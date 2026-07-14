@@ -1,0 +1,49 @@
+name: Android Build
+
+# Phase 0 skeleton. Requires three repo secrets before it can run
+# (Settings → Secrets and variables → Actions):
+#   UNITY_LICENSE  — contents of a Unity personal .ulf license file
+#   UNITY_EMAIL    — Unity account email
+#   UNITY_PASSWORD — Unity account password
+# License activation guide: https://game.ci/docs/github/activation
+#
+# Trigger is manual until the Unity project exists and secrets are set.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Build with Unity
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: Android
+          androidExportType: androidAppBundle
+          # unityVersion is auto-detected from ProjectSettings/ProjectVersion.txt
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wildgrove-aab
+          path: build/Android/*.aab
+          retention-days: 14
