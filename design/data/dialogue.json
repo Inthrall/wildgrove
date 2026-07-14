@@ -1,0 +1,22 @@
+{
+  "$comment": "All narrative text. Word budget ~1,200 at MVP; max two lines on screen. Proper nouns never explained. See design doc §6 for voice rules.",
+  "waystones": {
+    "sunfield-meadow":   "Walk gently. The meadow fed them, too, and they are under it.",
+    "bramble-hedgerows": "The stone does not grow back. Take it like you mean it.",
+    "old-growth-wood":   "These roots drink deeper than you will ever dig. Let them.",
+    "silverrun-river":   ""
+  },
+  "provisioner": [
+    { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
+    { "id": "prov-02", "trigger": "after-migration", "line": "The last warden asked fewer questions. Hm. Perhaps that was the trouble." }
+  ],
+  "migrationVignette": [
+    "The camp folds. The land exhales.",
+    "What you gave, it keeps."
+  ],
+  "fossilCards": {
+    "antler-crown":      "A crown of bone for a king of no kingdom. The meadow remembers being afraid, and will not say of what.",
+    "sunken-jaw":        "",
+    "those-who-planted": ""
+  }
+}

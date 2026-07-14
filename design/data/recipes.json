@@ -1,0 +1,15 @@
+{
+  "$comment": "Crafting recipes. valueMult applies to summed input base value for trade goods; ingots/gear are not sold by default. Input quantities are first-pass.",
+  "recipes": [
+    { "id": "berry-preserve",  "station": "fire",  "skill": "firecraft",  "inputs": { "berries": 4, "nuts": 2 },            "output": "berry-preserve",  "valueMult": 4, "kind": "trade" },
+    { "id": "mushroom-skewer", "station": "fire",  "skill": "firecraft",  "inputs": { "mushrooms": 3, "berries": 2 },       "output": "mushroom-skewer", "valueMult": 5, "kind": "trade" },
+    { "id": "smoked-trout",    "station": "fire",  "skill": "firecraft",  "inputs": { "fish": 2 },                          "output": "smoked-trout",    "valueMult": 5, "kind": "trade" },
+    { "id": "planks",          "station": "bench", "skill": "bushcraft",  "inputs": { "timber": 3 },                        "output": "planks",          "valueMult": 3, "kind": "trade" },
+    { "id": "reed-baskets",    "station": "bench", "skill": "bushcraft",  "inputs": { "planks": 2, "reeds": 4 },            "output": "reed-baskets",    "valueMult": 6, "kind": "trade" },
+    { "id": "cordage",         "station": "bench", "skill": "bushcraft",  "inputs": { "fibres": 8 },                        "output": "cordage",         "valueMult": 2, "kind": "material" },
+    { "id": "charcoal",        "station": "fire",  "skill": "firecraft",  "inputs": { "timber": 2 },                        "output": "charcoal",        "valueMult": 1, "kind": "material" },
+    { "id": "copper-ingot",    "station": "fire",  "skill": "forgecraft", "inputs": { "copper-scree": 5 },                  "output": "copper-ingot",    "valueMult": 3, "kind": "material" },
+    { "id": "bronze-ingot",    "station": "forge", "skill": "forgecraft", "inputs": { "copper-scree": 3, "tin-seam": 2 },   "output": "bronze-ingot",    "valueMult": 4, "kind": "material" },
+    { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material" }
+  ]
+}

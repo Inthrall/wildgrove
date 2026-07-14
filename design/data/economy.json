@@ -1,0 +1,41 @@
+{
+  "$comment": "Global economy constants from design doc §8. All first-pass values — tune in Phase 3 against pacing targets.",
+  "costGrowth": {
+    "crewHire": 1.09,
+    "porter": 1.10,
+    "building": 1.25
+  },
+  "tools": {
+    "baseCostCoin": 100,
+    "costMultPerTier": 12,
+    "yieldMultPerTier": 2,
+    "tiers": ["flint", "copper", "bronze", "iron", "steel"],
+    "$note": "flint is knapped (no forge); each later tier also consumes an ingot batch (see recipes)"
+  },
+  "mastery": { "yieldBonusPerLevel": 0.05 },
+  "verdure": {
+    "renownDivisor": 5000,
+    "exponent": 0.5,
+    "yieldBonusPerPoint": 0.02
+  },
+  "xp": { "base": 100, "growth": 1.10, "maxLevel": 99 },
+  "offline": {
+    "baseCapHours": 4,
+    "rateMultiplier": 1.0
+  },
+  "quality": {
+    "fineChance": 0.035,
+    "fineValueMult": 1.5,
+    "pristineBaseChance": 0.005
+  },
+  "excavation": {
+    "pityTimerHoursDug": 4,
+    "$note": "guaranteed fragment per pity interval; drop rate = digCrew * digSpeed * strataRarity"
+  },
+  "tending": {
+    "burstYieldMult": 3.0,
+    "burstDurationSec": 5,
+    "pristineBonusDurationSec": 30,
+    "$note": "burst values are a first guess — not in design doc, tune in Phase 1"
+  }
+}
