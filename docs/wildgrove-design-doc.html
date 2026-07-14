@@ -1,0 +1,512 @@
+<title>Wildgrove — Design Document</title>
+<style>
+  :root {
+    --ground: #f3f6ee;
+    --panel: #ffffff;
+    --ink: #22301e;
+    --ink-soft: #5c6a54;
+    --line: #d8ddce;
+    --accent: #3d7a44;
+    --accent-soft: #e3ecdf;
+    --honey: #9a6c14;
+    --honey-soft: #f3ead3;
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: Seravek, "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", Consolas, "SF Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #131810;
+      --panel: #1b2216;
+      --ink: #dde4d2;
+      --ink-soft: #97a289;
+      --line: #333d2b;
+      --accent: #8cbb77;
+      --accent-soft: #24301e;
+      --honey: #d9a54a;
+      --honey-soft: #2e2717;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #131810;
+    --panel: #1b2216;
+    --ink: #dde4d2;
+    --ink-soft: #97a289;
+    --line: #333d2b;
+    --accent: #8cbb77;
+    --accent-soft: #24301e;
+    --honey: #d9a54a;
+    --honey-soft: #2e2717;
+  }
+  :root[data-theme="light"] {
+    --ground: #f3f6ee;
+    --panel: #ffffff;
+    --ink: #22301e;
+    --ink-soft: #5c6a54;
+    --line: #d8ddce;
+    --accent: #3d7a44;
+    --accent-soft: #e3ecdf;
+    --honey: #9a6c14;
+    --honey-soft: #f3ead3;
+  }
+
+  html { background: var(--ground); }
+  body {
+    font-family: var(--body);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 16px;
+    margin: 0;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 3rem 1.25rem 6rem; }
+
+  header.doc { border-bottom: 3px double var(--accent); padding-bottom: 1.5rem; margin-bottom: 2.5rem; }
+  .doc-meta { font-size: 0.8rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  h1 { font-family: var(--display); font-size: 2.6rem; font-weight: 600; letter-spacing: 0.01em; margin: 0 0 0.5rem; text-wrap: balance; }
+  .thesis { font-family: var(--display); font-style: italic; font-size: 1.15rem; color: var(--ink-soft); margin: 0; max-width: 44ch; }
+
+  .eyebrow { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin: 3rem 0 0.25rem; }
+  h2 { font-family: var(--display); font-size: 1.7rem; font-weight: 600; margin: 0 0 0.9rem; text-wrap: balance; }
+  h3 { font-family: var(--display); font-size: 1.2rem; font-weight: 600; margin: 1.8rem 0 0.5rem; }
+  p { margin: 0 0 1rem; max-width: 68ch; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.4rem; }
+  li { margin-bottom: 0.35rem; }
+  strong { font-weight: 650; }
+  em { color: var(--ink-soft); }
+
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1rem 1.25rem; font-size: 0.9rem; }
+  nav.toc ol { columns: 2; column-gap: 2rem; margin: 0.4rem 0 0; padding-left: 1.2rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover, nav.toc a:focus { text-decoration: underline; }
+  nav.toc .toc-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-soft); }
+
+  .table-scroll { overflow-x: auto; margin: 0 0 1.25rem; border: 1px solid var(--line); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; background: var(--panel); }
+  th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; text-align: left; color: var(--ink-soft); font-weight: 700; padding: 0.6rem 0.8rem; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  td { padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; font-family: var(--mono); font-size: 0.82rem; }
+  td.tag { white-space: nowrap; }
+
+  .pill { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.5rem; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  .pill.honey { background: var(--honey-soft); color: var(--honey); }
+
+  .callout { background: var(--accent-soft); border-left: 3px solid var(--accent); padding: 0.85rem 1.1rem; border-radius: 0 4px 4px 0; margin: 0 0 1.25rem; font-size: 0.93rem; }
+  .callout.honey { background: var(--honey-soft); border-left-color: var(--honey); }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .formula { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0.9rem 1.1rem; font-family: var(--mono); font-size: 0.85rem; line-height: 1.8; overflow-x: auto; margin: 0 0 1.25rem; white-space: pre; }
+
+  .axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.9rem; margin: 0 0 1.25rem; }
+  .axis { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--accent); border-radius: 4px; padding: 0.9rem 1rem; }
+  .axis h4 { font-family: var(--display); font-size: 1.05rem; margin: 0 0 0.3rem; }
+  .axis p { font-size: 0.87rem; color: var(--ink-soft); margin: 0; }
+  .axis .lineage { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--honey); font-weight: 700; }
+
+  .phase { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1.1rem 1.3rem; margin-bottom: 1rem; }
+  .phase-head { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .phase-num { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: 0.85rem; }
+  .phase h4 { font-family: var(--display); font-size: 1.15rem; margin: 0; }
+  .phase .dur { margin-left: auto; font-size: 0.78rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .phase ul { font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .gate { font-size: 0.85rem; padding-top: 0.5rem; border-top: 1px dashed var(--line); }
+  .gate strong { color: var(--honey); }
+
+  .flow { font-family: var(--mono); font-size: 0.82rem; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0.9rem 1.1rem; overflow-x: auto; white-space: pre; line-height: 1.7; margin: 0 0 1.25rem; }
+
+  .voice { font-family: var(--display); font-style: italic; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--honey); border-radius: 0 4px 4px 0; padding: 0.8rem 1.1rem; margin: 0 0 1rem; font-size: 0.98rem; }
+  .voice .src { display: block; font-family: var(--body); font-style: normal; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft); margin-top: 0.4rem; }
+
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  @media (max-width: 560px) { nav.toc ol { columns: 1; } h1 { font-size: 2.1rem; } }
+</style>
+
+<div class="wrap">
+<header class="doc">
+  <div class="doc-meta"><span>Design document · v0.4</span><span>July 2026</span><span>Working title</span></div>
+  <h1>Wildgrove</h1>
+  <p class="thesis">An idle gathering &amp; collecting game about tending a wilderness that remembers. Walk deeper, craft to survive, unearth what sleeps beneath — and listen when the land speaks, which is rarely.</p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <span class="toc-label">Contents</span>
+  <ol>
+    <li><a href="#vision">Vision &amp; pillars</a></li>
+    <li><a href="#loop">Core loop</a></li>
+    <li><a href="#trail">The Trail — zones</a></li>
+    <li><a href="#skills">Crafts &amp; survival gear</a></li>
+    <li><a href="#compendium">Compendium, Museum &amp; fossils</a></li>
+    <li><a href="#narrative">Narrative &amp; tone</a></li>
+    <li><a href="#prestige">Prestige — Migration</a></li>
+    <li><a href="#economy">Economy math</a></li>
+    <li><a href="#upgrades">First 30 upgrades</a></li>
+    <li><a href="#monetization">Monetization</a></li>
+    <li><a href="#levelup">Level Up compliance</a></li>
+    <li><a href="#plan">MVP development plan</a></li>
+    <li><a href="#open">Open questions</a></li>
+  </ol>
+</nav>
+
+<p class="eyebrow" id="vision">1 · Vision</p>
+<h2>Tend, don't take</h2>
+<p>You are the warden of a small camp on the edge of an old, patient wilderness. Your crews gather what the land offers — berries, deadfall timber, river fish — porters carry it home, and around the fire you craft it into the gear and goods a camp needs to push deeper. Some finds are <strong>Pristine</strong>: specimens worth keeping forever. Some are older than that — <strong>fossils</strong>, surfacing from the soil, each one a sentence in a story nobody finishes telling you. When a season turns, the camp <strong>migrates</strong> on, and the land remembers how you treated it.</p>
+<p>The fantasy is <em>stewardship, not extraction</em>. You are a guest who works hard. The tone is warm, quiet, and slightly haunted.</p>
+<div class="axes">
+  <div class="axis"><span class="lineage">Spine · Idle Obelisk</span><h4>The Trail</h4><p>Push deeper through eight zones. Each opens new resources, a new craft, a waystone inscription, and — from Zone 3 — dig sites.</p></div>
+  <div class="axis"><span class="lineage">Breadth · Melvor Idle</span><h4>Crafts</h4><p>Parallel gathering and survival-crafting skills, each with XP, mastery, tools, and gear recipes.</p></div>
+  <div class="axis"><span class="lineage">Meta · Egg Inc</span><h4>Migration</h4><p>Prestige resets the region and banks Verdure — the land's memory of careful hands — into the permanent Almanac.</p></div>
+</div>
+<p><strong>The collecting identity:</strong> the Compendium (living things) and the Fossil Wing (dead ages) are the axes that never reset. They carry the set bonuses, the 40+ achievements, and nearly all of the story.</p>
+<h3>Art direction — the naturalist's plates (decided)</h3>
+<ul>
+  <li><strong>Every collectible is a plate.</strong> Compendium entries, fossil cards, and gear are hand-drawn naturalist illustrations: fine ink linework, muted watercolour and sepia washes, numbered figures, small hand-written margin annotations. The Compendium reads like a 19th-century field guide someone loved.</li>
+  <li><strong>UI is the warden's field journal.</strong> Paper grounds, journal tabs, stitched spines; restrained — texture as identity, never as noise.</li>
+  <li><strong>Zones are the stage, plates are the star.</strong> World scenes stay simple: layered painted-parallax backdrops with light ambient motion (drifting pollen, river shimmer). The illustration budget concentrates where the collecting identity lives.</li>
+  <li><strong>Solo-scale production:</strong> one fixed plate template (frame, figure number, nameplate) so each new card costs only the specimen drawing. Target ~60 plates at MVP (~40 Compendium, 6 fossils, 5 gear, zone headers), produced in per-zone batches. Scope pressure cuts <em>plate count</em>, never plate quality.</li>
+</ul>
+
+<p class="eyebrow" id="loop">2 · Core loop</p>
+<h2>Gather → haul → craft → trade</h2>
+<div class="flow">  [WILDS]                    [TRAIL]              [CAMP]
+  Crews gather nodes    ──►  Porters haul  ──►  Fire, forge &amp; bench   ──►  goods
+  (idle + Tending)           (throughput         │                          │
+       ▲                      bottleneck)        ├─► GEAR (equip crews)     │
+       │                                         └─► TRADE GOODS ──► Provisioner ──► Coin
+       └────────────── hires, tools, gear, camp, trail maps ◄──────────────┘</div>
+<ol>
+  <li><strong>Crews</strong> work resource nodes automatically. <strong>Tending</strong> a node (tap / click / key) — clearing brush, turning soil — gives a burst of yield and briefly raises its Pristine chance. Attention is rewarded, never demanded.</li>
+  <li>Harvest travels by <strong>porter</strong> back to camp. Under-invest in porters and baskets overflow at the node — the visible bottleneck tension.</li>
+  <li>The <strong>fire and benches</strong> turn raw finds into two kinds of output: <strong>survival gear</strong> you equip (cordage, torches, oilskins — permanent-for-the-run buffs) and <strong>trade goods</strong> (preserves, planks, baskets) worth far more than raw materials.</li>
+  <li>The <strong>Provisioner</strong> — a silent, recurring caravan — buys trade goods for Coin. Coin funds hires, tools, camp buildings, and <strong>Trail Maps</strong>. Deeper zones demand better tools <em>and</em> better gear → invest → advance. Repeat.</li>
+</ol>
+<div class="callout"><p><strong>Design tension to preserve:</strong> gather rate vs. haul rate vs. crafting rate stays slightly out of balance — upgrading one always exposes the next bottleneck. The gear-vs-goods split adds a second small dilemma: craft for the crew, or craft for the caravan?</p></div>
+
+<p class="eyebrow" id="trail">3 · The Trail</p>
+<h2>Eight zones, four at MVP</h2>
+<div class="table-scroll"><table>
+  <tr><th>#</th><th>Zone</th><th>Resources</th><th>Unlocks</th><th>Keystone specimen</th><th>Scope</th></tr>
+  <tr><td class="num">1</td><td><strong>Sunfield Meadow</strong></td><td>Berries, wildflowers, fibres</td><td>Foraging (start)</td><td>Sunburst Poppy</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td class="num">2</td><td><strong>Bramble Hedgerows</strong></td><td>Nuts, herbs, copper scree</td><td>Firecraft (the camp fire), Mining</td><td>Amber-Shelled Snail</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td class="num">3</td><td><strong>Old-Growth Wood</strong></td><td>Deadfall timber, mushrooms, tin seams</td><td>Logging, Bushcraft, <strong>first dig site</strong></td><td>Ancient Acorn</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td class="num">4</td><td><strong>Silverrun River</strong></td><td>Fish, reeds, clay, iron-rich gravel</td><td>Fishing, riverbank dig site</td><td>Moonscale Trout</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td class="num">5</td><td><strong>Mistfen Marsh</strong></td><td>Peat, rare herbs, fireflies</td><td>Entomology, Apothecary</td><td>Lantern Firefly</td><td class="tag"><span class="pill honey">v1.1</span></td></tr>
+  <tr><td class="num">6</td><td><strong>The Hollows</strong></td><td>Deep ores, crystals, bone beds</td><td>Delving; the richest fossil strata; shafts nobody living dug</td><td>Echo Geode</td><td class="tag"><span class="pill honey">v1.1</span></td></tr>
+  <tr><td class="num">7</td><td><strong>Highland Crags</strong></td><td>Eggs, wool, lichen</td><td>Husbandry</td><td>Cloudfleece Ram</td><td class="tag"><span class="pill honey">v1.2</span></td></tr>
+  <tr><td class="num">8</td><td><strong>Cloudreach Peaks</strong></td><td>Sky-blossoms, glacier ice</td><td>The final waystones (endgame)</td><td>Aurora Bloom</td><td class="tag"><span class="pill honey">v1.2</span></td></tr>
+</table></div>
+<p>Each zone is a screen: 2–3 nodes, the trail home, one <strong>keystone specimen</strong> (a guaranteed rare find gating a milestone achievement), and one <strong>waystone</strong> — a standing stone whose inscription is revealed on arrival (§6). From Zone 3 onward, zones also hold a <strong>dig site</strong>. Zone entry costs a Trail Map (Coin) <em>and</em> a tool tier, so Trail progress is paced by both economy and craft investment.</p>
+
+<p class="eyebrow" id="skills">4 · Crafts</p>
+<h2>Nine crafts at MVP, twelve at 1.2</h2>
+<div class="table-scroll"><table>
+  <tr><th>Craft</th><th>Type</th><th>Feeds on</th><th>Produces</th><th>Scope</th></tr>
+  <tr><td><strong>Foraging</strong></td><td>Gathering</td><td>Meadow, Hedgerow nodes</td><td>Berries, flowers, fibres, nuts, herbs</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Logging</strong></td><td>Gathering</td><td>Old-Growth deadfall</td><td>Timber, mushrooms (by-find)</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Fishing</strong></td><td>Gathering</td><td>Silverrun nodes</td><td>Fish, reeds, clay</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Mining</strong></td><td>Gathering</td><td>Scree, seams, gravel (Zones 2–4)</td><td>Copper, tin, iron ore; flint, stone</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Firecraft</strong></td><td>Survival crafting</td><td>Berries, nuts, mushrooms, fish</td><td>Preserves, skewers, meals; torches</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Forgecraft</strong></td><td>Survival crafting</td><td>Ores, timber (charcoal), clay</td><td>Ingots → every tool tier; fittings</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Bushcraft</strong></td><td>Survival crafting</td><td>Timber, fibres, reeds, clay</td><td>Cordage, planks, baskets; gear</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Excavation</strong></td><td>Collection</td><td>Dig sites (Zones 3+)</td><td>Fossil fragments, amber</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Curation</strong></td><td>Collection</td><td>Pristine specimens, fossils</td><td>Museum donations, set bonuses</td><td class="tag"><span class="pill">MVP</span></td></tr>
+  <tr><td><strong>Entomology</strong></td><td>Gathering</td><td>Marsh nodes</td><td>Insects (pure collection value)</td><td class="tag"><span class="pill honey">v1.1</span></td></tr>
+  <tr><td><strong>Apothecary</strong></td><td>Survival crafting</td><td>Herbs, peat, fungi</td><td>Tinctures (buff consumables)</td><td class="tag"><span class="pill honey">v1.1</span></td></tr>
+  <tr><td><strong>Husbandry</strong></td><td>Gathering</td><td>Crag nodes</td><td>Eggs, wool</td><td class="tag"><span class="pill honey">v1.2</span></td></tr>
+</table></div>
+<h3>Skill structure (per craft)</h3>
+<ul>
+  <li><strong>Skill level</strong> 1–99, XP from every action. Levels gate recipes and tool tiers.</li>
+  <li><strong>Mastery</strong> per resource: each mastery level gives +5% yield/value for that resource. The long-tail chase.</li>
+  <li><strong>Tools are mined, smelted, and smithed — never bought.</strong> Tier 1 is knapped flint (no forge). Every tier after needs Coin <em>plus</em> ingots at the forge: Copper (Zone 2 scree) → Bronze (add Zone 3 tin) → Iron (Zone 4 gravel) → Steel (charcoal + iron) → deep ores (Hollows, v1.1). Each tier ×2 yield, ~12× the cost of the last. <strong>Mining/Forgecraft is the unlock backbone:</strong> zones gate ores, ores gate tools, tools gate zones.</li>
+  <li>One gathering craft runs <strong>per zone crew</strong>; crafting runs in parallel via fire/bench queues — several bars always filling, the Melvor feel.</li>
+</ul>
+<h3>Survival gear (equip, don't sell)</h3>
+<p>Three gear slots per crew — <strong>Hands</strong>, <strong>Pack</strong>, <strong>Camp</strong> — filled by crafted items. Gear persists for the run and is rebuilt cheaply after Migration (an early-run ritual that makes the survival fantasy tactile).</p>
+<div class="table-scroll"><table>
+  <tr><th>Gear (MVP)</th><th>Slot</th><th>Craft</th><th>Materials</th><th>Effect</th></tr>
+  <tr><td>Cordage Wraps</td><td>Hands</td><td>Bushcraft</td><td>Fibres ×40</td><td>Tending burst +50%</td></tr>
+  <tr><td>Birch Frame Pack</td><td>Pack</td><td>Bushcraft</td><td>Timber ×25, cordage ×5</td><td>Porter capacity +25%</td></tr>
+  <tr><td>Pitch Torch</td><td>Camp</td><td>Firecraft</td><td>Timber ×10, fibres ×10</td><td>Night hours count fully offline</td></tr>
+  <tr><td>Oilskin Tarp</td><td>Camp</td><td>Bushcraft</td><td>Reeds ×30, fish oil ×5</td><td>Offline cap +2 h</td></tr>
+  <tr><td>Clay-Lined Creel</td><td>Pack</td><td>Bushcraft</td><td>Clay ×20, reeds ×15</td><td>Fish never spoil in transit</td></tr>
+</table></div>
+<h3>Recipe chains (MVP trade goods)</h3>
+<div class="flow">  Berries + Nuts        ──►  Fire      ──►  Berry Preserve     (×4 value)
+  Mushrooms + Berries   ──►  Fire      ──►  Forager's Skewer   (×5 value)
+  Fish                  ──►  Fire      ──►  Smoked Trout       (×5 value)
+  Timber                ──►  Bench     ──►  Planks             (×3 value)
+  Planks + Reeds        ──►  Bench     ──►  Reed Baskets       (×6 value)
+
+  Copper Scree          ──►  Fire      ──►  Copper Ingots  ─┐
+  Tin + Copper          ──►  Forge     ──►  Bronze Ingots  ─┼─►  Tool tiers &amp; fittings
+  Iron Gravel + Charcoal──►  Forge     ──►  Iron Ingots    ─┘   (equip, don't sell)</div>
+
+<p class="eyebrow" id="compendium">5 · Collection</p>
+<h2>Compendium, Museum &amp; the Fossil Wing</h2>
+<p>Every gatherable, creature, and recipe has a Compendium entry — a hand-illustrated card, a line or two of text, lifetime counters. Finds roll a quality: <strong>Common</strong> (96%), <strong>Fine</strong> (~3.5%, +50% value), <strong>Pristine</strong> (~0.5% base, upgradeable). Pristine finds can be sold to the Provisioner for a windfall — or <strong>donated</strong>.</p>
+<ul>
+  <li><strong>Museum sets</strong> group 4–8 related entries ("Meadow Blooms," "River Catch"). Completing a set grants a <em>permanent</em> bonus that survives Migration (+% yield, +Pristine chance, +offline cap).</li>
+  <li><strong>Donation is a real choice</strong>: run-speed now versus permanence.</li>
+</ul>
+<h3>Fossils — the deep chase</h3>
+<p>From Zone 3, <strong>dig sites</strong> appear: a crew assigned to Excavation slowly turns soil, surfacing amber and <strong>fossil fragments</strong>. Fossils assemble from 3–5 fragments each; deeper zones hold older strata and rarer beds. Each completed fossil:</p>
+<ul>
+  <li>grants a <strong>large permanent multiplier</strong> (this is the prophecy-egg analog — the months-long chase), and</li>
+  <li>unlocks a <strong>fossil card</strong> — the game's primary lore vehicle (§6). The bones tell the story; nothing else will.</li>
+</ul>
+<div class="table-scroll"><table>
+  <tr><th>Fossil set (MVP)</th><th>Pieces</th><th>Where</th><th>Bonus</th><th>What it whispers</th></tr>
+  <tr><td><strong>The Antler Crown</strong></td><td class="num">3</td><td>Old-Growth roots</td><td>+10% all yields</td><td>A great elk. Something hunted <em>it</em>.</td></tr>
+  <tr><td><strong>The Sunken Jaw</strong></td><td class="num">4</td><td>Riverbank</td><td>+15% fishing, +1% Pristine</td><td>A river leviathan. The Silverrun was once an ocean.</td></tr>
+  <tr><td><strong>Those Who Planted</strong></td><td class="num">5</td><td>Both sites, rare beds</td><td>+20% all yields</td><td>Tools. Worked stone. Hands like yours, much older.</td></tr>
+  <tr><td><em>The Long Winter strata</em></td><td class="num">—</td><td>Hollows (v1.1)</td><td>—</td><td>An ash layer above every other bed. Every set below it stops there.</td></tr>
+</table></div>
+<p>Target: ~6 fossils at MVP, ~30 by 1.2 — each a multiplier <em>and</em> a chapter.</p>
+
+<p class="eyebrow" id="narrative">6 · Narrative &amp; tone</p>
+<h2>The land speaks sparingly</h2>
+<p>No cutscenes, no quest log, no exposition. The story arrives the way it does in Dark Souls: through item descriptions, terse strangers, and places that imply more than they say. A player who ignores every word still has a complete idle game; a player who reads everything assembles something quietly devastating.</p>
+<h3>Four delivery channels</h3>
+<ul>
+  <li><strong>Waystones</strong> — one per zone, an inscription revealed on arrival. Two lines, never more. Weathered, second-person, addressed to wardens in general — you are clearly not the first.</li>
+  <li><strong>Fossil cards</strong> — the load-bearing lore. Each completed fossil adds a card written like a field note that trails off. The Long Winter is only ever visible as an absence: sets that stop, strata that end.</li>
+  <li><strong>The Provisioner</strong> — the silent caravan speaks one line per visit, maybe. Dry, oblique, faintly amused. Never answers a question the game lets you ask.</li>
+  <li><strong>Migration vignettes</strong> — three lines over a dark screen as the camp folds. The only scripted "cinematic" beat, and it is twelve words long.</li>
+</ul>
+<h3>Voice samples</h3>
+<div class="voice">Walk gently. The meadow fed them, too, and they are under it.<span class="src">Waystone · Sunfield Meadow</span></div>
+<div class="voice">These roots drink deeper than you will ever dig. Let them.<span class="src">Waystone · Old-Growth Wood</span></div>
+<div class="voice">A crown of bone for a king of no kingdom. The meadow remembers being afraid, and will not say of what.<span class="src">Fossil card · The Antler Crown</span></div>
+<div class="voice">The stone does not grow back. Take it like you mean it.<span class="src">Waystone · the copper scree, Bramble Hedgerows</span></div>
+<div class="voice">Sell me nothing you would weep to lose. I do not give refunds, and the land does not either.<span class="src">The Provisioner</span></div>
+<div class="voice">The last warden asked fewer questions. Hm. Perhaps that was the trouble.<span class="src">The Provisioner, much later</span></div>
+<div class="voice">The camp folds. The land exhales.<br>What you gave, it keeps.<span class="src">Migration vignette</span></div>
+<h3>The authorial truth (dev-facing — never stated in game)</h3>
+<div class="callout honey"><p>Long before the game begins, a civilization — <em>Those Who Planted</em> — worked this land the way the player does, and did not stop. Their taking outran the land's giving, and the Long Winter answered: the ash layer above every fossil bed. The wilderness that regrew is not wilderness; it is a survivor, and it is watching. The wardens are its long experiment in trying again — Verdure is literally the land's memory of careful hands, and Migration happens on the land's terms, not the camp's. The late-game implication, assembled only by completing the deep fossil sets and the final waystones: the warden order descends from Those Who Planted. You are the apology.</p></div>
+<h3>Writing rules</h3>
+<ul>
+  <li>Total word budget at MVP: <strong>~1,200 words</strong>. Scarcity is the aesthetic; every added line cheapens the rest.</li>
+  <li>Max two lines on screen at once. Everything skippable, everything re-readable in the Compendium.</li>
+  <li>Proper nouns are never explained (<em>the Long Winter, Those Who Planted, the First Warden</em>). Questions are answered only by other questions, three zones later.</li>
+  <li>Nothing hostile, nothing gory. The dread is geological — patient and mostly kind. Tone target: a nature documentary narrated by someone grieving politely.</li>
+</ul>
+
+<p class="eyebrow" id="prestige">7 · Prestige</p>
+<h2>Migration</h2>
+<p>When a region slows, the camp folds and <strong>migrates</strong>. Coin, hires, tools, gear, zone progress, and skill levels reset. You keep: the Compendium, the Museum, every fossil, Amber, and newly-banked <strong>Verdure</strong>.</p>
+<ul>
+  <li><strong>Verdure</strong> — the land's memory of careful hands — is earned from lifetime Renown (≈ lifetime Coin earned this run; formula in §8). Each point gives a permanent, stacking <strong>+2% to all yields</strong>.</li>
+  <li><strong>The Almanac</strong> is the permanent tree bought with Verdure: bigger offline caps, starting tool tiers, porter efficiency, Pristine chance, dig speed, auto-craft, starting-zone skips. ~12 nodes at MVP, ~40 by 1.1. Two tiers mirror Egg Inc: cheap per-run Camp upgrades (Coin, wiped) vs. the Almanac (Verdure, permanent).</li>
+  <li>Each new region gets a light modifier (lush: +herbs · misted: +fish, −flowers · ashen: +dig speed) so early runs feel different, not just faster.</li>
+  <li>Rebuilding gear in the first minutes of a run is deliberate — a small survival ritual that makes each new region feel inhabited rather than reskinned.</li>
+</ul>
+
+<p class="eyebrow" id="economy">8 · Economy</p>
+<h2>The math</h2>
+<h3>Currencies</h3>
+<div class="table-scroll"><table>
+  <tr><th>Currency</th><th>Role</th><th>Sources</th><th>Sinks</th></tr>
+  <tr><td><strong>Coin</strong></td><td>Per-run soft</td><td>Trade goods sold to the Provisioner</td><td>Hires, tool costs, buildings, maps</td></tr>
+  <tr><td><strong>Verdure</strong></td><td>Meta (permanent)</td><td>Migration</td><td>Almanac nodes; +2%/pt passive</td></tr>
+  <tr><td><strong>Amber</strong></td><td>Hard / premium</td><td>IAP, dig sites, rewarded ads, weekly Play Games Reward</td><td>Time-skips, cosmetic gear, extra craft queues</td></tr>
+</table></div>
+<h3>Formulas</h3>
+<div class="formula">cost(n)        = base · r^n            r: crew hires 1.09 · porters 1.10 · buildings 1.25
+toolCost(t)    = 100 · 12^(t−1) Coin + ingot batch (mined + smelted)    each tier ×2 yield
+yield/sec      = crew · toolMult · gearMult · (1 + 0.05·mastery) · global
+global         = (1 + 0.02·Verdure) · almanac · museumSets · fossils · boosts
+xpToLevel(L)   = 100 · 1.10^L
+verdureGain    = floor( √( lifetimeRenown / 5,000 ) )   — awarded on Migration
+offlineEarn    = rate · min(t, cap)    cap: 4 h base → +gear → 8 h buildings → 12 h Almanac
+pristineChance = 0.5% · (1 + fieldPress + almanac + tendingBonus)
+fragmentFind   = digCrew · digSpeed · strataRarity       — pity timer: guaranteed fragment / 4 h dug</div>
+<p>The square-root Verdure curve means each Migration at ~4× the previous lifetime Renown roughly doubles Verdure — the classic "when to reset" decision stays interesting without a wiki. The fossil pity timer keeps the deep chase strictly fair: patience always pays, luck only accelerates.</p>
+<h3>Pacing targets</h3>
+<div class="table-scroll"><table>
+  <tr><th>Moment</th><th>Target time</th><th>Why</th></tr>
+  <tr><td>First hire</td><td class="num">&lt; 60 s</td><td>Immediate agency</td></tr>
+  <tr><td>First tool crafted (Flint Sickle)</td><td class="num">~4 min</td><td>First ×2 spike; survival crafting established</td></tr>
+  <tr><td>Zone 2 + first waystone read</td><td class="num">~10 min</td><td>New content and the first hint of tone</td></tr>
+  <tr><td>First recipe cooked</td><td class="num">~20 min</td><td>Second system online; 4th first-hour achievement</td></tr>
+  <tr><td>Zone 3: Logging + first dig site</td><td class="num">~45 min</td><td>Parallel skills begin; fossil hook set</td></tr>
+  <tr><td>First fossil fragment</td><td class="num">~Day 1</td><td>The long chase visibly starts</td></tr>
+  <tr><td>Migration visible (Almanac Desk)</td><td class="num">Day 1</td><td>Meta-game revealed early</td></tr>
+  <tr><td>First Migration taken (~10 Verdure)</td><td class="num">Day 1–2</td><td>Hook set before the day-3 churn window</td></tr>
+  <tr><td>First fossil completed (Antler Crown)</td><td class="num">~Week 1</td><td>First lore payoff + big multiplier</td></tr>
+</table></div>
+
+<p class="eyebrow" id="upgrades">9 · Progression</p>
+<h2>First 30 named upgrades</h2>
+<p>Crew hires and porters scale separately by the cost formulas above; this is the <em>named, one-off</em> track that structures the first sessions. Tool entries also consume a material batch (crafted at the bench). Costs will move in balancing.</p>
+<div class="table-scroll"><table>
+  <tr><th>#</th><th>Upgrade</th><th>Track</th><th>Cost (Coin)</th><th>Effect</th></tr>
+  <tr><td class="num">1</td><td>Flint Sickle</td><td>Tools</td><td class="num">100</td><td>Foraging yield ×2</td></tr>
+  <tr><td class="num">2</td><td>Waxed Satchel</td><td>Porters</td><td class="num">150</td><td>Haul capacity ×1.5</td></tr>
+  <tr><td class="num">3</td><td>Drying Rack</td><td>Camp</td><td class="num">250</td><td>Berry sale value +25%</td></tr>
+  <tr><td class="num">4</td><td>Trail Map: Bramble Hedgerows</td><td>Trail</td><td class="num">400</td><td>Unlock Zone 2 (nuts, herbs, copper scree) + Mining</td></tr>
+  <tr><td class="num">5</td><td>Rawhide Gloves</td><td>Tools</td><td class="num">600</td><td>Hedgerow foraging ×2</td></tr>
+  <tr><td class="num">6</td><td>Handcart</td><td>Porters</td><td class="num">900</td><td>Haul capacity ×2</td></tr>
+  <tr><td class="num">7</td><td>Camp Fire Ring</td><td>Camp</td><td class="num">1,300</td><td>Unlock Firecraft + Forgecraft (copper smelts on an open fire) + Berry Preserve recipe</td></tr>
+  <tr><td class="num">8</td><td>Copper Sickle</td><td>Tools</td><td class="num">2,000</td><td>Foraging yield ×2 (needs copper ingots ×5)</td></tr>
+  <tr><td class="num">9</td><td>Root Cellar</td><td>Camp</td><td class="num">3,000</td><td>Offline cap 4 h → 6 h</td></tr>
+  <tr><td class="num">10</td><td>Preserving Jars</td><td>Firecraft</td><td class="num">4,500</td><td>Preserve value +50%</td></tr>
+  <tr><td class="num">11</td><td>Trail Map: Old-Growth Wood</td><td>Trail</td><td class="num">6,500</td><td>Unlock Zone 3 (timber, tin seams) + Logging + <strong>first dig site</strong></td></tr>
+  <tr><td class="num">12</td><td>Bronze Hatchet</td><td>Tools</td><td class="num">10,000</td><td>Logging yield ×2 (needs bronze ingots ×5)</td></tr>
+  <tr><td class="num">13</td><td>Mule Team</td><td>Porters</td><td class="num">15,000</td><td>Haul capacity ×2</td></tr>
+  <tr><td class="num">14</td><td>Carving Bench</td><td>Camp</td><td class="num">22,000</td><td>Unlock Bushcraft + Plank &amp; Cordage recipes</td></tr>
+  <tr><td class="num">15</td><td>Whetstone</td><td>Tools</td><td class="num">32,000</td><td>All gathering yield +25%</td></tr>
+  <tr><td class="num">16</td><td>Forager's Skewers</td><td>Firecraft</td><td class="num">48,000</td><td>Mushroom Skewer recipe</td></tr>
+  <tr><td class="num">17</td><td>Field Press</td><td>Compendium</td><td class="num">70,000</td><td>Pristine chance +1% (base 0.5%)</td></tr>
+  <tr><td class="num">18</td><td>Bellows Forge</td><td>Camp</td><td class="num">100,000</td><td>Forgecraft speed ×2; hot enough for iron (ore in Zone 4)</td></tr>
+  <tr><td class="num">19</td><td>Wagon</td><td>Porters</td><td class="num">150,000</td><td>Haul capacity ×2</td></tr>
+  <tr><td class="num">20</td><td>Smokehouse</td><td>Camp</td><td class="num">220,000</td><td>Offline cap 6 h → 8 h</td></tr>
+  <tr><td class="num">21</td><td>Trail Map: Silverrun River</td><td>Trail</td><td class="num">320,000</td><td>Unlock Zone 4 (fish, iron gravel) + Fishing + riverbank dig site</td></tr>
+  <tr><td class="num">22</td><td>Iron Toolset</td><td>Tools</td><td class="num">470,000</td><td>Foraging, Logging &amp; Mining ×2 (needs iron ingots ×8)</td></tr>
+  <tr><td class="num">23</td><td>Brush Screens</td><td>Excavation</td><td class="num">700,000</td><td>Dig speed ×2</td></tr>
+  <tr><td class="num">24</td><td>Smoking Racks + Willow Rod</td><td>Firecraft</td><td class="num">1.0 M</td><td>Smoked Trout recipe; Fishing yield ×2</td></tr>
+  <tr><td class="num">25</td><td>Reed Weaving</td><td>Bushcraft</td><td class="num">1.5 M</td><td>Reed Basket recipe (highest-value good)</td></tr>
+  <tr><td class="num">26</td><td>Curator's Cabinet</td><td>Compendium</td><td class="num">2.2 M</td><td>Museum set bonuses ×1.5</td></tr>
+  <tr><td class="num">27</td><td>Steel Toolset</td><td>Tools</td><td class="num">3.2 M</td><td>All gathering ×2 (iron ingots ×10 + charcoal ×20)</td></tr>
+  <tr><td class="num">28</td><td>Pack Ravens</td><td>Porters</td><td class="num">4.7 M</td><td>Haul capacity ×2</td></tr>
+  <tr><td class="num">29</td><td>Almanac Desk</td><td>Camp</td><td class="num">7.0 M</td><td>Reveals Migration + live Verdure forecast</td></tr>
+  <tr><td class="num">30</td><td>Trail Map: Mistfen Marsh</td><td>Trail</td><td class="num">10 M</td><td>Unlock Zone 5 (v1.1 content gate)</td></tr>
+</table></div>
+<div class="callout"><p><strong>First-hour achievement plan</strong> (Quest eligibility needs 4): <em>First Harvest</em> (gather anything), <em>Helping Hands</em> (3 gatherers), <em>Off the Beaten Path</em> (reach Zone 2), <em>Fire &amp; Fruit</em> (cook a recipe). All land inside the pacing targets above.</p></div>
+
+<p class="eyebrow" id="monetization">10 · Business</p>
+<h2>Monetization — the Egg Inc posture</h2>
+<p>Free, generous, player-initiated. The gathering loop is never interrupted by ads, and the story is never sold — every word and every fossil is reachable free.</p>
+<h3>Rewarded video (the workhorse)</h3>
+<ul>
+  <li>×2 all yields for 4 min (stackable to 1 h)</li>
+  <li>Double offline earnings on return (the single highest-value placement)</li>
+  <li>Instant-finish a craft queue · small Amber drip</li>
+</ul>
+<h3>IAP</h3>
+<ul>
+  <li><strong>Warden's Sigil</strong> — permanent ×2 all yields (the "Pro" purchase, ~US$7)</li>
+  <li>Remove ads · Amber packs · starter bundle · cosmetic camp &amp; gear skins</li>
+</ul>
+<h3>Play Games Rewards (Level Up requirement, not IAP)</h3>
+<ul>
+  <li>Single-use ×2 by Sep 30 2026: <strong>Wayfarer's Cloak</strong> (crew cosmetic) + <strong>Spare Porter</strong> (+1 porter slot)</li>
+  <li>Repeatable ×1 by Mar 1 2027: <strong>Weekly Amber Cache</strong> (20 Amber, max 1/week)</li>
+</ul>
+
+<p class="eyebrow" id="levelup">11 · Platform</p>
+<h2>Level Up compliance map</h2>
+<div class="table-scroll"><table>
+  <tr><th>Requirement</th><th>Wildgrove answer</th><th>Phase</th></tr>
+  <tr><td>PGS v2 SDK, init at startup</td><td>Unity plugin, initialized in bootstrap scene</td><td class="num">0</td></tr>
+  <tr><td>Achievements (10 min / 40+ rec / 4 in first hour)</td><td>40+ from zones, crafts, Museum sets, fossils, Migrations; first-hour four planned above</td><td class="num">5</td></tr>
+  <tr><td>Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)</td><td>Resources gathered (competitive) · deepest zone (progression) · recipes crafted · specimens catalogued · fossils completed · Migrations · Coin earned</td><td class="num">5</td></tr>
+  <tr><td>Cloud save + conflict policy</td><td>Saved Games API (&lt;100 KB save); conflict = highest lifetime Renown wins, prompt on tie</td><td class="num">5</td></tr>
+  <tr><td>Sidekick overlay enabled</td><td>App Bundle + Play Console toggle; test early</td><td class="num">5</td></tr>
+  <tr><td>Rewards items (2 single-use / 1 repeatable)</td><td>Cloak, Spare Porter, Weekly Amber Cache</td><td class="num">6</td></tr>
+  <tr><td>Vulkan primary (Unity 2021+)</td><td>Unity 6 LTS + URP, Vulkan first in API list from day one</td><td class="num">0</td></tr>
+  <tr><td>60 fps (avg ≥55 / P90 ≥50 / P99 ≥30)</td><td>2D URP; frame budget checked each phase gate</td><td class="num">all</td></tr>
+  <tr><td>Stability &lt;1% crash / &lt;2% ANR</td><td>Crashlytics from Phase 1; vitals gate before launch</td><td class="num">all</td></tr>
+  <tr><td>Large screens, no letterboxing at 4:3 / 16:10 / 21:9 (+ portrait complements)</td><td>Adaptive UI is Phase 2, not post-launch polish: phone portrait column ↔ tablet/PC landscape dashboard</td><td class="num">2</td></tr>
+  <tr><td>Play Games on PC</td><td>Idle UI suits PC; no touch-only features; opt in at beta</td><td class="num">6</td></tr>
+  <tr><td>Full keyboard/mouse + controller</td><td>Input abstraction from Phase 1: Tending = tap/click/Space/pad-A; full menu navigation</td><td class="num">2</td></tr>
+  <tr><td>Title availability parity</td><td>Play-only launch across mobile/tablet/PC — satisfied by default</td><td class="num">6</td></tr>
+</table></div>
+<div class="callout honey"><p><strong>Leaderboard integrity:</strong> idle games are trivially save-edited. Ship Play Integrity API checks and server-side sanity bounds (max plausible Renown/hour) before any competitive stat goes live, or the leaderboards are noise within a week.</p></div>
+
+<p class="eyebrow" id="plan">12 · Execution</p>
+<h2>MVP development plan</h2>
+<p>Solo, part-time estimates. Each phase ends at a <strong>gate</strong> — a concrete question answered before more is built. MVP = zones 1–4, nine crafts, gear slots, the ore→ingot→tool chain, 6 fossils, Migration + 12-node Almanac, Compendium v1, ~1,200 words of narrative, full PGS layer, monetization.</p>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 0</span><h4>Foundations</h4><span class="dur">1–2 wks</span></div>
+  <ul>
+    <li>Unity 6 LTS project, URP 2D, <strong>Vulkan first</strong> in the graphics API list; verify on a real device</li>
+    <li>Git repo + GitHub Actions Android build (AAB) from day one</li>
+    <li>Play Console app created; internal testing track live with a walking-skeleton build</li>
+    <li>Data-driven content: resources/upgrades/recipes/gear/dialogue lines as ScriptableObjects or JSON — balancing and writing must never require code changes</li>
+    <li>Number backbone: BreakInfinity (BigDouble) for currencies; versioned local JSON save with migration hooks</li>
+    <li>PGS v2 SDK integrated and initializing (sign-in only, nothing else yet)</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> a signed AAB installs from the internal track, signs into Play Games, and renders at 60 fps under Vulkan.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 1</span><h4>Core loop slice</h4><span class="dur">3–4 wks</span></div>
+  <ul>
+    <li>Sunfield Meadow only: two nodes, Tending burst, crew hires, porters, Provisioner sales</li>
+    <li>Upgrades 1–10 from the table; cost/yield formulas wired to data</li>
+    <li>Offline progress (4 h cap) + welcome-back summary sheet</li>
+    <li>Placeholder art; real numbers. Input goes through an abstraction layer (touch now, K&amp;M/pad later)</li>
+    <li>Crashlytics + basic analytics events (session length, upgrade purchases)</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> is 20 minutes fun? Hand it to 3–5 people; watch where they stall. If the loop isn't compulsive with placeholder art, stop and fix — content won't save it.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 2</span><h4>Adaptive UI &amp; input</h4><span class="dur">2–3 wks</span></div>
+  <ul>
+    <li>Responsive layout: phone-portrait single column ↔ landscape dashboard (camp left, zone right); test 4:3, 16:10, 21:9 + portrait complements, cutouts, foldable resize</li>
+    <li>Keyboard/mouse + controller: every interaction reachable without touch; focus states; gamepad manifest flag</li>
+    <li>Frame-budget pass on a mid-tier reference device</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> fully playable with a pad and with K&amp;M on a 16:10 tablet window, no letterboxing, no touch fallbacks. Cheapest now, brutal to retrofit.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 3</span><h4>Systems build-out</h4><span class="dur">5–7 wks</span></div>
+  <ul>
+    <li>Zones 2–4; Foraging/Logging/Fishing/Mining with XP, levels, per-resource mastery</li>
+    <li>Firecraft + Forgecraft + Bushcraft with queue slots; ore→ingot→tool tiers, trade-good chains, and the five MVP gear items</li>
+    <li>Excavation: two dig sites, fragment drops with pity timer, the three MVP fossil sets</li>
+    <li>Compendium v1: entries, quality rolls, Museum sets, Fossil Wing</li>
+    <li>Waystones 1–4 + first Provisioner lines (dialogue is data; writing pass is cheap and late-editable)</li>
+    <li>Upgrades 11–30; first real balance pass in a spreadsheet against the §8 pacing targets</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> pacing table holds within ±30% in real playtests through hour one; a bar is always filling; at least one tester asks what the Long Winter is without being prompted.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 4</span><h4>Prestige</h4><span class="dur">2–3 wks</span></div>
+  <ul>
+    <li>Migration flow with Verdure forecast, the vignette, and a deliberate confirm (players fear their first prestige — sell it hard)</li>
+    <li>Almanac tree, 12 nodes; region modifiers for run variety; cheap gear re-craft ritual tuned to ~2 minutes</li>
+    <li>Second-run tuning: run 2 must reach the old wall in ~⅓ the time</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> testers migrate voluntarily and report run 2 feels faster and worth it.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 5</span><h4>Play Games layer</h4><span class="dur">2–3 wks</span></div>
+  <ul>
+    <li>Cloud save via Saved Games API + conflict policy (highest lifetime Renown wins; prompt on ambiguity)</li>
+    <li>40+ achievements (first-hour four verified in playtest), 5+ Game Stats submitted</li>
+    <li>Sidekick enabled in Play Console and tested; leaderboards: deepest zone, weekly resources gathered</li>
+    <li>Play Integrity + save sanity bounds before leaderboards go live</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> uninstall/reinstall on a second device restores progress perfectly; achievements and stats visible in Sidekick.</div>
+</div>
+
+<div class="phase">
+  <div class="phase-head"><span class="phase-num">Phase 6</span><h4>Monetization, beta &amp; launch</h4><span class="dur">3–4 wks</span></div>
+  <ul>
+    <li>AdMob rewarded placements (§10) + IAP (Sigil, remove-ads, Amber) + Play Games Rewards items</li>
+    <li>Plate illustration pass (~60 naturalist plates, per-zone batches) + camp/zone backdrops; final narrative edit (cut 20% of the words — the doc's budget is a ceiling)</li>
+    <li>Store listing (screenshots incl. tablet/PC), closed beta on the open track; 2–3 weeks of vitals: crash &lt;1%, ANR &lt;2%, fps thresholds on reference devices</li>
+    <li>Play Games on PC opt-in; Level Up compliance self-check; launch</li>
+  </ul>
+  <div class="gate"><strong>Gate:</strong> vitals green for 14 consecutive days and D1 retention &gt;30% in beta → ship.</div>
+</div>
+
+<p><strong>Total: roughly 4½–6½ months part-time.</strong> The two classic solo-dev failure modes this plan defends against: building content before the loop is proven fun (Phase 1 gate), and treating form-factor/input as launch polish (Phase 2 exists because Level Up makes it compliance, not polish).</p>
+
+<p class="eyebrow" id="open">13 · Open questions</p>
+<h2>To decide before Phase 1 ends</h2>
+<ul>
+  <li><strong>Active-play depth:</strong> is Tending enough, or does MVP want one minigame (e.g., a timed fishing catch, a brush-away-the-soil dig reveal)? The dig reveal is tempting — it's the fossil moment. Lean: ship Tending only; prototype the dig reveal at 1.1.</li>
+  <li><strong>Amber earn rate for F2P:</strong> generous (Egg Inc) vs. tight. Proposal: generous — ~40/week free between dig finds and the weekly Reward cache.</li>
+  <li><strong>Narrative volume:</strong> 1,200 words is a deliberate ceiling. If playtesters want more story, the answer is more fossils, not more words per fossil.</li>
+  <li><strong>Name:</strong> "Wildgrove" is a working title — check Play Store collisions and trademark before the listing goes up.</li>
+</ul>
+</div>
