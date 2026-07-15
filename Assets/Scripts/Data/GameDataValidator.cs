@@ -410,6 +410,7 @@ namespace Wildgrove.Data
             RequireSection(economy.CostGrowth, "costGrowth", issues);
             RequireSection(economy.Gifts, "gifts", issues);
             RequireSection(economy.Hauling, "hauling", issues);
+            RequireSection(economy.Crafting, "crafting", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
             RequireSection(economy.Verdure, "verdure", issues);
@@ -441,6 +442,11 @@ namespace Wildgrove.Data
                 && (economy.Hauling.BaseCarryCapacity <= 0 || economy.Hauling.TripSeconds <= 0 || economy.Hauling.BasketCapacity <= 0))
             {
                 issues.Add("Economy hauling values must all be positive");
+            }
+
+            if (economy.Crafting != null && economy.Crafting.BaseCraftSeconds <= 0)
+            {
+                issues.Add("Economy crafting.baseCraftSeconds must be positive");
             }
 
             if (economy.Tools != null && (economy.Tools.Tiers == null || economy.Tools.Tiers.Count == 0))

@@ -182,6 +182,10 @@ namespace Wildgrove.Data
                     tripSeconds = e.Hauling.TripSeconds,
                     basketCapacity = e.Hauling.BasketCapacity
                 },
+                crafting = new EconomyData.CraftingData
+                {
+                    baseCraftSeconds = e.Crafting.BaseCraftSeconds
+                },
                 tools = new EconomyData.ToolsData
                 {
                     baseCostCoin = e.Tools.BaseCostCoin,

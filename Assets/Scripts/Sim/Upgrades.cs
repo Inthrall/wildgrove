@@ -132,6 +132,65 @@ namespace Wildgrove.Sim
             return mult;
         }
 
+        /// <summary>
+        /// The skills this run has opened: the starting zone's unlocks plus
+        /// every skill an owned upgrade's unlockSkill effect grants. Gates
+        /// which recipes can be crafted.
+        /// </summary>
+        public static HashSet<string> UnlockedSkills(GameState state, GameDataAsset data)
+        {
+            var skills = new HashSet<string>();
+            if (data.ZonesById.TryGetValue(GameStateFactory.StartingZoneId, out var startingZone))
+            {
+                skills.UnionWith(startingZone.unlocks);
+            }
+
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.UnlockSkill && !string.IsNullOrEmpty(effect.skill))
+                {
+                    skills.Add(effect.skill);
+                }
+            }
+
+            return skills;
+        }
+
+        /// <summary>Recipe ids granted by owned unlockRecipe effects (defaultKnown recipes don't need one).</summary>
+        public static HashSet<string> UnlockedRecipeIds(GameState state, GameDataAsset data)
+        {
+            var recipes = new HashSet<string>();
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.UnlockRecipe && !string.IsNullOrEmpty(effect.recipe))
+                {
+                    recipes.Add(effect.recipe);
+                }
+            }
+
+            return recipes;
+        }
+
+        /// <summary>
+        /// Craft-speed multiplier for one skill's recipes: owned craftSpeedMult
+        /// effects targeting that skill multiply together (Bellows Forge ×2 for
+        /// forgecraft). Divides the per-batch craft time.
+        /// </summary>
+        public static double CraftSpeedMultiplier(GameState state, GameDataAsset data, string skill)
+        {
+            var mult = 1.0;
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.CraftSpeedMult
+                    && (string.IsNullOrEmpty(effect.skill) || effect.skill == skill))
+                {
+                    mult *= effect.value;
+                }
+            }
+
+            return mult;
+        }
+
         /// <summary>Sell-value multiplier for one resource: 1 + the summed sellValueBonus effects owned.</summary>
         public static double SellValueMultiplier(GameState state, GameDataAsset data, string resourceId)
         {

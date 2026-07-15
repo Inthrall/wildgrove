@@ -95,6 +95,16 @@ namespace Wildgrove.Sim.Tests
                     order = 15, id = "whetstone", costCoin = 50,
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.25 } },
                 },
+                new UpgradeData
+                {
+                    order = 7, id = "camp-fire-ring", costCoin = 100,
+                    effects = { new EffectData { type = EffectType.UnlockSkill, skill = "firecraft" } },
+                },
+                new UpgradeData
+                {
+                    order = 18, id = "bellows-forge", costCoin = 100,
+                    effects = { new EffectData { type = EffectType.CraftSpeedMult, skill = "firecraft", value = 2 } },
+                },
             };
         }
 
@@ -326,6 +336,29 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(Upgrades.UnlockedZoneIds(state, _data),
                 Is.EquivalentTo(new[] { GameStateFactory.StartingZoneId, "bramble-hedgerows" }));
+        }
+
+        [Test]
+        public void UnlockedSkills_StartingZoneUnlocksPlusOwnedEffects()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.UnlockedSkills(state, _data), Is.EquivalentTo(new[] { "foraging" }));
+
+            state.purchasedUpgradeIds.Add("camp-fire-ring");
+
+            Assert.That(Upgrades.UnlockedSkills(state, _data),
+                Is.EquivalentTo(new[] { "foraging", "firecraft" }));
+        }
+
+        [Test]
+        public void CraftSpeedMultiplier_AppliesToTheTargetSkillOnly()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("bellows-forge");
+
+            Assert.That(Upgrades.CraftSpeedMultiplier(state, _data, "firecraft"), Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(Upgrades.CraftSpeedMultiplier(state, _data, "foraging"), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]

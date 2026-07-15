@@ -47,6 +47,7 @@ namespace Wildgrove.Game
 
         private Text _headerLabel;
         private Text _upgradesHeader;
+        private Text _craftingHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
         private Text _carrierLabel;
@@ -59,6 +60,7 @@ namespace Wildgrove.Game
         private static readonly Vector3[] CornerBuffer = new Vector3[4];
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
+        private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private NodeState _selected;
 
         private void Update()
@@ -103,6 +105,7 @@ namespace Wildgrove.Game
 
             _rows.Clear();
             _upgradeRows.Clear();
+            _craftRows.Clear();
             BuildUi();
             // Compute the layout now so the world-gap rect is valid this frame
             // (otherwise the node strip spends its first frame at zero size).
@@ -250,6 +253,25 @@ namespace Wildgrove.Game
                 _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
             }
 
+            _craftingHeader = CreateText("CraftingHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _craftingHeader.text = "Crafting";
+            SetPreferredHeight(_craftingHeader.gameObject, 48f);
+
+            var craftingPanel = CreatePanel("Crafting", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            var craftingLayout = craftingPanel.AddComponent<VerticalLayoutGroup>();
+            craftingLayout.spacing = 12f;
+            craftingLayout.childControlWidth = true;
+            craftingLayout.childControlHeight = true;
+            craftingLayout.childForceExpandWidth = true;
+            craftingLayout.childForceExpandHeight = false;
+
+            // A row per recipe in data order; Refresh shows only the ones the
+            // run can craft (known + skill unlocked).
+            foreach (var recipe in _loop.Data.recipes)
+            {
+                _craftRows.Add(BuildCraftRow(craftingPanel.transform, recipe));
+            }
+
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
             var actionsRow = CreatePanel("Actions", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
@@ -346,6 +368,35 @@ namespace Wildgrove.Game
                 root = rowGo,
                 buyButton = buy,
                 buyLabel = buyLabel,
+            };
+        }
+
+        private CraftRowView BuildCraftRow(Transform parent, RecipeData recipe)
+        {
+            var rowGo = CreatePanel("Craft_" + recipe.id, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var (toggle, toggleLabel) = CreateButton("Toggle", rowGo.transform, "Craft", () => _loop.ToggleCraft(recipe));
+            SetPreferredWidth(toggle.gameObject, 160f);
+
+            return new CraftRowView
+            {
+                recipe = recipe,
+                root = rowGo,
+                info = info,
+                toggleLabel = toggleLabel,
             };
         }
 
@@ -534,6 +585,45 @@ namespace Wildgrove.Game
 
             _upgradesHeader.gameObject.SetActive(onOffer > 0);
 
+            // The crafting section: only recipes the run can work right now
+            // (known + skill unlocked); hidden entirely before the first one.
+            var available = new HashSet<string>();
+            foreach (var recipe in _loop.AvailableRecipes())
+            {
+                available.Add(recipe.id);
+            }
+
+            var anyCraftable = false;
+            foreach (var row in _craftRows)
+            {
+                var show = available.Contains(row.recipe.id);
+                row.root.SetActive(show);
+                if (!show)
+                {
+                    continue;
+                }
+
+                anyCraftable = true;
+                var inputs = string.Join(" + ",
+                    row.recipe.inputs.Select(i => i.amount + " " + PrettyName(i.id)));
+
+                var status = string.Empty;
+                var crafting = _loop.IsCrafting(row.recipe);
+                if (crafting)
+                {
+                    var progress = _loop.CraftProgress(row.recipe);
+                    status = progress > 0.0
+                        ? "  •  crafting " + (int)(progress * 100.0) + "%"
+                        : "  •  waiting for goods";
+                }
+
+                row.info.text = PrettyName(row.recipe.id)
+                                + "\n<size=22>" + inputs + status + "</size>";
+                row.toggleLabel.text = crafting ? "Stop" : "Craft";
+            }
+
+            _craftingHeader.gameObject.SetActive(anyCraftable);
+
             // The Feeder: a bundle of every worked resource buys a carrier.
             var carrierCostEach = _loop.NextCarrierGiftCostEach();
             _carrierLabel.text = "Gift\n<size=22>+1 Carrier\nFeeder: " + NumberFormat.Short(carrierCostEach) + " of each</size>";
@@ -714,6 +804,14 @@ namespace Wildgrove.Game
             public GameObject root;
             public Button buyButton;
             public Text buyLabel;
+        }
+
+        private sealed class CraftRowView
+        {
+            public RecipeData recipe;
+            public GameObject root;
+            public Text info;
+            public Text toggleLabel;
         }
     }
 }

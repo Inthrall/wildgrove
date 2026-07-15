@@ -31,6 +31,9 @@ namespace Wildgrove.Sim
         /// <summary>Ids of the one-off §9 upgrades bought this run (reset by Migration).</summary>
         public List<string> purchasedUpgradeIds = new List<string>();
 
+        /// <summary>One entry per crafting station the run has put to work (fire / bench / forge).</summary>
+        public List<StationState> stations = new List<StationState>();
+
         public BigDouble GetResource(string resourceId)
         {
             return resources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
@@ -57,6 +60,28 @@ namespace Wildgrove.Sim
 
             return total;
         }
+    }
+
+    /// <summary>
+    /// One crafting station's work in progress. A station auto-crafts its
+    /// assigned recipe continuously (the Melvor-style bar): inputs are consumed
+    /// when a craft starts, the output lands when it completes, and the station
+    /// stalls quietly when camp stock can't cover the next batch.
+    /// </summary>
+    [Serializable]
+    public sealed class StationState
+    {
+        /// <summary>Station id from the recipe data ("fire", "bench", "forge").</summary>
+        public string stationId;
+
+        /// <summary>The recipe this station is working, or null when idle.</summary>
+        public string recipeId;
+
+        /// <summary>True while a batch is mid-craft (its inputs are already spent).</summary>
+        public bool inFlight;
+
+        /// <summary>Seconds of progress into the in-flight batch.</summary>
+        public double progressSeconds;
     }
 
     /// <summary>

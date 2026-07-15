@@ -46,6 +46,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
+            Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -96,6 +97,19 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("missing-recipe")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_NonPositiveCraftSeconds_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"baseCraftSeconds\": 5",
+                "\"baseCraftSeconds\": 0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("baseCraftSeconds")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

@@ -144,17 +144,74 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Provisioner sell value in Coin for one unit of a resource, including
         /// any sellValueBonus upgrades the run owns (e.g. the Drying Rack).
-        /// Only raw gatherables are priced (resources.json); anything else —
-        /// crafted materials, ingots, an unknown id — is unsellable and returns zero.
+        /// Raw gatherables are priced by resources.json; crafted <b>trade</b>
+        /// goods derive their value from the recipe — summed input base value ×
+        /// valueMult (recipes.json convention) — so a preserve is always worth
+        /// more than its berries. Materials (ingots, cordage) and unknown ids
+        /// are unsellable and return zero. Input values in the derivation are
+        /// base values: an input's own sellValueBonus never inflates the goods
+        /// crafted from it.
         /// </summary>
         public static BigDouble SellValuePerUnit(GameState state, GameDataAsset data, string resourceId)
         {
-            if (resourceId != null && data.ResourcesById.TryGetValue(resourceId, out var resource))
+            var baseValue = BaseUnitValue(data, resourceId, null);
+            return baseValue > BigDouble.Zero
+                ? baseValue * Upgrades.SellValueMultiplier(state, data, resourceId)
+                : BigDouble.Zero;
+        }
+
+        private static BigDouble BaseUnitValue(GameDataAsset data, string resourceId, HashSet<string> visiting)
+        {
+            if (resourceId == null)
             {
-                return resource.sellValue * Upgrades.SellValueMultiplier(state, data, resourceId);
+                return BigDouble.Zero;
             }
 
-            return BigDouble.Zero;
+            if (data.ResourcesById.TryGetValue(resourceId, out var resource))
+            {
+                return resource.sellValue;
+            }
+
+            var recipe = RecipeProducing(data, resourceId);
+            if (recipe == null || recipe.kind != "trade")
+            {
+                return BigDouble.Zero;
+            }
+
+            // Guard against a recipe cycle in authored data — better an
+            // unsellable good than a stack overflow.
+            visiting = visiting ?? new HashSet<string>();
+            if (!visiting.Add(resourceId))
+            {
+                return BigDouble.Zero;
+            }
+
+            var total = BigDouble.Zero;
+            foreach (var input in recipe.inputs)
+            {
+                total += BaseUnitValue(data, input.id, visiting) * input.amount;
+            }
+
+            visiting.Remove(resourceId);
+            return total * recipe.valueMult;
+        }
+
+        private static RecipeData RecipeProducing(GameDataAsset data, string resourceId)
+        {
+            if (data.recipes == null)
+            {
+                return null;
+            }
+
+            foreach (var recipe in data.recipes)
+            {
+                if (recipe.output == resourceId)
+                {
+                    return recipe;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

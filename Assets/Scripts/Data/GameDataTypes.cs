@@ -169,6 +169,7 @@ namespace Wildgrove.Data
         public CostGrowthData costGrowth;
         public GiftsData gifts;
         public HaulingData hauling;
+        public CraftingData crafting;
         public ToolsData tools;
         public MasteryData mastery;
         public VerdureData verdure;
@@ -199,6 +200,12 @@ namespace Wildgrove.Data
             public double baseCarryCapacity;
             public double tripSeconds;
             public double basketCapacity;
+        }
+
+        [Serializable]
+        public sealed class CraftingData
+        {
+            public double baseCraftSeconds;
         }
 
         [Serializable]

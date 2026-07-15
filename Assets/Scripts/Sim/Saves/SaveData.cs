@@ -30,6 +30,19 @@ namespace Wildgrove.Sim.Saves
         public List<SavedResource> resources = new List<SavedResource>();
         public List<SavedNode> nodes = new List<SavedNode>();
         public List<string> purchasedUpgradeIds = new List<string>();
+
+        /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
+        public List<SavedStation> stations = new List<SavedStation>();
+    }
+
+    /// <summary>One crafting station's assignment and in-flight batch.</summary>
+    [Serializable]
+    public sealed class SavedStation
+    {
+        public string stationId;
+        public string recipeId;
+        public bool inFlight;
+        public double progressSeconds;
     }
 
     [Serializable]

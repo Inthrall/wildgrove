@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -46,6 +46,17 @@ namespace Wildgrove.Sim.Saves
                     masteryLevel = node.masteryLevel,
                     tendBurstRemaining = node.tendBurstRemaining,
                     basket = node.basket,
+                });
+            }
+
+            foreach (var station in state.stations)
+            {
+                save.stations.Add(new SavedStation
+                {
+                    stationId = station.stationId,
+                    recipeId = station.recipeId,
+                    inFlight = station.inFlight,
+                    progressSeconds = station.progressSeconds,
                 });
             }
 
@@ -107,6 +118,27 @@ namespace Wildgrove.Sim.Saves
                 node.basket = saved.basket;
             }
 
+            state.stations.Clear();
+            if (save.stations != null)
+            {
+                foreach (var station in save.stations)
+                {
+                    if (station?.stationId != null)
+                    {
+                        // A recipe id the current data doesn't know is kept —
+                        // Crafting.Advance skips it harmlessly, same policy as
+                        // unknown resource/upgrade ids.
+                        state.stations.Add(new StationState
+                        {
+                            stationId = station.stationId,
+                            recipeId = station.recipeId,
+                            inFlight = station.inFlight,
+                            progressSeconds = station.progressSeconds,
+                        });
+                    }
+                }
+            }
+
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
         }
@@ -163,6 +195,12 @@ namespace Wildgrove.Sim.Saves
                         // default to empty via the missing-field default.
                         save.carrierCount = 1;
                         save.version = 2;
+                        break;
+
+                    case 2:
+                        // v2 predates crafting — stations simply start empty.
+                        save.stations = save.stations ?? new List<SavedStation>();
+                        save.version = 3;
                         break;
 
                     default:

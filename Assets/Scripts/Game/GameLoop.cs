@@ -251,6 +251,48 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>The recipes the run can craft right now — for the HUD's crafting section.</summary>
+        public System.Collections.Generic.List<RecipeData> AvailableRecipes()
+        {
+            return Crafting.AvailableRecipes(State, Data);
+        }
+
+        /// <summary>True while this recipe's station is assigned to it.</summary>
+        public bool IsCrafting(RecipeData recipe)
+        {
+            return Crafting.ActiveStationFor(State, recipe) != null;
+        }
+
+        /// <summary>True when camp stock covers one batch of the recipe's inputs.</summary>
+        public bool CanCraft(RecipeData recipe)
+        {
+            return Crafting.HasInputs(State, recipe);
+        }
+
+        /// <summary>The in-flight batch's fraction complete (0 when idle or stalled).</summary>
+        public double CraftProgress(RecipeData recipe)
+        {
+            return Crafting.Progress(State, Data, recipe);
+        }
+
+        /// <summary>
+        /// Start the recipe on its station (displacing whatever it was working,
+        /// in-flight inputs refunded), or stop it if it's already running.
+        /// </summary>
+        public void ToggleCraft(RecipeData recipe)
+        {
+            if (IsCrafting(recipe))
+            {
+                Crafting.Stop(State, Data, recipe);
+                return;
+            }
+
+            Crafting.Assign(State, Data, recipe);
+            Telemetry.LogEvent("craft_started",
+                ("recipe", recipe.id),
+                ("station", recipe.station));
+        }
+
         /// <summary>Sell the whole stock of one resource to the Provisioner. Returns Coin gained.</summary>
         public BigDouble SellResource(string resourceId)
         {

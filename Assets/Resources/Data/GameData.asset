@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: b73e600fb4d8c046d3a391acc7c1818fea30f7b690039c2cb129e90d2c1b0378
+  sourceHash: 76ebf9d56fece59196d06ed44f526cd4bb6fd60b9a9c89a59f9b65e00eda9207
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -29,6 +29,8 @@ MonoBehaviour:
       baseCarryCapacity: 15
       tripSeconds: 10
       basketCapacity: 60
+    crafting:
+      baseCraftSeconds: 5
     tools:
       baseCostCoin:
         mantissa: 1

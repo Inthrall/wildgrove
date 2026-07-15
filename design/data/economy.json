@@ -16,6 +16,10 @@
     "basketCapacity": 60,
     "$note": "first-guess Phase-1 numbers, not in design doc — a carrier's throughput is baseCarryCapacity/tripSeconds (x carry-capacity upgrades); gathered goods wait in a per-node basket of basketCapacity and overflow is lost. Tune with the loop playtest."
   },
+  "crafting": {
+    "baseCraftSeconds": 5,
+    "$note": "first-guess Phase-3 number, not in design doc — seconds per craft at every station before craftSpeedMult upgrades divide it. Tune against the §2 pacing targets (first recipe cooked ~20 min)."
+  },
   "tools": {
     "baseCostCoin": 100,
     "costMultPerTier": 12,

@@ -46,6 +46,31 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
+            _data.recipes = new List<RecipeData>
+            {
+                new RecipeData
+                {
+                    id = "berry-preserve", station = "fire", skill = "firecraft",
+                    inputs =
+                    {
+                        new ItemAmount { id = "berries", amount = 4 },
+                        new ItemAmount { id = "wildflowers", amount = 2 },
+                    },
+                    output = "berry-preserve", valueMult = 4, kind = "trade",
+                },
+                new RecipeData
+                {
+                    id = "gift-basket", station = "bench", skill = "bushcraft",
+                    inputs = { new ItemAmount { id = "berry-preserve", amount = 2 } },
+                    output = "gift-basket", valueMult = 2, kind = "trade",
+                },
+                new RecipeData
+                {
+                    id = "cordage", station = "bench", skill = "bushcraft",
+                    inputs = { new ItemAmount { id = "fibres", amount = 8 } },
+                    output = "cordage", valueMult = 2, kind = "material",
+                },
+            };
         }
 
         [TearDown]
@@ -222,6 +247,37 @@ namespace Wildgrove.Sim.Tests
             Assert.That(state.coin.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             // The unsellable stock is preserved, not destroyed.
             Assert.That(state.GetResource("iron-ingot").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellValuePerUnit_TradeGood_DerivesFromInputsTimesValueMult()
+        {
+            var state = new GameState();
+
+            var value = Economy.SellValuePerUnit(state, _data, "berry-preserve");
+
+            // (4 berries · 2 + 2 wildflowers · 3) · valueMult 4 = 56.
+            Assert.That(value.ToDouble(), Is.EqualTo(56.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellValuePerUnit_NestedTradeGood_DerivesRecursively()
+        {
+            var state = new GameState();
+
+            var value = Economy.SellValuePerUnit(state, _data, "gift-basket");
+
+            // (2 preserves · 56) · valueMult 2 = 224.
+            Assert.That(value.ToDouble(), Is.EqualTo(224.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellValuePerUnit_CraftedMaterial_IsUnsellable()
+        {
+            var state = new GameState();
+
+            Assert.That(Economy.SellValuePerUnit(state, _data, "cordage").ToDouble(),
+                Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]

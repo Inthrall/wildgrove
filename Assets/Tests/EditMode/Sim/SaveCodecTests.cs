@@ -202,6 +202,35 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresStationWorkInProgress()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.stations.Add(new StationState
+            {
+                stationId = "fire", recipeId = "berry-preserve", inFlight = true, progressSeconds = 2.5,
+            });
+
+            var restored = RoundTrip(state);
+
+            var station = restored.stations.Single();
+            Assert.That(station.stationId, Is.EqualTo("fire"));
+            Assert.That(station.recipeId, Is.EqualTo("berry-preserve"));
+            Assert.That(station.inFlight, Is.True);
+            Assert.That(station.progressSeconds, Is.EqualTo(2.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V2Save_GetsEmptyStations()
+        {
+            // v2 predates crafting — the run simply has no stations yet.
+            var save = new SaveData { version = 2, stations = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.stations, Is.Empty);
+        }
+
+        [Test]
         public void FromJson_GarbageOrEmpty_ReturnsNull()
         {
             Assert.That(SaveCodec.FromJson("not json {{{"), Is.Null);

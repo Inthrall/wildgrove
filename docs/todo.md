@@ -59,10 +59,23 @@ they're easy to find and delete when resolved.
 
 ## Phase 3+ — Systems build-out
 
-- **`unlockSkill` / `unlockRecipe` / `unlockDigSite` effects are still inert.**
-  `unlockZone` is live (trail maps create the zone's nodes with the §2 regional
-  seed); the other unlock types are recorded on purchase but wait for the
-  crafting and excavation systems. (`Wildgrove.Sim/Upgrades.cs`)
+- **`unlockDigSite` effects are still inert.** `unlockZone` (trail maps create
+  the zone's nodes), `unlockSkill` and `unlockRecipe` (both gate crafting) are
+  all live; dig sites wait for the excavation system.
+  (`Wildgrove.Sim/Upgrades.cs`)
+- **Stations are input-gated, not building-gated.** Recipes are gated by known
+  recipe + unlocked skill only; the design's station heat (Clay Furnace forge
+  for bronze, Bellows for iron) arrives with `buildings.json`. Meanwhile the
+  timing self-approximates — bronze needs Zone-3 tin, iron needs Zone-4 gravel —
+  but bronze technically smelts "on the fire" until buildings land.
+  (`Wildgrove.Sim/Crafting.cs`)
+- **`crafting.baseCraftSeconds` (5 s, uniform) is a first guess.** Not in the
+  design doc, and one duration for every recipe is a placeholder — tune against
+  the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
+  times with the balance pass. (`design/data/economy.json`)
+- **Craft skill XP/levels don't exist.** Design §4 says levels gate recipes and
+  tool tiers; nothing earns or checks XP yet — the xp section of economy.json
+  is parsed but unread. Lands with the wider Phase 3 skill build-out.
 - **Haul is a continuous-rate approximation, not discrete batches.** Carriers drain
   baskets proportionally at units/sec; design §5's quality rolls happen *per haul
   batch* (a carrier delivery), so Phase 3's Compendium needs the haul loop reworked

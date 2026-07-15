@@ -8,6 +8,7 @@ namespace Wildgrove.Data
         public CostGrowthSection CostGrowth { get; set; }
         public GiftsSection Gifts { get; set; }
         public HaulingSection Hauling { get; set; }
+        public CraftingSection Crafting { get; set; }
         public ToolsSection Tools { get; set; }
         public MasterySection Mastery { get; set; }
         public VerdureSection Verdure { get; set; }
@@ -35,6 +36,11 @@ namespace Wildgrove.Data
             public double BaseCarryCapacity { get; set; }
             public double TripSeconds { get; set; }
             public double BasketCapacity { get; set; }
+        }
+
+        public sealed class CraftingSection
+        {
+            public double BaseCraftSeconds { get; set; }
         }
 
         public sealed class ToolsSection
