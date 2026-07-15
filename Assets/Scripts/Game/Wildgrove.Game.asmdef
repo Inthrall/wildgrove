@@ -4,7 +4,9 @@
     "references": [
         "Wildgrove.Sim",
         "Wildgrove.Data",
-        "BreakInfinity"
+        "BreakInfinity",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

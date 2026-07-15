@@ -42,6 +42,12 @@ namespace Wildgrove.Game
             return Simulation.AdvanceOffline(State, Data, realElapsedSeconds);
         }
 
+        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action).</summary>
+        public void Tend(NodeState node)
+        {
+            Simulation.Tend(node, Data.economy);
+        }
+
         /// <summary>Coin cost of the next crew hire — for the hire button's label and enabled state.</summary>
         public BigDouble NextCrewHireCost()
         {

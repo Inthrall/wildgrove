@@ -25,6 +25,7 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
+                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -104,6 +105,54 @@ namespace Wildgrove.Sim.Tests
             Simulation.Advance(state, _data, 2.0);
 
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Tend_SetsBurstRemainingToConfiguredDuration()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Simulation.Tend(state.nodes[0], _data.economy);
+
+            Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_WithActiveBurst_MultipliesYieldForBurstSeconds()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Simulation.Tend(state.nodes[0], _data.economy);
+
+            Simulation.Advance(state, _data, 2.0);
+
+            // 1 crew * 2s fully inside the burst window * 3x = 6, burst 5 - 2 left.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(3.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_BurstExpiresMidTick_SplitsBurstedAndNormalYield()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Simulation.Tend(state.nodes[0], _data.economy);
+
+            Simulation.Advance(state, _data, 8.0);
+
+            // 5s bursted (5 * 3 = 15) + 3s normal (3 * 1 = 3) = 18; burst spent.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(18.0).Within(Tolerance));
+            Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Tend_RefreshesRatherThanStacks()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Simulation.Tend(state.nodes[0], _data.economy);
+            Simulation.Advance(state, _data, 2.0);
+
+            Simulation.Tend(state.nodes[0], _data.economy);
+
+            Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(5.0).Within(Tolerance));
         }
 
         [Test]

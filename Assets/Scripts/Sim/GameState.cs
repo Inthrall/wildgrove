@@ -70,6 +70,13 @@ namespace Wildgrove.Sim
         public int masteryLevel;
 
         /// <summary>
+        /// Seconds left on an active Tending burst. While positive, the node's
+        /// yield is multiplied by economy.tending.burstYieldMult for that slice
+        /// of the tick; a fresh Tend refreshes it to the full burst duration.
+        /// </summary>
+        public double tendBurstRemaining;
+
+        /// <summary>
         /// Combined tool + gear + upgrade multiplier for this node. Defaults to
         /// 1 and is recomputed by the upgrade/gear system when it lands; the
         /// tick treats it as an opaque multiplier so it stays balance-agnostic.

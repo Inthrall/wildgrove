@@ -22,16 +22,49 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            var economy = data.economy;
+            var burstMult = economy?.tending != null ? economy.tending.burstYieldMult : 1.0;
+
             foreach (var node in state.nodes)
             {
-                if (node.crewCount <= 0)
+                if (node.crewCount > 0)
                 {
-                    continue;
+                    // Split the tick into its bursted and normal slices so a burst
+                    // that expires part-way through a big delta (e.g. the offline
+                    // catch-up tick) only pays out for the seconds it was live.
+                    var burstSeconds = node.tendBurstRemaining > 0.0
+                        ? System.Math.Min(deltaSeconds, node.tendBurstRemaining)
+                        : 0.0;
+                    var normalSeconds = deltaSeconds - burstSeconds;
+
+                    var baseRate = YieldPerSecond(node, state, economy);
+                    var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
+                    state.AddResource(node.resourceId, gained);
                 }
 
-                var gained = YieldPerSecond(node, state, data.economy) * deltaSeconds;
-                state.AddResource(node.resourceId, gained);
+                if (node.tendBurstRemaining > 0.0)
+                {
+                    node.tendBurstRemaining = System.Math.Max(0.0, node.tendBurstRemaining - deltaSeconds);
+                }
             }
+        }
+
+        /// <summary>
+        /// Apply a Tending burst to <paramref name="node"/> (the tap-to-tend
+        /// interaction, design §5): for the next economy.tending.burstDurationSec
+        /// seconds the node yields at burstYieldMult. Refreshes rather than stacks
+        /// — a fresh tap resets the timer to the full duration. No-op when tending
+        /// isn't configured. The design's brief Pristine-chance bump arrives with
+        /// the quality system.
+        /// </summary>
+        public static void Tend(NodeState node, EconomyData economy)
+        {
+            if (node == null || economy?.tending == null)
+            {
+                return;
+            }
+
+            node.tendBurstRemaining = economy.tending.burstDurationSec;
         }
 
         /// <summary>
