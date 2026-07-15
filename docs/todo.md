@@ -2,16 +2,18 @@
 
 A living list of the deliberate placeholders and deferred work in the codebase, so
 nothing quietly ships as "done". Grouped by the phase that retires it (see
-`design-doc.md` §Roadmap). Keep entries pointing at the code so they're easy to find
-and delete when resolved.
+`design-doc.md` §12 MVP development plan). Keep entries pointing at the code so
+they're easy to find and delete when resolved.
 
 ## Phase 1 — Core loop slice (current)
 
 - **Tending burst values are a first guess.** `burstYieldMult` / `burstDurationSec`
   in `design/data/economy.json` aren't in the design doc — tune once the loop is
   playable. (`$note` in the file.)
-- **Crew hire base cost is first-pass.** `hires.crewBaseCoin = 10` in
-  `design/data/economy.json` — revisit with the economy pass.
+- **Familiar gift base cost is first-pass — and Coin-denominated.** `gifts.familiarBaseCoin = 10`
+  in `design/data/economy.json`. Design v0.5 prices gifts in goods, not Coin; the Coin
+  cost is a Phase-1 placeholder. Reprice (and pick the goods denomination) with the
+  economy pass.
 - **Offline progress isn't auto-applied on load.** `GameLoop.Awake` starts a fresh
   run every launch; `GameLoop.ApplyOfflineProgress` exists but nothing calls it until
   there's persisted state to diff against (needs the save system — Phase 5). Applying
@@ -42,6 +44,16 @@ and delete when resolved.
   (`Assets/Scripts/Game/Bootstrap.cs`)
 
 ## Phase 3+ — Systems build-out
+
+- **The Rite is data-only.** `rites.json`, `zones.verseSite`, and `dialogue.verses` are
+  parsed, validated, and mapped into GameData.asset, but no runtime system consumes
+  them until the Phase 3 Rite build. Validator covers slot integrity only — the full
+  ≥3-slots-reachable analysis (design §7) is a Phase 3 job.
+- **buildings.json doesn't exist yet.** The §9 camp building lines (Clay Furnace /
+  forge-station gating, Roosts & Burrows familiar caps) are doc-only; author the data
+  and its pipeline when Phase 3 crafting lands.
+- **Familiar caps not enforced in the sim.** `flockCap` / `carrierSlots` (design §8)
+  arrive with the building lines; `TryGiftFamiliar` currently has no cap check.
 
 - **`NodeState.yieldMultiplier` is an opaque, always-1 multiplier.** The tick treats
   it as a black box; the upgrade/gear/tool-tier system recomputes it later — nothing

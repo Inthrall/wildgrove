@@ -15,7 +15,7 @@
 | Render pipeline | URP, 2D Renderer |
 | Graphics API | **Vulkan first** in Player Settings → Android → Graphics APIs (Level Up requirement) |
 | Big numbers | BreakInfinity.cs (`BigDouble`) for all currencies — vendored at `Assets/Plugins/BreakInfinity/`; content defs surface costs as `BigDouble` |
-| Content | Data-driven: resources / upgrades / recipes / gear / dialogue authored as JSON in `design/data/`, validated and imported into a ScriptableObject database (`Assets/Resources/Data/GameData.asset`) by `GameDataImporter` — auto on editor load and build, or `Wildgrove > Import Design Data`. Balancing must never require code changes |
+| Content | Data-driven: resources / upgrades / recipes / gear / rites / dialogue authored as JSON in `design/data/`, validated and imported into a ScriptableObject database (`Assets/Resources/Data/GameData.asset`) by `GameDataImporter` — auto on editor load and build, or `Wildgrove > Import Design Data`. Balancing must never require code changes |
 | Saves | Versioned JSON with migration hooks; cloud = Saved Games API (Phase 5) |
 | Input | All interactions through an input abstraction from day one (touch / mouse / keyboard / gamepad) |
 | Min spec | Android 8.0 (API 26)+, target latest API per Play policy |
