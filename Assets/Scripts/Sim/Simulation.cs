@@ -27,7 +27,7 @@ namespace Wildgrove.Sim
 
             foreach (var node in state.nodes)
             {
-                if (node.crewCount > 0)
+                if (node.familiarCount > 0)
                 {
                     // Split the tick into its bursted and normal slices so a burst
                     // that expires part-way through a big delta (e.g. the offline
@@ -92,8 +92,8 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Gather rate for a node, per design doc §8:
-        /// yield/sec = crew · tool/gear mult · (1 + masteryBonus·mastery) · global.
-        /// Base rate is one unit per crew per second; global folds in the
+        /// yield/sec = familiars · tool/gear mult · (1 + masteryBonus·mastery) · global.
+        /// Base rate is one unit per familiar per second; global folds in the
         /// permanent Verdure bonus (almanac / museum / fossil / boost factors
         /// arrive with their systems and multiply in here later).
         /// </summary>
@@ -102,7 +102,7 @@ namespace Wildgrove.Sim
             var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * node.masteryLevel;
             var global = 1.0 + economy.verdure.yieldBonusPerPoint * state.verdurePoints;
 
-            return new BigDouble(node.crewCount) * node.yieldMultiplier * masteryBonus * global;
+            return new BigDouble(node.familiarCount) * node.yieldMultiplier * masteryBonus * global;
         }
     }
 }

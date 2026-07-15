@@ -4,44 +4,46 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// The two Coin-facing player actions of the core loop: hiring crew (a Coin
-    /// sink whose price climbs with each hire) and selling gathered resources to
-    /// the Provisioner (the Coin source). Pure and deterministic like the tick —
-    /// the MonoBehaviour driver wires these to input, the tests pin the maths.
+    /// The two Coin-facing player actions of the core loop: gifting familiars
+    /// (a sink whose price climbs with each familiar befriended — Coin as a
+    /// Phase-1 placeholder; design v0.5 prices gifts in goods) and selling
+    /// gathered resources to the Provisioner (the Coin source). Pure and
+    /// deterministic like the tick — the MonoBehaviour driver wires these to
+    /// input, the tests pin the maths.
     /// </summary>
     public static class Economy
     {
         /// <summary>
-        /// Cost of the next crew hire, per design doc §8: cost(n) = base · r^n,
-        /// where n is the crew already hired this run and r is the crew-hire
-        /// growth factor. The first hire (n = 0) costs exactly the base.
+        /// Cost of the next familiar's gift, per design doc §8: cost(n) = base · r^n,
+        /// where n is the familiars already befriended this run and r is the
+        /// gatherer-gift growth factor. The first gift (n = 0) costs exactly the base.
         /// </summary>
-        public static BigDouble CrewHireCost(GameState state, EconomyData economy)
+        public static BigDouble FamiliarGiftCost(GameState state, EconomyData economy)
         {
-            var growth = BigDouble.Pow(economy.costGrowth.crewHire, state.TotalCrew());
-            return economy.hires.crewBaseCoin * growth;
+            var growth = BigDouble.Pow(economy.costGrowth.gathererGift, state.TotalFamiliars());
+            return economy.gifts.familiarBaseCoin * growth;
         }
 
         /// <summary>
-        /// Hire one crew onto <paramref name="node"/> if the run can afford it,
+        /// Gift one familiar onto <paramref name="node"/> if the run can afford it,
         /// spending the Coin. Returns false (and changes nothing) when Coin is
         /// short or the node is null, so the caller can leave the button disabled.
         /// </summary>
-        public static bool TryHireCrew(GameState state, EconomyData economy, NodeState node)
+        public static bool TryGiftFamiliar(GameState state, EconomyData economy, NodeState node)
         {
             if (state == null || economy == null || node == null)
             {
                 return false;
             }
 
-            var cost = CrewHireCost(state, economy);
+            var cost = FamiliarGiftCost(state, economy);
             if (state.coin < cost)
             {
                 return false;
             }
 
             state.coin -= cost;
-            node.crewCount += 1;
+            node.familiarCount += 1;
             return true;
         }
 

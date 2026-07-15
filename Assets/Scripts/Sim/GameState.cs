@@ -13,7 +13,7 @@ namespace Wildgrove.Sim
     [Serializable]
     public sealed class GameState
     {
-        /// <summary>Per-run soft currency, spent on hires, tools, buildings and maps.</summary>
+        /// <summary>Per-run soft currency, spent on tools, buildings and maps (and, as a Phase-1 placeholder, familiar gifts).</summary>
         public BigDouble coin = BigDouble.Zero;
 
         /// <summary>Meta currency carried across migrations; drives the global yield bonus.</summary>
@@ -35,13 +35,13 @@ namespace Wildgrove.Sim
             resources[resourceId] = GetResource(resourceId) + amount;
         }
 
-        /// <summary>Total crew hired this run across every node — drives the hire-cost curve.</summary>
-        public int TotalCrew()
+        /// <summary>Total familiars befriended this run across every node — drives the gift-cost curve.</summary>
+        public int TotalFamiliars()
         {
             var total = 0;
             foreach (var node in nodes)
             {
-                total += node.crewCount;
+                total += node.familiarCount;
             }
 
             return total;
@@ -50,7 +50,8 @@ namespace Wildgrove.Sim
 
     /// <summary>
     /// One worked resource node — a single resource within a zone, gathered by
-    /// that zone's crew. Crews accrue the resource automatically each tick.
+    /// that zone's flock of familiars. Familiars accrue the resource
+    /// automatically each tick.
     /// </summary>
     [Serializable]
     public sealed class NodeState
@@ -63,8 +64,8 @@ namespace Wildgrove.Sim
         /// <summary>The gathering skill working this node (e.g. "foraging").</summary>
         public string skill;
 
-        /// <summary>Number of crew assigned; the base gather rate is one unit per crew per second.</summary>
-        public int crewCount;
+        /// <summary>Number of familiars working the node; the base gather rate is one unit per familiar per second.</summary>
+        public int familiarCount;
 
         /// <summary>Per-resource mastery level; each level adds economy.mastery.yieldBonusPerLevel.</summary>
         public int masteryLevel;

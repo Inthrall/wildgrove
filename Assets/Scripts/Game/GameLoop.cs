@@ -8,8 +8,8 @@ namespace Wildgrove.Game
     /// <summary>
     /// The scene-side driver that turns the pure simulation into a running game:
     /// it owns the content asset and the live <see cref="GameState"/>, advances
-    /// the tick every frame, and exposes the core-loop player actions (hire crew,
-    /// sell to the Provisioner) for the input/UI layer to call. All game logic
+    /// the tick every frame, and exposes the core-loop player actions (gift a
+    /// familiar, sell to the Provisioner) for the input/UI layer to call. All game logic
     /// lives in Wildgrove.Sim; this class is deliberately thin wiring.
     /// </summary>
     public sealed class GameLoop : MonoBehaviour
@@ -19,17 +19,39 @@ namespace Wildgrove.Game
 
         private void Awake()
         {
-            Data = GameDataAsset.LoadFromResources();
+            Initialise();
+        }
+
+        private void Update()
+        {
+            // A script recompile during Play reloads the app domain: non-serialised
+            // fields reset and Awake does not re-run. Start a fresh run rather than
+            // ticking dead state (no save system yet, so the run was lost anyway).
+            if (State == null)
+            {
+                Initialise();
+            }
+
+            Simulation.Advance(State, Data, Time.deltaTime);
+        }
+
+        private void Initialise()
+        {
+            try
+            {
+                Data = GameDataAsset.LoadFromResources();
+            }
+            catch
+            {
+                // Missing/broken asset: fail loudly once, not once per frame.
+                enabled = false;
+                throw;
+            }
 
             // Until the save system lands (versioned JSON, then cloud Saved Games
             // in Phase 5), every launch starts a fresh run. When it does, load the
             // persisted state here and feed the away-time to ApplyOfflineProgress.
             State = GameStateFactory.NewGame(Data);
-        }
-
-        private void Update()
-        {
-            Simulation.Advance(State, Data, Time.deltaTime);
         }
 
         /// <summary>
@@ -48,16 +70,16 @@ namespace Wildgrove.Game
             Simulation.Tend(node, Data.economy);
         }
 
-        /// <summary>Coin cost of the next crew hire — for the hire button's label and enabled state.</summary>
-        public BigDouble NextCrewHireCost()
+        /// <summary>Coin cost of the next familiar's gift — for the gift button's label and enabled state.</summary>
+        public BigDouble NextFamiliarGiftCost()
         {
-            return Economy.CrewHireCost(State, Data.economy);
+            return Economy.FamiliarGiftCost(State, Data.economy);
         }
 
-        /// <summary>Hire one crew onto the node. Returns false (no change) if the run can't afford it.</summary>
-        public bool HireCrew(NodeState node)
+        /// <summary>Gift one familiar onto the node. Returns false (no change) if the run can't afford it.</summary>
+        public bool GiftFamiliar(NodeState node)
         {
-            return Economy.TryHireCrew(State, Data.economy, node);
+            return Economy.TryGiftFamiliar(State, Data.economy, node);
         }
 
         /// <summary>Sell the whole stock of one resource to the Provisioner. Returns Coin gained.</summary>

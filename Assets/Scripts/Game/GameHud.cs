@@ -13,7 +13,7 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The Phase 1 on-screen layer: a code-built uGUI HUD that surfaces the core
-    /// loop (coin/crew readouts, a row per gathering node, and the hire / sell /
+    /// loop (coin/familiar readouts, a row per gathering node, and the gift / sell /
     /// tend actions) and routes the free-space Tend gesture through
     /// <see cref="IGameInput"/>. Deliberately programmer-art — real layout and
     /// adaptive form factors are Phase 2. All game logic stays in Wildgrove.Sim;
@@ -38,20 +38,47 @@ namespace Wildgrove.Game
         private readonly List<RowView> _rows = new List<RowView>();
         private NodeState _selected;
 
-        private void Awake()
+        private void Update()
         {
-            _loop = GetComponent<GameLoop>();
+            // Built lazily (and re-built after a recompile during Play, which
+            // reloads the app domain: non-serialised fields reset and Awake does
+            // not re-run). Waits until GameLoop has re-initialised its state.
+            if (_input == null)
+            {
+                if (_loop == null)
+                {
+                    _loop = GetComponent<GameLoop>();
+                }
+
+                if (_loop == null || _loop.State == null)
+                {
+                    return;
+                }
+
+                Initialise();
+            }
+
+            HandleTendInput();
+            Refresh();
+        }
+
+        private void Initialise()
+        {
             _input = new InputSystemGameInput();
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             EnsureEventSystem();
-            BuildUi();
-        }
 
-        private void Update()
-        {
-            HandleTendInput();
-            Refresh();
+            // A previous app domain may have left its canvas behind — all our
+            // references to it are gone, so tear it down and rebuild.
+            var staleCanvas = transform.Find("HudCanvas");
+            if (staleCanvas != null)
+            {
+                Destroy(staleCanvas.gameObject);
+            }
+
+            _rows.Clear();
+            BuildUi();
         }
 
         /// <summary>Route the free-space Tend gesture (empty tap / Space / pad-A) to the selected node.</summary>
@@ -157,8 +184,8 @@ namespace Wildgrove.Game
             // Select-and-tend on the same tap so the row becomes the Space/pad-A target.
             tend.onClick.AddListener(() => _loop.Tend(node));
 
-            var (crew, crewLabel) = CreateButton("Crew", rowGo.transform, "+ Crew", () => _loop.HireCrew(node));
-            SetPreferredWidth(crew.gameObject, 200f);
+            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "+ Familiar", () => _loop.GiftFamiliar(node));
+            SetPreferredWidth(gift.gameObject, 200f);
 
             var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell", () => _loop.SellResource(node.resourceId));
             SetPreferredWidth(sell.gameObject, 200f);
@@ -168,8 +195,8 @@ namespace Wildgrove.Game
                 node = node,
                 background = rowGo.GetComponent<Image>(),
                 info = info,
-                crewButton = crew,
-                crewLabel = crewLabel,
+                giftButton = gift,
+                giftLabel = giftLabel,
                 sellButton = sell,
                 sellLabel = sellLabel,
             };
@@ -185,10 +212,10 @@ namespace Wildgrove.Game
             var state = _loop.State;
             var economy = _loop.Data.economy;
 
-            _headerLabel.text = "Coin " + NumberFormat.Short(state.coin) + "     Crew " + state.TotalCrew();
+            _headerLabel.text = "Coin " + NumberFormat.Short(state.coin) + "     Familiars " + state.TotalFamiliars();
 
-            var hireCost = _loop.NextCrewHireCost();
-            var canAffordHire = state.coin >= hireCost;
+            var giftCost = _loop.NextFamiliarGiftCost();
+            var canAffordGift = state.coin >= giftCost;
 
             foreach (var row in _rows)
             {
@@ -199,11 +226,11 @@ namespace Wildgrove.Game
 
                 row.info.text = PrettyName(node.resourceId)
                                 + "\n<size=24>" + NumberFormat.Short(held) + " held"
-                                + "  •  " + node.crewCount + " crew"
+                                + "  •  " + node.familiarCount + " familiars"
                                 + "  •  " + NumberFormat.Short(rate) + "/s" + tending + "</size>";
 
-                row.crewLabel.text = "+ Crew\n<size=22>" + NumberFormat.Short(hireCost) + "</size>";
-                row.crewButton.interactable = canAffordHire;
+                row.giftLabel.text = "+ Familiar\n<size=22>" + NumberFormat.Short(giftCost) + "</size>";
+                row.giftButton.interactable = canAffordGift;
 
                 var unitValue = Economy.SellValuePerUnit(_loop.Data, node.resourceId);
                 var saleValue = held * unitValue;
@@ -356,8 +383,8 @@ namespace Wildgrove.Game
             public NodeState node;
             public Image background;
             public Text info;
-            public Button crewButton;
-            public Text crewLabel;
+            public Button giftButton;
+            public Text giftLabel;
             public Button sellButton;
             public Text sellLabel;
         }

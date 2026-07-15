@@ -6,7 +6,7 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Builds the starting state for a fresh run. Phase 1 opens on Sunfield
     /// Meadow only — a gathering node per zone resource, worked by the zone's
-    /// foraging crew, with one crew seeded so the loop is alive on first frame.
+    /// foraging familiars, with one seeded so the loop is alive on first frame.
     /// </summary>
     public static class GameStateFactory
     {
@@ -26,15 +26,15 @@ namespace Wildgrove.Sim
                     zoneId = zone.id,
                     resourceId = resourceId,
                     skill = skill,
-                    crewCount = 0,
+                    familiarCount = 0,
                 });
             }
 
-            // Seed one crew on the first node for immediate agency (design §11
-            // pacing: something gathering before the first hire).
+            // Seed one familiar on the first node for immediate agency (design §11
+            // pacing: something gathering before the first gift).
             if (state.nodes.Count > 0)
             {
-                state.nodes[0].crewCount = 1;
+                state.nodes[0].familiarCount = 1;
             }
 
             return state;
