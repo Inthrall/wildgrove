@@ -1,0 +1,123 @@
+name: Android Release
+
+# Manually-triggered signed release build. Produces a signed .aab, attaches it
+# to a GitHub Release, and (optionally) uploads it to a Google Play track.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD - as for android-build.yml
+#   ANDROID_KEYSTORE_BASE64    - base64 of the upload keystore (wildgrove-upload.keystore)
+#   ANDROID_KEYSTORE_PASSWORD  - keystore password
+#   ANDROID_KEY_PASSWORD       - key password (same value for this keystore)
+#   PLAY_SERVICE_ACCOUNT_JSON  - Google Play service-account key JSON (only needed
+#                                when uploading to Play). The service account must
+#                                be linked in the Play Console with "Release apps
+#                                to testing tracks" (and production, if used).
+# The signing key MUST stay the original upload key (alias wildgrove-upload) -
+# Play registers it from the first upload and rejects anything else after that.
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Android versionCode - must be higher than the highest already uploaded to Play (see Play Console)"
+        required: true
+        type: string
+      versionName:
+        description: "versionName (optional; defaults to 0.1.<versionCode>)"
+        required: false
+        type: string
+      uploadToPlay:
+        description: "Upload the .aab to Google Play (uncheck to only build + attach a GitHub Release)"
+        required: true
+        default: true
+        type: boolean
+      track:
+        description: "Play track (production = full public release)"
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+
+permissions:
+  contents: write   # needed to create the GitHub Release
+
+jobs:
+  release:
+    name: Build signed Android AAB
+    runs-on: ubuntu-latest
+    steps:
+      # The Unity Android editor image is ~12 GB; ubuntu-latest runners don't
+      # have room for it unless the preinstalled toolchains are removed first.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Resolve version name
+        id: ver
+        run: |
+          vn="${{ inputs.versionName }}"
+          if [ -z "$vn" ]; then vn="0.1.${{ inputs.versionCode }}"; fi
+          echo "versionName=$vn" >> "$GITHUB_OUTPUT"
+
+      # Same cache key family as android-build.yml so release builds reuse the
+      # Library populated by the push builds.
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Build with Unity (signed)
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: Android
+          androidExportType: androidAppBundle
+          versioning: Custom
+          version: ${{ steps.ver.outputs.versionName }}
+          androidVersionCode: ${{ inputs.versionCode }}
+          androidKeystoreName: wildgrove-upload.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          androidKeyaliasName: wildgrove-upload
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Rename AAB
+        run: sudo mv build/Android/Android.aab "build/Android/Wildgrove-v${{ inputs.versionCode }}.aab"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "android-v${{ inputs.versionCode }}" \
+            "build/Android/Wildgrove-v${{ inputs.versionCode }}.aab" \
+            --title "Android v${{ inputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
+            --notes "Signed Android App Bundle of Wildgrove.
+
+          Uploaded to Play track: ${{ inputs.uploadToPlay && inputs.track || 'not uploaded' }}."
+
+      - name: Upload to Google Play
+        if: ${{ inputs.uploadToPlay }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.inthrall.wildgrove
+          releaseFiles: build/Android/Wildgrove-v${{ inputs.versionCode }}.aab
+          tracks: ${{ inputs.track }}
+          status: completed

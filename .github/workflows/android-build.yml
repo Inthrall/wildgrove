@@ -11,6 +11,7 @@ on:
       - "Assets/**"
       - "Packages/**"
       - "ProjectSettings/**"
+      - "design/data/**"
       - ".github/workflows/android-build.yml"
 
 jobs:
@@ -49,6 +50,13 @@ jobs:
           targetPlatform: Android
           androidExportType: androidAppBundle
           # unityVersion is auto-detected from ProjectSettings/ProjectVersion.txt
+          # Release-sign with the upload key so Play accepts the artifact
+          # (Play rejects debug-signed bundles).
+          androidKeystoreName: wildgrove-upload.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          androidKeyaliasName: wildgrove-upload
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
