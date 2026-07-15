@@ -15,6 +15,7 @@ namespace Wildgrove.Data
             asset.recipes = data.Recipes.Select(MapRecipe).ToList();
             asset.gear = data.Gear.Select(MapGear).ToList();
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
+            asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);
         }
 
@@ -38,6 +39,7 @@ namespace Wildgrove.Data
                 unlocks = new List<string>(z.Unlocks),
                 keystone = z.Keystone,
                 digSite = z.DigSite,
+                verseSite = z.VerseSite,
                 priced = z.MapCostCoin.HasValue,
                 mapCostCoin = z.MapCostCoin ?? 0,
                 scope = z.Scope
@@ -112,11 +114,41 @@ namespace Wildgrove.Data
             };
         }
 
+        private static RitesBundle MapRites(RitesConfig r)
+        {
+            return new RitesBundle
+            {
+                chooseCount = r.ChooseCount,
+                rites = r.Rites.Select(rite => new RiteData
+                {
+                    id = rite.Id,
+                    migration = rite.Migration,
+                    verses = rite.Verses.Select(v => new RiteVerseData
+                    {
+                        id = v.Id,
+                        zone = v.Zone,
+                        spotlight = new List<string>(v.Spotlight),
+                        slots = v.Slots.Select(s => new RiteSlotData
+                        {
+                            type = s.Type,
+                            resource = s.Resource,
+                            amount = s.Amount,
+                            deed = s.Deed,
+                            count = s.Count,
+                            quality = s.Quality,
+                            renownGrant = s.RenownGrant
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
+            };
+        }
+
         private static DialogueBundle MapDialogue(DialogueData d)
         {
             return new DialogueBundle
             {
                 waystones = d.Waystones.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
+                verses = d.Verses.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
                 provisioner = d.Provisioner.Select(p => new ProvisionerEntry { id = p.Id, trigger = p.Trigger, line = p.Line }).ToList(),
                 migrationVignette = new List<string>(d.MigrationVignette),
                 fossilCards = d.FossilCards.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList()
@@ -134,13 +166,13 @@ namespace Wildgrove.Data
             {
                 costGrowth = new EconomyData.CostGrowthData
                 {
-                    crewHire = e.CostGrowth.CrewHire,
-                    porter = e.CostGrowth.Porter,
+                    gathererGift = e.CostGrowth.GathererGift,
+                    carrierGift = e.CostGrowth.CarrierGift,
                     building = e.CostGrowth.Building
                 },
-                hires = new EconomyData.HiresData
+                gifts = new EconomyData.GiftsData
                 {
-                    crewBaseCoin = e.Hires.CrewBaseCoin
+                    familiarBaseCoin = e.Gifts.FamiliarBaseCoin
                 },
                 tools = new EconomyData.ToolsData
                 {

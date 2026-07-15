@@ -56,16 +56,16 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NewGame_SeedsOneCrewOnFirstNodeOnly()
+        public void NewGame_SeedsOneFamiliarOnFirstNodeOnly()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(state.nodes[0].crewCount, Is.EqualTo(1));
-            Assert.That(state.nodes.Skip(1).All(n => n.crewCount == 0), Is.True);
+            Assert.That(state.nodes[0].familiarCount, Is.EqualTo(1));
+            Assert.That(state.nodes.Skip(1).All(n => n.familiarCount == 0), Is.True);
         }
 
         [Test]
-        public void Advance_OneCrewNoBonuses_AccruesOnePerSecond()
+        public void Advance_OneFamiliarNoBonuses_AccruesOnePerSecond()
         {
             var state = GameStateFactory.NewGame(_data);
 
@@ -75,13 +75,13 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_ZeroCrewNode_AccruesNothing()
+        public void Advance_ZeroFamiliarNode_AccruesNothing()
         {
             var state = GameStateFactory.NewGame(_data);
 
             Simulation.Advance(state, _data, 10.0);
 
-            // wildflowers node has no crew seeded.
+            // wildflowers node has no familiar seeded.
             Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
@@ -125,7 +125,7 @@ namespace Wildgrove.Sim.Tests
 
             Simulation.Advance(state, _data, 2.0);
 
-            // 1 crew * 2s fully inside the burst window * 3x = 6, burst 5 - 2 left.
+            // 1 familiar * 2s fully inside the burst window * 3x = 6, burst 5 - 2 left.
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
             Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(3.0).Within(Tolerance));
         }
@@ -158,36 +158,36 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void YieldPerSecond_AppliesMasteryBonus()
         {
-            var node = new NodeState { crewCount = 1, masteryLevel = 2 };
+            var node = new NodeState { familiarCount = 1, masteryLevel = 2 };
             var state = new GameState();
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
-            // 1 crew * (1 + 0.05 * 2) = 1.1
+            // 1 familiar * (1 + 0.05 * 2) = 1.1
             Assert.That(perSec.ToDouble(), Is.EqualTo(1.1).Within(Tolerance));
         }
 
         [Test]
         public void YieldPerSecond_AppliesVerdureGlobalBonus()
         {
-            var node = new NodeState { crewCount = 1 };
+            var node = new NodeState { familiarCount = 1 };
             var state = new GameState { verdurePoints = 10 };
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
-            // 1 crew * (1 + 0.02 * 10) = 1.2
+            // 1 familiar * (1 + 0.02 * 10) = 1.2
             Assert.That(perSec.ToDouble(), Is.EqualTo(1.2).Within(Tolerance));
         }
 
         [Test]
-        public void YieldPerSecond_ScalesWithCrewAndMultiplier()
+        public void YieldPerSecond_ScalesWithFamiliarsAndMultiplier()
         {
-            var node = new NodeState { crewCount = 4, yieldMultiplier = 2.0 };
+            var node = new NodeState { familiarCount = 4, yieldMultiplier = 2.0 };
             var state = new GameState();
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
-            // 4 crew * 2.0 tool/gear mult = 8
+            // 4 familiars * 2.0 tool/gear mult = 8
             Assert.That(perSec.ToDouble(), Is.EqualTo(8.0).Within(Tolerance));
         }
     }

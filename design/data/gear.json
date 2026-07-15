@@ -1,8 +1,8 @@
 {
-  "$comment": "Survival gear — equipped per crew (slots: hands, pack, camp). Persists for the run; reset by Migration.",
+  "$comment": "Survival gear — the warden's kit (slots: hands, pack, camp). Persists for the run; reset by Migration.",
   "gear": [
     { "id": "cordage-wraps",    "name": "Cordage Wraps",    "slot": "hands", "skill": "bushcraft", "materials": { "fibres": 40 },                 "effects": [{ "type": "tendingBurstBonus", "value": 0.5 }] },
-    { "id": "birch-frame-pack", "name": "Birch Frame Pack", "slot": "pack",  "skill": "bushcraft", "materials": { "timber": 25, "cordage": 5 },   "effects": [{ "type": "porterCapacityBonus", "value": 0.25 }] },
+    { "id": "birch-frame-pack", "name": "Birch Frame Pack", "slot": "pack",  "skill": "bushcraft", "materials": { "timber": 25, "cordage": 5 },   "effects": [{ "type": "carrierCapacityBonus", "value": 0.25 }] },
     { "id": "pitch-torch",      "name": "Pitch Torch",      "slot": "camp",  "skill": "firecraft", "materials": { "timber": 10, "fibres": 10 },   "effects": [{ "type": "offlineNightFullRate" }] },
     { "id": "oilskin-tarp",     "name": "Oilskin Tarp",     "slot": "camp",  "skill": "bushcraft", "materials": { "reeds": 30, "fish-oil": 5 },   "effects": [{ "type": "offlineCapBonusHours", "value": 2 }] },
     { "id": "clay-lined-creel", "name": "Clay-Lined Creel", "slot": "pack",  "skill": "bushcraft", "materials": { "clay": 20, "reeds": 15 },      "effects": [{ "type": "noSpoilage", "resource": "fish" }] }

@@ -31,7 +31,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Gear, Is.Not.Empty);
             Assert.That(data.Fossils, Is.Not.Empty);
+            Assert.That(data.Rites.Rites, Is.Not.Empty);
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
+            Assert.That(data.Dialogue.Verses, Is.Not.Empty);
         }
 
         [Test]
@@ -39,8 +41,8 @@ namespace Wildgrove.Data.Tests
         {
             var data = GameData.Parse(LoadSources());
 
-            Assert.That(data.Economy.CostGrowth.CrewHire, Is.EqualTo(1.09));
-            Assert.That(data.Economy.Hires.CrewBaseCoin, Is.EqualTo(10L));
+            Assert.That(data.Economy.CostGrowth.GathererGift, Is.EqualTo(1.09));
+            Assert.That(data.Economy.Gifts.FamiliarBaseCoin, Is.EqualTo(10L));
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
@@ -49,6 +51,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.UpgradesById["flint-sickle"].Effects.Single().Type, Is.EqualTo(EffectType.YieldMult));
             Assert.That(data.RecipesById["bronze-ingot"].Inputs["tin-seam"], Is.EqualTo(2));
             Assert.That(data.FossilsById["those-who-planted"].DigSites, Has.Count.EqualTo(2));
+            Assert.That(data.ZonesById["sunfield-meadow"].VerseSite, Is.EqualTo("the fire circle"));
+            Assert.That(data.Rites.ChooseCount, Is.EqualTo(3));
+            Assert.That(data.Rites.Rites.Single().Verses.First().Slots.First().Type, Is.EqualTo(RiteSlotType.Resource));
+            Assert.That(data.Rites.Rites.Single().Verses.First().Slots.Last().Type, Is.EqualTo(RiteSlotType.Specimen));
         }
 
         [Test]
@@ -240,7 +246,37 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.dialogue.waystones.Single(w => w.key == "sunfield-meadow").text, Is.Not.Empty);
             Assert.That(asset.economy.xp.baseXp, Is.EqualTo(100d));
             Assert.That(asset.ResourcesById["berries"].sellValue, Is.EqualTo(data.ResourcesById["berries"].SellValue));
-            Assert.That(asset.economy.hires.crewBaseCoin.ToDouble(), Is.EqualTo(10d));
+            Assert.That(asset.economy.gifts.familiarBaseCoin.ToDouble(), Is.EqualTo(10d));
+            Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
+            Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
+            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(4));
+            Assert.That(asset.dialogue.verses.Single(v => v.key == "sunfield-meadow").text, Is.Not.Empty);
+        }
+
+        [Test]
+        public void Validate_RiteSlotWithUnknownResource_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"resource\": \"berries\",     \"amount\": 300",
+                "\"resource\": \"moon-cheese\", \"amount\": 300");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("moon-cheese")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_MvpZoneWithoutVerseSite_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"verseSite\": \"the fire circle\",  ",
+                "");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("no verseSite")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

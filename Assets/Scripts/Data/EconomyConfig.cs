@@ -6,7 +6,7 @@ namespace Wildgrove.Data
     public sealed class EconomyConfig
     {
         public CostGrowthSection CostGrowth { get; set; }
-        public HiresSection Hires { get; set; }
+        public GiftsSection Gifts { get; set; }
         public ToolsSection Tools { get; set; }
         public MasterySection Mastery { get; set; }
         public VerdureSection Verdure { get; set; }
@@ -18,14 +18,14 @@ namespace Wildgrove.Data
 
         public sealed class CostGrowthSection
         {
-            public double CrewHire { get; set; }
-            public double Porter { get; set; }
+            public double GathererGift { get; set; }
+            public double CarrierGift { get; set; }
             public double Building { get; set; }
         }
 
-        public sealed class HiresSection
+        public sealed class GiftsSection
         {
-            public long CrewBaseCoin { get; set; }
+            public long FamiliarBaseCoin { get; set; }
         }
 
         public sealed class ToolsSection

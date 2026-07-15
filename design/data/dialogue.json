@@ -6,6 +6,12 @@
     "old-growth-wood":   "These roots drink deeper than you will ever dig. Let them.",
     "silverrun-river":   ""
   },
+  "verses": {
+    "sunfield-meadow":   "What you carry is borrowed. Set some down, and see what follows you home.",
+    "bramble-hedgerows": "",
+    "old-growth-wood":   "",
+    "silverrun-river":   ""
+  },
   "provisioner": [
     { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
     { "id": "prov-02", "trigger": "after-migration", "line": "The last warden asked fewer questions. Hm. Perhaps that was the trouble." }

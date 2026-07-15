@@ -4,7 +4,7 @@ using System.Linq;
 namespace Wildgrove.Data
 {
     /// <summary>
-    /// Referential-integrity and sanity checks across the seven data files.
+    /// Referential-integrity and sanity checks across the nine data files.
     /// Returns human-readable issues; empty list means the data is coherent.
     /// </summary>
     public static class GameDataValidator
@@ -19,6 +19,8 @@ namespace Wildgrove.Data
         private static readonly HashSet<string> SkillWildcards = new HashSet<string> { "all", "all-gathering" };
 
         private static readonly HashSet<string> KnownScopes = new HashSet<string> { "mvp", "v1.1", "v1.2" };
+
+        private static readonly HashSet<string> KnownSpecimenQualities = new HashSet<string> { "fine", "pristine" };
 
         public static IReadOnlyList<string> Validate(GameData data)
         {
@@ -41,6 +43,7 @@ namespace Wildgrove.Data
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
+            ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
 
@@ -104,6 +107,12 @@ namespace Wildgrove.Data
                 if (!KnownScopes.Contains(zone.Scope))
                 {
                     issues.Add($"Zone '{zone.Id}' has unknown scope '{zone.Scope}'");
+                }
+
+                // MVP zones host a verse of the Rite, so the site must be authored.
+                if (zone.Scope == "mvp" && string.IsNullOrWhiteSpace(zone.VerseSite))
+                {
+                    issues.Add($"Zone '{zone.Id}' is mvp scope but has no verseSite");
                 }
             }
         }
@@ -243,6 +252,120 @@ namespace Wildgrove.Data
             }
         }
 
+        private static void ValidateRites(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            if (data.Rites == null)
+            {
+                issues.Add("Rites data is missing");
+                return;
+            }
+
+            CheckIds(data.Rites.Rites.Select(r => r.Id), "rite", issues);
+            CheckIds(data.Rites.Rites.SelectMany(r => r.Verses).Select(v => v.Id), "verse", issues);
+
+            if (data.Rites.ChooseCount <= 0)
+            {
+                issues.Add("Rites chooseCount must be positive");
+            }
+
+            foreach (var rite in data.Rites.Rites)
+            {
+                if (rite.Migration < 0)
+                {
+                    issues.Add($"Rite '{rite.Id}' has negative migration index");
+                }
+
+                if (rite.Verses.Count == 0)
+                {
+                    issues.Add($"Rite '{rite.Id}' has no verses");
+                }
+
+                foreach (var verse in rite.Verses)
+                {
+                    if (verse.Zone == null || !data.ZonesById.ContainsKey(verse.Zone))
+                    {
+                        issues.Add($"Verse '{verse.Id}' references unknown zone '{verse.Zone}'");
+                    }
+
+                    // The choose-N-of-M safety valve only exists if M > N.
+                    if (verse.Slots.Count <= data.Rites.ChooseCount)
+                    {
+                        issues.Add($"Verse '{verse.Id}' has {verse.Slots.Count} slots but chooseCount is {data.Rites.ChooseCount} — no slot choice left");
+                    }
+
+                    foreach (var skill in verse.Spotlight.Where(s => !KnownSkills.Contains(s)))
+                    {
+                        issues.Add($"Verse '{verse.Id}' spotlights unknown skill '{skill}'");
+                    }
+
+                    foreach (var slot in verse.Slots)
+                    {
+                        ValidateRiteSlot(verse.Id, slot, resourceIds, issues);
+                    }
+                }
+            }
+        }
+
+        private static void ValidateRiteSlot(string verseId, RiteSlotDef slot, HashSet<string> resourceIds, List<string> issues)
+        {
+            switch (slot.Type)
+            {
+                case RiteSlotType.Resource:
+                    if (slot.Resource == null || !resourceIds.Contains(slot.Resource))
+                    {
+                        issues.Add($"Verse '{verseId}' resource slot references '{slot.Resource}' which is not gathered from any zone or produced by any recipe");
+                    }
+
+                    if (slot.Amount <= 0)
+                    {
+                        issues.Add($"Verse '{verseId}' resource slot needs a positive amount");
+                    }
+
+                    break;
+
+                case RiteSlotType.Deed:
+                    if (string.IsNullOrWhiteSpace(slot.Deed))
+                    {
+                        issues.Add($"Verse '{verseId}' deed slot names no deed");
+                    }
+
+                    RequireCountAndGrant(verseId, slot, issues);
+                    break;
+
+                case RiteSlotType.Specimen:
+                    if (slot.Quality == null || !KnownSpecimenQualities.Contains(slot.Quality))
+                    {
+                        issues.Add($"Verse '{verseId}' specimen slot has unknown quality '{slot.Quality}'");
+                    }
+
+                    RequireCountAndGrant(verseId, slot, issues);
+                    break;
+
+                case RiteSlotType.Fragment:
+                    RequireCountAndGrant(verseId, slot, issues);
+                    break;
+
+                default:
+                    issues.Add($"Verse '{verseId}' has slot type '{slot.Type}' with no validation rule");
+                    break;
+            }
+        }
+
+        private static void RequireCountAndGrant(string verseId, RiteSlotDef slot, List<string> issues)
+        {
+            if (slot.Count <= 0)
+            {
+                issues.Add($"Verse '{verseId}' {slot.Type} slot needs a positive count");
+            }
+
+            // Non-resource offerings have no trade value, so the fixed grant is
+            // how they credit Renown (design doc §7) — zero would tax prestige.
+            if (slot.RenownGrant <= 0)
+            {
+                issues.Add($"Verse '{verseId}' {slot.Type} slot needs a positive renownGrant");
+            }
+        }
+
         private static void ValidateDialogue(GameData data, List<string> issues)
         {
             if (data.Dialogue == null)
@@ -254,6 +377,11 @@ namespace Wildgrove.Data
             foreach (var key in data.Dialogue.Waystones.Keys.Where(k => !data.ZonesById.ContainsKey(k)))
             {
                 issues.Add($"Waystone text references unknown zone '{key}'");
+            }
+
+            foreach (var key in data.Dialogue.Verses.Keys.Where(k => !data.ZonesById.ContainsKey(k)))
+            {
+                issues.Add($"Verse text references unknown zone '{key}'");
             }
 
             foreach (var key in data.Dialogue.FossilCards.Keys.Where(k => !data.FossilsById.ContainsKey(k)))
@@ -271,7 +399,7 @@ namespace Wildgrove.Data
             }
 
             RequireSection(economy.CostGrowth, "costGrowth", issues);
-            RequireSection(economy.Hires, "hires", issues);
+            RequireSection(economy.Gifts, "gifts", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
             RequireSection(economy.Verdure, "verdure", issues);
@@ -282,14 +410,14 @@ namespace Wildgrove.Data
             RequireSection(economy.Tending, "tending", issues);
 
             if (economy.CostGrowth != null
-                && (economy.CostGrowth.CrewHire <= 1 || economy.CostGrowth.Porter <= 1 || economy.CostGrowth.Building <= 1))
+                && (economy.CostGrowth.GathererGift <= 1 || economy.CostGrowth.CarrierGift <= 1 || economy.CostGrowth.Building <= 1))
             {
                 issues.Add("Economy costGrowth factors must all be > 1");
             }
 
-            if (economy.Hires != null && economy.Hires.CrewBaseCoin <= 0)
+            if (economy.Gifts != null && economy.Gifts.FamiliarBaseCoin <= 0)
             {
-                issues.Add("Economy hires.crewBaseCoin must be positive");
+                issues.Add("Economy gifts.familiarBaseCoin must be positive");
             }
 
             if (economy.Tools != null && (economy.Tools.Tiers == null || economy.Tools.Tiers.Count == 0))
@@ -359,7 +487,7 @@ namespace Wildgrove.Data
                 case EffectType.OfflineCapHours:
                 case EffectType.OfflineCapBonusHours:
                 case EffectType.TendingBurstBonus:
-                case EffectType.PorterCapacityBonus:
+                case EffectType.CarrierCapacityBonus:
                     RequirePositiveValue(owner, effect, issues);
                     break;
 
@@ -408,7 +536,7 @@ namespace Wildgrove.Data
 
                     break;
 
-                case EffectType.UnlockMigration:
+                case EffectType.UnlockVerdureForecast:
                 case EffectType.OfflineNightFullRate:
                     break;
 

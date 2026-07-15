@@ -1,13 +1,13 @@
 {
   "$comment": "Global economy constants from design doc §8. All first-pass values — tune in Phase 3 against pacing targets.",
   "costGrowth": {
-    "crewHire": 1.09,
-    "porter": 1.10,
+    "gathererGift": 1.09,
+    "carrierGift": 1.10,
     "building": 1.25
   },
-  "hires": {
-    "crewBaseCoin": 10,
-    "$note": "cost(n) = crewBaseCoin * crewHire^n where n = crew already hired this run; first-pass, tune in Phase 3"
+  "gifts": {
+    "familiarBaseCoin": 10,
+    "$note": "cost(n) = familiarBaseCoin * gathererGift^n where n = familiars already befriended this run; first-pass, tune in Phase 3. Coin is a Phase-1 placeholder — design v0.5 prices gifts in goods; reprice with the economy pass."
   },
   "tools": {
     "baseCostCoin": 100,
@@ -34,7 +34,7 @@
   },
   "excavation": {
     "pityTimerHoursDug": 4,
-    "$note": "guaranteed fragment per pity interval; drop rate = digCrew * digSpeed * strataRarity"
+    "$note": "guaranteed fragment per pity interval; drop rate = digFamiliars * digSpeed * strataRarity"
   },
   "tending": {
     "burstYieldMult": 3.0,

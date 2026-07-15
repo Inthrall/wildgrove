@@ -1,0 +1,60 @@
+{
+  "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant. Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
+  "chooseCount": 3,
+  "rites": [
+    {
+      "id": "first-rite",
+      "migration": 0,
+      "verses": [
+        {
+          "id": "verse-sunfield",
+          "zone": "sunfield-meadow",
+          "spotlight": ["foraging"],
+          "slots": [
+            { "type": "resource", "resource": "berries",     "amount": 300 },
+            { "type": "resource", "resource": "wildflowers", "amount": 150 },
+            { "type": "resource", "resource": "fibres",      "amount": 200 },
+            { "type": "deed",     "deed": "tend",            "count": 25,  "renownGrant": 50 },
+            { "type": "specimen", "quality": "fine",         "count": 1,   "renownGrant": 100 }
+          ]
+        },
+        {
+          "id": "verse-bramble",
+          "zone": "bramble-hedgerows",
+          "spotlight": ["firecraft", "mining"],
+          "slots": [
+            { "type": "resource", "resource": "berry-preserve", "amount": 8 },
+            { "type": "resource", "resource": "nuts",           "amount": 400 },
+            { "type": "resource", "resource": "copper-ingot",   "amount": 5 },
+            { "type": "resource", "resource": "herbs",          "amount": 300 },
+            { "type": "specimen", "quality": "fine",            "count": 1, "renownGrant": 150 }
+          ]
+        },
+        {
+          "id": "verse-oldgrowth",
+          "zone": "old-growth-wood",
+          "spotlight": ["bushcraft", "forgecraft"],
+          "slots": [
+            { "type": "resource", "resource": "planks",          "amount": 20 },
+            { "type": "resource", "resource": "cordage",         "amount": 12 },
+            { "type": "resource", "resource": "mushroom-skewer", "amount": 12 },
+            { "type": "resource", "resource": "bronze-ingot",    "amount": 4 },
+            { "type": "fragment", "count": 1, "renownGrant": 500 }
+          ]
+        },
+        {
+          "id": "verse-silverrun",
+          "zone": "silverrun-river",
+          "spotlight": ["fishing"],
+          "slots": [
+            { "type": "resource", "resource": "fish",         "amount": 500 },
+            { "type": "resource", "resource": "smoked-trout", "amount": 20 },
+            { "type": "resource", "resource": "clay",         "amount": 300 },
+            { "type": "resource", "resource": "iron-ingot",   "amount": 6 },
+            { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 1000 }
+          ]
+        }
+      ]
+    }
+  ]
+}

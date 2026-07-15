@@ -24,6 +24,7 @@ namespace Wildgrove.Data
         public List<RecipeData> recipes = new List<RecipeData>();
         public List<GearData> gear = new List<GearData>();
         public List<FossilData> fossils = new List<FossilData>();
+        public RitesBundle rites;
         public DialogueBundle dialogue;
 
         private Dictionary<string, ResourceData> resourcesById;

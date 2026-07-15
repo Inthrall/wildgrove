@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 5334a09e1b4e71e6aa200851f65af9e35fff9f7fd788935587976dd2c4bb56b3
+  sourceHash: 76f8cb57cd0900861df355fb1c58030c7aa9d3722d0d8a3d2f2047aeefa4ed57
   economy:
     costGrowth:
-      crewHire: 1.09
-      porter: 1.1
+      gathererGift: 1.09
+      carrierGift: 1.1
       building: 1.25
-    hires:
-      crewBaseCoin:
+    gifts:
+      familiarBaseCoin:
         mantissa: 1
         exponent: 1
     tools:
@@ -118,6 +118,7 @@ MonoBehaviour:
     - foraging
     keystone: sunburst-poppy
     digSite: 0
+    verseSite: the fire circle
     priced: 1
     mapCostCoin:
       mantissa: 0
@@ -135,6 +136,7 @@ MonoBehaviour:
     - mining
     keystone: amber-shelled-snail
     digSite: 0
+    verseSite: the hollow oak
     priced: 1
     mapCostCoin:
       mantissa: 4
@@ -153,6 +155,7 @@ MonoBehaviour:
     - excavation
     keystone: ancient-acorn
     digSite: 1
+    verseSite: the oldest root
     priced: 1
     mapCostCoin:
       mantissa: 6.5
@@ -170,6 +173,7 @@ MonoBehaviour:
     - fishing
     keystone: moonscale-trout
     digSite: 1
+    verseSite: the river bend
     priced: 1
     mapCostCoin:
       mantissa: 3.2
@@ -187,6 +191,7 @@ MonoBehaviour:
     - apothecary
     keystone: lantern-firefly
     digSite: 1
+    verseSite: 
     priced: 1
     mapCostCoin:
       mantissa: 1
@@ -203,6 +208,7 @@ MonoBehaviour:
     - delving
     keystone: echo-geode
     digSite: 1
+    verseSite: 
     priced: 0
     mapCostCoin:
       mantissa: 0
@@ -219,6 +225,7 @@ MonoBehaviour:
     - husbandry
     keystone: cloudfleece-ram
     digSite: 1
+    verseSite: 
     priced: 0
     mapCostCoin:
       mantissa: 0
@@ -234,6 +241,7 @@ MonoBehaviour:
     - final-waystones
     keystone: aurora-bloom
     digSite: 1
+    verseSite: 
     priced: 0
     mapCostCoin:
       mantissa: 0
@@ -258,7 +266,7 @@ MonoBehaviour:
   - order: 2
     id: waxed-satchel
     displayName: Waxed Satchel
-    track: porters
+    track: carriers
     costCoin:
       mantissa: 1.5
       exponent: 2
@@ -324,7 +332,7 @@ MonoBehaviour:
   - order: 6
     id: handcart
     displayName: Handcart
-    track: porters
+    track: carriers
     costCoin:
       mantissa: 9
       exponent: 2
@@ -461,9 +469,9 @@ MonoBehaviour:
       recipe: 
       value: 2
   - order: 13
-    id: mule-team
-    displayName: Mule Team
-    track: porters
+    id: stag-harness
+    displayName: Stag Harness
+    track: carriers
     costCoin:
       mantissa: 1.5
       exponent: 4
@@ -571,7 +579,7 @@ MonoBehaviour:
   - order: 19
     id: wagon
     displayName: Wagon
-    track: porters
+    track: carriers
     costCoin:
       mantissa: 1.5
       exponent: 5
@@ -740,9 +748,9 @@ MonoBehaviour:
       recipe: 
       value: 2
   - order: 28
-    id: pack-ravens
-    displayName: Pack Ravens
-    track: porters
+    id: raven-panniers
+    displayName: Raven Panniers
+    track: carriers
     costCoin:
       mantissa: 4.7
       exponent: 6
@@ -1031,6 +1039,174 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.2
+  rites:
+    chooseCount: 3
+    rites:
+    - id: first-rite
+      migration: 0
+      verses:
+      - id: verse-sunfield
+        zone: sunfield-meadow
+        spotlight:
+        - foraging
+        slots:
+        - type: 0
+          resource: berries
+          amount: 300
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: wildflowers
+          amount: 150
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: fibres
+          amount: 200
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 1
+          resource: 
+          amount: 0
+          deed: tend
+          count: 25
+          quality: 
+          renownGrant: 50
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: fine
+          renownGrant: 100
+      - id: verse-bramble
+        zone: bramble-hedgerows
+        spotlight:
+        - firecraft
+        - mining
+        slots:
+        - type: 0
+          resource: berry-preserve
+          amount: 8
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: nuts
+          amount: 400
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: copper-ingot
+          amount: 5
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: herbs
+          amount: 300
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: fine
+          renownGrant: 150
+      - id: verse-oldgrowth
+        zone: old-growth-wood
+        spotlight:
+        - bushcraft
+        - forgecraft
+        slots:
+        - type: 0
+          resource: planks
+          amount: 20
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: cordage
+          amount: 12
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: mushroom-skewer
+          amount: 12
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: bronze-ingot
+          amount: 4
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 3
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: 
+          renownGrant: 500
+      - id: verse-silverrun
+        zone: silverrun-river
+        spotlight:
+        - fishing
+        slots:
+        - type: 0
+          resource: fish
+          amount: 500
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: smoked-trout
+          amount: 20
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: clay
+          amount: 300
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: iron-ingot
+          amount: 6
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: pristine
+          renownGrant: 1000
   dialogue:
     waystones:
     - key: sunfield-meadow
@@ -1039,6 +1215,15 @@ MonoBehaviour:
       text: The stone does not grow back. Take it like you mean it.
     - key: old-growth-wood
       text: These roots drink deeper than you will ever dig. Let them.
+    - key: silverrun-river
+      text: 
+    verses:
+    - key: sunfield-meadow
+      text: What you carry is borrowed. Set some down, and see what follows you home.
+    - key: bramble-hedgerows
+      text: 
+    - key: old-growth-wood
+      text: 
     - key: silverrun-river
       text: 
     provisioner:

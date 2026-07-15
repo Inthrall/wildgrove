@@ -46,6 +46,7 @@ namespace Wildgrove.Data
         public List<string> unlocks = new List<string>();
         public string keystone;
         public bool digSite;
+        public string verseSite;
         public bool priced;
         public BigDouble mapCostCoin;
         public string scope;
@@ -99,6 +100,42 @@ namespace Wildgrove.Data
     }
 
     [Serializable]
+    public sealed class RiteSlotData
+    {
+        public RiteSlotType type;
+        public string resource;
+        public long amount;
+        public string deed;
+        public int count;
+        public string quality;
+        public long renownGrant;
+    }
+
+    [Serializable]
+    public sealed class RiteVerseData
+    {
+        public string id;
+        public string zone;
+        public List<string> spotlight = new List<string>();
+        public List<RiteSlotData> slots = new List<RiteSlotData>();
+    }
+
+    [Serializable]
+    public sealed class RiteData
+    {
+        public string id;
+        public int migration;
+        public List<RiteVerseData> verses = new List<RiteVerseData>();
+    }
+
+    [Serializable]
+    public sealed class RitesBundle
+    {
+        public int chooseCount;
+        public List<RiteData> rites = new List<RiteData>();
+    }
+
+    [Serializable]
     public sealed class StringEntry
     {
         public string key;
@@ -117,6 +154,7 @@ namespace Wildgrove.Data
     public sealed class DialogueBundle
     {
         public List<StringEntry> waystones = new List<StringEntry>();
+        public List<StringEntry> verses = new List<StringEntry>();
         public List<ProvisionerEntry> provisioner = new List<ProvisionerEntry>();
         public List<string> migrationVignette = new List<string>();
         public List<StringEntry> fossilCards = new List<StringEntry>();
@@ -126,7 +164,7 @@ namespace Wildgrove.Data
     public sealed class EconomyData
     {
         public CostGrowthData costGrowth;
-        public HiresData hires;
+        public GiftsData gifts;
         public ToolsData tools;
         public MasteryData mastery;
         public VerdureData verdure;
@@ -139,15 +177,15 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class CostGrowthData
         {
-            public double crewHire;
-            public double porter;
+            public double gathererGift;
+            public double carrierGift;
             public double building;
         }
 
         [Serializable]
-        public sealed class HiresData
+        public sealed class GiftsData
         {
-            public BigDouble crewBaseCoin;
+            public BigDouble familiarBaseCoin;
         }
 
         [Serializable]

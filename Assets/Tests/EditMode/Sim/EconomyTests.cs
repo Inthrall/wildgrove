@@ -6,7 +6,7 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the Coin economy: the climbing crew-hire cost curve, Provisioner
+    /// Pins the Coin economy: the climbing familiar-gift cost curve, Provisioner
     /// sales (raw resources only), and offline catch-up capping. Uses a
     /// hand-built content asset so no scene or Resources asset is loaded.
     /// </summary>
@@ -24,8 +24,8 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
-                costGrowth = new EconomyData.CostGrowthData { crewHire = 1.09 },
-                hires = new EconomyData.HiresData { crewBaseCoin = 10 },
+                costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09 },
+                gifts = new EconomyData.GiftsData { familiarBaseCoin = 10 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
             };
             _data.resources = new List<ResourceData>
@@ -51,53 +51,53 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CrewHireCost_FirstHire_IsBaseCost()
+        public void FamiliarGiftCost_FirstGift_IsBaseCost()
         {
             var state = new GameState();
 
-            var cost = Economy.CrewHireCost(state, _data.economy);
+            var cost = Economy.FamiliarGiftCost(state, _data.economy);
 
-            // n = 0 crew hired → base · 1.09^0 = base.
+            // n = 0 familiars befriended → base · 1.09^0 = base.
             Assert.That(cost.ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
         }
 
         [Test]
-        public void CrewHireCost_ScalesWithTotalCrew()
+        public void FamiliarGiftCost_ScalesWithTotalFamiliars()
         {
             var state = new GameState();
-            state.nodes.Add(new NodeState { crewCount = 2 });
+            state.nodes.Add(new NodeState { familiarCount = 2 });
 
-            var cost = Economy.CrewHireCost(state, _data.economy);
+            var cost = Economy.FamiliarGiftCost(state, _data.economy);
 
             // 10 · 1.09^2 = 11.881
             Assert.That(cost.ToDouble(), Is.EqualTo(11.881).Within(Tolerance));
         }
 
         [Test]
-        public void TryHireCrew_WhenAffordable_SpendsCoinAndAddsCrew()
+        public void TryGiftFamiliar_WhenAffordable_SpendsCoinAndAddsFamiliar()
         {
             var state = new GameState { coin = 50 };
-            var node = new NodeState { crewCount = 0 };
+            var node = new NodeState { familiarCount = 0 };
             state.nodes.Add(node);
 
-            var hired = Economy.TryHireCrew(state, _data.economy, node);
+            var gifted = Economy.TryGiftFamiliar(state, _data.economy, node);
 
-            Assert.That(hired, Is.True);
-            Assert.That(node.crewCount, Is.EqualTo(1));
+            Assert.That(gifted, Is.True);
+            Assert.That(node.familiarCount, Is.EqualTo(1));
             Assert.That(state.coin.ToDouble(), Is.EqualTo(40.0).Within(Tolerance));
         }
 
         [Test]
-        public void TryHireCrew_WhenCoinShort_LeavesStateUnchanged()
+        public void TryGiftFamiliar_WhenCoinShort_LeavesStateUnchanged()
         {
             var state = new GameState { coin = 5 };
-            var node = new NodeState { crewCount = 0 };
+            var node = new NodeState { familiarCount = 0 };
             state.nodes.Add(node);
 
-            var hired = Economy.TryHireCrew(state, _data.economy, node);
+            var gifted = Economy.TryGiftFamiliar(state, _data.economy, node);
 
-            Assert.That(hired, Is.False);
-            Assert.That(node.crewCount, Is.EqualTo(0));
+            Assert.That(gifted, Is.False);
+            Assert.That(node.familiarCount, Is.EqualTo(0));
             Assert.That(state.coin.ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
         }
 
@@ -148,7 +148,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void AdvanceOffline_WithinCap_CreditsFullElapsed()
         {
-            var state = GameStateFactory.NewGame(_data); // 1 crew on the berries node
+            var state = GameStateFactory.NewGame(_data); // 1 familiar on the berries node
 
             var credited = Simulation.AdvanceOffline(state, _data, 100.0);
 

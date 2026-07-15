@@ -14,13 +14,15 @@ namespace Wildgrove.Data
         OfflineCapBonusHours,
         OfflineNightFullRate,
         TendingBurstBonus,
-        PorterCapacityBonus,
+        CarrierCapacityBonus,
         NoSpoilage,
         UnlockZone,
         UnlockSkill,
         UnlockRecipe,
         UnlockDigSite,
-        UnlockMigration
+
+        /// <summary>Reveals the live Verdure forecast (the Almanac Desk). Migration itself is gated by the Rite, not an upgrade.</summary>
+        UnlockVerdureForecast
     }
 
     /// <summary>
