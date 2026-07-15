@@ -43,6 +43,26 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// A per-second rate for display: small rates keep their fraction
+        /// ("0.5" — the warden's hand-gather trickle must not read as 0/s),
+        /// a thousand and up abbreviate like <see cref="Short"/>.
+        /// </summary>
+        public static string Rate(BigDouble value)
+        {
+            if (value <= BigDouble.Zero)
+            {
+                return "0";
+            }
+
+            if (value < new BigDouble(1000.0))
+            {
+                return value.ToDouble().ToString("0.##", CultureInfo.InvariantCulture);
+            }
+
+            return Short(value);
+        }
+
+        /// <summary>
         /// A wall-clock duration for display, at most two units and no zero
         /// tail: "42s", "5m 12s", "5m", "14h 2m". Hours are the largest unit —
         /// a multi-day absence reads as "72h", which is honest about the

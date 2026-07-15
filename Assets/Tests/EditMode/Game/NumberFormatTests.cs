@@ -46,6 +46,37 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Rate_FractionalTrickle_KeepsTheFraction()
+        {
+            Assert.That(NumberFormat.Rate(new BigDouble(0.5)), Is.EqualTo("0.5"));
+        }
+
+        [Test]
+        public void Rate_ZeroOrNegative_ReturnsZero()
+        {
+            Assert.That(NumberFormat.Rate(BigDouble.Zero), Is.EqualTo("0"));
+            Assert.That(NumberFormat.Rate(new BigDouble(-1.0)), Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void Rate_SmallRate_ShowsAtMostTwoDecimals()
+        {
+            Assert.That(NumberFormat.Rate(new BigDouble(3.14159)), Is.EqualTo("3.14"));
+        }
+
+        [Test]
+        public void Rate_WholeRate_DropsTheFraction()
+        {
+            Assert.That(NumberFormat.Rate(new BigDouble(12.0)), Is.EqualTo("12"));
+        }
+
+        [Test]
+        public void Rate_ThousandAndUp_AbbreviatesLikeShort()
+        {
+            Assert.That(NumberFormat.Rate(new BigDouble(1200.0)), Is.EqualTo("1.2K"));
+        }
+
+        [Test]
         public void Duration_UnderAMinute_ShowsSeconds()
         {
             Assert.That(NumberFormat.Duration(42.7), Is.EqualTo("42s"));

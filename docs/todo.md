@@ -28,10 +28,6 @@ they're easy to find and delete when resolved.
   `GameLoop.Initialise`. Note the SDK's External Dependency Manager patches
   `mainTemplate.gradle` — re-check the hand-authored Kotlin pins when it lands.
   (`Assets/Scripts/Game/Telemetry/`)
-- **The welcome-back sheet reports camp gains only.** Goods that piled up in node
-  baskets during the absence aren't listed (the summary diffs `state.resources`);
-  fine while baskets are small, revisit if basket capacity grows.
-  (`Simulation.AdvanceOfflineWithSummary`)
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)

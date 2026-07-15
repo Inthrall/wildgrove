@@ -127,8 +127,9 @@ namespace Wildgrove.Game
             }
 
             // A pointer press that landed on a widget is that widget's business
-            // (its own onClick runs) — don't also tend behind it. Non-positional
-            // confirms (Space / pad-A) and taps on empty space tend the selection.
+            // (its own onClick runs) — don't also tend behind it, and drop the
+            // node selection (row buttons re-select their own node on click,
+            // camp-wide widgets leave nothing selected).
             // NOTE: with a gamepad, pad-South is also uGUI's Submit, so tending
             // while a button is focused can double-fire — refined in the Phase 2
             // controller/focus pass.
@@ -137,12 +138,13 @@ namespace Wildgrove.Game
                              && EventSystem.current.IsPointerOverGameObject();
             if (overWidget)
             {
+                _selected = null;
                 return;
             }
 
-            // A positional tap resolves against the node sprites first: hitting
-            // one selects and tends it. Misses (and Space / pad-A) fall back to
-            // the selected node so tending never feels unresponsive.
+            // A positional tap resolves against the node sprites: hitting one
+            // selects and tends it, missing everything deselects. Only the
+            // non-positional confirms (Space / pad-A) tend the current selection.
             if (screenPosition.HasValue && _world != null)
             {
                 var hit = _world.NodeAtScreenPoint(screenPosition.Value);
@@ -150,8 +152,13 @@ namespace Wildgrove.Game
                 {
                     _selected = hit;
                     _loop.Tend(hit);
-                    return;
                 }
+                else
+                {
+                    _selected = null;
+                }
+
+                return;
             }
 
             if (_selected != null)
@@ -250,7 +257,7 @@ namespace Wildgrove.Game
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
             var actionsRow = CreatePanel("Actions", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
-            SetPreferredHeight(actionsRow, 96f);
+            SetPreferredHeight(actionsRow, 120f);
             var actionsLayout = actionsRow.AddComponent<HorizontalLayoutGroup>();
             actionsLayout.spacing = 12f;
             actionsLayout.childControlWidth = true;
@@ -258,7 +265,7 @@ namespace Wildgrove.Game
             actionsLayout.childForceExpandWidth = true;
             actionsLayout.childForceExpandHeight = true;
 
-            var (giftCarrier, giftCarrierLabel) = CreateButton("FillFeeder", actionsRow.transform, "+ Carrier", () => _loop.GiftCarrier());
+            var (giftCarrier, giftCarrierLabel) = CreateButton("FillFeeder", actionsRow.transform, "Gift", () => _loop.GiftCarrier());
             _carrierButton = giftCarrier;
             _carrierLabel = giftCarrierLabel;
 
@@ -287,17 +294,22 @@ namespace Wildgrove.Game
 
             var info = CreateText("Info", rowGo.transform, 32, TextAnchor.MiddleLeft, TextColor);
             info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            // Stats wrap inside the label's own column instead of overflowing
+            // under the buttons to its right.
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             var (tend, _) = CreateButton("Tend", rowGo.transform, "Tend", () => Select(node));
-            SetPreferredWidth(tend.gameObject, 150f);
+            SetPreferredWidth(tend.gameObject, 120f);
             // Select-and-tend on the same tap so the row becomes the Space/pad-A target.
             tend.onClick.AddListener(() => _loop.Tend(node));
 
-            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "+ Familiar", () => _loop.GiftGatherer(node));
+            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "Gift",
+                () => { Select(node); _loop.GiftGatherer(node); });
             SetPreferredWidth(gift.gameObject, 200f);
 
-            var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell", () => _loop.SellResource(node.resourceId));
-            SetPreferredWidth(sell.gameObject, 200f);
+            var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell",
+                () => { Select(node); _loop.SellResource(node.resourceId); });
+            SetPreferredWidth(sell.gameObject, 150f);
 
             return new RowView
             {
@@ -326,6 +338,7 @@ namespace Wildgrove.Game
 
             var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
             info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
             info.text = upgrade.displayName + "\n<size=22>" + PrettyName(upgrade.track) + "</size>";
 
             var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.PurchaseUpgrade(upgrade));
@@ -440,26 +453,34 @@ namespace Wildgrove.Game
                                 + "     Familiars " + state.TotalFamiliars()
                                 + "     Carriers " + state.carrierCount;
 
-            var giftCost = _loop.NextGathererGiftCost();
-
             foreach (var row in _rows)
             {
                 var node = row.node;
+                var giftCost = _loop.NextGathererGiftCost(node);
                 var held = state.GetResource(node.resourceId);
+
+                // While a burst is live the row shows the effective rate — the
+                // familiars' bursted yield plus the warden's hand-gather — so
+                // tending visibly earns even on a node with no familiars.
                 var rate = Simulation.YieldPerSecond(node, state, economy);
-                var tending = node.tendBurstRemaining > 0.0 ? "  (tending)" : string.Empty;
+                var tending = string.Empty;
+                if (node.tendBurstRemaining > 0.0 && economy.tending != null)
+                {
+                    rate = rate * economy.tending.burstYieldMult + new BigDouble(economy.tending.handGatherPerSecond);
+                    tending = "  (tending)";
+                }
                 var basketFull = economy.hauling != null && node.basket >= new BigDouble(economy.hauling.basketCapacity);
                 var basket = "  •  " + NumberFormat.Short(node.basket)
                              + (basketFull ? " in basket (full!)" : " in basket");
 
                 row.info.text = PrettyName(node.resourceId)
-                                + "\n<size=24>" + NumberFormat.Short(held) + " held" + basket
-                                + "  •  " + node.familiarCount + " familiars"
-                                + "  •  " + NumberFormat.Short(rate) + "/s" + tending + "</size>";
+                                + "\n<size=24>" + NumberFormat.Short(held) + " held" + basket + "</size>"
+                                + "\n<size=24>" + node.familiarCount + " familiars"
+                                + "  •  " + NumberFormat.Rate(rate) + "/s" + tending + "</size>";
 
                 // Gatherer gifts cost the node's own resource, from camp stock
                 // (design §13) — so affordability is per node.
-                row.giftLabel.text = "+ Familiar\n<size=22>" + NumberFormat.Short(giftCost)
+                row.giftLabel.text = "Gift\n<size=22>+1 Familiar\n" + NumberFormat.Short(giftCost)
                                      + " " + PrettyName(node.resourceId) + "</size>";
                 row.giftButton.interactable = held >= giftCost;
 
@@ -494,7 +515,7 @@ namespace Wildgrove.Game
 
             // The Feeder: a bundle of every worked resource buys a carrier.
             var carrierCostEach = _loop.NextCarrierGiftCostEach();
-            _carrierLabel.text = "+ Carrier\n<size=22>Feeder: " + NumberFormat.Short(carrierCostEach) + " of each</size>";
+            _carrierLabel.text = "Gift\n<size=22>+1 Carrier\nFeeder: " + NumberFormat.Short(carrierCostEach) + " of each</size>";
             _carrierButton.interactable = _loop.CanGiftCarrier();
 
             var totalSaleValue = TotalSellableValue(state);

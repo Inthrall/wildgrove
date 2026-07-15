@@ -186,8 +186,10 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// <see cref="AdvanceOffline"/> plus a report of what it paid out — the
-        /// welcome-back sheet's data. Snapshots the inventory, runs the catch-up,
-        /// and diffs, so the gains stay correct however the tick evolves.
+        /// welcome-back sheet's data. Snapshots the holdings (camp stock plus
+        /// what's waiting in node baskets, so goods the carriers hadn't hauled
+        /// yet still count as gained), runs the catch-up, and diffs — the gains
+        /// stay correct however the tick evolves.
         /// </summary>
         public static OfflineSummary AdvanceOfflineWithSummary(GameState state, GameDataAsset data, double realElapsedSeconds)
         {
@@ -200,10 +202,11 @@ namespace Wildgrove.Sim
                 return summary;
             }
 
-            var before = new Dictionary<string, BigDouble>(state.resources);
+            var before = SnapshotHoldings(state);
             summary.creditedSeconds = AdvanceOffline(state, data, realElapsedSeconds);
+            var after = SnapshotHoldings(state);
 
-            foreach (var pair in state.resources)
+            foreach (var pair in after)
             {
                 before.TryGetValue(pair.Key, out var had);
                 var gained = pair.Value - had;
@@ -214,6 +217,19 @@ namespace Wildgrove.Sim
             }
 
             return summary;
+        }
+
+        /// <summary>Camp stock plus basket contents, per resource.</summary>
+        private static Dictionary<string, BigDouble> SnapshotHoldings(GameState state)
+        {
+            var holdings = new Dictionary<string, BigDouble>(state.resources);
+            foreach (var node in state.nodes)
+            {
+                holdings.TryGetValue(node.resourceId, out var held);
+                holdings[node.resourceId] = held + node.basket;
+            }
+
+            return holdings;
         }
 
         /// <summary>

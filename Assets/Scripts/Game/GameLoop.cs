@@ -172,16 +172,16 @@ namespace Wildgrove.Game
             Simulation.Tend(node, Data.economy);
         }
 
-        /// <summary>Size of the next gatherer's gift, in units of the target node's own resource — for the gift button's label and enabled state.</summary>
-        public BigDouble NextGathererGiftCost()
+        /// <summary>Size of the node's next gatherer gift, in units of its own resource — for the gift button's label and enabled state.</summary>
+        public BigDouble NextGathererGiftCost(NodeState node)
         {
-            return Economy.GathererGiftCost(State, Data.economy);
+            return Economy.GathererGiftCost(node, Data.economy);
         }
 
         /// <summary>Gift one gatherer onto the node, paying in its own resource. Returns false (no change) if camp stock can't cover it.</summary>
         public bool GiftGatherer(NodeState node)
         {
-            var cost = Economy.GathererGiftCost(State, Data.economy);
+            var cost = Economy.GathererGiftCost(node, Data.economy);
             if (!Economy.TryGiftGatherer(State, Data.economy, node))
             {
                 return false;

@@ -57,24 +57,36 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void GathererGiftCost_FirstGift_IsBaseCost()
         {
-            var state = new GameState();
+            var node = new NodeState();
 
-            var cost = Economy.GathererGiftCost(state, _data.economy);
+            var cost = Economy.GathererGiftCost(node, _data.economy);
 
-            // n = 0 familiars befriended → base · 1.09^0 = base.
+            // n = 0 familiars befriended at the node → base · 1.09^0 = base.
             Assert.That(cost.ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
         }
 
         [Test]
-        public void GathererGiftCost_ScalesWithTotalFamiliars()
+        public void GathererGiftCost_ScalesWithTheNodesOwnFamiliars()
         {
-            var state = new GameState();
-            state.nodes.Add(new NodeState { familiarCount = 2 });
+            var node = new NodeState { familiarCount = 2 };
 
-            var cost = Economy.GathererGiftCost(state, _data.economy);
+            var cost = Economy.GathererGiftCost(node, _data.economy);
 
             // 10 · 1.09^2 = 11.881
             Assert.That(cost.ToDouble(), Is.EqualTo(11.881).Within(Tolerance));
+        }
+
+        [Test]
+        public void GathererGiftCost_BareNode_IgnoresTheFlockElsewhere()
+        {
+            var state = new GameState();
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 30 });
+            var bare = new NodeState { resourceId = "wildflowers" };
+            state.nodes.Add(bare);
+
+            // Depth pricing is per node: a virgin trail starts at the base cost
+            // however large the flock is at other nodes.
+            Assert.That(Economy.GathererGiftCost(bare, _data.economy).ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
         }
 
         [Test]

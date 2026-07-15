@@ -18,14 +18,18 @@ namespace Wildgrove.Sim
     {
         /// <summary>
         /// Size of the next gatherer's gift, per design doc §8: cost(n) = base · r^n,
-        /// where n is the gatherers already befriended this run and r is the
-        /// gatherer-gift growth factor. The first gift (n = 0) costs exactly the
-        /// base. The units are the target node's own resource (§13 decision:
-        /// you leave a pile of what the flock likes), paid from camp stock.
+        /// where n is the gatherers already befriended at <paramref name="node"/>
+        /// and r is the gatherer-gift growth factor. Depth pricing is per node:
+        /// a virgin trail's first gift always costs exactly the base however
+        /// large the flock is elsewhere (so a new node is a few taps of
+        /// hand-gather from starting, not a camp-inflated grind), and each
+        /// spirit at a worked node asks more than the last. The units are the
+        /// node's own resource (§13 decision: you leave a pile of what the
+        /// flock likes), paid from camp stock.
         /// </summary>
-        public static BigDouble GathererGiftCost(GameState state, EconomyData economy)
+        public static BigDouble GathererGiftCost(NodeState node, EconomyData economy)
         {
-            var growth = BigDouble.Pow(economy.costGrowth.gathererGift, state.TotalFamiliars());
+            var growth = BigDouble.Pow(economy.costGrowth.gathererGift, node.familiarCount);
             return economy.gifts.gathererBaseGoods * growth;
         }
 
@@ -42,7 +46,7 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            var cost = GathererGiftCost(state, economy);
+            var cost = GathererGiftCost(node, economy);
             if (state.GetResource(node.resourceId) < cost)
             {
                 return false;

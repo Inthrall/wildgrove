@@ -242,6 +242,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void AdvanceOfflineWithSummary_CountsGoodsStillInBaskets()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.carrierCount = 0;
+
+            var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
+
+            // With no carriers nothing reaches camp, but the basketful the
+            // familiar gathered is still a gain — the welcome-back sheet
+            // shouldn't under-report the absence.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(summary.gains["berries"].ToDouble(), Is.EqualTo(30.0).Within(Tolerance));
+        }
+
+        [Test]
         public void AdvanceOfflineWithSummary_NoTimeAway_HasNoGains()
         {
             var state = GameStateFactory.NewGame(_data);
