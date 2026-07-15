@@ -40,7 +40,9 @@ namespace Wildgrove.Data.Tests
             var data = GameData.Parse(LoadSources());
 
             Assert.That(data.Economy.CostGrowth.CrewHire, Is.EqualTo(1.09));
+            Assert.That(data.Economy.Hires.CrewBaseCoin, Is.EqualTo(10L));
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
+            Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -237,6 +239,34 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.RecipesById["charcoal"].defaultKnown, Is.True);
             Assert.That(asset.dialogue.waystones.Single(w => w.key == "sunfield-meadow").text, Is.Not.Empty);
             Assert.That(asset.economy.xp.baseXp, Is.EqualTo(100d));
+            Assert.That(asset.ResourcesById["berries"].sellValue, Is.EqualTo(data.ResourcesById["berries"].SellValue));
+            Assert.That(asset.economy.hires.crewBaseCoin.ToDouble(), Is.EqualTo(10d));
+        }
+
+        [Test]
+        public void Validate_GatheredResourceWithoutSellValue_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ResourcesJson = sources.ResourcesJson.Replace(
+                "{ \"id\": \"berries\",      \"sellValue\": 1 },",
+                "");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("berries") && i.Contains("no sell value")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_PricedResourceThatIsNotGathered_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ResourcesJson = sources.ResourcesJson.Replace(
+                "{ \"id\": \"berries\",      \"sellValue\": 1 },",
+                "{ \"id\": \"berries\",      \"sellValue\": 1 },\n    { \"id\": \"gold-bar\", \"sellValue\": 999 },");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("gold-bar") && i.Contains("not gathered")), Is.True, string.Join("\n", issues));
         }
     }
 }

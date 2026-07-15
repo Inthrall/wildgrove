@@ -28,6 +28,15 @@ namespace Wildgrove.Data
     }
 
     [Serializable]
+    public sealed class ResourceData
+    {
+        public string id;
+
+        /// <summary>Base Provisioner sell value in Coin per unit (raw gatherables only).</summary>
+        public double sellValue;
+    }
+
+    [Serializable]
     public sealed class ZoneData
     {
         public string id;
@@ -117,6 +126,7 @@ namespace Wildgrove.Data
     public sealed class EconomyData
     {
         public CostGrowthData costGrowth;
+        public HiresData hires;
         public ToolsData tools;
         public MasteryData mastery;
         public VerdureData verdure;
@@ -132,6 +142,12 @@ namespace Wildgrove.Data
             public double crewHire;
             public double porter;
             public double building;
+        }
+
+        [Serializable]
+        public sealed class HiresData
+        {
+            public BigDouble crewBaseCoin;
         }
 
         [Serializable]

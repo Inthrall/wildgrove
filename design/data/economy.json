@@ -5,6 +5,10 @@
     "porter": 1.10,
     "building": 1.25
   },
+  "hires": {
+    "crewBaseCoin": 10,
+    "$note": "cost(n) = crewBaseCoin * crewHire^n where n = crew already hired this run; first-pass, tune in Phase 3"
+  },
   "tools": {
     "baseCostCoin": 100,
     "costMultPerTier": 12,

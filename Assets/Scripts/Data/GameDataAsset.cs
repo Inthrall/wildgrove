@@ -18,6 +18,7 @@ namespace Wildgrove.Data
         public string sourceHash;
 
         public EconomyData economy;
+        public List<ResourceData> resources = new List<ResourceData>();
         public List<ZoneData> zones = new List<ZoneData>();
         public List<UpgradeData> upgrades = new List<UpgradeData>();
         public List<RecipeData> recipes = new List<RecipeData>();
@@ -25,12 +26,14 @@ namespace Wildgrove.Data
         public List<FossilData> fossils = new List<FossilData>();
         public DialogueBundle dialogue;
 
+        private Dictionary<string, ResourceData> resourcesById;
         private Dictionary<string, ZoneData> zonesById;
         private Dictionary<string, UpgradeData> upgradesById;
         private Dictionary<string, RecipeData> recipesById;
         private Dictionary<string, GearData> gearById;
         private Dictionary<string, FossilData> fossilsById;
 
+        public IReadOnlyDictionary<string, ResourceData> ResourcesById => resourcesById ??= Index(resources, r => r.id);
         public IReadOnlyDictionary<string, ZoneData> ZonesById => zonesById ??= Index(zones, z => z.id);
         public IReadOnlyDictionary<string, UpgradeData> UpgradesById => upgradesById ??= Index(upgrades, u => u.id);
         public IReadOnlyDictionary<string, RecipeData> RecipesById => recipesById ??= Index(recipes, r => r.id);

@@ -1,0 +1,36 @@
+{
+  "$comment": "Base Provisioner sell value (Coin per unit) for every raw gatherable resource — the source of truth for pricing. One entry per resource gathered from a zone; crafted trade goods derive their value from summed input value x recipe valueMult (see recipes.json) and are NOT listed here. Materials/ingots are not sold. All first-pass values — tune in Phase 3 against pacing targets.",
+  "resources": [
+    { "id": "berries",      "sellValue": 1 },
+    { "id": "wildflowers",  "sellValue": 1 },
+    { "id": "fibres",       "sellValue": 1 },
+
+    { "id": "nuts",         "sellValue": 3 },
+    { "id": "herbs",        "sellValue": 4 },
+    { "id": "copper-scree", "sellValue": 5 },
+
+    { "id": "timber",       "sellValue": 6 },
+    { "id": "mushrooms",    "sellValue": 8 },
+    { "id": "tin-seam",     "sellValue": 10 },
+
+    { "id": "fish",         "sellValue": 12 },
+    { "id": "reeds",        "sellValue": 6 },
+    { "id": "clay",         "sellValue": 5 },
+    { "id": "iron-gravel",  "sellValue": 20 },
+
+    { "id": "peat",         "sellValue": 15 },
+    { "id": "rare-herbs",   "sellValue": 30 },
+    { "id": "fireflies",    "sellValue": 25 },
+
+    { "id": "deep-ores",    "sellValue": 60 },
+    { "id": "crystals",     "sellValue": 120 },
+    { "id": "bone-beds",    "sellValue": 80 },
+
+    { "id": "eggs",         "sellValue": 40 },
+    { "id": "wool",         "sellValue": 50 },
+    { "id": "lichen",       "sellValue": 30 },
+
+    { "id": "sky-blossoms", "sellValue": 200 },
+    { "id": "glacier-ice",  "sellValue": 150 }
+  ]
+}

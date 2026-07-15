@@ -9,12 +9,22 @@ namespace Wildgrove.Data
         public static void Populate(GameDataAsset asset, GameData data)
         {
             asset.economy = MapEconomy(data.Economy);
+            asset.resources = data.Resources.Select(MapResource).ToList();
             asset.zones = data.Zones.Select(MapZone).ToList();
             asset.upgrades = data.Upgrades.Select(MapUpgrade).ToList();
             asset.recipes = data.Recipes.Select(MapRecipe).ToList();
             asset.gear = data.Gear.Select(MapGear).ToList();
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
             asset.dialogue = MapDialogue(data.Dialogue);
+        }
+
+        private static ResourceData MapResource(ResourceDef r)
+        {
+            return new ResourceData
+            {
+                id = r.Id,
+                sellValue = r.SellValue
+            };
         }
 
         private static ZoneData MapZone(ZoneDef z)
@@ -127,6 +137,10 @@ namespace Wildgrove.Data
                     crewHire = e.CostGrowth.CrewHire,
                     porter = e.CostGrowth.Porter,
                     building = e.CostGrowth.Building
+                },
+                hires = new EconomyData.HiresData
+                {
+                    crewBaseCoin = e.Hires.CrewBaseCoin
                 },
                 tools = new EconomyData.ToolsData
                 {

@@ -34,6 +34,18 @@ namespace Wildgrove.Sim
         {
             resources[resourceId] = GetResource(resourceId) + amount;
         }
+
+        /// <summary>Total crew hired this run across every node — drives the hire-cost curve.</summary>
+        public int TotalCrew()
+        {
+            var total = 0;
+            foreach (var node in nodes)
+            {
+                total += node.crewCount;
+            }
+
+            return total;
+        }
     }
 
     /// <summary>

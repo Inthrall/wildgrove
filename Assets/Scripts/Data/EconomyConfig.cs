@@ -6,6 +6,7 @@ namespace Wildgrove.Data
     public sealed class EconomyConfig
     {
         public CostGrowthSection CostGrowth { get; set; }
+        public HiresSection Hires { get; set; }
         public ToolsSection Tools { get; set; }
         public MasterySection Mastery { get; set; }
         public VerdureSection Verdure { get; set; }
@@ -20,6 +21,11 @@ namespace Wildgrove.Data
             public double CrewHire { get; set; }
             public double Porter { get; set; }
             public double Building { get; set; }
+        }
+
+        public sealed class HiresSection
+        {
+            public long CrewBaseCoin { get; set; }
         }
 
         public sealed class ToolsSection

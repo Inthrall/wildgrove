@@ -24,6 +24,7 @@ namespace Wildgrove.Data
         {
             var issues = new List<string>();
 
+            CheckIds(data.Resources.Select(r => r.Id), "resource", issues);
             CheckIds(data.Zones.Select(z => z.Id), "zone", issues);
             CheckIds(data.Upgrades.Select(u => u.Id), "upgrade", issues);
             CheckIds(data.Recipes.Select(r => r.Id), "recipe", issues);
@@ -34,6 +35,7 @@ namespace Wildgrove.Data
             var resourceIds = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
             resourceIds.UnionWith(data.Recipes.Select(r => r.Output).Where(o => o != null));
 
+            ValidateResources(data, issues);
             ValidateZones(data, issues);
             ValidateRecipes(data, resourceIds, issues);
             ValidateUpgrades(data, resourceIds, issues);
@@ -58,6 +60,30 @@ namespace Wildgrove.Data
                 {
                     issues.Add($"Duplicate {kind} id '{id}'");
                 }
+            }
+        }
+
+        private static void ValidateResources(GameData data, List<string> issues)
+        {
+            // Every raw gatherable must be priced exactly once, and resources.json
+            // must not price anything that isn't gathered (crafted trade goods
+            // derive their value from their recipe; materials are not sold).
+            var gathered = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
+            var priced = new HashSet<string>(data.Resources.Select(r => r.Id).Where(id => id != null));
+
+            foreach (var id in gathered.Where(id => !priced.Contains(id)))
+            {
+                issues.Add($"Resource '{id}' is gathered from a zone but has no sell value in resources.json");
+            }
+
+            foreach (var id in priced.Where(id => !gathered.Contains(id)))
+            {
+                issues.Add($"resources.json prices '{id}' which is not gathered from any zone");
+            }
+
+            foreach (var resource in data.Resources.Where(r => r.SellValue <= 0))
+            {
+                issues.Add($"Resource '{resource.Id}' has non-positive sellValue");
             }
         }
 
@@ -245,6 +271,7 @@ namespace Wildgrove.Data
             }
 
             RequireSection(economy.CostGrowth, "costGrowth", issues);
+            RequireSection(economy.Hires, "hires", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
             RequireSection(economy.Verdure, "verdure", issues);
@@ -258,6 +285,11 @@ namespace Wildgrove.Data
                 && (economy.CostGrowth.CrewHire <= 1 || economy.CostGrowth.Porter <= 1 || economy.CostGrowth.Building <= 1))
             {
                 issues.Add("Economy costGrowth factors must all be > 1");
+            }
+
+            if (economy.Hires != null && economy.Hires.CrewBaseCoin <= 0)
+            {
+                issues.Add("Economy hires.crewBaseCoin must be positive");
             }
 
             if (economy.Tools != null && (economy.Tools.Tiers == null || economy.Tools.Tiers.Count == 0))
