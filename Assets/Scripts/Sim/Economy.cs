@@ -48,15 +48,16 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Provisioner sell value in Coin for one unit of a resource. Only raw
-        /// gatherables are priced (resources.json); anything else — crafted
-        /// materials, ingots, an unknown id — is unsellable and returns zero.
+        /// Provisioner sell value in Coin for one unit of a resource, including
+        /// any sellValueBonus upgrades the run owns (e.g. the Drying Rack).
+        /// Only raw gatherables are priced (resources.json); anything else —
+        /// crafted materials, ingots, an unknown id — is unsellable and returns zero.
         /// </summary>
-        public static BigDouble SellValuePerUnit(GameDataAsset data, string resourceId)
+        public static BigDouble SellValuePerUnit(GameState state, GameDataAsset data, string resourceId)
         {
             if (resourceId != null && data.ResourcesById.TryGetValue(resourceId, out var resource))
             {
-                return resource.sellValue;
+                return resource.sellValue * Upgrades.SellValueMultiplier(state, data, resourceId);
             }
 
             return BigDouble.Zero;
@@ -74,7 +75,7 @@ namespace Wildgrove.Sim
                 return BigDouble.Zero;
             }
 
-            var unitValue = SellValuePerUnit(data, resourceId);
+            var unitValue = SellValuePerUnit(state, data, resourceId);
             if (unitValue <= BigDouble.Zero)
             {
                 return BigDouble.Zero;

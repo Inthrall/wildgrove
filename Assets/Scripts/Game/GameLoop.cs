@@ -82,6 +82,24 @@ namespace Wildgrove.Game
             return Economy.TryGiftFamiliar(State, Data.economy, node);
         }
 
+        /// <summary>True once the run owns the one-off upgrade.</summary>
+        public bool IsUpgradePurchased(UpgradeData upgrade)
+        {
+            return State.HasUpgrade(upgrade.id);
+        }
+
+        /// <summary>True when the run holds the upgrade's Coin and material costs — for the buy button's enabled state.</summary>
+        public bool CanAffordUpgrade(UpgradeData upgrade)
+        {
+            return Upgrades.CanAfford(State, upgrade);
+        }
+
+        /// <summary>Buy a one-off upgrade. Returns false (no change) when owned or unaffordable.</summary>
+        public bool PurchaseUpgrade(UpgradeData upgrade)
+        {
+            return Upgrades.TryPurchase(State, Data, upgrade);
+        }
+
         /// <summary>Sell the whole stock of one resource to the Provisioner. Returns Coin gained.</summary>
         public BigDouble SellResource(string resourceId)
         {

@@ -25,6 +25,9 @@ namespace Wildgrove.Sim
         /// <summary>Every gathering node the player has access to this run.</summary>
         public List<NodeState> nodes = new List<NodeState>();
 
+        /// <summary>Ids of the one-off §9 upgrades bought this run (reset by Migration).</summary>
+        public List<string> purchasedUpgradeIds = new List<string>();
+
         public BigDouble GetResource(string resourceId)
         {
             return resources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
@@ -33,6 +36,11 @@ namespace Wildgrove.Sim
         public void AddResource(string resourceId, BigDouble amount)
         {
             resources[resourceId] = GetResource(resourceId) + amount;
+        }
+
+        public bool HasUpgrade(string upgradeId)
+        {
+            return purchasedUpgradeIds.Contains(upgradeId);
         }
 
         /// <summary>Total familiars befriended this run across every node — drives the gift-cost curve.</summary>
@@ -79,8 +87,9 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Combined tool + gear + upgrade multiplier for this node. Defaults to
-        /// 1 and is recomputed by the upgrade/gear system when it lands; the
-        /// tick treats it as an opaque multiplier so it stays balance-agnostic.
+        /// 1 and is rebuilt by Upgrades.RecomputeYieldMultipliers on purchase
+        /// (gear folds in when its system lands); the tick treats it as an
+        /// opaque multiplier so it stays balance-agnostic.
         /// </summary>
         public double yieldMultiplier = 1.0;
     }

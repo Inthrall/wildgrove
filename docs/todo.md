@@ -21,7 +21,9 @@ they're easy to find and delete when resolved.
   for now. (`Assets/Scripts/Game/GameLoop.cs`)
 - **Welcome-back offline summary sheet not built.** Design §Phase 1 calls for one;
   `AdvanceOffline` already returns the credited wall-seconds for it to display.
-- **Upgrades 1–10 have no UI.** Data + effects model exist; no purchase surface yet.
+- **Upgrade rows show Coin cost only.** No Phase-1 upgrade has a materials cost, so
+  the buy button doesn't display one; `Upgrades.TryPurchase` already spends materials,
+  the label must learn to show them when the Phase 3 catalogue lands. (`GameHud`)
 
 ## Phase 2 — Adaptive UI & input
 
@@ -45,6 +47,14 @@ they're easy to find and delete when resolved.
 
 ## Phase 3+ — Systems build-out
 
+- **Upgrade shop is a hardcoded Phase-1 whitelist.** `GameHud.PhaseOneUpgradeIds`
+  lists the Sunfield-reachable upgrades (1–3, 6, 9) by id; the full §9 ladder needs
+  real content gating (zones, stations, unlock effects applied) with Phase 3. The
+  unlock effect types (`unlockZone` / `unlockSkill` / `unlockRecipe` / `unlockDigSite`)
+  are recorded on purchase but nothing consumes them yet. (`GameHud`, `Wildgrove.Sim/Upgrades.cs`)
+- **haulMult upgrades are purchased but inert.** Waxed Satchel / Handcart record on
+  the run and their Coin sink works, but nothing hauls yet — the carrier/haul sim
+  arrives with Phase 3. (`Wildgrove.Sim/Upgrades.cs`)
 - **The Rite is data-only.** `rites.json`, `zones.verseSite`, and `dialogue.verses` are
   parsed, validated, and mapped into GameData.asset, but no runtime system consumes
   them until the Phase 3 Rite build. Validator covers slot integrity only — the full
@@ -55,9 +65,10 @@ they're easy to find and delete when resolved.
 - **Familiar caps not enforced in the sim.** `flockCap` / `carrierSlots` (design §8)
   arrive with the building lines; `TryGiftFamiliar` currently has no cap check.
 
-- **`NodeState.yieldMultiplier` is an opaque, always-1 multiplier.** The tick treats
-  it as a black box; the upgrade/gear/tool-tier system recomputes it later — nothing
-  derives tool tiers yet. (`Assets/Scripts/Sim/GameState.cs`)
+- **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
+  it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
+  yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in
+  with their systems. (`Assets/Scripts/Sim/Upgrades.cs`)
 - **Tending's Pristine-chance bump is not implemented.** `Simulation.Tend` only starts
   the yield burst; the brief Pristine bonus arrives with the quality system.
   (`Assets/Scripts/Sim/Simulation.cs`; `tending.pristineBonusDurationSec` in data.)

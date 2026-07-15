@@ -13,8 +13,8 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The Phase 1 on-screen layer: a code-built uGUI HUD that surfaces the core
-    /// loop (coin/familiar readouts, a row per gathering node, and the gift / sell /
-    /// tend actions) and routes the free-space Tend gesture through
+    /// loop (coin/familiar readouts, a row per gathering node, the gift / sell /
+    /// tend actions, and the Phase-1 upgrade shop) and routes the free-space Tend gesture through
     /// <see cref="IGameInput"/>. Deliberately programmer-art — real layout and
     /// adaptive form factors are Phase 2. All game logic stays in Wildgrove.Sim;
     /// this only reads state and calls the <see cref="GameLoop"/> actions.
@@ -32,10 +32,20 @@ namespace Wildgrove.Game
         private IGameInput _input;
         private Font _font;
 
+        // The Sunfield-reachable upgrades (design §12 Phase 1). A hardcoded
+        // whitelist until the full §9 ladder gets real content gating (zones,
+        // stations, materials) in Phase 3 — see docs/todo.md.
+        private static readonly HashSet<string> PhaseOneUpgradeIds = new HashSet<string>
+        {
+            "flint-sickle", "waxed-satchel", "drying-rack", "handcart", "root-cellar",
+        };
+
         private Text _headerLabel;
+        private Text _upgradesHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
         private readonly List<RowView> _rows = new List<RowView>();
+        private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private NodeState _selected;
 
         private void Update()
@@ -78,6 +88,7 @@ namespace Wildgrove.Game
             }
 
             _rows.Clear();
+            _upgradeRows.Clear();
             BuildUi();
         }
 
@@ -152,6 +163,26 @@ namespace Wildgrove.Game
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
+            _upgradesHeader = CreateText("UpgradesHeader", root.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _upgradesHeader.text = "Upgrades";
+            SetPreferredHeight(_upgradesHeader.gameObject, 48f);
+
+            var upgradesPanel = CreatePanel("Upgrades", root.transform, new Color(0f, 0f, 0f, 0f));
+            var upgradesLayout = upgradesPanel.AddComponent<VerticalLayoutGroup>();
+            upgradesLayout.spacing = 12f;
+            upgradesLayout.childControlWidth = true;
+            upgradesLayout.childControlHeight = true;
+            upgradesLayout.childForceExpandWidth = true;
+            upgradesLayout.childForceExpandHeight = false;
+
+            foreach (var upgrade in _loop.Data.upgrades)
+            {
+                if (PhaseOneUpgradeIds.Contains(upgrade.id))
+                {
+                    _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
+                }
+            }
+
             var (sellAll, sellAllLabel) = CreateButton("SellAll", root.transform, "Sell All", () => _loop.SellAll());
             _sellAllButton = sellAll;
             _sellAllLabel = sellAllLabel;
@@ -202,6 +233,35 @@ namespace Wildgrove.Game
             };
         }
 
+        private UpgradeRowView BuildUpgradeRow(Transform parent, UpgradeData upgrade)
+        {
+            var rowGo = CreatePanel("Upgrade_" + upgrade.id, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.text = upgrade.displayName + "\n<size=22>" + PrettyName(upgrade.track) + "</size>";
+
+            var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.PurchaseUpgrade(upgrade));
+            SetPreferredWidth(buy.gameObject, 200f);
+
+            return new UpgradeRowView
+            {
+                upgrade = upgrade,
+                root = rowGo,
+                buyButton = buy,
+                buyLabel = buyLabel,
+            };
+        }
+
         private void Select(NodeState node)
         {
             _selected = node;
@@ -232,7 +292,7 @@ namespace Wildgrove.Game
                 row.giftLabel.text = "+ Familiar\n<size=22>" + NumberFormat.Short(giftCost) + "</size>";
                 row.giftButton.interactable = canAffordGift;
 
-                var unitValue = Economy.SellValuePerUnit(_loop.Data, node.resourceId);
+                var unitValue = Economy.SellValuePerUnit(state, _loop.Data, node.resourceId);
                 var saleValue = held * unitValue;
                 var canSell = unitValue > BigDouble.Zero && held > BigDouble.Zero;
                 row.sellLabel.text = canSell
@@ -242,6 +302,24 @@ namespace Wildgrove.Game
 
                 row.background.color = node == _selected ? RowSelectedColor : RowColor;
             }
+
+            // Bought upgrades leave the shop; the header goes with the last one.
+            var anyUpgradeOnOffer = false;
+            foreach (var row in _upgradeRows)
+            {
+                var purchased = _loop.IsUpgradePurchased(row.upgrade);
+                row.root.SetActive(!purchased);
+                if (purchased)
+                {
+                    continue;
+                }
+
+                anyUpgradeOnOffer = true;
+                row.buyLabel.text = "Buy\n<size=22>" + NumberFormat.Short(row.upgrade.costCoin) + "</size>";
+                row.buyButton.interactable = _loop.CanAffordUpgrade(row.upgrade);
+            }
+
+            _upgradesHeader.gameObject.SetActive(anyUpgradeOnOffer);
 
             var totalSaleValue = TotalSellableValue(state);
             _sellAllLabel.text = totalSaleValue > BigDouble.Zero
@@ -255,7 +333,7 @@ namespace Wildgrove.Game
             var total = BigDouble.Zero;
             foreach (var pair in state.resources)
             {
-                var unitValue = Economy.SellValuePerUnit(_loop.Data, pair.Key);
+                var unitValue = Economy.SellValuePerUnit(state, _loop.Data, pair.Key);
                 if (unitValue > BigDouble.Zero)
                 {
                     total += pair.Value * unitValue;
@@ -387,6 +465,14 @@ namespace Wildgrove.Game
             public Text giftLabel;
             public Button sellButton;
             public Text sellLabel;
+        }
+
+        private sealed class UpgradeRowView
+        {
+            public UpgradeData upgrade;
+            public GameObject root;
+            public Button buyButton;
+            public Text buyLabel;
         }
     }
 }

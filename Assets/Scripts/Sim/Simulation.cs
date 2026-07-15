@@ -70,9 +70,10 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Credit time away since the last session, per design doc §8:
         /// offlineEarn = rate · min(t, cap). Real elapsed time is capped at the
-        /// offline cap (base cap hours for now; gear/building/Almanac bonuses
-        /// multiply in with their systems) and the offline rate multiplier is
-        /// applied, then the tick runs once with that effective delta. Returns
+        /// offline cap (base cap hours, raised by any offlineCapHours upgrade
+        /// owned; gear/Almanac bonuses arrive with their systems) and the
+        /// offline rate multiplier is applied, then the tick runs once with
+        /// that effective delta. Returns
         /// the capped wall-clock seconds credited (before the rate multiplier),
         /// so the welcome-back summary can report how much of the absence paid out.
         /// </summary>
@@ -83,7 +84,7 @@ namespace Wildgrove.Sim
                 return 0.0;
             }
 
-            var capSeconds = data.economy.offline.baseCapHours * 3600.0;
+            var capSeconds = Upgrades.OfflineCapHours(state, data) * 3600.0;
             var creditedSeconds = System.Math.Min(realElapsedSeconds, capSeconds);
 
             Advance(state, data, creditedSeconds * data.economy.offline.rateMultiplier);
