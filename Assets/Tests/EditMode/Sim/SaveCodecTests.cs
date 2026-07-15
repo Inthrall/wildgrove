@@ -34,8 +34,16 @@ namespace Wildgrove.Sim.Tests
                 new ZoneData
                 {
                     id = GameStateFactory.StartingZoneId,
+                    order = 1,
                     resources = new List<string> { "berries", "wildflowers", "fibres" },
                     unlocks = new List<string> { "foraging" },
+                },
+                new ZoneData
+                {
+                    id = "bramble-hedgerows",
+                    order = 2,
+                    resources = new List<string> { "nuts", "copper-scree" },
+                    unlocks = new List<string> { "firecraft", "mining" },
                 },
             };
             _data.upgrades = new List<UpgradeData>
@@ -44,6 +52,11 @@ namespace Wildgrove.Sim.Tests
                 {
                     order = 1, id = "flint-sickle", costCoin = 100,
                     effects = { new EffectData { type = EffectType.YieldMult, skill = "foraging", value = 2 } },
+                },
+                new UpgradeData
+                {
+                    order = 4, id = "map-bramble", costCoin = 400,
+                    effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
                 },
             };
         }
@@ -146,6 +159,35 @@ namespace Wildgrove.Sim.Tests
 
             var fibres = restored.nodes.Single(n => n.resourceId == "fibres");
             Assert.That(fibres.familiarCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Restore_RebuildsUnlockedZoneNodes_AndOverlaysTheirProgress()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = 400;
+            Upgrades.TryPurchase(state, _data, _data.UpgradesById["map-bramble"]);
+            var nuts = state.nodes.Single(n => n.resourceId == "nuts");
+            nuts.familiarCount = 4;
+            state.carrierCount = 7;
+
+            var restored = RoundTrip(state);
+
+            // The unlocked zone's nodes exist again, carrying the saved
+            // progress — not the fresh regional seed, and no seed carrier
+            // inflating the saved pool.
+            Assert.That(restored.nodes.Count, Is.EqualTo(5));
+            Assert.That(restored.nodes.Single(n => n.resourceId == "nuts").familiarCount, Is.EqualTo(4));
+            Assert.That(restored.carrierCount, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void Restore_ZoneNeverUnlocked_StaysAbsent()
+        {
+            var restored = RoundTrip(GameStateFactory.NewGame(_data));
+
+            Assert.That(restored.nodes.Count, Is.EqualTo(3));
+            Assert.That(restored.nodes.Any(n => n.zoneId == "bramble-hedgerows"), Is.False);
         }
 
         [Test]

@@ -30,18 +30,35 @@ namespace Wildgrove.Sim.Tests
             _data.resources = new List<ResourceData>
             {
                 new ResourceData { id = "berries", sellValue = 2 },
+                new ResourceData { id = "nuts", sellValue = 3, skill = "foraging" },
+                new ResourceData { id = "copper-scree", sellValue = 5, skill = "mining" },
             };
             _data.zones = new List<ZoneData>
             {
                 new ZoneData
                 {
                     id = GameStateFactory.StartingZoneId,
+                    order = 1,
                     resources = new List<string> { "berries", "wildflowers", "fibres" },
                     unlocks = new List<string> { "foraging" },
+                },
+                // Deliberately lists a non-gathering skill first (like the real
+                // Bramble) — node skills must come from the resources, not here.
+                new ZoneData
+                {
+                    id = "bramble-hedgerows",
+                    order = 2,
+                    resources = new List<string> { "nuts", "copper-scree" },
+                    unlocks = new List<string> { "firecraft", "mining" },
                 },
             };
             _data.upgrades = new List<UpgradeData>
             {
+                new UpgradeData
+                {
+                    order = 4, id = "map-bramble", costCoin = 400,
+                    effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
+                },
                 new UpgradeData
                 {
                     order = 1, id = "flint-sickle", costCoin = 100,
@@ -243,6 +260,72 @@ namespace Wildgrove.Sim.Tests
             {
                 Assert.That(node.yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
             }
+        }
+
+        [Test]
+        public void TryPurchase_TrailMap_CreatesTheZonesNodesWithRegionalSeed()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = 400;
+
+            var bought = Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
+
+            Assert.That(bought, Is.True);
+            Assert.That(state.nodes.Count, Is.EqualTo(5));
+            var nuts = state.nodes[3];
+            var copper = state.nodes[4];
+            Assert.That(nuts.id, Is.EqualTo("bramble-hedgerows:nuts"));
+            // The design §2 regional seed: one gatherer on the zone's first
+            // node, one carrier joining the camp pool (1 starting + 1).
+            Assert.That(nuts.familiarCount, Is.EqualTo(1));
+            Assert.That(copper.familiarCount, Is.EqualTo(0));
+            Assert.That(state.carrierCount, Is.EqualTo(2));
+            // Node skills come from the resources, not the zone's unlock list.
+            Assert.That(nuts.skill, Is.EqualTo("foraging"));
+            Assert.That(copper.skill, Is.EqualTo("mining"));
+        }
+
+        [Test]
+        public void TryPurchase_TrailMap_NewNodesGetOwnedUpgradeMultipliers()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = 500;
+            Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
+
+            Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
+
+            // The foraging sickle covers the new zone's foraging node too;
+            // its mining node is untouched.
+            Assert.That(state.nodes[3].yieldMultiplier, Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(state.nodes[4].yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryPurchase_TrailMap_BoughtTwiceNeverDuplicatesNodes()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = 800;
+            Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
+
+            Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
+            GameStateFactory.SyncUnlockedZones(state, _data);
+
+            Assert.That(state.nodes.Count, Is.EqualTo(5));
+            Assert.That(state.carrierCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void UnlockedZoneIds_StartingZonePlusOwnedTrailMaps()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data),
+                Is.EquivalentTo(new[] { GameStateFactory.StartingZoneId }));
+
+            state.purchasedUpgradeIds.Add("map-bramble");
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data),
+                Is.EquivalentTo(new[] { GameStateFactory.StartingZoneId, "bramble-hedgerows" }));
         }
 
         [Test]

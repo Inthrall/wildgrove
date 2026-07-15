@@ -88,6 +88,15 @@ namespace Wildgrove.Data
             {
                 issues.Add($"Resource '{resource.Id}' has non-positive sellValue");
             }
+
+            // Every gatherable names its gathering skill — nodes take their
+            // skill from the resource (a zone can mix skills), and upgrade
+            // effects target skills, so a missing/unknown one silently breaks
+            // yield targeting.
+            foreach (var resource in data.Resources.Where(r => !KnownSkills.Contains(r.Skill)))
+            {
+                issues.Add($"Resource '{resource.Id}' has missing or unknown skill '{resource.Skill}'");
+            }
         }
 
         private static void ValidateZones(GameData data, List<string> issues)

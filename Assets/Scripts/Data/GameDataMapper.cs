@@ -24,7 +24,8 @@ namespace Wildgrove.Data
             return new ResourceData
             {
                 id = r.Id,
-                sellValue = r.SellValue
+                sellValue = r.SellValue,
+                skill = r.Skill
             };
         }
 

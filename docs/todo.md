@@ -31,9 +31,10 @@ they're easy to find and delete when resolved.
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)
-- **Upgrade rows show Coin cost only.** No Phase-1 upgrade has a materials cost, so
-  the buy button doesn't display one; `Upgrades.TryPurchase` already spends materials,
-  the label must learn to show them when the Phase 3 catalogue lands. (`GameHud`)
+- **The upgrade shop shows the next 3 unpurchased rungs.** A window over the §9
+  ladder in order; material-costed rungs appear (with their costs shown) before
+  crafting exists to pay them — an honest preview, but they sit unaffordable
+  until the crafting system lands. (`GameHud.UpgradeShopWindow`)
 
 ## Phase 2 — Adaptive UI & input
 
@@ -58,11 +59,10 @@ they're easy to find and delete when resolved.
 
 ## Phase 3+ — Systems build-out
 
-- **Upgrade shop is a hardcoded Phase-1 whitelist.** `GameHud.PhaseOneUpgradeIds`
-  lists the Sunfield-reachable upgrades (1–3, 6, 9) by id; the full §9 ladder needs
-  real content gating (zones, stations, unlock effects applied) with Phase 3. The
-  unlock effect types (`unlockZone` / `unlockSkill` / `unlockRecipe` / `unlockDigSite`)
-  are recorded on purchase but nothing consumes them yet. (`GameHud`, `Wildgrove.Sim/Upgrades.cs`)
+- **`unlockSkill` / `unlockRecipe` / `unlockDigSite` effects are still inert.**
+  `unlockZone` is live (trail maps create the zone's nodes with the §2 regional
+  seed); the other unlock types are recorded on purchase but wait for the
+  crafting and excavation systems. (`Wildgrove.Sim/Upgrades.cs`)
 - **Haul is a continuous-rate approximation, not discrete batches.** Carriers drain
   baskets proportionally at units/sec; design §5's quality rolls happen *per haul
   batch* (a carrier delivery), so Phase 3's Compendium needs the haul loop reworked
@@ -80,11 +80,11 @@ they're easy to find and delete when resolved.
   and its pipeline when Phase 3 crafting lands.
 - **Familiar caps not enforced in the sim.** `flockCap` / `carrierSlots` (design §8)
   arrive with the building lines; `TryGiftFamiliar` currently has no cap check.
-- **Save restore only rebuilds the starting zone's nodes.** `SaveCodec.Restore`
-  reconciles saved node progress against `GameStateFactory.NewGame`, which is
-  Sunfield-only — when Phase 3 zone unlocks land, restore must rebuild every
-  *unlocked* zone's nodes (derive the set from the run's purchased map upgrades)
-  or unlocked-zone familiars vanish on load. (`Assets/Scripts/Sim/Saves/SaveCodec.cs`)
+- **The HUD column will outgrow portrait height around the third zone.** Node
+  rows are a straight VerticalLayoutGroup with no scrolling — three zones is
+  ~10 rows plus the shop and actions. The Phase 2 adaptive-layout pass needs a
+  scroll view (or per-zone collapsing) before Old-Growth Wood is reachable in
+  balance. (`GameHud`)
 
 - **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /

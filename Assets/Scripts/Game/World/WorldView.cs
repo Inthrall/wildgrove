@@ -51,7 +51,9 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            if (_builtFor != _loop.State)
+            // Rebuild on a new run/state object, and when the node list itself
+            // grows mid-run (a trail map unlocked a zone).
+            if (_builtFor != _loop.State || _views.Count != _loop.State.nodes.Count)
             {
                 Rebuild();
             }

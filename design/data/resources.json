@@ -1,36 +1,36 @@
 {
-  "$comment": "Base Provisioner sell value (Coin per unit) for every raw gatherable resource — the source of truth for pricing. One entry per resource gathered from a zone; crafted trade goods derive their value from summed input value x recipe valueMult (see recipes.json) and are NOT listed here. Materials/ingots are not sold. All first-pass values — tune in Phase 3 against pacing targets.",
+  "$comment": "Base Provisioner sell value (Coin per unit) and gathering skill for every raw gatherable resource. One entry per resource gathered from a zone; crafted trade goods derive their value from summed input value x recipe valueMult (see recipes.json) and are NOT listed here. Materials/ingots are not sold. skill drives node upgrade targeting (a zone can mix skills — Bramble's copper-scree is mining while its nuts are foraging). All first-pass values — tune in Phase 3 against pacing targets.",
   "resources": [
-    { "id": "berries",      "sellValue": 1 },
-    { "id": "wildflowers",  "sellValue": 1 },
-    { "id": "fibres",       "sellValue": 1 },
+    { "id": "berries",      "sellValue": 1,   "skill": "foraging" },
+    { "id": "wildflowers",  "sellValue": 1,   "skill": "foraging" },
+    { "id": "fibres",       "sellValue": 1,   "skill": "foraging" },
 
-    { "id": "nuts",         "sellValue": 3 },
-    { "id": "herbs",        "sellValue": 4 },
-    { "id": "copper-scree", "sellValue": 5 },
+    { "id": "nuts",         "sellValue": 3,   "skill": "foraging" },
+    { "id": "herbs",        "sellValue": 4,   "skill": "foraging" },
+    { "id": "copper-scree", "sellValue": 5,   "skill": "mining" },
 
-    { "id": "timber",       "sellValue": 6 },
-    { "id": "mushrooms",    "sellValue": 8 },
-    { "id": "tin-seam",     "sellValue": 10 },
+    { "id": "timber",       "sellValue": 6,   "skill": "logging" },
+    { "id": "mushrooms",    "sellValue": 8,   "skill": "foraging" },
+    { "id": "tin-seam",     "sellValue": 10,  "skill": "mining" },
 
-    { "id": "fish",         "sellValue": 12 },
-    { "id": "reeds",        "sellValue": 6 },
-    { "id": "clay",         "sellValue": 5 },
-    { "id": "iron-gravel",  "sellValue": 20 },
+    { "id": "fish",         "sellValue": 12,  "skill": "fishing" },
+    { "id": "reeds",        "sellValue": 6,   "skill": "foraging" },
+    { "id": "clay",         "sellValue": 5,   "skill": "mining" },
+    { "id": "iron-gravel",  "sellValue": 20,  "skill": "mining" },
 
-    { "id": "peat",         "sellValue": 15 },
-    { "id": "rare-herbs",   "sellValue": 30 },
-    { "id": "fireflies",    "sellValue": 25 },
+    { "id": "peat",         "sellValue": 15,  "skill": "mining" },
+    { "id": "rare-herbs",   "sellValue": 30,  "skill": "foraging" },
+    { "id": "fireflies",    "sellValue": 25,  "skill": "entomology" },
 
-    { "id": "deep-ores",    "sellValue": 60 },
-    { "id": "crystals",     "sellValue": 120 },
-    { "id": "bone-beds",    "sellValue": 80 },
+    { "id": "deep-ores",    "sellValue": 60,  "skill": "delving" },
+    { "id": "crystals",     "sellValue": 120, "skill": "delving" },
+    { "id": "bone-beds",    "sellValue": 80,  "skill": "delving" },
 
-    { "id": "eggs",         "sellValue": 40 },
-    { "id": "wool",         "sellValue": 50 },
-    { "id": "lichen",       "sellValue": 30 },
+    { "id": "eggs",         "sellValue": 40,  "skill": "husbandry" },
+    { "id": "wool",         "sellValue": 50,  "skill": "husbandry" },
+    { "id": "lichen",       "sellValue": 30,  "skill": "foraging" },
 
-    { "id": "sky-blossoms", "sellValue": 200 },
-    { "id": "glacier-ice",  "sellValue": 150 }
+    { "id": "sky-blossoms", "sellValue": 200, "skill": "foraging" },
+    { "id": "glacier-ice",  "sellValue": 150, "skill": "mining" }
   ]
 }

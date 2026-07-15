@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: a99c1a589ea38ee7394b11b7fa6605425f6ee68e888755c5d9541d77c3d8fa42
+  sourceHash: b73e600fb4d8c046d3a391acc7c1818fea30f7b690039c2cb129e90d2c1b0378
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -68,52 +68,76 @@ MonoBehaviour:
   resources:
   - id: berries
     sellValue: 1
+    skill: foraging
   - id: wildflowers
     sellValue: 1
+    skill: foraging
   - id: fibres
     sellValue: 1
+    skill: foraging
   - id: nuts
     sellValue: 3
+    skill: foraging
   - id: herbs
     sellValue: 4
+    skill: foraging
   - id: copper-scree
     sellValue: 5
+    skill: mining
   - id: timber
     sellValue: 6
+    skill: logging
   - id: mushrooms
     sellValue: 8
+    skill: foraging
   - id: tin-seam
     sellValue: 10
+    skill: mining
   - id: fish
     sellValue: 12
+    skill: fishing
   - id: reeds
     sellValue: 6
+    skill: foraging
   - id: clay
     sellValue: 5
+    skill: mining
   - id: iron-gravel
     sellValue: 20
+    skill: mining
   - id: peat
     sellValue: 15
+    skill: mining
   - id: rare-herbs
     sellValue: 30
+    skill: foraging
   - id: fireflies
     sellValue: 25
+    skill: entomology
   - id: deep-ores
     sellValue: 60
+    skill: delving
   - id: crystals
     sellValue: 120
+    skill: delving
   - id: bone-beds
     sellValue: 80
+    skill: delving
   - id: eggs
     sellValue: 40
+    skill: husbandry
   - id: wool
     sellValue: 50
+    skill: husbandry
   - id: lichen
     sellValue: 30
+    skill: foraging
   - id: sky-blossoms
     sellValue: 200
+    skill: foraging
   - id: glacier-ice
     sellValue: 150
+    skill: mining
   zones:
   - id: sunfield-meadow
     order: 1

@@ -45,6 +45,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Gifts.GathererBaseGoods, Is.EqualTo(10L));
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
+            Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -95,6 +96,19 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("missing-recipe")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_ResourceWithUnknownSkill_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ResourcesJson = sources.ResourcesJson.Replace(
+                "\"skill\": \"fishing\"",
+                "\"skill\": \"basket-weaving\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("basket-weaving")), Is.True, string.Join("\n", issues));
         }
 
         [Test]
@@ -298,7 +312,7 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.ResourcesJson = sources.ResourcesJson.Replace(
-                "{ \"id\": \"berries\",      \"sellValue\": 1 },",
+                "{ \"id\": \"berries\",      \"sellValue\": 1,   \"skill\": \"foraging\" },",
                 "");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
@@ -311,8 +325,8 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.ResourcesJson = sources.ResourcesJson.Replace(
-                "{ \"id\": \"berries\",      \"sellValue\": 1 },",
-                "{ \"id\": \"berries\",      \"sellValue\": 1 },\n    { \"id\": \"gold-bar\", \"sellValue\": 999 },");
+                "{ \"id\": \"berries\",      \"sellValue\": 1,   \"skill\": \"foraging\" },",
+                "{ \"id\": \"berries\",      \"sellValue\": 1,   \"skill\": \"foraging\" },\n    { \"id\": \"gold-bar\", \"sellValue\": 999, \"skill\": \"foraging\" },");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 

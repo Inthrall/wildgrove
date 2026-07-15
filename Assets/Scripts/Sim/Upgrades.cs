@@ -9,8 +9,8 @@ namespace Wildgrove.Sim
     /// the derived modifiers the tick and economy read. Pure and deterministic
     /// like the rest of the sim — the MonoBehaviour driver wires it to the UI,
     /// the tests pin the maths. Effect types the sim doesn't consume yet
-    /// (haulMult, unlocks, …) are recorded on the run but stay inert until
-    /// their systems land.
+    /// (unlockSkill / unlockRecipe / unlockDigSite, craft and dig speed, …)
+    /// are recorded on the run but stay inert until their systems land.
     /// </summary>
     public static class Upgrades
     {
@@ -57,8 +57,31 @@ namespace Wildgrove.Sim
             }
 
             state.purchasedUpgradeIds.Add(upgrade.id);
+
+            // A trail map's unlockZone effect takes hold immediately: the new
+            // zone's nodes appear (with the design §2 regional seed) before the
+            // multipliers are rebuilt so they're covered too.
+            GameStateFactory.SyncUnlockedZones(state, data);
             RecomputeYieldMultipliers(state, data);
             return true;
+        }
+
+        /// <summary>
+        /// The zones this run has opened: the starting zone plus every zone an
+        /// owned upgrade's unlockZone effect grants.
+        /// </summary>
+        public static HashSet<string> UnlockedZoneIds(GameState state, GameDataAsset data)
+        {
+            var ids = new HashSet<string> { GameStateFactory.StartingZoneId };
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.UnlockZone && !string.IsNullOrEmpty(effect.zone))
+                {
+                    ids.Add(effect.zone);
+                }
+            }
+
+            return ids;
         }
 
         /// <summary>

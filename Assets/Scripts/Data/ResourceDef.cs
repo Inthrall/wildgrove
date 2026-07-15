@@ -9,5 +9,6 @@ namespace Wildgrove.Data
     {
         public string Id { get; set; }
         public double SellValue { get; set; }
+        public string Skill { get; set; }
     }
 }

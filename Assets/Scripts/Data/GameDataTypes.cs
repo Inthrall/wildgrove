@@ -34,6 +34,9 @@ namespace Wildgrove.Data
 
         /// <summary>Base Provisioner sell value in Coin per unit (raw gatherables only).</summary>
         public double sellValue;
+
+        /// <summary>The gathering skill that works this resource — drives node upgrade targeting.</summary>
+        public string skill;
     }
 
     [Serializable]

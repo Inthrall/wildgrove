@@ -34,13 +34,11 @@ namespace Wildgrove.Game
         private IGameInput _input;
         private Font _font;
 
-        // The Sunfield-reachable upgrades (design §12 Phase 1). A hardcoded
-        // whitelist until the full §9 ladder gets real content gating (zones,
-        // stations, materials) in Phase 3 — see docs/todo.md.
-        private static readonly HashSet<string> PhaseOneUpgradeIds = new HashSet<string>
-        {
-            "flint-sickle", "waxed-satchel", "drying-rack", "handcart", "root-cellar",
-        };
+        // The shop shows the next few unpurchased rungs of the §9 ladder in
+        // order — enough to see what's coming without a thirty-row wall.
+        // Material-costed rungs appear too (unaffordable until crafting lands),
+        // honestly previewing the crafting system rather than hiding it.
+        private const int UpgradeShopWindow = 3;
 
         // Below this much credited absence the welcome-back sheet stays quiet —
         // quick restarts and editor recompiles shouldn't greet the player.
@@ -54,6 +52,7 @@ namespace Wildgrove.Game
         private Text _carrierLabel;
         private Button _carrierButton;
         private Transform _canvas;
+        private Transform _nodesPanel;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -226,11 +225,9 @@ namespace Wildgrove.Game
             nodesLayout.childControlHeight = true;
             nodesLayout.childForceExpandWidth = true;
             nodesLayout.childForceExpandHeight = false;
+            _nodesPanel = nodesPanel.transform;
 
-            foreach (var node in _loop.State.nodes)
-            {
-                _rows.Add(BuildRow(nodesPanel.transform, node));
-            }
+            RebuildNodeRows();
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
@@ -246,12 +243,11 @@ namespace Wildgrove.Game
             upgradesLayout.childForceExpandWidth = true;
             upgradesLayout.childForceExpandHeight = false;
 
-            foreach (var upgrade in _loop.Data.upgrades)
+            // A row per ladder rung, in §9 order; Refresh keeps only the next
+            // few unpurchased ones visible.
+            foreach (var upgrade in _loop.Data.upgrades.OrderBy(u => u.order))
             {
-                if (PhaseOneUpgradeIds.Contains(upgrade.id))
-                {
-                    _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
-                }
+                _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
             }
 
             // Camp-wide actions side by side: the carrier gift (carriers are a
@@ -326,7 +322,7 @@ namespace Wildgrove.Game
         private UpgradeRowView BuildUpgradeRow(Transform parent, UpgradeData upgrade)
         {
             var rowGo = CreatePanel("Upgrade_" + upgrade.id, parent, RowColor);
-            SetPreferredHeight(rowGo, 100f);
+            SetPreferredHeight(rowGo, 120f);
             var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
             rowLayout.padding = new RectOffset(16, 16, 12, 12);
             rowLayout.spacing = 12f;
@@ -342,7 +338,7 @@ namespace Wildgrove.Game
             info.text = upgrade.displayName + "\n<size=22>" + PrettyName(upgrade.track) + "</size>";
 
             var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.PurchaseUpgrade(upgrade));
-            SetPreferredWidth(buy.gameObject, 200f);
+            SetPreferredWidth(buy.gameObject, 240f);
 
             return new UpgradeRowView
             {
@@ -356,6 +352,24 @@ namespace Wildgrove.Game
         private void Select(NodeState node)
         {
             _selected = node;
+        }
+
+        /// <summary>
+        /// (Re)create a row per gathering node — called at build, and again
+        /// whenever the node list changes (a trail map unlocked a zone).
+        /// </summary>
+        private void RebuildNodeRows()
+        {
+            foreach (var row in _rows)
+            {
+                Destroy(row.background.gameObject);
+            }
+
+            _rows.Clear();
+            foreach (var node in _loop.State.nodes)
+            {
+                _rows.Add(BuildRow(_nodesPanel, node));
+            }
         }
 
         /// <summary>
@@ -441,6 +455,12 @@ namespace Wildgrove.Game
             var state = _loop.State;
             var economy = _loop.Data.economy;
 
+            // A trail-map purchase grew the node list — mirror it in the rows.
+            if (_rows.Count != state.nodes.Count)
+            {
+                RebuildNodeRows();
+            }
+
             // Keep the world layer in step: where the free gap is on screen this
             // frame, and which node should wear the selection ring.
             if (_world != null && _worldStrip != null)
@@ -495,23 +515,24 @@ namespace Wildgrove.Game
                 row.background.color = node == _selected ? RowSelectedColor : RowColor;
             }
 
-            // Bought upgrades leave the shop; the header goes with the last one.
-            var anyUpgradeOnOffer = false;
+            // Bought upgrades leave the shop; only the next few unpurchased
+            // rungs of the ladder are on offer at once.
+            var onOffer = 0;
             foreach (var row in _upgradeRows)
             {
-                var purchased = _loop.IsUpgradePurchased(row.upgrade);
-                row.root.SetActive(!purchased);
-                if (purchased)
+                var show = !_loop.IsUpgradePurchased(row.upgrade) && onOffer < UpgradeShopWindow;
+                row.root.SetActive(show);
+                if (!show)
                 {
                     continue;
                 }
 
-                anyUpgradeOnOffer = true;
-                row.buyLabel.text = "Buy\n<size=22>" + NumberFormat.Short(row.upgrade.costCoin) + "</size>";
+                onOffer++;
+                row.buyLabel.text = BuyLabel(row.upgrade);
                 row.buyButton.interactable = _loop.CanAffordUpgrade(row.upgrade);
             }
 
-            _upgradesHeader.gameObject.SetActive(anyUpgradeOnOffer);
+            _upgradesHeader.gameObject.SetActive(onOffer > 0);
 
             // The Feeder: a bundle of every worked resource buys a carrier.
             var carrierCostEach = _loop.NextCarrierGiftCostEach();
@@ -523,6 +544,21 @@ namespace Wildgrove.Game
                 ? "Sell All  (" + NumberFormat.Short(totalSaleValue) + ")"
                 : "Sell All";
             _sellAllButton.interactable = totalSaleValue > BigDouble.Zero;
+        }
+
+        /// <summary>
+        /// The buy button's text: Coin cost, plus a line per crafted material
+        /// the rung asks for (spent by <c>Upgrades.TryPurchase</c>).
+        /// </summary>
+        private static string BuyLabel(UpgradeData upgrade)
+        {
+            var label = "Buy\n<size=22>" + NumberFormat.Short(upgrade.costCoin) + "</size>";
+            foreach (var material in upgrade.materials)
+            {
+                label += "\n<size=20>" + material.amount + " " + PrettyName(material.id) + "</size>";
+            }
+
+            return label;
         }
 
         private BigDouble TotalSellableValue(GameState state)

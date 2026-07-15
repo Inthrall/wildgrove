@@ -54,16 +54,19 @@ namespace Wildgrove.Sim.Saves
 
         public static GameState Restore(SaveData save, GameDataAsset data)
         {
-            // The fresh-run baseline supplies the node set the current data says
-            // exists (Phase 1: the starting zone; zone unlocks extend this with
-            // Phase 3 — see docs/todo.md).
+            // The baseline supplies the node set the current data says exists:
+            // the fresh-run starting zone, extended with every zone the saved
+            // purchases had unlocked. The sync's regional seeds (familiar,
+            // carrier) are provisional — the saved values overwrite them below.
             var state = GameStateFactory.NewGame(data);
-            state.coin = save.coin;
-            state.verdurePoints = save.verdurePoints;
-            state.carrierCount = save.carrierCount;
             state.purchasedUpgradeIds = save.purchasedUpgradeIds != null
                 ? new List<string>(save.purchasedUpgradeIds)
                 : new List<string>();
+            GameStateFactory.SyncUnlockedZones(state, data);
+
+            state.coin = save.coin;
+            state.verdurePoints = save.verdurePoints;
+            state.carrierCount = save.carrierCount;
 
             state.resources.Clear();
             if (save.resources != null)
