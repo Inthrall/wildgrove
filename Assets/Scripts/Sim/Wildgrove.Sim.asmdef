@@ -1,0 +1,17 @@
+{
+    "name": "Wildgrove.Sim",
+    "rootNamespace": "Wildgrove.Sim",
+    "references": [
+        "Wildgrove.Data",
+        "BreakInfinity"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
