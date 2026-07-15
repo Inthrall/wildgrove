@@ -12,16 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 76f8cb57cd0900861df355fb1c58030c7aa9d3722d0d8a3d2f2047aeefa4ed57
+  sourceHash: a99c1a589ea38ee7394b11b7fa6605425f6ee68e888755c5d9541d77c3d8fa42
   economy:
     costGrowth:
       gathererGift: 1.09
       carrierGift: 1.1
       building: 1.25
     gifts:
-      familiarBaseCoin:
+      gathererBaseGoods:
         mantissa: 1
         exponent: 1
+      carrierBaseGoods:
+        mantissa: 8
+        exponent: 0
+    hauling:
+      baseCarryCapacity: 15
+      tripSeconds: 10
+      basketCapacity: 60
     tools:
       baseCostCoin:
         mantissa: 1
@@ -57,6 +64,7 @@ MonoBehaviour:
       burstYieldMult: 3
       burstDurationSec: 5
       pristineBonusDurationSec: 30
+      handGatherPerSecond: 0.5
   resources:
   - id: berries
     sellValue: 1

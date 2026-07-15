@@ -69,18 +69,22 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             state.coin = new BigDouble(1234.5);
             state.verdurePoints = 7.5;
+            state.carrierCount = 3;
             state.AddResource("berries", new BigDouble(42.25));
             state.nodes[1].familiarCount = 3;
             state.nodes[1].masteryLevel = 2;
+            state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
 
             var restored = RoundTrip(state);
 
             Assert.That(restored.coin.ToDouble(), Is.EqualTo(1234.5).Within(Tolerance));
             Assert.That(restored.verdurePoints, Is.EqualTo(7.5).Within(Tolerance));
+            Assert.That(restored.carrierCount, Is.EqualTo(3));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
             Assert.That(restored.nodes[1].familiarCount, Is.EqualTo(3));
             Assert.That(restored.nodes[1].masteryLevel, Is.EqualTo(2));
+            Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
             // The starter familiar was captured on node 0, not re-seeded on top.
             Assert.That(restored.nodes[0].familiarCount, Is.EqualTo(1));
@@ -172,12 +176,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_OlderVersion_StampsCurrent()
+        public void TryMigrate_V1Save_GrantsTheSeedCarrier()
+        {
+            // A v1 save predates carriers entirely — migration must hand the
+            // run its regional seed or nothing ever reaches camp again.
+            var save = new SaveData { version = 1 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.carrierCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryMigrate_OlderVersion_ClimbsTheWholeLadder()
         {
             var save = new SaveData { version = 0 };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.carrierCount, Is.EqualTo(1));
         }
     }
 }

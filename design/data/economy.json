@@ -6,8 +6,15 @@
     "building": 1.25
   },
   "gifts": {
-    "familiarBaseCoin": 10,
-    "$note": "cost(n) = familiarBaseCoin * gathererGift^n where n = familiars already befriended this run; first-pass, tune in Phase 3. Coin is a Phase-1 placeholder — design v0.5 prices gifts in goods; reprice with the economy pass."
+    "gathererBaseGoods": 10,
+    "carrierBaseGoods": 8,
+    "$note": "cost(n) = base * growth^n where n = familiars of that role already befriended this run. Gatherer gifts are paid in the node's own resource (design §13 decision: you leave a pile of what the flock likes), gathererBaseGoods units from camp stock. Carrier gifts fill the camp Feeder: carrierBaseGoods units of EACH resource the flock currently works (every node with a gatherer), also from camp stock — breadth for the familiars that serve every trail. First-pass values, tune in Phase 3."
+  },
+  "hauling": {
+    "baseCarryCapacity": 15,
+    "tripSeconds": 10,
+    "basketCapacity": 60,
+    "$note": "first-guess Phase-1 numbers, not in design doc — a carrier's throughput is baseCarryCapacity/tripSeconds (x carry-capacity upgrades); gathered goods wait in a per-node basket of basketCapacity and overflow is lost. Tune with the loop playtest."
   },
   "tools": {
     "baseCostCoin": 100,
@@ -40,6 +47,7 @@
     "burstYieldMult": 3.0,
     "burstDurationSec": 5,
     "pristineBonusDurationSec": 30,
-    "$note": "burst values are a first guess — not in design doc, tune in Phase 1"
+    "handGatherPerSecond": 0.5,
+    "$note": "burst values and handGatherPerSecond are first guesses — tune in Phase 1. handGatherPerSecond is the warden's own hands while a Tend burst is live, straight to camp stock — it's how a node with no familiars earns its first own-resource gift (design §13 decision), so it must stay positive."
   }
 }

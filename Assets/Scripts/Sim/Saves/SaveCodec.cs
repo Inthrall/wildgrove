@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -28,6 +28,7 @@ namespace Wildgrove.Sim.Saves
                 savedAtUnixMs = savedAtUnixMs,
                 coin = state.coin,
                 verdurePoints = state.verdurePoints,
+                carrierCount = state.carrierCount,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
 
@@ -44,6 +45,7 @@ namespace Wildgrove.Sim.Saves
                     familiarCount = node.familiarCount,
                     masteryLevel = node.masteryLevel,
                     tendBurstRemaining = node.tendBurstRemaining,
+                    basket = node.basket,
                 });
             }
 
@@ -58,6 +60,7 @@ namespace Wildgrove.Sim.Saves
             var state = GameStateFactory.NewGame(data);
             state.coin = save.coin;
             state.verdurePoints = save.verdurePoints;
+            state.carrierCount = save.carrierCount;
             state.purchasedUpgradeIds = save.purchasedUpgradeIds != null
                 ? new List<string>(save.purchasedUpgradeIds)
                 : new List<string>();
@@ -98,6 +101,7 @@ namespace Wildgrove.Sim.Saves
                 node.familiarCount = saved.familiarCount;
                 node.masteryLevel = saved.masteryLevel;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
+                node.basket = saved.basket;
             }
 
             Upgrades.RecomputeYieldMultipliers(state, data);
@@ -139,10 +143,32 @@ namespace Wildgrove.Sim.Saves
                 return false;
             }
 
-            // Migration steps go here as `while (save.version < CurrentVersion)
-            // switch (save.version) { ... }` once v2 exists; v1 is the first
-            // released shape, so anything at or below it just stamps current.
-            save.version = CurrentVersion;
+            // v1 was the first released shape; pre-v1 (hand-edited or very
+            // early dev saves) enters the ladder at v1.
+            if (save.version < 1)
+            {
+                save.version = 1;
+            }
+
+            while (save.version < CurrentVersion)
+            {
+                switch (save.version)
+                {
+                    case 1:
+                        // v1 predates carriers and baskets. Grant the regional
+                        // seed carrier (a fresh v2 run starts with one); baskets
+                        // default to empty via the missing-field default.
+                        save.carrierCount = 1;
+                        save.version = 2;
+                        break;
+
+                    default:
+                        // A gap in the ladder is a coding error — refuse rather
+                        // than spin.
+                        return false;
+                }
+            }
+
             return true;
         }
     }

@@ -172,25 +172,56 @@ namespace Wildgrove.Game
             Simulation.Tend(node, Data.economy);
         }
 
-        /// <summary>Coin cost of the next familiar's gift — for the gift button's label and enabled state.</summary>
-        public BigDouble NextFamiliarGiftCost()
+        /// <summary>Size of the next gatherer's gift, in units of the target node's own resource — for the gift button's label and enabled state.</summary>
+        public BigDouble NextGathererGiftCost()
         {
-            return Economy.FamiliarGiftCost(State, Data.economy);
+            return Economy.GathererGiftCost(State, Data.economy);
         }
 
-        /// <summary>Gift one familiar onto the node. Returns false (no change) if the run can't afford it.</summary>
-        public bool GiftFamiliar(NodeState node)
+        /// <summary>Gift one gatherer onto the node, paying in its own resource. Returns false (no change) if camp stock can't cover it.</summary>
+        public bool GiftGatherer(NodeState node)
         {
-            var cost = Economy.FamiliarGiftCost(State, Data.economy);
-            if (!Economy.TryGiftFamiliar(State, Data.economy, node))
+            var cost = Economy.GathererGiftCost(State, Data.economy);
+            if (!Economy.TryGiftGatherer(State, Data.economy, node))
             {
                 return false;
             }
 
             Telemetry.LogEvent("familiar_gifted",
+                ("role", "gatherer"),
                 ("node", node.id),
-                ("coin_cost", cost.ToDouble()),
+                ("goods_cost", cost.ToDouble()),
                 ("total_familiars", State.TotalFamiliars()));
+            return true;
+        }
+
+        /// <summary>Per-resource size of the next carrier's Feeder bundle — for the gift button's label.</summary>
+        public BigDouble NextCarrierGiftCostEach()
+        {
+            return Economy.CarrierGiftCostEach(State, Data.economy);
+        }
+
+        /// <summary>True when camp stock covers the whole Feeder bundle — for the gift button's enabled state.</summary>
+        public bool CanGiftCarrier()
+        {
+            return Economy.CanGiftCarrier(State, Data.economy);
+        }
+
+        /// <summary>Fill the Feeder to gift one carrier into the camp pool. Returns false (no change) if any of the bundle is short.</summary>
+        public bool GiftCarrier()
+        {
+            var costEach = Economy.CarrierGiftCostEach(State, Data.economy);
+            var bundleSize = Economy.FeederResources(State).Count;
+            if (!Economy.TryGiftCarrier(State, Data.economy))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("familiar_gifted",
+                ("role", "carrier"),
+                ("goods_cost_each", costEach.ToDouble()),
+                ("bundle_resources", bundleSize),
+                ("total_carriers", State.carrierCount));
             return true;
         }
 

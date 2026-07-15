@@ -12,9 +12,21 @@ namespace Wildgrove.Sim
     public static class Simulation
     {
         /// <summary>
-        /// Advance the run by <paramref name="deltaSeconds"/>, accruing every
-        /// active node's yield into the inventory. Non-positive deltas are a
-        /// no-op so a paused or clock-skewed tick can't rewind progress.
+        /// Longest slice a single tick is integrated over. Basket caps make big
+        /// deltas path-dependent — gather and haul run concurrently in real
+        /// time, so a 4-hour offline tick evaluated in one step would clamp a
+        /// whole absence's gathering into one basketful. Sub-stepping keeps the
+        /// catch-up honest: baskets fill, drain and overflow the way they
+        /// would have live.
+        /// </summary>
+        private const double MaxStepSeconds = 1.0;
+
+        /// <summary>
+        /// Advance the run by <paramref name="deltaSeconds"/>: familiars gather
+        /// into their node's basket, then carriers haul basket contents to the
+        /// camp inventory (design §2 gather → haul → camp; only camp stock is
+        /// spendable). Non-positive deltas are a no-op so a paused or
+        /// clock-skewed tick can't rewind progress.
         /// </summary>
         public static void Advance(GameState state, GameDataAsset data, double deltaSeconds)
         {
@@ -23,29 +35,109 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            while (deltaSeconds > 0.0)
+            {
+                var step = System.Math.Min(deltaSeconds, MaxStepSeconds);
+                Step(state, data, step);
+                deltaSeconds -= step;
+            }
+        }
+
+        private static void Step(GameState state, GameDataAsset data, double deltaSeconds)
+        {
             var economy = data.economy;
             var burstMult = economy?.tending != null ? economy.tending.burstYieldMult : 1.0;
+            var hauling = economy?.hauling;
 
             foreach (var node in state.nodes)
             {
+                // Split the tick into its bursted and normal slices so a burst
+                // that expires part-way through a step only pays for the
+                // seconds it was live.
+                var burstSeconds = node.tendBurstRemaining > 0.0
+                    ? System.Math.Min(deltaSeconds, node.tendBurstRemaining)
+                    : 0.0;
+
                 if (node.familiarCount > 0)
                 {
-                    // Split the tick into its bursted and normal slices so a burst
-                    // that expires part-way through a big delta (e.g. the offline
-                    // catch-up tick) only pays out for the seconds it was live.
-                    var burstSeconds = node.tendBurstRemaining > 0.0
-                        ? System.Math.Min(deltaSeconds, node.tendBurstRemaining)
-                        : 0.0;
                     var normalSeconds = deltaSeconds - burstSeconds;
-
                     var baseRate = YieldPerSecond(node, state, economy);
                     var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
-                    state.AddResource(node.resourceId, gained);
+
+                    if (hauling != null)
+                    {
+                        // Into the basket, clamped at capacity — a full basket
+                        // overflows and the excess is lost (the §2 bottleneck).
+                        node.basket = BigDouble.Min(node.basket + gained, new BigDouble(hauling.basketCapacity));
+                    }
+                    else
+                    {
+                        // Hauling not configured (hand-built test data): goods
+                        // go straight to camp, the pre-carrier behaviour.
+                        state.AddResource(node.resourceId, gained);
+                    }
+                }
+
+                // The warden's own hands, while the burst is live — straight to
+                // camp, no carrier needed (they pocket what they pick). This is
+                // how a node with no familiars earns its first own-resource
+                // gift (design §13 decision).
+                if (burstSeconds > 0.0 && economy?.tending != null)
+                {
+                    state.AddResource(node.resourceId, new BigDouble(economy.tending.handGatherPerSecond * burstSeconds));
                 }
 
                 if (node.tendBurstRemaining > 0.0)
                 {
                     node.tendBurstRemaining = System.Math.Max(0.0, node.tendBurstRemaining - deltaSeconds);
+                }
+            }
+
+            if (hauling != null)
+            {
+                Haul(state, data, hauling, deltaSeconds);
+            }
+        }
+
+        /// <summary>
+        /// Move basket contents to camp at the carriers' throughput:
+        /// carriers · carryCapacity · upgradeMult / tripSeconds, units per
+        /// second camp-wide. Carriers split across baskets in proportion to
+        /// what's waiting — a continuous approximation; discrete haul batches
+        /// (quality rolls per delivery, design §5) arrive with Phase 3.
+        /// </summary>
+        private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
+        {
+            if (state.carrierCount <= 0)
+            {
+                return;
+            }
+
+            var waiting = BigDouble.Zero;
+            foreach (var node in state.nodes)
+            {
+                waiting += node.basket;
+            }
+
+            if (waiting <= BigDouble.Zero)
+            {
+                return;
+            }
+
+            var capacity = new BigDouble(state.carrierCount)
+                * hauling.baseCarryCapacity
+                * Upgrades.HaulCapacityMultiplier(state, data)
+                / hauling.tripSeconds
+                * deltaSeconds;
+
+            var share = capacity >= waiting ? BigDouble.One : capacity / waiting;
+            foreach (var node in state.nodes)
+            {
+                if (node.basket > BigDouble.Zero)
+                {
+                    var moved = node.basket * share;
+                    node.basket -= moved;
+                    state.AddResource(node.resourceId, moved);
                 }
             }
         }

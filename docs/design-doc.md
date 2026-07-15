@@ -265,7 +265,7 @@ Familiar **gifts** and Rite **offerings** are paid in goods, not Coin — the ec
 ### Formulas
 
 ```
-giftCost(n)    = base · r^n            r: gatherer gifts 1.09 · carrier gifts 1.10  (paid in goods)
+giftCost(n)    = base · r^n            r: gatherer gifts 1.09 · carrier gifts 1.10  (gatherer gifts: the node's own resource · carrier gifts: the Feeder — n of each worked resource)
 buildingCost(L)= base · 1.25^L         each camp building is a leveled line (Coin) — see §9; the repeatable Coin sink
 flockCap(zone) = 8 + 2·roostLevel      gatherer familiars per zone; gifts fill slots up to the cap
 carrierSlots   = 2 + roostLevel        camp-wide; +1 from the Spare Wing reward (§10); Almanac adds to both caps
@@ -504,7 +504,7 @@ To decide before Phase 1 ends:
 
 To decide before Phase 3 (systems build-out):
 
-- **Gift denomination:** v0.5 prices gifts in goods, but *which* goods? Lean: the node's own resource (you leave a pile of what the flock likes), so every node self-funds its first familiars and deeper nodes stay self-contained. Decide before repricing `gifts.familiarBaseCoin` (currently a Coin placeholder).
+- **Gift denomination — DECIDED (2026-07-16):** gatherer gifts cost the node's own resource (you leave a pile of what the flock likes), paid from camp stock. The cold-start hole — a bare node produces nothing, so it could never self-fund its first gift — is closed by the warden's own hands: **while a Tend burst is live, the warden hand-gathers a small trickle straight to camp** (`tending.handGatherPerSecond`), fitting the tend-don't-take fiction and giving every node a bootstrap that costs attention, not currency. Carrier gifts — decided the same day: **the camp Feeder**. A carrier's gift is a bundle of *every resource the flock currently works* (N of each, N on the carrier curve), laid out in a feeder at the camp edge — gatherers are priced in depth (their node's own resource), carriers in breadth, because they serve every trail. The bundle broadens as more nodes come into work, which is exactly when more carriers are needed, and it can't be bought off one overflowing node. ("Offering" was considered and rejected for the name — that word belongs to the Rite.)
 
 To decide before Phase 4 (the Rite generator):
 

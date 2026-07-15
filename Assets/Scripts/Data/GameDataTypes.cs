@@ -165,6 +165,7 @@ namespace Wildgrove.Data
     {
         public CostGrowthData costGrowth;
         public GiftsData gifts;
+        public HaulingData hauling;
         public ToolsData tools;
         public MasteryData mastery;
         public VerdureData verdure;
@@ -185,7 +186,16 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class GiftsData
         {
-            public BigDouble familiarBaseCoin;
+            public BigDouble gathererBaseGoods;
+            public BigDouble carrierBaseGoods;
+        }
+
+        [Serializable]
+        public sealed class HaulingData
+        {
+            public double baseCarryCapacity;
+            public double tripSeconds;
+            public double basketCapacity;
         }
 
         [Serializable]
@@ -246,6 +256,7 @@ namespace Wildgrove.Data
             public double burstYieldMult;
             public double burstDurationSec;
             public double pristineBonusDurationSec;
+            public double handGatherPerSecond;
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Wildgrove.Data.Tests
             var data = GameData.Parse(LoadSources());
 
             Assert.That(data.Economy.CostGrowth.GathererGift, Is.EqualTo(1.09));
-            Assert.That(data.Economy.Gifts.FamiliarBaseCoin, Is.EqualTo(10L));
+            Assert.That(data.Economy.Gifts.GathererBaseGoods, Is.EqualTo(10L));
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
@@ -163,6 +163,19 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void Validate_NonPositiveHaulingValue_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"tripSeconds\": 10",
+                "\"tripSeconds\": 0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("hauling values must all be positive")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_FossilEffectWithUnknownResource_IsReported()
         {
             var sources = LoadSources();
@@ -246,7 +259,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.dialogue.waystones.Single(w => w.key == "sunfield-meadow").text, Is.Not.Empty);
             Assert.That(asset.economy.xp.baseXp, Is.EqualTo(100d));
             Assert.That(asset.ResourcesById["berries"].sellValue, Is.EqualTo(data.ResourcesById["berries"].SellValue));
-            Assert.That(asset.economy.gifts.familiarBaseCoin.ToDouble(), Is.EqualTo(10d));
+            Assert.That(asset.economy.gifts.gathererBaseGoods.ToDouble(), Is.EqualTo(10d));
+            Assert.That(asset.economy.tending.handGatherPerSecond, Is.EqualTo(0.5d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
             Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(4));

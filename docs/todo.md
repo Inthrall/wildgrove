@@ -10,10 +10,14 @@ they're easy to find and delete when resolved.
 - **Tending burst values are a first guess.** `burstYieldMult` / `burstDurationSec`
   in `design/data/economy.json` aren't in the design doc — tune once the loop is
   playable. (`$note` in the file.)
-- **Familiar gift base cost is first-pass — and Coin-denominated.** `gifts.familiarBaseCoin = 10`
-  in `design/data/economy.json`. Design v0.5 prices gifts in goods, not Coin; the Coin
-  cost is a Phase-1 placeholder. Reprice (and pick the goods denomination) with the
-  economy pass.
+- **Feeder base amount is a first guess.** `gifts.carrierBaseGoods = 8` — N of each
+  worked resource per carrier (design §13 Feeder). Watch the Phase 3 zone unlocks:
+  the bundle broadens as new nodes come into work, so a freshly-gifted node briefly
+  raises the carrier price in a resource the camp barely holds — probably desirable
+  tension, but confirm it in balance.
+- **Hand-gather rate is a first guess.** `tending.handGatherPerSecond = 0.5` — the
+  warden's trickle while a burst is live, and the bare-node gift bootstrap. Tune so
+  a first gift feels like a few taps, not a grind.
 - **Telemetry sink is the Unity log, not Firebase.** The design calls for
   Crashlytics + GA events from Phase 1; the events (session_start/end,
   upgrade_purchased, familiar_gifted, welcome_back) are instrumented behind
@@ -24,6 +28,10 @@ they're easy to find and delete when resolved.
   `GameLoop.Initialise`. Note the SDK's External Dependency Manager patches
   `mainTemplate.gradle` — re-check the hand-authored Kotlin pins when it lands.
   (`Assets/Scripts/Game/Telemetry/`)
+- **The welcome-back sheet reports camp gains only.** Goods that piled up in node
+  baskets during the absence aren't listed (the summary diffs `state.resources`);
+  fine while baskets are small, revisit if basket capacity grows.
+  (`Simulation.AdvanceOfflineWithSummary`)
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)
@@ -59,9 +67,14 @@ they're easy to find and delete when resolved.
   real content gating (zones, stations, unlock effects applied) with Phase 3. The
   unlock effect types (`unlockZone` / `unlockSkill` / `unlockRecipe` / `unlockDigSite`)
   are recorded on purchase but nothing consumes them yet. (`GameHud`, `Wildgrove.Sim/Upgrades.cs`)
-- **haulMult upgrades are purchased but inert.** Waxed Satchel / Handcart record on
-  the run and their Coin sink works, but nothing hauls yet — the carrier/haul sim
-  arrives with Phase 3. (`Wildgrove.Sim/Upgrades.cs`)
+- **Haul is a continuous-rate approximation, not discrete batches.** Carriers drain
+  baskets proportionally at units/sec; design §5's quality rolls happen *per haul
+  batch* (a carrier delivery), so Phase 3's Compendium needs the haul loop reworked
+  into discrete deliveries. (`Simulation.Haul`)
+- **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
+  `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
+  the loop playtest. Carrier slots (`carrierSlots = 2 + roostLevel`) are not enforced
+  yet — same cap gap as the gatherer `flockCap` below.
 - **The Rite is data-only.** `rites.json`, `zones.verseSite`, and `dialogue.verses` are
   parsed, validated, and mapped into GameData.asset, but no runtime system consumes
   them until the Phase 3 Rite build. Validator covers slot integrity only — the full

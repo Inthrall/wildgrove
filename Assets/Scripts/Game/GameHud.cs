@@ -51,6 +51,8 @@ namespace Wildgrove.Game
         private Text _upgradesHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
+        private Text _carrierLabel;
+        private Button _carrierButton;
         private Transform _canvas;
         private GameObject _welcomeSheet;
         private WorldView _world;
@@ -245,10 +247,24 @@ namespace Wildgrove.Game
                 }
             }
 
-            var (sellAll, sellAllLabel) = CreateButton("SellAll", lowerPanel.transform, "Sell All", () => _loop.SellAll());
+            // Camp-wide actions side by side: the carrier gift (carriers are a
+            // camp pool, not per-node — design §8) and Sell All.
+            var actionsRow = CreatePanel("Actions", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            SetPreferredHeight(actionsRow, 96f);
+            var actionsLayout = actionsRow.AddComponent<HorizontalLayoutGroup>();
+            actionsLayout.spacing = 12f;
+            actionsLayout.childControlWidth = true;
+            actionsLayout.childControlHeight = true;
+            actionsLayout.childForceExpandWidth = true;
+            actionsLayout.childForceExpandHeight = true;
+
+            var (giftCarrier, giftCarrierLabel) = CreateButton("FillFeeder", actionsRow.transform, "+ Carrier", () => _loop.GiftCarrier());
+            _carrierButton = giftCarrier;
+            _carrierLabel = giftCarrierLabel;
+
+            var (sellAll, sellAllLabel) = CreateButton("SellAll", actionsRow.transform, "Sell All", () => _loop.SellAll());
             _sellAllButton = sellAll;
             _sellAllLabel = sellAllLabel;
-            SetPreferredHeight(sellAll.gameObject, 96f);
 
             var hint = CreateText("Hint", lowerPanel.transform, 28, TextAnchor.MiddleCenter,
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
@@ -277,7 +293,7 @@ namespace Wildgrove.Game
             // Select-and-tend on the same tap so the row becomes the Space/pad-A target.
             tend.onClick.AddListener(() => _loop.Tend(node));
 
-            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "+ Familiar", () => _loop.GiftFamiliar(node));
+            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "+ Familiar", () => _loop.GiftGatherer(node));
             SetPreferredWidth(gift.gameObject, 200f);
 
             var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell", () => _loop.SellResource(node.resourceId));
@@ -420,10 +436,11 @@ namespace Wildgrove.Game
                 _world.SelectedNode = _selected;
             }
 
-            _headerLabel.text = "Coin " + NumberFormat.Short(state.coin) + "     Familiars " + state.TotalFamiliars();
+            _headerLabel.text = "Coin " + NumberFormat.Short(state.coin)
+                                + "     Familiars " + state.TotalFamiliars()
+                                + "     Carriers " + state.carrierCount;
 
-            var giftCost = _loop.NextFamiliarGiftCost();
-            var canAffordGift = state.coin >= giftCost;
+            var giftCost = _loop.NextGathererGiftCost();
 
             foreach (var row in _rows)
             {
@@ -431,14 +448,20 @@ namespace Wildgrove.Game
                 var held = state.GetResource(node.resourceId);
                 var rate = Simulation.YieldPerSecond(node, state, economy);
                 var tending = node.tendBurstRemaining > 0.0 ? "  (tending)" : string.Empty;
+                var basketFull = economy.hauling != null && node.basket >= new BigDouble(economy.hauling.basketCapacity);
+                var basket = "  •  " + NumberFormat.Short(node.basket)
+                             + (basketFull ? " in basket (full!)" : " in basket");
 
                 row.info.text = PrettyName(node.resourceId)
-                                + "\n<size=24>" + NumberFormat.Short(held) + " held"
+                                + "\n<size=24>" + NumberFormat.Short(held) + " held" + basket
                                 + "  •  " + node.familiarCount + " familiars"
                                 + "  •  " + NumberFormat.Short(rate) + "/s" + tending + "</size>";
 
-                row.giftLabel.text = "+ Familiar\n<size=22>" + NumberFormat.Short(giftCost) + "</size>";
-                row.giftButton.interactable = canAffordGift;
+                // Gatherer gifts cost the node's own resource, from camp stock
+                // (design §13) — so affordability is per node.
+                row.giftLabel.text = "+ Familiar\n<size=22>" + NumberFormat.Short(giftCost)
+                                     + " " + PrettyName(node.resourceId) + "</size>";
+                row.giftButton.interactable = held >= giftCost;
 
                 var unitValue = Economy.SellValuePerUnit(state, _loop.Data, node.resourceId);
                 var saleValue = held * unitValue;
@@ -468,6 +491,11 @@ namespace Wildgrove.Game
             }
 
             _upgradesHeader.gameObject.SetActive(anyUpgradeOnOffer);
+
+            // The Feeder: a bundle of every worked resource buys a carrier.
+            var carrierCostEach = _loop.NextCarrierGiftCostEach();
+            _carrierLabel.text = "+ Carrier\n<size=22>Feeder: " + NumberFormat.Short(carrierCostEach) + " of each</size>";
+            _carrierButton.interactable = _loop.CanGiftCarrier();
 
             var totalSaleValue = TotalSellableValue(state);
             _sellAllLabel.text = totalSaleValue > BigDouble.Zero

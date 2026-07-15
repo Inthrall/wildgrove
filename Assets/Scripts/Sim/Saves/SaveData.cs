@@ -24,6 +24,9 @@ namespace Wildgrove.Sim.Saves
 
         public double verdurePoints;
 
+        /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
+        public int carrierCount;
+
         public List<SavedResource> resources = new List<SavedResource>();
         public List<SavedNode> nodes = new List<SavedNode>();
         public List<string> purchasedUpgradeIds = new List<string>();
@@ -51,5 +54,9 @@ namespace Wildgrove.Sim.Saves
         public int familiarCount;
         public int masteryLevel;
         public double tendBurstRemaining;
+
+        /// <summary>v2+: goods gathered but not yet hauled to camp (absent in v1 — defaults to zero).</summary>
+        [JsonConverter(typeof(BigDoubleJsonConverter))]
+        public BigDouble basket;
     }
 }

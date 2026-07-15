@@ -400,6 +400,7 @@ namespace Wildgrove.Data
 
             RequireSection(economy.CostGrowth, "costGrowth", issues);
             RequireSection(economy.Gifts, "gifts", issues);
+            RequireSection(economy.Hauling, "hauling", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
             RequireSection(economy.Verdure, "verdure", issues);
@@ -415,9 +416,22 @@ namespace Wildgrove.Data
                 issues.Add("Economy costGrowth factors must all be > 1");
             }
 
-            if (economy.Gifts != null && economy.Gifts.FamiliarBaseCoin <= 0)
+            if (economy.Gifts != null && (economy.Gifts.GathererBaseGoods <= 0 || economy.Gifts.CarrierBaseGoods <= 0))
             {
-                issues.Add("Economy gifts.familiarBaseCoin must be positive");
+                issues.Add("Economy gift base costs must be positive");
+            }
+
+            if (economy.Tending != null && economy.Tending.HandGatherPerSecond <= 0)
+            {
+                // Not merely a tuning value: gatherer gifts cost the node's own
+                // resource, and a bare node's only source is the warden's hands.
+                issues.Add("Economy tending.handGatherPerSecond must be positive or bare nodes can never afford their first gift");
+            }
+
+            if (economy.Hauling != null
+                && (economy.Hauling.BaseCarryCapacity <= 0 || economy.Hauling.TripSeconds <= 0 || economy.Hauling.BasketCapacity <= 0))
+            {
+                issues.Add("Economy hauling values must all be positive");
             }
 
             if (economy.Tools != null && (economy.Tools.Tiers == null || economy.Tools.Tiers.Count == 0))

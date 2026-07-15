@@ -229,7 +229,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryPurchase_HaulMultUpgrade_IsRecordedButInert()
+        public void TryPurchase_HaulMultUpgrade_LeavesYieldMultipliersAlone()
         {
             var state = GameStateFactory.NewGame(_data);
             state.coin = 150;
@@ -238,11 +238,23 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(bought, Is.True);
             Assert.That(state.HasUpgrade("waxed-satchel"), Is.True);
-            // Nothing hauls yet — no node multiplier moves until the carrier sim lands.
+            // Carry capacity is the haul sim's lever — gather rates don't move.
             foreach (var node in state.nodes)
             {
                 Assert.That(node.yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
             }
+        }
+
+        [Test]
+        public void HaulCapacityMultiplier_ReflectsOwnedHaulMultUpgrades()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.0).Within(Tolerance));
+
+            state.purchasedUpgradeIds.Add("waxed-satchel");
+
+            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.5).Within(Tolerance));
         }
     }
 }

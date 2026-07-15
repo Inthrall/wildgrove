@@ -90,6 +90,25 @@ namespace Wildgrove.Sim
             }
         }
 
+        /// <summary>
+        /// Carry-capacity multiplier from owned haulMult upgrades (Waxed
+        /// Satchel ×1.5, Handcart ×2, …) — they multiply together. Additive
+        /// carrierCapacityBonus gear arrives with the gear system.
+        /// </summary>
+        public static double HaulCapacityMultiplier(GameState state, GameDataAsset data)
+        {
+            var mult = 1.0;
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.HaulMult)
+                {
+                    mult *= effect.value;
+                }
+            }
+
+            return mult;
+        }
+
         /// <summary>Sell-value multiplier for one resource: 1 + the summed sellValueBonus effects owned.</summary>
         public static double SellValueMultiplier(GameState state, GameDataAsset data, string resourceId)
         {

@@ -25,8 +25,13 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
-                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0 },
+                // handGatherPerSecond 0 keeps the burst-maths tests exact; the
+                // hand-gather tests below opt in per test.
+                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0, handGatherPerSecond = 0.0 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
+                // Effectively unbounded, so yield-focused tests see goods at camp
+                // the same tick they're gathered; HaulTests pins the tight case.
+                hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -63,6 +68,14 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(state.nodes[0].familiarCount, Is.EqualTo(1));
             Assert.That(state.nodes.Skip(1).All(n => n.familiarCount == 0), Is.True);
+        }
+
+        [Test]
+        public void NewGame_SeedsOneCarrier()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(state.carrierCount, Is.EqualTo(1));
         }
 
         [Test]
@@ -154,6 +167,50 @@ namespace Wildgrove.Sim.Tests
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_TendedEmptyNode_HandGathersStraightToCamp()
+        {
+            _data.economy.tending.handGatherPerSecond = 0.5;
+            var state = GameStateFactory.NewGame(_data);
+            Simulation.Tend(state.nodes[1], _data.economy); // wildflowers: no familiars
+
+            Simulation.Advance(state, _data, 2.0);
+
+            // The warden's hands are the bare node's only source — 0.5/s for the
+            // 2 bursted seconds, bypassing basket and carriers (design §13).
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_HandGather_StopsWhenTheBurstExpires()
+        {
+            _data.economy.tending.handGatherPerSecond = 0.5;
+            var state = GameStateFactory.NewGame(_data);
+            Simulation.Tend(state.nodes[1], _data.economy);
+
+            Simulation.Advance(state, _data, 8.0);
+
+            // Only the 5 bursted seconds pay — 0.5 · 5 = 2.5.
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(2.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_HandGather_AddsToFamiliarYieldWithoutCarriers()
+        {
+            _data.economy.tending.handGatherPerSecond = 0.5;
+            var state = GameStateFactory.NewGame(_data);
+            state.carrierCount = 0;
+            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 familiar
+
+            Simulation.Advance(state, _data, 2.0);
+
+            // The familiar's bursted yield (2s · 3×) waits in the basket with no
+            // carriers, but the warden's 1.0 reaches camp regardless.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
         }
 
         [Test]

@@ -19,8 +19,11 @@ namespace Wildgrove.Sim
         /// <summary>Meta currency carried across migrations; drives the global yield bonus.</summary>
         public double verdurePoints;
 
-        /// <summary>Raw and crafted materials on hand, keyed by resource id.</summary>
+        /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp by carrier haul from the nodes' baskets.</summary>
         public Dictionary<string, BigDouble> resources = new Dictionary<string, BigDouble>();
+
+        /// <summary>Carrier familiars hauling for the camp (design §8: a camp-wide pool, not per-node).</summary>
+        public int carrierCount;
 
         /// <summary>Every gathering node the player has access to this run.</summary>
         public List<NodeState> nodes = new List<NodeState>();
@@ -84,6 +87,14 @@ namespace Wildgrove.Sim
         /// of the tick; a fresh Tend refreshes it to the full burst duration.
         /// </summary>
         public double tendBurstRemaining;
+
+        /// <summary>
+        /// Goods gathered but not yet hauled to camp — the basket at the node.
+        /// Capped at economy.hauling.basketCapacity; gathering into a full
+        /// basket is lost (design §2: "under-invest in carriers and baskets
+        /// overflow at the node").
+        /// </summary>
+        public BigDouble basket;
 
         /// <summary>
         /// Combined tool + gear + upgrade multiplier for this node. Defaults to

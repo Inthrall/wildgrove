@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BreakInfinity;
 using NUnit.Framework;
 using UnityEngine;
 using Wildgrove.Data;
@@ -24,9 +25,12 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
-                costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09 },
-                gifts = new EconomyData.GiftsData { familiarBaseCoin = 10 },
+                costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09, carrierGift = 1.10 },
+                gifts = new EconomyData.GiftsData { gathererBaseGoods = 10, carrierBaseGoods = 8 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
+                // Effectively unbounded, so offline/sale tests see goods at camp
+                // the same tick they're gathered; HaulTests pins the tight case.
+                hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
             _data.resources = new List<ResourceData>
             {
@@ -51,54 +55,134 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void FamiliarGiftCost_FirstGift_IsBaseCost()
+        public void GathererGiftCost_FirstGift_IsBaseCost()
         {
             var state = new GameState();
 
-            var cost = Economy.FamiliarGiftCost(state, _data.economy);
+            var cost = Economy.GathererGiftCost(state, _data.economy);
 
             // n = 0 familiars befriended → base · 1.09^0 = base.
             Assert.That(cost.ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
         }
 
         [Test]
-        public void FamiliarGiftCost_ScalesWithTotalFamiliars()
+        public void GathererGiftCost_ScalesWithTotalFamiliars()
         {
             var state = new GameState();
             state.nodes.Add(new NodeState { familiarCount = 2 });
 
-            var cost = Economy.FamiliarGiftCost(state, _data.economy);
+            var cost = Economy.GathererGiftCost(state, _data.economy);
 
             // 10 · 1.09^2 = 11.881
             Assert.That(cost.ToDouble(), Is.EqualTo(11.881).Within(Tolerance));
         }
 
         [Test]
-        public void TryGiftFamiliar_WhenAffordable_SpendsCoinAndAddsFamiliar()
+        public void CarrierGiftCostEach_ScalesWithCarriersOnItsOwnCurve()
         {
-            var state = new GameState { coin = 50 };
-            var node = new NodeState { familiarCount = 0 };
-            state.nodes.Add(node);
+            var state = new GameState();
 
-            var gifted = Economy.TryGiftFamiliar(state, _data.economy, node);
+            // n = 0 carriers → base; n = 2 → 8 · 1.10² = 9.68 (of each worked resource).
+            Assert.That(Economy.CarrierGiftCostEach(state, _data.economy).ToDouble(), Is.EqualTo(8.0).Within(Tolerance));
 
-            Assert.That(gifted, Is.True);
-            Assert.That(node.familiarCount, Is.EqualTo(1));
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(40.0).Within(Tolerance));
+            state.carrierCount = 2;
+            Assert.That(Economy.CarrierGiftCostEach(state, _data.economy).ToDouble(), Is.EqualTo(9.68).Within(Tolerance));
         }
 
         [Test]
-        public void TryGiftFamiliar_WhenCoinShort_LeavesStateUnchanged()
+        public void FeederResources_ListsOnlyWorkedNodes()
         {
-            var state = new GameState { coin = 5 };
-            var node = new NodeState { familiarCount = 0 };
-            state.nodes.Add(node);
+            var state = new GameState();
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 2 });
+            state.nodes.Add(new NodeState { resourceId = "wildflowers", familiarCount = 0 });
+            state.nodes.Add(new NodeState { resourceId = "fibres", familiarCount = 1 });
 
-            var gifted = Economy.TryGiftFamiliar(state, _data.economy, node);
+            Assert.That(Economy.FeederResources(state), Is.EqualTo(new[] { "berries", "fibres" }));
+        }
+
+        [Test]
+        public void TryGiftCarrier_FillsTheFeederFromEveryWorkedResource()
+        {
+            var state = new GameState { coin = new BigDouble(999.0), carrierCount = 1 };
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 1 });
+            state.nodes.Add(new NodeState { resourceId = "wildflowers", familiarCount = 1 });
+            state.nodes.Add(new NodeState { resourceId = "fibres", familiarCount = 0 });
+            state.AddResource("berries", new BigDouble(20.0));
+            state.AddResource("wildflowers", new BigDouble(20.0));
+
+            var gifted = Economy.TryGiftCarrier(state, _data.economy);
+
+            // costEach = 8 · 1.10¹ = 8.8 of berries AND wildflowers; the idle
+            // fibres node isn't in the bundle, and Coin is untouched.
+            Assert.That(gifted, Is.True);
+            Assert.That(state.carrierCount, Is.EqualTo(2));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(11.2).Within(Tolerance));
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(11.2).Within(Tolerance));
+            Assert.That(state.GetResource("fibres").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.coin.ToDouble(), Is.EqualTo(999.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryGiftCarrier_AnyShortResource_ChangesNothing()
+        {
+            var state = new GameState { carrierCount = 1 };
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 1 });
+            state.nodes.Add(new NodeState { resourceId = "wildflowers", familiarCount = 1 });
+            state.AddResource("berries", new BigDouble(20.0));
+            state.AddResource("wildflowers", new BigDouble(5.0)); // short of 8.8
+
+            var gifted = Economy.TryGiftCarrier(state, _data.economy);
 
             Assert.That(gifted, Is.False);
+            Assert.That(state.carrierCount, Is.EqualTo(1));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryGiftCarrier_NothingWorked_IsRefusedNotFree()
+        {
+            var state = new GameState { carrierCount = 1 };
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 0 });
+            state.AddResource("berries", new BigDouble(100.0));
+
+            // An empty bundle must never read as "affordable".
+            Assert.That(Economy.CanGiftCarrier(state, _data.economy), Is.False);
+            Assert.That(Economy.TryGiftCarrier(state, _data.economy), Is.False);
+            Assert.That(state.carrierCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryGiftGatherer_WhenStocked_SpendsTheNodesOwnResource()
+        {
+            var state = new GameState { coin = new BigDouble(999.0) };
+            var node = new NodeState { resourceId = "berries", familiarCount = 0 };
+            state.nodes.Add(node);
+            state.AddResource("berries", new BigDouble(12.0));
+
+            var gifted = Economy.TryGiftGatherer(state, _data.economy, node);
+
+            Assert.That(gifted, Is.True);
+            Assert.That(node.familiarCount, Is.EqualTo(1));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+            // Coin is untouched — gatherer gifts are a goods sink (design §13).
+            Assert.That(state.coin.ToDouble(), Is.EqualTo(999.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryGiftGatherer_WhenStockShort_LeavesStateUnchanged()
+        {
+            var state = new GameState { coin = new BigDouble(999.0) };
+            var node = new NodeState { resourceId = "berries", familiarCount = 0 };
+            state.nodes.Add(node);
+            state.AddResource("berries", new BigDouble(5.0));
+
+            var gifted = Economy.TryGiftGatherer(state, _data.economy, node);
+
+            // Coin can't stand in — only the node's own resource pays (design §13).
+            Assert.That(gifted, Is.False);
             Assert.That(node.familiarCount, Is.EqualTo(0));
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
         }
 
         [Test]

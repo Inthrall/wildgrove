@@ -30,12 +30,16 @@ namespace Wildgrove.Sim
                 });
             }
 
-            // Seed one familiar on the first node for immediate agency (design §11
-            // pacing: something gathering before the first gift).
+            // Seed one gatherer on the first node and one carrier for the camp —
+            // "every region opens with one gatherer and one carrier already
+            // helping" (design §2): immediate agency, and goods flow to camp
+            // from the first frame.
             if (state.nodes.Count > 0)
             {
                 state.nodes[0].familiarCount = 1;
             }
+
+            state.carrierCount = 1;
 
             return state;
         }

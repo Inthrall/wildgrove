@@ -172,7 +172,14 @@ namespace Wildgrove.Data
                 },
                 gifts = new EconomyData.GiftsData
                 {
-                    familiarBaseCoin = e.Gifts.FamiliarBaseCoin
+                    gathererBaseGoods = e.Gifts.GathererBaseGoods,
+                    carrierBaseGoods = e.Gifts.CarrierBaseGoods
+                },
+                hauling = new EconomyData.HaulingData
+                {
+                    baseCarryCapacity = e.Hauling.BaseCarryCapacity,
+                    tripSeconds = e.Hauling.TripSeconds,
+                    basketCapacity = e.Hauling.BasketCapacity
                 },
                 tools = new EconomyData.ToolsData
                 {
@@ -216,7 +223,8 @@ namespace Wildgrove.Data
                 {
                     burstYieldMult = e.Tending.BurstYieldMult,
                     burstDurationSec = e.Tending.BurstDurationSec,
-                    pristineBonusDurationSec = e.Tending.PristineBonusDurationSec
+                    pristineBonusDurationSec = e.Tending.PristineBonusDurationSec,
+                    handGatherPerSecond = e.Tending.HandGatherPerSecond
                 }
             };
         }
