@@ -1,0 +1,178 @@
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Wildgrove.Data
+{
+    /// <summary>Maps the JSON authoring model (GameData) onto the Unity-serializable runtime model (GameDataAsset).</summary>
+    public static class GameDataMapper
+    {
+        public static void Populate(GameDataAsset asset, GameData data)
+        {
+            asset.economy = MapEconomy(data.Economy);
+            asset.zones = data.Zones.Select(MapZone).ToList();
+            asset.upgrades = data.Upgrades.Select(MapUpgrade).ToList();
+            asset.recipes = data.Recipes.Select(MapRecipe).ToList();
+            asset.gear = data.Gear.Select(MapGear).ToList();
+            asset.fossils = data.Fossils.Select(MapFossil).ToList();
+            asset.dialogue = MapDialogue(data.Dialogue);
+        }
+
+        private static ZoneData MapZone(ZoneDef z)
+        {
+            return new ZoneData
+            {
+                id = z.Id,
+                order = z.Order,
+                displayName = z.Name,
+                resources = new List<string>(z.Resources),
+                unlocks = new List<string>(z.Unlocks),
+                keystone = z.Keystone,
+                digSite = z.DigSite,
+                priced = z.MapCostCoin.HasValue,
+                mapCostCoin = z.MapCostCoin ?? 0,
+                scope = z.Scope
+            };
+        }
+
+        private static UpgradeData MapUpgrade(UpgradeDef u)
+        {
+            return new UpgradeData
+            {
+                order = u.Order,
+                id = u.Id,
+                displayName = u.Name,
+                track = u.Track,
+                costCoin = u.CostCoin,
+                materials = MapItemAmounts(u.Materials),
+                effects = u.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static RecipeData MapRecipe(RecipeDef r)
+        {
+            return new RecipeData
+            {
+                id = r.Id,
+                station = r.Station,
+                skill = r.Skill,
+                inputs = MapItemAmounts(r.Inputs),
+                output = r.Output,
+                valueMult = r.ValueMult,
+                kind = r.Kind,
+                defaultKnown = r.DefaultKnown
+            };
+        }
+
+        private static GearData MapGear(GearDef g)
+        {
+            return new GearData
+            {
+                id = g.Id,
+                displayName = g.Name,
+                slot = g.Slot,
+                skill = g.Skill,
+                materials = MapItemAmounts(g.Materials),
+                effects = g.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static FossilData MapFossil(FossilDef f)
+        {
+            return new FossilData
+            {
+                id = f.Id,
+                displayName = f.Name,
+                fragments = f.Fragments,
+                digSites = new List<string>(f.DigSites),
+                strataRarity = f.StrataRarity,
+                effects = f.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static EffectData MapEffect(EffectDef e)
+        {
+            return new EffectData
+            {
+                type = e.Type,
+                skill = e.Skill,
+                zone = e.Zone,
+                resource = e.Resource,
+                recipe = e.Recipe,
+                value = e.Value ?? 0
+            };
+        }
+
+        private static DialogueBundle MapDialogue(DialogueData d)
+        {
+            return new DialogueBundle
+            {
+                waystones = d.Waystones.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
+                provisioner = d.Provisioner.Select(p => new ProvisionerEntry { id = p.Id, trigger = p.Trigger, line = p.Line }).ToList(),
+                migrationVignette = new List<string>(d.MigrationVignette),
+                fossilCards = d.FossilCards.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList()
+            };
+        }
+
+        private static List<ItemAmount> MapItemAmounts(Dictionary<string, int> source)
+        {
+            return source.Select(kv => new ItemAmount { id = kv.Key, amount = kv.Value }).ToList();
+        }
+
+        private static EconomyData MapEconomy(EconomyConfig e)
+        {
+            return new EconomyData
+            {
+                costGrowth = new EconomyData.CostGrowthData
+                {
+                    crewHire = e.CostGrowth.CrewHire,
+                    porter = e.CostGrowth.Porter,
+                    building = e.CostGrowth.Building
+                },
+                tools = new EconomyData.ToolsData
+                {
+                    baseCostCoin = e.Tools.BaseCostCoin,
+                    costMultPerTier = e.Tools.CostMultPerTier,
+                    yieldMultPerTier = e.Tools.YieldMultPerTier,
+                    tiers = new List<string>(e.Tools.Tiers)
+                },
+                mastery = new EconomyData.MasteryData
+                {
+                    yieldBonusPerLevel = e.Mastery.YieldBonusPerLevel
+                },
+                verdure = new EconomyData.VerdureData
+                {
+                    renownDivisor = e.Verdure.RenownDivisor,
+                    exponent = e.Verdure.Exponent,
+                    yieldBonusPerPoint = e.Verdure.YieldBonusPerPoint
+                },
+                xp = new EconomyData.XpData
+                {
+                    baseXp = e.Xp.Base,
+                    growth = e.Xp.Growth,
+                    maxLevel = e.Xp.MaxLevel
+                },
+                offline = new EconomyData.OfflineData
+                {
+                    baseCapHours = e.Offline.BaseCapHours,
+                    rateMultiplier = e.Offline.RateMultiplier
+                },
+                quality = new EconomyData.QualityData
+                {
+                    fineChance = e.Quality.FineChance,
+                    fineValueMult = e.Quality.FineValueMult,
+                    pristineBaseChance = e.Quality.PristineBaseChance
+                },
+                excavation = new EconomyData.ExcavationData
+                {
+                    pityTimerHoursDug = e.Excavation.PityTimerHoursDug
+                },
+                tending = new EconomyData.TendingData
+                {
+                    burstYieldMult = e.Tending.BurstYieldMult,
+                    burstDurationSec = e.Tending.BurstDurationSec,
+                    pristineBonusDurationSec = e.Tending.PristineBonusDurationSec
+                }
+            };
+        }
+    }
+}

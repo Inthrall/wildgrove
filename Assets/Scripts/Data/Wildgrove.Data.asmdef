@@ -1,0 +1,16 @@
+{
+    "name": "Wildgrove.Data",
+    "rootNamespace": "Wildgrove.Data",
+    "references": [
+        "BreakInfinity"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,25 @@
+{
+    "name": "Wildgrove.Data.Tests",
+    "rootNamespace": "Wildgrove.Data.Tests",
+    "references": [
+        "Wildgrove.Data",
+        "BreakInfinity",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

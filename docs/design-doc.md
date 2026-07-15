@@ -371,7 +371,7 @@ Solo, part-time estimates. Each phase ends at a **gate** — a concrete question
 - Unity 6 LTS project, URP 2D, **Vulkan first** in the graphics API list; verify on a real device
 - Git repo + GitHub Actions Android build (AAB) from day one
 - Play Console app created; internal testing track live with a walking-skeleton build
-- Data-driven content: resources/upgrades/recipes/gear/dialogue lines as ScriptableObjects or JSON — balancing and writing must never require code changes
+- Data-driven content: resources/upgrades/recipes/gear/dialogue lines authored as JSON in `design/data/`, validated and imported into a ScriptableObject database at editor-load/build time — balancing and writing must never require code changes
 - Number backbone: BreakInfinity (BigDouble) for currencies; versioned local JSON save with migration hooks
 - PGS v2 SDK integrated and initializing (sign-in only, nothing else yet)
 

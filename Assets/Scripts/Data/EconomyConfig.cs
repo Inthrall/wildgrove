@@ -1,0 +1,77 @@
+using System.Collections.Generic;
+
+namespace Wildgrove.Data
+{
+    /// <summary>Global economy constants (design doc §8).</summary>
+    public sealed class EconomyConfig
+    {
+        public CostGrowthSection CostGrowth { get; set; }
+        public ToolsSection Tools { get; set; }
+        public MasterySection Mastery { get; set; }
+        public VerdureSection Verdure { get; set; }
+        public XpSection Xp { get; set; }
+        public OfflineSection Offline { get; set; }
+        public QualitySection Quality { get; set; }
+        public ExcavationSection Excavation { get; set; }
+        public TendingSection Tending { get; set; }
+
+        public sealed class CostGrowthSection
+        {
+            public double CrewHire { get; set; }
+            public double Porter { get; set; }
+            public double Building { get; set; }
+        }
+
+        public sealed class ToolsSection
+        {
+            public long BaseCostCoin { get; set; }
+            public double CostMultPerTier { get; set; }
+            public double YieldMultPerTier { get; set; }
+            public List<string> Tiers { get; set; }
+        }
+
+        public sealed class MasterySection
+        {
+            public double YieldBonusPerLevel { get; set; }
+        }
+
+        public sealed class VerdureSection
+        {
+            public double RenownDivisor { get; set; }
+            public double Exponent { get; set; }
+            public double YieldBonusPerPoint { get; set; }
+        }
+
+        public sealed class XpSection
+        {
+            public double Base { get; set; }
+            public double Growth { get; set; }
+            public int MaxLevel { get; set; }
+        }
+
+        public sealed class OfflineSection
+        {
+            public double BaseCapHours { get; set; }
+            public double RateMultiplier { get; set; }
+        }
+
+        public sealed class QualitySection
+        {
+            public double FineChance { get; set; }
+            public double FineValueMult { get; set; }
+            public double PristineBaseChance { get; set; }
+        }
+
+        public sealed class ExcavationSection
+        {
+            public double PityTimerHoursDug { get; set; }
+        }
+
+        public sealed class TendingSection
+        {
+            public double BurstYieldMult { get; set; }
+            public double BurstDurationSec { get; set; }
+            public double PristineBonusDurationSec { get; set; }
+        }
+    }
+}
