@@ -18,6 +18,14 @@ jobs:
     name: Build Android AAB
     runs-on: ubuntu-latest
     steps:
+      # The Unity Android editor image is ~12 GB; ubuntu-latest runners don't
+      # have room for it unless the preinstalled toolchains are removed first.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h /
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
