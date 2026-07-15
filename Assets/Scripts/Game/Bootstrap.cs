@@ -26,6 +26,7 @@ namespace Wildgrove.Game
             // GameLoop first so its Awake builds the run state before the HUD's
             // Awake reads it (GameHud also RequireComponents GameLoop as a guard).
             go.AddComponent<GameLoop>();
+            go.AddComponent<World.WorldView>();
             go.AddComponent<GameHud>();
         }
     }

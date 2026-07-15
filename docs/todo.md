@@ -29,10 +29,11 @@ they're easy to find and delete when resolved.
 - **Legacy `Text` + `LegacyRuntime.ttf` builtin font.** Chosen to avoid the
   TextMeshPro essentials import for placeholder UI; swap to TMP with a real naturalist
   typeface when the art direction lands. (`GameHud`)
-- **Positional tend targets the selected row, not a world node.** With no world node
-  sprites yet, a tap on empty space tends `_selected`. Once nodes are drawn, the
-  `IGameInput` screen position should raycast to the node under the pointer.
-  (`GameHud.HandleTendInput`)
+- **Node sprites are runtime-generated placeholder discs in a screen strip.**
+  `PlaceholderArt` makes one tinted disc per resource and `WorldView` lays them out
+  in the gap the HUD leaves open; the hand-drawn naturalist plates and a real region
+  scene replace them (the camera/world seam and screen-point hit test stay).
+  (`Assets/Scripts/Game/World/`)
 - **Gamepad South double-fire.** Pad-South is also uGUI's Submit, so tending while a
   widget is focused can fire both the button and the tend. Fix in the controller/focus
   pass. (`GameHud.HandleTendInput`)

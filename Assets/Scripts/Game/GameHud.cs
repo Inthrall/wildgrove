@@ -8,6 +8,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Wildgrove.Data;
 using Wildgrove.Game.Input;
+using Wildgrove.Game.World;
 using Wildgrove.Sim;
 
 namespace Wildgrove.Game
@@ -52,6 +53,9 @@ namespace Wildgrove.Game
         private Button _sellAllButton;
         private Transform _canvas;
         private GameObject _welcomeSheet;
+        private WorldView _world;
+        private RectTransform _worldStrip;
+        private static readonly Vector3[] CornerBuffer = new Vector3[4];
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private NodeState _selected;
@@ -84,6 +88,7 @@ namespace Wildgrove.Game
         {
             _input = new InputSystemGameInput();
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _world = GetComponent<WorldView>();
 
             EnsureEventSystem();
 
@@ -98,6 +103,9 @@ namespace Wildgrove.Game
             _rows.Clear();
             _upgradeRows.Clear();
             BuildUi();
+            // Compute the layout now so the world-gap rect is valid this frame
+            // (otherwise the node strip spends its first frame at zero size).
+            Canvas.ForceUpdateCanvases();
             ShowWelcomeBackIfEarned();
         }
 
@@ -130,6 +138,20 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // A positional tap resolves against the node sprites first: hitting
+            // one selects and tends it. Misses (and Space / pad-A) fall back to
+            // the selected node so tending never feels unresponsive.
+            if (screenPosition.HasValue && _world != null)
+            {
+                var hit = _world.NodeAtScreenPoint(screenPosition.Value);
+                if (hit != null)
+                {
+                    _selected = hit;
+                    _loop.Tend(hit);
+                    return;
+                }
+            }
+
             if (_selected != null)
             {
                 _loop.Tend(_selected);
@@ -150,7 +172,11 @@ namespace Wildgrove.Game
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
-            var root = CreatePanel("Root", canvasGo.transform, PanelColor);
+            // The root is a plain container, not a panel: the screen's middle
+            // stays open (visually and for raycasts) so the world layer's node
+            // strip shows through and taps there reach the world hit test.
+            var root = new GameObject("Root", typeof(RectTransform));
+            root.transform.SetParent(canvasGo.transform, false);
             StretchFull(root.GetComponent<RectTransform>());
             var column = root.AddComponent<VerticalLayoutGroup>();
             column.padding = new RectOffset(32, 32, 32, 32);
@@ -160,18 +186,37 @@ namespace Wildgrove.Game
             column.childForceExpandWidth = true;
             column.childForceExpandHeight = false;
 
-            _headerLabel = CreateText("Header", root.transform, 48, TextAnchor.MiddleLeft, TextColor);
-            SetPreferredHeight(_headerLabel.gameObject, 72f);
+            var headerPanel = CreatePanel("Header", root.transform, PanelColor);
+            SetPreferredHeight(headerPanel, 88f);
+            _headerLabel = CreateText("HeaderLabel", headerPanel.transform, 48, TextAnchor.MiddleLeft, TextColor);
+            var headerRect = _headerLabel.GetComponent<RectTransform>();
+            StretchFull(headerRect);
+            headerRect.offsetMin = new Vector2(24f, 0f);
+            headerRect.offsetMax = new Vector2(-24f, 0f);
 
-            var nodesPanel = CreatePanel("Nodes", root.transform, new Color(0f, 0f, 0f, 0f));
+            // The deliberate gap between header and controls — WorldView lays
+            // the node sprites out inside this rect.
+            var worldGap = new GameObject("WorldGap", typeof(RectTransform), typeof(LayoutElement));
+            worldGap.transform.SetParent(root.transform, false);
+            worldGap.GetComponent<LayoutElement>().flexibleHeight = 1f;
+            _worldStrip = worldGap.GetComponent<RectTransform>();
+
+            var lowerPanel = CreatePanel("LowerPanel", root.transform, PanelColor);
+            var lowerLayout = lowerPanel.AddComponent<VerticalLayoutGroup>();
+            lowerLayout.padding = new RectOffset(24, 24, 24, 24);
+            lowerLayout.spacing = 20f;
+            lowerLayout.childControlWidth = true;
+            lowerLayout.childControlHeight = true;
+            lowerLayout.childForceExpandWidth = true;
+            lowerLayout.childForceExpandHeight = false;
+
+            var nodesPanel = CreatePanel("Nodes", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
             var nodesLayout = nodesPanel.AddComponent<VerticalLayoutGroup>();
             nodesLayout.spacing = 12f;
             nodesLayout.childControlWidth = true;
             nodesLayout.childControlHeight = true;
             nodesLayout.childForceExpandWidth = true;
             nodesLayout.childForceExpandHeight = false;
-            var nodesFlex = nodesPanel.AddComponent<LayoutElement>();
-            nodesFlex.flexibleHeight = 1f;
 
             foreach (var node in _loop.State.nodes)
             {
@@ -180,11 +225,11 @@ namespace Wildgrove.Game
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
-            _upgradesHeader = CreateText("UpgradesHeader", root.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _upgradesHeader = CreateText("UpgradesHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
             _upgradesHeader.text = "Upgrades";
             SetPreferredHeight(_upgradesHeader.gameObject, 48f);
 
-            var upgradesPanel = CreatePanel("Upgrades", root.transform, new Color(0f, 0f, 0f, 0f));
+            var upgradesPanel = CreatePanel("Upgrades", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
             var upgradesLayout = upgradesPanel.AddComponent<VerticalLayoutGroup>();
             upgradesLayout.spacing = 12f;
             upgradesLayout.childControlWidth = true;
@@ -200,12 +245,12 @@ namespace Wildgrove.Game
                 }
             }
 
-            var (sellAll, sellAllLabel) = CreateButton("SellAll", root.transform, "Sell All", () => _loop.SellAll());
+            var (sellAll, sellAllLabel) = CreateButton("SellAll", lowerPanel.transform, "Sell All", () => _loop.SellAll());
             _sellAllButton = sellAll;
             _sellAllLabel = sellAllLabel;
             SetPreferredHeight(sellAll.gameObject, 96f);
 
-            var hint = CreateText("Hint", root.transform, 28, TextAnchor.MiddleCenter,
+            var hint = CreateText("Hint", lowerPanel.transform, 28, TextAnchor.MiddleCenter,
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
             hint.text = "Tap a node, Space, or (A) to tend";
             SetPreferredHeight(hint.gameObject, 44f);
@@ -367,6 +412,14 @@ namespace Wildgrove.Game
             var state = _loop.State;
             var economy = _loop.Data.economy;
 
+            // Keep the world layer in step: where the free gap is on screen this
+            // frame, and which node should wear the selection ring.
+            if (_world != null && _worldStrip != null)
+            {
+                _world.StripScreenRect = ScreenRectOf(_worldStrip);
+                _world.SelectedNode = _selected;
+            }
+
             _headerLabel.text = "Coin " + NumberFormat.Short(state.coin) + "     Familiars " + state.TotalFamiliars();
 
             var giftCost = _loop.NextFamiliarGiftCost();
@@ -498,6 +551,14 @@ namespace Wildgrove.Game
             text.text = label;
 
             return (button, text);
+        }
+
+        private static Rect ScreenRectOf(RectTransform rect)
+        {
+            // On a ScreenSpaceOverlay canvas, world corners are screen pixels.
+            rect.GetWorldCorners(CornerBuffer);
+            return new Rect(CornerBuffer[0].x, CornerBuffer[0].y,
+                CornerBuffer[2].x - CornerBuffer[0].x, CornerBuffer[2].y - CornerBuffer[0].y);
         }
 
         private static void StretchFull(RectTransform rect)
