@@ -2,6 +2,7 @@ using System;
 using BreakInfinity;
 using UnityEngine;
 using Wildgrove.Data;
+using Wildgrove.Game.Telemetry;
 using Wildgrove.Sim;
 using Wildgrove.Sim.Saves;
 
@@ -28,7 +29,12 @@ namespace Wildgrove.Game
         /// </summary>
         public OfflineSummary PendingOfflineSummary { get; private set; }
 
+        /// <summary>The analytics/crash-reporting sink (Debug.Log until Firebase lands — see docs/todo.md).</summary>
+        public ITelemetry Telemetry { get; private set; }
+
         private double _autosaveCountdown = AutosaveIntervalSeconds;
+        private float _sessionStartRealtime;
+        private bool _sessionOpen;
 
         private void Awake()
         {
@@ -58,16 +64,23 @@ namespace Wildgrove.Game
         private void OnApplicationPause(bool paused)
         {
             // Android's "the player switched away" signal — the last reliable
-            // moment to persist before the OS may kill the process.
+            // moment to persist before the OS may kill the process. It's also
+            // the mobile session boundary: end on pause, start on resume.
             if (paused)
             {
                 SaveNow();
+                EndSession();
+            }
+            else if (!_sessionOpen && State != null)
+            {
+                StartSession();
             }
         }
 
         private void OnApplicationQuit()
         {
             SaveNow();
+            EndSession();
         }
 
         private void Initialise()
@@ -83,6 +96,8 @@ namespace Wildgrove.Game
                 throw;
             }
 
+            Telemetry = new UnityLogTelemetry();
+
             if (SaveFile.TryLoad(out var save))
             {
                 State = SaveCodec.Restore(save, Data);
@@ -95,6 +110,36 @@ namespace Wildgrove.Game
             }
 
             _autosaveCountdown = AutosaveIntervalSeconds;
+            StartSession();
+
+            var offline = PendingOfflineSummary;
+            if (offline != null && offline.creditedSeconds > 0.0)
+            {
+                Telemetry.LogEvent("welcome_back",
+                    ("away_sec", System.Math.Round(offline.realSeconds)),
+                    ("credited_sec", System.Math.Round(offline.creditedSeconds)));
+            }
+        }
+
+        private void StartSession()
+        {
+            _sessionStartRealtime = Time.realtimeSinceStartup;
+            _sessionOpen = true;
+            Telemetry.LogEvent("session_start");
+        }
+
+        private void EndSession()
+        {
+            // Guarded so quit-after-pause (or a pause before Awake) can't
+            // double-count; the design's gate metric is session length.
+            if (!_sessionOpen)
+            {
+                return;
+            }
+
+            _sessionOpen = false;
+            Telemetry.LogEvent("session_end",
+                ("length_sec", System.Math.Round(Time.realtimeSinceStartup - _sessionStartRealtime)));
         }
 
         /// <summary>Persist the run now (also runs on the autosave interval, on pause, and on quit).</summary>
@@ -136,7 +181,17 @@ namespace Wildgrove.Game
         /// <summary>Gift one familiar onto the node. Returns false (no change) if the run can't afford it.</summary>
         public bool GiftFamiliar(NodeState node)
         {
-            return Economy.TryGiftFamiliar(State, Data.economy, node);
+            var cost = Economy.FamiliarGiftCost(State, Data.economy);
+            if (!Economy.TryGiftFamiliar(State, Data.economy, node))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("familiar_gifted",
+                ("node", node.id),
+                ("coin_cost", cost.ToDouble()),
+                ("total_familiars", State.TotalFamiliars()));
+            return true;
         }
 
         /// <summary>True once the run owns the one-off upgrade.</summary>
@@ -154,7 +209,15 @@ namespace Wildgrove.Game
         /// <summary>Buy a one-off upgrade. Returns false (no change) when owned or unaffordable.</summary>
         public bool PurchaseUpgrade(UpgradeData upgrade)
         {
-            return Upgrades.TryPurchase(State, Data, upgrade);
+            if (!Upgrades.TryPurchase(State, Data, upgrade))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("upgrade_purchased",
+                ("upgrade_id", upgrade.id),
+                ("coin_cost", upgrade.costCoin.ToDouble()));
+            return true;
         }
 
         /// <summary>Sell the whole stock of one resource to the Provisioner. Returns Coin gained.</summary>

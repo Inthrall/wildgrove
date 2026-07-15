@@ -14,6 +14,16 @@ they're easy to find and delete when resolved.
   in `design/data/economy.json`. Design v0.5 prices gifts in goods, not Coin; the Coin
   cost is a Phase-1 placeholder. Reprice (and pick the goods denomination) with the
   economy pass.
+- **Telemetry sink is the Unity log, not Firebase.** The design calls for
+  Crashlytics + GA events from Phase 1; the events (session_start/end,
+  upgrade_purchased, familiar_gifted, welcome_back) are instrumented behind
+  `ITelemetry`, but the sink is `UnityLogTelemetry` (Debug.Log / logcat) until the
+  Firebase side exists. Remaining steps: create the Firebase project + register
+  `com.inthrall.wildgrove` and download `google-services.json` (console work), then
+  import the Firebase Unity SDK (Analytics + Crashlytics) and swap the sink in
+  `GameLoop.Initialise`. Note the SDK's External Dependency Manager patches
+  `mainTemplate.gradle` — re-check the hand-authored Kotlin pins when it lands.
+  (`Assets/Scripts/Game/Telemetry/`)
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)
