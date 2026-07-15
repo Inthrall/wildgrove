@@ -14,13 +14,9 @@ they're easy to find and delete when resolved.
   in `design/data/economy.json`. Design v0.5 prices gifts in goods, not Coin; the Coin
   cost is a Phase-1 placeholder. Reprice (and pick the goods denomination) with the
   economy pass.
-- **Offline progress isn't auto-applied on load.** `GameLoop.Awake` starts a fresh
-  run every launch; `GameLoop.ApplyOfflineProgress` exists but nothing calls it until
-  there's persisted state to diff against (needs the save system — Phase 5). Applying
-  offline to a `NewGame` would fabricate resources, so the seam is intentionally dead
-  for now. (`Assets/Scripts/Game/GameLoop.cs`)
-- **Welcome-back offline summary sheet not built.** Design §Phase 1 calls for one;
-  `AdvanceOffline` already returns the credited wall-seconds for it to display.
+- **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
+  guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
+  `GameHud.WelcomeBackMinSeconds`)
 - **Upgrade rows show Coin cost only.** No Phase-1 upgrade has a materials cost, so
   the buy button doesn't display one; `Upgrades.TryPurchase` already spends materials,
   the label must learn to show them when the Phase 3 catalogue lands. (`GameHud`)
@@ -64,6 +60,11 @@ they're easy to find and delete when resolved.
   and its pipeline when Phase 3 crafting lands.
 - **Familiar caps not enforced in the sim.** `flockCap` / `carrierSlots` (design §8)
   arrive with the building lines; `TryGiftFamiliar` currently has no cap check.
+- **Save restore only rebuilds the starting zone's nodes.** `SaveCodec.Restore`
+  reconciles saved node progress against `GameStateFactory.NewGame`, which is
+  Sunfield-only — when Phase 3 zone unlocks land, restore must rebuild every
+  *unlocked* zone's nodes (derive the set from the run's purchased map upgrades)
+  or unlocked-zone familiars vanish on load. (`Assets/Scripts/Sim/Saves/SaveCodec.cs`)
 
 - **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /

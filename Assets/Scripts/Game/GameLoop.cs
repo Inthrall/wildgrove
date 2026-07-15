@@ -1,7 +1,9 @@
+using System;
 using BreakInfinity;
 using UnityEngine;
 using Wildgrove.Data;
 using Wildgrove.Sim;
+using Wildgrove.Sim.Saves;
 
 namespace Wildgrove.Game
 {
@@ -14,8 +16,19 @@ namespace Wildgrove.Game
     /// </summary>
     public sealed class GameLoop : MonoBehaviour
     {
+        private const double AutosaveIntervalSeconds = 30.0;
+
         public GameDataAsset Data { get; private set; }
         public GameState State { get; private set; }
+
+        /// <summary>
+        /// What the load-time offline catch-up credited, held until the HUD
+        /// collects it via <see cref="TakePendingOfflineSummary"/>. Null when
+        /// the launch had nothing to credit (fresh run, or already shown).
+        /// </summary>
+        public OfflineSummary PendingOfflineSummary { get; private set; }
+
+        private double _autosaveCountdown = AutosaveIntervalSeconds;
 
         private void Awake()
         {
@@ -25,14 +38,36 @@ namespace Wildgrove.Game
         private void Update()
         {
             // A script recompile during Play reloads the app domain: non-serialised
-            // fields reset and Awake does not re-run. Start a fresh run rather than
-            // ticking dead state (no save system yet, so the run was lost anyway).
+            // fields reset and Awake does not re-run. Re-initialise rather than
+            // ticking dead state — the run comes back from the last autosave.
             if (State == null)
             {
                 Initialise();
             }
 
             Simulation.Advance(State, Data, Time.deltaTime);
+
+            _autosaveCountdown -= Time.deltaTime;
+            if (_autosaveCountdown <= 0.0)
+            {
+                _autosaveCountdown = AutosaveIntervalSeconds;
+                SaveNow();
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            // Android's "the player switched away" signal — the last reliable
+            // moment to persist before the OS may kill the process.
+            if (paused)
+            {
+                SaveNow();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            SaveNow();
         }
 
         private void Initialise()
@@ -48,20 +83,42 @@ namespace Wildgrove.Game
                 throw;
             }
 
-            // Until the save system lands (versioned JSON, then cloud Saved Games
-            // in Phase 5), every launch starts a fresh run. When it does, load the
-            // persisted state here and feed the away-time to ApplyOfflineProgress.
-            State = GameStateFactory.NewGame(Data);
+            if (SaveFile.TryLoad(out var save))
+            {
+                State = SaveCodec.Restore(save, Data);
+                var awaySeconds = (NowUnixMs() - save.savedAtUnixMs) / 1000.0;
+                PendingOfflineSummary = Simulation.AdvanceOfflineWithSummary(State, Data, awaySeconds);
+            }
+            else
+            {
+                State = GameStateFactory.NewGame(Data);
+            }
+
+            _autosaveCountdown = AutosaveIntervalSeconds;
         }
 
-        /// <summary>
-        /// Credit time the player spent away (capped and rate-scaled by the sim).
-        /// Called by the load path once state persistence exists; returns the
-        /// wall-clock seconds credited so a welcome-back summary can be shown.
-        /// </summary>
-        public double ApplyOfflineProgress(double realElapsedSeconds)
+        /// <summary>Persist the run now (also runs on the autosave interval, on pause, and on quit).</summary>
+        public void SaveNow()
         {
-            return Simulation.AdvanceOffline(State, Data, realElapsedSeconds);
+            if (State == null)
+            {
+                return;
+            }
+
+            SaveFile.Write(SaveCodec.Capture(State, NowUnixMs()));
+        }
+
+        /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
+        public OfflineSummary TakePendingOfflineSummary()
+        {
+            var summary = PendingOfflineSummary;
+            PendingOfflineSummary = null;
+            return summary;
+        }
+
+        private static long NowUnixMs()
+        {
+            return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         }
 
         /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action).</summary>

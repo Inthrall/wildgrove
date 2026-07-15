@@ -26,6 +26,7 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0 },
+                offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -153,6 +154,46 @@ namespace Wildgrove.Sim.Tests
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void AdvanceOfflineWithSummary_ReportsCreditAndGains()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 100.0);
+
+            Assert.That(summary.realSeconds, Is.EqualTo(100.0).Within(Tolerance));
+            Assert.That(summary.creditedSeconds, Is.EqualTo(100.0).Within(Tolerance));
+            // Only the seeded berries node gathers, so it's the sole gain.
+            Assert.That(summary.gains.Keys, Is.EquivalentTo(new[] { "berries" }));
+            Assert.That(summary.gains["berries"].ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void AdvanceOfflineWithSummary_CappedAbsence_ReportsBothTimes()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var fiveHours = 5.0 * 3600.0;
+
+            var summary = Simulation.AdvanceOfflineWithSummary(state, _data, fiveHours);
+
+            // Cap is 4h: the full absence is reported but only the cap credits.
+            Assert.That(summary.realSeconds, Is.EqualTo(fiveHours).Within(Tolerance));
+            Assert.That(summary.creditedSeconds, Is.EqualTo(4.0 * 3600.0).Within(Tolerance));
+            Assert.That(summary.gains["berries"].ToDouble(), Is.EqualTo(4.0 * 3600.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void AdvanceOfflineWithSummary_NoTimeAway_HasNoGains()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            var summary = Simulation.AdvanceOfflineWithSummary(state, _data, -30.0);
+
+            Assert.That(summary.realSeconds, Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(summary.creditedSeconds, Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(summary.gains, Is.Empty);
         }
 
         [Test]

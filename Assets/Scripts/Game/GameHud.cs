@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using BreakInfinity;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -40,10 +41,17 @@ namespace Wildgrove.Game
             "flint-sickle", "waxed-satchel", "drying-rack", "handcart", "root-cellar",
         };
 
+        // Below this much credited absence the welcome-back sheet stays quiet —
+        // quick restarts and editor recompiles shouldn't greet the player.
+        private const double WelcomeBackMinSeconds = 60.0;
+        private const int WelcomeBackMaxGainLines = 6;
+
         private Text _headerLabel;
         private Text _upgradesHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
+        private Transform _canvas;
+        private GameObject _welcomeSheet;
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private NodeState _selected;
@@ -90,11 +98,19 @@ namespace Wildgrove.Game
             _rows.Clear();
             _upgradeRows.Clear();
             BuildUi();
+            ShowWelcomeBackIfEarned();
         }
 
         /// <summary>Route the free-space Tend gesture (empty tap / Space / pad-A) to the selected node.</summary>
         private void HandleTendInput()
         {
+            // While the welcome-back sheet is up, its dim layer owns the screen —
+            // a non-positional confirm (Space / pad-A) shouldn't tend behind it.
+            if (_welcomeSheet != null)
+            {
+                return;
+            }
+
             if (!_input.TendTriggered(out var screenPosition))
             {
                 return;
@@ -124,6 +140,7 @@ namespace Wildgrove.Game
         {
             var canvasGo = new GameObject("HudCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasGo.transform.SetParent(transform, false);
+            _canvas = canvasGo.transform;
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
@@ -265,6 +282,84 @@ namespace Wildgrove.Game
         private void Select(NodeState node)
         {
             _selected = node;
+        }
+
+        /// <summary>
+        /// The welcome-back sheet: a one-shot modal over the HUD reporting what
+        /// the load-time offline catch-up credited. Only shown when the absence
+        /// was long enough to be worth greeting.
+        /// </summary>
+        private void ShowWelcomeBackIfEarned()
+        {
+            var summary = _loop.TakePendingOfflineSummary();
+            if (summary == null || summary.creditedSeconds < WelcomeBackMinSeconds || summary.gains.Count == 0)
+            {
+                return;
+            }
+
+            // Full-screen dim layer — its Image is a raycast target, so it also
+            // swallows taps meant for the HUD underneath.
+            _welcomeSheet = CreatePanel("WelcomeBack", _canvas, new Color(0f, 0f, 0f, 0.65f));
+            StretchFull(_welcomeSheet.GetComponent<RectTransform>());
+
+            var sheet = CreatePanel("Sheet", _welcomeSheet.transform, PanelColor);
+            var sheetRect = sheet.GetComponent<RectTransform>();
+            sheetRect.anchorMin = new Vector2(0.06f, 0.5f);
+            sheetRect.anchorMax = new Vector2(0.94f, 0.5f);
+            sheetRect.pivot = new Vector2(0.5f, 0.5f);
+            sheetRect.offsetMin = new Vector2(0f, 0f);
+            sheetRect.offsetMax = new Vector2(0f, 0f);
+            var sheetLayout = sheet.AddComponent<VerticalLayoutGroup>();
+            sheetLayout.padding = new RectOffset(40, 40, 36, 36);
+            sheetLayout.spacing = 16f;
+            sheetLayout.childControlWidth = true;
+            sheetLayout.childControlHeight = true;
+            sheetLayout.childForceExpandWidth = true;
+            sheetLayout.childForceExpandHeight = false;
+            var fitter = sheet.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var title = CreateText("Title", sheet.transform, 44, TextAnchor.MiddleCenter, TextColor);
+            title.text = "Welcome back";
+            SetPreferredHeight(title.gameObject, 64f);
+
+            // Report the credited time, and be honest when the cap trimmed it.
+            var capped = summary.creditedSeconds < summary.realSeconds - 1.0;
+            var away = CreateText("Away", sheet.transform, 30, TextAnchor.MiddleCenter,
+                new Color(TextColor.r, TextColor.g, TextColor.b, 0.8f));
+            away.text = capped
+                ? "Away " + NumberFormat.Duration(summary.realSeconds)
+                  + "  •  " + NumberFormat.Duration(summary.creditedSeconds) + " credited (offline cap)"
+                : "Away " + NumberFormat.Duration(summary.realSeconds);
+            SetPreferredHeight(away.gameObject, 44f);
+
+            foreach (var gain in summary.gains.OrderByDescending(g => g.Value).Take(WelcomeBackMaxGainLines))
+            {
+                var line = CreateText("Gain_" + gain.Key, sheet.transform, 32, TextAnchor.MiddleCenter, TextColor);
+                line.text = "+" + NumberFormat.Short(gain.Value) + "  " + PrettyName(gain.Key);
+                SetPreferredHeight(line.gameObject, 44f);
+            }
+
+            var remainder = summary.gains.Count - WelcomeBackMaxGainLines;
+            if (remainder > 0)
+            {
+                var more = CreateText("More", sheet.transform, 26, TextAnchor.MiddleCenter,
+                    new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
+                more.text = "…and " + remainder + " more";
+                SetPreferredHeight(more.gameObject, 38f);
+            }
+
+            var (dismiss, _) = CreateButton("Continue", sheet.transform, "Continue", DismissWelcomeBack);
+            SetPreferredHeight(dismiss.gameObject, 96f);
+        }
+
+        private void DismissWelcomeBack()
+        {
+            if (_welcomeSheet != null)
+            {
+                Destroy(_welcomeSheet);
+                _welcomeSheet = null;
+            }
         }
 
         private void Refresh()
