@@ -34,6 +34,15 @@ namespace Wildgrove.Game
             if (group < Suffixes.Length)
             {
                 var scaled = value.Mantissa * System.Math.Pow(10.0, exponent - group * 3);
+
+                // "0.##" rounds, so 999.996 would print as "1000K" — carry it
+                // into the next group ("1M") instead.
+                if (scaled >= 999.995 && group + 1 < Suffixes.Length)
+                {
+                    group++;
+                    scaled /= 1000.0;
+                }
+
                 return scaled.ToString("0.##", CultureInfo.InvariantCulture) + Suffixes[group];
             }
 

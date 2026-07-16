@@ -45,6 +45,12 @@ on:
 permissions:
   contents: write   # needed to create the GitHub Release
 
+# Two concurrent blank-versionCode dispatches would resolve the same number
+# and race the tag + Play upload — queue them instead.
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build signed Android AAB
@@ -63,18 +69,27 @@ jobs:
         with:
           lfs: true
 
+      # Inputs reach the shell via env, never inline interpolation — a crafted
+      # input must not become shell syntax — and are validated before use.
       - name: Resolve version code
         id: vc
         env:
           GH_TOKEN: ${{ github.token }}
+          VC_INPUT: ${{ inputs.versionCode }}
         run: |
-          vc="${{ inputs.versionCode }}"
+          vc="$VC_INPUT"
+          if [ -n "$vc" ] && ! [[ "$vc" =~ ^[0-9]+$ ]]; then
+            echo "::error::versionCode must be a whole number, got '$vc'"
+            exit 1
+          fi
           if [ -z "$vc" ]; then
-            # Auto: one past the highest android-v* GitHub release. Every Play
-            # upload goes through this workflow (which tags a release), so the
-            # tags track Play's highest versionCode.
-            latest=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' \
-              | sed -n 's/^android-v\([0-9]\{1,\}\)$/\1/p' | sort -n | tail -1)
+            # Auto: one past the highest android-v* GIT TAG. Tags (not the
+            # releases list) so a deleted release can't re-issue its number,
+            # and --paginate so no volume of newer tags pushes the latest
+            # android one out of a fixed window. Every Play upload goes
+            # through this workflow, so the tags track Play's highest code.
+            latest=$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/android-v" --jq '.[].ref' \
+              | sed -n 's/^refs\/tags\/android-v\([0-9]\{1,\}\)$/\1/p' | sort -n | tail -1)
             vc=$(( ${latest:-0} + 1 ))
           fi
           echo "Resolved versionCode: $vc"
@@ -82,9 +97,15 @@ jobs:
 
       - name: Resolve version name
         id: ver
+        env:
+          VN_INPUT: ${{ inputs.versionName }}
         run: |
-          vn="${{ inputs.versionName }}"
+          vn="$VN_INPUT"
           if [ -z "$vn" ]; then vn="0.1.${{ steps.vc.outputs.versionCode }}"; fi
+          if ! [[ "$vn" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::versionName may only contain letters, digits, dots, dashes and underscores"
+            exit 1
+          fi
           echo "versionName=$vn" >> "$GITHUB_OUTPUT"
 
       # Same cache key family as android-build.yml so release builds reuse the
@@ -97,8 +118,9 @@ jobs:
           restore-keys: |
             Library-Android-
 
+      # Pinned by SHA — this action receives the upload keystore.
       - name: Build with Unity (signed)
-        uses: game-ci/unity-builder@v4
+        uses: game-ci/unity-builder@1d4ee0697f193f54668e98961d79907911f4b4f2 # v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -151,9 +173,10 @@ jobs:
           Uploaded to Play track: ${{ inputs.uploadToPlay && inputs.track || 'not uploaded' }}."
           fi
 
+      # Pinned by SHA — this action receives the Play service-account key.
       - name: Upload to Google Play
         if: ${{ inputs.uploadToPlay }}
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.inthrall.wildgrove

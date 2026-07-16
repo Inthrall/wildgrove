@@ -41,6 +41,7 @@ namespace Wildgrove.Data
             ValidateResources(data, issues);
             ValidateZones(data, issues);
             ValidateRecipes(data, resourceIds, issues);
+            ValidateRecipeObtainability(data, issues);
             ValidateBuildings(data, issues);
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
@@ -108,6 +109,19 @@ namespace Wildgrove.Data
                 issues.Add($"Duplicate zone order {duplicate.Key}");
             }
 
+            // Only the starting zone's unlocks are mechanically live (they
+            // seed UnlockedSkills); a typo there silently severs everything
+            // hanging off the skill. Later zones' unlocks are documentation —
+            // a known divergence — so they stay unchecked.
+            var startingZone = data.Zones.OrderBy(z => z.Order).FirstOrDefault();
+            if (startingZone != null)
+            {
+                foreach (var skill in startingZone.Unlocks.Where(s => !KnownSkills.Contains(s)))
+                {
+                    issues.Add($"Starting zone '{startingZone.Id}' unlock '{skill}' is not a known skill");
+                }
+            }
+
             foreach (var zone in data.Zones)
             {
                 if (zone.Resources.Count == 0)
@@ -134,6 +148,15 @@ namespace Wildgrove.Data
                 .SelectMany(u => u.Effects)
                 .Where(e => e.Type == EffectType.UnlockRecipe && e.Recipe != null)
                 .Select(e => e.Recipe));
+
+            // What a run can actually open: the starting (lowest-order) zone's
+            // unlocks plus every upgrade-granted skill.
+            var unlockableSkills = new HashSet<string>(
+                data.Zones.OrderBy(z => z.Order).Select(z => z.Unlocks).FirstOrDefault() ?? new List<string>());
+            unlockableSkills.UnionWith(data.Upgrades
+                .SelectMany(u => u.Effects)
+                .Where(e => e.Type == EffectType.UnlockSkill && e.Skill != null)
+                .Select(e => e.Skill));
 
             foreach (var recipe in data.Recipes)
             {
@@ -172,6 +195,13 @@ namespace Wildgrove.Data
                     issues.Add($"Recipe '{recipe.Id}' input '{input}' is not gathered from any zone or produced by any recipe");
                 }
 
+                foreach (var input in recipe.Inputs.Where(kv => kv.Value <= 0))
+                {
+                    // Zero would craft trade goods from nothing (free Coin via
+                    // valueMult); negative would CREDIT stock at batch start.
+                    issues.Add($"Recipe '{recipe.Id}' input '{input.Key}' amount must be positive");
+                }
+
                 if (recipe.StationLevel < 1)
                 {
                     issues.Add($"Recipe '{recipe.Id}' has stationLevel below 1");
@@ -181,6 +211,58 @@ namespace Wildgrove.Data
                 {
                     issues.Add($"Recipe '{recipe.Id}' has skillLevel below 1");
                 }
+
+                // The XP clamp stops at maxLevel, so a gate above it is a
+                // "visible goal" that can never be reached.
+                if (data.Economy?.Xp != null && recipe.SkillLevel > data.Economy.Xp.MaxLevel)
+                {
+                    issues.Add($"Recipe '{recipe.Id}' skillLevel {recipe.SkillLevel} exceeds xp.maxLevel {data.Economy.Xp.MaxLevel} — unreachable forever");
+                }
+
+                // Existence isn't enough: at runtime only the starting zone's
+                // unlocks and upgrade unlockSkill effects open skills (other
+                // zones' unlocks lists are documentation — known divergence).
+                // A recipe keyed to a never-granted skill is invisible forever.
+                if (KnownSkills.Contains(recipe.Skill) && !unlockableSkills.Contains(recipe.Skill))
+                {
+                    issues.Add($"Recipe '{recipe.Id}' skill '{recipe.Skill}' is never unlockable — not in the starting zone's unlocks and no upgrade grants it");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Every recipe must be reachable from gathered leaves: fixpoint over
+        /// "all inputs obtainable → output obtainable". Catches circular
+        /// chains (A needs B, B needs A — including self-inputs), which pass
+        /// referential checks but deadlock stations at runtime.
+        /// </summary>
+        private static void ValidateRecipeObtainability(GameData data, List<string> issues)
+        {
+            var obtainable = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
+            var pending = new List<RecipeDef>(data.Recipes);
+            var grew = true;
+            while (grew)
+            {
+                grew = false;
+                for (var i = pending.Count - 1; i >= 0; i--)
+                {
+                    var recipe = pending[i];
+                    if (recipe.Inputs.Keys.All(input => obtainable.Contains(input)))
+                    {
+                        if (recipe.Output != null)
+                        {
+                            obtainable.Add(recipe.Output);
+                        }
+
+                        pending.RemoveAt(i);
+                        grew = true;
+                    }
+                }
+            }
+
+            foreach (var recipe in pending)
+            {
+                issues.Add($"Recipe '{recipe.Id}' can never be crafted — its inputs are not reachable from gathered resources (cycle or missing source)");
             }
         }
 
@@ -233,6 +315,18 @@ namespace Wildgrove.Data
                     issues.Add($"Recipe '{recipe.Id}' needs station '{recipe.Station}' level {recipe.StationLevel} but no building line has that id");
                 }
             }
+
+            // Once any building lines exist, EVERY recipe station must match
+            // one: a typo'd station id doesn't break the recipe — it silently
+            // deletes the station gate (StationLevelMet treats an unclaimed
+            // station as ungated, a concession to hand-built test data).
+            if (data.Buildings.Count > 0)
+            {
+                foreach (var recipe in data.Recipes.Where(r => r.Station != null && data.Buildings.All(b => b.Id != r.Station)))
+                {
+                    issues.Add($"Recipe '{recipe.Id}' station '{recipe.Station}' matches no building line — its station gate would silently vanish");
+                }
+            }
         }
 
         private static void ValidateUpgrades(GameData data, HashSet<string> resourceIds, List<string> issues)
@@ -247,6 +341,11 @@ namespace Wildgrove.Data
                 foreach (var material in upgrade.Materials.Keys.Where(m => !resourceIds.Contains(m)))
                 {
                     issues.Add($"Upgrade '{upgrade.Id}' material '{material}' is not gathered from any zone or produced by any recipe");
+                }
+
+                foreach (var material in upgrade.Materials.Where(kv => kv.Value <= 0))
+                {
+                    issues.Add($"Upgrade '{upgrade.Id}' material '{material.Key}' amount must be positive");
                 }
 
                 foreach (var effect in upgrade.Effects)
@@ -277,6 +376,11 @@ namespace Wildgrove.Data
                 foreach (var material in gear.Materials.Keys.Where(m => !resourceIds.Contains(m)))
                 {
                     issues.Add($"Gear '{gear.Id}' material '{material}' is not gathered from any zone or produced by any recipe");
+                }
+
+                foreach (var material in gear.Materials.Where(kv => kv.Value <= 0))
+                {
+                    issues.Add($"Gear '{gear.Id}' material '{material.Key}' amount must be positive");
                 }
 
                 foreach (var effect in gear.Effects)
@@ -335,6 +439,14 @@ namespace Wildgrove.Data
             CheckIds(data.Rites.Rites.Select(r => r.Id), "rite", issues);
             CheckIds(data.Rites.Rites.SelectMany(r => r.Verses).Select(v => v.Id), "verse", issues);
 
+            // Resource offerings credit Renown at trade value (design §7) —
+            // and only gathered raws and trade-kind recipe outputs have one.
+            // A material offering must carry its own renownGrant instead.
+            var tradeValued = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
+            tradeValued.UnionWith(data.Recipes
+                .Where(r => r.Kind == "trade" && r.Output != null)
+                .Select(r => r.Output));
+
             if (data.Rites.ChooseCount <= 0)
             {
                 issues.Add("Rites chooseCount must be positive");
@@ -372,13 +484,14 @@ namespace Wildgrove.Data
 
                     foreach (var slot in verse.Slots)
                     {
-                        ValidateRiteSlot(verse.Id, slot, resourceIds, issues);
+                        ValidateRiteSlot(verse.Id, slot, resourceIds, tradeValued, issues);
                     }
                 }
             }
         }
 
-        private static void ValidateRiteSlot(string verseId, RiteSlotDef slot, HashSet<string> resourceIds, List<string> issues)
+        private static void ValidateRiteSlot(string verseId, RiteSlotDef slot, HashSet<string> resourceIds,
+            HashSet<string> tradeValued, List<string> issues)
         {
             switch (slot.Type)
             {
@@ -386,6 +499,12 @@ namespace Wildgrove.Data
                     if (slot.Resource == null || !resourceIds.Contains(slot.Resource))
                     {
                         issues.Add($"Verse '{verseId}' resource slot references '{slot.Resource}' which is not gathered from any zone or produced by any recipe");
+                    }
+                    else if (!tradeValued.Contains(slot.Resource) && slot.RenownGrant <= 0)
+                    {
+                        // Materials price at zero, so without an explicit grant
+                        // the slot would credit no Renown — taxing prestige.
+                        issues.Add($"Verse '{verseId}' resource slot '{slot.Resource}' is a material with no trade value — it needs an explicit renownGrant");
                     }
 
                     if (slot.Amount <= 0)
@@ -525,8 +644,10 @@ namespace Wildgrove.Data
                 issues.Add("Economy tools.tiers is empty");
             }
 
-            if (economy.Xp != null && (economy.Xp.Growth <= 1 || economy.Xp.MaxLevel <= 1))
+            if (economy.Xp != null && (economy.Xp.Base <= 0 || economy.Xp.Growth <= 1 || economy.Xp.MaxLevel <= 1))
             {
+                // Base ≤ 0 means every rung costs nothing — all skills read
+                // max level at zero XP and every skillLevel gate falls open.
                 issues.Add("Economy xp progression is degenerate");
             }
 

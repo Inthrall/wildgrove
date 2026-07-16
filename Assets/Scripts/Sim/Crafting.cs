@@ -44,6 +44,28 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// True when a station may actively work the recipe: known, skill
+        /// unlocked, station hot enough, and skill level met. Assign checks
+        /// this on the way in, and Advance re-checks it every tick — so a
+        /// station restored (or data retuned) past a gate stalls instead of
+        /// crafting through it.
+        /// </summary>
+        public static bool IsWorkable(GameState state, GameDataAsset data, RecipeData recipe)
+        {
+            return IsWorkable(state, data, recipe,
+                Upgrades.UnlockedSkills(state, data), Upgrades.UnlockedRecipeIds(state, data));
+        }
+
+        private static bool IsWorkable(GameState state, GameDataAsset data, RecipeData recipe,
+            HashSet<string> unlockedSkills, HashSet<string> unlockedRecipes)
+        {
+            return (recipe.defaultKnown || unlockedRecipes.Contains(recipe.id))
+                   && unlockedSkills.Contains(recipe.skill)
+                   && StationLevelMet(state, data, recipe)
+                   && SkillLevelMet(state, data, recipe);
+        }
+
+        /// <summary>
         /// True when the run's skill level covers the recipe's skillLevel
         /// (design §4: levels gate recipes). Ungated when economy.xp is absent
         /// — hand-built test data without the XP system.
@@ -87,7 +109,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public static void Assign(GameState state, GameDataAsset data, RecipeData recipe)
         {
-            if (state == null || recipe == null || !SkillLevelMet(state, data, recipe))
+            if (state == null || recipe == null || !IsWorkable(state, data, recipe))
             {
                 return;
             }
@@ -148,9 +170,26 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            // The gate sets are purchase-driven and shared by every station;
+            // computed lazily so station-less ticks stay allocation-free.
+            HashSet<string> unlockedSkills = null;
+            HashSet<string> unlockedRecipes = null;
+
             foreach (var station in state.stations)
             {
                 if (station.recipeId == null || !data.RecipesById.TryGetValue(station.recipeId, out var recipe))
+                {
+                    continue;
+                }
+
+                unlockedSkills = unlockedSkills ?? Upgrades.UnlockedSkills(state, data);
+                unlockedRecipes = unlockedRecipes ?? Upgrades.UnlockedRecipeIds(state, data);
+
+                // A station holding a recipe the run can no longer work (a
+                // save restored past a gate, or a data retune) stalls with its
+                // in-flight batch frozen — Stop refunds it; it never crafts
+                // through a gate Assign would refuse.
+                if (!IsWorkable(state, data, recipe, unlockedSkills, unlockedRecipes))
                 {
                     continue;
                 }

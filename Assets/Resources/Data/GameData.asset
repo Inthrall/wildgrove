@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: ebef5e3159b1a4fb81246e3bdafa4eb26a8d1aded8d874cdc19847777512e76f
+  sourceHash: f29fa183288730e8a35350a7a9234f37693aca57acc0154d1303f00b3528c31a
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1234,7 +1234,7 @@ MonoBehaviour:
           deed: 
           count: 0
           quality: 
-          renownGrant: 0
+          renownGrant: 375
         - type: 0
           resource: herbs
           amount: 300
@@ -1268,7 +1268,7 @@ MonoBehaviour:
           deed: 
           count: 0
           quality: 
-          renownGrant: 0
+          renownGrant: 200
         - type: 0
           resource: mushroom-skewer
           amount: 12
@@ -1282,7 +1282,7 @@ MonoBehaviour:
           deed: 
           count: 0
           quality: 
-          renownGrant: 0
+          renownGrant: 550
         - type: 3
           resource: 
           amount: 0
@@ -1322,7 +1322,7 @@ MonoBehaviour:
           deed: 
           count: 0
           quality: 
-          renownGrant: 0
+          renownGrant: 3000
         - type: 2
           resource: 
           amount: 0

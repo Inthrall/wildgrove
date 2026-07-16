@@ -116,6 +116,14 @@ they're easy to find and delete when resolved.
   folds in the Verdure global bonus only; the other multipliers arrive with their
   systems and multiply in there.
 
+## Narrative authoring
+
+- **MVP dialogue strings are partly empty** — the silverrun-river waystone and
+  three of four verse lines in `design/data/dialogue.json` are `""`. The
+  validator can't enforce non-empty text until the words are written (that's
+  the §6 narrative budget, an authoring task, not a data bug); add the
+  every-mvp-zone-has-text rule when they land.
+
 ## Data-layer review items (open from the data-layer PR review)
 
 - **Skills vocabulary hardcoded** in `GameDataValidator` as a C# `HashSet` rather than

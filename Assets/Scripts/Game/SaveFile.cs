@@ -38,7 +38,20 @@ namespace Wildgrove.Game
                 return false;
             }
 
-            var parsed = SaveCodec.FromJson(json);
+            SaveData parsed;
+            try
+            {
+                parsed = SaveCodec.FromJson(json);
+            }
+            catch (Exception e)
+            {
+                // FromJson absorbs JSON shape errors itself; anything that
+                // still escapes is a decode failure the corrupt-file path must
+                // own — the alternative is a crash loop on every launch.
+                Debug.LogError("Save decode failed: " + e.Message);
+                parsed = null;
+            }
+
             if (parsed == null || !SaveCodec.TryMigrate(parsed))
             {
                 SetAsideCorrupt();

@@ -77,8 +77,10 @@ namespace Wildgrove.Sim.Saves
         {
             // The baseline supplies the node set the current data says exists:
             // the fresh-run starting zone, extended with every zone the saved
-            // purchases had unlocked. The sync's regional seeds (familiar,
-            // carrier) are provisional — the saved values overwrite them below.
+            // purchases had unlocked. Regional seeds for zones the save KNEW
+            // are overwritten by the saved values below; a zone that first
+            // materialises during this restore (a data update added the
+            // unlock) keeps its seeds, matching the live unlock path.
             var state = GameStateFactory.NewGame(data);
             state.purchasedUpgradeIds = save.purchasedUpgradeIds != null
                 ? new List<string>(save.purchasedUpgradeIds)
@@ -87,7 +89,6 @@ namespace Wildgrove.Sim.Saves
 
             state.coin = save.coin;
             state.verdurePoints = save.verdurePoints;
-            state.carrierCount = save.carrierCount;
 
             state.resources.Clear();
             if (save.resources != null)
@@ -112,6 +113,19 @@ namespace Wildgrove.Sim.Saves
                     }
                 }
             }
+
+            // Zones the save knew contributed their seed carrier to the saved
+            // carrierCount already; zones materialising for the first time in
+            // this restore keep the +1 the live unlock path would have granted.
+            var newZones = new HashSet<string>();
+            var savedZones = new HashSet<string>();
+            foreach (var node in state.nodes)
+            {
+                (savedById.ContainsKey(node.id) ? savedZones : newZones).Add(node.zoneId);
+            }
+
+            newZones.ExceptWith(savedZones);
+            state.carrierCount = save.carrierCount + newZones.Count;
 
             foreach (var node in state.nodes)
             {

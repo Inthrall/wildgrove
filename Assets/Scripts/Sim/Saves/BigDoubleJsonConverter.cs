@@ -37,8 +37,17 @@ namespace Wildgrove.Sim.Saves
                     "Malformed BigDouble '" + text + "' — expected '<mantissa>e<exponent>'.");
             }
 
-            var mantissa = double.Parse(text.Substring(0, split), NumberStyles.Float, CultureInfo.InvariantCulture);
-            var exponent = long.Parse(text.Substring(split + 1), NumberStyles.Integer, CultureInfo.InvariantCulture);
+            // TryParse, not Parse: FormatException/OverflowException are not
+            // JsonExceptions, so they would sail past FromJson's catch and
+            // turn a corrupt save into a launch crash loop instead of a
+            // set-aside .corrupt file.
+            if (!double.TryParse(text.Substring(0, split), NumberStyles.Float, CultureInfo.InvariantCulture, out var mantissa)
+                || !long.TryParse(text.Substring(split + 1), NumberStyles.Integer, CultureInfo.InvariantCulture, out var exponent))
+            {
+                throw new JsonSerializationException(
+                    "Malformed BigDouble '" + text + "' — expected '<mantissa>e<exponent>'.");
+            }
+
             return new BigDouble(mantissa, exponent);
         }
     }

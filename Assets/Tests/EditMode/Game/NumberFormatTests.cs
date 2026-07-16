@@ -16,6 +16,14 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Short_JustUnderASuffixBoundary_CarriesIntoTheNextGroup()
+        {
+            // "0.##" rounds 999.996 up — must read 1M, never 1000K.
+            Assert.That(NumberFormat.Short(new BigDouble(999996.0)), Is.EqualTo("1M"));
+            Assert.That(NumberFormat.Short(new BigDouble(999994.0)), Is.EqualTo("999.99K"));
+        }
+
+        [Test]
         public void Short_Negative_ReturnsZero()
         {
             Assert.That(NumberFormat.Short(new BigDouble(-5.0)), Is.EqualTo("0"));

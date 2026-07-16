@@ -60,6 +60,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
+            Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -331,6 +332,115 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("mastery progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RecipeCycle_IsReported()
+        {
+            var sources = LoadSources();
+            // Planks now require planks — referentially fine, never craftable.
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"inputs\": { \"timber\": 3 },",
+                "\"inputs\": { \"planks\": 3 },");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("can never be crafted")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_SkillLevelAboveXpCap_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"skillLevel\": 5",
+                "\"skillLevel\": 120");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("exceeds xp.maxLevel")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RecipeOnNeverGrantedSkill_IsReported()
+        {
+            var sources = LoadSources();
+            // apothecary is a known skill, but nothing unlocks it at runtime.
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"skill\": \"firecraft\",  \"inputs\": { \"fish\": 2 }",
+                "\"skill\": \"apothecary\", \"inputs\": { \"fish\": 2 }");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("never unlockable")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_NonPositiveRecipeInputAmount_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"inputs\": { \"fish\": 3 },",
+                "\"inputs\": { \"fish\": 0 },");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("amount must be positive")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RecipeStationWithNoBuildingLine_IsReported()
+        {
+            var sources = LoadSources();
+            // A typo'd station id must fail loudly — at runtime it would
+            // silently REMOVE the station gate, not break the recipe.
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"id\": \"cordage\",         \"station\": \"bench\"",
+                "\"id\": \"cordage\",         \"station\": \"benchh\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("station gate would silently vanish")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_ZeroXpBase_IsReported()
+        {
+            var sources = LoadSources();
+            // base 0 → every rung free → all skills read max level at 0 XP.
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"base\": 100,",
+                "\"base\": 0,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_MaterialRiteOfferingWithoutRenownGrant_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"resource\": \"copper-ingot\",   \"amount\": 5,   \"renownGrant\": 375",
+                "\"resource\": \"copper-ingot\",   \"amount\": 5");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("needs an explicit renownGrant")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_TypoInStartingZoneUnlocks_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"unlocks\": [\"foraging\"],",
+                "\"unlocks\": [\"forraging\"],");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("is not a known skill")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

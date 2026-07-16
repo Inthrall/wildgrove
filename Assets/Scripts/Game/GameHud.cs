@@ -40,10 +40,14 @@ namespace Wildgrove.Game
         // honestly previewing the crafting system rather than hiding it.
         private const int UpgradeShopWindow = 3;
 
-        // Below this much credited absence the welcome-back sheet stays quiet —
-        // quick restarts and editor recompiles shouldn't greet the player.
-        private const double WelcomeBackMinSeconds = 60.0;
         private const int WelcomeBackMaxGainLines = 6;
+
+        // Recipe availability and skill levels change on the order of
+        // purchases and level-ups, not frames — recomputing them per frame
+        // was the HUD's main source of per-frame garbage (list + hash sets
+        // per query) on a mobile target. A quarter second of staleness is
+        // imperceptible next to the button press that changes them.
+        private const float SectionRefreshInterval = 0.25f;
 
         private Text _headerLabel;
         private Text _upgradesHeader;
@@ -63,6 +67,9 @@ namespace Wildgrove.Game
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
+        private readonly HashSet<string> _availableRecipeIds = new HashSet<string>();
+        private string _skillsLine = string.Empty;
+        private float _sectionRefreshCountdown;
         private NodeState _selected;
 
         private void Update()
@@ -87,6 +94,13 @@ namespace Wildgrove.Game
 
             HandleTendInput();
             Refresh();
+
+            // A pause→resume catch-up can queue a summary while the HUD is
+            // already built — surface it the same way the load-time one shows.
+            if (_welcomeSheet == null && _loop.PendingOfflineSummary != null)
+            {
+                ShowWelcomeBackIfEarned();
+            }
         }
 
         private void Initialise()
@@ -480,6 +494,9 @@ namespace Wildgrove.Game
                 info = info,
                 toggleButton = toggle,
                 toggleLabel = toggleLabel,
+                // Static per recipe — built once, not per frame.
+                inputsLine = string.Join(" + ",
+                    recipe.inputs.Select(i => i.amount + " " + PrettyName(i.id))),
             };
         }
 
@@ -542,6 +559,29 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The purchase-and-level-driven queries, refreshed on the slow
+        /// cadence: which recipes are on offer, and the header's skills line.
+        /// </summary>
+        private void RefreshSectionCaches()
+        {
+            _availableRecipeIds.Clear();
+            foreach (var recipe in _loop.AvailableRecipes())
+            {
+                _availableRecipeIds.Add(recipe.id);
+            }
+
+            _skillsLine = string.Empty;
+            if (_loop.Data.economy?.xp != null)
+            {
+                foreach (var skill in _loop.UnlockedSkills())
+                {
+                    _skillsLine += (_skillsLine.Length > 0 ? "   " : string.Empty)
+                                   + PrettyName(skill) + " " + _loop.SkillLevel(skill);
+                }
+            }
+        }
+
+        /// <summary>
         /// (Re)create a row per gathering node — called at build, and again
         /// whenever the node list changes (a trail map unlocked a zone).
         /// </summary>
@@ -567,7 +607,7 @@ namespace Wildgrove.Game
         private void ShowWelcomeBackIfEarned()
         {
             var summary = _loop.TakePendingOfflineSummary();
-            if (summary == null || summary.creditedSeconds < WelcomeBackMinSeconds || summary.gains.Count == 0)
+            if (summary == null || summary.creditedSeconds < GameLoop.WelcomeBackMinSeconds || summary.gains.Count == 0)
             {
                 return;
             }
@@ -642,6 +682,13 @@ namespace Wildgrove.Game
             var state = _loop.State;
             var economy = _loop.Data.economy;
 
+            _sectionRefreshCountdown -= Time.deltaTime;
+            if (_sectionRefreshCountdown <= 0f)
+            {
+                _sectionRefreshCountdown = SectionRefreshInterval;
+                RefreshSectionCaches();
+            }
+
             // A trail-map purchase grew the node list — mirror it in the rows.
             if (_rows.Count != state.nodes.Count)
             {
@@ -663,17 +710,9 @@ namespace Wildgrove.Game
                                 + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty);
 
             // The skills readout (design §4): each unlocked skill's level.
-            if (_loop.Data.economy?.xp != null)
+            if (_skillsLine.Length > 0)
             {
-                var skills = _loop.UnlockedSkills();
-                var line = string.Empty;
-                foreach (var skill in skills)
-                {
-                    line += (line.Length > 0 ? "   " : string.Empty)
-                            + PrettyName(skill) + " " + _loop.SkillLevel(skill);
-                }
-
-                _headerLabel.text += "\n<size=26>" + line + "</size>";
+                _headerLabel.text += "\n<size=26>" + _skillsLine + "</size>";
             }
 
             foreach (var row in _rows)
@@ -743,18 +782,14 @@ namespace Wildgrove.Game
 
             _upgradesHeader.gameObject.SetActive(onOffer > 0);
 
-            // The crafting section: only recipes the run can work right now
-            // (known + skill unlocked); hidden entirely before the first one.
-            var available = new HashSet<string>();
-            foreach (var recipe in _loop.AvailableRecipes())
-            {
-                available.Add(recipe.id);
-            }
-
+            // The crafting section: recipes the run can see, plus anything a
+            // station is actively working (a running recipe must always have a
+            // row, or a data retune could leave an unstoppable station).
             var anyCraftable = false;
             foreach (var row in _craftRows)
             {
-                var show = available.Contains(row.recipe.id);
+                var crafting = _loop.IsCrafting(row.recipe);
+                var show = crafting || _availableRecipeIds.Contains(row.recipe.id);
                 row.root.SetActive(show);
                 if (!show)
                 {
@@ -762,17 +797,18 @@ namespace Wildgrove.Game
                 }
 
                 anyCraftable = true;
-                var inputs = string.Join(" + ",
-                    row.recipe.inputs.Select(i => i.amount + " " + PrettyName(i.id)));
 
-                // Level-locked recipes stay on the list as a visible goal, with
-                // the requirement spelled out and the button disabled.
-                var levelMet = _loop.IsRecipeLevelMet(row.recipe);
+                var workable = _loop.IsRecipeWorkable(row.recipe);
                 var status = string.Empty;
-                var crafting = _loop.IsCrafting(row.recipe);
-                if (!levelMet)
+                if (!_loop.IsRecipeLevelMet(row.recipe))
                 {
+                    // A visible goal: the requirement spelled out.
                     status = "  •  needs " + PrettyName(row.recipe.skill) + " " + row.recipe.skillLevel;
+                }
+                else if (!workable)
+                {
+                    // Some other gate closed after assignment (data retune).
+                    status = "  •  locked";
                 }
                 else if (crafting)
                 {
@@ -783,9 +819,10 @@ namespace Wildgrove.Game
                 }
 
                 row.info.text = PrettyName(row.recipe.id)
-                                + "\n<size=22>" + inputs + status + "</size>";
+                                + "\n<size=22>" + row.inputsLine + status + "</size>";
                 row.toggleLabel.text = crafting ? "Stop" : "Craft";
-                row.toggleButton.interactable = levelMet;
+                // Stop must always be reachable — only starting is gated.
+                row.toggleButton.interactable = crafting || workable;
             }
 
             _craftingHeader.gameObject.SetActive(anyCraftable);
@@ -945,11 +982,20 @@ namespace Wildgrove.Game
             element.minWidth = width;
         }
 
+        // Memoised — PrettyName runs many times per frame over a small, fixed
+        // set of content ids, and the split/join otherwise allocates each call.
+        private static readonly Dictionary<string, string> PrettyNameCache = new Dictionary<string, string>();
+
         private static string PrettyName(string id)
         {
             if (string.IsNullOrEmpty(id))
             {
                 return id;
+            }
+
+            if (PrettyNameCache.TryGetValue(id, out var cached))
+            {
+                return cached;
             }
 
             var words = id.Replace('-', ' ').Replace('_', ' ').Split(' ');
@@ -961,7 +1007,9 @@ namespace Wildgrove.Game
                 }
             }
 
-            return string.Join(" ", words);
+            var pretty = string.Join(" ", words);
+            PrettyNameCache[id] = pretty;
+            return pretty;
         }
 
         private sealed class RowView
@@ -990,6 +1038,7 @@ namespace Wildgrove.Game
             public Text info;
             public Button toggleButton;
             public Text toggleLabel;
+            public string inputsLine;
         }
 
         private sealed class BuildingRowView

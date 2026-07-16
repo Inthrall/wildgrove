@@ -19,13 +19,22 @@ namespace Wildgrove.Game
     {
         private const double AutosaveIntervalSeconds = 30.0;
 
+        /// <summary>
+        /// Below this much credited absence the welcome-back sheet stays quiet
+        /// (quick restarts and editor recompiles shouldn't greet the player).
+        /// The welcome_back telemetry event uses the same bar so the metric
+        /// counts what players actually saw.
+        /// </summary>
+        public const double WelcomeBackMinSeconds = 60.0;
+
         public GameDataAsset Data { get; private set; }
         public GameState State { get; private set; }
 
         /// <summary>
-        /// What the load-time offline catch-up credited, held until the HUD
-        /// collects it via <see cref="TakePendingOfflineSummary"/>. Null when
-        /// the launch had nothing to credit (fresh run, or already shown).
+        /// What the last offline catch-up (cold launch or pause→resume)
+        /// credited, held until the HUD collects it via
+        /// <see cref="TakePendingOfflineSummary"/>. Null when there was
+        /// nothing to credit (fresh run, or already shown).
         /// </summary>
         public OfflineSummary PendingOfflineSummary { get; private set; }
 
@@ -35,6 +44,7 @@ namespace Wildgrove.Game
         private double _autosaveCountdown = AutosaveIntervalSeconds;
         private float _sessionStartRealtime;
         private bool _sessionOpen;
+        private long _lastSavedUnixMs;
 
         private void Awake()
         {
@@ -73,6 +83,13 @@ namespace Wildgrove.Game
             }
             else if (!_sessionOpen && State != null)
             {
+                // Resuming a still-alive process — Android's most common
+                // return path. Update's next delta is clamped to a fraction of
+                // a second, so the hours away must be credited here exactly
+                // like a cold launch credits them (the pause branch saved on
+                // the way out, making the last save the absence baseline).
+                // Without this the next autosave would forfeit the absence.
+                CreditAbsence((NowUnixMs() - _lastSavedUnixMs) / 1000.0);
                 StartSession();
             }
         }
@@ -101,23 +118,38 @@ namespace Wildgrove.Game
             if (SaveFile.TryLoad(out var save))
             {
                 State = SaveCodec.Restore(save, Data);
-                var awaySeconds = (NowUnixMs() - save.savedAtUnixMs) / 1000.0;
-                PendingOfflineSummary = Simulation.AdvanceOfflineWithSummary(State, Data, awaySeconds);
+                CreditAbsence((NowUnixMs() - save.savedAtUnixMs) / 1000.0);
             }
             else
             {
                 State = GameStateFactory.NewGame(Data);
             }
 
+            _lastSavedUnixMs = NowUnixMs();
             _autosaveCountdown = AutosaveIntervalSeconds;
             StartSession();
+        }
 
-            var offline = PendingOfflineSummary;
-            if (offline != null && offline.creditedSeconds > 0.0)
+        /// <summary>
+        /// Run the offline catch-up for an absence and queue the welcome-back
+        /// summary — shared by the cold-launch load and the pause→resume path.
+        /// </summary>
+        private void CreditAbsence(double awaySeconds)
+        {
+            var summary = Simulation.AdvanceOfflineWithSummary(State, Data, awaySeconds);
+
+            // An unshown summary from a previous absence keeps priority — it
+            // credited earlier, larger time; don't clobber it with a top-up.
+            if (PendingOfflineSummary == null && summary.creditedSeconds > 0.0)
+            {
+                PendingOfflineSummary = summary;
+            }
+
+            if (summary.creditedSeconds >= WelcomeBackMinSeconds)
             {
                 Telemetry.LogEvent("welcome_back",
-                    ("away_sec", System.Math.Round(offline.realSeconds)),
-                    ("credited_sec", System.Math.Round(offline.creditedSeconds)));
+                    ("away_sec", System.Math.Round(summary.realSeconds)),
+                    ("credited_sec", System.Math.Round(summary.creditedSeconds)));
             }
         }
 
@@ -150,7 +182,8 @@ namespace Wildgrove.Game
                 return;
             }
 
-            SaveFile.Write(SaveCodec.Capture(State, NowUnixMs()));
+            _lastSavedUnixMs = NowUnixMs();
+            SaveFile.Write(SaveCodec.Capture(State, _lastSavedUnixMs));
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
@@ -297,10 +330,16 @@ namespace Wildgrove.Game
             return Crafting.AvailableRecipes(State, Data);
         }
 
-        /// <summary>True when the run's skill level covers the recipe's skillLevel — the assign gate.</summary>
+        /// <summary>True when the run's skill level covers the recipe's skillLevel — for the HUD's requirement hint.</summary>
         public bool IsRecipeLevelMet(RecipeData recipe)
         {
             return Crafting.SkillLevelMet(State, Data, recipe);
+        }
+
+        /// <summary>True when a station may actively work the recipe (every gate) — the assign/advance gate.</summary>
+        public bool IsRecipeWorkable(RecipeData recipe)
+        {
+            return Crafting.IsWorkable(State, Data, recipe);
         }
 
         /// <summary>The skill's current level (1 when the XP system is unconfigured).</summary>
@@ -353,9 +392,9 @@ namespace Wildgrove.Game
                 return;
             }
 
-            // Level-locked: Assign would refuse anyway, but bail here so the
+            // Gated: Assign would refuse anyway, but bail here so the
             // telemetry can't report a craft that never started.
-            if (!Crafting.SkillLevelMet(State, Data, recipe))
+            if (!Crafting.IsWorkable(State, Data, recipe))
             {
                 return;
             }

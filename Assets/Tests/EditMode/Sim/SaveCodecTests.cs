@@ -293,6 +293,33 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void FromJson_MalformedBigDoubleField_ReturnsNullInsteadOfThrowing()
+        {
+            // Bit-rot inside a BigDouble string must land on the corrupt-file
+            // path, not crash the launch: a parse failure here used to escape
+            // as FormatException past the JsonException catch.
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": \"1.5e\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": \"1.x5e42\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": 100 }"), Is.Null);
+        }
+
+        [Test]
+        public void Restore_ZoneUnlockedSinceTheSave_KeepsItsSeedCarrier()
+        {
+            // A data update granted unlockZone to an upgrade the save already
+            // owns: the save has none of the zone's nodes. The live purchase
+            // path seeds a gatherer AND a carrier — restore must agree.
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.purchasedUpgradeIds.Add("map-bramble");
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.nodes.Any(n => n.zoneId == "bramble-hedgerows"), Is.True);
+            Assert.That(restored.nodes.Single(n => n.resourceId == "nuts").familiarCount, Is.EqualTo(1));
+            Assert.That(restored.carrierCount, Is.EqualTo(2));
+        }
+
+        [Test]
         public void TryMigrate_FutureVersion_IsRefused()
         {
             var save = new SaveData { version = SaveCodec.CurrentVersion + 1 };

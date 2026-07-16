@@ -296,6 +296,61 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_GateLostMidBatch_StallsFrozen_AndStopStillRefunds()
+        {
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(5.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+            Crafting.Advance(state, _data, 2.0); // batch in flight, inputs spent
+
+            // A retune raises the gate above the run's level after assignment.
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99 };
+            Recipe("berry-jam").skillLevel = 3;
+
+            Crafting.Advance(state, _data, 30.0);
+
+            // Frozen, not completed — it must never craft through a gate
+            // Assign would refuse — and Stop still refunds the batch.
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Crafting.Stop(state, _data, Recipe("berry-jam"));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_SkillNoLongerUnlocked_Stalls()
+        {
+            // The restored-save shape: a station holds a recipe whose skill
+            // grant no longer exists in purchasedUpgradeIds.
+            var state = new GameState();
+            state.AddResource("timber", new BigDouble(10.0));
+            state.stations.Add(new StationState { stationId = "fire", recipeId = "charcoal" });
+
+            Crafting.Advance(state, _data, 30.0);
+
+            Assert.That(state.GetResource("charcoal").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("timber").ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Assign_StationLineNotBuilt_Refuses()
+        {
+            _data.buildings = new List<BuildingData>
+            {
+                new BuildingData
+                {
+                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 0.05 },
+                },
+            };
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(5.0));
+
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Null);
+        }
+
+        [Test]
         public void SkillLevelMet_XpUnconfigured_IsOpen()
         {
             Recipe("berry-jam").skillLevel = 5;

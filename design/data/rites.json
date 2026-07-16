@@ -1,5 +1,5 @@
 {
-  "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant. Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
+  "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant, and so do resource slots offering unsellable MATERIALS (ingots, cordage — trade value is zero, the validator enforces the grant; values approximate amount x the material's notional input-derived worth). Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
   "chooseCount": 3,
   "rites": [
     {
@@ -25,7 +25,7 @@
           "slots": [
             { "type": "resource", "resource": "berry-preserve", "amount": 8 },
             { "type": "resource", "resource": "nuts",           "amount": 400 },
-            { "type": "resource", "resource": "copper-ingot",   "amount": 5 },
+            { "type": "resource", "resource": "copper-ingot",   "amount": 5,   "renownGrant": 375 },
             { "type": "resource", "resource": "herbs",          "amount": 300 },
             { "type": "specimen", "quality": "fine",            "count": 1, "renownGrant": 150 }
           ]
@@ -36,9 +36,9 @@
           "spotlight": ["bushcraft", "forgecraft"],
           "slots": [
             { "type": "resource", "resource": "planks",          "amount": 20 },
-            { "type": "resource", "resource": "cordage",         "amount": 12 },
+            { "type": "resource", "resource": "cordage",         "amount": 12, "renownGrant": 200 },
             { "type": "resource", "resource": "mushroom-skewer", "amount": 12 },
-            { "type": "resource", "resource": "bronze-ingot",    "amount": 4 },
+            { "type": "resource", "resource": "bronze-ingot",    "amount": 4,  "renownGrant": 550 },
             { "type": "fragment", "count": 1, "renownGrant": 500 }
           ]
         },
@@ -50,7 +50,7 @@
             { "type": "resource", "resource": "fish",         "amount": 500 },
             { "type": "resource", "resource": "smoked-trout", "amount": 20 },
             { "type": "resource", "resource": "clay",         "amount": 300 },
-            { "type": "resource", "resource": "iron-ingot",   "amount": 6 },
+            { "type": "resource", "resource": "iron-ingot",   "amount": 6,   "renownGrant": 3000 },
             { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 1000 }
           ]
         }
