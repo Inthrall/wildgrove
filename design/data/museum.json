@@ -1,9 +1,16 @@
 {
-  "$comment": "Museum sets (design doc §5): groups of Compendium entries completed by DONATING a Pristine specimen of each listed resource. A completed set grants a permanent effect that survives Migration; the Curator's Cabinet upgrade (museumSetBonusMult) scales the granted values while owned. Donation is the three-way Pristine choice made real: sell the windfall, offer it to the Rite, or bank permanence here. Sets and effect sizes are first guesses over the four MVP zones' resources; more sets (and the full Compendium plates around them) come with the content pass.",
+  "$comment": "Museum sets (design doc §5): groups of Compendium entries completed by DONATING a Pristine specimen of each listed resource. A completed set grants a permanent effect that survives Migration; the Curator's Cabinet upgrade (museumSetBonusMult) scales the granted values while owned. Donation is the three-way Pristine choice made real: sell the windfall, offer it to the Rite, or bank permanence here. Sets and effect sizes are first guesses: one set per zone across all eight, plus the Warden's Gallery capstone (one donation from every zone — the long cross-zone chase). The full Compendium plates around them come with the art pass.",
   "sets": [
     { "id": "meadow-blooms",     "name": "Meadow Blooms",     "entries": ["berries", "wildflowers", "fibres"],       "effects": [{ "type": "yieldBonus", "skill": "foraging", "value": 0.10 }] },
     { "id": "hedgerow-harvest",  "name": "Hedgerow Harvest",  "entries": ["nuts", "herbs", "copper-scree"],          "effects": [{ "type": "pristineChanceBonus", "value": 0.005 }] },
     { "id": "old-growth-bounty", "name": "Old-Growth Bounty", "entries": ["timber", "mushrooms", "tin-seam"],        "effects": [{ "type": "offlineCapBonusHours", "value": 1 }] },
-    { "id": "river-catch",       "name": "River Catch",       "entries": ["fish", "reeds", "clay", "iron-gravel"],   "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }] }
+    { "id": "river-catch",       "name": "River Catch",       "entries": ["fish", "reeds", "clay", "iron-gravel"],   "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }] },
+
+    { "id": "marsh-lights",      "name": "Marsh Lights",      "entries": ["peat", "rare-herbs", "fireflies"],        "effects": [{ "type": "craftSpeedMult", "value": 1.1 }] },
+    { "id": "hollow-relics",     "name": "Relics of the Hollows", "entries": ["deep-ores", "crystals", "bone-beds"], "effects": [{ "type": "digSpeedMult", "value": 1.25 }] },
+    { "id": "crag-flock",        "name": "The Crag Flock",    "entries": ["eggs", "wool", "lichen"],                 "effects": [{ "type": "carrierCapacityBonus", "value": 0.10 }] },
+    { "id": "summit-posy",       "name": "Summit Posy",       "entries": ["sky-blossoms", "glacier-ice"],            "effects": [{ "type": "tendingBurstBonus", "value": 0.25 }] },
+
+    { "id": "wardens-gallery",   "name": "The Warden's Gallery", "entries": ["berries", "nuts", "timber", "fish", "peat", "deep-ores", "eggs", "sky-blossoms"], "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.10 }] }
   ]
 }

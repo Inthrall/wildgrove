@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: b54a780820537aa1f1dc151f87581768e83040b0e93c27b9781fc342c4939c24
+  sourceHash: 0f19e337809238db5f6be00e2d861f86e42a892403b18284e95d64cd639e451e
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1406,6 +1406,75 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.15
+  - id: marsh-lights
+    displayName: Marsh Lights
+    entries:
+    - peat
+    - rare-herbs
+    - fireflies
+    effects:
+    - type: 4
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.1
+  - id: hollow-relics
+    displayName: Relics of the Hollows
+    entries:
+    - deep-ores
+    - crystals
+    - bone-beds
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.25
+  - id: crag-flock
+    displayName: The Crag Flock
+    entries:
+    - eggs
+    - wool
+    - lichen
+    effects:
+    - type: 12
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.1
+  - id: summit-posy
+    displayName: Summit Posy
+    entries:
+    - sky-blossoms
+    - glacier-ice
+    effects:
+    - type: 11
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.25
+  - id: wardens-gallery
+    displayName: The Warden's Gallery
+    entries:
+    - berries
+    - nuts
+    - timber
+    - fish
+    - peat
+    - deep-ores
+    - eggs
+    - sky-blossoms
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.1
   bonds:
   - id: sootwing
     displayName: Sootwing, a pack raven
