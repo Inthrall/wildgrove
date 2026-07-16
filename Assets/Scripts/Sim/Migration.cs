@@ -72,6 +72,22 @@ namespace Wildgrove.Sim
                 next.fossilFragments[pair.Key] = pair.Value;
             }
 
+            // "You keep … the Compendium" — the lifetime record crosses whole.
+            foreach (var pair in state.lifetimeGathered)
+            {
+                next.lifetimeGathered[pair.Key] = pair.Value;
+            }
+
+            foreach (var pair in state.lifetimeCrafted)
+            {
+                next.lifetimeCrafted[pair.Key] = pair.Value;
+            }
+
+            foreach (var pair in state.lifetimePristine)
+            {
+                next.lifetimePristine[pair.Key] = pair.Value;
+            }
+
             // Fossil effects fold into the fresh run's multipliers at once.
             Upgrades.RecomputeYieldMultipliers(next, data);
             return next;

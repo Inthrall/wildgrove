@@ -65,17 +65,21 @@ namespace Wildgrove.Sim
                     ? System.Math.Min(deltaSeconds, node.tendBurstRemaining)
                     : 0.0;
 
-                if (node.familiarCount > 0)
+                // Gate on the rate, not the flock count: a bonded gatherer
+                // posted at an empty node (design §7) gathers alone.
+                var baseRate = YieldPerSecond(node, state, data, economy);
+                if (baseRate > BigDouble.Zero)
                 {
                     var normalSeconds = deltaSeconds - burstSeconds;
-                    var baseRate = YieldPerSecond(node, state, data, economy);
                     var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
 
                     // XP from every action (design §4) — credited on the gross
                     // gather, so a full basket loses the goods but not the
-                    // practice. Mastery accrues alongside, per node.
+                    // practice. Mastery and the Compendium's lifetime record
+                    // accrue alongside.
                     Skills.AddGatherXp(state, data, node.skill, gained);
                     Mastery.AddGatherXp(node, economy, gained);
+                    Compendium.RecordGather(state, node.resourceId, gained);
 
                     if (hauling != null)
                     {
@@ -101,6 +105,7 @@ namespace Wildgrove.Sim
                     state.AddResource(node.resourceId, handGathered);
                     Skills.AddGatherXp(state, data, node.skill, handGathered);
                     Mastery.AddGatherXp(node, economy, handGathered);
+                    Compendium.RecordGather(state, node.resourceId, handGathered);
                 }
 
                 if (node.tendBurstRemaining > 0.0)
@@ -195,6 +200,7 @@ namespace Wildgrove.Sim
             {
                 case QualityTier.Pristine:
                     state.AddPristine(node.resourceId, amount);
+                    Compendium.RecordPristine(state, node.resourceId, amount);
                     break;
 
                 case QualityTier.Fine:

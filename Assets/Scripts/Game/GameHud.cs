@@ -72,6 +72,9 @@ namespace Wildgrove.Game
         private Text _museumHeader;
         private GameObject _museumPanel;
         private readonly List<MuseumRowView> _museumRows = new List<MuseumRowView>();
+        private Text _compendiumHeader;
+        private GameObject _compendiumPanel;
+        private Text _compendiumText;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -411,6 +414,24 @@ namespace Wildgrove.Game
                 info.horizontalOverflow = HorizontalWrapMode.Wrap;
                 _museumRows.Add(new MuseumRowView { set = set, root = rowGo, info = info });
             }
+
+            // The Compendium (design §5): the lifetime record — every
+            // gatherable, recipe, and companion, discovered by doing. The
+            // hand-drawn plates and entry text arrive with the art/narrative
+            // pass; this is the field-notes rendering of the same record.
+            _compendiumHeader = CreateText("CompendiumHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _compendiumHeader.text = "Compendium";
+            SetPreferredHeight(_compendiumHeader.gameObject, 48f);
+
+            _compendiumPanel = CreatePanel("Compendium", sections, RowColor);
+            var compendiumLayout = _compendiumPanel.AddComponent<VerticalLayoutGroup>();
+            compendiumLayout.padding = new RectOffset(16, 16, 12, 12);
+            compendiumLayout.childControlWidth = true;
+            compendiumLayout.childControlHeight = true;
+            compendiumLayout.childForceExpandWidth = true;
+            compendiumLayout.childForceExpandHeight = false;
+            _compendiumText = CreateText("Entries", _compendiumPanel.transform, 28, TextAnchor.UpperLeft, TextColor);
+            _compendiumText.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             // The warden's kit (design §4): three slots of crafted survival
             // gear. Rows show as their craft skill unlocks.
@@ -907,6 +928,64 @@ namespace Wildgrove.Game
         }
 
         /// <summary>What a set of effects grants, for Almanac and Kit row subtitles.</summary>
+        /// <summary>
+        /// The Compendium's field-notes list: one line per DISCOVERED entry
+        /// (undiscovered ones stay off the page entirely — the count in the
+        /// header is the only hint at what's left to find).
+        /// </summary>
+        private void RefreshCompendium(GameState state)
+        {
+            var discovered = Compendium.DiscoveredCount(state, _loop.Data);
+            var visible = discovered > 0;
+            _compendiumHeader.gameObject.SetActive(visible);
+            _compendiumPanel.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            _compendiumHeader.text = "Compendium — " + discovered + " / "
+                                     + Compendium.TotalEntries(_loop.Data) + " entries";
+
+            var lines = new System.Text.StringBuilder();
+            foreach (var resource in _loop.Data.resources)
+            {
+                if (!Compendium.IsResourceDiscovered(state, resource.id))
+                {
+                    continue;
+                }
+
+                lines.Append(PrettyName(resource.id))
+                     .Append(" — ").Append(NumberFormat.Short(Compendium.LifetimeGathered(state, resource.id)))
+                     .Append(" gathered");
+                var pristine = Compendium.LifetimePristine(state, resource.id);
+                if (pristine > BigDouble.Zero)
+                {
+                    lines.Append("  •  ").Append(NumberFormat.Short(pristine)).Append(" pristine");
+                }
+
+                lines.Append('\n');
+            }
+
+            foreach (var recipe in _loop.Data.recipes)
+            {
+                if (Compendium.IsRecipeDiscovered(state, recipe.id))
+                {
+                    lines.Append(PrettyName(recipe.output))
+                         .Append(" — ").Append((long)Compendium.LifetimeCrafted(state, recipe.id))
+                         .Append(" crafted").Append('\n');
+                }
+            }
+
+            foreach (var bond in Bonds.Earned(state, _loop.Data))
+            {
+                lines.Append(bond.displayName).Append(" — bonded").Append('\n');
+            }
+
+            _compendiumText.text = lines.ToString().TrimEnd('\n');
+            SetPreferredHeight(_compendiumText.gameObject, 10f + 36f * discovered);
+        }
+
         private static string EffectSummary(List<EffectData> effects)
         {
             var parts = new List<string>();
@@ -1373,6 +1452,8 @@ namespace Wildgrove.Game
                                     + bondLine;
                 }
             }
+
+            RefreshCompendium(state);
 
             // Dig sites: who's turning soil, and how each fossil is assembling.
             foreach (var row in _digRows)

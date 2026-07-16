@@ -43,6 +43,11 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v15+: the node the bonded gatherers are posted at (null = the first node; earned bonds are derived, never saved).</summary>
         public string bondedPostNodeId;
 
+        /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
+        public List<SavedResource> lifetimeGathered = new List<SavedResource>();
+        public List<SavedTally> lifetimeCrafted = new List<SavedTally>();
+        public List<SavedResource> lifetimePristine = new List<SavedResource>();
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 
@@ -168,6 +173,13 @@ namespace Wildgrove.Sim.Saves
 
         [JsonConverter(typeof(BigDoubleJsonConverter))]
         public BigDouble amount;
+    }
+
+    /// <summary>A plain-double tally keyed by id (Compendium crafted-batch counts).</summary>
+    public sealed class SavedTally
+    {
+        public string id;
+        public double count;
     }
 
     /// <summary>

@@ -225,6 +225,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_TheCompendiumCrossesWhole()
+        {
+            var state = StateWithTheRiteSung();
+            state.lifetimeGathered["berries"] = new BigDouble(123456.0);
+            state.lifetimeCrafted["berry-preserve"] = 42.0;
+            state.lifetimePristine["berries"] = new BigDouble(3.0);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(Compendium.LifetimeGathered(next, "berries").ToDouble(), Is.EqualTo(123456.0).Within(Tolerance));
+            Assert.That(Compendium.LifetimeCrafted(next, "berry-preserve"), Is.EqualTo(42.0).Within(Tolerance));
+            Assert.That(Compendium.LifetimePristine(next, "berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance),
+                "the record is one of the axes that never reset");
+        }
+
+        [Test]
         public void Migrate_KeepsTheAlmanac_AndItsEffects()
         {
             _data.almanac = new List<AlmanacNodeData>

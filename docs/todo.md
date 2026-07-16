@@ -115,8 +115,13 @@ they're easy to find and delete when resolved.
   lifetime counters are not.** Quality pools now feed all three forks — the
   Provisioner windfall, Rite specimen slots, and Museum donations (one
   Pristine per set entry, permanent set bonuses × the Curator's Cabinet).
-  Still waiting: Compendium entries/plates/lifetime counters (the art +
-  content pass), more Museum sets, and familiar plates. Interpretations to
+  Still waiting: the Compendium's hand-drawn plates and entry text (the art
+  + narrative pass — the system layer with lifetime counters, discovery, and
+  the field-notes HUD section is live in `Wildgrove.Sim/Compendium.cs`;
+  counters record GROSS gathering like skill XP, crafted batches, and
+  Pristine UNITS — units not windfall events, an interpretation), more
+  Museum sets, familiar species plates, and a compendium_entry_discovered
+  telemetry event (skipped for now: offline catch-up would burst-fire it). Interpretations to
   confirm in balance: the whole batch takes the rolled tier;
   pristineValueMult (10×) isn't in the doc; hand-gather and the no-hauling
   fallback never roll; staggered-fleet cadence and fullest-basket-first

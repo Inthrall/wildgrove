@@ -221,6 +221,7 @@ namespace Wildgrove.Sim
                     {
                         state.AddResource(recipe.output, BigDouble.One);
                         Skills.AddCraftXp(state, data, recipe.skill);
+                        Compendium.RecordCraft(state, recipe.id);
                         station.inFlight = false;
                         station.progressSeconds = 0.0;
                     }

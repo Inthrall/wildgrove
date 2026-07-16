@@ -172,6 +172,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void BondedGatherer_GathersAloneAtAnEmptyNode()
+        {
+            // Regression: Step used to gate gathering on familiarCount > 0,
+            // so a bonded gatherer at an empty node showed a rate in the HUD
+            // while accruing nothing.
+            var state = GameStateFactory.NewGame(_data);
+            state.almanacNodeIds.Add("old-friend");
+            state.carrierCount = 0;
+            state.nodes[0].familiarCount = 0;
+
+            Simulation.Advance(state, _data, 10.0);
+
+            Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(10.0).Within(Tolerance),
+                "Burr gathers with or without a flock");
+        }
+
+        [Test]
         public void BondedGatherer_StaysOutsideTheFlockCount()
         {
             var state = GameStateFactory.NewGame(_data);

@@ -426,6 +426,34 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheCompendium()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.lifetimeGathered["berries"] = new BigDouble(1e42);
+            state.lifetimeCrafted["berry-preserve"] = 7.0;
+            state.lifetimePristine["berries"] = new BigDouble(2.0);
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.lifetimeGathered["berries"].ToDouble(), Is.EqualTo(1e42).Within(1e33));
+            Assert.That(restored.lifetimeCrafted["berry-preserve"], Is.EqualTo(7.0));
+            Assert.That(restored.lifetimePristine["berries"].ToDouble(), Is.EqualTo(2.0));
+        }
+
+        [Test]
+        public void TryMigrate_V15Save_StartsTheRecordEmpty()
+        {
+            // v15 predates the Compendium — the lifetime record starts here.
+            var save = new SaveData { version = 15, lifetimeGathered = null, lifetimeCrafted = null, lifetimePristine = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.lifetimeGathered, Is.Empty);
+            Assert.That(save.lifetimeCrafted, Is.Empty);
+            Assert.That(save.lifetimePristine, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V14Save_HasNoBondedPost()
         {
             // v14 predates bonded familiars; earned bonds are derived, never

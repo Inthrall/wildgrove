@@ -41,6 +41,11 @@ namespace Wildgrove.Sim
         /// </summary>
         public string bondedPostNodeId;
 
+        /// <summary>Compendium lifetime counters (design §5) — never reset, never decremented; they survive Migration.</summary>
+        public Dictionary<string, BigDouble> lifetimeGathered = new Dictionary<string, BigDouble>();
+        public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();
+        public Dictionary<string, BigDouble> lifetimePristine = new Dictionary<string, BigDouble>();
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

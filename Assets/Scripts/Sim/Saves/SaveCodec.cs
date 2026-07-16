@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 15;
+        public const int CurrentVersion = 16;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -53,6 +53,21 @@ namespace Wildgrove.Sim.Saves
             foreach (var pair in state.pristineResources)
             {
                 save.pristineResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+            }
+
+            foreach (var pair in state.lifetimeGathered)
+            {
+                save.lifetimeGathered.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+            }
+
+            foreach (var pair in state.lifetimeCrafted)
+            {
+                save.lifetimeCrafted.Add(new SavedTally { id = pair.Key, count = pair.Value });
+            }
+
+            foreach (var pair in state.lifetimePristine)
+            {
+                save.lifetimePristine.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
             foreach (var node in state.nodes)
@@ -168,6 +183,20 @@ namespace Wildgrove.Sim.Saves
 
             RestorePool(state.fineResources, save.fineResources);
             RestorePool(state.pristineResources, save.pristineResources);
+            RestorePool(state.lifetimeGathered, save.lifetimeGathered);
+            RestorePool(state.lifetimePristine, save.lifetimePristine);
+
+            state.lifetimeCrafted.Clear();
+            if (save.lifetimeCrafted != null)
+            {
+                foreach (var tally in save.lifetimeCrafted)
+                {
+                    if (tally?.id != null)
+                    {
+                        state.lifetimeCrafted[tally.id] = tally.count;
+                    }
+                }
+            }
 
             // A pre-v8 save carries no rng state (0) — keep the fresh seed the
             // baseline NewGame just rolled rather than pinning every migrated
@@ -514,6 +543,14 @@ namespace Wildgrove.Sim.Saves
                         // earned bonds themselves are derived, never stored,
                         // so they need no migration at all.
                         save.version = 15;
+                        break;
+
+                    case 15:
+                        // v15 predates the Compendium — the record starts here.
+                        save.lifetimeGathered = save.lifetimeGathered ?? new List<SavedResource>();
+                        save.lifetimeCrafted = save.lifetimeCrafted ?? new List<SavedTally>();
+                        save.lifetimePristine = save.lifetimePristine ?? new List<SavedResource>();
+                        save.version = 16;
                         break;
 
                     default:
