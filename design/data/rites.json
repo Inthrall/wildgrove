@@ -1,6 +1,12 @@
 {
   "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant, and so do resource slots offering unsellable MATERIALS (ingots, cordage — trade value is zero, the validator enforces the grant; values approximate amount x the material's notional input-derived worth). Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
   "chooseCount": 3,
+  "generator": {
+    "$comment": "Run-2+ generator tuning (design §8: verseDemand(m) = baseQty · d^m, spotlight slots cheapest). demandGrowth is d; spotlight slots price at value × spotlightDiscount, off-spotlight at value × offSpotlightPremium. All first guesses.",
+    "demandGrowth": 2.5,
+    "spotlightDiscount": 0.6,
+    "offSpotlightPremium": 1.5
+  },
   "rites": [
     {
       "id": "first-rite",

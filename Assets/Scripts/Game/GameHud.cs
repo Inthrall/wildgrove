@@ -445,7 +445,7 @@ namespace Wildgrove.Game
             riteLayout.childForceExpandWidth = true;
             riteLayout.childForceExpandHeight = false;
 
-            var rite = Rite.CurrentRite(_loop.Data);
+            var rite = Rite.CurrentRite(_loop.State, _loop.Data);
             if (rite != null)
             {
                 foreach (var verse in rite.verses)

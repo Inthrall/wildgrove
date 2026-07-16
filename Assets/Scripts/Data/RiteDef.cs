@@ -49,11 +49,30 @@ namespace Wildgrove.Data
         public List<RiteVerseDef> Verses { get; set; } = new List<RiteVerseDef>();
     }
 
+    /// <summary>
+    /// Tuning for the run-2+ Rite generator (design §8: verseDemand(m) =
+    /// baseQty · d^m; the 1–2 spotlight slots are the cheapest path).
+    /// </summary>
+    public sealed class RiteGeneratorDef
+    {
+        /// <summary>d in verseDemand(m) = baseQty · d^m — how much more each Rite asks than the last.</summary>
+        public double DemandGrowth { get; set; }
+
+        /// <summary>Spotlight slots price at value × this (≤ 1 — the cheap path).</summary>
+        public double SpotlightDiscount { get; set; }
+
+        /// <summary>Off-spotlight slots price at value × this (≥ 1 — grind at a premium).</summary>
+        public double OffSpotlightPremium { get; set; }
+    }
+
     /// <summary>Top-level shape of rites.json.</summary>
     public sealed class RitesConfig
     {
         /// <summary>How many of a verse's slots must be filled to complete it (design: 3 of 5).</summary>
         public int ChooseCount { get; set; }
+
+        /// <summary>Run-2+ generator tuning; null disables the generator (later runs re-walk the authored Rite).</summary>
+        public RiteGeneratorDef Generator { get; set; }
 
         public List<RiteDef> Rites { get; set; } = new List<RiteDef>();
     }

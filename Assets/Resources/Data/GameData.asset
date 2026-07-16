@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: eb1f569ded15a5d6683f87c048b238cd8d1d20f44a270c4a08f0fc0ca3af9dbc
+  sourceHash: 30f29eaa05b8ec29302cadd3208cdf40c35c9d28a8e7a2ee4301468ead3fc99d
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1398,6 +1398,10 @@ MonoBehaviour:
       value: 0.15
   rites:
     chooseCount: 3
+    generator:
+      demandGrowth: 2.5
+      spotlightDiscount: 0.6
+      offSpotlightPremium: 1.5
     rites:
     - id: first-rite
       migration: 0

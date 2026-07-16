@@ -167,6 +167,12 @@ namespace Wildgrove.Data
             return new RitesBundle
             {
                 chooseCount = r.ChooseCount,
+                generator = r.Generator == null ? null : new RiteGeneratorConfigData
+                {
+                    demandGrowth = r.Generator.DemandGrowth,
+                    spotlightDiscount = r.Generator.SpotlightDiscount,
+                    offSpotlightPremium = r.Generator.OffSpotlightPremium
+                },
                 rites = r.Rites.Select(rite => new RiteData
                 {
                     id = rite.Id,

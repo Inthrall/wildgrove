@@ -18,8 +18,19 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Rite
     {
-        /// <summary>The rite this run is walking: matched by migration count (run 1 = migration 0). Null when the data has none.</summary>
-        public static RiteData CurrentRite(GameDataAsset data)
+        private static RiteData _generated;
+        private static int _generatedMigration = -1;
+        private static GameDataAsset _generatedFrom;
+
+        /// <summary>
+        /// The rite this run is walking: an authored rite matching the
+        /// migration count when one exists (run 1 = migration 0), otherwise
+        /// the generated rite for this migration (memoised — generation is
+        /// deterministic, so regenerating is safe but wasteful). Data without
+        /// generator tuning re-walks the authored first rite. Null when the
+        /// data has no rites at all.
+        /// </summary>
+        public static RiteData CurrentRite(GameState state, GameDataAsset data)
         {
             var rites = data.rites?.rites;
             if (rites == null || rites.Count == 0)
@@ -27,9 +38,27 @@ namespace Wildgrove.Sim
                 return null;
             }
 
-            // Runs 2+ come from the Phase-4 generator; until then every run
-            // walks the authored first rite.
-            return rites[0];
+            foreach (var rite in rites)
+            {
+                if (rite.migration == state.migrationCount)
+                {
+                    return rite;
+                }
+            }
+
+            if (!RiteGenerator.Configured(data.rites))
+            {
+                return rites[0];
+            }
+
+            if (_generated == null || _generatedMigration != state.migrationCount || _generatedFrom != data)
+            {
+                _generated = RiteGenerator.Generate(data, state.migrationCount);
+                _generatedMigration = state.migrationCount;
+                _generatedFrom = data;
+            }
+
+            return _generated;
         }
 
         /// <summary>A verse is revealed when the run has opened its zone (the warden has stood at the verse site).</summary>
@@ -84,7 +113,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public static bool IsRiteComplete(GameState state, GameDataAsset data)
         {
-            var rite = CurrentRite(data);
+            var rite = CurrentRite(state, data);
             if (rite == null || rite.verses.Count == 0)
             {
                 return false;
@@ -233,7 +262,7 @@ namespace Wildgrove.Sim
             state.deedCounts.TryGetValue(deed, out var count);
             state.deedCounts[deed] = count + 1;
 
-            var rite = CurrentRite(data);
+            var rite = CurrentRite(state, data);
             if (rite == null)
             {
                 return;

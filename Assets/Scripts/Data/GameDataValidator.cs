@@ -573,6 +573,25 @@ namespace Wildgrove.Data
                 issues.Add("Rites chooseCount must be positive");
             }
 
+            var generator = data.Rites.Generator;
+            if (generator != null)
+            {
+                if (generator.DemandGrowth <= 1.0)
+                {
+                    issues.Add("Rites generator demandGrowth must exceed 1 — each Rite must ask more than the last");
+                }
+
+                if (generator.SpotlightDiscount <= 0.0 || generator.SpotlightDiscount > 1.0)
+                {
+                    issues.Add("Rites generator spotlightDiscount must be in (0, 1] — the spotlight is the cheap path");
+                }
+
+                if (generator.OffSpotlightPremium < 1.0)
+                {
+                    issues.Add("Rites generator offSpotlightPremium must be at least 1 — off-spotlight grinds at a premium");
+                }
+            }
+
             foreach (var rite in data.Rites.Rites)
             {
                 if (rite.Migration < 0)

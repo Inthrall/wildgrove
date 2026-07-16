@@ -193,9 +193,25 @@ namespace Wildgrove.Data
     }
 
     [Serializable]
+    public sealed class RiteGeneratorConfigData
+    {
+        public double demandGrowth;
+        public double spotlightDiscount;
+        public double offSpotlightPremium;
+    }
+
+    [Serializable]
     public sealed class RitesBundle
     {
         public int chooseCount;
+
+        /// <summary>
+        /// Run-2+ generator tuning. Unity serialization can't round-trip a
+        /// null — treat demandGrowth &lt;= 0 as "no generator" (the Configured
+        /// pattern), in which case later runs re-walk the authored Rite.
+        /// </summary>
+        public RiteGeneratorConfigData generator;
+
         public List<RiteData> rites = new List<RiteData>();
     }
 

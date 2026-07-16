@@ -310,6 +310,62 @@ namespace Wildgrove.Sim
             return 1.0;
         }
 
+        /// <summary>
+        /// The trade value the Provisioner would pay per unit, before any
+        /// state bonuses — zero for materials. The Rite generator uses this
+        /// to decide whether a goods slot needs an explicit renownGrant.
+        /// </summary>
+        public static BigDouble TradeUnitValue(GameDataAsset data, string resourceId)
+        {
+            return BaseUnitValue(data, resourceId, null);
+        }
+
+        /// <summary>
+        /// A good's notional worth per unit, for pricing Rite demands: raw
+        /// finds at their sellValue, crafted goods — INCLUDING materials,
+        /// which trade at zero — at their input-derived worth (summed input
+        /// notional value × the recipe's valueMult). This is the "notional
+        /// input-derived worth" the authored rites.json grants approximate.
+        /// </summary>
+        public static BigDouble NotionalUnitValue(GameDataAsset data, string resourceId)
+        {
+            return NotionalValue(data, resourceId, null);
+        }
+
+        private static BigDouble NotionalValue(GameDataAsset data, string resourceId, HashSet<string> visiting)
+        {
+            if (resourceId == null)
+            {
+                return BigDouble.Zero;
+            }
+
+            if (data.ResourcesById.TryGetValue(resourceId, out var resource))
+            {
+                return resource.sellValue;
+            }
+
+            var recipe = RecipeProducing(data, resourceId);
+            if (recipe == null)
+            {
+                return BigDouble.Zero;
+            }
+
+            visiting = visiting ?? new HashSet<string>();
+            if (!visiting.Add(resourceId))
+            {
+                return BigDouble.Zero;
+            }
+
+            var total = BigDouble.Zero;
+            foreach (var input in recipe.inputs)
+            {
+                total += NotionalValue(data, input.id, visiting) * input.amount;
+            }
+
+            visiting.Remove(resourceId);
+            return total * (recipe.valueMult > 0 ? recipe.valueMult : 1.0);
+        }
+
         private static BigDouble BaseUnitValue(GameDataAsset data, string resourceId, HashSet<string> visiting)
         {
             if (resourceId == null)

@@ -129,21 +129,36 @@ they're easy to find and delete when resolved.
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
   the loop playtest.
-- **The Rite and Migration are live; the Almanac and the generator are not.**
+- **The Rite, Migration, and the run-2+ generator are all live.**
   Verses reveal with their zones, offerings consume goods/specimens/fragments
   and credit Renown, verses complete at chooseCount, the Rite at
   all-verses-sung, and Migration folds the camp (confirm sheet with the
   vignette + Verdure forecast; reset per §7, keeping Verdure/Renown/fossils/
-  rng/migration count/Almanac). Still open: the run-2+ procedural verse
-  generator (runs 2+ currently REUSE the authored rite, unscaled), showing
-  `dialogue.verses` lines at the verse site, and the ≥3-slots-reachable
-  validator analysis (§7). Interpretations flagged:
+  rng/migration count/Almanac). Runs 2+ generate from the authored template
+  (same zones, slot shape, and value anchor; goods re-picked from the content
+  available by each zone's order, spotlight rotated by migration, demand
+  × demandGrowth^m, spotlight slots discounted / off-spotlight at a premium);
+  the ≥3-slots-reachable proof runs 2–10 lives in RiteGeneratorTests, not
+  the import-time validator (the validator can't see generated rites — it
+  validates the generator's tuning instead). Still open: showing
+  `dialogue.verses` lines at the verse site (generated verses reuse the
+  zone's site but have no authored lines — the narrative pass decides what
+  a run-3 verse *says*), and the design doc's region modifiers (single
+  region at MVP, modifierWeight ≡ 1). Generator interpretations flagged:
+  generator numbers (demandGrowth 2.5, spotlightDiscount 0.6,
+  offSpotlightPremium 1.5) are first guesses against §8's "similar share of
+  each run's lifetime output" — tune with real run-2 playtests; deed/
+  specimen/fragment COUNTS stay authored (they price in taps and luck —
+  only their renownGrant scales); Coin-bought skills with no home zone
+  (forgecraft via the Fire Ring) debut at zone order 2 for candidate gating;
+  a verse's raw candidates are its OWN zone's resources only (authored
+  pattern). Older Rite interpretations still flagged:
   plain-resource offerings credit Renown at the CURRENT sell value (incl.
   owned bonuses), specimen offerings auto-pick the largest matching pool,
   fragment offerings take from the richest incomplete fossil, deeds before a
   verse's reveal still count (lifetime, no per-verse baseline), and partial
   fossil FRAGMENTS survive Migration alongside completed fossils ("every
-  fossil"). (`Wildgrove.Sim/Rite.cs`, `Migration.cs`)
+  fossil"). (`Wildgrove.Sim/Rite.cs`, `RiteGenerator.cs`, `Migration.cs`)
 - **Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
   `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
   spoilage system for them to modify — both are recorded on the worn kit and

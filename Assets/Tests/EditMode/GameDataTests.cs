@@ -72,6 +72,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
             Assert.That(data.MuseumSetsById["river-catch"].Entries, Has.Count.EqualTo(4));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
+            Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(2.5), "the run-2+ generator's d in baseQty · d^m");
+            Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
+            Assert.That(data.Rites.Generator.OffSpotlightPremium, Is.EqualTo(1.5));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -441,6 +444,34 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("'bogus-find' is not a gathered resource")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RiteGeneratorShrinkingDemand_IsReported()
+        {
+            var sources = LoadSources();
+            // d <= 1 would make each Rite CHEAPER than the last while the
+            // economy compounds — the gate would stop gating.
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"demandGrowth\": 2.5,",
+                "\"demandGrowth\": 0.9,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("demandGrowth must exceed 1")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RiteGeneratorSpotlightDearerThanOffSpotlight_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"spotlightDiscount\": 0.6,",
+                "\"spotlightDiscount\": 1.4,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("spotlightDiscount must be in (0, 1]")), Is.True, string.Join("\n", issues));
         }
 
         [Test]
