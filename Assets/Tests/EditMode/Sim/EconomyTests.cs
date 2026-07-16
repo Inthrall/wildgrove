@@ -383,6 +383,64 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void SellResource_IncludesFineStockAtTheQualityBonus()
+        {
+            _data.economy.quality = new EconomyData.QualityData
+            {
+                fineChance = 0.035, fineValueMult = 1.5, pristineBaseChance = 0.005, pristineValueMult = 10.0,
+            };
+            var state = new GameState();
+            state.AddResource("berries", 5);
+            state.AddFine("berries", 4);
+
+            var gained = Economy.SellResource(state, _data, "berries");
+
+            // 5 common · 2 + 4 fine · 2 · 1.5 = 22, both pools cleared.
+            Assert.That(gained.ToDouble(), Is.EqualTo(22.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellPristine_IsTheWindfall_AndOnlyTouchesTheSpecimens()
+        {
+            _data.economy.quality = new EconomyData.QualityData
+            {
+                fineChance = 0.035, fineValueMult = 1.5, pristineBaseChance = 0.005, pristineValueMult = 10.0,
+            };
+            var state = new GameState();
+            state.AddResource("berries", 5);
+            state.AddPristine("berries", 3);
+
+            var gained = Economy.SellPristine(state, _data, "berries");
+
+            // 3 specimens · 2 · 10 — the common stock is untouched.
+            Assert.That(gained.ToDouble(), Is.EqualTo(60.0).Within(Tolerance));
+            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellAll_SellsFineOnlyHoldings_ButNeverPristine()
+        {
+            _data.economy.quality = new EconomyData.QualityData
+            {
+                fineChance = 0.035, fineValueMult = 1.5, pristineBaseChance = 0.005, pristineValueMult = 10.0,
+            };
+            var state = new GameState();
+            state.AddFine("berries", 4);       // no common berries at all
+            state.AddPristine("wildflowers", 2);
+
+            var gained = Economy.SellAll(state, _data);
+
+            // The fine-only holding sells (4 · 2 · 1.5); the specimens stay —
+            // sell-all must never spend the sell/donate/offer choice.
+            Assert.That(gained.ToDouble(), Is.EqualTo(12.0).Within(Tolerance));
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetPristine("wildflowers").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+        }
+
+        [Test]
         public void AdvanceOffline_WithinCap_CreditsFullElapsed()
         {
             var state = GameStateFactory.NewGame(_data); // 1 familiar on the berries node

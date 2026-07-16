@@ -297,6 +297,7 @@ namespace Wildgrove.Data
             public double fineChance;
             public double fineValueMult;
             public double pristineBaseChance;
+            public double pristineValueMult;
         }
 
         [Serializable]
@@ -311,6 +312,7 @@ namespace Wildgrove.Data
             public double burstYieldMult;
             public double burstDurationSec;
             public double pristineBonusDurationSec;
+            public double pristineChanceBonus;
             public double handGatherPerSecond;
         }
     }

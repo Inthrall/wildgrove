@@ -31,6 +31,16 @@ namespace Wildgrove.Sim.Saves
         public double haulTripProgress;
 
         public List<SavedResource> resources = new List<SavedResource>();
+
+        /// <summary>v8+: Fine-quality finds per resource (absent before quality rolls — pools start empty).</summary>
+        public List<SavedResource> fineResources = new List<SavedResource>();
+
+        /// <summary>v8+: Pristine specimens per resource (absent before quality rolls — pools start empty).</summary>
+        public List<SavedResource> pristineResources = new List<SavedResource>();
+
+        /// <summary>v8+: xorshift64* state for the run's rolls (0 in older saves — restore reseeds).</summary>
+        public ulong rngState;
+
         public List<SavedNode> nodes = new List<SavedNode>();
         public List<string> purchasedUpgradeIds = new List<string>();
 
@@ -95,6 +105,9 @@ namespace Wildgrove.Sim.Saves
         public double masteryXp;
 
         public double tendBurstRemaining;
+
+        /// <summary>v8+: seconds left on the post-tend Pristine window (absent before quality rolls — defaults to zero).</summary>
+        public double pristineBonusRemaining;
 
         /// <summary>v2+: goods gathered but not yet hauled to camp (absent in v1 — defaults to zero).</summary>
         [JsonConverter(typeof(BigDoubleJsonConverter))]

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: f29fa183288730e8a35350a7a9234f37693aca57acc0154d1303f00b3528c31a
+  sourceHash: aea5e1423fa79a563e3bd9dda079c3081b24328ba2b36085d77b8fb94e336f09
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -71,12 +71,14 @@ MonoBehaviour:
       fineChance: 0.035
       fineValueMult: 1.5
       pristineBaseChance: 0.005
+      pristineValueMult: 10
     excavation:
       pityTimerHoursDug: 4
     tending:
       burstYieldMult: 3
       burstDurationSec: 5
       pristineBonusDurationSec: 30
+      pristineChanceBonus: 1
       handGatherPerSecond: 0.5
   resources:
   - id: berries

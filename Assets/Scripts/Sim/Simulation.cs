@@ -104,6 +104,11 @@ namespace Wildgrove.Sim
                 {
                     node.tendBurstRemaining = System.Math.Max(0.0, node.tendBurstRemaining - deltaSeconds);
                 }
+
+                if (node.pristineBonusRemaining > 0.0)
+                {
+                    node.pristineBonusRemaining = System.Math.Max(0.0, node.pristineBonusRemaining - deltaSeconds);
+                }
             }
 
             if (hauling != null)
@@ -165,7 +170,32 @@ namespace Wildgrove.Sim
                 state.haulTripProgress -= interval;
                 var moved = BigDouble.Min(node.basket, load);
                 node.basket -= moved;
-                state.AddResource(node.resourceId, moved);
+                Deliver(state, data, node, moved);
+            }
+        }
+
+        /// <summary>
+        /// Land one haul batch at camp with its design §5 quality roll: the
+        /// whole delivery takes the rolled tier. Common goes to plain stock,
+        /// Fine to the fine pool (sold at the bonus alongside plain stock),
+        /// Pristine to the specimen pool (held for an explicit windfall sale —
+        /// or, later, donation or offering).
+        /// </summary>
+        private static void Deliver(GameState state, GameDataAsset data, NodeState node, BigDouble amount)
+        {
+            switch (Quality.Roll(state, data, node))
+            {
+                case QualityTier.Pristine:
+                    state.AddPristine(node.resourceId, amount);
+                    break;
+
+                case QualityTier.Fine:
+                    state.AddFine(node.resourceId, amount);
+                    break;
+
+                default:
+                    state.AddResource(node.resourceId, amount);
+                    break;
             }
         }
 
@@ -187,10 +217,11 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Apply a Tending burst to <paramref name="node"/> (the tap-to-tend
         /// interaction, design §5): for the next economy.tending.burstDurationSec
-        /// seconds the node yields at burstYieldMult. Refreshes rather than stacks
-        /// — a fresh tap resets the timer to the full duration. No-op when tending
-        /// isn't configured. The design's brief Pristine-chance bump arrives with
-        /// the quality system.
+        /// seconds the node yields at burstYieldMult, and for
+        /// pristineBonusDurationSec its haul batches roll Pristine at the
+        /// tending-boosted chance. Both refresh rather than stack — a fresh tap
+        /// resets each timer to its full duration. No-op when tending isn't
+        /// configured.
         /// </summary>
         public static void Tend(NodeState node, EconomyData economy)
         {
@@ -200,6 +231,7 @@ namespace Wildgrove.Sim
             }
 
             node.tendBurstRemaining = economy.tending.burstDurationSec;
+            node.pristineBonusRemaining = economy.tending.pristineBonusDurationSec;
         }
 
         /// <summary>
@@ -261,10 +293,16 @@ namespace Wildgrove.Sim
             return summary;
         }
 
-        /// <summary>Camp stock plus basket contents, per resource.</summary>
+        /// <summary>
+        /// Camp stock plus basket contents, per resource — quality pools
+        /// included, so a Fine or Pristine batch landed offline still counts
+        /// as a welcome-back gain of its resource.
+        /// </summary>
         private static Dictionary<string, BigDouble> SnapshotHoldings(GameState state)
         {
             var holdings = new Dictionary<string, BigDouble>(state.resources);
+            AddPool(holdings, state.fineResources);
+            AddPool(holdings, state.pristineResources);
             foreach (var node in state.nodes)
             {
                 holdings.TryGetValue(node.resourceId, out var held);
@@ -272,6 +310,15 @@ namespace Wildgrove.Sim
             }
 
             return holdings;
+        }
+
+        private static void AddPool(Dictionary<string, BigDouble> holdings, Dictionary<string, BigDouble> pool)
+        {
+            foreach (var pair in pool)
+            {
+                holdings.TryGetValue(pair.Key, out var held);
+                holdings[pair.Key] = held + pair.Value;
+            }
         }
 
         /// <summary>

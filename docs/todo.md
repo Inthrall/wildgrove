@@ -94,12 +94,21 @@ they're easy to find and delete when resolved.
   iron 5). Tool-tier level gating (§4) waits for the tools system, and the
   Migration skill reset (§7) for the prestige build.
   (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
-- **Haul batches carry no quality roll yet.** Hauling is discrete (one
-  single-resource delivery per tripSeconds / carrierCount, from the fullest
-  basket) so design §5's per-batch quality roll has its unit — but the roll
-  itself (Common/Fine/Pristine) waits for the quality system with Phase 3's
-  Compendium. The staggered-fleet cadence and fullest-basket-first carrier
-  routing are interpretations to confirm in balance. (`Simulation.Haul`)
+- **Quality rolls land per haul batch, but nothing consumes the pools except
+  the Provisioner.** Each delivery rolls once (Common/Fine/Pristine, design
+  §5); Fine stock sells with the common stock at fineValueMult, Pristine
+  specimens wait in the HUD's Specimens section for an explicit windfall
+  sale. The Compendium (lifetime counters, plates), Museum donation, and
+  Rite specimen slots all consume these pools later — a rite "specimen" is a
+  unit of the quality pool of the right resource. Interpretations to confirm
+  in balance: the whole batch takes the rolled tier; pristineValueMult (10×)
+  isn't in the doc; hand-gather and the no-hauling fallback never roll; the
+  staggered-fleet cadence and fullest-basket-first routing.
+  (`Wildgrove.Sim/Quality.cs`, `Simulation.Deliver`)
+- **Crafting and gifts spend only common stock.** Fine finds can't feed a
+  recipe or a gift — probably right (they're for selling/offering), but it
+  means a run holding only Fine berries can't gift a gatherer. Revisit with
+  balance. (`Crafting`, `Economy`)
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
   the loop playtest.
@@ -111,9 +120,10 @@ they're easy to find and delete when resolved.
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
   yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in
   with their systems. (`Assets/Scripts/Sim/Upgrades.cs`)
-- **Tending's Pristine-chance bump is not implemented.** `Simulation.Tend` only starts
-  the yield burst; the brief Pristine bonus arrives with the quality system.
-  (`Assets/Scripts/Sim/Simulation.cs`; `tending.pristineBonusDurationSec` in data.)
+- **Tending's Pristine window is live but invisible.** `Simulation.Tend` opens
+  the 30 s pristineBonusRemaining window (chance × (1 + pristineChanceBonus))
+  alongside the yield burst, but the HUD gives no cue that it's running —
+  surface it with the real art pass. (`GameHud`)
 - **Verdure / almanac / museum / fossil / boost multipliers.** `Simulation.YieldPerSecond`
   folds in the Verdure global bonus only; the other multipliers arrive with their
   systems and multiply in there.

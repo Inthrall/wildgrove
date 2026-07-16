@@ -266,6 +266,47 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresQualityPoolsRngAndPristineWindow()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddFine("berries", new BigDouble(12.5));
+            state.AddPristine("berries", new BigDouble(3.0));
+            state.rngState = 987654321UL;
+            state.nodes[0].pristineBonusRemaining = 17.5;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.GetFine("berries").ToDouble(), Is.EqualTo(12.5).Within(Tolerance));
+            Assert.That(restored.GetPristine("berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
+            // The rng must resume exactly — a reload can't reroll fate.
+            Assert.That(restored.rngState, Is.EqualTo(987654321UL));
+            Assert.That(restored.nodes[0].pristineBonusRemaining, Is.EqualTo(17.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V7Save_GetsEmptyQualityPools()
+        {
+            // v7 predates quality rolls — nothing found yet.
+            var save = new SaveData { version = 7, fineResources = null, pristineResources = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.fineResources, Is.Empty);
+            Assert.That(save.pristineResources, Is.Empty);
+        }
+
+        [Test]
+        public void Restore_PreQualitySaveWithoutRngState_KeepsAFreshSeed()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.rngState = 0UL; // what any pre-v8 save deserialises to
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.rngState, Is.Not.EqualTo(0UL), "zero is xorshift's fixed point — restore must reseed");
+        }
+
+        [Test]
         public void TryMigrate_V6Save_StartsAFreshTrip()
         {
             // v6 predates discrete hauling — no trip was in progress.

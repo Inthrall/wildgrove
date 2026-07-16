@@ -59,11 +59,14 @@ namespace Wildgrove.Game
         private Button _carrierButton;
         private Transform _canvas;
         private Transform _nodesPanel;
+        private Text _specimensHeader;
+        private Transform _specimensPanel;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
         private static readonly Vector3[] CornerBuffer = new Vector3[4];
         private readonly List<RowView> _rows = new List<RowView>();
+        private readonly List<SpecimenRowView> _specimenRows = new List<SpecimenRowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
@@ -253,6 +256,21 @@ namespace Wildgrove.Game
             nodesLayout.childForceExpandWidth = true;
             nodesLayout.childForceExpandHeight = false;
             _nodesPanel = nodesPanel.transform;
+
+            // Pristine windfalls (design §5) — hidden until the first Pristine
+            // batch lands; the sale stays an explicit act, apart from Sell All.
+            _specimensHeader = CreateText("SpecimensHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _specimensHeader.text = "Specimens";
+            SetPreferredHeight(_specimensHeader.gameObject, 48f);
+
+            var specimensPanel = CreatePanel("Specimens", sections, new Color(0f, 0f, 0f, 0f));
+            var specimensLayout = specimensPanel.AddComponent<VerticalLayoutGroup>();
+            specimensLayout.spacing = 12f;
+            specimensLayout.childControlWidth = true;
+            specimensLayout.childControlHeight = true;
+            specimensLayout.childForceExpandWidth = true;
+            specimensLayout.childForceExpandHeight = false;
+            _specimensPanel = specimensPanel.transform;
 
             RebuildNodeRows();
 
@@ -597,6 +615,53 @@ namespace Wildgrove.Game
             {
                 _rows.Add(BuildRow(_nodesPanel, node));
             }
+
+            foreach (var row in _specimenRows)
+            {
+                Destroy(row.root);
+            }
+
+            _specimenRows.Clear();
+            var specimenResources = new HashSet<string>();
+            foreach (var node in _loop.State.nodes)
+            {
+                // One row per resource — a resource worked from two zones
+                // shares one Pristine pool.
+                if (node.resourceId != null && specimenResources.Add(node.resourceId))
+                {
+                    _specimenRows.Add(BuildSpecimenRow(_specimensPanel, node.resourceId));
+                }
+            }
+        }
+
+        private SpecimenRowView BuildSpecimenRow(Transform parent, string resourceId)
+        {
+            var rowGo = CreatePanel("Specimen_" + resourceId, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell", () => _loop.SellPristine(resourceId));
+            SetPreferredWidth(sell.gameObject, 200f);
+
+            return new SpecimenRowView
+            {
+                resourceId = resourceId,
+                root = rowGo,
+                info = info,
+                sellButton = sell,
+                sellLabel = sellLabel,
+            };
         }
 
         /// <summary>
@@ -740,8 +805,12 @@ namespace Wildgrove.Game
                 var mastery = Mastery.Configured(economy)
                     ? "  •  Mastery " + Mastery.Level(node, economy)
                     : string.Empty;
+                var fine = state.GetFine(node.resourceId);
+                var fineHeld = fine > BigDouble.Zero
+                    ? " (+" + NumberFormat.Short(fine) + " fine)"
+                    : string.Empty;
                 row.info.text = PrettyName(node.resourceId)
-                                + "\n<size=24>" + NumberFormat.Short(held) + " held" + basket + "</size>"
+                                + "\n<size=24>" + NumberFormat.Short(held) + " held" + fineHeld + basket + "</size>"
                                 + "\n<size=24>" + node.familiarCount + " familiars"
                                 + "  •  " + NumberFormat.Rate(rate) + "/s" + tending + mastery + "</size>";
 
@@ -752,9 +821,13 @@ namespace Wildgrove.Game
                 // Affordability AND the zone's flock cap (design §8).
                 row.giftButton.interactable = _loop.CanGiftGatherer(node);
 
+                // The sale covers common and Fine stock together — Fine at the
+                // design §5 quality bonus (Pristine stays in the Specimens
+                // section; nothing sells it in passing).
                 var unitValue = Economy.SellValuePerUnit(state, _loop.Data, node.resourceId);
-                var saleValue = held * unitValue;
-                var canSell = unitValue > BigDouble.Zero && held > BigDouble.Zero;
+                var fineMult = economy.quality != null ? economy.quality.fineValueMult : 1.0;
+                var saleValue = (held + fine * fineMult) * unitValue;
+                var canSell = unitValue > BigDouble.Zero && saleValue > BigDouble.Zero;
                 row.sellLabel.text = canSell
                     ? "Sell\n<size=22>" + NumberFormat.Short(saleValue) + "</size>"
                     : "Sell";
@@ -762,6 +835,32 @@ namespace Wildgrove.Game
 
                 row.background.color = node == _selected ? RowSelectedColor : RowColor;
             }
+
+            // Pristine windfalls: a row per resource holding specimens; the
+            // whole section disappears when there are none.
+            var anySpecimens = false;
+            foreach (var row in _specimenRows)
+            {
+                var pristine = state.GetPristine(row.resourceId);
+                var show = pristine > BigDouble.Zero;
+                row.root.SetActive(show);
+                if (!show)
+                {
+                    continue;
+                }
+
+                anySpecimens = true;
+                var pristineMult = economy.quality != null ? economy.quality.pristineValueMult : 1.0;
+                var windfall = pristine * Economy.SellValuePerUnit(state, _loop.Data, row.resourceId) * pristineMult;
+                row.info.text = "Pristine " + PrettyName(row.resourceId)
+                                + "\n<size=24>" + NumberFormat.Short(pristine) + " held</size>";
+                row.sellLabel.text = windfall > BigDouble.Zero
+                    ? "Sell\n<size=22>" + NumberFormat.Short(windfall) + "</size>"
+                    : "Sell";
+                row.sellButton.interactable = windfall > BigDouble.Zero;
+            }
+
+            _specimensHeader.gameObject.SetActive(anySpecimens);
 
             // Bought upgrades leave the shop; only the next few unpurchased
             // rungs of the ladder are on offer at once.
@@ -874,6 +973,17 @@ namespace Wildgrove.Game
                 if (unitValue > BigDouble.Zero)
                 {
                     total += pair.Value * unitValue;
+                }
+            }
+
+            // Fine stock sells with Sell All (at its bonus); Pristine never does.
+            var fineMult = _loop.Data.economy?.quality != null ? _loop.Data.economy.quality.fineValueMult : 1.0;
+            foreach (var pair in state.fineResources)
+            {
+                var unitValue = Economy.SellValuePerUnit(state, _loop.Data, pair.Key);
+                if (unitValue > BigDouble.Zero)
+                {
+                    total += pair.Value * unitValue * fineMult;
                 }
             }
 
@@ -1019,6 +1129,15 @@ namespace Wildgrove.Game
             public Text info;
             public Button giftButton;
             public Text giftLabel;
+            public Button sellButton;
+            public Text sellLabel;
+        }
+
+        private sealed class SpecimenRowView
+        {
+            public string resourceId;
+            public GameObject root;
+            public Text info;
             public Button sellButton;
             public Text sellLabel;
         }

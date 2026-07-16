@@ -673,6 +673,24 @@ namespace Wildgrove.Data
             {
                 issues.Add("Economy quality chances must be within [0, 1]");
             }
+
+            if (economy.Quality != null && economy.Quality.FineChance + economy.Quality.PristineBaseChance > 1)
+            {
+                // The two rolls share one [0,1) draw — together they must
+                // leave room for Common.
+                issues.Add("Economy quality chances must not sum above 1");
+            }
+
+            if (economy.Quality != null
+                && (economy.Quality.FineValueMult <= 0 || economy.Quality.PristineValueMult <= 0))
+            {
+                issues.Add("Economy quality value multipliers must be positive");
+            }
+
+            if (economy.Tending != null && economy.Tending.PristineChanceBonus < 0)
+            {
+                issues.Add("Economy tending.pristineChanceBonus must not be negative");
+            }
         }
 
         private static void RequireSection(object section, string name, List<string> issues)

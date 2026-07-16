@@ -416,5 +416,17 @@ namespace Wildgrove.Game
         {
             return Economy.SellAll(State, Data);
         }
+
+        /// <summary>The windfall: sell one resource's Pristine specimens (design §5 — always an explicit act). Returns Coin gained.</summary>
+        public BigDouble SellPristine(string resourceId)
+        {
+            var coin = Economy.SellPristine(State, Data, resourceId);
+            if (coin > BigDouble.Zero)
+            {
+                Telemetry.LogEvent("pristine_sold", ("resource", resourceId), ("coin", coin.ToDouble()));
+            }
+
+            return coin;
+        }
     }
 }

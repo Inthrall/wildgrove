@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BreakInfinity;
 using Newtonsoft.Json;
 using Wildgrove.Data;
 
@@ -18,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 7;
+        public const int CurrentVersion = 8;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -30,12 +31,23 @@ namespace Wildgrove.Sim.Saves
                 verdurePoints = state.verdurePoints,
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
+                rngState = state.rngState,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
 
             foreach (var pair in state.resources)
             {
                 save.resources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+            }
+
+            foreach (var pair in state.fineResources)
+            {
+                save.fineResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+            }
+
+            foreach (var pair in state.pristineResources)
+            {
+                save.pristineResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
             foreach (var node in state.nodes)
@@ -46,6 +58,7 @@ namespace Wildgrove.Sim.Saves
                     familiarCount = node.familiarCount,
                     masteryXp = node.masteryXp,
                     tendBurstRemaining = node.tendBurstRemaining,
+                    pristineBonusRemaining = node.pristineBonusRemaining,
                     basket = node.basket,
                 });
             }
@@ -103,6 +116,17 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            RestorePool(state.fineResources, save.fineResources);
+            RestorePool(state.pristineResources, save.pristineResources);
+
+            // A pre-v8 save carries no rng state (0) — keep the fresh seed the
+            // baseline NewGame just rolled rather than pinning every migrated
+            // run to the same constant.
+            if (save.rngState != 0UL)
+            {
+                state.rngState = save.rngState;
+            }
+
             var savedById = new Dictionary<string, SavedNode>();
             if (save.nodes != null)
             {
@@ -141,6 +165,7 @@ namespace Wildgrove.Sim.Saves
                 node.familiarCount = saved.familiarCount;
                 node.masteryXp = saved.masteryXp;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
+                node.pristineBonusRemaining = saved.pristineBonusRemaining;
                 node.basket = saved.basket;
             }
 
@@ -193,6 +218,24 @@ namespace Wildgrove.Sim.Saves
 
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
+        }
+
+        private static void RestorePool(Dictionary<string, BigDouble> pool, List<SavedResource> saved)
+        {
+            pool.Clear();
+            if (saved == null)
+            {
+                return;
+            }
+
+            foreach (var resource in saved)
+            {
+                if (resource?.id != null)
+                {
+                    // Unknown resource ids are kept, same policy as elsewhere.
+                    pool[resource.id] = resource.amount;
+                }
+            }
         }
 
         public static string ToJson(SaveData save)
@@ -278,6 +321,14 @@ namespace Wildgrove.Sim.Saves
                         // v6 predates discrete hauling — the fleet starts a
                         // fresh trip (haulTripProgress's missing-field zero).
                         save.version = 7;
+                        break;
+
+                    case 7:
+                        // v7 predates quality rolls — the quality pools start
+                        // empty and Restore reseeds the missing (0) rng state.
+                        save.fineResources = save.fineResources ?? new List<SavedResource>();
+                        save.pristineResources = save.pristineResources ?? new List<SavedResource>();
+                        save.version = 8;
                         break;
 
                     default:

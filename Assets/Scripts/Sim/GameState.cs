@@ -22,6 +22,15 @@ namespace Wildgrove.Sim
         /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp by carrier haul from the nodes' baskets.</summary>
         public Dictionary<string, BigDouble> resources = new Dictionary<string, BigDouble>();
 
+        /// <summary>Fine-quality finds at camp, keyed by resource id (design §5: a Fine haul batch, sold at the quality bonus alongside the common stock).</summary>
+        public Dictionary<string, BigDouble> fineResources = new Dictionary<string, BigDouble>();
+
+        /// <summary>Pristine specimens at camp, keyed by resource id (design §5). Never sold automatically — the windfall sale (and later donation or offering) is the player's explicit choice.</summary>
+        public Dictionary<string, BigDouble> pristineResources = new Dictionary<string, BigDouble>();
+
+        /// <summary>Xorshift64* state for the run's rolls (quality, later loot). Seeded at run birth, saved with the run — the sim itself stays deterministic.</summary>
+        public ulong rngState = 0x9E3779B97F4A7C15UL;
+
         /// <summary>Carrier familiars hauling for the camp (design §8: a camp-wide pool, not per-node).</summary>
         public int carrierCount;
 
@@ -56,6 +65,26 @@ namespace Wildgrove.Sim
         public void AddResource(string resourceId, BigDouble amount)
         {
             resources[resourceId] = GetResource(resourceId) + amount;
+        }
+
+        public BigDouble GetFine(string resourceId)
+        {
+            return fineResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
+        }
+
+        public void AddFine(string resourceId, BigDouble amount)
+        {
+            fineResources[resourceId] = GetFine(resourceId) + amount;
+        }
+
+        public BigDouble GetPristine(string resourceId)
+        {
+            return pristineResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
+        }
+
+        public void AddPristine(string resourceId, BigDouble amount)
+        {
+            pristineResources[resourceId] = GetPristine(resourceId) + amount;
         }
 
         public bool HasUpgrade(string upgradeId)
@@ -130,6 +159,15 @@ namespace Wildgrove.Sim
         /// of the tick; a fresh Tend refreshes it to the full burst duration.
         /// </summary>
         public double tendBurstRemaining;
+
+        /// <summary>
+        /// Seconds left on the post-tend Pristine window (design §5: Tending
+        /// "briefly raised Pristine chance"). While positive, haul batches from
+        /// this node multiply their Pristine chance by
+        /// (1 + economy.tending.pristineChanceBonus). Refreshed by Tend
+        /// alongside the yield burst, on its own (longer) duration.
+        /// </summary>
+        public double pristineBonusRemaining;
 
         /// <summary>
         /// Goods gathered but not yet hauled to camp — the basket at the node.

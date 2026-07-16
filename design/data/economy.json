@@ -62,7 +62,9 @@
   "quality": {
     "fineChance": 0.035,
     "fineValueMult": 1.5,
-    "pristineBaseChance": 0.005
+    "pristineBaseChance": 0.005,
+    "pristineValueMult": 10,
+    "$note": "design §5: quality rolls per haul batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
   },
   "excavation": {
     "pityTimerHoursDug": 4,
@@ -72,6 +74,7 @@
     "burstYieldMult": 3.0,
     "burstDurationSec": 5,
     "pristineBonusDurationSec": 30,
+    "pristineChanceBonus": 1.0,
     "handGatherPerSecond": 0.5,
     "$note": "burst values and handGatherPerSecond are first guesses — tune in Phase 1. handGatherPerSecond is the warden's own hands while a Tend burst is live, straight to camp stock — it's how a node with no familiars earns its first own-resource gift (design §13 decision), so it must stay positive."
   }

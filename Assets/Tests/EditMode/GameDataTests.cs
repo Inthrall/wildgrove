@@ -60,6 +60,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
+            Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
+            Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
@@ -415,6 +417,33 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_QualityChancesSummingAboveOne_IsReported()
+        {
+            var sources = LoadSources();
+            // 0.999 + pristine's 0.005 leaves no room for Common in one draw.
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"fineChance\": 0.035,",
+                "\"fineChance\": 0.999,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("must not sum above 1")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_NonPositiveQualityValueMult_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"pristineValueMult\": 10,",
+                "\"pristineValueMult\": 0,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("quality value multipliers")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

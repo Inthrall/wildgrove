@@ -207,6 +207,25 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Flat Pristine-chance points from owned pristineChanceBonus upgrades
+        /// (Field Press +0.01), summed — design §8's additive band. Fossil and
+        /// Almanac bonuses join this sum when their systems land.
+        /// </summary>
+        public static double PristineChanceBonus(GameState state, GameDataAsset data)
+        {
+            var bonus = 0.0;
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.PristineChanceBonus)
+                {
+                    bonus += effect.value;
+                }
+            }
+
+            return bonus;
+        }
+
+        /// <summary>
         /// The run's offline cap: the base cap, raised (never lowered) to the
         /// best offlineCapHours upgrade owned (Root Cellar 6 h, Smokehouse 8 h).
         /// Additive offlineCapBonusHours gear arrives with the gear system.

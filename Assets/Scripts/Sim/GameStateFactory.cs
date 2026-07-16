@@ -17,7 +17,7 @@ namespace Wildgrove.Sim
 
         public static GameState NewGame(GameDataAsset data)
         {
-            var state = new GameState();
+            var state = new GameState { rngState = Rng.NewSeed() };
             AddZone(state, data, data.ZonesById[StartingZoneId]);
             return state;
         }

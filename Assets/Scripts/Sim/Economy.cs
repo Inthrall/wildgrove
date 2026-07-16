@@ -278,9 +278,14 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Sell the whole stock of one resource to the Provisioner, moving its
-        /// Coin value into the purse and clearing the stock. A no-op for
-        /// unsellable resources (leaves the stock untouched). Returns the Coin gained.
+        /// Sell the whole stock of one resource to the Provisioner — common
+        /// units at the unit value, Fine units alongside at the design §5
+        /// quality bonus — moving the Coin into the purse and clearing both
+        /// pools. Pristine specimens are deliberately NOT included: the
+        /// windfall sale is <see cref="SellPristine"/>, an explicit act, so
+        /// sell-all can never spend the sell/donate/offer choice for the
+        /// player. A no-op for unsellable resources (leaves the stock
+        /// untouched). Returns the Coin gained.
         /// </summary>
         public static BigDouble SellResource(GameState state, GameDataAsset data, string resourceId)
         {
@@ -295,19 +300,56 @@ namespace Wildgrove.Sim
                 return BigDouble.Zero;
             }
 
-            var held = state.GetResource(resourceId);
-            if (held <= BigDouble.Zero)
+            var coin = state.GetResource(resourceId) * unitValue;
+            coin += state.GetFine(resourceId) * unitValue * FineValueMult(data);
+            if (coin <= BigDouble.Zero)
             {
                 return BigDouble.Zero;
             }
 
-            var coin = held * unitValue;
             state.coin += coin;
             state.resources[resourceId] = BigDouble.Zero;
+            state.fineResources[resourceId] = BigDouble.Zero;
             return coin;
         }
 
-        /// <summary>Sell every sellable resource on hand. Returns the total Coin gained.</summary>
+        /// <summary>
+        /// The windfall (design §5): sell every Pristine specimen of one
+        /// resource at quality.pristineValueMult × the unit value. Only ever
+        /// called explicitly — donation and offering will compete for these
+        /// specimens when their systems land. Returns the Coin gained.
+        /// </summary>
+        public static BigDouble SellPristine(GameState state, GameDataAsset data, string resourceId)
+        {
+            if (state == null || data == null)
+            {
+                return BigDouble.Zero;
+            }
+
+            var unitValue = SellValuePerUnit(state, data, resourceId);
+            var held = state.GetPristine(resourceId);
+            if (unitValue <= BigDouble.Zero || held <= BigDouble.Zero)
+            {
+                return BigDouble.Zero;
+            }
+
+            var mult = data.economy?.quality != null ? data.economy.quality.pristineValueMult : 1.0;
+            var coin = held * unitValue * mult;
+            state.coin += coin;
+            state.pristineResources[resourceId] = BigDouble.Zero;
+            return coin;
+        }
+
+        private static double FineValueMult(GameDataAsset data)
+        {
+            return data.economy?.quality != null ? data.economy.quality.fineValueMult : 1.0;
+        }
+
+        /// <summary>
+        /// Sell every sellable resource on hand — common and Fine pools;
+        /// Pristine specimens stay (see <see cref="SellResource"/>). Returns
+        /// the total Coin gained.
+        /// </summary>
         public static BigDouble SellAll(GameState state, GameDataAsset data)
         {
             if (state == null || data == null)
@@ -317,9 +359,10 @@ namespace Wildgrove.Sim
 
             var total = BigDouble.Zero;
 
-            // Snapshot the keys — SellResource mutates the dictionary as it goes.
-            var resourceIds = new string[state.resources.Count];
-            state.resources.Keys.CopyTo(resourceIds, 0);
+            // Snapshot the keys — SellResource mutates the dictionaries as it
+            // goes — and include resources held only as Fine finds.
+            var resourceIds = new HashSet<string>(state.resources.Keys);
+            resourceIds.UnionWith(state.fineResources.Keys);
 
             foreach (var resourceId in resourceIds)
             {

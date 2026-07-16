@@ -251,7 +251,8 @@ namespace Wildgrove.Data
                 {
                     fineChance = e.Quality.FineChance,
                     fineValueMult = e.Quality.FineValueMult,
-                    pristineBaseChance = e.Quality.PristineBaseChance
+                    pristineBaseChance = e.Quality.PristineBaseChance,
+                    pristineValueMult = e.Quality.PristineValueMult
                 },
                 excavation = new EconomyData.ExcavationData
                 {
@@ -262,6 +263,7 @@ namespace Wildgrove.Data
                     burstYieldMult = e.Tending.BurstYieldMult,
                     burstDurationSec = e.Tending.BurstDurationSec,
                     pristineBonusDurationSec = e.Tending.PristineBonusDurationSec,
+                    pristineChanceBonus = e.Tending.PristineChanceBonus,
                     handGatherPerSecond = e.Tending.HandGatherPerSecond
                 }
             };
