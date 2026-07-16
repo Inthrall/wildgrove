@@ -122,9 +122,15 @@ namespace Wildgrove.Game.World
         private void Layout()
         {
             // Nodes first, dig sites after — one shared strip, so the hit test's
-            // "first N centres are nodes" convention holds.
+            // "first N centres are nodes" convention holds. The buffer is
+            // reused frame to frame — this runs per LateUpdate.
             var total = _views.Count + _digViews.Count;
-            _centres = WorldStrip.LayoutCentres(StripScreenRect, total);
+            if (_centres.Length != total)
+            {
+                _centres = new Vector2[total];
+            }
+
+            WorldStrip.LayoutCentresInto(StripScreenRect, total, _centres);
             var diameterPx = WorldStrip.Diameter(StripScreenRect, total);
             _radiusPx = diameterPx * 0.5f * HitSlop;
 

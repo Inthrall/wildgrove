@@ -45,6 +45,22 @@ namespace Wildgrove.Sim
         /// <summary>Amber (design §10) — the premium currency; dig sites surface it free, and it survives Migration.</summary>
         public double amber;
 
+        /// <summary>
+        /// Monotonic version of the effect sources (purchases, donations,
+        /// fossils, gear, Almanac, buildings) — bumping it invalidates the
+        /// cached <see cref="modifierSnapshot"/>. Never saved.
+        /// </summary>
+        public int modifierVersion;
+
+        /// <summary>Cached derived modifiers — see Modifiers.Of. Never saved.</summary>
+        public ModifierSnapshot modifierSnapshot;
+
+        /// <summary>Invalidate the cached modifier snapshot after an effect-source mutation.</summary>
+        public void BumpModifiers()
+        {
+            modifierVersion++;
+        }
+
         /// <summary>Zones whose waystone inscription has been read (design §6) — lore stays read across Migration.</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 

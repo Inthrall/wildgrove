@@ -171,6 +171,10 @@ namespace Wildgrove.Sim
         /// </summary>
         public static void RecomputeYieldMultipliers(GameState state, GameDataAsset data)
         {
+            // Every effect-source mutation funnels through here — drop the
+            // cached modifier snapshot alongside the node multipliers.
+            state.BumpModifiers();
+
             foreach (var node in state.nodes)
             {
                 var mult = 1.0;
@@ -200,36 +204,13 @@ namespace Wildgrove.Sim
         /// </summary>
         public static double HaulCapacityMultiplier(GameState state, GameDataAsset data)
         {
-            var mult = 1.0;
-            var bonus = 0.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.HaulMult)
-                {
-                    mult *= effect.value;
-                }
-                else if (effect.type == EffectType.CarrierCapacityBonus)
-                {
-                    bonus += effect.value;
-                }
-            }
-
-            return mult * (1.0 + bonus);
+            return Modifiers.Of(state, data).haulCapacityMultiplier;
         }
 
         /// <summary>Extra Tending burst strength from worn gear (the Cordage Wraps' +50%), summed — multiplies the burst's yield multiplier.</summary>
         public static double TendingBurstBonus(GameState state, GameDataAsset data)
         {
-            var bonus = 0.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.TendingBurstBonus)
-                {
-                    bonus += effect.value;
-                }
-            }
-
-            return bonus;
+            return Modifiers.Of(state, data).tendingBurstBonus;
         }
 
         /// <summary>
@@ -239,7 +220,13 @@ namespace Wildgrove.Sim
         /// </summary>
         public static HashSet<string> UnlockedSkills(GameState state, GameDataAsset data)
         {
-            var skills = new HashSet<string>();
+            // The cached set — callers read (Contains/enumerate), never mutate.
+            return Modifiers.Of(state, data).unlockedSkills;
+        }
+
+        /// <summary>The raw derivation, into <paramref name="skills"/> — the snapshot builder's path.</summary>
+        internal static void BuildUnlockedSkills(GameState state, GameDataAsset data, HashSet<string> skills)
+        {
             if (data.ZonesById.TryGetValue(GameStateFactory.StartingZoneId, out var startingZone))
             {
                 skills.UnionWith(startingZone.unlocks);
@@ -252,14 +239,18 @@ namespace Wildgrove.Sim
                     skills.Add(effect.skill);
                 }
             }
-
-            return skills;
         }
 
         /// <summary>Recipe ids granted by owned unlockRecipe effects (defaultKnown recipes don't need one).</summary>
         public static HashSet<string> UnlockedRecipeIds(GameState state, GameDataAsset data)
         {
-            var recipes = new HashSet<string>();
+            // The cached set — callers read, never mutate.
+            return Modifiers.Of(state, data).unlockedRecipeIds;
+        }
+
+        /// <summary>The raw derivation, into <paramref name="recipes"/> — the snapshot builder's path.</summary>
+        internal static void BuildUnlockedRecipeIds(GameState state, GameDataAsset data, HashSet<string> recipes)
+        {
             foreach (var effect in PurchasedEffects(state, data))
             {
                 if (effect.type == EffectType.UnlockRecipe && !string.IsNullOrEmpty(effect.recipe))
@@ -267,8 +258,6 @@ namespace Wildgrove.Sim
                     recipes.Add(effect.recipe);
                 }
             }
-
-            return recipes;
         }
 
         /// <summary>
@@ -278,31 +267,15 @@ namespace Wildgrove.Sim
         /// </summary>
         public static double CraftSpeedMultiplier(GameState state, GameDataAsset data, string skill)
         {
-            var mult = 1.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.CraftSpeedMult
-                    && (string.IsNullOrEmpty(effect.skill) || effect.skill == skill))
-                {
-                    mult *= effect.value;
-                }
-            }
-
-            return mult;
+            var snapshot = Modifiers.Of(state, data);
+            snapshot.craftSpeedBySkill.TryGetValue(skill ?? string.Empty, out var perSkill);
+            return snapshot.craftSpeedGlobal * (perSkill == 0.0 ? 1.0 : perSkill);
         }
 
         /// <summary>Sell-value multiplier for one resource: 1 + the summed sellValueBonus effects owned.</summary>
         public static double SellValueMultiplier(GameState state, GameDataAsset data, string resourceId)
         {
-            var bonus = 0.0;
-            foreach (var effect in PurchasedEffects(state, data))
-            {
-                if (effect.type == EffectType.SellValueBonus && effect.resource == resourceId)
-                {
-                    bonus += effect.value;
-                }
-            }
-
+            Modifiers.Of(state, data).sellValueBonusByResource.TryGetValue(resourceId ?? string.Empty, out var bonus);
             return 1.0 + bonus;
         }
 
@@ -313,31 +286,13 @@ namespace Wildgrove.Sim
         /// </summary>
         public static double PristineChanceBonus(GameState state, GameDataAsset data)
         {
-            var bonus = 0.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.PristineChanceBonus)
-                {
-                    bonus += effect.value;
-                }
-            }
-
-            return bonus;
+            return Modifiers.Of(state, data).pristineChanceBonus;
         }
 
         /// <summary>Dig-speed multiplier from owned digSpeedMult upgrades (Brush Screens ×2) — they multiply together.</summary>
         public static double DigSpeedMultiplier(GameState state, GameDataAsset data)
         {
-            var mult = 1.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.DigSpeedMult)
-                {
-                    mult *= effect.value;
-                }
-            }
-
-            return mult;
+            return Modifiers.Of(state, data).digSpeedMultiplier;
         }
 
         /// <summary>Zones whose dig site an owned unlockDigSite effect has opened.</summary>
@@ -363,25 +318,18 @@ namespace Wildgrove.Sim
         /// </summary>
         public static double OfflineCapHours(GameState state, GameDataAsset data)
         {
-            var cap = data.economy.offline.baseCapHours;
-            var bonus = 0.0;
-            foreach (var effect in ActiveEffects(state, data))
-            {
-                if (effect.type == EffectType.OfflineCapHours && effect.value > cap)
-                {
-                    cap = effect.value;
-                }
-                else if (effect.type == EffectType.OfflineCapBonusHours)
-                {
-                    bonus += effect.value;
-                }
-            }
-
-            return cap + bonus;
+            var snapshot = Modifiers.Of(state, data);
+            var cap = System.Math.Max(data.economy.offline.baseCapHours, snapshot.offlineCapRaiseTo);
+            return cap + snapshot.offlineCapBonusHours;
         }
 
-        /// <summary>Purchased upgrade effects, completed fossils', owned Almanac nodes', and worn gear's — everything currently modifying the run.</summary>
-        private static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
+        /// <summary>
+        /// Purchased upgrade effects, completed fossils', owned Almanac nodes',
+        /// and worn gear's — everything currently modifying the run. The RAW
+        /// walk (the Museum leg clones) — per-tick consumers read the
+        /// <see cref="Modifiers"/> snapshot instead.
+        /// </summary>
+        internal static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
         {
             foreach (var effect in Gear.EquippedEffects(state, data))
             {
@@ -417,7 +365,7 @@ namespace Wildgrove.Sim
             }
         }
 
-        private static IEnumerable<EffectData> PurchasedEffects(GameState state, GameDataAsset data)
+        internal static IEnumerable<EffectData> PurchasedEffects(GameState state, GameDataAsset data)
         {
             foreach (var upgradeId in state.purchasedUpgradeIds)
             {

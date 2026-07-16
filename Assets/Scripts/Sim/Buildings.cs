@@ -63,6 +63,8 @@ namespace Wildgrove.Sim
 
             state.coin -= cost;
             state.buildingLevels[building.id] = BoughtLevels(state, building.id) + 1;
+            // Basket capacity is snapshot-cached — a bought level changes it.
+            state.BumpModifiers();
             return true;
         }
 
@@ -89,6 +91,12 @@ namespace Wildgrove.Sim
 
         /// <summary>Basket-capacity multiplier from Store-style lines: 1 + perLevel value per bought level.</summary>
         public static double BasketCapacityMultiplier(GameState state, GameDataAsset data)
+        {
+            return Modifiers.Of(state, data).basketCapacityMultiplier;
+        }
+
+        /// <summary>The raw derivation — the snapshot builder's path.</summary>
+        internal static double ComputeBasketCapacityMultiplier(GameState state, GameDataAsset data)
         {
             var mult = 1.0;
             foreach (var building in data.buildings)

@@ -843,6 +843,10 @@ namespace Wildgrove.Game
             {
                 _sectionsScroll.verticalNormalizedPosition = 1f;
             }
+
+            // Label passes are gated by page — refresh the new page's labels
+            // on the next frame rather than up to a cadence-tick later.
+            _sectionRefreshCountdown = 0f;
         }
 
         private void StyleNavTab(NavTabView nav, bool active)
@@ -1351,6 +1355,12 @@ namespace Wildgrove.Game
             SetSectionTitle(_compendiumSection, "Compendium — " + discovered + " / "
                                                 + Compendium.TotalEntries(_loop.Data) + " entries");
 
+            // The full field-notes text only matters on the Collect page.
+            if (_activeTab != TabCollect)
+            {
+                return;
+            }
+
             var lines = new System.Text.StringBuilder();
             foreach (var resource in _loop.Data.resources)
             {
@@ -1840,17 +1850,47 @@ namespace Wildgrove.Game
             SetPreferredHeight(dismiss.gameObject, 96f);
         }
 
+        /// <summary>
+        /// The per-frame lane: sync the world layer and the selection
+        /// highlight (the things that must track the finger), then run the
+        /// heavy label/visibility pass only on the slow cadence. Rebuilding
+        /// every rich-text string 60×/s was the HUD's main cost — a quarter
+        /// second of label staleness is imperceptible; a GC spike is not.
+        /// </summary>
         private void Refresh()
+        {
+            // Keep the world layer in step: where the free gap is on screen this
+            // frame, and which node should wear the selection ring.
+            if (_world != null && _worldStrip != null)
+            {
+                _world.StripScreenRect = ScreenRectOf(_worldStrip);
+                _world.SelectedNode = _selected;
+            }
+
+            foreach (var row in _rows)
+            {
+                row.background.color = row.node == _selected ? RowSelectedColor : RowColor;
+            }
+
+            _sectionRefreshCountdown -= Time.deltaTime;
+            if (_sectionRefreshCountdown > 0f)
+            {
+                return;
+            }
+
+            _sectionRefreshCountdown = SectionRefreshInterval;
+            RefreshSectionCaches();
+            RefreshSlow();
+        }
+
+        /// <summary>
+        /// The heavy pass: visibility flags for every section (the nav needs
+        /// them all), but row labels only for the page that's actually open.
+        /// </summary>
+        private void RefreshSlow()
         {
             var state = _loop.State;
             var economy = _loop.Data.economy;
-
-            _sectionRefreshCountdown -= Time.deltaTime;
-            if (_sectionRefreshCountdown <= 0f)
-            {
-                _sectionRefreshCountdown = SectionRefreshInterval;
-                RefreshSectionCaches();
-            }
 
             // A trail-map purchase grew the node list — mirror it in the rows.
             if (_rows.Count != state.nodes.Count)
@@ -1861,14 +1901,6 @@ namespace Wildgrove.Game
             if (_digRows.Count != state.digSites.Count)
             {
                 RebuildDigRows();
-            }
-
-            // Keep the world layer in step: where the free gap is on screen this
-            // frame, and which node should wear the selection ring.
-            if (_world != null && _worldStrip != null)
-            {
-                _world.StripScreenRect = ScreenRectOf(_worldStrip);
-                _world.SelectedNode = _selected;
             }
 
             var carrierSlots = _loop.CarrierSlots();
@@ -1887,6 +1919,24 @@ namespace Wildgrove.Game
                 _headerLabel.text += "\n<size=26>" + _skillsLine + "</size>";
             }
 
+            // Node-row labels only matter on the Gather page.
+            if (_activeTab == TabGather)
+            {
+                RefreshNodeRows(state, economy);
+            }
+
+            RefreshSpecimenAndMuseumRows(state, economy);
+            RefreshCompendium(state);
+            RefreshDigRows(state);
+            RefreshKitRows(state);
+            RefreshRiteAndAlmanac(state);
+            RefreshShopRows(state);
+            RefreshGatherActions(state, economy);
+            UpdateNavBar();
+        }
+
+        private void RefreshNodeRows(GameState state, EconomyData economy)
+        {
             foreach (var row in _rows)
             {
                 var node = row.node;
@@ -1955,10 +2005,11 @@ namespace Wildgrove.Game
                     ? "Sell\n<size=22>" + NumberFormat.Short(saleValue) + "</size>"
                     : "Sell";
                 row.sellButton.interactable = canSell;
-
-                row.background.color = node == _selected ? RowSelectedColor : RowColor;
             }
+        }
 
+        private void RefreshSpecimenAndMuseumRows(GameState state, EconomyData economy)
+        {
             // Pristine windfalls: a row per resource holding specimens; the
             // whole section disappears when there are none.
             var anySpecimens = false;
@@ -1973,6 +2024,11 @@ namespace Wildgrove.Game
                 }
 
                 anySpecimens = true;
+                if (_activeTab != TabGather)
+                {
+                    continue;
+                }
+
                 var pristineMult = economy.quality != null ? economy.quality.pristineValueMult : 1.0;
                 var windfall = pristine * Economy.SellValuePerUnit(state, _loop.Data, row.resourceId) * pristineMult;
                 row.info.text = "Pristine " + PrettyName(row.resourceId)
@@ -1986,10 +2042,11 @@ namespace Wildgrove.Game
 
             SetSectionVisible(_specimensSection, anySpecimens);
 
-            // The Museum: set progress, visible once specimens are in play.
+            // The Museum: set progress, visible once specimens are in play —
+            // the flag always (the nav needs it), the strings on its page only.
             var museumVisible = anySpecimens || state.donatedResources.Count > 0;
             SetSectionVisible(_museumSection, museumVisible);
-            if (museumVisible)
+            if (museumVisible && _activeTab == TabCollect)
             {
                 foreach (var row in _museumRows)
                 {
@@ -2007,8 +2064,15 @@ namespace Wildgrove.Game
                                     + bondLine;
                 }
             }
+        }
 
-            RefreshCompendium(state);
+        private void RefreshDigRows(GameState state)
+        {
+            SetSectionVisible(_excavationSection, _digRows.Count > 0);
+            if (_activeTab != TabCollect)
+            {
+                return;
+            }
 
             // Dig sites: who's turning soil, and how each fossil is assembling.
             foreach (var row in _digRows)
@@ -2051,12 +2115,14 @@ namespace Wildgrove.Game
                                      + NumberFormat.Short(costEach) + " of each zone find</size>";
                 row.giftButton.interactable = _loop.CanGiftDigger(row.site);
             }
+        }
 
-            SetSectionVisible(_excavationSection, _digRows.Count > 0);
-
+        private void RefreshKitRows(GameState state)
+        {
             // The Kit: pieces appear as their craft skill unlocks; worn pieces
             // show as such and the section hides until anything is craftable.
             var anyKit = false;
+            var onPage = _activeTab == TabCraft;
             var unlockedSkills = Upgrades.UnlockedSkills(state, _loop.Data);
             foreach (var row in _gearRows)
             {
@@ -2069,6 +2135,11 @@ namespace Wildgrove.Game
                 }
 
                 anyKit = true;
+                if (!onPage)
+                {
+                    continue;
+                }
+
                 row.info.text = row.gear.displayName + "  <size=24>(" + PrettyName(row.gear.slot) + ")</size>"
                                 + "\n<size=24>" + EffectSummary(row.gear.effects)
                                 + (worn ? "  •  worn" : string.Empty) + "</size>";
@@ -2079,7 +2150,10 @@ namespace Wildgrove.Game
             }
 
             SetSectionVisible(_kitSection, anyKit);
+        }
 
+        private void RefreshRiteAndAlmanac(GameState state)
+        {
             // The Rite: revealed verses show their heading and, while
             // incomplete, their offering slots. A sung verse folds down to its
             // heading; the header carries the eligibility line when all are.
@@ -2108,6 +2182,13 @@ namespace Wildgrove.Game
                     }
                 }
             }
+            // Verse headings and slot rows live on the Rite page — skip their
+            // label pass elsewhere (the section flags above stay fresh).
+            if (_activeTab != TabRite)
+            {
+                return;
+            }
+
             foreach (var heading in _verseHeadings)
             {
                 var revealed = Rite.IsVerseRevealed(state, _loop.Data, heading.verse);
@@ -2155,9 +2236,14 @@ namespace Wildgrove.Game
                     row.offerButton.interactable = !complete && CanOfferAnything(state, slot);
                 }
             }
+        }
 
+        private void RefreshShopRows(GameState state)
+        {
             // Bought upgrades leave the shop; only the next few unpurchased
-            // rungs of the ladder are on offer at once.
+            // rungs of the ladder are on offer at once. The window is computed
+            // every pass (the nav needs the flag); labels only on their page.
+            var onBuildPage = _activeTab == TabBuild;
             var onOffer = 0;
             foreach (var row in _upgradeRows)
             {
@@ -2169,6 +2255,11 @@ namespace Wildgrove.Game
                 }
 
                 onOffer++;
+                if (!onBuildPage)
+                {
+                    continue;
+                }
+
                 // The §3 tool gate: a trail map stays visible (an honest
                 // preview, like material costs) but can't be bought until the
                 // required tool tier is owned.
@@ -2184,6 +2275,7 @@ namespace Wildgrove.Game
             // The crafting section: recipes the run can see, plus anything a
             // station is actively working (a running recipe must always have a
             // row, or a data retune could leave an unstoppable station).
+            var onCraftPage = _activeTab == TabCraft;
             var anyCraftable = false;
             foreach (var row in _craftRows)
             {
@@ -2196,6 +2288,10 @@ namespace Wildgrove.Game
                 }
 
                 anyCraftable = true;
+                if (!onCraftPage)
+                {
+                    continue;
+                }
 
                 var workable = _loop.IsRecipeWorkable(row.recipe);
                 var status = string.Empty;
@@ -2227,14 +2323,26 @@ namespace Wildgrove.Game
             SetSectionVisible(_craftingSection, anyCraftable);
 
             // The camp building lines — the always-available Coin sink.
-            foreach (var row in _buildingRows)
+            if (_activeTab == TabBuild)
             {
-                var level = _loop.BuildingLevel(row.building);
-                var cost = _loop.NextBuildingCost(row.building);
-                row.info.text = row.building.displayName
-                                + "\n<size=22>Level " + level + "  •  " + PerLevelDescription(row.building.perLevel) + "</size>";
-                row.buildLabel.text = "Build\n<size=22>" + NumberFormat.Short(cost) + "</size>";
-                row.buildButton.interactable = state.coin >= cost;
+                foreach (var row in _buildingRows)
+                {
+                    var level = _loop.BuildingLevel(row.building);
+                    var cost = _loop.NextBuildingCost(row.building);
+                    row.info.text = row.building.displayName
+                                    + "\n<size=22>Level " + level + "  •  " + PerLevelDescription(row.building.perLevel) + "</size>";
+                    row.buildLabel.text = "Build\n<size=22>" + NumberFormat.Short(cost) + "</size>";
+                    row.buildButton.interactable = state.coin >= cost;
+                }
+            }
+        }
+
+        /// <summary>The Gather page's pinned chrome — the Feeder, Sell All, and the Amber skip.</summary>
+        private void RefreshGatherActions(GameState state, EconomyData economy)
+        {
+            if (_activeTab != TabGather)
+            {
+                return;
             }
 
             // The Feeder: a bundle of every worked resource buys a carrier.
@@ -2257,8 +2365,6 @@ namespace Wildgrove.Game
                                       + amberEconomy.timeSkipCostAmber + " Amber</size>";
                 _timeSkipButton.interactable = _loop.CanTimeSkip();
             }
-
-            UpdateNavBar();
         }
 
         /// <summary>

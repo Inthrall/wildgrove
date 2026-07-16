@@ -54,16 +54,7 @@ namespace Wildgrove.Sim
         /// <summary>Bonded carriers hauling with the fleet — outside carrierCount, its slots, and its gift curve.</summary>
         public static int BondedCarriers(GameState state, GameDataAsset data)
         {
-            var count = 0;
-            foreach (var bond in Earned(state, data))
-            {
-                if (bond.role == "carrier")
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            return Modifiers.Of(state, data).bondedCarriers;
         }
 
         /// <summary>
@@ -78,16 +69,7 @@ namespace Wildgrove.Sim
                 return 0;
             }
 
-            var count = 0;
-            foreach (var bond in Earned(state, data))
-            {
-                if (bond.role == "gatherer")
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            return Modifiers.Of(state, data).bondedGatherers;
         }
 
         /// <summary>Where the bonded gatherers are posted: at the warden's side (design §7).</summary>

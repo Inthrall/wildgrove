@@ -29,6 +29,16 @@ namespace Wildgrove.Game.World
         public static Vector2[] LayoutCentres(Rect strip, int count)
         {
             var centres = new Vector2[Mathf.Max(0, count)];
+            LayoutCentresInto(strip, count, centres);
+            return centres;
+        }
+
+        /// <summary>
+        /// Allocation-free variant for the per-frame caller: writes into
+        /// <paramref name="centres"/> (sized to <paramref name="count"/>).
+        /// </summary>
+        public static void LayoutCentresInto(Rect strip, int count, Vector2[] centres)
+        {
             if (Rows(count) == 1)
             {
                 for (var i = 0; i < centres.Length; i++)
@@ -37,7 +47,7 @@ namespace Wildgrove.Game.World
                     centres[i] = new Vector2(x, strip.center.y);
                 }
 
-                return centres;
+                return;
             }
 
             var topCount = (count + 1) / 2;
@@ -55,8 +65,6 @@ namespace Wildgrove.Game.World
                 var x = strip.xMin + strip.width * (i + 1) / (bottomCount + 1);
                 centres[topCount + i] = new Vector2(x, bottomY);
             }
-
-            return centres;
         }
 
         /// <summary>
