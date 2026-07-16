@@ -63,6 +63,10 @@ namespace Wildgrove.Data
         public sealed class MasterySection
         {
             public double YieldBonusPerLevel { get; set; }
+            public double Base { get; set; }
+            public double Growth { get; set; }
+            public int MaxLevel { get; set; }
+            public double XpPerUnit { get; set; }
         }
 
         public sealed class VerdureSection

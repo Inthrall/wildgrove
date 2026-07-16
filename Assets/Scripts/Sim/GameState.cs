@@ -109,8 +109,12 @@ namespace Wildgrove.Sim
         /// <summary>Number of familiars working the node; the base gather rate is one unit per familiar per second.</summary>
         public int familiarCount;
 
-        /// <summary>Per-resource mastery level; each level adds economy.mastery.yieldBonusPerLevel.</summary>
-        public int masteryLevel;
+        /// <summary>
+        /// Mastery XP earned gathering this node's resource (design §4). Levels
+        /// derive via Mastery.Level — each adds economy.mastery.yieldBonusPerLevel
+        /// to the node's yield and the raw resource's sell value.
+        /// </summary>
+        public double masteryXp;
 
         /// <summary>
         /// Seconds left on an active Tending burst. While positive, the node's

@@ -325,6 +325,38 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void SellValuePerUnit_MasteryRaisesTheRawResourceValue()
+        {
+            _data.economy.mastery = new EconomyData.MasteryData
+            {
+                yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.25,
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.nodes[0].masteryXp = 107.5; // berries node, mastery level 2
+
+            var value = Economy.SellValuePerUnit(state, _data, "berries");
+
+            // 2 base · (1 + 0.05 · 2) — §4's "+yield/value per level".
+            Assert.That(value.ToDouble(), Is.EqualTo(2.2).Within(Tolerance));
+        }
+
+        [Test]
+        public void SellValuePerUnit_MasteryNeverInflatesCraftedGoods()
+        {
+            _data.economy.mastery = new EconomyData.MasteryData
+            {
+                yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.25,
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.nodes[0].masteryXp = 107.5;
+
+            var value = Economy.SellValuePerUnit(state, _data, "berry-preserve");
+
+            // Still input BASE values × valueMult — berry mastery notwithstanding.
+            Assert.That(value.ToDouble(), Is.EqualTo(56.0).Within(Tolerance));
+        }
+
+        [Test]
         public void SellValuePerUnit_CraftedMaterial_IsUnsellable()
         {
             var state = new GameState();

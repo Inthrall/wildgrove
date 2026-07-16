@@ -85,7 +85,7 @@ namespace Wildgrove.Sim.Tests
             state.carrierCount = 3;
             state.AddResource("berries", new BigDouble(42.25));
             state.nodes[1].familiarCount = 3;
-            state.nodes[1].masteryLevel = 2;
+            state.nodes[1].masteryXp = 107.5;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
 
@@ -96,7 +96,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.carrierCount, Is.EqualTo(3));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
             Assert.That(restored.nodes[1].familiarCount, Is.EqualTo(3));
-            Assert.That(restored.nodes[1].masteryLevel, Is.EqualTo(2));
+            Assert.That(restored.nodes[1].masteryXp, Is.EqualTo(107.5).Within(Tolerance));
             Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
             // The starter familiar was captured on node 0, not re-seeded on top.
@@ -250,6 +250,16 @@ namespace Wildgrove.Sim.Tests
             var restored = RoundTrip(state);
 
             Assert.That(restored.skillXp["foraging"], Is.EqualTo(123.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V5Save_ClimbsToCurrent()
+        {
+            // v5 nodes carried a never-earned masteryLevel — nothing to carry.
+            var save = new SaveData { version = 5 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
         }
 
         [Test]

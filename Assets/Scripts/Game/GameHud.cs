@@ -698,10 +698,13 @@ namespace Wildgrove.Game
                 var basket = "  •  " + NumberFormat.Short(node.basket)
                              + (basketFull ? " in basket (full!)" : " in basket");
 
+                var mastery = Mastery.Configured(economy)
+                    ? "  •  Mastery " + Mastery.Level(node, economy)
+                    : string.Empty;
                 row.info.text = PrettyName(node.resourceId)
                                 + "\n<size=24>" + NumberFormat.Short(held) + " held" + basket + "</size>"
                                 + "\n<size=24>" + node.familiarCount + " familiars"
-                                + "  •  " + NumberFormat.Rate(rate) + "/s" + tending + "</size>";
+                                + "  •  " + NumberFormat.Rate(rate) + "/s" + tending + mastery + "</size>";
 
                 // Gatherer gifts cost the node's own resource, from camp stock
                 // (design §13) — so affordability is per node.

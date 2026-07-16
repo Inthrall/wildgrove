@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -43,7 +43,7 @@ namespace Wildgrove.Sim.Saves
                 {
                     id = node.id,
                     familiarCount = node.familiarCount,
-                    masteryLevel = node.masteryLevel,
+                    masteryXp = node.masteryXp,
                     tendBurstRemaining = node.tendBurstRemaining,
                     basket = node.basket,
                 });
@@ -123,7 +123,7 @@ namespace Wildgrove.Sim.Saves
                 }
 
                 node.familiarCount = saved.familiarCount;
-                node.masteryLevel = saved.masteryLevel;
+                node.masteryXp = saved.masteryXp;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
                 node.basket = saved.basket;
             }
@@ -250,6 +250,12 @@ namespace Wildgrove.Sim.Saves
                         // level 1 (XP was never earned, not lost).
                         save.skillXp = save.skillXp ?? new List<SavedSkillXp>();
                         save.version = 5;
+                        break;
+
+                    case 5:
+                        // v5 nodes carried a masteryLevel nothing ever granted
+                        // (always 0) — dropped on read; masteryXp starts fresh.
+                        save.version = 6;
                         break;
 
                     default:

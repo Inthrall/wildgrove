@@ -58,6 +58,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.RecipesById["copper-ingot"].SkillLevel, Is.EqualTo(1), "absent skillLevel defaults to 1");
             Assert.That(data.Economy.Xp.GatherPerUnit, Is.EqualTo(1.0));
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
+            Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
+            Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -316,6 +318,19 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp gains")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_DegenerateMasteryCurve_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"xpPerUnit\": 0.25,",
+                "\"xpPerUnit\": -1,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("mastery progression is degenerate")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

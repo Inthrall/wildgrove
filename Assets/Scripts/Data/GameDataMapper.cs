@@ -222,7 +222,11 @@ namespace Wildgrove.Data
                 },
                 mastery = new EconomyData.MasteryData
                 {
-                    yieldBonusPerLevel = e.Mastery.YieldBonusPerLevel
+                    yieldBonusPerLevel = e.Mastery.YieldBonusPerLevel,
+                    baseXp = e.Mastery.Base,
+                    growth = e.Mastery.Growth,
+                    maxLevel = e.Mastery.MaxLevel,
+                    xpPerUnit = e.Mastery.XpPerUnit
                 },
                 verdure = new EconomyData.VerdureData
                 {

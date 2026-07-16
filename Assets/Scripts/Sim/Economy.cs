@@ -195,7 +195,32 @@ namespace Wildgrove.Sim
             var baseValue = BaseUnitValue(data, resourceId, null);
             return baseValue > BigDouble.Zero
                 ? baseValue * Upgrades.SellValueMultiplier(state, data, resourceId)
+                          * MasteryValueMultiplier(state, data, resourceId)
                 : BigDouble.Zero;
+        }
+
+        /// <summary>
+        /// Mastery's value bonus (design §4: "+yield/value per level"), from
+        /// the node gathering this resource. Applies to the raw gatherable's
+        /// direct sale only — like sellValueBonus, it never inflates goods
+        /// crafted from it (BaseUnitValue stays a base value).
+        /// </summary>
+        private static double MasteryValueMultiplier(GameState state, GameDataAsset data, string resourceId)
+        {
+            if (!Mastery.Configured(data.economy))
+            {
+                return 1.0;
+            }
+
+            foreach (var node in state.nodes)
+            {
+                if (node.resourceId == resourceId)
+                {
+                    return 1.0 + data.economy.mastery.yieldBonusPerLevel * Mastery.Level(node, data.economy);
+                }
+            }
+
+            return 1.0;
         }
 
         private static BigDouble BaseUnitValue(GameDataAsset data, string resourceId, HashSet<string> visiting)

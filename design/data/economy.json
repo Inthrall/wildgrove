@@ -34,7 +34,14 @@
     "tiers": ["flint", "copper", "bronze", "iron", "steel"],
     "$note": "flint is knapped (no forge); each later tier also consumes an ingot batch (see recipes)"
   },
-  "mastery": { "yieldBonusPerLevel": 0.05 },
+  "mastery": {
+    "yieldBonusPerLevel": 0.05,
+    "base": 50,
+    "growth": 1.15,
+    "maxLevel": 99,
+    "xpPerUnit": 0.25,
+    "$note": "curve and xpPerUnit are first guesses, not in the design doc — mastery XP per unit gathered at the node, rung r costs base·growth^r. yieldBonusPerLevel applies to both yield and the raw resource's sell value (§4 '+5% yield/value')."
+  },
   "verdure": {
     "renownDivisor": 5000,
     "exponent": 0.5,

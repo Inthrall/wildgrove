@@ -81,6 +81,12 @@ they're easy to find and delete when resolved.
   design doc, and one duration for every recipe is a placeholder — tune against
   the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
   times with the balance pass. (`design/data/economy.json`)
+- **Mastery curve and value-bonus interpretation are first guesses.** base 50 /
+  growth 1.15 / xpPerUnit 0.25 aren't in the design doc, and §4's "+5%
+  yield/value" is implemented as one yieldBonusPerLevel applying to the node's
+  yield and to the raw resource's direct sale — never to goods crafted from it
+  (recipe derivation uses base values, same convention as sellValueBonus).
+  (`Wildgrove.Sim/Mastery.cs`, `design/data/economy.json`)
 - **Skill XP gains and recipe skillLevels are first guesses.** xp.gatherPerUnit
   (1, credited on the gross gather — basket overflow loses the goods but still
   pays XP) and xp.craftPerBatch (25) aren't in the design doc, nor are the

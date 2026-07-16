@@ -70,8 +70,9 @@ namespace Wildgrove.Sim
 
                     // XP from every action (design §4) — credited on the gross
                     // gather, so a full basket loses the goods but not the
-                    // practice.
+                    // practice. Mastery accrues alongside, per node.
                     Skills.AddGatherXp(state, data, node.skill, gained);
+                    Mastery.AddGatherXp(node, economy, gained);
 
                     if (hauling != null)
                     {
@@ -96,6 +97,7 @@ namespace Wildgrove.Sim
                     var handGathered = new BigDouble(economy.tending.handGatherPerSecond * burstSeconds);
                     state.AddResource(node.resourceId, handGathered);
                     Skills.AddGatherXp(state, data, node.skill, handGathered);
+                    Mastery.AddGatherXp(node, economy, handGathered);
                 }
 
                 if (node.tendBurstRemaining > 0.0)
@@ -256,7 +258,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, EconomyData economy)
         {
-            var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * node.masteryLevel;
+            var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * Mastery.Level(node, economy);
             var global = 1.0 + economy.verdure.yieldBonusPerPoint * state.verdurePoints;
 
             return new BigDouble(node.familiarCount) * node.yieldMultiplier * masteryBonus * global;

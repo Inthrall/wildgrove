@@ -87,7 +87,10 @@ namespace Wildgrove.Sim.Saves
     {
         public string id;
         public int familiarCount;
-        public int masteryLevel;
+
+        /// <summary>v6+: mastery XP (replaces v≤5's masteryLevel, which nothing ever granted — dropped on read).</summary>
+        public double masteryXp;
+
         public double tendBurstRemaining;
 
         /// <summary>v2+: goods gathered but not yet hauled to camp (absent in v1 — defaults to zero).</summary>

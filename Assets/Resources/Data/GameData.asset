@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 7e737e238e770b4ba8a24ce92c48de596afb4ea9d2efad225f3efc28e47c34e3
+  sourceHash: ebef5e3159b1a4fb81246e3bdafa4eb26a8d1aded8d874cdc19847777512e76f
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -50,6 +50,10 @@ MonoBehaviour:
       - steel
     mastery:
       yieldBonusPerLevel: 0.05
+      baseXp: 50
+      growth: 1.15
+      maxLevel: 99
+      xpPerUnit: 0.25
     verdure:
       renownDivisor: 5000
       exponent: 0.5

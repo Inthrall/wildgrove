@@ -301,13 +301,33 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void YieldPerSecond_AppliesMasteryBonus()
         {
-            var node = new NodeState { familiarCount = 1, masteryLevel = 2 };
+            _data.economy.mastery = new EconomyData.MasteryData
+            {
+                yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.25,
+            };
+            // Rungs 0 and 1 cost 50 + 57.5 — mastery level 2.
+            var node = new NodeState { familiarCount = 1, masteryXp = 107.5 };
             var state = new GameState();
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
             // 1 familiar * (1 + 0.05 * 2) = 1.1
             Assert.That(perSec.ToDouble(), Is.EqualTo(1.1).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_Gathering_GrantsMasteryXpPerUnit()
+        {
+            _data.economy.mastery = new EconomyData.MasteryData
+            {
+                yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.5,
+            };
+            var state = GameStateFactory.NewGame(_data);
+
+            Simulation.Advance(state, _data, 10.0);
+
+            // One familiar gathering 1/s for 10 s, at 0.5 mastery XP per unit.
+            Assert.That(state.nodes[0].masteryXp, Is.EqualTo(5.0).Within(Tolerance));
         }
 
         [Test]

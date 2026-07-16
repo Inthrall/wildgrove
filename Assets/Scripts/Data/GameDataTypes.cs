@@ -260,6 +260,10 @@ namespace Wildgrove.Data
         public sealed class MasteryData
         {
             public double yieldBonusPerLevel;
+            public double baseXp;
+            public double growth;
+            public int maxLevel;
+            public double xpPerUnit;
         }
 
         [Serializable]

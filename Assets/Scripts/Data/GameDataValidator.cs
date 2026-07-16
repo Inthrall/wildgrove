@@ -535,6 +535,13 @@ namespace Wildgrove.Data
                 issues.Add("Economy xp gains must not be negative");
             }
 
+            if (economy.Mastery != null
+                && (economy.Mastery.Base <= 0 || economy.Mastery.Growth <= 1
+                    || economy.Mastery.MaxLevel < 1 || economy.Mastery.XpPerUnit <= 0))
+            {
+                issues.Add("Economy mastery progression is degenerate");
+            }
+
             if (economy.Offline != null && economy.Offline.BaseCapHours <= 0)
             {
                 issues.Add("Economy offline.baseCapHours must be positive");
