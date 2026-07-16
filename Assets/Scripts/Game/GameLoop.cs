@@ -453,6 +453,13 @@ namespace Wildgrove.Game
             return Economy.SellAll(State, Data);
         }
 
+        /// <summary>Mark a zone's waystone inscription as read (design §6 — shown once on arrival, re-readable in the Compendium).</summary>
+        public void MarkWaystoneRead(string zoneId)
+        {
+            Narrative.MarkWaystoneRead(State, zoneId);
+            Telemetry.LogEvent("waystone_read", ("zone", zoneId));
+        }
+
         /// <summary>Whether the time-skip is configured and affordable — the button's enabled state.</summary>
         public bool CanTimeSkip()
         {

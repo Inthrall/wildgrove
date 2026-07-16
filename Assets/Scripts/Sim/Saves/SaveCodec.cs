@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 17;
+        public const int CurrentVersion = 18;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -35,6 +35,7 @@ namespace Wildgrove.Sim.Saves
                 donatedResources = new List<string>(state.donatedResources),
                 bondedPostNodeId = state.bondedPostNodeId,
                 amber = state.amber,
+                seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -170,6 +171,9 @@ namespace Wildgrove.Sim.Saves
                 : new List<string>();
             state.bondedPostNodeId = save.bondedPostNodeId;
             state.amber = save.amber;
+            state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
+                ? new List<string>(save.seenWaystoneZoneIds)
+                : new List<string>();
 
             state.resources.Clear();
             if (save.resources != null)
@@ -559,6 +563,14 @@ namespace Wildgrove.Sim.Saves
                         // v16 predates the amber system — none held (the
                         // double already defaults to 0).
                         save.version = 17;
+                        break;
+
+                    case 17:
+                        // v17 predates waystone reveals — an old save's
+                        // already-unlocked zones will show their stones once,
+                        // which reads as a feature, not a bug.
+                        save.seenWaystoneZoneIds = save.seenWaystoneZoneIds ?? new List<string>();
+                        save.version = 18;
                         break;
 
                     default:

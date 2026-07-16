@@ -44,6 +44,9 @@ namespace Wildgrove.Sim
         /// <summary>Amber (design §10) — the premium currency; dig sites surface it free, and it survives Migration.</summary>
         public double amber;
 
+        /// <summary>Zones whose waystone inscription has been read (design §6) — lore stays read across Migration.</summary>
+        public List<string> seenWaystoneZoneIds = new List<string>();
+
         /// <summary>Compendium lifetime counters (design §5) — never reset, never decremented; they survive Migration.</summary>
         public Dictionary<string, BigDouble> lifetimeGathered = new Dictionary<string, BigDouble>();
         public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();

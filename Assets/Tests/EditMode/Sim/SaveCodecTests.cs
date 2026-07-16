@@ -426,6 +426,27 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresReadWaystones()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.seenWaystoneZoneIds.Add(GameStateFactory.StartingZoneId);
+
+            Assert.That(RoundTrip(state).seenWaystoneZoneIds, Is.EqualTo(new[] { GameStateFactory.StartingZoneId }));
+        }
+
+        [Test]
+        public void TryMigrate_V17Save_HasReadNoWaystones()
+        {
+            // v17 predates waystone reveals — already-unlocked zones will show
+            // their stones once, which reads as a feature.
+            var save = new SaveData { version = 17, seenWaystoneZoneIds = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.seenWaystoneZoneIds, Is.Empty);
+        }
+
+        [Test]
         public void RoundTrip_RestoresAmber()
         {
             var state = GameStateFactory.NewGame(_data);

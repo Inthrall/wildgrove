@@ -25,6 +25,7 @@ namespace Wildgrove.Game
     public sealed class GameHud : MonoBehaviour
     {
         private static readonly Color PanelColor = new Color(0.12f, 0.16f, 0.13f, 0.92f);
+        private static readonly Color SectionHeaderColor = new Color(0.09f, 0.13f, 0.10f, 0.9f);
         private static readonly Color RowColor = new Color(0.18f, 0.23f, 0.19f, 0.90f);
         private static readonly Color RowSelectedColor = new Color(0.24f, 0.34f, 0.24f, 0.95f);
         private static readonly Color AccentColor = new Color(0.35f, 0.55f, 0.34f, 1f);
@@ -50,9 +51,10 @@ namespace Wildgrove.Game
         private const float SectionRefreshInterval = 0.25f;
 
         private Text _headerLabel;
-        private Text _upgradesHeader;
-        private Text _craftingHeader;
-        private Text _buildingsHeader;
+        private SectionView _nodesSection;
+        private SectionView _upgradesSection;
+        private SectionView _craftingSection;
+        private SectionView _buildingsSection;
         private Text _sellAllLabel;
         private Button _sellAllButton;
         private Text _timeSkipLabel;
@@ -61,20 +63,21 @@ namespace Wildgrove.Game
         private Button _carrierButton;
         private Transform _canvas;
         private Transform _nodesPanel;
-        private Text _specimensHeader;
+        private SectionView _specimensSection;
         private Transform _specimensPanel;
-        private Text _excavationHeader;
+        private SectionView _excavationSection;
         private Transform _excavationPanel;
-        private Text _riteHeader;
+        private SectionView _riteSection;
         private Button _migrateButton;
         private GameObject _migrationSheet;
-        private Text _almanacHeader;
+        private GameObject _waystoneSheet;
+        private SectionView _almanacSection;
         private GameObject _almanacPanel;
-        private Text _kitHeader;
-        private Text _museumHeader;
+        private SectionView _kitSection;
+        private SectionView _museumSection;
         private GameObject _museumPanel;
         private readonly List<MuseumRowView> _museumRows = new List<MuseumRowView>();
-        private Text _compendiumHeader;
+        private SectionView _compendiumSection;
         private GameObject _compendiumPanel;
         private Text _compendiumText;
         private GameObject _welcomeSheet;
@@ -96,6 +99,8 @@ namespace Wildgrove.Game
         private float _sectionRefreshCountdown;
         private NodeState _selected;
         private GameState _boundState;
+        private bool _builtLandscape;
+        private readonly List<SectionView> _sections = new List<SectionView>();
 
         private void Update()
         {
@@ -124,6 +129,15 @@ namespace Wildgrove.Game
                 Initialise();
             }
 
+            // The layout is built per orientation (portrait column vs landscape
+            // dashboard) — a rotation rebuilds it. Deferred while a modal sheet
+            // is up so the rebuild can't eat a welcome-back or Migration confirm.
+            if ((Screen.width > Screen.height) != _builtLandscape
+                && _welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null)
+            {
+                Initialise();
+            }
+
             HandleTendInput();
             Refresh();
 
@@ -132,6 +146,17 @@ namespace Wildgrove.Game
             if (_welcomeSheet == null && _loop.PendingOfflineSummary != null)
             {
                 ShowWelcomeBackIfEarned();
+            }
+
+            // A waystone reveals on arrival (design §6) — one sheet at a
+            // time, and never over another modal.
+            if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null)
+            {
+                var waystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
+                if (waystoneZone != null)
+                {
+                    ShowWaystoneSheet(waystoneZone);
+                }
             }
         }
 
@@ -162,6 +187,7 @@ namespace Wildgrove.Game
             _almanacRows.Clear();
             _gearRows.Clear();
             _museumRows.Clear();
+            _sections.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
             _boundState = _loop.State;
@@ -177,7 +203,7 @@ namespace Wildgrove.Game
         {
             // While the welcome-back sheet is up, its dim layer owns the screen —
             // a non-positional confirm (Space / pad-A) shouldn't tend behind it.
-            if (_welcomeSheet != null || _migrationSheet != null)
+            if (_welcomeSheet != null || _migrationSheet != null || _waystoneSheet != null)
             {
                 return;
             }
@@ -248,15 +274,51 @@ namespace Wildgrove.Game
             var root = new GameObject("Root", typeof(RectTransform));
             root.transform.SetParent(canvasGo.transform, false);
             StretchFull(root.GetComponent<RectTransform>());
-            var column = root.AddComponent<VerticalLayoutGroup>();
-            column.padding = new RectOffset(32, 32, 32, 32);
-            column.spacing = 20f;
-            column.childControlWidth = true;
-            column.childControlHeight = true;
-            column.childForceExpandWidth = true;
-            column.childForceExpandHeight = false;
 
-            var headerPanel = CreatePanel("Header", root.transform, PanelColor);
+            // Portrait stacks header / world / panel in one column. Landscape
+            // is a dashboard: header and world on the left, the control panel
+            // as a full-height column on the right.
+            _builtLandscape = Screen.width > Screen.height;
+            Transform topParent;
+            Transform panelParent;
+            if (_builtLandscape)
+            {
+                var row = root.AddComponent<HorizontalLayoutGroup>();
+                row.padding = new RectOffset(32, 32, 32, 32);
+                row.spacing = 24f;
+                row.childControlWidth = true;
+                row.childControlHeight = true;
+                row.childForceExpandWidth = false;
+                row.childForceExpandHeight = true;
+
+                var left = new GameObject("LeftColumn", typeof(RectTransform), typeof(LayoutElement));
+                left.transform.SetParent(root.transform, false);
+                left.GetComponent<LayoutElement>().flexibleWidth = 1.15f;
+                var leftColumn = left.AddComponent<VerticalLayoutGroup>();
+                leftColumn.spacing = 20f;
+                leftColumn.childControlWidth = true;
+                leftColumn.childControlHeight = true;
+                leftColumn.childForceExpandWidth = true;
+                leftColumn.childForceExpandHeight = false;
+
+                topParent = left.transform;
+                panelParent = root.transform;
+            }
+            else
+            {
+                var column = root.AddComponent<VerticalLayoutGroup>();
+                column.padding = new RectOffset(32, 32, 32, 32);
+                column.spacing = 20f;
+                column.childControlWidth = true;
+                column.childControlHeight = true;
+                column.childForceExpandWidth = true;
+                column.childForceExpandHeight = false;
+
+                topParent = root.transform;
+                panelParent = root.transform;
+            }
+
+            var headerPanel = CreatePanel("Header", topParent, PanelColor);
             // Two lines when the XP system is live: currencies, then skill levels.
             SetPreferredHeight(headerPanel, _loop.Data.economy?.xp != null ? 132f : 88f);
             _headerLabel = CreateText("HeaderLabel", headerPanel.transform, 48, TextAnchor.MiddleLeft, TextColor);
@@ -268,11 +330,19 @@ namespace Wildgrove.Game
             // The deliberate gap between header and controls — WorldView lays
             // the node sprites out inside this rect.
             var worldGap = new GameObject("WorldGap", typeof(RectTransform), typeof(LayoutElement));
-            worldGap.transform.SetParent(root.transform, false);
+            worldGap.transform.SetParent(topParent, false);
             worldGap.GetComponent<LayoutElement>().flexibleHeight = 1f;
             _worldStrip = worldGap.GetComponent<RectTransform>();
 
-            var lowerPanel = CreatePanel("LowerPanel", root.transform, PanelColor);
+            var lowerPanel = CreatePanel("LowerPanel", panelParent, PanelColor);
+            if (_builtLandscape)
+            {
+                // The right-hand column of the dashboard: a fixed share of the
+                // width, full height from the root row.
+                var panelElement = lowerPanel.AddComponent<LayoutElement>();
+                panelElement.flexibleWidth = 0.85f;
+            }
+
             var lowerLayout = lowerPanel.AddComponent<VerticalLayoutGroup>();
             lowerLayout.padding = new RectOffset(24, 24, 24, 24);
             lowerLayout.spacing = 20f;
@@ -284,8 +354,12 @@ namespace Wildgrove.Game
             // The sections (nodes, shop, crafting, camp) live in a height-capped
             // scroll view — three zones is ~10 node rows, which outgrows a
             // portrait screen as a straight column. The camp-wide actions row
-            // and the hint stay pinned below it, always reachable.
-            var sections = BuildScrollSection(lowerPanel.transform, canvasGo.GetComponent<RectTransform>());
+            // and the hint stay pinned below it, always reachable. In landscape
+            // the panel owns the full height, so the scroll gets a bigger share.
+            var sections = BuildScrollSection(lowerPanel.transform, canvasGo.GetComponent<RectTransform>(),
+                _builtLandscape ? 0.68f : 0.45f);
+
+            _nodesSection = CreateSection(sections, "nodes", "Gathering");
 
             var nodesPanel = CreatePanel("Nodes", sections, new Color(0f, 0f, 0f, 0f));
             var nodesLayout = nodesPanel.AddComponent<VerticalLayoutGroup>();
@@ -295,12 +369,11 @@ namespace Wildgrove.Game
             nodesLayout.childForceExpandWidth = true;
             nodesLayout.childForceExpandHeight = false;
             _nodesPanel = nodesPanel.transform;
+            AttachSectionPanel(_nodesSection, nodesPanel);
 
             // Pristine windfalls (design §5) — hidden until the first Pristine
             // batch lands; the sale stays an explicit act, apart from Sell All.
-            _specimensHeader = CreateText("SpecimensHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _specimensHeader.text = "Specimens";
-            SetPreferredHeight(_specimensHeader.gameObject, 48f);
+            _specimensSection = CreateSection(sections, "specimens", "Specimens");
 
             var specimensPanel = CreatePanel("Specimens", sections, new Color(0f, 0f, 0f, 0f));
             var specimensLayout = specimensPanel.AddComponent<VerticalLayoutGroup>();
@@ -310,14 +383,13 @@ namespace Wildgrove.Game
             specimensLayout.childForceExpandWidth = true;
             specimensLayout.childForceExpandHeight = false;
             _specimensPanel = specimensPanel.transform;
+            AttachSectionPanel(_specimensSection, specimensPanel);
 
             RebuildNodeRows();
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
-            _upgradesHeader = CreateText("UpgradesHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _upgradesHeader.text = "Upgrades";
-            SetPreferredHeight(_upgradesHeader.gameObject, 48f);
+            _upgradesSection = CreateSection(sections, "upgrades", "Upgrades");
 
             var upgradesPanel = CreatePanel("Upgrades", sections, new Color(0f, 0f, 0f, 0f));
             var upgradesLayout = upgradesPanel.AddComponent<VerticalLayoutGroup>();
@@ -334,9 +406,9 @@ namespace Wildgrove.Game
                 _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
             }
 
-            _craftingHeader = CreateText("CraftingHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _craftingHeader.text = "Crafting";
-            SetPreferredHeight(_craftingHeader.gameObject, 48f);
+            AttachSectionPanel(_upgradesSection, upgradesPanel);
+
+            _craftingSection = CreateSection(sections, "crafting", "Crafting");
 
             var craftingPanel = CreatePanel("Crafting", sections, new Color(0f, 0f, 0f, 0f));
             var craftingLayout = craftingPanel.AddComponent<VerticalLayoutGroup>();
@@ -353,10 +425,10 @@ namespace Wildgrove.Game
                 _craftRows.Add(BuildCraftRow(craftingPanel.transform, recipe));
             }
 
+            AttachSectionPanel(_craftingSection, craftingPanel);
+
             // Dig sites (design §5) — appear as trail maps unlock them.
-            _excavationHeader = CreateText("ExcavationHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _excavationHeader.text = "Excavation";
-            SetPreferredHeight(_excavationHeader.gameObject, 48f);
+            _excavationSection = CreateSection(sections, "excavation", "Excavation");
 
             var excavationPanel = CreatePanel("Excavation", sections, new Color(0f, 0f, 0f, 0f));
             var excavationLayout = excavationPanel.AddComponent<VerticalLayoutGroup>();
@@ -366,12 +438,11 @@ namespace Wildgrove.Game
             excavationLayout.childForceExpandWidth = true;
             excavationLayout.childForceExpandHeight = false;
             _excavationPanel = excavationPanel.transform;
+            AttachSectionPanel(_excavationSection, excavationPanel);
 
             RebuildDigRows();
 
-            _buildingsHeader = CreateText("BuildingsHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _buildingsHeader.text = "Camp";
-            SetPreferredHeight(_buildingsHeader.gameObject, 48f);
+            _buildingsSection = CreateSection(sections, "camp", "Camp");
 
             var buildingsPanel = CreatePanel("Buildings", sections, new Color(0f, 0f, 0f, 0f));
             var buildingsLayout = buildingsPanel.AddComponent<VerticalLayoutGroup>();
@@ -386,13 +457,12 @@ namespace Wildgrove.Game
                 _buildingRows.Add(BuildBuildingRow(buildingsPanel.transform, building));
             }
 
-            _buildingsHeader.gameObject.SetActive(_buildingRows.Count > 0);
+            AttachSectionPanel(_buildingsSection, buildingsPanel);
+            SetSectionVisible(_buildingsSection, _buildingRows.Count > 0);
 
             // The Museum (design §5): set progress and the permanent bonuses
             // donations have banked. Hidden until specimens enter the picture.
-            _museumHeader = CreateText("MuseumHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _museumHeader.text = "Museum";
-            SetPreferredHeight(_museumHeader.gameObject, 48f);
+            _museumSection = CreateSection(sections, "museum", "Museum");
 
             _museumPanel = CreatePanel("Museum", sections, new Color(0f, 0f, 0f, 0f));
             var museumLayout = _museumPanel.AddComponent<VerticalLayoutGroup>();
@@ -417,13 +487,13 @@ namespace Wildgrove.Game
                 _museumRows.Add(new MuseumRowView { set = set, root = rowGo, info = info });
             }
 
+            AttachSectionPanel(_museumSection, _museumPanel);
+
             // The Compendium (design §5): the lifetime record — every
             // gatherable, recipe, and companion, discovered by doing. The
             // hand-drawn plates and entry text arrive with the art/narrative
             // pass; this is the field-notes rendering of the same record.
-            _compendiumHeader = CreateText("CompendiumHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _compendiumHeader.text = "Compendium";
-            SetPreferredHeight(_compendiumHeader.gameObject, 48f);
+            _compendiumSection = CreateSection(sections, "compendium", "Compendium");
 
             _compendiumPanel = CreatePanel("Compendium", sections, RowColor);
             var compendiumLayout = _compendiumPanel.AddComponent<VerticalLayoutGroup>();
@@ -434,12 +504,11 @@ namespace Wildgrove.Game
             compendiumLayout.childForceExpandHeight = false;
             _compendiumText = CreateText("Entries", _compendiumPanel.transform, 28, TextAnchor.UpperLeft, TextColor);
             _compendiumText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            AttachSectionPanel(_compendiumSection, _compendiumPanel);
 
             // The warden's kit (design §4): three slots of crafted survival
             // gear. Rows show as their craft skill unlocks.
-            _kitHeader = CreateText("KitHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _kitHeader.text = "The Kit";
-            SetPreferredHeight(_kitHeader.gameObject, 48f);
+            _kitSection = CreateSection(sections, "kit", "The Kit");
 
             var kitPanel = CreatePanel("Kit", sections, new Color(0f, 0f, 0f, 0f));
             var kitLayout = kitPanel.AddComponent<VerticalLayoutGroup>();
@@ -454,11 +523,11 @@ namespace Wildgrove.Game
                 _gearRows.Add(BuildGearRow(kitPanel.transform, gearItem));
             }
 
+            AttachSectionPanel(_kitSection, kitPanel);
+
             // The Rite (design §7): each unlocked zone's verse and its
             // offering slots. Static per data — Refresh drives visibility.
-            _riteHeader = CreateText("RiteHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _riteHeader.text = "The Rite";
-            SetPreferredHeight(_riteHeader.gameObject, 48f);
+            _riteSection = CreateSection(sections, "rite", "The Rite");
 
             var ritePanel = CreatePanel("Rite", sections, new Color(0f, 0f, 0f, 0f));
             var riteLayout = ritePanel.AddComponent<VerticalLayoutGroup>();
@@ -475,7 +544,20 @@ namespace Wildgrove.Game
                 {
                     var heading = CreateText("Verse_" + verse.id, ritePanel.transform, 30, TextAnchor.MiddleLeft, TextColor);
                     SetPreferredHeight(heading.gameObject, 44f);
-                    _verseHeadings.Add(new VerseHeadingView { verse = verse, text = heading });
+
+                    // The verse line (design §6) — what the site says, when
+                    // it's been written. Generated verses reuse their zone's
+                    // authored line; unauthored zones simply say nothing.
+                    Text verseLine = null;
+                    var spoken = Narrative.VerseLine(_loop.Data, verse.zone);
+                    if (spoken != null)
+                    {
+                        verseLine = CreateText("VerseLine_" + verse.id, ritePanel.transform, 26, TextAnchor.MiddleLeft, TextColor);
+                        verseLine.text = "<i>“" + spoken + "”</i>";
+                        SetPreferredHeight(verseLine.gameObject, 40f);
+                    }
+
+                    _verseHeadings.Add(new VerseHeadingView { verse = verse, text = heading, line = verseLine });
 
                     for (var i = 0; i < verse.slots.Count; i++)
                     {
@@ -491,13 +573,12 @@ namespace Wildgrove.Game
             _migrateButton = migrate;
             _migrateButton.gameObject.SetActive(false);
 
-            _riteHeader.gameObject.SetActive(rite != null);
+            AttachSectionPanel(_riteSection, ritePanel);
+            SetSectionVisible(_riteSection, rite != null);
 
             // The Almanac (design §7): the permanent Verdure tree. Hidden
             // until the first Migration banks any Verdure.
-            _almanacHeader = CreateText("AlmanacHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
-            _almanacHeader.text = "Almanac";
-            SetPreferredHeight(_almanacHeader.gameObject, 48f);
+            _almanacSection = CreateSection(sections, "almanac", "Almanac");
 
             _almanacPanel = CreatePanel("Almanac", sections, new Color(0f, 0f, 0f, 0f));
             var almanacLayout = _almanacPanel.AddComponent<VerticalLayoutGroup>();
@@ -511,6 +592,8 @@ namespace Wildgrove.Game
             {
                 _almanacRows.Add(BuildAlmanacRow(_almanacPanel.transform, node));
             }
+
+            AttachSectionPanel(_almanacSection, _almanacPanel);
 
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
@@ -546,11 +629,86 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// A section header that doubles as its fold toggle: tap to collapse or
+        /// expand the panel beneath it. The fold state is remembered per
+        /// section across sessions — the §12 systems stack up to a dozen
+        /// sections, and which ones a player keeps open is theirs to choose.
+        /// </summary>
+        private SectionView CreateSection(Transform parent, string id, string title)
+        {
+            var go = CreatePanel("SectionHeader_" + id, parent, SectionHeaderColor);
+            SetPreferredHeight(go, 56f);
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = go.GetComponent<Image>();
+
+            var label = CreateText("Label", go.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            var labelRect = label.GetComponent<RectTransform>();
+            StretchFull(labelRect);
+            labelRect.offsetMin = new Vector2(20f, 0f);
+            labelRect.offsetMax = new Vector2(-20f, 0f);
+
+            var view = new SectionView
+            {
+                id = id,
+                header = go,
+                headerLabel = label,
+                collapsed = PlayerPrefs.GetInt(CollapseKey(id), 0) == 1,
+            };
+            button.onClick.AddListener(() => ToggleSection(view));
+            SetSectionTitle(view, title);
+            _sections.Add(view);
+            return view;
+        }
+
+        /// <summary>Bind the panel a section header folds, applying any remembered fold.</summary>
+        private static void AttachSectionPanel(SectionView section, GameObject panel)
+        {
+            section.panel = panel;
+            panel.SetActive(section.header.activeSelf && !section.collapsed);
+        }
+
+        private void ToggleSection(SectionView section)
+        {
+            section.collapsed = !section.collapsed;
+            PlayerPrefs.SetInt(CollapseKey(section.id), section.collapsed ? 1 : 0);
+            SetSectionTitle(section, section.title);
+            if (section.panel != null)
+            {
+                section.panel.SetActive(section.header.activeSelf && !section.collapsed);
+            }
+        }
+
+        /// <summary>The header's text — the fold arrow plus the (possibly dynamic) title.</summary>
+        private static void SetSectionTitle(SectionView section, string title)
+        {
+            section.title = title;
+            section.headerLabel.text = (section.collapsed ? "►  " : "▼  ") + title;
+        }
+
+        /// <summary>
+        /// Game-state visibility for a whole section: the header shows or hides
+        /// with the feature, the panel additionally honours the fold.
+        /// </summary>
+        private static void SetSectionVisible(SectionView section, bool visible)
+        {
+            section.header.SetActive(visible);
+            if (section.panel != null)
+            {
+                section.panel.SetActive(visible && !section.collapsed);
+            }
+        }
+
+        private static string CollapseKey(string id)
+        {
+            return "hud.section." + id + ".collapsed";
+        }
+
+        /// <summary>
         /// A vertical scroll view whose height hugs its content until the cap
         /// (a share of the canvas height, via <see cref="HeightClampedElement"/>),
         /// then scrolls. Returns the content transform sections parent to.
         /// </summary>
-        private Transform BuildScrollSection(Transform parent, RectTransform canvasRect)
+        private Transform BuildScrollSection(Transform parent, RectTransform canvasRect, float maxCanvasShare)
         {
             var sectionGo = new GameObject("Sections", typeof(RectTransform), typeof(ScrollRect), typeof(HeightClampedElement));
             sectionGo.transform.SetParent(parent, false);
@@ -586,6 +744,7 @@ namespace Wildgrove.Game
             var clamp = sectionGo.GetComponent<HeightClampedElement>();
             clamp.content = contentRect;
             clamp.canvas = canvasRect;
+            clamp.maxCanvasShare = maxCanvasShare;
 
             var scroll = sectionGo.GetComponent<ScrollRect>();
             scroll.viewport = viewportRect;
@@ -947,15 +1106,14 @@ namespace Wildgrove.Game
         {
             var discovered = Compendium.DiscoveredCount(state, _loop.Data);
             var visible = discovered > 0;
-            _compendiumHeader.gameObject.SetActive(visible);
-            _compendiumPanel.SetActive(visible);
+            SetSectionVisible(_compendiumSection, visible);
             if (!visible)
             {
                 return;
             }
 
-            _compendiumHeader.text = "Compendium — " + discovered + " / "
-                                     + Compendium.TotalEntries(_loop.Data) + " entries";
+            SetSectionTitle(_compendiumSection, "Compendium — " + discovered + " / "
+                                                + Compendium.TotalEntries(_loop.Data) + " entries");
 
             var lines = new System.Text.StringBuilder();
             foreach (var resource in _loop.Data.resources)
@@ -992,8 +1150,28 @@ namespace Wildgrove.Game
                 lines.Append(bond.displayName).Append(" — bonded").Append('\n');
             }
 
+            // Read waystones stay re-readable here forever (design §6) —
+            // extra field-note lines, not counted as entries.
+            var waystoneLines = 0;
+            foreach (var zone in _loop.Data.zones)
+            {
+                if (!state.seenWaystoneZoneIds.Contains(zone.id))
+                {
+                    continue;
+                }
+
+                var inscription = Narrative.WaystoneText(_loop.Data, zone.id);
+                if (inscription != null)
+                {
+                    lines.Append("Waystone, ").Append(zone.displayName)
+                         .Append(" — <i>“").Append(inscription).Append("”</i>").Append('\n');
+                    waystoneLines++;
+                }
+            }
+
             _compendiumText.text = lines.ToString().TrimEnd('\n');
-            SetPreferredHeight(_compendiumText.gameObject, 10f + 36f * discovered);
+            // Inscriptions run long enough to wrap — budget them two lines.
+            SetPreferredHeight(_compendiumText.gameObject, 10f + 36f * discovered + 72f * waystoneLines);
         }
 
         private static string EffectSummary(List<EffectData> effects)
@@ -1308,6 +1486,65 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// A waystone revealed on arrival (design §6): the standing stone's
+        /// inscription, shown once per zone and re-readable in the Compendium.
+        /// Dismissing it marks the stone read — skippable, never lost.
+        /// </summary>
+        private void ShowWaystoneSheet(ZoneData zone)
+        {
+            if (_waystoneSheet != null)
+            {
+                return;
+            }
+
+            var inscription = Narrative.WaystoneText(_loop.Data, zone.id);
+            if (inscription == null)
+            {
+                return;
+            }
+
+            _waystoneSheet = CreatePanel("Waystone", _canvas, new Color(0f, 0f, 0f, 0.65f));
+            StretchFull(_waystoneSheet.GetComponent<RectTransform>());
+
+            var sheet = CreatePanel("Sheet", _waystoneSheet.transform, PanelColor);
+            var sheetRect = sheet.GetComponent<RectTransform>();
+            sheetRect.anchorMin = new Vector2(0.06f, 0.5f);
+            sheetRect.anchorMax = new Vector2(0.94f, 0.5f);
+            sheetRect.pivot = new Vector2(0.5f, 0.5f);
+            sheetRect.offsetMin = Vector2.zero;
+            sheetRect.offsetMax = Vector2.zero;
+            var sheetLayout = sheet.AddComponent<VerticalLayoutGroup>();
+            sheetLayout.padding = new RectOffset(40, 40, 36, 36);
+            sheetLayout.spacing = 16f;
+            sheetLayout.childControlWidth = true;
+            sheetLayout.childControlHeight = true;
+            sheetLayout.childForceExpandWidth = true;
+            sheetLayout.childForceExpandHeight = false;
+            var fitter = sheet.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var title = CreateText("Title", sheet.transform, 40, TextAnchor.MiddleCenter, TextColor);
+            title.text = "A waystone — " + zone.displayName;
+            SetPreferredHeight(title.gameObject, 60f);
+
+            var text = CreateText("Inscription", sheet.transform, 32, TextAnchor.MiddleCenter, TextColor);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.text = "<i>“" + inscription + "”</i>";
+            SetPreferredHeight(text.gameObject, 140f);
+
+            var (dismiss, _) = CreateButton("Continue", sheet.transform, "Walk on", () =>
+            {
+                _loop.MarkWaystoneRead(zone.id);
+                if (_waystoneSheet != null)
+                {
+                    Destroy(_waystoneSheet);
+                    _waystoneSheet = null;
+                }
+            });
+            SetPreferredHeight(dismiss.gameObject, 96f);
+        }
+
         private void Refresh()
         {
             var state = _loop.State;
@@ -1371,6 +1608,14 @@ namespace Wildgrove.Game
                     var burstMult = economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, _loop.Data));
                     rate = rate * burstMult + new BigDouble(economy.tending.handGatherPerSecond);
                     tending = "  (tending)";
+                }
+
+                // The post-tend Pristine window outlasts the burst (design §5)
+                // — count it down in gold so tending's second gift is visible.
+                if (node.pristineBonusRemaining > 0.0 && economy.quality != null)
+                {
+                    tending += "  <color=#F2C14E>pristine "
+                               + (int)System.Math.Ceiling(node.pristineBonusRemaining) + "s</color>";
                 }
                 var basketFull = economy.hauling != null
                                  && node.basket >= new BigDouble(economy.hauling.basketCapacity
@@ -1439,12 +1684,11 @@ namespace Wildgrove.Game
                 row.donateButton.interactable = Museum.CanDonate(state, _loop.Data, row.resourceId);
             }
 
-            _specimensHeader.gameObject.SetActive(anySpecimens);
+            SetSectionVisible(_specimensSection, anySpecimens);
 
             // The Museum: set progress, visible once specimens are in play.
             var museumVisible = anySpecimens || state.donatedResources.Count > 0;
-            _museumHeader.gameObject.SetActive(museumVisible);
-            _museumPanel.SetActive(museumVisible);
+            SetSectionVisible(_museumSection, museumVisible);
             if (museumVisible)
             {
                 foreach (var row in _museumRows)
@@ -1484,10 +1728,18 @@ namespace Wildgrove.Game
                         }
 
                         var found = Fossils.FragmentCount(state, fossil.id);
-                        progress += "  •  " + fossil.displayName + " "
-                                    + (Fossils.IsComplete(state, fossil)
-                                        ? "assembled!"
-                                        : found + "/" + fossil.fragments);
+                        if (Fossils.IsComplete(state, fossil))
+                        {
+                            // The card line (design §6) — an assembled fossil
+                            // finally says what it kept to itself.
+                            var card = Narrative.FossilCard(_loop.Data, fossil.id);
+                            progress += "  •  " + fossil.displayName + " assembled!"
+                                        + (card != null ? "\n<i>“" + card + "”</i>" : string.Empty);
+                        }
+                        else
+                        {
+                            progress += "  •  " + fossil.displayName + " " + found + "/" + fossil.fragments;
+                        }
                     }
                 }
 
@@ -1500,7 +1752,7 @@ namespace Wildgrove.Game
                 row.giftButton.interactable = _loop.CanGiftDigger(row.site);
             }
 
-            _excavationHeader.gameObject.SetActive(_digRows.Count > 0);
+            SetSectionVisible(_excavationSection, _digRows.Count > 0);
 
             // The Kit: pieces appear as their craft skill unlocks; worn pieces
             // show as such and the section hides until anything is craftable.
@@ -1526,26 +1778,26 @@ namespace Wildgrove.Game
                 row.craftButton.interactable = !worn && Gear.CanCraft(state, _loop.Data, row.gear);
             }
 
-            _kitHeader.gameObject.SetActive(anyKit);
+            SetSectionVisible(_kitSection, anyKit);
 
             // The Rite: revealed verses show their heading and, while
             // incomplete, their offering slots. A sung verse folds down to its
             // heading; the header carries the eligibility line when all are.
             var riteComplete = Rite.IsRiteComplete(state, _loop.Data);
-            _riteHeader.text = riteComplete
+            SetSectionTitle(_riteSection, riteComplete
                 ? "The Rite\n<size=24>The Rite is complete — the trail calls onward.</size>"
-                : "The Rite";
+                : "The Rite");
             _migrateButton.gameObject.SetActive(riteComplete);
 
             // The Almanac: hidden until Verdure exists; bought nodes leave
             // the list (permanent — nothing to show but the effect itself).
             var almanacVisible = state.verdurePoints > 0.0 || state.almanacNodeIds.Count > 0;
-            _almanacHeader.gameObject.SetActive(almanacVisible);
-            _almanacPanel.SetActive(almanacVisible);
+            SetSectionVisible(_almanacSection, almanacVisible);
             if (almanacVisible)
             {
-                _almanacHeader.text = "Almanac\n<size=24>Verdure " + NumberFormat.Short(new BigDouble(state.verdurePoints))
-                                      + "  •  " + NumberFormat.Short(new BigDouble(_loop.AvailableVerdure())) + " free</size>";
+                SetSectionTitle(_almanacSection,
+                    "Almanac\n<size=24>Verdure " + NumberFormat.Short(new BigDouble(state.verdurePoints))
+                    + "  •  " + NumberFormat.Short(new BigDouble(_loop.AvailableVerdure())) + " free</size>");
                 foreach (var row in _almanacRows)
                 {
                     var owned = Almanac.IsOwned(state, row.node);
@@ -1560,6 +1812,11 @@ namespace Wildgrove.Game
             {
                 var revealed = Rite.IsVerseRevealed(state, _loop.Data, heading.verse);
                 heading.text.gameObject.SetActive(revealed);
+                if (heading.line != null)
+                {
+                    heading.line.gameObject.SetActive(revealed);
+                }
+
                 if (!revealed)
                 {
                     continue;
@@ -1622,7 +1879,7 @@ namespace Wildgrove.Game
                 row.buyButton.interactable = missingTool == null && _loop.CanAffordUpgrade(row.upgrade);
             }
 
-            _upgradesHeader.gameObject.SetActive(onOffer > 0);
+            SetSectionVisible(_upgradesSection, onOffer > 0);
 
             // The crafting section: recipes the run can see, plus anything a
             // station is actively working (a running recipe must always have a
@@ -1667,7 +1924,7 @@ namespace Wildgrove.Game
                 row.toggleButton.interactable = crafting || workable;
             }
 
-            _craftingHeader.gameObject.SetActive(anyCraftable);
+            SetSectionVisible(_craftingSection, anyCraftable);
 
             // The camp building lines — the always-available Coin sink.
             foreach (var row in _buildingRows)
@@ -1875,6 +2132,16 @@ namespace Wildgrove.Game
             return pretty;
         }
 
+        private sealed class SectionView
+        {
+            public string id;
+            public string title;
+            public GameObject header;
+            public Text headerLabel;
+            public GameObject panel;
+            public bool collapsed;
+        }
+
         private sealed class RowView
         {
             public NodeState node;
@@ -1972,6 +2239,9 @@ namespace Wildgrove.Game
         {
             public RiteVerseData verse;
             public Text text;
+
+            /// <summary>The site's spoken line, when authored — shown with the heading.</summary>
+            public Text line;
         }
 
         private sealed class RiteSlotRowView

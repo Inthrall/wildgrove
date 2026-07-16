@@ -62,6 +62,10 @@ namespace Wildgrove.Sim
             // "You keep … Amber" — the premium currency never resets.
             next.amber = state.amber;
 
+            // Lore stays read: run 2 re-unlocks the zones without re-showing
+            // every stone the warden has already stood before.
+            next.seenWaystoneZoneIds.AddRange(state.seenWaystoneZoneIds);
+
             // The Almanac is the permanent tree — bought once, kept forever.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);
 

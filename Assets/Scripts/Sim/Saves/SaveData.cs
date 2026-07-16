@@ -46,6 +46,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v17+: Amber (absent before the amber system — none held).</summary>
         public double amber;
 
+        /// <summary>v18+: zones whose waystone has been read (absent before — every unlocked stone shows once).</summary>
+        public List<string> seenWaystoneZoneIds = new List<string>();
+
         /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
         public List<SavedResource> lifetimeGathered = new List<SavedResource>();
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();

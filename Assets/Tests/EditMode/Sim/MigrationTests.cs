@@ -225,6 +225,18 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_LoreStaysRead()
+        {
+            var state = StateWithTheRiteSung();
+            state.seenWaystoneZoneIds.Add(GameStateFactory.StartingZoneId);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.seenWaystoneZoneIds, Is.EqualTo(new[] { GameStateFactory.StartingZoneId }),
+                "run 2 re-unlocks the zones without re-showing read stones");
+        }
+
+        [Test]
         public void Migrate_KeepsAmber()
         {
             var state = StateWithTheRiteSung();

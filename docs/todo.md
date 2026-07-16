@@ -211,6 +211,19 @@ they're easy to find and delete when resolved.
   their systems; all costs are first guesses tuned to ~10 Verdure from the
   first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
 
+- **The narrative display layer is live; most of the words are not.**
+  Waystones reveal once per zone on arrival (modal sheet, marks read on
+  "Walk on", re-readable in the Compendium; the read-set survives Migration
+  — lore stays read); verse lines show under revealed verse headings;
+  assembled fossils show their card line in the dig row. Unauthored (empty)
+  dialogue simply never shows, so authoring can land line by line.
+  Pacing DECIDED (2026-07-17): the starting zone's waystone showing at
+  minute 0 is accepted (its unlock IS first launch) — the §8 table's
+  "~10min first waystone" now reads as zone 2's stone. Still waiting:
+  provisioner trigger lines (first-visit / after-migration), waystones as
+  tappable world objects (the modal stands in), and most of the ~1,200-word
+  budget itself. (`Wildgrove.Sim/Narrative.cs`)
+
 ## Narrative authoring
 
 - **MVP dialogue strings are partly empty** — the silverrun-river waystone and
