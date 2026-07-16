@@ -224,7 +224,13 @@ namespace Wildgrove.Game
             lowerLayout.childForceExpandWidth = true;
             lowerLayout.childForceExpandHeight = false;
 
-            var nodesPanel = CreatePanel("Nodes", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            // The sections (nodes, shop, crafting, camp) live in a height-capped
+            // scroll view — three zones is ~10 node rows, which outgrows a
+            // portrait screen as a straight column. The camp-wide actions row
+            // and the hint stay pinned below it, always reachable.
+            var sections = BuildScrollSection(lowerPanel.transform, canvasGo.GetComponent<RectTransform>());
+
+            var nodesPanel = CreatePanel("Nodes", sections, new Color(0f, 0f, 0f, 0f));
             var nodesLayout = nodesPanel.AddComponent<VerticalLayoutGroup>();
             nodesLayout.spacing = 12f;
             nodesLayout.childControlWidth = true;
@@ -237,11 +243,11 @@ namespace Wildgrove.Game
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
-            _upgradesHeader = CreateText("UpgradesHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _upgradesHeader = CreateText("UpgradesHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
             _upgradesHeader.text = "Upgrades";
             SetPreferredHeight(_upgradesHeader.gameObject, 48f);
 
-            var upgradesPanel = CreatePanel("Upgrades", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            var upgradesPanel = CreatePanel("Upgrades", sections, new Color(0f, 0f, 0f, 0f));
             var upgradesLayout = upgradesPanel.AddComponent<VerticalLayoutGroup>();
             upgradesLayout.spacing = 12f;
             upgradesLayout.childControlWidth = true;
@@ -256,11 +262,11 @@ namespace Wildgrove.Game
                 _upgradeRows.Add(BuildUpgradeRow(upgradesPanel.transform, upgrade));
             }
 
-            _craftingHeader = CreateText("CraftingHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _craftingHeader = CreateText("CraftingHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
             _craftingHeader.text = "Crafting";
             SetPreferredHeight(_craftingHeader.gameObject, 48f);
 
-            var craftingPanel = CreatePanel("Crafting", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            var craftingPanel = CreatePanel("Crafting", sections, new Color(0f, 0f, 0f, 0f));
             var craftingLayout = craftingPanel.AddComponent<VerticalLayoutGroup>();
             craftingLayout.spacing = 12f;
             craftingLayout.childControlWidth = true;
@@ -275,11 +281,11 @@ namespace Wildgrove.Game
                 _craftRows.Add(BuildCraftRow(craftingPanel.transform, recipe));
             }
 
-            _buildingsHeader = CreateText("BuildingsHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _buildingsHeader = CreateText("BuildingsHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
             _buildingsHeader.text = "Camp";
             SetPreferredHeight(_buildingsHeader.gameObject, 48f);
 
-            var buildingsPanel = CreatePanel("Buildings", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            var buildingsPanel = CreatePanel("Buildings", sections, new Color(0f, 0f, 0f, 0f));
             var buildingsLayout = buildingsPanel.AddComponent<VerticalLayoutGroup>();
             buildingsLayout.spacing = 12f;
             buildingsLayout.childControlWidth = true;
@@ -317,6 +323,59 @@ namespace Wildgrove.Game
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
             hint.text = "Tap a node, Space, or (A) to tend";
             SetPreferredHeight(hint.gameObject, 44f);
+        }
+
+        /// <summary>
+        /// A vertical scroll view whose height hugs its content until the cap
+        /// (a share of the canvas height, via <see cref="HeightClampedElement"/>),
+        /// then scrolls. Returns the content transform sections parent to.
+        /// </summary>
+        private Transform BuildScrollSection(Transform parent, RectTransform canvasRect)
+        {
+            var sectionGo = new GameObject("Sections", typeof(RectTransform), typeof(ScrollRect), typeof(HeightClampedElement));
+            sectionGo.transform.SetParent(parent, false);
+
+            // The viewport carries a fully transparent Image so presses on the
+            // empty space between rows still raycast here — that's what lets a
+            // drag anywhere in the section reach the ScrollRect (and keeps the
+            // tend gesture treating the area as "over a widget").
+            var viewport = CreatePanel("Viewport", sectionGo.transform, new Color(0f, 0f, 0f, 0f));
+            viewport.AddComponent<RectMask2D>();
+            var viewportRect = viewport.GetComponent<RectTransform>();
+            StretchFull(viewportRect);
+
+            var contentGo = new GameObject("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(viewport.transform, false);
+            var contentRect = contentGo.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
+
+            var layout = contentGo.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 20f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var fitter = contentGo.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var clamp = sectionGo.GetComponent<HeightClampedElement>();
+            clamp.content = contentRect;
+            clamp.canvas = canvasRect;
+
+            var scroll = sectionGo.GetComponent<ScrollRect>();
+            scroll.viewport = viewportRect;
+            scroll.content = contentRect;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40f;
+
+            return contentGo.transform;
         }
 
         private RowView BuildRow(Transform parent, NodeState node)

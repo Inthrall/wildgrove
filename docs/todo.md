@@ -49,6 +49,13 @@ they're easy to find and delete when resolved.
   in the gap the HUD leaves open; the hand-drawn naturalist plates and a real region
   scene replace them (the camera/world seam and screen-point hit test stay).
   (`Assets/Scripts/Game/World/`)
+- **The lower panel scrolls rather than adapting.** The node/shop/crafting/camp
+  sections sit in a height-capped scroll view (45% of canvas height) with the
+  actions row and hint pinned below — so the column can't outgrow portrait, but
+  it's still a single list. Per-zone collapsing and the landscape dashboard are
+  the remaining Phase 2 job; on short landscape screens the scroll section
+  absorbs the squeeze and the world strip can collapse to nothing.
+  (`GameHud.BuildScrollSection`, `HeightClampedElement`)
 - **Gamepad South double-fire.** Pad-South is also uGUI's Submit, so tending while a
   widget is focused can fire both the button and the tend. Fix in the controller/focus
   pass. (`GameHud.HandleTendInput`)
@@ -88,12 +95,6 @@ they're easy to find and delete when resolved.
   parsed, validated, and mapped into GameData.asset, but no runtime system consumes
   them until the Phase 3 Rite build. Validator covers slot integrity only — the full
   ≥3-slots-reachable analysis (design §7) is a Phase 3 job.
-- **The HUD column will outgrow portrait height around the third zone.** Node
-  rows are a straight VerticalLayoutGroup with no scrolling — three zones is
-  ~10 rows plus the shop and actions. The Phase 2 adaptive-layout pass needs a
-  scroll view (or per-zone collapsing) before Old-Growth Wood is reachable in
-  balance. (`GameHud`)
-
 - **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
   yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in
