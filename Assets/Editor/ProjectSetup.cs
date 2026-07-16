@@ -29,13 +29,16 @@ namespace Wildgrove.EditorTools
             PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)26;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
 
-            // Play 64-bit requirement: Mono only emits ARMv7, so IL2CPP with
-            // ARM64 included is mandatory for any Play upload.
+            // Play 64-bit requirement: Mono only emits ARMv7, so IL2CPP is
+            // mandatory for any Play upload. ARM64 ONLY: the ARMv7 ABI
+            // roughly doubled IL2CPP build time for a shrinking set of
+            // 32-bit-only devices — re-add AndroidArchitecture.ARMv7 if
+            // Play Console vitals ever show real 32-bit demand.
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
-            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARMv7 | AndroidArchitecture.ARM64;
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
             AssetDatabase.SaveAssets();
-            Debug.Log("ProjectSetup.Configure complete: Vulkan-first Android, IL2CPP ARMv7+ARM64, com.inthrall.wildgrove");
+            Debug.Log("ProjectSetup.Configure complete: Vulkan-first Android, IL2CPP ARM64-only, com.inthrall.wildgrove");
         }
     }
 }
