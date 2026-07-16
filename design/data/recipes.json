@@ -1,5 +1,5 @@
 {
-  "$comment": "Crafting recipes. valueMult applies to summed input base value for trade goods; ingots/gear are not sold by default. Input quantities are first-pass. Every recipe is either defaultKnown (usable once its station + skill exist) or granted by an upgrade's unlockRecipe effect — the validator enforces exactly one of the two.",
+  "$comment": "Crafting recipes. valueMult applies to summed input base value for trade goods; ingots/gear are not sold by default. Input quantities are first-pass. Every recipe is either defaultKnown (usable once its station + skill exist) or granted by an upgrade's unlockRecipe effect — the validator enforces exactly one of the two. stationLevel (default 1) is the station line level the recipe needs — iron heat is forge 2 (design §9).",
   "recipes": [
     { "id": "berry-preserve",  "station": "fire",  "skill": "firecraft",  "inputs": { "berries": 4, "nuts": 2 },            "output": "berry-preserve",  "valueMult": 4, "kind": "trade" },
     { "id": "mushroom-skewer", "station": "fire",  "skill": "firecraft",  "inputs": { "mushrooms": 3, "berries": 2 },       "output": "mushroom-skewer", "valueMult": 5, "kind": "trade" },
@@ -11,6 +11,6 @@
     { "id": "charcoal",        "station": "fire",  "skill": "firecraft",  "inputs": { "timber": 2 },                        "output": "charcoal",        "valueMult": 1, "kind": "material", "defaultKnown": true },
     { "id": "copper-ingot",    "station": "fire",  "skill": "forgecraft", "inputs": { "copper-scree": 5 },                  "output": "copper-ingot",    "valueMult": 3, "kind": "material" },
     { "id": "bronze-ingot",    "station": "forge", "skill": "forgecraft", "inputs": { "copper-scree": 3, "tin-seam": 2 },   "output": "bronze-ingot",    "valueMult": 4, "kind": "material", "defaultKnown": true },
-    { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material" }
+    { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material", "stationLevel": 2 }
   ]
 }

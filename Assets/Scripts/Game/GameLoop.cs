@@ -178,11 +178,17 @@ namespace Wildgrove.Game
             return Economy.GathererGiftCost(node, Data.economy);
         }
 
-        /// <summary>Gift one gatherer onto the node, paying in its own resource. Returns false (no change) if camp stock can't cover it.</summary>
+        /// <summary>True when a gatherer gift can land on the node (stock covers it and the zone's flock is under cap).</summary>
+        public bool CanGiftGatherer(NodeState node)
+        {
+            return Economy.CanGiftGatherer(State, Data, node);
+        }
+
+        /// <summary>Gift one gatherer onto the node, paying in its own resource. Returns false (no change) if stock is short or the flock is at cap.</summary>
         public bool GiftGatherer(NodeState node)
         {
             var cost = Economy.GathererGiftCost(node, Data.economy);
-            if (!Economy.TryGiftGatherer(State, Data.economy, node))
+            if (!Economy.TryGiftGatherer(State, Data, node))
             {
                 return false;
             }
@@ -201,18 +207,24 @@ namespace Wildgrove.Game
             return Economy.CarrierGiftCostEach(State, Data.economy);
         }
 
-        /// <summary>True when camp stock covers the whole Feeder bundle — for the gift button's enabled state.</summary>
+        /// <summary>True when the Feeder can be filled (stock covers the bundle and a carrier slot is free) — for the gift button's enabled state.</summary>
         public bool CanGiftCarrier()
         {
-            return Economy.CanGiftCarrier(State, Data.economy);
+            return Economy.CanGiftCarrier(State, Data);
         }
 
-        /// <summary>Fill the Feeder to gift one carrier into the camp pool. Returns false (no change) if any of the bundle is short.</summary>
+        /// <summary>Camp-wide carrier slots (design §8, raised by the roosts line) — for the header readout.</summary>
+        public int CarrierSlots()
+        {
+            return Buildings.CarrierSlots(State, Data);
+        }
+
+        /// <summary>Fill the Feeder to gift one carrier into the camp pool. Returns false (no change) if any of the bundle is short or the slots are full.</summary>
         public bool GiftCarrier()
         {
             var costEach = Economy.CarrierGiftCostEach(State, Data.economy);
             var bundleSize = Economy.FeederResources(State).Count;
-            if (!Economy.TryGiftCarrier(State, Data.economy))
+            if (!Economy.TryGiftCarrier(State, Data))
             {
                 return false;
             }
@@ -248,6 +260,34 @@ namespace Wildgrove.Game
             Telemetry.LogEvent("upgrade_purchased",
                 ("upgrade_id", upgrade.id),
                 ("coin_cost", upgrade.costCoin.ToDouble()));
+            return true;
+        }
+
+        /// <summary>A building line's current level (bought + owned milestone upgrades) — for the buildings row.</summary>
+        public int BuildingLevel(BuildingData building)
+        {
+            return Buildings.TotalLevel(State, building);
+        }
+
+        /// <summary>Coin cost of the line's next level — for the build button's label.</summary>
+        public BigDouble NextBuildingCost(BuildingData building)
+        {
+            return Buildings.NextLevelCost(State, Data, building);
+        }
+
+        /// <summary>Buy the line's next level. Returns false (no change) when the purse can't cover it.</summary>
+        public bool BuyBuildingLevel(BuildingData building)
+        {
+            var cost = Buildings.NextLevelCost(State, Data, building);
+            if (!Buildings.TryBuyLevel(State, Data, building))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("building_level_bought",
+                ("building", building.id),
+                ("level", Buildings.TotalLevel(State, building)),
+                ("coin_cost", cost.ToDouble()));
             return true;
         }
 

@@ -33,6 +33,17 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
         public List<SavedStation> stations = new List<SavedStation>();
+
+        /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
+        public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
+    }
+
+    /// <summary>Bought levels of one camp building line (§9 milestone upgrades live in purchasedUpgradeIds).</summary>
+    [Serializable]
+    public sealed class SavedBuildingLevel
+    {
+        public string id;
+        public int levels;
     }
 
     /// <summary>One crafting station's assignment and in-flight batch.</summary>

@@ -63,12 +63,13 @@ they're easy to find and delete when resolved.
   the zone's nodes), `unlockSkill` and `unlockRecipe` (both gate crafting) are
   all live; dig sites wait for the excavation system.
   (`Wildgrove.Sim/Upgrades.cs`)
-- **Stations are input-gated, not building-gated.** Recipes are gated by known
-  recipe + unlocked skill only; the design's station heat (Clay Furnace forge
-  for bronze, Bellows for iron) arrives with `buildings.json`. Meanwhile the
-  timing self-approximates — bronze needs Zone-3 tin, iron needs Zone-4 gravel —
-  but bronze technically smelts "on the fire" until buildings land.
-  (`Wildgrove.Sim/Crafting.cs`)
+- **Building perLevel values are first guesses, and two are interpretations.**
+  The 5% speed/capacity tapers aren't in the design doc. Interpretive calls to
+  confirm in balance: the §9 Store's "storage capacity" is implemented as
+  basket capacity (camp storage caps don't exist), and the Clay Furnace is
+  simply the forge line's first bought level (its ~8,000 debut price is the
+  line's baseCostCoin). The Spare Wing's +1 carrier slot (§10) arrives with
+  the PGS rewards layer. (`design/data/buildings.json`)
 - **`crafting.baseCraftSeconds` (5 s, uniform) is a first guess.** Not in the
   design doc, and one duration for every recipe is a placeholder — tune against
   the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
@@ -82,17 +83,11 @@ they're easy to find and delete when resolved.
   into discrete deliveries. (`Simulation.Haul`)
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
-  the loop playtest. Carrier slots (`carrierSlots = 2 + roostLevel`) are not enforced
-  yet — same cap gap as the gatherer `flockCap` below.
+  the loop playtest.
 - **The Rite is data-only.** `rites.json`, `zones.verseSite`, and `dialogue.verses` are
   parsed, validated, and mapped into GameData.asset, but no runtime system consumes
   them until the Phase 3 Rite build. Validator covers slot integrity only — the full
   ≥3-slots-reachable analysis (design §7) is a Phase 3 job.
-- **buildings.json doesn't exist yet.** The §9 camp building lines (Clay Furnace /
-  forge-station gating, Roosts & Burrows familiar caps) are doc-only; author the data
-  and its pipeline when Phase 3 crafting lands.
-- **Familiar caps not enforced in the sim.** `flockCap` / `carrierSlots` (design §8)
-  arrive with the building lines; `TryGiftFamiliar` currently has no cap check.
 - **The HUD column will outgrow portrait height around the third zone.** Node
   rows are a straight VerticalLayoutGroup with no scrolling — three zones is
   ~10 rows plus the shop and actions. The Phase 2 adaptive-layout pass needs a

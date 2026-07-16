@@ -231,6 +231,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresBoughtBuildingLevels()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.buildingLevels["roosts"] = 3;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.buildingLevels["roosts"], Is.EqualTo(3));
+        }
+
+        [Test]
+        public void TryMigrate_V3Save_GetsEmptyBuildingLevels()
+        {
+            // v3 predates camp buildings — nothing bought yet.
+            var save = new SaveData { version = 3, buildingLevels = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.buildingLevels, Is.Empty);
+        }
+
+        [Test]
         public void FromJson_GarbageOrEmpty_ReturnsNull()
         {
             Assert.That(SaveCodec.FromJson("not json {{{"), Is.Null);

@@ -48,6 +48,10 @@ namespace Wildgrove.Sim
             var economy = data.economy;
             var burstMult = economy?.tending != null ? economy.tending.burstYieldMult : 1.0;
             var hauling = economy?.hauling;
+            // The Store line's bought levels stretch every basket.
+            var basketCapacity = hauling != null
+                ? new BigDouble(hauling.basketCapacity * Buildings.BasketCapacityMultiplier(state, data))
+                : BigDouble.Zero;
 
             foreach (var node in state.nodes)
             {
@@ -68,7 +72,7 @@ namespace Wildgrove.Sim
                     {
                         // Into the basket, clamped at capacity — a full basket
                         // overflows and the excess is lost (the §2 bottleneck).
-                        node.basket = BigDouble.Min(node.basket + gained, new BigDouble(hauling.basketCapacity));
+                        node.basket = BigDouble.Min(node.basket + gained, basketCapacity);
                     }
                     else
                     {

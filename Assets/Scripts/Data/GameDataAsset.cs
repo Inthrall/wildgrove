@@ -22,6 +22,7 @@ namespace Wildgrove.Data
         public List<ZoneData> zones = new List<ZoneData>();
         public List<UpgradeData> upgrades = new List<UpgradeData>();
         public List<RecipeData> recipes = new List<RecipeData>();
+        public List<BuildingData> buildings = new List<BuildingData>();
         public List<GearData> gear = new List<GearData>();
         public List<FossilData> fossils = new List<FossilData>();
         public RitesBundle rites;
@@ -31,6 +32,7 @@ namespace Wildgrove.Data
         private Dictionary<string, ZoneData> zonesById;
         private Dictionary<string, UpgradeData> upgradesById;
         private Dictionary<string, RecipeData> recipesById;
+        private Dictionary<string, BuildingData> buildingsById;
         private Dictionary<string, GearData> gearById;
         private Dictionary<string, FossilData> fossilsById;
 
@@ -38,6 +40,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, ZoneData> ZonesById => zonesById ??= Index(zones, z => z.id);
         public IReadOnlyDictionary<string, UpgradeData> UpgradesById => upgradesById ??= Index(upgrades, u => u.id);
         public IReadOnlyDictionary<string, RecipeData> RecipesById => recipesById ??= Index(recipes, r => r.id);
+        public IReadOnlyDictionary<string, BuildingData> BuildingsById => buildingsById ??= Index(buildings, b => b.id);
         public IReadOnlyDictionary<string, GearData> GearById => gearById ??= Index(gear, g => g.id);
         public IReadOnlyDictionary<string, FossilData> FossilsById => fossilsById ??= Index(fossils, f => f.id);
 

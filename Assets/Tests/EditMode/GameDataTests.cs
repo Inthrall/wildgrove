@@ -29,6 +29,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Zones, Is.Not.Empty);
             Assert.That(data.Upgrades, Has.Count.EqualTo(30), "design doc §9 defines exactly 30 named upgrades");
             Assert.That(data.Recipes, Is.Not.Empty);
+            Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
             Assert.That(data.Fossils, Is.Not.Empty);
             Assert.That(data.Rites.Rites, Is.Not.Empty);
@@ -47,6 +48,12 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
             Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
+            Assert.That(data.Economy.FamiliarCaps.FlockCapBase, Is.EqualTo(8));
+            Assert.That(data.BuildingsById["forge"].BaseCostCoin, Is.EqualTo(8000L));
+            Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
+            Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("familiarCaps"));
+            Assert.That(data.RecipesById["iron-ingot"].StationLevel, Is.EqualTo(2), "iron heat is forge 2");
+            Assert.That(data.RecipesById["copper-ingot"].StationLevel, Is.EqualTo(1), "absent stationLevel defaults to 1");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -97,6 +104,32 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("missing-recipe")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_BuildingMilestoneUpgradeMissing_IsReported()
+        {
+            var sources = LoadSources();
+            sources.BuildingsJson = sources.BuildingsJson.Replace(
+                "\"milestoneUpgradeIds\": [\"carving-bench\"]",
+                "\"milestoneUpgradeIds\": [\"no-such-upgrade\"]");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("no-such-upgrade")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_BuildingUnknownPerLevelType_IsReported()
+        {
+            var sources = LoadSources();
+            sources.BuildingsJson = sources.BuildingsJson.Replace(
+                "\"type\": \"basketCapacityBonus\"",
+                "\"type\": \"frobnicateBonus\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("frobnicateBonus")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 76ebf9d56fece59196d06ed44f526cd4bb6fd60b9a9c89a59f9b65e00eda9207
+  sourceHash: 8d308ae4283972e66be557865286bd32f75327035c8520c49b5e0e1163710fee
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -29,6 +29,11 @@ MonoBehaviour:
       baseCarryCapacity: 15
       tripSeconds: 10
       basketCapacity: 60
+    familiarCaps:
+      flockCapBase: 8
+      flockCapPerRoostLevel: 2
+      carrierSlotsBase: 2
+      carrierSlotsPerRoostLevel: 1
     crafting:
       baseCraftSeconds: 5
     tools:
@@ -839,6 +844,7 @@ MonoBehaviour:
     valueMult: 4
     kind: trade
     defaultKnown: 0
+    stationLevel: 1
   - id: mushroom-skewer
     station: fire
     skill: firecraft
@@ -851,6 +857,7 @@ MonoBehaviour:
     valueMult: 5
     kind: trade
     defaultKnown: 0
+    stationLevel: 1
   - id: smoked-trout
     station: fire
     skill: firecraft
@@ -861,6 +868,7 @@ MonoBehaviour:
     valueMult: 5
     kind: trade
     defaultKnown: 0
+    stationLevel: 1
   - id: fish-oil
     station: fire
     skill: firecraft
@@ -871,6 +879,7 @@ MonoBehaviour:
     valueMult: 2
     kind: material
     defaultKnown: 1
+    stationLevel: 1
   - id: planks
     station: bench
     skill: bushcraft
@@ -881,6 +890,7 @@ MonoBehaviour:
     valueMult: 3
     kind: trade
     defaultKnown: 0
+    stationLevel: 1
   - id: reed-baskets
     station: bench
     skill: bushcraft
@@ -893,6 +903,7 @@ MonoBehaviour:
     valueMult: 6
     kind: trade
     defaultKnown: 0
+    stationLevel: 1
   - id: cordage
     station: bench
     skill: bushcraft
@@ -903,6 +914,7 @@ MonoBehaviour:
     valueMult: 2
     kind: material
     defaultKnown: 0
+    stationLevel: 1
   - id: charcoal
     station: fire
     skill: firecraft
@@ -913,6 +925,7 @@ MonoBehaviour:
     valueMult: 1
     kind: material
     defaultKnown: 1
+    stationLevel: 1
   - id: copper-ingot
     station: fire
     skill: forgecraft
@@ -923,6 +936,7 @@ MonoBehaviour:
     valueMult: 3
     kind: material
     defaultKnown: 0
+    stationLevel: 1
   - id: bronze-ingot
     station: forge
     skill: forgecraft
@@ -935,6 +949,7 @@ MonoBehaviour:
     valueMult: 4
     kind: material
     defaultKnown: 1
+    stationLevel: 1
   - id: iron-ingot
     station: forge
     skill: forgecraft
@@ -947,6 +962,63 @@ MonoBehaviour:
     valueMult: 5
     kind: material
     defaultKnown: 0
+    stationLevel: 2
+  buildings:
+  - id: fire
+    displayName: The Fire
+    baseCostCoin:
+      mantissa: 1.3
+      exponent: 3
+    milestoneUpgradeIds:
+    - camp-fire-ring
+    perLevel:
+      type: stationSpeedBonus
+      station: fire
+      value: 0.05
+  - id: forge
+    displayName: The Forge
+    baseCostCoin:
+      mantissa: 8
+      exponent: 3
+    milestoneUpgradeIds:
+    - bellows-forge
+    perLevel:
+      type: stationSpeedBonus
+      station: forge
+      value: 0.05
+  - id: bench
+    displayName: The Bench
+    baseCostCoin:
+      mantissa: 2.2
+      exponent: 4
+    milestoneUpgradeIds:
+    - carving-bench
+    perLevel:
+      type: stationSpeedBonus
+      station: bench
+      value: 0.05
+  - id: store
+    displayName: The Store
+    baseCostCoin:
+      mantissa: 3
+      exponent: 3
+    milestoneUpgradeIds:
+    - root-cellar
+    - smokehouse
+    perLevel:
+      type: basketCapacityBonus
+      station: 
+      value: 0.05
+  - id: roosts
+    displayName: Roosts & Burrows
+    baseCostCoin:
+      mantissa: 2
+      exponent: 3
+    milestoneUpgradeIds: []
+    perLevel:
+      type: familiarCaps
+      station: 
+      value: 0
   gear:
   - id: cordage-wraps
     displayName: Cordage Wraps

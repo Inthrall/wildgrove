@@ -18,8 +18,9 @@ namespace Wildgrove.Sim
     {
         /// <summary>
         /// The recipes the run can craft right now, in data order: known
-        /// (defaultKnown or granted by an owned unlockRecipe effect) and their
-        /// skill unlocked.
+        /// (defaultKnown or granted by an owned unlockRecipe effect), their
+        /// skill unlocked, and their station line built to the recipe's
+        /// stationLevel (design §9 heat — iron needs forge 2).
         /// </summary>
         public static List<RecipeData> AvailableRecipes(GameState state, GameDataAsset data)
         {
@@ -29,13 +30,30 @@ namespace Wildgrove.Sim
             var available = new List<RecipeData>();
             foreach (var recipe in data.recipes)
             {
-                if ((recipe.defaultKnown || unlockedRecipes.Contains(recipe.id)) && skills.Contains(recipe.skill))
+                if ((recipe.defaultKnown || unlockedRecipes.Contains(recipe.id))
+                    && skills.Contains(recipe.skill)
+                    && StationLevelMet(state, data, recipe))
                 {
                     available.Add(recipe);
                 }
             }
 
             return available;
+        }
+
+        /// <summary>
+        /// True when the recipe's station is hot enough: its building line
+        /// (matched by id) is at ≥ the recipe's stationLevel. A station no
+        /// line claims is ungated — hand-built test data without buildings.
+        /// </summary>
+        public static bool StationLevelMet(GameState state, GameDataAsset data, RecipeData recipe)
+        {
+            if (data.buildings == null || !data.BuildingsById.TryGetValue(recipe.station, out var line))
+            {
+                return true;
+            }
+
+            return Buildings.TotalLevel(state, line) >= recipe.stationLevel;
         }
 
         /// <summary>The station working <paramref name="recipe"/>, or null.</summary>
@@ -120,7 +138,7 @@ namespace Wildgrove.Sim
                     continue;
                 }
 
-                var duration = crafting.baseCraftSeconds / Upgrades.CraftSpeedMultiplier(state, data, recipe.skill);
+                var duration = BatchSeconds(state, data, recipe);
                 var remaining = deltaSeconds;
 
                 while (remaining > 0.0)
@@ -163,8 +181,16 @@ namespace Wildgrove.Sim
                 return 0.0;
             }
 
-            var duration = crafting.baseCraftSeconds / Upgrades.CraftSpeedMultiplier(state, data, recipe.skill);
+            var duration = BatchSeconds(state, data, recipe);
             return duration > 0.0 ? station.progressSeconds / duration : 0.0;
+        }
+
+        /// <summary>One batch's craft time: the base divided by the skill's craftSpeedMult upgrades and the station line's speed levels.</summary>
+        private static double BatchSeconds(GameState state, GameDataAsset data, RecipeData recipe)
+        {
+            return data.economy.crafting.baseCraftSeconds
+                   / Upgrades.CraftSpeedMultiplier(state, data, recipe.skill)
+                   / Buildings.StationSpeedMultiplier(state, data, recipe.station);
         }
 
         private static StationState StationFor(GameState state, string stationId)

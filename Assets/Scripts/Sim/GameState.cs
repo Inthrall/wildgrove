@@ -34,6 +34,9 @@ namespace Wildgrove.Sim
         /// <summary>One entry per crafting station the run has put to work (fire / bench / forge).</summary>
         public List<StationState> stations = new List<StationState>();
 
+        /// <summary>Bought levels per camp building line, keyed by building id (§9 milestone upgrades count separately).</summary>
+        public Dictionary<string, int> buildingLevels = new Dictionary<string, int>();
+
         public BigDouble GetResource(string resourceId)
         {
             return resources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;

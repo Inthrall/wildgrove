@@ -147,7 +147,7 @@ namespace Wildgrove.Sim.Tests
             state.AddResource("berries", new BigDouble(20.0));
             state.AddResource("wildflowers", new BigDouble(20.0));
 
-            var gifted = Economy.TryGiftCarrier(state, _data.economy);
+            var gifted = Economy.TryGiftCarrier(state, _data);
 
             // costEach = 8 · 1.10¹ = 8.8 of berries AND wildflowers; the idle
             // fibres node isn't in the bundle, and Coin is untouched.
@@ -168,7 +168,7 @@ namespace Wildgrove.Sim.Tests
             state.AddResource("berries", new BigDouble(20.0));
             state.AddResource("wildflowers", new BigDouble(5.0)); // short of 8.8
 
-            var gifted = Economy.TryGiftCarrier(state, _data.economy);
+            var gifted = Economy.TryGiftCarrier(state, _data);
 
             Assert.That(gifted, Is.False);
             Assert.That(state.carrierCount, Is.EqualTo(1));
@@ -184,9 +184,62 @@ namespace Wildgrove.Sim.Tests
             state.AddResource("berries", new BigDouble(100.0));
 
             // An empty bundle must never read as "affordable".
-            Assert.That(Economy.CanGiftCarrier(state, _data.economy), Is.False);
-            Assert.That(Economy.TryGiftCarrier(state, _data.economy), Is.False);
+            Assert.That(Economy.CanGiftCarrier(state, _data), Is.False);
+            Assert.That(Economy.TryGiftCarrier(state, _data), Is.False);
             Assert.That(state.carrierCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryGiftGatherer_AtFlockCap_IsRefused()
+        {
+            _data.economy.familiarCaps = new EconomyData.FamiliarCapsData
+            {
+                flockCapBase = 2, flockCapPerRoostLevel = 2, carrierSlotsBase = 2, carrierSlotsPerRoostLevel = 1,
+            };
+            var state = new GameState();
+            var node = new NodeState { zoneId = "z", resourceId = "berries", familiarCount = 1 };
+            state.nodes.Add(node);
+            state.nodes.Add(new NodeState { zoneId = "z", resourceId = "wildflowers", familiarCount = 1 });
+            state.AddResource("berries", new BigDouble(100.0));
+
+            // The zone's flock (2) is at its cap even though stock covers the gift.
+            Assert.That(Economy.CanGiftGatherer(state, _data, node), Is.False);
+            Assert.That(Economy.TryGiftGatherer(state, _data, node), Is.False);
+            Assert.That(node.familiarCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryGiftGatherer_FlockCapIsPerZone()
+        {
+            _data.economy.familiarCaps = new EconomyData.FamiliarCapsData
+            {
+                flockCapBase = 2, flockCapPerRoostLevel = 2, carrierSlotsBase = 2, carrierSlotsPerRoostLevel = 1,
+            };
+            var state = new GameState();
+            state.nodes.Add(new NodeState { zoneId = "a", resourceId = "berries", familiarCount = 2 });
+            var fresh = new NodeState { zoneId = "b", resourceId = "wildflowers", familiarCount = 0 };
+            state.nodes.Add(fresh);
+            state.AddResource("wildflowers", new BigDouble(100.0));
+
+            // Zone a is full; zone b's flock is its own count.
+            Assert.That(Economy.CanGiftGatherer(state, _data, fresh), Is.True);
+        }
+
+        [Test]
+        public void TryGiftCarrier_AtCarrierSlots_IsRefused()
+        {
+            _data.economy.familiarCaps = new EconomyData.FamiliarCapsData
+            {
+                flockCapBase = 8, flockCapPerRoostLevel = 2, carrierSlotsBase = 2, carrierSlotsPerRoostLevel = 1,
+            };
+            var state = new GameState { carrierCount = 2 };
+            state.nodes.Add(new NodeState { resourceId = "berries", familiarCount = 1 });
+            state.AddResource("berries", new BigDouble(100.0));
+
+            // Stock covers the Feeder but both carrier slots are taken.
+            Assert.That(Economy.CanGiftCarrier(state, _data), Is.False);
+            Assert.That(Economy.TryGiftCarrier(state, _data), Is.False);
+            Assert.That(state.carrierCount, Is.EqualTo(2));
         }
 
         [Test]
@@ -197,7 +250,7 @@ namespace Wildgrove.Sim.Tests
             state.nodes.Add(node);
             state.AddResource("berries", new BigDouble(12.0));
 
-            var gifted = Economy.TryGiftGatherer(state, _data.economy, node);
+            var gifted = Economy.TryGiftGatherer(state, _data, node);
 
             Assert.That(gifted, Is.True);
             Assert.That(node.familiarCount, Is.EqualTo(1));
@@ -214,7 +267,7 @@ namespace Wildgrove.Sim.Tests
             state.nodes.Add(node);
             state.AddResource("berries", new BigDouble(5.0));
 
-            var gifted = Economy.TryGiftGatherer(state, _data.economy, node);
+            var gifted = Economy.TryGiftGatherer(state, _data, node);
 
             // Coin can't stand in — only the node's own resource pays (design §13).
             Assert.That(gifted, Is.False);

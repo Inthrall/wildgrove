@@ -48,6 +48,7 @@ namespace Wildgrove.Game
         private Text _headerLabel;
         private Text _upgradesHeader;
         private Text _craftingHeader;
+        private Text _buildingsHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
         private Text _carrierLabel;
@@ -61,6 +62,7 @@ namespace Wildgrove.Game
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
+        private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
         private NodeState _selected;
 
         private void Update()
@@ -106,6 +108,7 @@ namespace Wildgrove.Game
             _rows.Clear();
             _upgradeRows.Clear();
             _craftRows.Clear();
+            _buildingRows.Clear();
             BuildUi();
             // Compute the layout now so the world-gap rect is valid this frame
             // (otherwise the node strip spends its first frame at zero size).
@@ -272,6 +275,25 @@ namespace Wildgrove.Game
                 _craftRows.Add(BuildCraftRow(craftingPanel.transform, recipe));
             }
 
+            _buildingsHeader = CreateText("BuildingsHeader", lowerPanel.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            _buildingsHeader.text = "Camp";
+            SetPreferredHeight(_buildingsHeader.gameObject, 48f);
+
+            var buildingsPanel = CreatePanel("Buildings", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
+            var buildingsLayout = buildingsPanel.AddComponent<VerticalLayoutGroup>();
+            buildingsLayout.spacing = 12f;
+            buildingsLayout.childControlWidth = true;
+            buildingsLayout.childControlHeight = true;
+            buildingsLayout.childForceExpandWidth = true;
+            buildingsLayout.childForceExpandHeight = false;
+
+            foreach (var building in _loop.Data.buildings)
+            {
+                _buildingRows.Add(BuildBuildingRow(buildingsPanel.transform, building));
+            }
+
+            _buildingsHeader.gameObject.SetActive(_buildingRows.Count > 0);
+
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
             var actionsRow = CreatePanel("Actions", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
@@ -400,6 +422,59 @@ namespace Wildgrove.Game
             };
         }
 
+        private BuildingRowView BuildBuildingRow(Transform parent, BuildingData building)
+        {
+            var rowGo = CreatePanel("Building_" + building.id, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var (build, buildLabel) = CreateButton("Build", rowGo.transform, "Build", () => _loop.BuyBuildingLevel(building));
+            SetPreferredWidth(build.gameObject, 200f);
+
+            return new BuildingRowView
+            {
+                building = building,
+                info = info,
+                buildButton = build,
+                buildLabel = buildLabel,
+            };
+        }
+
+        /// <summary>What each bought level of the line grants, for the row's subtitle.</summary>
+        private string PerLevelDescription(BuildingPerLevelData perLevel)
+        {
+            if (perLevel == null)
+            {
+                return string.Empty;
+            }
+
+            switch (perLevel.type)
+            {
+                case "stationSpeedBonus":
+                    return "+" + (int)(perLevel.value * 100.0) + "% " + PrettyName(perLevel.station) + " speed / level";
+                case "basketCapacityBonus":
+                    return "+" + (int)(perLevel.value * 100.0) + "% basket capacity / level";
+                case "familiarCaps":
+                    var caps = _loop.Data.economy.familiarCaps;
+                    return caps != null
+                        ? "+" + caps.flockCapPerRoostLevel + " flock cap, +" + caps.carrierSlotsPerRoostLevel + " carrier slot / level"
+                        : string.Empty;
+                default:
+                    return string.Empty;
+            }
+        }
+
         private void Select(NodeState node)
         {
             _selected = node;
@@ -520,9 +595,11 @@ namespace Wildgrove.Game
                 _world.SelectedNode = _selected;
             }
 
+            var carrierSlots = _loop.CarrierSlots();
             _headerLabel.text = "Coin " + NumberFormat.Short(state.coin)
                                 + "     Familiars " + state.TotalFamiliars()
-                                + "     Carriers " + state.carrierCount;
+                                + "     Carriers " + state.carrierCount
+                                + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty);
 
             foreach (var row in _rows)
             {
@@ -540,7 +617,9 @@ namespace Wildgrove.Game
                     rate = rate * economy.tending.burstYieldMult + new BigDouble(economy.tending.handGatherPerSecond);
                     tending = "  (tending)";
                 }
-                var basketFull = economy.hauling != null && node.basket >= new BigDouble(economy.hauling.basketCapacity);
+                var basketFull = economy.hauling != null
+                                 && node.basket >= new BigDouble(economy.hauling.basketCapacity
+                                                                 * Buildings.BasketCapacityMultiplier(state, _loop.Data));
                 var basket = "  •  " + NumberFormat.Short(node.basket)
                              + (basketFull ? " in basket (full!)" : " in basket");
 
@@ -553,7 +632,8 @@ namespace Wildgrove.Game
                 // (design §13) — so affordability is per node.
                 row.giftLabel.text = "Gift\n<size=22>+1 Familiar\n" + NumberFormat.Short(giftCost)
                                      + " " + PrettyName(node.resourceId) + "</size>";
-                row.giftButton.interactable = held >= giftCost;
+                // Affordability AND the zone's flock cap (design §8).
+                row.giftButton.interactable = _loop.CanGiftGatherer(node);
 
                 var unitValue = Economy.SellValuePerUnit(state, _loop.Data, node.resourceId);
                 var saleValue = held * unitValue;
@@ -623,6 +703,17 @@ namespace Wildgrove.Game
             }
 
             _craftingHeader.gameObject.SetActive(anyCraftable);
+
+            // The camp building lines — the always-available Coin sink.
+            foreach (var row in _buildingRows)
+            {
+                var level = _loop.BuildingLevel(row.building);
+                var cost = _loop.NextBuildingCost(row.building);
+                row.info.text = row.building.displayName
+                                + "\n<size=22>Level " + level + "  •  " + PerLevelDescription(row.building.perLevel) + "</size>";
+                row.buildLabel.text = "Build\n<size=22>" + NumberFormat.Short(cost) + "</size>";
+                row.buildButton.interactable = state.coin >= cost;
+            }
 
             // The Feeder: a bundle of every worked resource buys a carrier.
             var carrierCostEach = _loop.NextCarrierGiftCostEach();
@@ -812,6 +903,14 @@ namespace Wildgrove.Game
             public GameObject root;
             public Text info;
             public Text toggleLabel;
+        }
+
+        private sealed class BuildingRowView
+        {
+            public BuildingData building;
+            public Text info;
+            public Button buildButton;
+            public Text buildLabel;
         }
     }
 }

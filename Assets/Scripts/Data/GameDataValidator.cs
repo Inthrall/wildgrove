@@ -30,6 +30,7 @@ namespace Wildgrove.Data
             CheckIds(data.Zones.Select(z => z.Id), "zone", issues);
             CheckIds(data.Upgrades.Select(u => u.Id), "upgrade", issues);
             CheckIds(data.Recipes.Select(r => r.Id), "recipe", issues);
+            CheckIds(data.Buildings.Select(b => b.Id), "building", issues);
             CheckIds(data.Gear.Select(g => g.Id), "gear", issues);
             CheckIds(data.Fossils.Select(f => f.Id), "fossil", issues);
 
@@ -40,6 +41,7 @@ namespace Wildgrove.Data
             ValidateResources(data, issues);
             ValidateZones(data, issues);
             ValidateRecipes(data, resourceIds, issues);
+            ValidateBuildings(data, issues);
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
@@ -168,6 +170,62 @@ namespace Wildgrove.Data
                 foreach (var input in recipe.Inputs.Keys.Where(i => !resourceIds.Contains(i)))
                 {
                     issues.Add($"Recipe '{recipe.Id}' input '{input}' is not gathered from any zone or produced by any recipe");
+                }
+
+                if (recipe.StationLevel < 1)
+                {
+                    issues.Add($"Recipe '{recipe.Id}' has stationLevel below 1");
+                }
+            }
+        }
+
+        private static readonly HashSet<string> KnownBuildingPerLevelTypes = new HashSet<string>
+        {
+            "stationSpeedBonus", "basketCapacityBonus", "familiarCaps"
+        };
+
+        private static void ValidateBuildings(GameData data, List<string> issues)
+        {
+            var upgradeIds = new HashSet<string>(data.Upgrades.Select(u => u.Id));
+            var stations = new HashSet<string>(data.Recipes.Select(r => r.Station).Where(s => s != null));
+
+            foreach (var building in data.Buildings)
+            {
+                if (building.BaseCostCoin <= 0)
+                {
+                    issues.Add($"Building '{building.Id}' has non-positive baseCostCoin");
+                }
+
+                foreach (var milestone in building.MilestoneUpgradeIds.Where(m => !upgradeIds.Contains(m)))
+                {
+                    issues.Add($"Building '{building.Id}' milestone upgrade '{milestone}' does not exist");
+                }
+
+                if (building.PerLevel == null || !KnownBuildingPerLevelTypes.Contains(building.PerLevel.Type))
+                {
+                    issues.Add($"Building '{building.Id}' has missing or unknown perLevel type '{building.PerLevel?.Type}'");
+                    continue;
+                }
+
+                if (building.PerLevel.Type == "stationSpeedBonus" && !stations.Contains(building.PerLevel.Station))
+                {
+                    issues.Add($"Building '{building.Id}' stationSpeedBonus targets unknown station '{building.PerLevel.Station}'");
+                }
+
+                if (building.PerLevel.Type != "familiarCaps" && building.PerLevel.Value <= 0)
+                {
+                    issues.Add($"Building '{building.Id}' perLevel value must be positive");
+                }
+            }
+
+            // Every recipe station that gates on a building line must have that
+            // line authored — a station line named after a station a recipe
+            // uses is how the gate binds.
+            foreach (var recipe in data.Recipes.Where(r => r.StationLevel > 1))
+            {
+                if (data.Buildings.All(b => b.Id != recipe.Station))
+                {
+                    issues.Add($"Recipe '{recipe.Id}' needs station '{recipe.Station}' level {recipe.StationLevel} but no building line has that id");
                 }
             }
         }
@@ -410,6 +468,7 @@ namespace Wildgrove.Data
             RequireSection(economy.CostGrowth, "costGrowth", issues);
             RequireSection(economy.Gifts, "gifts", issues);
             RequireSection(economy.Hauling, "hauling", issues);
+            RequireSection(economy.FamiliarCaps, "familiarCaps", issues);
             RequireSection(economy.Crafting, "crafting", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
@@ -442,6 +501,13 @@ namespace Wildgrove.Data
                 && (economy.Hauling.BaseCarryCapacity <= 0 || economy.Hauling.TripSeconds <= 0 || economy.Hauling.BasketCapacity <= 0))
             {
                 issues.Add("Economy hauling values must all be positive");
+            }
+
+            if (economy.FamiliarCaps != null
+                && (economy.FamiliarCaps.FlockCapBase <= 0 || economy.FamiliarCaps.FlockCapPerRoostLevel <= 0
+                    || economy.FamiliarCaps.CarrierSlotsBase <= 0 || economy.FamiliarCaps.CarrierSlotsPerRoostLevel <= 0))
+            {
+                issues.Add("Economy familiarCaps values must all be positive");
             }
 
             if (economy.Crafting != null && economy.Crafting.BaseCraftSeconds <= 0)

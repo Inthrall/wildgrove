@@ -196,6 +196,51 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void AvailableRecipes_StationLine_GatesUntilBuilt()
+        {
+            _data.buildings = new List<BuildingData>
+            {
+                new BuildingData
+                {
+                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    milestoneUpgradeIds = new List<string> { "camp-fire-ring" },
+                    perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 0.05 },
+                },
+            };
+            var state = new GameState();
+
+            // All three recipes use the fire, and the fire isn't built yet.
+            Assert.That(Crafting.AvailableRecipes(state, _data), Is.Empty);
+
+            // The milestone builds the fire (and unlocks firecraft with it).
+            state.purchasedUpgradeIds.Add("camp-fire-ring");
+
+            Assert.That(Crafting.AvailableRecipes(state, _data).ConvertAll(r => r.id),
+                Is.EqualTo(new[] { "berry-jam", "dried-berries", "charcoal" }));
+        }
+
+        [Test]
+        public void Advance_StationSpeedLevels_DivideTheBatchTime()
+        {
+            _data.buildings = new List<BuildingData>
+            {
+                new BuildingData
+                {
+                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 1.0 },
+                },
+            };
+            var state = new GameState();
+            state.buildingLevels["fire"] = 1; // ×2 fire speed: the 5 s batch takes 2.5 s.
+            state.AddResource("berries", new BigDouble(5.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Crafting.Advance(state, _data, 2.5);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
         public void Advance_UnknownRecipeId_IsSkippedHarmlessly()
         {
             var state = new GameState();

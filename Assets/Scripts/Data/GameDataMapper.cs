@@ -13,6 +13,7 @@ namespace Wildgrove.Data
             asset.zones = data.Zones.Select(MapZone).ToList();
             asset.upgrades = data.Upgrades.Select(MapUpgrade).ToList();
             asset.recipes = data.Recipes.Select(MapRecipe).ToList();
+            asset.buildings = data.Buildings.Select(MapBuilding).ToList();
             asset.gear = data.Gear.Select(MapGear).ToList();
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
             asset.rites = MapRites(data.Rites);
@@ -72,7 +73,25 @@ namespace Wildgrove.Data
                 output = r.Output,
                 valueMult = r.ValueMult,
                 kind = r.Kind,
-                defaultKnown = r.DefaultKnown
+                defaultKnown = r.DefaultKnown,
+                stationLevel = r.StationLevel
+            };
+        }
+
+        private static BuildingData MapBuilding(BuildingDef b)
+        {
+            return new BuildingData
+            {
+                id = b.Id,
+                displayName = b.Name,
+                baseCostCoin = b.BaseCostCoin,
+                milestoneUpgradeIds = new List<string>(b.MilestoneUpgradeIds),
+                perLevel = b.PerLevel == null ? null : new BuildingPerLevelData
+                {
+                    type = b.PerLevel.Type,
+                    station = b.PerLevel.Station,
+                    value = b.PerLevel.Value,
+                },
             };
         }
 
@@ -181,6 +200,13 @@ namespace Wildgrove.Data
                     baseCarryCapacity = e.Hauling.BaseCarryCapacity,
                     tripSeconds = e.Hauling.TripSeconds,
                     basketCapacity = e.Hauling.BasketCapacity
+                },
+                familiarCaps = new EconomyData.FamiliarCapsData
+                {
+                    flockCapBase = e.FamiliarCaps.FlockCapBase,
+                    flockCapPerRoostLevel = e.FamiliarCaps.FlockCapPerRoostLevel,
+                    carrierSlotsBase = e.FamiliarCaps.CarrierSlotsBase,
+                    carrierSlotsPerRoostLevel = e.FamiliarCaps.CarrierSlotsPerRoostLevel
                 },
                 crafting = new EconomyData.CraftingData
                 {

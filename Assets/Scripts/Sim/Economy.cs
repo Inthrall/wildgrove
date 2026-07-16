@@ -34,27 +34,56 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Gift one gatherer onto <paramref name="node"/> if camp stock holds
-        /// enough of the node's own resource, spending it. Returns false (and
-        /// changes nothing) when stock is short or the node is null, so the
-        /// caller can leave the button disabled.
+        /// True when a gatherer gift can land on the node: camp stock covers
+        /// the node's own-resource cost AND the zone's flock is under its cap
+        /// (design §8: flockCap per zone, raised by the roosts line).
         /// </summary>
-        public static bool TryGiftGatherer(GameState state, EconomyData economy, NodeState node)
+        public static bool CanGiftGatherer(GameState state, GameDataAsset data, NodeState node)
         {
-            if (state == null || economy == null || node == null)
+            if (state == null || data == null || node == null)
             {
                 return false;
             }
 
-            var cost = GathererGiftCost(node, economy);
-            if (state.GetResource(node.resourceId) < cost)
+            if (ZoneFamiliarCount(state, node.zoneId) >= Buildings.FlockCap(state, data))
             {
                 return false;
             }
 
+            return state.GetResource(node.resourceId) >= GathererGiftCost(node, data.economy);
+        }
+
+        /// <summary>
+        /// Gift one gatherer onto <paramref name="node"/>, spending the
+        /// own-resource cost from camp stock. Returns false (and changes
+        /// nothing) when stock is short or the zone's flock is at its cap, so
+        /// the caller can leave the button disabled.
+        /// </summary>
+        public static bool TryGiftGatherer(GameState state, GameDataAsset data, NodeState node)
+        {
+            if (!CanGiftGatherer(state, data, node))
+            {
+                return false;
+            }
+
+            var cost = GathererGiftCost(node, data.economy);
             state.resources[node.resourceId] = state.GetResource(node.resourceId) - cost;
             node.familiarCount += 1;
             return true;
+        }
+
+        private static int ZoneFamiliarCount(GameState state, string zoneId)
+        {
+            var total = 0;
+            foreach (var node in state.nodes)
+            {
+                if (node.zoneId == zoneId)
+                {
+                    total += node.familiarCount;
+                }
+            }
+
+            return total;
         }
 
         /// <summary>
@@ -90,10 +119,19 @@ namespace Wildgrove.Sim
             return resources;
         }
 
-        /// <summary>True when camp stock covers the whole Feeder bundle — for the gift button's enabled state.</summary>
-        public static bool CanGiftCarrier(GameState state, EconomyData economy)
+        /// <summary>
+        /// True when the Feeder can be filled: camp stock covers the whole
+        /// bundle AND the camp has a free carrier slot (design §8, raised by
+        /// the roosts line) — for the gift button's enabled state.
+        /// </summary>
+        public static bool CanGiftCarrier(GameState state, GameDataAsset data)
         {
-            if (state == null || economy == null)
+            if (state == null || data == null)
+            {
+                return false;
+            }
+
+            if (state.carrierCount >= Buildings.CarrierSlots(state, data))
             {
                 return false;
             }
@@ -106,7 +144,7 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            var costEach = CarrierGiftCostEach(state, economy);
+            var costEach = CarrierGiftCostEach(state, data.economy);
             foreach (var resourceId in resources)
             {
                 if (state.GetResource(resourceId) < costEach)
@@ -122,16 +160,16 @@ namespace Wildgrove.Sim
         /// Fill the camp Feeder to gift one carrier into the camp-wide pool:
         /// spends <see cref="CarrierGiftCostEach"/> units of each worked
         /// resource from camp stock. Returns false (and changes nothing) when
-        /// any part of the bundle is short.
+        /// any part of the bundle is short or the carrier slots are full.
         /// </summary>
-        public static bool TryGiftCarrier(GameState state, EconomyData economy)
+        public static bool TryGiftCarrier(GameState state, GameDataAsset data)
         {
-            if (!CanGiftCarrier(state, economy))
+            if (!CanGiftCarrier(state, data))
             {
                 return false;
             }
 
-            var costEach = CarrierGiftCostEach(state, economy);
+            var costEach = CarrierGiftCostEach(state, data.economy);
             foreach (var resourceId in FeederResources(state))
             {
                 state.resources[resourceId] = state.GetResource(resourceId) - costEach;

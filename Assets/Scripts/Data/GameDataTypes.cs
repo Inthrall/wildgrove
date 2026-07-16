@@ -78,6 +78,32 @@ namespace Wildgrove.Data
         public double valueMult;
         public string kind;
         public bool defaultKnown;
+
+        /// <summary>The station line level the recipe needs (design §9 heat: iron is forge 2). 1 = any built station.</summary>
+        public int stationLevel = 1;
+    }
+
+    /// <summary>
+    /// One camp building line (design §9) — the repeatable Coin sink. Named §9
+    /// upgrades are milestone levels; bought levels each grant perLevel.
+    /// </summary>
+    [Serializable]
+    public sealed class BuildingData
+    {
+        public string id;
+        public string displayName;
+        public BigDouble baseCostCoin;
+        public List<string> milestoneUpgradeIds = new List<string>();
+        public BuildingPerLevelData perLevel;
+    }
+
+    [Serializable]
+    public sealed class BuildingPerLevelData
+    {
+        /// <summary>"stationSpeedBonus" | "basketCapacityBonus" | "familiarCaps".</summary>
+        public string type;
+        public string station;
+        public double value;
     }
 
     [Serializable]
@@ -169,6 +195,7 @@ namespace Wildgrove.Data
         public CostGrowthData costGrowth;
         public GiftsData gifts;
         public HaulingData hauling;
+        public FamiliarCapsData familiarCaps;
         public CraftingData crafting;
         public ToolsData tools;
         public MasteryData mastery;
@@ -200,6 +227,15 @@ namespace Wildgrove.Data
             public double baseCarryCapacity;
             public double tripSeconds;
             public double basketCapacity;
+        }
+
+        [Serializable]
+        public sealed class FamiliarCapsData
+        {
+            public int flockCapBase;
+            public int flockCapPerRoostLevel;
+            public int carrierSlotsBase;
+            public int carrierSlotsPerRoostLevel;
         }
 
         [Serializable]

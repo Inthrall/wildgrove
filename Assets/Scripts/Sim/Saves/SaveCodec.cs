@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -58,6 +58,11 @@ namespace Wildgrove.Sim.Saves
                     inFlight = station.inFlight,
                     progressSeconds = station.progressSeconds,
                 });
+            }
+
+            foreach (var pair in state.buildingLevels)
+            {
+                save.buildingLevels.Add(new SavedBuildingLevel { id = pair.Key, levels = pair.Value });
             }
 
             return save;
@@ -139,6 +144,19 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            state.buildingLevels.Clear();
+            if (save.buildingLevels != null)
+            {
+                foreach (var building in save.buildingLevels)
+                {
+                    if (building?.id != null)
+                    {
+                        // Unknown line ids are kept, same policy as elsewhere.
+                        state.buildingLevels[building.id] = building.levels;
+                    }
+                }
+            }
+
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
         }
@@ -201,6 +219,12 @@ namespace Wildgrove.Sim.Saves
                         // v2 predates crafting — stations simply start empty.
                         save.stations = save.stations ?? new List<SavedStation>();
                         save.version = 3;
+                        break;
+
+                    case 3:
+                        // v3 predates camp buildings — no levels bought yet.
+                        save.buildingLevels = save.buildingLevels ?? new List<SavedBuildingLevel>();
+                        save.version = 4;
                         break;
 
                     default:
