@@ -1,31 +1,99 @@
 using UnityEditor;
+using UnityEditor.Android;
+using UnityEditor.Build;
 using UnityEngine;
 
 namespace Wildgrove.EditorTools
 {
     /// <summary>
-    /// The one piece of branding that isn't waiting on real art: the startup
-    /// splash shows the mandatory "Made with Unity" logo dark-on-light over
-    /// warm parchment instead of the default black — so even the first frame
-    /// belongs to the field-guide world. Icons and a proper splash logo come
-    /// from the hand-drawn art pass (prompts in design/art-prompts.md).
+    /// Wires the hand-drawn brand art (Assets/Art/Brand — generated from the
+    /// briefs in design/art-prompts.md) into Player Settings: Android
+    /// adaptive/round/legacy icons and the startup splash. The splash shows
+    /// the ringed mark + wordmark over warm parchment, with the mandatory
+    /// "Made with Unity" logo dark-on-light so it sits with the paper.
+    /// Store-listing images (Play icon, feature graphic) live in
+    /// design/store/ — uploaded via Play Console, not built into the app.
     ///
     /// Headless: Unity.exe -batchmode -quit -projectPath . -executeMethod Wildgrove.EditorTools.SplashBranding.Apply
     /// </summary>
     public static class SplashBranding
     {
+        private const string ArtDir = "Assets/Art/Brand";
         private static readonly Color Parchment = new Color32(0xEE, 0xE4, 0xCC, 0xFF);
 
-        [MenuItem("Wildgrove/Apply Splash Branding")]
+        [MenuItem("Wildgrove/Apply Splash + Icon Branding")]
         public static void Apply()
         {
+            ConfigureImporters();
+            AssignIcons();
+            ConfigureSplash();
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("SplashBranding.Apply complete: brand art wired into icons + splash.");
+        }
+
+        private static void ConfigureImporters()
+        {
+            foreach (var name in new[] { "icon-foreground.png", "icon-background.png", "icon-legacy.png" })
+            {
+                var importer = (TextureImporter)AssetImporter.GetAtPath(ArtDir + "/" + name);
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+
+            var splash = (TextureImporter)AssetImporter.GetAtPath(ArtDir + "/splash-logo.png");
+            splash.textureType = TextureImporterType.Sprite;
+            splash.alphaIsTransparency = true;
+            splash.mipmapEnabled = false;
+            splash.textureCompression = TextureImporterCompression.Uncompressed;
+            splash.SaveAndReimport();
+        }
+
+        private static void AssignIcons()
+        {
+            var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-foreground.png");
+            var background = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-background.png");
+            var legacy = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-legacy.png");
+
+            var adaptive = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive);
+            foreach (var icon in adaptive)
+            {
+                icon.SetTextures(background, foreground);
+            }
+
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive, adaptive);
+
+            var round = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Round);
+            foreach (var icon in round)
+            {
+                icon.SetTextures(legacy);
+            }
+
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Round, round);
+
+            var legacyKind = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy);
+            foreach (var icon in legacyKind)
+            {
+                icon.SetTextures(legacy);
+            }
+
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy, legacyKind);
+        }
+
+        private static void ConfigureSplash()
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(ArtDir + "/splash-logo.png");
+
             PlayerSettings.SplashScreen.show = true;
             PlayerSettings.SplashScreen.backgroundColor = Parchment;
             PlayerSettings.SplashScreen.unityLogoStyle = PlayerSettings.SplashScreen.UnityLogoStyle.DarkOnLight;
-            PlayerSettings.SplashScreen.logos = new PlayerSettings.SplashScreenLogo[0];
-
-            AssetDatabase.SaveAssets();
-            Debug.Log("SplashBranding.Apply complete: parchment splash, dark-on-light Unity logo.");
+            PlayerSettings.SplashScreen.drawMode = PlayerSettings.SplashScreen.DrawMode.AllSequential;
+            PlayerSettings.SplashScreen.logos = sprite == null
+                ? new PlayerSettings.SplashScreenLogo[0]
+                : new[] { PlayerSettings.SplashScreenLogo.Create(2.5f, sprite) };
         }
     }
 }
