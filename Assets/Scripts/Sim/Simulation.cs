@@ -117,11 +117,16 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Move basket contents to camp at the carriers' throughput:
-        /// carriers · carryCapacity · upgradeMult / tripSeconds, units per
-        /// second camp-wide. Carriers split across baskets in proportion to
-        /// what's waiting — a continuous approximation; discrete haul batches
-        /// (quality rolls per delivery, design §5) arrive with Phase 3.
+        /// Move basket contents to camp in discrete deliveries — the "haul
+        /// batch" design §5's quality rolls attach to (the roll itself arrives
+        /// with the quality system). The fleet lands one delivery every
+        /// tripSeconds / carrierCount (carriers evenly staggered on the trail);
+        /// each delivery takes up to one load (carryCapacity · upgradeMult)
+        /// from the fullest basket, so a batch is always a single resource.
+        /// Average throughput matches the old continuous drain:
+        /// carriers · carryCapacity · upgradeMult / tripSeconds. Trip progress
+        /// only accrues while something is waiting — idle carriers sit at camp
+        /// rather than banking trips against future goods.
         /// </summary>
         private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
         {
@@ -130,33 +135,53 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            var waiting = BigDouble.Zero;
-            foreach (var node in state.nodes)
+            if (FullestBasket(state) == null)
             {
-                waiting += node.basket;
-            }
-
-            if (waiting <= BigDouble.Zero)
-            {
+                state.haulTripProgress = 0.0;
                 return;
             }
 
-            var capacity = new BigDouble(state.carrierCount)
-                * hauling.baseCarryCapacity
-                * Upgrades.HaulCapacityMultiplier(state, data)
-                / hauling.tripSeconds
-                * deltaSeconds;
+            var load = new BigDouble(hauling.baseCarryCapacity) * Upgrades.HaulCapacityMultiplier(state, data);
+            var interval = hauling.tripSeconds / state.carrierCount;
+            if (interval <= 0.0 || load <= BigDouble.Zero)
+            {
+                // Degenerate hand-built data (the validator rejects real
+                // content like this) — don't spin the delivery loop.
+                return;
+            }
 
-            var share = capacity >= waiting ? BigDouble.One : capacity / waiting;
+            state.haulTripProgress += deltaSeconds;
+            while (state.haulTripProgress >= interval)
+            {
+                var node = FullestBasket(state);
+                if (node == null)
+                {
+                    // Everything delivered mid-step; what's left of the
+                    // progress is idle time at camp, not a banked trip.
+                    state.haulTripProgress = 0.0;
+                    return;
+                }
+
+                state.haulTripProgress -= interval;
+                var moved = BigDouble.Min(node.basket, load);
+                node.basket -= moved;
+                state.AddResource(node.resourceId, moved);
+            }
+        }
+
+        /// <summary>The node with the most waiting in its basket (where the next carrier heads), or null when every basket is empty.</summary>
+        private static NodeState FullestBasket(GameState state)
+        {
+            NodeState fullest = null;
             foreach (var node in state.nodes)
             {
-                if (node.basket > BigDouble.Zero)
+                if (node.basket > BigDouble.Zero && (fullest == null || node.basket > fullest.basket))
                 {
-                    var moved = node.basket * share;
-                    node.basket -= moved;
-                    state.AddResource(node.resourceId, moved);
+                    fullest = node;
                 }
             }
+
+            return fullest;
         }
 
         /// <summary>

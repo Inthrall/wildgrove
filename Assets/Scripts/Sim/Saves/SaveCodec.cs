@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -29,6 +29,7 @@ namespace Wildgrove.Sim.Saves
                 coin = state.coin,
                 verdurePoints = state.verdurePoints,
                 carrierCount = state.carrierCount,
+                haulTripProgress = state.haulTripProgress,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
 
@@ -126,6 +127,7 @@ namespace Wildgrove.Sim.Saves
 
             newZones.ExceptWith(savedZones);
             state.carrierCount = save.carrierCount + newZones.Count;
+            state.haulTripProgress = save.haulTripProgress;
 
             foreach (var node in state.nodes)
             {
@@ -270,6 +272,12 @@ namespace Wildgrove.Sim.Saves
                         // v5 nodes carried a masteryLevel nothing ever granted
                         // (always 0) — dropped on read; masteryXp starts fresh.
                         save.version = 6;
+                        break;
+
+                    case 6:
+                        // v6 predates discrete hauling — the fleet starts a
+                        // fresh trip (haulTripProgress's missing-field zero).
+                        save.version = 7;
                         break;
 
                     default:

@@ -25,6 +25,14 @@ namespace Wildgrove.Sim
         /// <summary>Carrier familiars hauling for the camp (design §8: a camp-wide pool, not per-node).</summary>
         public int carrierCount;
 
+        /// <summary>
+        /// Seconds accrued toward the fleet's next delivery (design §5: hauling
+        /// lands in discrete batches, one every tripSeconds / carrierCount).
+        /// Only accrues while a basket has goods waiting; reset when the
+        /// carriers run out of work.
+        /// </summary>
+        public double haulTripProgress;
+
         /// <summary>Every gathering node the player has access to this run.</summary>
         public List<NodeState> nodes = new List<NodeState>();
 

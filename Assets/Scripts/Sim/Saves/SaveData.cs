@@ -27,6 +27,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 
+        /// <summary>v7+: seconds toward the fleet's next delivery (absent before discrete hauling — defaults to a fresh trip).</summary>
+        public double haulTripProgress;
+
         public List<SavedResource> resources = new List<SavedResource>();
         public List<SavedNode> nodes = new List<SavedNode>();
         public List<string> purchasedUpgradeIds = new List<string>();

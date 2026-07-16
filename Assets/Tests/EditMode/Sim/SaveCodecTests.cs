@@ -253,6 +253,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresHaulTripProgress()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.haulTripProgress = 1.25;
+
+            var restored = RoundTrip(state);
+
+            // A save mid-trip resumes mid-trip — the next delivery isn't
+            // pushed back (or brought forward) by quitting and reloading.
+            Assert.That(restored.haulTripProgress, Is.EqualTo(1.25).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V6Save_StartsAFreshTrip()
+        {
+            // v6 predates discrete hauling — no trip was in progress.
+            var save = new SaveData { version = 6 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.haulTripProgress, Is.EqualTo(0.0));
+        }
+
+        [Test]
         public void TryMigrate_V5Save_ClimbsToCurrent()
         {
             // v5 nodes carried a never-earned masteryLevel — nothing to carry.

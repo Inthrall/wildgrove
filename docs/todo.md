@@ -94,10 +94,12 @@ they're easy to find and delete when resolved.
   iron 5). Tool-tier level gating (§4) waits for the tools system, and the
   Migration skill reset (§7) for the prestige build.
   (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
-- **Haul is a continuous-rate approximation, not discrete batches.** Carriers drain
-  baskets proportionally at units/sec; design §5's quality rolls happen *per haul
-  batch* (a carrier delivery), so Phase 3's Compendium needs the haul loop reworked
-  into discrete deliveries. (`Simulation.Haul`)
+- **Haul batches carry no quality roll yet.** Hauling is discrete (one
+  single-resource delivery per tripSeconds / carrierCount, from the fullest
+  basket) so design §5's per-batch quality roll has its unit — but the roll
+  itself (Common/Fine/Pristine) waits for the quality system with Phase 3's
+  Compendium. The staggered-fleet cadence and fullest-basket-first carrier
+  routing are interpretations to confirm in balance. (`Simulation.Haul`)
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
   the loop playtest.
