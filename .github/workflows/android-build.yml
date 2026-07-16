@@ -3,15 +3,14 @@ name: Android Build
 # Requires repo secrets UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD.
 # License activation guide: https://game.ci/docs/github/activation
 
-# Manual dispatch only — the repo is private again, where per-push Unity
-# builds exhaust the free Actions budget. Local headless EditMode runs are
-# the test gate; re-add the push trigger if the repo goes public or a paid
-# plan arrives:
-#   push:
-#     branches: [main]
-#     paths: ["Assets/**", "Packages/**", "ProjectSettings/**", "design/data/**", ".github/workflows/android-build.yml"]
+# The repo is public, so Actions minutes are free — the push trigger is
+# back (it goes dispatch-only whenever the repo turns private, where an
+# IL2CPP Unity build per push exhausts the free budget).
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["Assets/**", "Packages/**", "ProjectSettings/**", "design/data/**", ".github/workflows/android-build.yml"]
 
 jobs:
   # The EditMode suite — sim regressions must not ship to Play on a
