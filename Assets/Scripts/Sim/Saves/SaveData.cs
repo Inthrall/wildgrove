@@ -28,6 +28,9 @@ namespace Wildgrove.Sim.Saves
         [JsonConverter(typeof(BigDoubleJsonConverter))]
         public BigDouble renown;
 
+        /// <summary>v11+: completed Migrations (absent before the prestige build — zero).</summary>
+        public int migrationCount;
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 

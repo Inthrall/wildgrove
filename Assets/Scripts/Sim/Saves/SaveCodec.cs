@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 10;
+        public const int CurrentVersion = 11;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -30,6 +30,7 @@ namespace Wildgrove.Sim.Saves
                 coin = state.coin,
                 verdurePoints = state.verdurePoints,
                 renown = state.renown,
+                migrationCount = state.migrationCount,
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -136,6 +137,7 @@ namespace Wildgrove.Sim.Saves
             state.coin = save.coin;
             state.verdurePoints = save.verdurePoints;
             state.renown = save.renown;
+            state.migrationCount = save.migrationCount;
 
             state.resources.Clear();
             if (save.resources != null)
@@ -452,6 +454,12 @@ namespace Wildgrove.Sim.Saves
                         save.deedCounts = save.deedCounts ?? new List<SavedDeedCount>();
                         save.verseProgress = save.verseProgress ?? new List<SavedVerseProgress>();
                         save.version = 10;
+                        break;
+
+                    case 10:
+                        // v10 predates Migration — no camp has folded yet
+                        // (migrationCount's missing-field zero).
+                        save.version = 11;
                         break;
 
                     default:

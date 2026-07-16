@@ -22,6 +22,9 @@ namespace Wildgrove.Sim
         /// <summary>Lifetime Renown from Rite offerings (design §7) — Verdure derives from it at Migration and it is never spent.</summary>
         public BigDouble renown = BigDouble.Zero;
 
+        /// <summary>Completed Migrations (design §7) — selects the run's Rite and drives achievements.</summary>
+        public int migrationCount;
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

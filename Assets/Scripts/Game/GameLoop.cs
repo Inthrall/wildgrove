@@ -505,6 +505,40 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>True when the Rite has consented — the Migrate button's visibility.</summary>
+        public bool CanMigrate()
+        {
+            return Migration.CanMigrate(State, Data);
+        }
+
+        /// <summary>The Verdure total a Migration right now would bank — for the confirm sheet.</summary>
+        public double VerdureAfterMigration()
+        {
+            return Migration.VerdureAfterMigration(State, Data);
+        }
+
+        /// <summary>
+        /// Fold the camp (design §7): swap in the next run's state, keeping
+        /// the permanents, and save at once so the old run can't be resumed
+        /// by force-closing. Returns false when the Rite hasn't consented.
+        /// </summary>
+        public bool Migrate()
+        {
+            var next = Migration.Migrate(State, Data);
+            if (next == null)
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("migration_completed",
+                ("number", next.migrationCount),
+                ("verdure", next.verdurePoints),
+                ("renown", State.renown.ToDouble()));
+            State = next;
+            SaveNow();
+            return true;
+        }
+
         private void AfterOffering(RiteVerseData verse, bool verseWasComplete)
         {
             if (!verseWasComplete && Rite.IsVerseComplete(State, Data, verse))

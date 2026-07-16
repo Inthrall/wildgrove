@@ -129,20 +129,22 @@ they're easy to find and delete when resolved.
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
   the loop playtest.
-- **The Rite runtime stops at eligibility — Migration is the prestige build.**
+- **The Rite and Migration are live; the Almanac and the generator are not.**
   Verses reveal with their zones, offerings consume goods/specimens/fragments
-  and credit Renown, verses complete at chooseCount and the Rite at
-  all-verses-sung; the HUD then says "the trail calls onward" but nothing
-  migrates yet (Verdure grant, run reset, Almanac). Still open: the run-2+
-  procedural verse generator (Phase 4), showing `dialogue.verses` lines at
-  the verse site, the ≥3-slots-reachable validator analysis (§7), and
-  Amber-can-never-fill-a-slot needs no code until IAP exists.
-  Interpretations flagged: plain-resource offerings credit Renown at the
-  CURRENT sell value (incl. owned bonuses — the opportunity cost), specimen
-  offerings auto-pick the largest matching pool, fragment offerings take
-  from the richest incomplete fossil, and deeds performed before a verse is
-  revealed still count toward its deed slot (lifetime counts, no per-verse
-  baseline). (`Wildgrove.Sim/Rite.cs`)
+  and credit Renown, verses complete at chooseCount, the Rite at
+  all-verses-sung, and Migration folds the camp (confirm sheet with the
+  vignette + Verdure forecast; reset per §7, keeping Verdure/Renown/fossils/
+  rng/migration count). Still open: the **Almanac tree** (Verdure has nothing
+  to buy — it only feeds the passive +2%/pt yield bonus), the run-2+
+  procedural verse generator (runs 2+ currently REUSE the authored rite,
+  unscaled), showing `dialogue.verses` lines at the verse site, and the
+  ≥3-slots-reachable validator analysis (§7). Interpretations flagged:
+  plain-resource offerings credit Renown at the CURRENT sell value (incl.
+  owned bonuses), specimen offerings auto-pick the largest matching pool,
+  fragment offerings take from the richest incomplete fossil, deeds before a
+  verse's reveal still count (lifetime, no per-verse baseline), and partial
+  fossil FRAGMENTS survive Migration alongside completed fossils ("every
+  fossil"). (`Wildgrove.Sim/Rite.cs`, `Migration.cs`)
 - **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
   yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in

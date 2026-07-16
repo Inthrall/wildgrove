@@ -344,6 +344,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheMigrationCount()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.migrationCount = 3;
+
+            Assert.That(RoundTrip(state).migrationCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void TryMigrate_V10Save_ClimbsToCurrent()
+        {
+            // v10 predates Migration — no camp has folded yet.
+            var save = new SaveData { version = 10 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.migrationCount, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TryMigrate_V9Save_GetsEmptyRiteProgress()
         {
             // v9 predates the Rite runtime — nothing offered yet.

@@ -64,6 +64,8 @@ namespace Wildgrove.Game
         private Text _excavationHeader;
         private Transform _excavationPanel;
         private Text _riteHeader;
+        private Button _migrateButton;
+        private GameObject _migrationSheet;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -80,6 +82,7 @@ namespace Wildgrove.Game
         private string _skillsLine = string.Empty;
         private float _sectionRefreshCountdown;
         private NodeState _selected;
+        private GameState _boundState;
 
         private void Update()
         {
@@ -98,6 +101,13 @@ namespace Wildgrove.Game
                     return;
                 }
 
+                Initialise();
+            }
+
+            // A Migration swapped in a fresh run — every row holds references
+            // into the old state, so rebuild the whole HUD against the new one.
+            if (!ReferenceEquals(_boundState, _loop.State))
+            {
                 Initialise();
             }
 
@@ -132,6 +142,13 @@ namespace Wildgrove.Game
             _upgradeRows.Clear();
             _craftRows.Clear();
             _buildingRows.Clear();
+            _specimenRows.Clear();
+            _digRows.Clear();
+            _verseHeadings.Clear();
+            _riteRows.Clear();
+            _welcomeSheet = null;
+            _migrationSheet = null;
+            _boundState = _loop.State;
             BuildUi();
             // Compute the layout now so the world-gap rect is valid this frame
             // (otherwise the node strip spends its first frame at zero size).
@@ -144,7 +161,7 @@ namespace Wildgrove.Game
         {
             // While the welcome-back sheet is up, its dim layer owns the screen —
             // a non-positional confirm (Space / pad-A) shouldn't tend behind it.
-            if (_welcomeSheet != null)
+            if (_welcomeSheet != null || _migrationSheet != null)
             {
                 return;
             }
@@ -384,6 +401,13 @@ namespace Wildgrove.Game
                     }
                 }
             }
+
+            // The gate, not the timer (design §7): visible once the Rite
+            // consents; the confirm sheet makes leaving a deliberate act.
+            var (migrate, _) = CreateButton("Migrate", ritePanel.transform, "Migrate — fold the camp", ShowMigrationSheet);
+            SetPreferredHeight(migrate.gameObject, 96f);
+            _migrateButton = migrate;
+            _migrateButton.gameObject.SetActive(false);
 
             _riteHeader.gameObject.SetActive(rite != null);
 
@@ -913,6 +937,91 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// The Migration confirm (design §12: forecast, the vignette, and a
+        /// deliberate confirm — players fear their first prestige, so sell it
+        /// hard and make staying easy).
+        /// </summary>
+        private void ShowMigrationSheet()
+        {
+            if (_migrationSheet != null || !_loop.CanMigrate())
+            {
+                return;
+            }
+
+            _migrationSheet = CreatePanel("Migration", _canvas, new Color(0f, 0f, 0f, 0.65f));
+            StretchFull(_migrationSheet.GetComponent<RectTransform>());
+
+            var sheet = CreatePanel("Sheet", _migrationSheet.transform, PanelColor);
+            var sheetRect = sheet.GetComponent<RectTransform>();
+            sheetRect.anchorMin = new Vector2(0.06f, 0.5f);
+            sheetRect.anchorMax = new Vector2(0.94f, 0.5f);
+            sheetRect.pivot = new Vector2(0.5f, 0.5f);
+            sheetRect.offsetMin = Vector2.zero;
+            sheetRect.offsetMax = Vector2.zero;
+            var sheetLayout = sheet.AddComponent<VerticalLayoutGroup>();
+            sheetLayout.padding = new RectOffset(40, 40, 36, 36);
+            sheetLayout.spacing = 16f;
+            sheetLayout.childControlWidth = true;
+            sheetLayout.childControlHeight = true;
+            sheetLayout.childForceExpandWidth = true;
+            sheetLayout.childForceExpandHeight = false;
+            var fitter = sheet.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var title = CreateText("Title", sheet.transform, 44, TextAnchor.MiddleCenter, TextColor);
+            title.text = "Migration";
+            SetPreferredHeight(title.gameObject, 64f);
+
+            // The vignette — the game's only scripted beat (design §6). MVP
+            // lines may still be unauthored; show only the written ones.
+            var vignette = _loop.Data.dialogue?.migrationVignette;
+            if (vignette != null)
+            {
+                foreach (var line in vignette)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        continue;
+                    }
+
+                    var text = CreateText("Vignette", sheet.transform, 28, TextAnchor.MiddleCenter,
+                        new Color(TextColor.r, TextColor.g, TextColor.b, 0.8f));
+                    text.text = line;
+                    SetPreferredHeight(text.gameObject, 40f);
+                }
+            }
+
+            var forecast = CreateText("Forecast", sheet.transform, 32, TextAnchor.MiddleCenter, TextColor);
+            forecast.text = "Verdure " + NumberFormat.Short(new BigDouble(_loop.State.verdurePoints))
+                            + "  →  " + NumberFormat.Short(new BigDouble(_loop.VerdureAfterMigration()));
+            SetPreferredHeight(forecast.gameObject, 48f);
+
+            var warning = CreateText("Warning", sheet.transform, 26, TextAnchor.MiddleCenter,
+                new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
+            warning.text = "The camp folds: Coin, familiars, tools and zones reset.\nThe Compendium, fossils and Verdure remain.";
+            SetPreferredHeight(warning.gameObject, 76f);
+
+            var (confirm, _) = CreateButton("Confirm", sheet.transform, "Migrate", () =>
+            {
+                DismissMigrationSheet();
+                _loop.Migrate();
+            });
+            SetPreferredHeight(confirm.gameObject, 96f);
+
+            var (stay, _) = CreateButton("Stay", sheet.transform, "Stay a while longer", DismissMigrationSheet);
+            SetPreferredHeight(stay.gameObject, 96f);
+        }
+
+        private void DismissMigrationSheet()
+        {
+            if (_migrationSheet != null)
+            {
+                Destroy(_migrationSheet);
+                _migrationSheet = null;
+            }
+        }
+
         private void Refresh()
         {
             var state = _loop.State;
@@ -1082,6 +1191,7 @@ namespace Wildgrove.Game
             _riteHeader.text = riteComplete
                 ? "The Rite\n<size=24>The Rite is complete — the trail calls onward.</size>"
                 : "The Rite";
+            _migrateButton.gameObject.SetActive(riteComplete);
             foreach (var heading in _verseHeadings)
             {
                 var revealed = Rite.IsVerseRevealed(state, _loop.Data, heading.verse);
