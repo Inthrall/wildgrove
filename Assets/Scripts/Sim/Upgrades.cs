@@ -45,7 +45,8 @@ namespace Wildgrove.Sim
         public static bool TryPurchase(GameState state, GameDataAsset data, UpgradeData upgrade)
         {
             if (state == null || data == null || upgrade == null
-                || state.HasUpgrade(upgrade.id) || !CanAfford(state, upgrade))
+                || state.HasUpgrade(upgrade.id) || !CanAfford(state, upgrade)
+                || !MeetsToolRequirement(state, data, upgrade))
             {
                 return false;
             }
@@ -64,6 +65,84 @@ namespace Wildgrove.Sim
             GameStateFactory.SyncUnlockedZones(state, data);
             RecomputeYieldMultipliers(state, data);
             return true;
+        }
+
+        /// <summary>
+        /// The run's tool tier as an index into economy.tools.tiers: the best
+        /// toolTier upgrade owned, −1 with none. Data without a tools section
+        /// (hand-built fixtures) reads −1 but gates nothing — see
+        /// <see cref="MeetsToolRequirement"/>.
+        /// </summary>
+        public static int ToolTierIndex(GameState state, GameDataAsset data)
+        {
+            var tiers = data.economy?.tools?.tiers;
+            if (tiers == null)
+            {
+                return -1;
+            }
+
+            var best = -1;
+            foreach (var upgradeId in state.purchasedUpgradeIds)
+            {
+                if (data.UpgradesById.TryGetValue(upgradeId, out var upgrade)
+                    && !string.IsNullOrEmpty(upgrade.toolTier))
+                {
+                    var index = tiers.IndexOf(upgrade.toolTier);
+                    if (index > best)
+                    {
+                        best = index;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// The design §3 tool gate: a trail map can only be bought once the
+        /// run's tool tier covers every zone it unlocks (Zone 2 flint …
+        /// deeper steel+). Non-map upgrades, ungated zones, and data without
+        /// a tools section all pass.
+        /// </summary>
+        public static bool MeetsToolRequirement(GameState state, GameDataAsset data, UpgradeData upgrade)
+        {
+            var missing = MissingToolTier(state, data, upgrade);
+            return string.IsNullOrEmpty(missing);
+        }
+
+        /// <summary>
+        /// The tier name blocking this upgrade's purchase (for the buy
+        /// button's "needs … tools" line), or null when nothing is missing.
+        /// </summary>
+        public static string MissingToolTier(GameState state, GameDataAsset data, UpgradeData upgrade)
+        {
+            var tiers = data.economy?.tools?.tiers;
+            if (tiers == null || upgrade == null)
+            {
+                return null;
+            }
+
+            string missing = null;
+            var missingIndex = -1;
+            var owned = ToolTierIndex(state, data);
+            foreach (var effect in upgrade.effects)
+            {
+                if (effect.type != EffectType.UnlockZone || string.IsNullOrEmpty(effect.zone)
+                    || !data.ZonesById.TryGetValue(effect.zone, out var zone)
+                    || string.IsNullOrEmpty(zone.requiredTool))
+                {
+                    continue;
+                }
+
+                var required = tiers.IndexOf(zone.requiredTool);
+                if (required > owned && required > missingIndex)
+                {
+                    missing = zone.requiredTool;
+                    missingIndex = required;
+                }
+            }
+
+            return missing;
         }
 
         /// <summary>

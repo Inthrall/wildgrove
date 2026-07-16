@@ -372,5 +372,85 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.5).Within(Tolerance));
         }
+
+        /// <summary>Turn on the design §3 tool gate: Bramble demands copper tools.</summary>
+        private void EnableToolGate()
+        {
+            _data.economy.tools = new EconomyData.ToolsData
+            {
+                tiers = new List<string> { "flint", "copper", "bronze" },
+            };
+            _data.zones[1].requiredTool = "copper";
+            _data.upgrades[1].toolTier = "flint";  // flint-sickle
+            _data.upgrades[5].toolTier = "copper"; // copper-sickle
+        }
+
+        [Test]
+        public void ToolTierIndex_TracksTheBestToolOwned()
+        {
+            EnableToolGate();
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.ToolTierIndex(state, _data), Is.EqualTo(-1), "a fresh run owns no tools");
+
+            state.purchasedUpgradeIds.Add("flint-sickle");
+            Assert.That(Upgrades.ToolTierIndex(state, _data), Is.EqualTo(0));
+
+            state.purchasedUpgradeIds.Add("copper-sickle");
+            Assert.That(Upgrades.ToolTierIndex(state, _data), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryPurchase_TrailMapBehindTheToolGate_Refuses()
+        {
+            EnableToolGate();
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("flint-sickle"); // one tier short
+            state.coin = 1000;
+
+            var bought = Upgrades.TryPurchase(state, _data, _data.upgrades[0]);
+
+            // Design §3: the trail map demands the tool tier, not just Coin.
+            Assert.That(bought, Is.False);
+            Assert.That(state.coin.ToDouble(), Is.EqualTo(1000.0).Within(Tolerance));
+            Assert.That(state.nodes.TrueForAll(n => n.zoneId == GameStateFactory.StartingZoneId), Is.True);
+        }
+
+        [Test]
+        public void TryPurchase_TrailMapWithTheRequiredTool_Succeeds()
+        {
+            EnableToolGate();
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("copper-sickle");
+            state.coin = 1000;
+
+            var bought = Upgrades.TryPurchase(state, _data, _data.upgrades[0]);
+
+            Assert.That(bought, Is.True);
+            Assert.That(state.nodes.Exists(n => n.zoneId == "bramble-hedgerows"), Is.True);
+        }
+
+        [Test]
+        public void MissingToolTier_NamesTheBlockingTier()
+        {
+            EnableToolGate();
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.MissingToolTier(state, _data, _data.upgrades[0]), Is.EqualTo("copper"));
+
+            state.purchasedUpgradeIds.Add("copper-sickle");
+            Assert.That(Upgrades.MissingToolTier(state, _data, _data.upgrades[0]), Is.Null);
+        }
+
+        [Test]
+        public void MeetsToolRequirement_DataWithoutTools_NeverGates()
+        {
+            // The fixture default: no tools section — the pre-gate behaviour
+            // every other test in this file relies on.
+            _data.zones[1].requiredTool = "copper";
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Upgrades.MeetsToolRequirement(state, _data, _data.upgrades[0]), Is.True);
+        }
     }
 }

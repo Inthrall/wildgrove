@@ -50,6 +50,10 @@ namespace Wildgrove.Data
         public string keystone;
         public bool digSite;
         public string verseSite;
+
+        /// <summary>Tool tier the zone's trail map demands (design §3); null/empty = ungated.</summary>
+        public string requiredTool;
+
         public bool priced;
         public BigDouble mapCostCoin;
         public string scope;
@@ -62,6 +66,10 @@ namespace Wildgrove.Data
         public string id;
         public string displayName;
         public string track;
+
+        /// <summary>The tool tier owning this upgrade represents (economy.tools.tiers), for zone gating; null/empty for non-tier upgrades.</summary>
+        public string toolTier;
+
         public BigDouble costCoin;
         public List<ItemAmount> materials = new List<ItemAmount>();
         public List<EffectData> effects = new List<EffectData>();

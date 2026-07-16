@@ -42,6 +42,7 @@ namespace Wildgrove.Data
                 keystone = z.Keystone,
                 digSite = z.DigSite,
                 verseSite = z.VerseSite,
+                requiredTool = z.RequiredTool,
                 priced = z.MapCostCoin.HasValue,
                 mapCostCoin = z.MapCostCoin ?? 0,
                 scope = z.Scope
@@ -56,6 +57,7 @@ namespace Wildgrove.Data
                 id = u.Id,
                 displayName = u.Name,
                 track = u.Track,
+                toolTier = u.ToolTier,
                 costCoin = u.CostCoin,
                 materials = MapItemAmounts(u.Materials),
                 effects = u.Effects.Select(MapEffect).ToList()

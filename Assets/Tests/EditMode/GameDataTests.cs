@@ -65,6 +65,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Excavation.BaseFragmentsPerHour, Is.EqualTo(0.25));
             Assert.That(data.UpgradesById["map-oldgrowth"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "excavation"),
                 Is.True, "the first dig site's map also teaches excavation");
+            Assert.That(data.ZonesById["silverrun-river"].RequiredTool, Is.EqualTo("bronze"));
+            Assert.That(data.ZonesById["sunfield-meadow"].RequiredTool, Is.Null, "the starting zone is ungated");
+            Assert.That(data.UpgradesById["copper-sickle"].ToolTier, Is.EqualTo("copper"));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
@@ -420,6 +423,34 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_UnknownRequiredTool_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"requiredTool\": \"flint\",",
+                "\"requiredTool\": \"flintt\",");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("requiredTool 'flintt'")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RequiredToolNoUpgradeGrants_IsReported()
+        {
+            var sources = LoadSources();
+            // Strip the steel toolset's tier — the steel-gated zones become
+            // unenterable forever.
+            sources.UpgradesJson = sources.UpgradesJson.Replace(
+                "\"toolTier\": \"steel\",",
+                "");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("can never be met")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

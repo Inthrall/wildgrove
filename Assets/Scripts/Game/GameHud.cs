@@ -983,8 +983,14 @@ namespace Wildgrove.Game
                 }
 
                 onOffer++;
-                row.buyLabel.text = BuyLabel(row.upgrade);
-                row.buyButton.interactable = _loop.CanAffordUpgrade(row.upgrade);
+                // The §3 tool gate: a trail map stays visible (an honest
+                // preview, like material costs) but can't be bought until the
+                // required tool tier is owned.
+                var missingTool = _loop.MissingToolTier(row.upgrade);
+                row.buyLabel.text = missingTool == null
+                    ? BuyLabel(row.upgrade)
+                    : BuyLabel(row.upgrade) + "\n<size=20>needs " + PrettyName(missingTool) + " tools</size>";
+                row.buyButton.interactable = missingTool == null && _loop.CanAffordUpgrade(row.upgrade);
             }
 
             _upgradesHeader.gameObject.SetActive(onOffer > 0);

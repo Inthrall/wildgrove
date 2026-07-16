@@ -305,6 +305,12 @@ namespace Wildgrove.Game
             return State.HasUpgrade(upgrade.id);
         }
 
+        /// <summary>The tool tier blocking this upgrade (design §3 zone gate), or null when none — for the buy button's "needs … tools" line.</summary>
+        public string MissingToolTier(UpgradeData upgrade)
+        {
+            return Upgrades.MissingToolTier(State, Data, upgrade);
+        }
+
         /// <summary>True when the run holds the upgrade's Coin and material costs — for the buy button's enabled state.</summary>
         public bool CanAffordUpgrade(UpgradeData upgrade)
         {

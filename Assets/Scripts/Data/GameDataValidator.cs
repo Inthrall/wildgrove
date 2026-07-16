@@ -140,6 +140,56 @@ namespace Wildgrove.Data
                     issues.Add($"Zone '{zone.Id}' is mvp scope but has no verseSite");
                 }
             }
+
+            ValidateToolGating(data, issues);
+        }
+
+        /// <summary>
+        /// The design §3 tool gate: zone requiredTool and upgrade toolTier must
+        /// both name real tiers, and every demanded tier must be grantable by
+        /// some upgrade — an ungrantable requirement walls off the zone (and
+        /// everything behind it) forever.
+        /// </summary>
+        private static void ValidateToolGating(GameData data, List<string> issues)
+        {
+            var tiers = data.Economy?.Tools?.Tiers ?? new List<string>();
+            var bestGrantable = -1;
+
+            foreach (var upgrade in data.Upgrades)
+            {
+                if (string.IsNullOrEmpty(upgrade.ToolTier))
+                {
+                    continue;
+                }
+
+                var index = tiers.IndexOf(upgrade.ToolTier);
+                if (index < 0)
+                {
+                    issues.Add($"Upgrade '{upgrade.Id}' toolTier '{upgrade.ToolTier}' is not in economy.tools.tiers");
+                }
+                else if (index > bestGrantable)
+                {
+                    bestGrantable = index;
+                }
+            }
+
+            foreach (var zone in data.Zones)
+            {
+                if (string.IsNullOrEmpty(zone.RequiredTool))
+                {
+                    continue;
+                }
+
+                var index = tiers.IndexOf(zone.RequiredTool);
+                if (index < 0)
+                {
+                    issues.Add($"Zone '{zone.Id}' requiredTool '{zone.RequiredTool}' is not in economy.tools.tiers");
+                }
+                else if (index > bestGrantable)
+                {
+                    issues.Add($"Zone '{zone.Id}' requiredTool '{zone.RequiredTool}' can never be met — no upgrade grants that tier");
+                }
+            }
         }
 
         private static void ValidateRecipes(GameData data, HashSet<string> resourceIds, List<string> issues)

@@ -77,6 +77,16 @@ they're easy to find and delete when resolved.
   of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
   (0.25) is a first guess not in the doc.
   (`Wildgrove.Sim/Excavation.cs`, `Fossils.cs`)
+- **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
+  run's tool tier derives from owned upgrades tagged `toolTier`
+  (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
+  `zones.requiredTool` (§3: Zone 2 flint … deeper steel+). Interpretations:
+  §8's standalone toolCost formula (100·12^(t−1) + ingot batch) is expressed
+  through the rungs' own Coin+ingot costs rather than computed; the ×2 yield
+  per tier is the rungs' yieldMult effects; a HIGHER tier satisfies a lower
+  requirement. Tool-tier gating of *recipes* (§4 "levels gate recipes and
+  tool tiers") still waits on skill-level design.
+  (`Upgrades.ToolTierIndex/MeetsToolRequirement`)
 - **Building perLevel values are first guesses, and two are interpretations.**
   The 5% speed/capacity tapers aren't in the design doc. Interpretive calls to
   confirm in balance: the §9 Store's "storage capacity" is implemented as
