@@ -66,6 +66,8 @@ namespace Wildgrove.Game
         private Text _riteHeader;
         private Button _migrateButton;
         private GameObject _migrationSheet;
+        private Text _almanacHeader;
+        private GameObject _almanacPanel;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -75,6 +77,7 @@ namespace Wildgrove.Game
         private readonly List<DigRowView> _digRows = new List<DigRowView>();
         private readonly List<VerseHeadingView> _verseHeadings = new List<VerseHeadingView>();
         private readonly List<RiteSlotRowView> _riteRows = new List<RiteSlotRowView>();
+        private readonly List<AlmanacRowView> _almanacRows = new List<AlmanacRowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
@@ -146,6 +149,7 @@ namespace Wildgrove.Game
             _digRows.Clear();
             _verseHeadings.Clear();
             _riteRows.Clear();
+            _almanacRows.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
             _boundState = _loop.State;
@@ -410,6 +414,25 @@ namespace Wildgrove.Game
             _migrateButton.gameObject.SetActive(false);
 
             _riteHeader.gameObject.SetActive(rite != null);
+
+            // The Almanac (design §7): the permanent Verdure tree. Hidden
+            // until the first Migration banks any Verdure.
+            _almanacHeader = CreateText("AlmanacHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _almanacHeader.text = "Almanac";
+            SetPreferredHeight(_almanacHeader.gameObject, 48f);
+
+            _almanacPanel = CreatePanel("Almanac", sections, new Color(0f, 0f, 0f, 0f));
+            var almanacLayout = _almanacPanel.AddComponent<VerticalLayoutGroup>();
+            almanacLayout.spacing = 12f;
+            almanacLayout.childControlWidth = true;
+            almanacLayout.childControlHeight = true;
+            almanacLayout.childForceExpandWidth = true;
+            almanacLayout.childForceExpandHeight = false;
+
+            foreach (var node in _loop.Data.almanac)
+            {
+                _almanacRows.Add(BuildAlmanacRow(_almanacPanel.transform, node));
+            }
 
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
@@ -758,6 +781,71 @@ namespace Wildgrove.Game
                 giftButton = gift,
                 giftLabel = giftLabel,
             };
+        }
+
+        private AlmanacRowView BuildAlmanacRow(Transform parent, AlmanacNodeData node)
+        {
+            var rowGo = CreatePanel("Almanac_" + node.id, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+            info.text = node.displayName + "\n<size=24>" + AlmanacEffectSummary(node) + "</size>";
+
+            var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.BuyAlmanacNode(node));
+            SetPreferredWidth(buy.gameObject, 200f);
+            buyLabel.text = "Buy\n<size=22>" + NumberFormat.Short(new BigDouble(node.costVerdure)) + " Verdure</size>";
+
+            return new AlmanacRowView
+            {
+                node = node,
+                root = rowGo,
+                buyButton = buy,
+            };
+        }
+
+        /// <summary>What the node grants, for its row subtitle.</summary>
+        private static string AlmanacEffectSummary(AlmanacNodeData node)
+        {
+            var parts = new List<string>();
+            foreach (var effect in node.effects)
+            {
+                switch (effect.type)
+                {
+                    case EffectType.YieldBonus:
+                        parts.Add("+" + (int)(effect.value * 100.0) + "% yields");
+                        break;
+                    case EffectType.OfflineCapHours:
+                        parts.Add("offline cap " + effect.value + " h");
+                        break;
+                    case EffectType.HaulMult:
+                        parts.Add("carry ×" + effect.value);
+                        break;
+                    case EffectType.CraftSpeedMult:
+                        parts.Add("craft speed ×" + effect.value);
+                        break;
+                    case EffectType.DigSpeedMult:
+                        parts.Add("dig speed ×" + effect.value);
+                        break;
+                    case EffectType.PristineChanceBonus:
+                        parts.Add("+" + effect.value * 100.0 + "pt Pristine");
+                        break;
+                    default:
+                        parts.Add(PrettyName(effect.type.ToString()));
+                        break;
+                }
+            }
+
+            return string.Join("  •  ", parts);
         }
 
         private RiteSlotRowView BuildRiteSlotRow(Transform parent, RiteVerseData verse, int slotIndex)
@@ -1192,6 +1280,26 @@ namespace Wildgrove.Game
                 ? "The Rite\n<size=24>The Rite is complete — the trail calls onward.</size>"
                 : "The Rite";
             _migrateButton.gameObject.SetActive(riteComplete);
+
+            // The Almanac: hidden until Verdure exists; bought nodes leave
+            // the list (permanent — nothing to show but the effect itself).
+            var almanacVisible = state.verdurePoints > 0.0 || state.almanacNodeIds.Count > 0;
+            _almanacHeader.gameObject.SetActive(almanacVisible);
+            _almanacPanel.SetActive(almanacVisible);
+            if (almanacVisible)
+            {
+                _almanacHeader.text = "Almanac\n<size=24>Verdure " + NumberFormat.Short(new BigDouble(state.verdurePoints))
+                                      + "  •  " + NumberFormat.Short(new BigDouble(_loop.AvailableVerdure())) + " free</size>";
+                foreach (var row in _almanacRows)
+                {
+                    var owned = Almanac.IsOwned(state, row.node);
+                    row.root.SetActive(!owned);
+                    if (!owned)
+                    {
+                        row.buyButton.interactable = Almanac.CanBuy(state, _loop.Data, row.node);
+                    }
+                }
+            }
             foreach (var heading in _verseHeadings)
             {
                 var revealed = Rite.IsVerseRevealed(state, _loop.Data, heading.verse);
@@ -1567,6 +1675,13 @@ namespace Wildgrove.Game
             public Text info;
             public Button sellButton;
             public Text sellLabel;
+        }
+
+        private sealed class AlmanacRowView
+        {
+            public AlmanacNodeData node;
+            public GameObject root;
+            public Button buyButton;
         }
 
         private sealed class VerseHeadingView

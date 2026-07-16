@@ -68,6 +68,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.ZonesById["silverrun-river"].RequiredTool, Is.EqualTo("bronze"));
             Assert.That(data.ZonesById["sunfield-meadow"].RequiredTool, Is.Null, "the starting zone is ungated");
             Assert.That(data.UpgradesById["copper-sickle"].ToolTier, Is.EqualTo("copper"));
+            Assert.That(data.AlmanacById["old-songs-ii"].Requires, Is.EqualTo("old-songs-i"));
+            Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
@@ -423,6 +425,32 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_AlmanacRequiresUnknownNode_IsReported()
+        {
+            var sources = LoadSources();
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "\"requires\": \"old-songs-ii\",",
+                "\"requires\": \"lost-songs\",");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("requires unknown node 'lost-songs'")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_FreeAlmanacNode_IsReported()
+        {
+            var sources = LoadSources();
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "\"costVerdure\": 4,",
+                "\"costVerdure\": 0,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("must cost Verdure")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

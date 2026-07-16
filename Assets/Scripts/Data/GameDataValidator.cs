@@ -33,6 +33,7 @@ namespace Wildgrove.Data
             CheckIds(data.Buildings.Select(b => b.Id), "building", issues);
             CheckIds(data.Gear.Select(g => g.Id), "gear", issues);
             CheckIds(data.Fossils.Select(f => f.Id), "fossil", issues);
+            CheckIds(data.Almanac.Select(a => a.Id), "almanac node", issues);
 
             // Everything obtainable: gathered from a zone or produced by a recipe.
             var resourceIds = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
@@ -46,6 +47,7 @@ namespace Wildgrove.Data
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
+            ValidateAlmanac(data, resourceIds, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
@@ -478,6 +480,45 @@ namespace Wildgrove.Data
             }
         }
 
+        private static void ValidateAlmanac(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            foreach (var node in data.Almanac)
+            {
+                if (node.CostVerdure <= 0)
+                {
+                    issues.Add($"Almanac node '{node.Id}' must cost Verdure");
+                }
+
+                if (!string.IsNullOrEmpty(node.Requires) && !data.AlmanacById.ContainsKey(node.Requires))
+                {
+                    issues.Add($"Almanac node '{node.Id}' requires unknown node '{node.Requires}'");
+                }
+
+                foreach (var effect in node.Effects)
+                {
+                    ValidateEffect($"Almanac node '{node.Id}'", effect, data, resourceIds, issues);
+                }
+            }
+
+            // The requires chain must ground out — a cycle makes every node in
+            // it unbuyable forever.
+            foreach (var node in data.Almanac)
+            {
+                var visited = new HashSet<string>();
+                var current = node;
+                while (current != null && !string.IsNullOrEmpty(current.Requires))
+                {
+                    if (!visited.Add(current.Id))
+                    {
+                        issues.Add($"Almanac node '{node.Id}' sits in a requires cycle");
+                        break;
+                    }
+
+                    data.AlmanacById.TryGetValue(current.Requires, out current);
+                }
+            }
+        }
+
         private static void ValidateRites(GameData data, HashSet<string> resourceIds, List<string> issues)
         {
             if (data.Rites == null)
@@ -772,7 +813,11 @@ namespace Wildgrove.Data
                 case EffectType.YieldBonus:
                 case EffectType.CraftSpeedMult:
                     RequirePositiveValue(owner, effect, issues);
-                    if (effect.Skill == null && effect.Zone == null)
+                    // A target-less craftSpeedMult is global — the sim applies
+                    // it to every skill's recipes (Patient Hands). Yield
+                    // effects still need a target: the sim would silently
+                    // apply a bare one to nothing.
+                    if (effect.Skill == null && effect.Zone == null && effect.Type != EffectType.CraftSpeedMult)
                     {
                         issues.Add($"{owner} {effect.Type} effect targets neither a skill nor a zone");
                     }

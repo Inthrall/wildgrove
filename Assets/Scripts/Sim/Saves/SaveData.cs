@@ -31,6 +31,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v11+: completed Migrations (absent before the prestige build — zero).</summary>
         public int migrationCount;
 
+        /// <summary>v12+: Almanac nodes bought with Verdure (absent before the Almanac — none owned).</summary>
+        public List<string> almanacNodeIds = new List<string>();
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 

@@ -134,11 +134,10 @@ they're easy to find and delete when resolved.
   and credit Renown, verses complete at chooseCount, the Rite at
   all-verses-sung, and Migration folds the camp (confirm sheet with the
   vignette + Verdure forecast; reset per §7, keeping Verdure/Renown/fossils/
-  rng/migration count). Still open: the **Almanac tree** (Verdure has nothing
-  to buy — it only feeds the passive +2%/pt yield bonus), the run-2+
-  procedural verse generator (runs 2+ currently REUSE the authored rite,
-  unscaled), showing `dialogue.verses` lines at the verse site, and the
-  ≥3-slots-reachable validator analysis (§7). Interpretations flagged:
+  rng/migration count/Almanac). Still open: the run-2+ procedural verse
+  generator (runs 2+ currently REUSE the authored rite, unscaled), showing
+  `dialogue.verses` lines at the verse site, and the ≥3-slots-reachable
+  validator analysis (§7). Interpretations flagged:
   plain-resource offerings credit Renown at the CURRENT sell value (incl.
   owned bonuses), specimen offerings auto-pick the largest matching pool,
   fragment offerings take from the richest incomplete fossil, deeds before a
@@ -156,6 +155,15 @@ they're easy to find and delete when resolved.
 - **Verdure / almanac / museum / fossil / boost multipliers.** `Simulation.YieldPerSecond`
   folds in the Verdure global bonus only; the other multipliers arrive with their
   systems and multiply in there.
+
+- **The Almanac is 12 nodes of existing effect types; costs and the
+  allocation model are interpretations.** Verdure is never destroyed — a node
+  allocates from the banked total (available = verdurePoints − owned costs)
+  so the +2%/pt passive keeps counting the full total and Migration's
+  recompute-from-lifetime-Renown can't refund spent points. The §7 exotic
+  nodes (starting tool tiers, auto-craft, starting-zone skips) wait for
+  their systems; all costs are first guesses tuned to ~10 Verdure from the
+  first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
 
 ## Narrative authoring
 

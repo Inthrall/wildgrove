@@ -170,6 +170,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_KeepsTheAlmanac_AndItsEffects()
+        {
+            _data.almanac = new List<AlmanacNodeData>
+            {
+                new AlmanacNodeData
+                {
+                    id = "old-songs-i", displayName = "Old Songs I", costVerdure = 2,
+                    effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.10 } },
+                },
+            };
+            var state = StateWithTheRiteSung();
+            state.verdurePoints = 5.0;
+            Almanac.TryBuy(state, _data, _data.almanac[0]);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.almanacNodeIds, Is.EqualTo(new[] { "old-songs-i" }));
+            Assert.That(next.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance),
+                "the permanent tree survives the fold");
+        }
+
+        [Test]
         public void Migrate_CompletedFossilEffects_CarryIntoTheFreshRun()
         {
             var state = StateWithTheRiteSung();

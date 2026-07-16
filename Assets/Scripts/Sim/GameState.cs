@@ -25,6 +25,9 @@ namespace Wildgrove.Sim
         /// <summary>Completed Migrations (design §7) — selects the run's Rite and drives achievements.</summary>
         public int migrationCount;
 
+        /// <summary>Almanac nodes bought with Verdure (design §7) — permanent, surviving every Migration. Their costs stay allocated; see Almanac.AvailableVerdure.</summary>
+        public List<string> almanacNodeIds = new List<string>();
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

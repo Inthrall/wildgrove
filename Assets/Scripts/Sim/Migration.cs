@@ -59,6 +59,9 @@ namespace Wildgrove.Sim
             next.migrationCount = state.migrationCount + 1;
             next.rngState = state.rngState;
 
+            // The Almanac is the permanent tree — bought once, kept forever.
+            next.almanacNodeIds.AddRange(state.almanacNodeIds);
+
             // "You keep … every fossil" — completed fossils and the fragments
             // still assembling both survive; the dig chase spans migrations.
             foreach (var pair in state.fossilFragments)

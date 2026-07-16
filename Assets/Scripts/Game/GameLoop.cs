@@ -505,6 +505,26 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>Verdure not yet allocated to an Almanac node — for the section header and buy buttons.</summary>
+        public double AvailableVerdure()
+        {
+            return Almanac.AvailableVerdure(State, Data);
+        }
+
+        /// <summary>Buy an Almanac node with unallocated Verdure (permanent — survives Migration). Returns false when it can't be bought.</summary>
+        public bool BuyAlmanacNode(AlmanacNodeData node)
+        {
+            if (!Almanac.TryBuy(State, Data, node))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("almanac_node_bought",
+                ("node", node.id),
+                ("verdure_cost", node.costVerdure));
+            return true;
+        }
+
         /// <summary>True when the Rite has consented — the Migrate button's visibility.</summary>
         public bool CanMigrate()
         {

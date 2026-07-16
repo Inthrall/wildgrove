@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 54a4bfc47065af40ef7b039e4507f7537ab7ba9010554a28bf30a8742505528a
+  sourceHash: 0f9ad414595ac05aeeb521461596883b59a5c378679c6abe9bdcf673f440b0b8
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1209,6 +1209,139 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.2
+  almanac:
+  - id: old-songs-i
+    displayName: Old Songs I
+    costVerdure: 2
+    requires: 
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.1
+  - id: long-watch-i
+    displayName: The Long Watch I
+    costVerdure: 2
+    requires: 
+    effects:
+    - type: 8
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 6
+  - id: verdant-eye-i
+    displayName: Verdant Eye I
+    costVerdure: 3
+    requires: 
+    effects:
+    - type: 6
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.005
+  - id: sure-paths-i
+    displayName: Sure Paths I
+    costVerdure: 3
+    requires: 
+    effects:
+    - type: 2
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.25
+  - id: patient-hands
+    displayName: Patient Hands
+    costVerdure: 4
+    requires: 
+    effects:
+    - type: 4
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.25
+  - id: deep-sight-i
+    displayName: Deep Sight I
+    costVerdure: 4
+    requires: 
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.5
+  - id: old-songs-ii
+    displayName: Old Songs II
+    costVerdure: 6
+    requires: old-songs-i
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.15
+  - id: long-watch-ii
+    displayName: The Long Watch II
+    costVerdure: 6
+    requires: long-watch-i
+    effects:
+    - type: 8
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 8
+  - id: sure-paths-ii
+    displayName: Sure Paths II
+    costVerdure: 9
+    requires: sure-paths-i
+    effects:
+    - type: 2
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1.5
+  - id: verdant-eye-ii
+    displayName: Verdant Eye II
+    costVerdure: 12
+    requires: verdant-eye-i
+    effects:
+    - type: 6
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.01
+  - id: long-watch-iii
+    displayName: The Long Watch III
+    costVerdure: 16
+    requires: long-watch-ii
+    effects:
+    - type: 8
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 12
+  - id: old-songs-iii
+    displayName: Old Songs III
+    costVerdure: 20
+    requires: old-songs-ii
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.25
   rites:
     chooseCount: 3
     rites:

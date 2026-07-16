@@ -8,7 +8,7 @@ using Newtonsoft.Json.Serialization;
 
 namespace Wildgrove.Data
 {
-    /// <summary>Raw JSON text of the ten design data files.</summary>
+    /// <summary>Raw JSON text of the eleven design data files.</summary>
     public sealed class GameDataSources
     {
         public string EconomyJson { get; set; }
@@ -20,6 +20,7 @@ namespace Wildgrove.Data
         public string GearJson { get; set; }
         public string FossilsJson { get; set; }
         public string RitesJson { get; set; }
+        public string AlmanacJson { get; set; }
         public string DialogueJson { get; set; }
     }
 
@@ -41,6 +42,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<GearDef> Gear { get; private set; }
         public IReadOnlyList<FossilDef> Fossils { get; private set; }
         public RitesConfig Rites { get; private set; }
+        public IReadOnlyList<AlmanacDef> Almanac { get; private set; }
         public DialogueData Dialogue { get; private set; }
 
         public IReadOnlyDictionary<string, ResourceDef> ResourcesById { get; private set; }
@@ -50,6 +52,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, BuildingDef> BuildingsById { get; private set; }
         public IReadOnlyDictionary<string, GearDef> GearById { get; private set; }
         public IReadOnlyDictionary<string, FossilDef> FossilsById { get; private set; }
+        public IReadOnlyDictionary<string, AlmanacDef> AlmanacById { get; private set; }
 
         private GameData()
         {
@@ -70,6 +73,7 @@ namespace Wildgrove.Data
                 Gear = JsonConvert.DeserializeObject<GearFile>(sources.GearJson, settings).Gear,
                 Fossils = JsonConvert.DeserializeObject<FossilsFile>(sources.FossilsJson, settings).Fossils,
                 Rites = JsonConvert.DeserializeObject<RitesConfig>(sources.RitesJson, settings),
+                Almanac = JsonConvert.DeserializeObject<AlmanacFile>(sources.AlmanacJson, settings).Nodes,
                 Dialogue = JsonConvert.DeserializeObject<DialogueData>(sources.DialogueJson, settings)
             };
 
@@ -96,11 +100,12 @@ namespace Wildgrove.Data
                 GearJson = File.ReadAllText(Path.Combine(directory, "gear.json")),
                 FossilsJson = File.ReadAllText(Path.Combine(directory, "fossils.json")),
                 RitesJson = File.ReadAllText(Path.Combine(directory, "rites.json")),
+                AlmanacJson = File.ReadAllText(Path.Combine(directory, "almanac.json")),
                 DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json"))
             };
         }
 
-        /// <summary>Fingerprint of the ten source files, stored on GameDataAsset to detect staleness.</summary>
+        /// <summary>Fingerprint of the eleven source files, stored on GameDataAsset to detect staleness.</summary>
         public static string ComputeSourceHash(GameDataSources sources)
         {
             // The separator ends in an escaped NUL: it can't appear in JSON
@@ -108,7 +113,8 @@ namespace Wildgrove.Data
             // sequence — a raw NUL byte here once made git and grep treat
             // this whole file as binary.
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
-                sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson, sources.DialogueJson);
+                sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson,
+                sources.AlmanacJson, sources.DialogueJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -143,6 +149,7 @@ namespace Wildgrove.Data
             BuildingsById = IndexById(Buildings, b => b.Id);
             GearById = IndexById(Gear, g => g.Id);
             FossilsById = IndexById(Fossils, f => f.Id);
+            AlmanacById = IndexById(Almanac, a => a.Id);
         }
 
         private static IReadOnlyDictionary<string, T> IndexById<T>(IEnumerable<T> items, System.Func<T, string> id)
@@ -193,6 +200,11 @@ namespace Wildgrove.Data
         private sealed class FossilsFile
         {
             public List<FossilDef> Fossils { get; set; }
+        }
+
+        private sealed class AlmanacFile
+        {
+            public List<AlmanacDef> Nodes { get; set; }
         }
     }
 }

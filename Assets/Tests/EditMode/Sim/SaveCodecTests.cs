@@ -364,6 +364,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresAlmanacOwnership()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.almanacNodeIds.Add("old-songs-i");
+
+            Assert.That(RoundTrip(state).almanacNodeIds, Is.EqualTo(new[] { "old-songs-i" }));
+        }
+
+        [Test]
+        public void TryMigrate_V11Save_GetsAnEmptyAlmanac()
+        {
+            // v11 predates the Almanac — nothing bought yet.
+            var save = new SaveData { version = 11, almanacNodeIds = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.almanacNodeIds, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V9Save_GetsEmptyRiteProgress()
         {
             // v9 predates the Rite runtime — nothing offered yet.

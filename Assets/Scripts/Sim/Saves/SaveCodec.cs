@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 11;
+        public const int CurrentVersion = 12;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -31,6 +31,7 @@ namespace Wildgrove.Sim.Saves
                 verdurePoints = state.verdurePoints,
                 renown = state.renown,
                 migrationCount = state.migrationCount,
+                almanacNodeIds = new List<string>(state.almanacNodeIds),
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -138,6 +139,9 @@ namespace Wildgrove.Sim.Saves
             state.verdurePoints = save.verdurePoints;
             state.renown = save.renown;
             state.migrationCount = save.migrationCount;
+            state.almanacNodeIds = save.almanacNodeIds != null
+                ? new List<string>(save.almanacNodeIds)
+                : new List<string>();
 
             state.resources.Clear();
             if (save.resources != null)
@@ -460,6 +464,12 @@ namespace Wildgrove.Sim.Saves
                         // v10 predates Migration — no camp has folded yet
                         // (migrationCount's missing-field zero).
                         save.version = 11;
+                        break;
+
+                    case 11:
+                        // v11 predates the Almanac — no nodes bought yet.
+                        save.almanacNodeIds = save.almanacNodeIds ?? new List<string>();
+                        save.version = 12;
                         break;
 
                     default:

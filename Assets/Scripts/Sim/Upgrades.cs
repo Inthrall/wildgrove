@@ -200,7 +200,7 @@ namespace Wildgrove.Sim
         public static double HaulCapacityMultiplier(GameState state, GameDataAsset data)
         {
             var mult = 1.0;
-            foreach (var effect in PurchasedEffects(state, data))
+            foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.HaulMult)
                 {
@@ -258,7 +258,7 @@ namespace Wildgrove.Sim
         public static double CraftSpeedMultiplier(GameState state, GameDataAsset data, string skill)
         {
             var mult = 1.0;
-            foreach (var effect in PurchasedEffects(state, data))
+            foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.CraftSpeedMult
                     && (string.IsNullOrEmpty(effect.skill) || effect.skill == skill))
@@ -308,7 +308,7 @@ namespace Wildgrove.Sim
         public static double DigSpeedMultiplier(GameState state, GameDataAsset data)
         {
             var mult = 1.0;
-            foreach (var effect in PurchasedEffects(state, data))
+            foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.DigSpeedMult)
                 {
@@ -342,7 +342,7 @@ namespace Wildgrove.Sim
         public static double OfflineCapHours(GameState state, GameDataAsset data)
         {
             var cap = data.economy.offline.baseCapHours;
-            foreach (var effect in PurchasedEffects(state, data))
+            foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.OfflineCapHours && effect.value > cap)
                 {
@@ -353,7 +353,7 @@ namespace Wildgrove.Sim
             return cap;
         }
 
-        /// <summary>Purchased upgrade effects plus completed fossils' — everything currently modifying the run.</summary>
+        /// <summary>Purchased upgrade effects, completed fossils', and owned Almanac nodes' — everything currently modifying the run.</summary>
         private static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
         {
             foreach (var effect in PurchasedEffects(state, data))
@@ -364,6 +364,19 @@ namespace Wildgrove.Sim
             foreach (var effect in Fossils.CompletedEffects(state, data))
             {
                 yield return effect;
+            }
+
+            foreach (var nodeId in state.almanacNodeIds)
+            {
+                if (!data.AlmanacById.TryGetValue(nodeId, out var node))
+                {
+                    continue;
+                }
+
+                foreach (var effect in node.effects)
+                {
+                    yield return effect;
+                }
             }
         }
 

@@ -139,6 +139,20 @@ namespace Wildgrove.Data
         public List<EffectData> effects = new List<EffectData>();
     }
 
+    /// <summary>One node of the Almanac — the permanent Verdure tree (design §7). Ownership survives Migration.</summary>
+    [Serializable]
+    public sealed class AlmanacNodeData
+    {
+        public string id;
+        public string displayName;
+        public double costVerdure;
+
+        /// <summary>Single prerequisite node id; null/empty for a root node.</summary>
+        public string requires;
+
+        public List<EffectData> effects = new List<EffectData>();
+    }
+
     [Serializable]
     public sealed class RiteSlotData
     {

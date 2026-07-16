@@ -25,6 +25,7 @@ namespace Wildgrove.Data
         public List<BuildingData> buildings = new List<BuildingData>();
         public List<GearData> gear = new List<GearData>();
         public List<FossilData> fossils = new List<FossilData>();
+        public List<AlmanacNodeData> almanac = new List<AlmanacNodeData>();
         public RitesBundle rites;
         public DialogueBundle dialogue;
 
@@ -35,6 +36,7 @@ namespace Wildgrove.Data
         private Dictionary<string, BuildingData> buildingsById;
         private Dictionary<string, GearData> gearById;
         private Dictionary<string, FossilData> fossilsById;
+        private Dictionary<string, AlmanacNodeData> almanacById;
 
         public IReadOnlyDictionary<string, ResourceData> ResourcesById => resourcesById ??= Index(resources, r => r.id);
         public IReadOnlyDictionary<string, ZoneData> ZonesById => zonesById ??= Index(zones, z => z.id);
@@ -43,6 +45,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, BuildingData> BuildingsById => buildingsById ??= Index(buildings, b => b.id);
         public IReadOnlyDictionary<string, GearData> GearById => gearById ??= Index(gear, g => g.id);
         public IReadOnlyDictionary<string, FossilData> FossilsById => fossilsById ??= Index(fossils, f => f.id);
+        public IReadOnlyDictionary<string, AlmanacNodeData> AlmanacById => almanacById ??= Index(almanac, a => a.id);
 
         public static GameDataAsset LoadFromResources()
         {
