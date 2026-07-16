@@ -61,6 +61,51 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void LayoutCentres_Crowded_WrapsToTwoRows()
+        {
+            var centres = WorldStrip.LayoutCentres(Strip, 15);
+
+            Assert.That(centres.Length, Is.EqualTo(15));
+            // Top band takes the larger half, bottom the rest.
+            var topY = Strip.yMin + Strip.height * 0.68f;
+            var bottomY = Strip.yMin + Strip.height * 0.32f;
+            for (var i = 0; i < 8; i++)
+            {
+                Assert.That(centres[i].y, Is.EqualTo(topY).Within(Tolerance), "top row " + i);
+            }
+
+            for (var i = 8; i < 15; i++)
+            {
+                Assert.That(centres[i].y, Is.EqualTo(bottomY).Within(Tolerance), "bottom row " + i);
+            }
+
+            // Every centre stays inside the strip.
+            foreach (var centre in centres)
+            {
+                Assert.That(Strip.Contains(centre), Is.True, centre.ToString());
+            }
+        }
+
+        [Test]
+        public void LayoutCentres_AtTheRowCap_StaysSingleRow()
+        {
+            var centres = WorldStrip.LayoutCentres(Strip, WorldStrip.MaxPerRow);
+
+            foreach (var centre in centres)
+            {
+                Assert.That(centre.y, Is.EqualTo(Strip.center.y).Within(Tolerance));
+            }
+        }
+
+        [Test]
+        public void Diameter_TwoRows_UsesPerRowHeightAndSpread()
+        {
+            // 15 sprites wrap to two rows of 8: height allows 400/2 * 0.6 = 120,
+            // the spread allows 880/9 * 0.7 ≈ 68.4 — spread wins.
+            Assert.That(WorldStrip.Diameter(Strip, 15), Is.EqualTo(880f / 9f * 0.7f).Within(Tolerance));
+        }
+
+        [Test]
         public void HitIndex_InsideRadius_ReturnsThatNode()
         {
             var centres = WorldStrip.LayoutCentres(Strip, 3);

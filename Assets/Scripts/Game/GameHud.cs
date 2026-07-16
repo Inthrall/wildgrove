@@ -27,6 +27,24 @@ namespace Wildgrove.Game
         private static readonly Color PanelColor = new Color(0.12f, 0.16f, 0.13f, 0.92f);
         private static readonly Color SectionHeaderColor = new Color(0.09f, 0.13f, 0.10f, 0.9f);
         private static readonly Color ZoneHeaderColor = new Color(0.15f, 0.20f, 0.16f, 0.75f);
+        private static readonly Color NavBarColor = new Color(0.07f, 0.10f, 0.08f, 0.95f);
+        private static readonly Color NavInactiveColor = new Color(0.16f, 0.21f, 0.17f, 1f);
+
+        // The bottom nav's pages. Every section belongs to one tab; the world
+        // strip and header stay global above them.
+        private const string TabGather = "gather";
+        private const string TabCraft = "craft";
+        private const string TabBuild = "build";
+        private const string TabCollect = "collect";
+        private const string TabRite = "rite";
+        private static readonly (string id, string label)[] Tabs =
+        {
+            (TabGather, "Gather"),
+            (TabCraft, "Craft"),
+            (TabBuild, "Build"),
+            (TabCollect, "Collect"),
+            (TabRite, "Rite"),
+        };
         private static readonly Color RowColor = new Color(0.18f, 0.23f, 0.19f, 0.90f);
         private static readonly Color RowSelectedColor = new Color(0.24f, 0.34f, 0.24f, 0.95f);
         private static readonly Color AccentColor = new Color(0.35f, 0.55f, 0.34f, 1f);
@@ -104,6 +122,11 @@ namespace Wildgrove.Game
         private GameObject _bondSheet;
         private readonly List<SectionView> _sections = new List<SectionView>();
         private readonly List<SectionView> _zoneGroups = new List<SectionView>();
+        private string _activeTab = TabGather;
+        private readonly List<NavTabView> _navTabs = new List<NavTabView>();
+        private GameObject _actionsRow;
+        private GameObject _hintGo;
+        private ScrollRect _sectionsScroll;
 
         private void Update()
         {
@@ -216,6 +239,7 @@ namespace Wildgrove.Game
             _museumRows.Clear();
             _sections.Clear();
             _zoneGroups.Clear();
+            _navTabs.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
             _bondSheet = null;
@@ -355,14 +379,17 @@ namespace Wildgrove.Game
                 panelParent = root.transform;
             }
 
+            // The header hugs its (wrapping) text — with eight skills and four
+            // currencies a fixed height clips off the screen edge instead.
             var headerPanel = CreatePanel("Header", topParent, PanelColor);
-            // Two lines when the XP system is live: currencies, then skill levels.
-            SetPreferredHeight(headerPanel, _loop.Data.economy?.xp != null ? 132f : 88f);
-            _headerLabel = CreateText("HeaderLabel", headerPanel.transform, 48, TextAnchor.MiddleLeft, TextColor);
-            var headerRect = _headerLabel.GetComponent<RectTransform>();
-            StretchFull(headerRect);
-            headerRect.offsetMin = new Vector2(24f, 0f);
-            headerRect.offsetMax = new Vector2(-24f, 0f);
+            var headerLayout = headerPanel.AddComponent<VerticalLayoutGroup>();
+            headerLayout.padding = new RectOffset(24, 24, 16, 16);
+            headerLayout.childControlWidth = true;
+            headerLayout.childControlHeight = true;
+            headerLayout.childForceExpandWidth = true;
+            headerLayout.childForceExpandHeight = false;
+            _headerLabel = CreateText("HeaderLabel", headerPanel.transform, 40, TextAnchor.MiddleLeft, TextColor);
+            _headerLabel.horizontalOverflow = HorizontalWrapMode.Wrap;
 
             // The deliberate gap between header and controls — WorldView lays
             // the node sprites out inside this rect.
@@ -396,7 +423,7 @@ namespace Wildgrove.Game
             var sections = BuildScrollSection(lowerPanel.transform, canvasGo.GetComponent<RectTransform>(),
                 _builtLandscape ? 0.68f : 0.45f);
 
-            _nodesSection = CreateSection(sections, "nodes", "Gathering");
+            _nodesSection = CreateSection(sections, "nodes", "Gathering", TabGather);
 
             var nodesPanel = CreatePanel("Nodes", sections, new Color(0f, 0f, 0f, 0f));
             var nodesLayout = nodesPanel.AddComponent<VerticalLayoutGroup>();
@@ -410,7 +437,7 @@ namespace Wildgrove.Game
 
             // Pristine windfalls (design §5) — hidden until the first Pristine
             // batch lands; the sale stays an explicit act, apart from Sell All.
-            _specimensSection = CreateSection(sections, "specimens", "Specimens");
+            _specimensSection = CreateSection(sections, "specimens", "Specimens", TabGather);
 
             var specimensPanel = CreatePanel("Specimens", sections, new Color(0f, 0f, 0f, 0f));
             var specimensLayout = specimensPanel.AddComponent<VerticalLayoutGroup>();
@@ -426,7 +453,7 @@ namespace Wildgrove.Game
 
             _selected = _loop.State.nodes.Count > 0 ? _loop.State.nodes[0] : null;
 
-            _upgradesSection = CreateSection(sections, "upgrades", "Upgrades");
+            _upgradesSection = CreateSection(sections, "upgrades", "Upgrades", TabBuild);
 
             var upgradesPanel = CreatePanel("Upgrades", sections, new Color(0f, 0f, 0f, 0f));
             var upgradesLayout = upgradesPanel.AddComponent<VerticalLayoutGroup>();
@@ -445,7 +472,7 @@ namespace Wildgrove.Game
 
             AttachSectionPanel(_upgradesSection, upgradesPanel);
 
-            _craftingSection = CreateSection(sections, "crafting", "Crafting");
+            _craftingSection = CreateSection(sections, "crafting", "Crafting", TabCraft);
 
             var craftingPanel = CreatePanel("Crafting", sections, new Color(0f, 0f, 0f, 0f));
             var craftingLayout = craftingPanel.AddComponent<VerticalLayoutGroup>();
@@ -465,7 +492,7 @@ namespace Wildgrove.Game
             AttachSectionPanel(_craftingSection, craftingPanel);
 
             // Dig sites (design §5) — appear as trail maps unlock them.
-            _excavationSection = CreateSection(sections, "excavation", "Excavation");
+            _excavationSection = CreateSection(sections, "excavation", "Excavation", TabCollect);
 
             var excavationPanel = CreatePanel("Excavation", sections, new Color(0f, 0f, 0f, 0f));
             var excavationLayout = excavationPanel.AddComponent<VerticalLayoutGroup>();
@@ -479,7 +506,7 @@ namespace Wildgrove.Game
 
             RebuildDigRows();
 
-            _buildingsSection = CreateSection(sections, "camp", "Camp");
+            _buildingsSection = CreateSection(sections, "camp", "Camp", TabBuild);
 
             var buildingsPanel = CreatePanel("Buildings", sections, new Color(0f, 0f, 0f, 0f));
             var buildingsLayout = buildingsPanel.AddComponent<VerticalLayoutGroup>();
@@ -499,7 +526,7 @@ namespace Wildgrove.Game
 
             // The Museum (design §5): set progress and the permanent bonuses
             // donations have banked. Hidden until specimens enter the picture.
-            _museumSection = CreateSection(sections, "museum", "Museum");
+            _museumSection = CreateSection(sections, "museum", "Museum", TabCollect);
 
             _museumPanel = CreatePanel("Museum", sections, new Color(0f, 0f, 0f, 0f));
             var museumLayout = _museumPanel.AddComponent<VerticalLayoutGroup>();
@@ -530,7 +557,7 @@ namespace Wildgrove.Game
             // gatherable, recipe, and companion, discovered by doing. The
             // hand-drawn plates and entry text arrive with the art/narrative
             // pass; this is the field-notes rendering of the same record.
-            _compendiumSection = CreateSection(sections, "compendium", "Compendium");
+            _compendiumSection = CreateSection(sections, "compendium", "Compendium", TabCollect);
 
             _compendiumPanel = CreatePanel("Compendium", sections, RowColor);
             var compendiumLayout = _compendiumPanel.AddComponent<VerticalLayoutGroup>();
@@ -545,7 +572,7 @@ namespace Wildgrove.Game
 
             // The warden's kit (design §4): three slots of crafted survival
             // gear. Rows show as their craft skill unlocks.
-            _kitSection = CreateSection(sections, "kit", "The Kit");
+            _kitSection = CreateSection(sections, "kit", "The Kit", TabCraft);
 
             var kitPanel = CreatePanel("Kit", sections, new Color(0f, 0f, 0f, 0f));
             var kitLayout = kitPanel.AddComponent<VerticalLayoutGroup>();
@@ -564,7 +591,7 @@ namespace Wildgrove.Game
 
             // The Rite (design §7): each unlocked zone's verse and its
             // offering slots. Static per data — Refresh drives visibility.
-            _riteSection = CreateSection(sections, "rite", "The Rite");
+            _riteSection = CreateSection(sections, "rite", "The Rite", TabRite);
 
             var ritePanel = CreatePanel("Rite", sections, new Color(0f, 0f, 0f, 0f));
             var riteLayout = ritePanel.AddComponent<VerticalLayoutGroup>();
@@ -615,7 +642,7 @@ namespace Wildgrove.Game
 
             // The Almanac (design §7): the permanent Verdure tree. Hidden
             // until the first Migration banks any Verdure.
-            _almanacSection = CreateSection(sections, "almanac", "Almanac");
+            _almanacSection = CreateSection(sections, "almanac", "Almanac", TabRite);
 
             _almanacPanel = CreatePanel("Almanac", sections, new Color(0f, 0f, 0f, 0f));
             var almanacLayout = _almanacPanel.AddComponent<VerticalLayoutGroup>();
@@ -633,9 +660,11 @@ namespace Wildgrove.Game
             AttachSectionPanel(_almanacSection, _almanacPanel);
 
             // Camp-wide actions side by side: the carrier gift (carriers are a
-            // camp pool, not per-node — design §8) and Sell All.
+            // camp pool, not per-node — design §8) and Sell All. Gather-page
+            // chrome — SwitchTab hides it on the other pages.
             var actionsRow = CreatePanel("Actions", lowerPanel.transform, new Color(0f, 0f, 0f, 0f));
-            SetPreferredHeight(actionsRow, 120f);
+            SetFixedHeight(actionsRow, 120f);
+            _actionsRow = actionsRow;
             var actionsLayout = actionsRow.AddComponent<HorizontalLayoutGroup>();
             actionsLayout.spacing = 12f;
             actionsLayout.childControlWidth = true;
@@ -662,7 +691,39 @@ namespace Wildgrove.Game
             var hint = CreateText("Hint", lowerPanel.transform, 28, TextAnchor.MiddleCenter,
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
             hint.text = "Tap a node, Space, or (A) to tend";
-            SetPreferredHeight(hint.gameObject, 44f);
+            SetFixedHeight(hint.gameObject, 44f);
+            _hintGo = hint.gameObject;
+
+            // The bottom nav: one page per pillar of the loop. The strip and
+            // header stay global; everything below the world lives on a page.
+            var navBar = CreatePanel("NavBar", lowerPanel.transform, NavBarColor);
+            SetFixedHeight(navBar, 104f);
+            var navLayout = navBar.AddComponent<HorizontalLayoutGroup>();
+            navLayout.padding = new RectOffset(8, 8, 8, 8);
+            navLayout.spacing = 8f;
+            navLayout.childControlWidth = true;
+            navLayout.childControlHeight = true;
+            navLayout.childForceExpandWidth = true;
+            navLayout.childForceExpandHeight = true;
+
+            foreach (var (id, label) in Tabs)
+            {
+                var tabId = id;
+                var (navButton, navLabel) = CreateButton("Tab_" + tabId, navBar.transform, label,
+                    () => SwitchTab(tabId));
+                navLabel.fontSize = 28;
+                _navTabs.Add(new NavTabView { id = tabId, button = navButton, label = navLabel });
+            }
+
+            // Apply the remembered page (also styles the nav and gather chrome).
+            var savedTab = PlayerPrefs.GetString("hud.activeTab", TabGather);
+            var known = false;
+            foreach (var (id, _) in Tabs)
+            {
+                known |= id == savedTab;
+            }
+
+            SwitchTab(known ? savedTab : TabGather);
         }
 
         /// <summary>
@@ -671,9 +732,10 @@ namespace Wildgrove.Game
         /// section across sessions — the §12 systems stack up to a dozen
         /// sections, and which ones a player keeps open is theirs to choose.
         /// </summary>
-        private SectionView CreateSection(Transform parent, string id, string title)
+        private SectionView CreateSection(Transform parent, string id, string title, string tab)
         {
             var view = CreateFoldHeader(parent, id, title, 34, 56f, SectionHeaderColor);
+            view.tab = tab;
             _sections.Add(view);
             return view;
         }
@@ -709,10 +771,10 @@ namespace Wildgrove.Game
         }
 
         /// <summary>Bind the panel a section header folds, applying any remembered fold.</summary>
-        private static void AttachSectionPanel(SectionView section, GameObject panel)
+        private void AttachSectionPanel(SectionView section, GameObject panel)
         {
             section.panel = panel;
-            panel.SetActive(section.header.activeSelf && !section.collapsed);
+            ApplySectionState(section);
         }
 
         private void ToggleSection(SectionView section)
@@ -720,9 +782,22 @@ namespace Wildgrove.Game
             section.collapsed = !section.collapsed;
             PlayerPrefs.SetInt(CollapseKey(section.id), section.collapsed ? 1 : 0);
             SetSectionTitle(section, section.title);
+            ApplySectionState(section);
+        }
+
+        /// <summary>
+        /// Resolve a section's on-screen state from its three inputs: the game
+        /// state (feature exists), the active tab (its page is open — tabless
+        /// views like the zone groups show on any), and the player's fold.
+        /// </summary>
+        private void ApplySectionState(SectionView section)
+        {
+            var visible = section.stateVisible
+                          && (section.tab == null || section.tab == _activeTab);
+            section.header.SetActive(visible);
             if (section.panel != null)
             {
-                section.panel.SetActive(section.header.activeSelf && !section.collapsed);
+                section.panel.SetActive(visible && !section.collapsed);
             }
         }
 
@@ -735,14 +810,75 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Game-state visibility for a whole section: the header shows or hides
-        /// with the feature, the panel additionally honours the fold.
+        /// with the feature; the active tab and the fold also get their say.
         /// </summary>
-        private static void SetSectionVisible(SectionView section, bool visible)
+        private void SetSectionVisible(SectionView section, bool visible)
         {
-            section.header.SetActive(visible);
-            if (section.panel != null)
+            section.stateVisible = visible;
+            ApplySectionState(section);
+        }
+
+        /// <summary>Open a nav page: sections filter to it, gather-only chrome follows, scroll resets.</summary>
+        private void SwitchTab(string tabId)
+        {
+            _activeTab = tabId;
+            PlayerPrefs.SetString("hud.activeTab", tabId);
+            foreach (var section in _sections)
             {
-                section.panel.SetActive(visible && !section.collapsed);
+                ApplySectionState(section);
+            }
+
+            // The camp-wide actions and the tend hint belong to the gather
+            // loop — the other pages keep their space.
+            var gather = tabId == TabGather;
+            _actionsRow.SetActive(gather);
+            _hintGo.SetActive(gather);
+
+            foreach (var nav in _navTabs)
+            {
+                StyleNavTab(nav, nav.id == tabId);
+            }
+
+            if (_sectionsScroll != null)
+            {
+                _sectionsScroll.verticalNormalizedPosition = 1f;
+            }
+        }
+
+        private void StyleNavTab(NavTabView nav, bool active)
+        {
+            var baseColor = active ? AccentColor : NavInactiveColor;
+            nav.button.image.color = baseColor;
+            var colors = nav.button.colors;
+            colors.normalColor = baseColor;
+            colors.highlightedColor = new Color(baseColor.r + 0.08f, baseColor.g + 0.08f, baseColor.b + 0.08f, 1f);
+            colors.pressedColor = new Color(baseColor.r - 0.05f, baseColor.g - 0.05f, baseColor.b - 0.05f, 1f);
+            colors.selectedColor = baseColor;
+            nav.button.colors = colors;
+            nav.label.color = active
+                ? TextColor
+                : new Color(TextColor.r, TextColor.g, TextColor.b, 0.65f);
+        }
+
+        /// <summary>A page with nothing to show keeps its button but greys it out (gather always lives).</summary>
+        private void UpdateNavBar()
+        {
+            foreach (var nav in _navTabs)
+            {
+                var hasContent = nav.id == TabGather;
+                if (!hasContent)
+                {
+                    foreach (var section in _sections)
+                    {
+                        if (section.tab == nav.id && section.stateVisible)
+                        {
+                            hasContent = true;
+                            break;
+                        }
+                    }
+                }
+
+                nav.button.interactable = hasContent || nav.id == _activeTab;
             }
         }
 
@@ -801,6 +937,7 @@ namespace Wildgrove.Game
             scroll.vertical = true;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40f;
+            _sectionsScroll = scroll;
 
             return contentGo.transform;
         }
@@ -2115,6 +2252,8 @@ namespace Wildgrove.Game
                                       + amberEconomy.timeSkipCostAmber + " Amber</size>";
                 _timeSkipButton.interactable = _loop.CanTimeSkip();
             }
+
+            UpdateNavBar();
         }
 
         /// <summary>
@@ -2248,6 +2387,24 @@ namespace Wildgrove.Game
             element.minHeight = height;
         }
 
+        /// <summary>
+        /// A hard height: preferred, min, AND zero flexible — rows that must
+        /// never absorb layout slack (actions, nav) use this so spare panel
+        /// space can't balloon them.
+        /// </summary>
+        private static void SetFixedHeight(GameObject go, float height)
+        {
+            var element = go.GetComponent<LayoutElement>();
+            if (element == null)
+            {
+                element = go.AddComponent<LayoutElement>();
+            }
+
+            element.preferredHeight = height;
+            element.minHeight = height;
+            element.flexibleHeight = 0f;
+        }
+
         private static void SetPreferredWidth(GameObject go, float width)
         {
             var element = go.GetComponent<LayoutElement>();
@@ -2294,10 +2451,19 @@ namespace Wildgrove.Game
         {
             public string id;
             public string title;
+            public string tab;
             public GameObject header;
             public Text headerLabel;
             public GameObject panel;
             public bool collapsed;
+            public bool stateVisible = true;
+        }
+
+        private sealed class NavTabView
+        {
+            public string id;
+            public Button button;
+            public Text label;
         }
 
         private sealed class RowView
