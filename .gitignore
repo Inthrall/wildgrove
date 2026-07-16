@@ -46,6 +46,9 @@ sysinfo.txt
 *.aab
 *.unitypackage
 *.app
+[Bb]uilds/
+# Native (frame-pacing/swappy) build temp that local Android builds drop in the project root
+.utmp/
 
 # Crashlytics
 crashlytics-build.properties
