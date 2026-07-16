@@ -1,0 +1,17 @@
+{
+  "$comment": "Bonded familiars (design doc §7): the rare exception to the Migration reset — earned, never bought. Each bond source grants exactly one permanent companion; bonds are role-locked (a carrier bonds as a carrier), work any zone, and sit outside the gift count and its cost curve. Earned state is DERIVED from the source (Museum donations and Almanac nodes both survive Migration), so a bond crosses with you for free. MVP: two bondable — more by 1.1.",
+  "bonds": [
+    {
+      "id": "sootwing",
+      "name": "Sootwing, a pack raven",
+      "role": "carrier",
+      "source": { "type": "museumSet", "id": "meadow-blooms" }
+    },
+    {
+      "id": "burr",
+      "name": "Burr, a meadow vole",
+      "role": "gatherer",
+      "source": { "type": "almanacNode", "id": "old-friend" }
+    }
+  ]
+}

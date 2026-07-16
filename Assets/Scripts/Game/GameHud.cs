@@ -887,7 +887,12 @@ namespace Wildgrove.Game
             var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
             info.GetComponent<LayoutElement>().flexibleWidth = 1f;
             info.horizontalOverflow = HorizontalWrapMode.Wrap;
-            info.text = node.displayName + "\n<size=24>" + EffectSummary(node.effects) + "</size>";
+            // A bond node's promise is the companion itself, not an effect line.
+            var nodeBond = Bonds.BondForSource(_loop.Data, "almanacNode", node.id);
+            var nodeSummary = nodeBond != null
+                ? nodeBond.displayName + " crosses every Migration with you"
+                : EffectSummary(node.effects);
+            info.text = node.displayName + "\n<size=24>" + nodeSummary + "</size>";
 
             var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.BuyAlmanacNode(node));
             SetPreferredWidth(buy.gameObject, 200f);
@@ -1246,10 +1251,12 @@ namespace Wildgrove.Game
             }
 
             var carrierSlots = _loop.CarrierSlots();
+            var bondedCarriers = Bonds.BondedCarriers(state, _loop.Data);
             _headerLabel.text = "Coin " + NumberFormat.Short(state.coin)
                                 + "     Familiars " + state.TotalFamiliars()
                                 + "     Carriers " + state.carrierCount
                                 + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty)
+                                + (bondedCarriers > 0 ? " (+" + bondedCarriers + " bonded)" : string.Empty)
                                 + (state.renown > BigDouble.Zero ? "     Renown " + NumberFormat.Short(state.renown) : string.Empty);
 
             // The skills readout (design §4): each unlocked skill's level.
@@ -1267,7 +1274,7 @@ namespace Wildgrove.Game
                 // While a burst is live the row shows the effective rate — the
                 // familiars' bursted yield plus the warden's hand-gather — so
                 // tending visibly earns even on a node with no familiars.
-                var rate = Simulation.YieldPerSecond(node, state, economy);
+                var rate = Simulation.YieldPerSecond(node, state, _loop.Data, economy);
                 var tending = string.Empty;
                 if (node.tendBurstRemaining > 0.0 && economy.tending != null)
                 {
@@ -1288,9 +1295,11 @@ namespace Wildgrove.Game
                 var fineHeld = fine > BigDouble.Zero
                     ? " (+" + NumberFormat.Short(fine) + " fine)"
                     : string.Empty;
+                var bondedHere = Bonds.BondedGatherersAt(state, _loop.Data, node);
                 row.info.text = PrettyName(node.resourceId)
                                 + "\n<size=24>" + NumberFormat.Short(held) + " held" + fineHeld + basket + "</size>"
                                 + "\n<size=24>" + node.familiarCount + " familiars"
+                                + (bondedHere > 0 ? " (+" + bondedHere + " bonded)" : string.Empty)
                                 + "  •  " + NumberFormat.Rate(rate) + "/s" + tending + mastery + "</size>";
 
                 // Gatherer gifts cost the node's own resource, from camp stock
@@ -1351,12 +1360,17 @@ namespace Wildgrove.Game
                 foreach (var row in _museumRows)
                 {
                     var complete = Museum.IsSetComplete(state, row.set);
+                    var bond = Bonds.BondForSource(_loop.Data, "museumSet", row.set.id);
+                    var bondLine = bond == null
+                        ? string.Empty
+                        : "\n<size=24>" + bond.displayName + (complete ? " — bonded, at your side for good" : " — bonds when the set completes") + "</size>";
                     row.info.text = row.set.displayName
                                     + (complete
                                         ? "  <size=24>— complete</size>"
                                         : "  <size=24>— " + Museum.DonatedEntryCount(state, row.set)
                                           + "/" + row.set.entries.Count + " donated</size>")
-                                    + "\n<size=24>" + EffectSummary(row.set.effects) + "</size>";
+                                    + "\n<size=24>" + EffectSummary(row.set.effects) + "</size>"
+                                    + bondLine;
                 }
             }
 

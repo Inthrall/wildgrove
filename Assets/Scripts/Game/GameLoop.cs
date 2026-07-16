@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BreakInfinity;
 using UnityEngine;
 using Wildgrove.Data;
@@ -508,12 +509,14 @@ namespace Wildgrove.Game
         /// <summary>Donate one Pristine specimen to the Museum (design §5 — permanence over the windfall). Returns false when no set wants it or none is held.</summary>
         public bool DonatePristine(string resourceId)
         {
+            var bondsBefore = EarnedBondIds();
             if (!Museum.TryDonate(State, Data, resourceId))
             {
                 return false;
             }
 
             Telemetry.LogEvent("specimen_donated", ("resource", resourceId));
+            ReportNewBonds(bondsBefore);
             return true;
         }
 
@@ -538,6 +541,7 @@ namespace Wildgrove.Game
         /// <summary>Buy an Almanac node with unallocated Verdure (permanent — survives Migration). Returns false when it can't be bought.</summary>
         public bool BuyAlmanacNode(AlmanacNodeData node)
         {
+            var bondsBefore = EarnedBondIds();
             if (!Almanac.TryBuy(State, Data, node))
             {
                 return false;
@@ -546,7 +550,36 @@ namespace Wildgrove.Game
             Telemetry.LogEvent("almanac_node_bought",
                 ("node", node.id),
                 ("verdure_cost", node.costVerdure));
+            ReportNewBonds(bondsBefore);
             return true;
+        }
+
+        private HashSet<string> EarnedBondIds()
+        {
+            var earned = new HashSet<string>();
+            foreach (var bond in Bonds.Earned(State, Data))
+            {
+                earned.Add(bond.id);
+            }
+
+            return earned;
+        }
+
+        /// <summary>
+        /// A bond is earned the moment its source completes — an event worth
+        /// the telemetry (design lean: rare enough that each one is one).
+        /// Earned state is derived, so diffing against the pre-action set
+        /// finds exactly the newly bonded companions.
+        /// </summary>
+        private void ReportNewBonds(HashSet<string> bondsBefore)
+        {
+            foreach (var bond in Bonds.Earned(State, Data))
+            {
+                if (!bondsBefore.Contains(bond.id))
+                {
+                    Telemetry.LogEvent("familiar_bonded", ("bond", bond.id), ("role", bond.role));
+                }
+            }
         }
 
         /// <summary>True when the Rite has consented — the Migrate button's visibility.</summary>

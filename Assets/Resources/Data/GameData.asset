@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 30f29eaa05b8ec29302cadd3208cdf40c35c9d28a8e7a2ee4301468ead3fc99d
+  sourceHash: 9a9afef4de6eec540d90776e5a9df68da3ae8c567914f518e2b0f1e72076648b
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1320,6 +1320,11 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.01
+  - id: old-friend
+    displayName: The Old Friend
+    costVerdure: 12
+    requires: 
+    effects: []
   - id: long-watch-iii
     displayName: The Long Watch III
     costVerdure: 16
@@ -1396,6 +1401,19 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.15
+  bonds:
+  - id: sootwing
+    displayName: Sootwing, a pack raven
+    role: carrier
+    source:
+      type: museumSet
+      id: meadow-blooms
+  - id: burr
+    displayName: Burr, a meadow vole
+    role: gatherer
+    source:
+      type: almanacNode
+      id: old-friend
   rites:
     chooseCount: 3
     generator:

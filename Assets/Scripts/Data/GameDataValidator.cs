@@ -50,6 +50,7 @@ namespace Wildgrove.Data
             ValidateFossils(data, resourceIds, issues);
             ValidateAlmanac(data, resourceIds, issues);
             ValidateMuseum(data, resourceIds, issues);
+            ValidateBonds(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
@@ -517,6 +518,45 @@ namespace Wildgrove.Data
                     }
 
                     data.AlmanacById.TryGetValue(current.Requires, out current);
+                }
+            }
+        }
+
+        private static readonly HashSet<string> KnownBondRoles = new HashSet<string> { "gatherer", "carrier" };
+        private static readonly HashSet<string> KnownBondSourceTypes = new HashSet<string> { "museumSet", "almanacNode" };
+
+        private static void ValidateBonds(GameData data, List<string> issues)
+        {
+            CheckIds(data.Bonds.Select(b => b.Id), "bond", issues);
+
+            var seenSources = new HashSet<string>();
+            foreach (var bond in data.Bonds)
+            {
+                if (!KnownBondRoles.Contains(bond.Role))
+                {
+                    issues.Add($"Bond '{bond.Id}' has unknown role '{bond.Role}'");
+                }
+
+                if (bond.Source == null || !KnownBondSourceTypes.Contains(bond.Source.Type))
+                {
+                    issues.Add($"Bond '{bond.Id}' has an unknown source type '{bond.Source?.Type}'");
+                    continue;
+                }
+
+                var exists = bond.Source.Type == "museumSet"
+                    ? data.MuseumSetsById.ContainsKey(bond.Source.Id ?? string.Empty)
+                    : data.AlmanacById.ContainsKey(bond.Source.Id ?? string.Empty);
+                if (!exists)
+                {
+                    issues.Add($"Bond '{bond.Id}' source references unknown {bond.Source.Type} '{bond.Source.Id}'");
+                }
+
+                // Each bond source grants exactly ONE permanent companion
+                // (design §7) — two bonds on one source silently halves the
+                // reward the second one promises.
+                if (!seenSources.Add(bond.Source.Type + ":" + bond.Source.Id))
+                {
+                    issues.Add($"Bond '{bond.Id}' shares its source {bond.Source.Type} '{bond.Source.Id}' with another bond — one companion per source");
                 }
             }
         }

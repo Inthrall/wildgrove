@@ -193,6 +193,31 @@ namespace Wildgrove.Data
     }
 
     [Serializable]
+    public sealed class BondSourceData
+    {
+        /// <summary>"museumSet" or "almanacNode".</summary>
+        public string type;
+        public string id;
+    }
+
+    /// <summary>
+    /// A bonded familiar (design §7): a permanent, role-locked companion
+    /// earned from exactly one source, crossing every Migration. Earned
+    /// state is derived from the source — never stored.
+    /// </summary>
+    [Serializable]
+    public sealed class BondData
+    {
+        public string id;
+        public string displayName;
+
+        /// <summary>"gatherer" or "carrier".</summary>
+        public string role;
+
+        public BondSourceData source;
+    }
+
+    [Serializable]
     public sealed class RiteGeneratorConfigData
     {
         public double demandGrowth;

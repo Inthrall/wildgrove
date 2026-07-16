@@ -18,6 +18,7 @@ namespace Wildgrove.Data
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
             asset.almanac = data.Almanac.Select(MapAlmanacNode).ToList();
             asset.museumSets = data.MuseumSets.Select(MapMuseumSet).ToList();
+            asset.bonds = data.Bonds.Select(MapBond).ToList();
             asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);
         }
@@ -121,6 +122,17 @@ namespace Wildgrove.Data
                 displayName = m.Name,
                 entries = new List<string>(m.Entries),
                 effects = m.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static BondData MapBond(BondDef b)
+        {
+            return new BondData
+            {
+                id = b.Id,
+                displayName = b.Name,
+                role = b.Role,
+                source = b.Source == null ? null : new BondSourceData { type = b.Source.Type, id = b.Source.Id }
             };
         }
 

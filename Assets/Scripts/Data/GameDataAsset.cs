@@ -27,6 +27,7 @@ namespace Wildgrove.Data
         public List<FossilData> fossils = new List<FossilData>();
         public List<AlmanacNodeData> almanac = new List<AlmanacNodeData>();
         public List<MuseumSetData> museumSets = new List<MuseumSetData>();
+        public List<BondData> bonds = new List<BondData>();
         public RitesBundle rites;
         public DialogueBundle dialogue;
 

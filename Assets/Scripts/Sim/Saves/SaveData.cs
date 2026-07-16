@@ -40,6 +40,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v14+: resources whose Pristine specimen was donated to the Museum (absent before the Museum — nothing donated).</summary>
         public List<string> donatedResources = new List<string>();
 
+        /// <summary>v15+: the node the bonded gatherers are posted at (null = the first node; earned bonds are derived, never saved).</summary>
+        public string bondedPostNodeId;
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 

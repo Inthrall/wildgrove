@@ -195,6 +195,36 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_BondedFamiliarsCross_ButThePostResets()
+        {
+            _data.museumSets = new List<MuseumSetData>
+            {
+                new MuseumSetData
+                {
+                    id = "meadow-blooms", displayName = "Meadow Blooms",
+                    entries = new List<string> { "berries" },
+                },
+            };
+            _data.bonds = new List<BondData>
+            {
+                new BondData
+                {
+                    id = "sootwing", displayName = "Sootwing, a pack raven", role = "carrier",
+                    source = new BondSourceData { type = "museumSet", id = "meadow-blooms" },
+                },
+            };
+            var state = StateWithTheRiteSung();
+            state.donatedResources.Add("berries");
+            state.bondedPostNodeId = state.nodes[0].id;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(Bonds.BondedCarriers(next, _data), Is.EqualTo(1),
+                "the bond is derived from the donations the fold carries — Sootwing crosses too");
+            Assert.That(next.bondedPostNodeId, Is.Null, "the post resets with the camp");
+        }
+
+        [Test]
         public void Migrate_KeepsTheAlmanac_AndItsEffects()
         {
             _data.almanac = new List<AlmanacNodeData>

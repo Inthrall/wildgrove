@@ -417,6 +417,27 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheBondedPost()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.bondedPostNodeId = state.nodes[0].id;
+
+            Assert.That(RoundTrip(state).bondedPostNodeId, Is.EqualTo(state.nodes[0].id));
+        }
+
+        [Test]
+        public void TryMigrate_V14Save_HasNoBondedPost()
+        {
+            // v14 predates bonded familiars; earned bonds are derived, never
+            // stored, so only the post needs a default.
+            var save = new SaveData { version = 14, bondedPostNodeId = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.bondedPostNodeId, Is.Null);
+        }
+
+        [Test]
         public void TryMigrate_V13Save_GetsAnEmptyMuseum()
         {
             // v13 predates the Museum — nothing donated yet.

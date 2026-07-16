@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 14;
+        public const int CurrentVersion = 15;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -33,6 +33,7 @@ namespace Wildgrove.Sim.Saves
                 migrationCount = state.migrationCount,
                 almanacNodeIds = new List<string>(state.almanacNodeIds),
                 donatedResources = new List<string>(state.donatedResources),
+                bondedPostNodeId = state.bondedPostNodeId,
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -151,6 +152,7 @@ namespace Wildgrove.Sim.Saves
             state.donatedResources = save.donatedResources != null
                 ? new List<string>(save.donatedResources)
                 : new List<string>();
+            state.bondedPostNodeId = save.bondedPostNodeId;
 
             state.resources.Clear();
             if (save.resources != null)
@@ -505,6 +507,13 @@ namespace Wildgrove.Sim.Saves
                         // v13 predates the Museum — nothing donated yet.
                         save.donatedResources = save.donatedResources ?? new List<string>();
                         save.version = 14;
+                        break;
+
+                    case 14:
+                        // v14 predates bonded familiars — no post recorded;
+                        // earned bonds themselves are derived, never stored,
+                        // so they need no migration at all.
+                        save.version = 15;
                         break;
 
                     default:

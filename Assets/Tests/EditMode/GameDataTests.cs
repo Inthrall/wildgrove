@@ -33,6 +33,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Gear, Is.Not.Empty);
             Assert.That(data.Fossils, Is.Not.Empty);
             Assert.That(data.Rites.Rites, Is.Not.Empty);
+            Assert.That(data.Bonds, Is.Not.Empty);
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
             Assert.That(data.Dialogue.Verses, Is.Not.Empty);
         }
@@ -73,6 +74,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.MuseumSetsById["river-catch"].Entries, Has.Count.EqualTo(4));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(2.5), "the run-2+ generator's d in baseQty · d^m");
+            Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
+            Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("museumSet"));
+            Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
+            Assert.That(data.AlmanacById["old-friend"].Effects, Is.Empty, "the bond node's promise is the companion, not an effect");
             Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
             Assert.That(data.Rites.Generator.OffSpotlightPremium, Is.EqualTo(1.5));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
@@ -444,6 +449,32 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("'bogus-find' is not a gathered resource")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_BondWithUnknownSource_IsReported()
+        {
+            var sources = LoadSources();
+            sources.BondsJson = sources.BondsJson.Replace(
+                "\"source\": { \"type\": \"museumSet\", \"id\": \"meadow-blooms\" }",
+                "\"source\": { \"type\": \"museumSet\", \"id\": \"lost-set\" }");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("unknown museumSet 'lost-set'")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_BondWithUnknownRole_IsReported()
+        {
+            var sources = LoadSources();
+            sources.BondsJson = sources.BondsJson.Replace(
+                "\"role\": \"carrier\",",
+                "\"role\": \"warden\",");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("unknown role 'warden'")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

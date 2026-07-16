@@ -159,6 +159,21 @@ they're easy to find and delete when resolved.
   verse's reveal still count (lifetime, no per-verse baseline), and partial
   fossil FRAGMENTS survive Migration alongside completed fossils ("every
   fossil"). (`Wildgrove.Sim/Rite.cs`, `RiteGenerator.cs`, `Migration.cs`)
+- **Bonded familiars are live; species abilities are not.** Two MVP bonds
+  (design §7): Sootwing, a pack raven (carrier) bonds when the Meadow Blooms
+  Museum set completes; Burr, a meadow vole (gatherer) crosses with the
+  Old Friend Almanac node (12 Verdure, deliberately effect-less — the
+  companion IS the effect). Earned state is DERIVED from the source — never
+  stored — so bonds survive Migration and stale saves for free. Role rules:
+  the carrier hauls with the fleet outside carrierCount, its slots, and the
+  gift curve; the gatherer works the warden's last-tended node (the first
+  node until the first tend of a run — an interpretation of "work any zone"),
+  outside the flock count and cap. Interpretations to confirm: the follow-
+  the-warden post rule, bond sources chosen (first Museum set + a dedicated
+  Almanac node), 12-Verdure pricing against the "1 bond per 2–3 Migrations"
+  lean. Waiting: species abilities (v1.1), more bonds, a bonding
+  moment/celebration in the HUD (currently just rows changing text), world
+  sprites for companions. (`Wildgrove.Sim/Bonds.cs`, `design/data/bonds.json`)
 - **Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
   `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
   spoilage system for them to modify — both are recorded on the worn kit and

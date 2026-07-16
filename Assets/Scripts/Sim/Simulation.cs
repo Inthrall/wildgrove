@@ -68,7 +68,7 @@ namespace Wildgrove.Sim
                 if (node.familiarCount > 0)
                 {
                     var normalSeconds = deltaSeconds - burstSeconds;
-                    var baseRate = YieldPerSecond(node, state, economy);
+                    var baseRate = YieldPerSecond(node, state, data, economy);
                     var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
 
                     // XP from every action (design §4) — credited on the gross
@@ -140,7 +140,10 @@ namespace Wildgrove.Sim
         /// </summary>
         private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
         {
-            if (state.carrierCount <= 0)
+            // Bonded carriers (design §7) haul with the fleet from minute one
+            // of every run — outside carrierCount, its slots, and its gifts.
+            var carriers = state.carrierCount + Bonds.BondedCarriers(state, data);
+            if (carriers <= 0)
             {
                 return;
             }
@@ -152,7 +155,7 @@ namespace Wildgrove.Sim
             }
 
             var load = new BigDouble(hauling.baseCarryCapacity) * Upgrades.HaulCapacityMultiplier(state, data);
-            var interval = hauling.tripSeconds / state.carrierCount;
+            var interval = hauling.tripSeconds / carriers;
             if (interval <= 0.0 || load <= BigDouble.Zero)
             {
                 // Degenerate hand-built data (the validator rejects real
@@ -253,6 +256,7 @@ namespace Wildgrove.Sim
             }
 
             Tend(node, data.economy);
+            state.bondedPostNodeId = node.id;
             Rite.RecordDeed(state, data, "tend");
         }
 
@@ -352,10 +356,17 @@ namespace Wildgrove.Sim
         /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, EconomyData economy)
         {
+            return YieldPerSecond(node, state, null, economy);
+        }
+
+        /// <summary>Data-aware overload: bonded gatherers (design §7) work at the warden's side, outside the flock count.</summary>
+        public static BigDouble YieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
+        {
             var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * Mastery.Level(node, economy);
             var global = 1.0 + economy.verdure.yieldBonusPerPoint * state.verdurePoints;
+            var familiars = node.familiarCount + (data != null ? Bonds.BondedGatherersAt(state, data, node) : 0);
 
-            return new BigDouble(node.familiarCount) * node.yieldMultiplier * masteryBonus * global;
+            return new BigDouble(familiars) * node.yieldMultiplier * masteryBonus * global;
         }
     }
 

@@ -34,6 +34,13 @@ namespace Wildgrove.Sim
         /// <summary>Resources whose Pristine specimen has been donated to the Museum (design §5) — permanent, surviving every Migration.</summary>
         public List<string> donatedResources = new List<string>();
 
+        /// <summary>
+        /// Where the bonded gatherers are posted: the node the warden last
+        /// tended (they follow the warden's attention). Null until the first
+        /// tend of a run — bonds default to the first node.
+        /// </summary>
+        public string bondedPostNodeId;
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 
