@@ -19,8 +19,8 @@ on:
   workflow_dispatch:
     inputs:
       versionCode:
-        description: "Android versionCode - must be higher than the highest already uploaded to Play (see Play Console)"
-        required: true
+        description: "Android versionCode (blank = auto: highest android-v* GitHub release + 1). Must be higher than the highest already uploaded to Play"
+        required: false
         type: string
       versionName:
         description: "versionName (optional; defaults to 0.1.<versionCode>)"
@@ -63,11 +63,28 @@ jobs:
         with:
           lfs: true
 
+      - name: Resolve version code
+        id: vc
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          vc="${{ inputs.versionCode }}"
+          if [ -z "$vc" ]; then
+            # Auto: one past the highest android-v* GitHub release. Every Play
+            # upload goes through this workflow (which tags a release), so the
+            # tags track Play's highest versionCode.
+            latest=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' \
+              | sed -n 's/^android-v\([0-9]\{1,\}\)$/\1/p' | sort -n | tail -1)
+            vc=$(( ${latest:-0} + 1 ))
+          fi
+          echo "Resolved versionCode: $vc"
+          echo "versionCode=$vc" >> "$GITHUB_OUTPUT"
+
       - name: Resolve version name
         id: ver
         run: |
           vn="${{ inputs.versionName }}"
-          if [ -z "$vn" ]; then vn="0.1.${{ inputs.versionCode }}"; fi
+          if [ -z "$vn" ]; then vn="0.1.${{ steps.vc.outputs.versionCode }}"; fi
           echo "versionName=$vn" >> "$GITHUB_OUTPUT"
 
       # Same cache key family as android-build.yml so release builds reuse the
@@ -92,7 +109,7 @@ jobs:
           androidSymbolType: debugging
           versioning: Custom
           version: ${{ steps.ver.outputs.versionName }}
-          androidVersionCode: ${{ inputs.versionCode }}
+          androidVersionCode: ${{ steps.vc.outputs.versionCode }}
           androidKeystoreName: wildgrove-upload.keystore
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -102,12 +119,12 @@ jobs:
       - name: Rename AAB and locate symbols
         id: files
         run: |
-          sudo mv build/Android/Android.aab "build/Android/Wildgrove-v${{ inputs.versionCode }}.aab"
+          sudo mv build/Android/Android.aab "build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.aab"
           # Unity names the symbols archive after the build + version; resolve by glob.
           sym=$(ls build/Android/*.symbols.zip 2>/dev/null | head -1 || true)
           if [ -n "$sym" ]; then
-            sudo mv "$sym" "build/Android/Wildgrove-v${{ inputs.versionCode }}.symbols.zip"
-            echo "symbols=build/Android/Wildgrove-v${{ inputs.versionCode }}.symbols.zip" >> "$GITHUB_OUTPUT"
+            sudo mv "$sym" "build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.symbols.zip"
+            echo "symbols=build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.symbols.zip" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::No symbols.zip produced by the build."
             echo "symbols=" >> "$GITHUB_OUTPUT"
@@ -120,15 +137,15 @@ jobs:
           # Idempotent: re-dispatching a versionCode replaces the assets on the
           # existing release instead of dying on the duplicate tag (which would
           # also block the Play upload step below).
-          tag="android-v${{ inputs.versionCode }}"
+          tag="android-v${{ steps.vc.outputs.versionCode }}"
           if gh release view "$tag" > /dev/null 2>&1; then
             gh release upload "$tag" \
-              build/Android/Wildgrove-v${{ inputs.versionCode }}.* \
+              build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.* \
               --clobber
           else
             gh release create "$tag" \
-              build/Android/Wildgrove-v${{ inputs.versionCode }}.* \
-              --title "Android v${{ inputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
+              build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.* \
+              --title "Android v${{ steps.vc.outputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
               --notes "Signed Android App Bundle of Wildgrove.
 
           Uploaded to Play track: ${{ inputs.uploadToPlay && inputs.track || 'not uploaded' }}."
@@ -140,7 +157,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.inthrall.wildgrove
-          releaseFiles: build/Android/Wildgrove-v${{ inputs.versionCode }}.aab
+          releaseFiles: build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.aab
           debugSymbols: ${{ steps.files.outputs.symbols }}
           tracks: ${{ inputs.track }}
           status: completed
