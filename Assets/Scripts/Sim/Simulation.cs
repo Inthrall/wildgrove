@@ -237,6 +237,23 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// <see cref="Tend(NodeState, EconomyData)"/> plus the deed record —
+        /// tending is a warden act, and the Rite's deed slots count it
+        /// (design §7). The driver calls this; the state-less overload stays
+        /// for burst-maths tests.
+        /// </summary>
+        public static void Tend(GameState state, GameDataAsset data, NodeState node)
+        {
+            if (state == null || data == null || node == null || data.economy?.tending == null)
+            {
+                return;
+            }
+
+            Tend(node, data.economy);
+            Rite.RecordDeed(state, data, "tend");
+        }
+
+        /// <summary>
         /// Credit time away since the last session, per design doc §8:
         /// offlineEarn = rate · min(t, cap). Real elapsed time is capped at the
         /// offline cap (base cap hours, raised by any offlineCapHours upgrade

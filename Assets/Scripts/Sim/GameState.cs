@@ -19,6 +19,15 @@ namespace Wildgrove.Sim
         /// <summary>Meta currency carried across migrations; drives the global yield bonus.</summary>
         public double verdurePoints;
 
+        /// <summary>Lifetime Renown from Rite offerings (design §7) — Verdure derives from it at Migration and it is never spent.</summary>
+        public BigDouble renown = BigDouble.Zero;
+
+        /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
+        public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
+
+        /// <summary>Offering progress per revealed verse of the Rite, created on first touch.</summary>
+        public List<VerseProgressState> verseProgress = new List<VerseProgressState>();
+
         /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp by carrier haul from the nodes' baskets.</summary>
         public Dictionary<string, BigDouble> resources = new Dictionary<string, BigDouble>();
 
@@ -136,6 +145,29 @@ namespace Wildgrove.Sim
 
         /// <summary>Seconds of progress into the in-flight batch.</summary>
         public double progressSeconds;
+    }
+
+    /// <summary>
+    /// One verse's offering progress (design §7). Slots parallel the verse's
+    /// data slots by index; identity and targets are always read from the
+    /// current data, so a retuned verse self-corrects on load like nodes do.
+    /// </summary>
+    [Serializable]
+    public sealed class VerseProgressState
+    {
+        public string verseId;
+        public List<SlotProgressState> slots = new List<SlotProgressState>();
+    }
+
+    /// <summary>Progress on one offering slot.</summary>
+    [Serializable]
+    public sealed class SlotProgressState
+    {
+        /// <summary>Units (resource slots) or count (deed/specimen/fragment slots) delivered so far.</summary>
+        public double delivered;
+
+        /// <summary>True once a completion-granted slot (deeds) has credited its renownGrant — keeps the grant one-shot.</summary>
+        public bool granted;
     }
 
     /// <summary>

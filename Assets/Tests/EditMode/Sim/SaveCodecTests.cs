@@ -317,6 +317,45 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresRiteProgress()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.renown = new BigDouble(1234.5);
+            state.deedCounts["tend"] = 7;
+            state.verseProgress.Add(new VerseProgressState
+            {
+                verseId = "verse-sunfield",
+                slots =
+                {
+                    new SlotProgressState { delivered = 40.0, granted = false },
+                    new SlotProgressState { delivered = 3.0, granted = true },
+                },
+            });
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.renown.ToDouble(), Is.EqualTo(1234.5).Within(Tolerance));
+            Assert.That(restored.deedCounts["tend"], Is.EqualTo(7));
+            var verse = restored.verseProgress.Single(v => v.verseId == "verse-sunfield");
+            Assert.That(verse.slots[0].delivered, Is.EqualTo(40.0).Within(Tolerance));
+            Assert.That(verse.slots[0].granted, Is.False);
+            // The one-shot deed grant must never re-pay after a reload.
+            Assert.That(verse.slots[1].granted, Is.True);
+        }
+
+        [Test]
+        public void TryMigrate_V9Save_GetsEmptyRiteProgress()
+        {
+            // v9 predates the Rite runtime — nothing offered yet.
+            var save = new SaveData { version = 9, deedCounts = null, verseProgress = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.deedCounts, Is.Empty);
+            Assert.That(save.verseProgress, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V8Save_GetsEmptyExcavation()
         {
             // v8 predates excavation — nothing dug yet.

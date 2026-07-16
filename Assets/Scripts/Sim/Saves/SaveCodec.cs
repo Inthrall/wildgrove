@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 9;
+        public const int CurrentVersion = 10;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -29,6 +29,7 @@ namespace Wildgrove.Sim.Saves
                 savedAtUnixMs = savedAtUnixMs,
                 coin = state.coin,
                 verdurePoints = state.verdurePoints,
+                renown = state.renown,
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -99,6 +100,22 @@ namespace Wildgrove.Sim.Saves
                 save.fossilFragments.Add(new SavedFossilFragments { id = pair.Key, fragments = pair.Value });
             }
 
+            foreach (var pair in state.deedCounts)
+            {
+                save.deedCounts.Add(new SavedDeedCount { id = pair.Key, count = pair.Value });
+            }
+
+            foreach (var verse in state.verseProgress)
+            {
+                var savedVerse = new SavedVerseProgress { verseId = verse.verseId };
+                foreach (var slot in verse.slots)
+                {
+                    savedVerse.slots.Add(new SavedSlotProgress { delivered = slot.delivered, granted = slot.granted });
+                }
+
+                save.verseProgress.Add(savedVerse);
+            }
+
             return save;
         }
 
@@ -118,6 +135,7 @@ namespace Wildgrove.Sim.Saves
 
             state.coin = save.coin;
             state.verdurePoints = save.verdurePoints;
+            state.renown = save.renown;
 
             state.resources.Clear();
             if (save.resources != null)
@@ -262,6 +280,48 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            state.deedCounts.Clear();
+            if (save.deedCounts != null)
+            {
+                foreach (var deed in save.deedCounts)
+                {
+                    if (deed?.id != null)
+                    {
+                        state.deedCounts[deed.id] = deed.count;
+                    }
+                }
+            }
+
+            state.verseProgress.Clear();
+            if (save.verseProgress != null)
+            {
+                foreach (var savedVerse in save.verseProgress)
+                {
+                    if (savedVerse?.verseId == null)
+                    {
+                        continue;
+                    }
+
+                    // Unknown verse ids are kept (a retuned rite may rename);
+                    // slot rows beyond the current data's slot count are
+                    // harmless — progress reads go by the data's indices.
+                    var verse = new VerseProgressState { verseId = savedVerse.verseId };
+                    if (savedVerse.slots != null)
+                    {
+                        foreach (var slot in savedVerse.slots)
+                        {
+                            verse.slots.Add(new SlotProgressState
+                            {
+                                delivered = slot?.delivered ?? 0.0,
+                                granted = slot?.granted ?? false,
+                            });
+                        }
+                    }
+
+                    state.verseProgress.Add(verse);
+                }
+            }
+
             // Last, so completed fossils' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
@@ -384,6 +444,14 @@ namespace Wildgrove.Sim.Saves
                         save.digSites = save.digSites ?? new List<SavedDigSite>();
                         save.fossilFragments = save.fossilFragments ?? new List<SavedFossilFragments>();
                         save.version = 9;
+                        break;
+
+                    case 9:
+                        // v9 predates the Rite runtime — nothing offered, no
+                        // deeds counted, renown at the missing-field zero.
+                        save.deedCounts = save.deedCounts ?? new List<SavedDeedCount>();
+                        save.verseProgress = save.verseProgress ?? new List<SavedVerseProgress>();
+                        save.version = 10;
                         break;
 
                     default:

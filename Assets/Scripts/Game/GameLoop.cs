@@ -199,10 +199,10 @@ namespace Wildgrove.Game
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         }
 
-        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action).</summary>
+        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action, counted as a Rite deed).</summary>
         public void Tend(NodeState node)
         {
-            Simulation.Tend(node, Data.economy);
+            Simulation.Tend(State, Data, node);
         }
 
         /// <summary>Size of the node's next gatherer gift, in units of its own resource — for the gift button's label and enabled state.</summary>
@@ -450,6 +450,71 @@ namespace Wildgrove.Game
         public BigDouble SellAll()
         {
             return Economy.SellAll(State, Data);
+        }
+
+        /// <summary>Offer camp stock into a resource slot of the Rite (design §7). Returns the units delivered.</summary>
+        public BigDouble OfferResource(RiteVerseData verse, int slotIndex)
+        {
+            var wasComplete = Rite.IsVerseComplete(State, Data, verse);
+            var given = Rite.DeliverResource(State, Data, verse, slotIndex);
+            if (given > BigDouble.Zero)
+            {
+                Telemetry.LogEvent("offering_made",
+                    ("verse", verse.id),
+                    ("slot", slotIndex),
+                    ("amount", given.ToDouble()));
+                AfterOffering(verse, wasComplete);
+            }
+
+            return given;
+        }
+
+        /// <summary>Offer one Fine/Pristine specimen into a specimen slot. Returns true when one was given.</summary>
+        public bool OfferSpecimen(RiteVerseData verse, int slotIndex)
+        {
+            var wasComplete = Rite.IsVerseComplete(State, Data, verse);
+            var resourceId = Rite.DeliverSpecimen(State, Data, verse, slotIndex);
+            if (resourceId == null)
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("offering_made",
+                ("verse", verse.id),
+                ("slot", slotIndex),
+                ("specimen", resourceId));
+            AfterOffering(verse, wasComplete);
+            return true;
+        }
+
+        /// <summary>Offer one dug fossil fragment into a fragment slot — a real sacrifice from the dig chase. Returns true when one was given.</summary>
+        public bool OfferFragment(RiteVerseData verse, int slotIndex)
+        {
+            var wasComplete = Rite.IsVerseComplete(State, Data, verse);
+            var fossilId = Rite.DeliverFragment(State, Data, verse, slotIndex);
+            if (fossilId == null)
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("offering_made",
+                ("verse", verse.id),
+                ("slot", slotIndex),
+                ("fragment_from", fossilId));
+            AfterOffering(verse, wasComplete);
+            return true;
+        }
+
+        private void AfterOffering(RiteVerseData verse, bool verseWasComplete)
+        {
+            if (!verseWasComplete && Rite.IsVerseComplete(State, Data, verse))
+            {
+                Telemetry.LogEvent("verse_completed", ("verse", verse.id));
+                if (Rite.IsRiteComplete(State, Data))
+                {
+                    Telemetry.LogEvent("rite_completed", ("renown", State.renown.ToDouble()));
+                }
+            }
         }
 
         /// <summary>The windfall: sell one resource's Pristine specimens (design §5 — always an explicit act). Returns Coin gained.</summary>

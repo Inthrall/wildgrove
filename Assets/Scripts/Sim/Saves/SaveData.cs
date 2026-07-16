@@ -24,6 +24,10 @@ namespace Wildgrove.Sim.Saves
 
         public double verdurePoints;
 
+        /// <summary>v10+: lifetime Renown from Rite offerings (absent before the Rite runtime — nothing offered yet).</summary>
+        [JsonConverter(typeof(BigDoubleJsonConverter))]
+        public BigDouble renown;
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 
@@ -49,6 +53,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v9+: fossil fragments surfaced, per fossil id (absent before excavation — nothing found yet).</summary>
         public List<SavedFossilFragments> fossilFragments = new List<SavedFossilFragments>();
 
+        /// <summary>v10+: warden deed counts (absent before the Rite runtime).</summary>
+        public List<SavedDeedCount> deedCounts = new List<SavedDeedCount>();
+
+        /// <summary>v10+: offering progress per verse of the Rite (absent before the Rite runtime).</summary>
+        public List<SavedVerseProgress> verseProgress = new List<SavedVerseProgress>();
+
         public List<string> purchasedUpgradeIds = new List<string>();
 
         /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
@@ -67,6 +77,30 @@ namespace Wildgrove.Sim.Saves
     {
         public string id;
         public double xp;
+    }
+
+    /// <summary>One warden deed's lifetime count this run.</summary>
+    [Serializable]
+    public sealed class SavedDeedCount
+    {
+        public string id;
+        public int count;
+    }
+
+    /// <summary>One verse's offering progress; slots parallel the verse's data slots by index.</summary>
+    [Serializable]
+    public sealed class SavedVerseProgress
+    {
+        public string verseId;
+        public List<SavedSlotProgress> slots = new List<SavedSlotProgress>();
+    }
+
+    /// <summary>One offering slot's progress.</summary>
+    [Serializable]
+    public sealed class SavedSlotProgress
+    {
+        public double delivered;
+        public bool granted;
     }
 
     /// <summary>One dig site's diggers and pity progress (identity resyncs from owned unlockDigSite upgrades on restore).</summary>

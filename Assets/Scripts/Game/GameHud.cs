@@ -63,6 +63,7 @@ namespace Wildgrove.Game
         private Transform _specimensPanel;
         private Text _excavationHeader;
         private Transform _excavationPanel;
+        private Text _riteHeader;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -70,6 +71,8 @@ namespace Wildgrove.Game
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<SpecimenRowView> _specimenRows = new List<SpecimenRowView>();
         private readonly List<DigRowView> _digRows = new List<DigRowView>();
+        private readonly List<VerseHeadingView> _verseHeadings = new List<VerseHeadingView>();
+        private readonly List<RiteSlotRowView> _riteRows = new List<RiteSlotRowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
@@ -351,6 +354,38 @@ namespace Wildgrove.Game
             }
 
             _buildingsHeader.gameObject.SetActive(_buildingRows.Count > 0);
+
+            // The Rite (design §7): each unlocked zone's verse and its
+            // offering slots. Static per data — Refresh drives visibility.
+            _riteHeader = CreateText("RiteHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _riteHeader.text = "The Rite";
+            SetPreferredHeight(_riteHeader.gameObject, 48f);
+
+            var ritePanel = CreatePanel("Rite", sections, new Color(0f, 0f, 0f, 0f));
+            var riteLayout = ritePanel.AddComponent<VerticalLayoutGroup>();
+            riteLayout.spacing = 12f;
+            riteLayout.childControlWidth = true;
+            riteLayout.childControlHeight = true;
+            riteLayout.childForceExpandWidth = true;
+            riteLayout.childForceExpandHeight = false;
+
+            var rite = Rite.CurrentRite(_loop.Data);
+            if (rite != null)
+            {
+                foreach (var verse in rite.verses)
+                {
+                    var heading = CreateText("Verse_" + verse.id, ritePanel.transform, 30, TextAnchor.MiddleLeft, TextColor);
+                    SetPreferredHeight(heading.gameObject, 44f);
+                    _verseHeadings.Add(new VerseHeadingView { verse = verse, text = heading });
+
+                    for (var i = 0; i < verse.slots.Count; i++)
+                    {
+                        _riteRows.Add(BuildRiteSlotRow(ritePanel.transform, verse, i));
+                    }
+                }
+            }
+
+            _riteHeader.gameObject.SetActive(rite != null);
 
             // Camp-wide actions side by side: the carrier gift (carriers are a
             // camp pool, not per-node — design §8) and Sell All.
@@ -701,6 +736,75 @@ namespace Wildgrove.Game
             };
         }
 
+        private RiteSlotRowView BuildRiteSlotRow(Transform parent, RiteVerseData verse, int slotIndex)
+        {
+            var slot = verse.slots[slotIndex];
+            var rowGo = CreatePanel("Slot_" + verse.id + "_" + slotIndex, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            Button offer = null;
+            Text offerLabel = null;
+            if (slot.type != RiteSlotType.Deed)
+            {
+                // Deeds fill themselves as the warden acts; everything else is
+                // an explicit act of offering.
+                (offer, offerLabel) = CreateButton("Offer", rowGo.transform, "Offer", () =>
+                {
+                    switch (slot.type)
+                    {
+                        case RiteSlotType.Resource:
+                            _loop.OfferResource(verse, slotIndex);
+                            break;
+                        case RiteSlotType.Specimen:
+                            _loop.OfferSpecimen(verse, slotIndex);
+                            break;
+                        case RiteSlotType.Fragment:
+                            _loop.OfferFragment(verse, slotIndex);
+                            break;
+                    }
+                });
+                SetPreferredWidth(offer.gameObject, 160f);
+            }
+
+            return new RiteSlotRowView
+            {
+                verse = verse,
+                slotIndex = slotIndex,
+                root = rowGo,
+                info = info,
+                offerButton = offer,
+                offerLabel = offerLabel,
+            };
+        }
+
+        /// <summary>The slot's ask, for its row label ("300 Berries", "Tend 25 times", "1 Pristine specimen", "1 fossil fragment").</summary>
+        private static string SlotAsk(RiteSlotData slot)
+        {
+            switch (slot.type)
+            {
+                case RiteSlotType.Resource:
+                    return NumberFormat.Short(new BigDouble(slot.amount)) + " " + PrettyName(slot.resource);
+                case RiteSlotType.Deed:
+                    return PrettyName(slot.deed) + " " + slot.count + " times";
+                case RiteSlotType.Specimen:
+                    return slot.count + " " + PrettyName(slot.quality) + " specimen" + (slot.count > 1 ? "s" : string.Empty);
+                default:
+                    return slot.count + " fossil fragment" + (slot.count > 1 ? "s" : string.Empty);
+            }
+        }
+
         private SpecimenRowView BuildSpecimenRow(Transform parent, string resourceId)
         {
             var rowGo = CreatePanel("Specimen_" + resourceId, parent, RowColor);
@@ -844,7 +948,8 @@ namespace Wildgrove.Game
             _headerLabel.text = "Coin " + NumberFormat.Short(state.coin)
                                 + "     Familiars " + state.TotalFamiliars()
                                 + "     Carriers " + state.carrierCount
-                                + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty);
+                                + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty)
+                                + (state.renown > BigDouble.Zero ? "     Renown " + NumberFormat.Short(state.renown) : string.Empty);
 
             // The skills readout (design §4): each unlocked skill's level.
             if (_skillsLine.Length > 0)
@@ -969,6 +1074,56 @@ namespace Wildgrove.Game
             }
 
             _excavationHeader.gameObject.SetActive(_digRows.Count > 0);
+
+            // The Rite: revealed verses show their heading and, while
+            // incomplete, their offering slots. A sung verse folds down to its
+            // heading; the header carries the eligibility line when all are.
+            var riteComplete = Rite.IsRiteComplete(state, _loop.Data);
+            _riteHeader.text = riteComplete
+                ? "The Rite\n<size=24>The Rite is complete — the trail calls onward.</size>"
+                : "The Rite";
+            foreach (var heading in _verseHeadings)
+            {
+                var revealed = Rite.IsVerseRevealed(state, _loop.Data, heading.verse);
+                heading.text.gameObject.SetActive(revealed);
+                if (!revealed)
+                {
+                    continue;
+                }
+
+                var zoneName = _loop.Data.ZonesById.TryGetValue(heading.verse.zone, out var zone)
+                    ? zone.displayName
+                    : PrettyName(heading.verse.zone);
+                heading.text.text = Rite.IsVerseComplete(state, _loop.Data, heading.verse)
+                    ? "Verse of " + zoneName + " — sung"
+                    : "Verse of " + zoneName + " — "
+                      + Rite.CompletedSlotCount(state, heading.verse) + "/" + _loop.Data.rites.chooseCount + " offerings";
+            }
+
+            foreach (var row in _riteRows)
+            {
+                var show = Rite.IsVerseRevealed(state, _loop.Data, row.verse)
+                           && !Rite.IsVerseComplete(state, _loop.Data, row.verse);
+                row.root.SetActive(show);
+                if (!show)
+                {
+                    continue;
+                }
+
+                var slot = row.verse.slots[row.slotIndex];
+                var delivered = Rite.SlotDelivered(state, row.verse, row.slotIndex);
+                var complete = Rite.IsSlotComplete(state, row.verse, row.slotIndex);
+                row.info.text = SlotAsk(slot)
+                                + "\n<size=24>" + (complete
+                                    ? "offered"
+                                    : NumberFormat.Short(new BigDouble(delivered)) + " of "
+                                      + NumberFormat.Short(new BigDouble(Rite.SlotTarget(slot))) + " given") + "</size>";
+
+                if (row.offerButton != null)
+                {
+                    row.offerButton.interactable = !complete && CanOfferAnything(state, slot);
+                }
+            }
 
             // Bought upgrades leave the shop; only the next few unpurchased
             // rungs of the ladder are on offer at once.
@@ -1247,6 +1402,45 @@ namespace Wildgrove.Game
             public Text sellLabel;
         }
 
+        /// <summary>True when the camp holds anything the slot would take — the Offer button's enabled state.</summary>
+        private bool CanOfferAnything(GameState state, RiteSlotData slot)
+        {
+            switch (slot.type)
+            {
+                case RiteSlotType.Resource:
+                    return state.GetResource(slot.resource) > BigDouble.Zero;
+
+                case RiteSlotType.Specimen:
+                    var pool = slot.quality == "pristine" ? state.pristineResources : state.fineResources;
+                    foreach (var pair in pool)
+                    {
+                        if (pair.Value >= BigDouble.One)
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+
+                case RiteSlotType.Fragment:
+                    if (_loop.Data.fossils != null)
+                    {
+                        foreach (var fossil in _loop.Data.fossils)
+                        {
+                            if (Fossils.FragmentCount(state, fossil.id) > 0 && !Fossils.IsComplete(state, fossil))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+
+                default:
+                    return false;
+            }
+        }
+
         private sealed class DigRowView
         {
             public DigSiteState site;
@@ -1263,6 +1457,22 @@ namespace Wildgrove.Game
             public Text info;
             public Button sellButton;
             public Text sellLabel;
+        }
+
+        private sealed class VerseHeadingView
+        {
+            public RiteVerseData verse;
+            public Text text;
+        }
+
+        private sealed class RiteSlotRowView
+        {
+            public RiteVerseData verse;
+            public int slotIndex;
+            public GameObject root;
+            public Text info;
+            public Button offerButton;
+            public Text offerLabel;
         }
 
         private sealed class UpgradeRowView

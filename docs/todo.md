@@ -129,10 +129,20 @@ they're easy to find and delete when resolved.
 - **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
   `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
   the loop playtest.
-- **The Rite is data-only.** `rites.json`, `zones.verseSite`, and `dialogue.verses` are
-  parsed, validated, and mapped into GameData.asset, but no runtime system consumes
-  them until the Phase 3 Rite build. Validator covers slot integrity only — the full
-  ≥3-slots-reachable analysis (design §7) is a Phase 3 job.
+- **The Rite runtime stops at eligibility — Migration is the prestige build.**
+  Verses reveal with their zones, offerings consume goods/specimens/fragments
+  and credit Renown, verses complete at chooseCount and the Rite at
+  all-verses-sung; the HUD then says "the trail calls onward" but nothing
+  migrates yet (Verdure grant, run reset, Almanac). Still open: the run-2+
+  procedural verse generator (Phase 4), showing `dialogue.verses` lines at
+  the verse site, the ≥3-slots-reachable validator analysis (§7), and
+  Amber-can-never-fill-a-slot needs no code until IAP exists.
+  Interpretations flagged: plain-resource offerings credit Renown at the
+  CURRENT sell value (incl. owned bonuses — the opportunity cost), specimen
+  offerings auto-pick the largest matching pool, fragment offerings take
+  from the richest incomplete fossil, and deeds performed before a verse is
+  revealed still count toward its deed slot (lifetime counts, no per-verse
+  baseline). (`Wildgrove.Sim/Rite.cs`)
 - **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
   it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
   yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in
