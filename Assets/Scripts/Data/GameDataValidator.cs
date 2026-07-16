@@ -176,6 +176,11 @@ namespace Wildgrove.Data
                 {
                     issues.Add($"Recipe '{recipe.Id}' has stationLevel below 1");
                 }
+
+                if (recipe.SkillLevel < 1)
+                {
+                    issues.Add($"Recipe '{recipe.Id}' has skillLevel below 1");
+                }
             }
         }
 
@@ -523,6 +528,11 @@ namespace Wildgrove.Data
             if (economy.Xp != null && (economy.Xp.Growth <= 1 || economy.Xp.MaxLevel <= 1))
             {
                 issues.Add("Economy xp progression is degenerate");
+            }
+
+            if (economy.Xp != null && (economy.Xp.GatherPerUnit < 0 || economy.Xp.CraftPerBatch < 0))
+            {
+                issues.Add("Economy xp gains must not be negative");
             }
 
             if (economy.Offline != null && economy.Offline.BaseCapHours <= 0)

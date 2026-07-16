@@ -77,6 +77,8 @@ namespace Wildgrove.Data
             public double Base { get; set; }
             public double Growth { get; set; }
             public int MaxLevel { get; set; }
+            public double GatherPerUnit { get; set; }
+            public double CraftPerBatch { get; set; }
         }
 
         public sealed class OfflineSection

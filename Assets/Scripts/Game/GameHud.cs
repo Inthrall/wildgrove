@@ -201,7 +201,8 @@ namespace Wildgrove.Game
             column.childForceExpandHeight = false;
 
             var headerPanel = CreatePanel("Header", root.transform, PanelColor);
-            SetPreferredHeight(headerPanel, 88f);
+            // Two lines when the XP system is live: currencies, then skill levels.
+            SetPreferredHeight(headerPanel, _loop.Data.economy?.xp != null ? 132f : 88f);
             _headerLabel = CreateText("HeaderLabel", headerPanel.transform, 48, TextAnchor.MiddleLeft, TextColor);
             var headerRect = _headerLabel.GetComponent<RectTransform>();
             StretchFull(headerRect);
@@ -477,6 +478,7 @@ namespace Wildgrove.Game
                 recipe = recipe,
                 root = rowGo,
                 info = info,
+                toggleButton = toggle,
                 toggleLabel = toggleLabel,
             };
         }
@@ -660,6 +662,20 @@ namespace Wildgrove.Game
                                 + "     Carriers " + state.carrierCount
                                 + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty);
 
+            // The skills readout (design §4): each unlocked skill's level.
+            if (_loop.Data.economy?.xp != null)
+            {
+                var skills = _loop.UnlockedSkills();
+                var line = string.Empty;
+                foreach (var skill in skills)
+                {
+                    line += (line.Length > 0 ? "   " : string.Empty)
+                            + PrettyName(skill) + " " + _loop.SkillLevel(skill);
+                }
+
+                _headerLabel.text += "\n<size=26>" + line + "</size>";
+            }
+
             foreach (var row in _rows)
             {
                 var node = row.node;
@@ -746,9 +762,16 @@ namespace Wildgrove.Game
                 var inputs = string.Join(" + ",
                     row.recipe.inputs.Select(i => i.amount + " " + PrettyName(i.id)));
 
+                // Level-locked recipes stay on the list as a visible goal, with
+                // the requirement spelled out and the button disabled.
+                var levelMet = _loop.IsRecipeLevelMet(row.recipe);
                 var status = string.Empty;
                 var crafting = _loop.IsCrafting(row.recipe);
-                if (crafting)
+                if (!levelMet)
+                {
+                    status = "  •  needs " + PrettyName(row.recipe.skill) + " " + row.recipe.skillLevel;
+                }
+                else if (crafting)
                 {
                     var progress = _loop.CraftProgress(row.recipe);
                     status = progress > 0.0
@@ -759,6 +782,7 @@ namespace Wildgrove.Game
                 row.info.text = PrettyName(row.recipe.id)
                                 + "\n<size=22>" + inputs + status + "</size>";
                 row.toggleLabel.text = crafting ? "Stop" : "Craft";
+                row.toggleButton.interactable = levelMet;
             }
 
             _craftingHeader.gameObject.SetActive(anyCraftable);
@@ -961,6 +985,7 @@ namespace Wildgrove.Game
             public RecipeData recipe;
             public GameObject root;
             public Text info;
+            public Button toggleButton;
             public Text toggleLabel;
         }
 

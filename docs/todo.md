@@ -81,9 +81,13 @@ they're easy to find and delete when resolved.
   design doc, and one duration for every recipe is a placeholder — tune against
   the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
   times with the balance pass. (`design/data/economy.json`)
-- **Craft skill XP/levels don't exist.** Design §4 says levels gate recipes and
-  tool tiers; nothing earns or checks XP yet — the xp section of economy.json
-  is parsed but unread. Lands with the wider Phase 3 skill build-out.
+- **Skill XP gains and recipe skillLevels are first guesses.** xp.gatherPerUnit
+  (1, credited on the gross gather — basket overflow loses the goods but still
+  pays XP) and xp.craftPerBatch (25) aren't in the design doc, nor are the
+  per-recipe skillLevel picks (skewer/trout 2, reed baskets and bronze 3,
+  iron 5). Tool-tier level gating (§4) waits for the tools system, and the
+  Migration skill reset (§7) for the prestige build.
+  (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
 - **Haul is a continuous-rate approximation, not discrete batches.** Carriers drain
   baskets proportionally at units/sec; design §5's quality rolls happen *per haul
   batch* (a carrier delivery), so Phase 3's Compendium needs the haul loop reworked

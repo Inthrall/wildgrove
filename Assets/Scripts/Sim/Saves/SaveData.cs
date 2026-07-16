@@ -36,6 +36,17 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
         public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
+
+        /// <summary>v5+: total XP per skill (absent before the XP system existed; levels are derived, never stored).</summary>
+        public List<SavedSkillXp> skillXp = new List<SavedSkillXp>();
+    }
+
+    /// <summary>One skill's earned XP.</summary>
+    [Serializable]
+    public sealed class SavedSkillXp
+    {
+        public string id;
+        public double xp;
     }
 
     /// <summary>Bought levels of one camp building line (§9 milestone upgrades live in purchasedUpgradeIds).</summary>

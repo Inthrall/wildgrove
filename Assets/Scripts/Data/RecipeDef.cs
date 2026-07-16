@@ -19,5 +19,9 @@ namespace Wildgrove.Data
         // The station line level the recipe needs (design §9 heat: iron is
         // forge 2). Defaults to 1 — any built station.
         public int StationLevel { get; set; } = 1;
+
+        // The skill level the recipe needs (design §4: levels gate recipes).
+        // Defaults to 1 — available as soon as the skill exists.
+        public int SkillLevel { get; set; } = 1;
     }
 }

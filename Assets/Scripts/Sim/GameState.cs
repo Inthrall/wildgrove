@@ -37,6 +37,9 @@ namespace Wildgrove.Sim
         /// <summary>Bought levels per camp building line, keyed by building id (§9 milestone upgrades count separately).</summary>
         public Dictionary<string, int> buildingLevels = new Dictionary<string, int>();
 
+        /// <summary>Total XP earned per skill this run (design §4; levels are derived by Skills.Level, never stored).</summary>
+        public Dictionary<string, double> skillXp = new Dictionary<string, double>();
+
         public BigDouble GetResource(string resourceId)
         {
             return resources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;

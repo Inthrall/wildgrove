@@ -40,7 +40,14 @@
     "exponent": 0.5,
     "yieldBonusPerPoint": 0.02
   },
-  "xp": { "base": 100, "growth": 1.10, "maxLevel": 99 },
+  "xp": {
+    "base": 100,
+    "growth": 1.10,
+    "maxLevel": 99,
+    "gatherPerUnit": 1,
+    "craftPerBatch": 25,
+    "$note": "gatherPerUnit/craftPerBatch are first guesses, not in the design doc — XP per unit gathered (gross, basket overflow included) and per completed batch. Tune with the §2 pacing targets."
+  },
   "offline": {
     "baseCapHours": 4,
     "rateMultiplier": 1.0

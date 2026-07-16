@@ -74,7 +74,8 @@ namespace Wildgrove.Data
                 valueMult = r.ValueMult,
                 kind = r.Kind,
                 defaultKnown = r.DefaultKnown,
-                stationLevel = r.StationLevel
+                stationLevel = r.StationLevel,
+                skillLevel = r.SkillLevel
             };
         }
 
@@ -233,7 +234,9 @@ namespace Wildgrove.Data
                 {
                     baseXp = e.Xp.Base,
                     growth = e.Xp.Growth,
-                    maxLevel = e.Xp.MaxLevel
+                    maxLevel = e.Xp.MaxLevel,
+                    gatherPerUnit = e.Xp.GatherPerUnit,
+                    craftPerBatch = e.Xp.CraftPerBatch
                 },
                 offline = new EconomyData.OfflineData
                 {

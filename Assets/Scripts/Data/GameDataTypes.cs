@@ -81,6 +81,9 @@ namespace Wildgrove.Data
 
         /// <summary>The station line level the recipe needs (design §9 heat: iron is forge 2). 1 = any built station.</summary>
         public int stationLevel = 1;
+
+        /// <summary>The skill level the recipe needs (design §4: levels gate recipes). 1 = available from the start.</summary>
+        public int skillLevel = 1;
     }
 
     /// <summary>
@@ -273,6 +276,8 @@ namespace Wildgrove.Data
             public double baseXp;
             public double growth;
             public int maxLevel;
+            public double gatherPerUnit;
+            public double craftPerBatch;
         }
 
         [Serializable]

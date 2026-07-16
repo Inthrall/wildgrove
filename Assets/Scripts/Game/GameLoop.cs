@@ -291,10 +291,36 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>The recipes the run can craft right now — for the HUD's crafting section.</summary>
+        /// <summary>The recipes the run can see — for the HUD's crafting section (level-locked ones included, as visible goals).</summary>
         public System.Collections.Generic.List<RecipeData> AvailableRecipes()
         {
             return Crafting.AvailableRecipes(State, Data);
+        }
+
+        /// <summary>True when the run's skill level covers the recipe's skillLevel — the assign gate.</summary>
+        public bool IsRecipeLevelMet(RecipeData recipe)
+        {
+            return Crafting.SkillLevelMet(State, Data, recipe);
+        }
+
+        /// <summary>The skill's current level (1 when the XP system is unconfigured).</summary>
+        public int SkillLevel(string skill)
+        {
+            return Skills.Level(State, Data, skill);
+        }
+
+        /// <summary>Fraction of the way to the skill's next level (0 once capped).</summary>
+        public double SkillProgress(string skill)
+        {
+            return Skills.ProgressToNext(State, Data, skill);
+        }
+
+        /// <summary>The skills this run has opened, for the HUD's readout — stable alphabetical order.</summary>
+        public System.Collections.Generic.List<string> UnlockedSkills()
+        {
+            var skills = new System.Collections.Generic.List<string>(Upgrades.UnlockedSkills(State, Data));
+            skills.Sort(System.StringComparer.Ordinal);
+            return skills;
         }
 
         /// <summary>True while this recipe's station is assigned to it.</summary>
@@ -324,6 +350,13 @@ namespace Wildgrove.Game
             if (IsCrafting(recipe))
             {
                 Crafting.Stop(State, Data, recipe);
+                return;
+            }
+
+            // Level-locked: Assign would refuse anyway, but bail here so the
+            // telemetry can't report a craft that never started.
+            if (!Crafting.SkillLevelMet(State, Data, recipe))
+            {
                 return;
             }
 

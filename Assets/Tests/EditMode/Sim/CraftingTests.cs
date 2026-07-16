@@ -250,6 +250,60 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_CompletedBatch_GrantsCraftXpToTheRecipeSkill()
+        {
+            _data.economy.xp = new EconomyData.XpData
+            {
+                baseXp = 100, growth = 1.1, maxLevel = 99, craftPerBatch = 25,
+            };
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(12.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Crafting.Advance(state, _data, 10.0);
+
+            // Two finished batches, 25 XP each; the in-flight third pays nothing yet.
+            Assert.That(Skills.Xp(state, "foraging"), Is.EqualTo(50.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Assign_SkillLevelTooLow_Refuses_UntilTheLevelIsEarned()
+        {
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99 };
+            Recipe("berry-jam").skillLevel = 3;
+            var state = new GameState();
+
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Null);
+
+            // Levels 2 and 3 cost 100 + 110.
+            state.skillXp["foraging"] = 210.0;
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Not.Null);
+        }
+
+        [Test]
+        public void AvailableRecipes_LevelLockedRecipe_StaysListedAsAGoal()
+        {
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99 };
+            Recipe("berry-jam").skillLevel = 3;
+            var state = new GameState();
+
+            Assert.That(Crafting.AvailableRecipes(state, _data).ConvertAll(r => r.id),
+                Does.Contain("berry-jam"));
+            Assert.That(Crafting.SkillLevelMet(state, _data, Recipe("berry-jam")), Is.False);
+        }
+
+        [Test]
+        public void SkillLevelMet_XpUnconfigured_IsOpen()
+        {
+            Recipe("berry-jam").skillLevel = 5;
+
+            Assert.That(Crafting.SkillLevelMet(new GameState(), _data, Recipe("berry-jam")), Is.True);
+        }
+
+        [Test]
         public void SimulationAdvance_OfflineCatchup_CraftsBatchByBatchAsGoodsArrive()
         {
             var state = new GameState { carrierCount = 1 };

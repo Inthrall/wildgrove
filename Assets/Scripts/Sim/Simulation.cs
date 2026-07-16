@@ -68,6 +68,11 @@ namespace Wildgrove.Sim
                     var baseRate = YieldPerSecond(node, state, economy);
                     var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
 
+                    // XP from every action (design §4) — credited on the gross
+                    // gather, so a full basket loses the goods but not the
+                    // practice.
+                    Skills.AddGatherXp(state, data, node.skill, gained);
+
                     if (hauling != null)
                     {
                         // Into the basket, clamped at capacity — a full basket
@@ -88,7 +93,9 @@ namespace Wildgrove.Sim
                 // gift (design §13 decision).
                 if (burstSeconds > 0.0 && economy?.tending != null)
                 {
-                    state.AddResource(node.resourceId, new BigDouble(economy.tending.handGatherPerSecond * burstSeconds));
+                    var handGathered = new BigDouble(economy.tending.handGatherPerSecond * burstSeconds);
+                    state.AddResource(node.resourceId, handGathered);
+                    Skills.AddGatherXp(state, data, node.skill, handGathered);
                 }
 
                 if (node.tendBurstRemaining > 0.0)

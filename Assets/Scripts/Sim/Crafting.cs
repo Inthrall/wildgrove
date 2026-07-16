@@ -10,17 +10,19 @@ namespace Wildgrove.Sim
     /// camp stock when a batch starts, the output lands at camp when it
     /// completes, and a station stalls quietly until stock can cover the next
     /// batch. Recipes become craftable when they're known (defaultKnown or an
-    /// owned unlockRecipe effect) and their skill is unlocked. Pure and
-    /// deterministic like the tick; station gating by camp buildings arrives
-    /// with buildings.json.
+    /// owned unlockRecipe effect), their skill is unlocked, their station line
+    /// is hot enough, and the skill's level covers the recipe (design §4).
+    /// Pure and deterministic like the tick.
     /// </summary>
     public static class Crafting
     {
         /// <summary>
-        /// The recipes the run can craft right now, in data order: known
-        /// (defaultKnown or granted by an owned unlockRecipe effect), their
-        /// skill unlocked, and their station line built to the recipe's
-        /// stationLevel (design §9 heat — iron needs forge 2).
+        /// The recipes the run can see, in data order: known (defaultKnown or
+        /// granted by an owned unlockRecipe effect), their skill unlocked, and
+        /// their station line built to the recipe's stationLevel (design §9
+        /// heat — iron needs forge 2). Recipes above the run's skill level ARE
+        /// listed — they're a visible goal; <see cref="SkillLevelMet"/> gates
+        /// actually assigning them.
         /// </summary>
         public static List<RecipeData> AvailableRecipes(GameState state, GameDataAsset data)
         {
@@ -39,6 +41,21 @@ namespace Wildgrove.Sim
             }
 
             return available;
+        }
+
+        /// <summary>
+        /// True when the run's skill level covers the recipe's skillLevel
+        /// (design §4: levels gate recipes). Ungated when economy.xp is absent
+        /// — hand-built test data without the XP system.
+        /// </summary>
+        public static bool SkillLevelMet(GameState state, GameDataAsset data, RecipeData recipe)
+        {
+            if (data.economy?.xp == null)
+            {
+                return true;
+            }
+
+            return Skills.Level(state, data, recipe.skill) >= recipe.skillLevel;
         }
 
         /// <summary>
@@ -70,7 +87,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public static void Assign(GameState state, GameDataAsset data, RecipeData recipe)
         {
-            if (state == null || recipe == null)
+            if (state == null || recipe == null || !SkillLevelMet(state, data, recipe))
             {
                 return;
             }
@@ -164,6 +181,7 @@ namespace Wildgrove.Sim
                     if (station.progressSeconds >= duration - 1e-9)
                     {
                         state.AddResource(recipe.output, BigDouble.One);
+                        Skills.AddCraftXp(state, data, recipe.skill);
                         station.inFlight = false;
                         station.progressSeconds = 0.0;
                     }

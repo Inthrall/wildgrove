@@ -51,6 +51,36 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_Gathering_GrantsSkillXpPerUnit()
+        {
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
+            var state = GameStateFactory.NewGame(_data);
+
+            Simulation.Advance(state, _data, 10.0);
+
+            // One familiar gathering 1/s for 10 s — XP from every action (§4).
+            Assert.That(Skills.Xp(state, "foraging"), Is.EqualTo(10.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_HandGatherDuringBurst_AlsoGrantsSkillXp()
+        {
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
+            _data.economy.tending = new EconomyData.TendingData
+            {
+                burstYieldMult = 3.0, burstDurationSec = 5.0, handGatherPerSecond = 2.0,
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.nodes[0].familiarCount = 0;
+            Simulation.Tend(state.nodes[0], _data.economy);
+
+            Simulation.Advance(state, _data, 5.0);
+
+            // The warden's hands are an action too: 2/s for the 5 s burst.
+            Assert.That(Skills.Xp(state, "foraging"), Is.EqualTo(10.0).Within(Tolerance));
+        }
+
+        [Test]
         public void NewGame_StartingZone_CreatesNodePerResource()
         {
             var state = GameStateFactory.NewGame(_data);

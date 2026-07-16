@@ -242,6 +242,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresSkillXp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.skillXp["foraging"] = 123.5;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.skillXp["foraging"], Is.EqualTo(123.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V4Save_GetsEmptySkillXp()
+        {
+            // v4 predates skill XP — nothing earned yet.
+            var save = new SaveData { version = 4, skillXp = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.skillXp, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V3Save_GetsEmptyBuildingLevels()
         {
             // v3 predates camp buildings — nothing bought yet.

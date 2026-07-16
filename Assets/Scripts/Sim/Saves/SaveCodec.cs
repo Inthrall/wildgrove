@@ -18,7 +18,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -63,6 +63,11 @@ namespace Wildgrove.Sim.Saves
             foreach (var pair in state.buildingLevels)
             {
                 save.buildingLevels.Add(new SavedBuildingLevel { id = pair.Key, levels = pair.Value });
+            }
+
+            foreach (var pair in state.skillXp)
+            {
+                save.skillXp.Add(new SavedSkillXp { id = pair.Key, xp = pair.Value });
             }
 
             return save;
@@ -157,6 +162,19 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            state.skillXp.Clear();
+            if (save.skillXp != null)
+            {
+                foreach (var skill in save.skillXp)
+                {
+                    if (skill?.id != null)
+                    {
+                        // Unknown skill ids are kept, same policy as elsewhere.
+                        state.skillXp[skill.id] = skill.xp;
+                    }
+                }
+            }
+
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
         }
@@ -225,6 +243,13 @@ namespace Wildgrove.Sim.Saves
                         // v3 predates camp buildings — no levels bought yet.
                         save.buildingLevels = save.buildingLevels ?? new List<SavedBuildingLevel>();
                         save.version = 4;
+                        break;
+
+                    case 4:
+                        // v4 predates skill XP — every skill starts back at
+                        // level 1 (XP was never earned, not lost).
+                        save.skillXp = save.skillXp ?? new List<SavedSkillXp>();
+                        save.version = 5;
                         break;
 
                     default:

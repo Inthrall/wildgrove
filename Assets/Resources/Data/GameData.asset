@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 8d308ae4283972e66be557865286bd32f75327035c8520c49b5e0e1163710fee
+  sourceHash: 7e737e238e770b4ba8a24ce92c48de596afb4ea9d2efad225f3efc28e47c34e3
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -58,6 +58,8 @@ MonoBehaviour:
       baseXp: 100
       growth: 1.1
       maxLevel: 99
+      gatherPerUnit: 1
+      craftPerBatch: 25
     offline:
       baseCapHours: 4
       rateMultiplier: 1
@@ -845,6 +847,7 @@ MonoBehaviour:
     kind: trade
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 1
   - id: mushroom-skewer
     station: fire
     skill: firecraft
@@ -858,6 +861,7 @@ MonoBehaviour:
     kind: trade
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 2
   - id: smoked-trout
     station: fire
     skill: firecraft
@@ -869,6 +873,7 @@ MonoBehaviour:
     kind: trade
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 2
   - id: fish-oil
     station: fire
     skill: firecraft
@@ -880,6 +885,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 1
     stationLevel: 1
+    skillLevel: 1
   - id: planks
     station: bench
     skill: bushcraft
@@ -891,6 +897,7 @@ MonoBehaviour:
     kind: trade
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 1
   - id: reed-baskets
     station: bench
     skill: bushcraft
@@ -904,6 +911,7 @@ MonoBehaviour:
     kind: trade
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 3
   - id: cordage
     station: bench
     skill: bushcraft
@@ -915,6 +923,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 1
   - id: charcoal
     station: fire
     skill: firecraft
@@ -926,6 +935,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 1
     stationLevel: 1
+    skillLevel: 1
   - id: copper-ingot
     station: fire
     skill: forgecraft
@@ -937,6 +947,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 0
     stationLevel: 1
+    skillLevel: 1
   - id: bronze-ingot
     station: forge
     skill: forgecraft
@@ -950,6 +961,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 1
     stationLevel: 1
+    skillLevel: 3
   - id: iron-ingot
     station: forge
     skill: forgecraft
@@ -963,6 +975,7 @@ MonoBehaviour:
     kind: material
     defaultKnown: 0
     stationLevel: 2
+    skillLevel: 5
   buildings:
   - id: fire
     displayName: The Fire

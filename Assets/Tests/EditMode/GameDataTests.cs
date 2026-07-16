@@ -54,6 +54,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("familiarCaps"));
             Assert.That(data.RecipesById["iron-ingot"].StationLevel, Is.EqualTo(2), "iron heat is forge 2");
             Assert.That(data.RecipesById["copper-ingot"].StationLevel, Is.EqualTo(1), "absent stationLevel defaults to 1");
+            Assert.That(data.RecipesById["iron-ingot"].SkillLevel, Is.EqualTo(5), "iron smelting waits for forgecraft 5");
+            Assert.That(data.RecipesById["copper-ingot"].SkillLevel, Is.EqualTo(1), "absent skillLevel defaults to 1");
+            Assert.That(data.Economy.Xp.GatherPerUnit, Is.EqualTo(1.0));
+            Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
@@ -286,6 +290,32 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("pick one")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RecipeSkillLevelBelowOne_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"skillLevel\": 5",
+                "\"skillLevel\": 0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("skillLevel below 1")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_NegativeXpGain_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"gatherPerUnit\": 1,",
+                "\"gatherPerUnit\": -1,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("xp gains")), Is.True, string.Join("\n", issues));
         }
 
         [Test]
