@@ -281,6 +281,7 @@ namespace Wildgrove.Data
         public QualityData quality;
         public ExcavationData excavation;
         public TendingData tending;
+        public WardenData warden;
 
         /// <summary>Unity can't serialize a null section — treat timeSkipCostAmber &lt;= 0 as "no amber system" (the Configured pattern).</summary>
         public AmberData amber;
@@ -399,7 +400,13 @@ namespace Wildgrove.Data
             public double burstDurationSec;
             public double pristineBonusDurationSec;
             public double pristineChanceBonus;
-            public double handGatherPerSecond;
+        }
+
+        [Serializable]
+        public sealed class WardenData
+        {
+            /// <summary>The warden's own gather rate at their post, straight to camp — the bare-node gift bootstrap.</summary>
+            public double gatherPerSecond;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Wildgrove.Sim.Tests
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 60 },
                 costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09, carrierGift = 1.10 },
                 gifts = new EconomyData.GiftsData { gathererBaseGoods = 10, carrierBaseGoods = 8 },
-                tending = new EconomyData.TendingData { burstYieldMult = 3, burstDurationSec = 5, handGatherPerSecond = 0.5 },
+                tending = new EconomyData.TendingData { burstYieldMult = 3, burstDurationSec = 5 },
             };
             _data.resources = new List<ResourceData>
             {

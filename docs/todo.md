@@ -15,9 +15,11 @@ they're easy to find and delete when resolved.
   the bundle broadens as new nodes come into work, so a freshly-gifted node briefly
   raises the carrier price in a resource the camp barely holds — probably desirable
   tension, but confirm it in balance.
-- **Hand-gather rate is a first guess.** `tending.handGatherPerSecond = 0.5` — the
-  warden's trickle while a burst is live, and the bare-node gift bootstrap. Tune so
-  a first gift feels like a few taps, not a grind.
+- **Warden gather rate is a first guess.** `warden.gatherPerSecond = 0.5` — the
+  warden's passive trickle at their post (always on, burst-boosted), and the
+  bare-node gift bootstrap. Replaced the old burst-only hand-gather so the
+  early game is assignment, not a tap surge. Tune so the first gift lands in
+  ~20 s of just standing there.
 - **Telemetry sink is the Unity log, not Firebase.** The design calls for
   Crashlytics + GA events from Phase 1; the events (session_start/end,
   upgrade_purchased, familiar_gifted, welcome_back) are instrumented behind

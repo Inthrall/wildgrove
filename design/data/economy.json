@@ -83,7 +83,10 @@
     "burstDurationSec": 5,
     "pristineBonusDurationSec": 30,
     "pristineChanceBonus": 1.0,
-    "handGatherPerSecond": 0.5,
-    "$note": "burst values and handGatherPerSecond are first guesses — tune in Phase 1. handGatherPerSecond is the warden's own hands while a Tend burst is live, straight to camp stock — it's how a node with no familiars earns its first own-resource gift (design §13 decision), so it must stay positive."
+    "$note": "burst values are first guesses — tune in Phase 1."
+  },
+  "warden": {
+    "gatherPerSecond": 0.5,
+    "$note": "first guess. The warden's own hands at their post (the last-tended node) — always on, boosted by a live burst, straight to camp stock. It's the early-game kickstart (assignment, not a tap surge) AND how a bare node earns its first own-resource gift (design §13 decision), so it must stay positive."
   }
 }

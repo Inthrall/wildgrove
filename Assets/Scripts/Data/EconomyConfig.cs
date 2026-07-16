@@ -19,6 +19,7 @@ namespace Wildgrove.Data
         public ExcavationSection Excavation { get; set; }
         public AmberSection Amber { get; set; }
         public TendingSection Tending { get; set; }
+        public WardenSection Warden { get; set; }
 
         public sealed class CostGrowthSection
         {
@@ -121,7 +122,11 @@ namespace Wildgrove.Data
             public double BurstDurationSec { get; set; }
             public double PristineBonusDurationSec { get; set; }
             public double PristineChanceBonus { get; set; }
-            public double HandGatherPerSecond { get; set; }
+        }
+
+        public sealed class WardenSection
+        {
+            public double GatherPerSecond { get; set; }
         }
     }
 }

@@ -690,7 +690,7 @@ namespace Wildgrove.Game
 
             var hint = CreateText("Hint", lowerPanel.transform, 28, TextAnchor.MiddleCenter,
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
-            hint.text = "Tap a node, Space, or (A) to tend";
+            hint.text = "Tend a node (tap, Space, or (A)) — the warden stays and works it";
             SetFixedHeight(hint.gameObject, 44f);
             _hintGo = hint.gameObject;
 
@@ -1821,7 +1821,7 @@ namespace Wildgrove.Game
             moment.horizontalOverflow = HorizontalWrapMode.Wrap;
             moment.text = bond.role == "carrier"
                 ? "falls in beside your carriers, hauling with the fleet —\noutside any count, cap, or cost."
-                : "settles wherever you last tended, gathering —\noutside the flock and its caps.";
+                : "works at the warden's side, gathering —\noutside the flock and its caps.";
             SetPreferredHeight(moment.gameObject, 88f);
 
             var keepsake = CreateText("Keepsake", sheet.transform, 28, TextAnchor.MiddleCenter,
@@ -1893,17 +1893,21 @@ namespace Wildgrove.Game
                 var giftCost = _loop.NextGathererGiftCost(node);
                 var held = state.GetResource(node.resourceId);
 
-                // While a burst is live the row shows the effective rate — the
-                // familiars' bursted yield plus the warden's hand-gather — so
-                // tending visibly earns even on a node with no familiars.
+                // The row shows the effective rate: familiars (and any bonded
+                // companion) plus the warden's own hands at their post, all
+                // burst-boosted while a tend is live — so a bare node with the
+                // warden standing at it visibly earns.
                 var rate = Simulation.YieldPerSecond(node, state, _loop.Data, economy);
                 var tending = string.Empty;
+                var rowBurstMult = 1.0;
                 if (node.tendBurstRemaining > 0.0 && economy.tending != null)
                 {
-                    var burstMult = economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, _loop.Data));
-                    rate = rate * burstMult + new BigDouble(economy.tending.handGatherPerSecond);
+                    rowBurstMult = economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, _loop.Data));
                     tending = "  (tending)";
                 }
+
+                var wardenHere = Warden.IsPosted(state, node);
+                rate = (rate + new BigDouble(Warden.GatherPerSecond(state, economy, node))) * rowBurstMult;
 
                 // The post-tend Pristine window outlasts the burst (design §5)
                 // — count it down in gold so tending's second gift is visible.
@@ -1927,6 +1931,7 @@ namespace Wildgrove.Game
                     : string.Empty;
                 var bondedHere = Bonds.BondedGatherersAt(state, _loop.Data, node);
                 row.info.text = PrettyName(node.resourceId)
+                                + (wardenHere ? "  <size=22><color=#F2EBD3>• the warden is here</color></size>" : string.Empty)
                                 + "\n<size=24>" + NumberFormat.Short(held) + " held" + fineHeld + basket + "</size>"
                                 + "\n<size=24>" + node.familiarCount + " familiars"
                                 + (bondedHere > 0 ? " (+" + bondedHere + " bonded)" : string.Empty)

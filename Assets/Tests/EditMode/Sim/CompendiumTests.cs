@@ -27,7 +27,9 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { renownDivisor = 5000, exponent = 0.5, yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
-                tending = new EconomyData.TendingData { burstYieldMult = 3, burstDurationSec = 5, handGatherPerSecond = 0.5 },
+                // No warden section — the warden-gather test opts in itself so
+                // the other records stay exact.
+                tending = new EconomyData.TendingData { burstYieldMult = 3, burstDurationSec = 5 },
                 crafting = new EconomyData.CraftingData { baseCraftSeconds = 5 },
             };
             _data.resources = new List<ResourceData>
@@ -78,15 +80,17 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void HandGather_JoinsTheRecord()
+        public void WardenGather_JoinsTheRecord()
         {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.nodes[0].familiarCount = 0;
 
             Simulation.Tend(state, _data, state.nodes[0]);
             Simulation.Advance(state, _data, 5.0);
 
-            Assert.That(Compendium.LifetimeGathered(state, "berries").ToDouble(), Is.EqualTo(2.5).Within(Tolerance),
+            // The whole 5 s is bursted at ×3: 0.5 · 5 · 3 = 7.5.
+            Assert.That(Compendium.LifetimeGathered(state, "berries").ToDouble(), Is.EqualTo(7.5).Within(Tolerance),
                 "the warden's own hands count too");
         }
 

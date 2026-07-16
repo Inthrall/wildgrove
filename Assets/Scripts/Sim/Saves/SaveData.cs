@@ -40,8 +40,11 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v14+: resources whose Pristine specimen was donated to the Museum (absent before the Museum — nothing donated).</summary>
         public List<string> donatedResources = new List<string>();
 
-        /// <summary>v15+: the node the bonded gatherers are posted at (null = the first node; earned bonds are derived, never saved).</summary>
+        /// <summary>v15–v18 wire name for the warden's post — read only by the v18→v19 migration.</summary>
         public string bondedPostNodeId;
+
+        /// <summary>v19+: the warden's post (null = the first node; the bonded gatherers work at the warden's side).</summary>
+        public string wardenPostNodeId;
 
         /// <summary>v17+: Amber (absent before the amber system — none held).</summary>
         public double amber;

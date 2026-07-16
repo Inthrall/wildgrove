@@ -90,15 +90,10 @@ namespace Wildgrove.Sim
             return count;
         }
 
-        /// <summary>Where the bonded gatherers are posted: the last-tended node, or the first node before any tend.</summary>
+        /// <summary>Where the bonded gatherers are posted: at the warden's side (design §7).</summary>
         public static string PostNodeId(GameState state)
         {
-            if (!string.IsNullOrEmpty(state.bondedPostNodeId))
-            {
-                return state.bondedPostNodeId;
-            }
-
-            return state.nodes.Count > 0 ? state.nodes[0].id : null;
+            return Warden.PostNodeId(state);
         }
 
         /// <summary>The bond a source grants, if any — for the HUD to promise the companion before it's earned.</summary>

@@ -95,17 +95,20 @@ namespace Wildgrove.Sim
                     }
                 }
 
-                // The warden's own hands, while the burst is live — straight to
-                // camp, no carrier needed (they pocket what they pick). This is
-                // how a node with no familiars earns its first own-resource
-                // gift (design §13 decision).
-                if (burstSeconds > 0.0 && economy?.tending != null)
+                // The warden's own hands, at their post — always on (being
+                // somewhere is the kickstart, not a tap surge), boosted while
+                // a burst is live, and straight to camp with no carrier (they
+                // pocket what they pick). This is how a bare node earns its
+                // first own-resource gift (design §13 decision).
+                var wardenRate = Warden.GatherPerSecond(state, economy, node);
+                if (wardenRate > 0.0)
                 {
-                    var handGathered = new BigDouble(economy.tending.handGatherPerSecond * burstSeconds);
-                    state.AddResource(node.resourceId, handGathered);
-                    Skills.AddGatherXp(state, data, node.skill, handGathered);
-                    Mastery.AddGatherXp(node, economy, handGathered);
-                    Compendium.RecordGather(state, node.resourceId, handGathered);
+                    var wardenGathered = new BigDouble(wardenRate *
+                        (deltaSeconds - burstSeconds + burstSeconds * burstMult));
+                    state.AddResource(node.resourceId, wardenGathered);
+                    Skills.AddGatherXp(state, data, node.skill, wardenGathered);
+                    Mastery.AddGatherXp(node, economy, wardenGathered);
+                    Compendium.RecordGather(state, node.resourceId, wardenGathered);
                 }
 
                 if (node.tendBurstRemaining > 0.0)
@@ -262,7 +265,7 @@ namespace Wildgrove.Sim
             }
 
             Tend(node, data.economy);
-            state.bondedPostNodeId = node.id;
+            state.wardenPostNodeId = node.id;
             Rite.RecordDeed(state, data, "tend");
         }
 

@@ -215,13 +215,13 @@ namespace Wildgrove.Sim.Tests
             };
             var state = StateWithTheRiteSung();
             state.donatedResources.Add("berries");
-            state.bondedPostNodeId = state.nodes[0].id;
+            state.wardenPostNodeId = state.nodes[0].id;
 
             var next = Migration.Migrate(state, _data);
 
             Assert.That(Bonds.BondedCarriers(next, _data), Is.EqualTo(1),
                 "the bond is derived from the donations the fold carries — Sootwing crosses too");
-            Assert.That(next.bondedPostNodeId, Is.Null, "the post resets with the camp");
+            Assert.That(next.wardenPostNodeId, Is.Null, "the post resets with the camp");
         }
 
         [Test]

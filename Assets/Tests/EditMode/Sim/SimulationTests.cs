@@ -25,9 +25,9 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
-                // handGatherPerSecond 0 keeps the burst-maths tests exact; the
-                // hand-gather tests below opt in per test.
-                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0, handGatherPerSecond = 0.0 },
+                // No warden section: keeps the burst-maths tests exact; the
+                // warden-gather tests below opt in per test.
+                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // Effectively unbounded, so yield-focused tests see goods at camp
                 // the same tick they're gathered; HaulTests pins the tight case.
@@ -63,20 +63,17 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_HandGatherDuringBurst_AlsoGrantsSkillXp()
+        public void Advance_WardenGather_AlsoGrantsSkillXp()
         {
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
-            _data.economy.tending = new EconomyData.TendingData
-            {
-                burstYieldMult = 3.0, burstDurationSec = 5.0, handGatherPerSecond = 2.0,
-            };
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 2.0 };
             var state = GameStateFactory.NewGame(_data);
             state.nodes[0].familiarCount = 0;
-            Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 5.0);
 
-            // The warden's hands are an action too: 2/s for the 5 s burst.
+            // The warden's hands are an action too: 2/s at their default post
+            // (the first node) for 5 s, no tend required.
             Assert.That(Skills.Xp(state, "foraging"), Is.EqualTo(10.0).Within(Tolerance));
         }
 
@@ -200,47 +197,76 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_TendedEmptyNode_HandGathersStraightToCamp()
+        public void Advance_WardenAtBareNode_GathersStraightToCamp()
         {
-            _data.economy.tending.handGatherPerSecond = 0.5;
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            Simulation.Tend(state.nodes[1], _data.economy); // wildflowers: no familiars
+            state.wardenPostNodeId = state.nodes[1].id; // wildflowers: no familiars
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The warden's hands are the bare node's only source — 0.5/s for the
-            // 2 bursted seconds, bypassing basket and carriers (design §13).
+            // The warden's hands are the bare node's only source — 0.5/s just
+            // for standing there, bypassing basket and carriers (design §13).
             Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
             Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
-        public void Advance_HandGather_StopsWhenTheBurstExpires()
+        public void Advance_WardenGather_IsBoostedWhileTheBurstLives()
         {
-            _data.economy.tending.handGatherPerSecond = 0.5;
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
+            state.wardenPostNodeId = state.nodes[1].id;
             Simulation.Tend(state.nodes[1], _data.economy);
 
             Simulation.Advance(state, _data, 8.0);
 
-            // Only the 5 bursted seconds pay — 0.5 · 5 = 2.5.
-            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(2.5).Within(Tolerance));
+            // 5 bursted seconds at ×3 plus 3 plain seconds: 0.5 · (15 + 3) = 9.
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(9.0).Within(Tolerance));
         }
 
         [Test]
-        public void Advance_HandGather_AddsToFamiliarYieldWithoutCarriers()
+        public void Advance_WardenGather_OnlyAtThePost()
         {
-            _data.economy.tending.handGatherPerSecond = 0.5;
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+            state.wardenPostNodeId = state.nodes[1].id;
+            foreach (var node in state.nodes)
+            {
+                node.familiarCount = 0;
+            }
+
+            Simulation.Advance(state, _data, 2.0);
+
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_WardenGather_AddsToFamiliarYieldWithoutCarriers()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.carrierCount = 0;
-            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 familiar
+            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 familiar, the default post
 
             Simulation.Advance(state, _data, 2.0);
 
             // The familiar's bursted yield (2s · 3×) waits in the basket with no
-            // carriers, but the warden's 1.0 reaches camp regardless.
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            // carriers, but the warden's bursted 0.5 · 2 · 3 reaches camp regardless.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
             Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Tend_StateAware_MovesTheWardenPost()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[0].id), "defaults to the first node");
+
+            Simulation.Tend(state, _data, state.nodes[2]);
+
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[2].id));
         }
 
         [Test]

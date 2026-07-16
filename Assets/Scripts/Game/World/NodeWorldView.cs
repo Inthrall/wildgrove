@@ -30,6 +30,7 @@ namespace Wildgrove.Game.World
 
         private static readonly Color HaloColour = new Color(1f, 0.78f, 0.25f, 0.5f);
         private static readonly Color BondedColour = new Color(1f, 0.72f, 0.2f, 1f);
+        private static readonly Color WardenColour = new Color(0.95f, 0.92f, 0.83f, 1f);
 
         public NodeState Node { get; private set; }
 
@@ -37,6 +38,7 @@ namespace Wildgrove.Game.World
         private SpriteRenderer _ring;
         private SpriteRenderer _halo;
         private SpriteRenderer _bondedMarker;
+        private SpriteRenderer _wardenMarker;
         private SpriteRenderer[] _flockDots;
         private Color _colour;
         private float _diameter = 1f;
@@ -74,6 +76,13 @@ namespace Wildgrove.Game.World
             view._bondedMarker.transform.localPosition = new Vector3(0.42f, 0.42f, 0f);
             view._bondedMarker.enabled = false;
 
+            // The warden's post — a parchment-cream triangle (a little tent)
+            // above the node they stand at.
+            view._wardenMarker = CreateSprite(go.transform, "Warden", PlaceholderArt.Triangle, WardenColour, 3);
+            view._wardenMarker.transform.localScale = Vector3.one * 0.34f;
+            view._wardenMarker.transform.localPosition = new Vector3(-0.42f, 0.46f, 0f);
+            view._wardenMarker.enabled = false;
+
             return view;
         }
 
@@ -83,8 +92,10 @@ namespace Wildgrove.Game.World
             _diameter = worldDiameter;
         }
 
-        public void Refresh(bool selected, float time, int bondedGatherers)
+        public void Refresh(bool selected, float time, int bondedGatherers, bool wardenPosted)
         {
+            _wardenMarker.enabled = wardenPosted;
+
             var pulse = Node.tendBurstRemaining > 0.0
                 ? 1f + PulseAmount * Mathf.Sin(time * PulseSpeed)
                 : 1f;
@@ -103,7 +114,9 @@ namespace Wildgrove.Game.World
                 _halo.color = halo;
             }
 
-            var working = Node.familiarCount + bondedGatherers > 0;
+            // The warden counts as somebody working it — a bare node at the
+            // post shouldn't read as idle.
+            var working = Node.familiarCount + bondedGatherers > 0 || wardenPosted;
             var colour = _colour;
             colour.a = working ? 1f : IdleAlpha;
             _disc.color = colour;

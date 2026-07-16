@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 18;
+        public const int CurrentVersion = 19;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -33,7 +33,7 @@ namespace Wildgrove.Sim.Saves
                 migrationCount = state.migrationCount,
                 almanacNodeIds = new List<string>(state.almanacNodeIds),
                 donatedResources = new List<string>(state.donatedResources),
-                bondedPostNodeId = state.bondedPostNodeId,
+                wardenPostNodeId = state.wardenPostNodeId,
                 amber = state.amber,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 carrierCount = state.carrierCount,
@@ -169,7 +169,7 @@ namespace Wildgrove.Sim.Saves
             state.donatedResources = save.donatedResources != null
                 ? new List<string>(save.donatedResources)
                 : new List<string>();
-            state.bondedPostNodeId = save.bondedPostNodeId;
+            state.wardenPostNodeId = save.wardenPostNodeId;
             state.amber = save.amber;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
@@ -571,6 +571,13 @@ namespace Wildgrove.Sim.Saves
                         // which reads as a feature, not a bug.
                         save.seenWaystoneZoneIds = save.seenWaystoneZoneIds ?? new List<string>();
                         save.version = 18;
+                        break;
+
+                    case 18:
+                        // v18's "bonded post" became the warden's post — same
+                        // meaning (the last-tended node), wider role.
+                        save.wardenPostNodeId = save.bondedPostNodeId;
+                        save.version = 19;
                         break;
 
                     default:

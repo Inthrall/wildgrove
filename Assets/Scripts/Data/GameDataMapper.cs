@@ -316,8 +316,11 @@ namespace Wildgrove.Data
                     burstYieldMult = e.Tending.BurstYieldMult,
                     burstDurationSec = e.Tending.BurstDurationSec,
                     pristineBonusDurationSec = e.Tending.PristineBonusDurationSec,
-                    pristineChanceBonus = e.Tending.PristineChanceBonus,
-                    handGatherPerSecond = e.Tending.HandGatherPerSecond
+                    pristineChanceBonus = e.Tending.PristineChanceBonus
+                },
+                warden = new EconomyData.WardenData
+                {
+                    gatherPerSecond = e.Warden.GatherPerSecond
                 }
             };
         }

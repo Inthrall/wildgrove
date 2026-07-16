@@ -35,11 +35,12 @@ namespace Wildgrove.Sim
         public List<string> donatedResources = new List<string>();
 
         /// <summary>
-        /// Where the bonded gatherers are posted: the node the warden last
-        /// tended (they follow the warden's attention). Null until the first
-        /// tend of a run — bonds default to the first node.
+        /// The warden's post: the node they last tended (the warden works
+        /// where their attention is, and bonded gatherers work at their side).
+        /// Null until the first tend of a run — the post defaults to the
+        /// first node.
         /// </summary>
-        public string bondedPostNodeId;
+        public string wardenPostNodeId;
 
         /// <summary>Amber (design §10) — the premium currency; dig sites surface it free, and it survives Migration.</summary>
         public double amber;

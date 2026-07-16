@@ -35,8 +35,8 @@ namespace Wildgrove.Sim.Tests
                 {
                     burstYieldMult = 3.0, burstDurationSec = 5.0,
                     pristineBonusDurationSec = 30.0, pristineChanceBonus = 1.0,
-                    handGatherPerSecond = 0.5,
                 },
+                warden = new EconomyData.WardenData { gatherPerSecond = 0.5 },
             };
             _data.resources = new List<ResourceData>
             {

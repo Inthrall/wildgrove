@@ -75,10 +75,11 @@ namespace Wildgrove.Game.World
 
             Layout();
 
+            var postNodeId = Warden.PostNodeId(_loop.State);
             foreach (var view in _views)
             {
                 var bonded = Bonds.BondedGatherersAt(_loop.State, _loop.Data, view.Node);
-                view.Refresh(view.Node == SelectedNode, Time.time, bonded);
+                view.Refresh(view.Node == SelectedNode, Time.time, bonded, view.Node.id == postNodeId);
             }
 
             foreach (var digView in _digViews)

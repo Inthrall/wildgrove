@@ -417,12 +417,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresTheBondedPost()
+        public void RoundTrip_RestoresTheWardenPost()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.bondedPostNodeId = state.nodes[0].id;
+            state.wardenPostNodeId = state.nodes[0].id;
 
-            Assert.That(RoundTrip(state).bondedPostNodeId, Is.EqualTo(state.nodes[0].id));
+            Assert.That(RoundTrip(state).wardenPostNodeId, Is.EqualTo(state.nodes[0].id));
         }
 
         [Test]
@@ -495,7 +495,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V14Save_HasNoBondedPost()
+        public void TryMigrate_V14Save_HasNoWardenPost()
         {
             // v14 predates bonded familiars; earned bonds are derived, never
             // stored, so only the post needs a default.
@@ -503,7 +503,18 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.bondedPostNodeId, Is.Null);
+            Assert.That(save.wardenPostNodeId, Is.Null);
+        }
+
+        [Test]
+        public void TryMigrate_V18Save_CarriesTheBondedPostToTheWarden()
+        {
+            // v18's "bonded post" became the warden's post — same meaning
+            // (the last-tended node), wider role.
+            var save = new SaveData { version = 18, bondedPostNodeId = "sunfield-meadow:berries" };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.wardenPostNodeId, Is.EqualTo("sunfield-meadow:berries"));
         }
 
         [Test]

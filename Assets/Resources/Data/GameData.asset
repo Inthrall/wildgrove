@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: e373d75ae9107e1e5d6260e12dad23d4bc6ce55cdba333fe02563ec6ce577830
+  sourceHash: 8e605c382d0d3fad63279c41a4ba8a23870753bd49c0b9fc2998e5afa851b232
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -80,7 +80,8 @@ MonoBehaviour:
       burstDurationSec: 5
       pristineBonusDurationSec: 30
       pristineChanceBonus: 1
-      handGatherPerSecond: 0.5
+    warden:
+      gatherPerSecond: 0.5
     amber:
       digFindsPerHour: 0.06
       perFind: 2

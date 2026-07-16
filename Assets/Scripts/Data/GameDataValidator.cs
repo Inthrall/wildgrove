@@ -801,6 +801,7 @@ namespace Wildgrove.Data
             RequireSection(economy.Quality, "quality", issues);
             RequireSection(economy.Excavation, "excavation", issues);
             RequireSection(economy.Tending, "tending", issues);
+            RequireSection(economy.Warden, "warden", issues);
 
             if (economy.CostGrowth != null
                 && (economy.CostGrowth.GathererGift <= 1 || economy.CostGrowth.CarrierGift <= 1 || economy.CostGrowth.Building <= 1))
@@ -813,11 +814,11 @@ namespace Wildgrove.Data
                 issues.Add("Economy gift base costs must be positive");
             }
 
-            if (economy.Tending != null && economy.Tending.HandGatherPerSecond <= 0)
+            if (economy.Warden != null && economy.Warden.GatherPerSecond <= 0)
             {
                 // Not merely a tuning value: gatherer gifts cost the node's own
                 // resource, and a bare node's only source is the warden's hands.
-                issues.Add("Economy tending.handGatherPerSecond must be positive or bare nodes can never afford their first gift");
+                issues.Add("Economy warden.gatherPerSecond must be positive or bare nodes can never afford their first gift");
             }
 
             if (economy.Hauling != null
