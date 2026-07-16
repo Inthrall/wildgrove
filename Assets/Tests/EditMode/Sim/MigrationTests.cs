@@ -132,6 +132,7 @@ namespace Wildgrove.Sim.Tests
             state.skillXp["foraging"] = 1000.0;
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId, familiarCount = 2 });
             state.deedCounts["tend"] = 9;
+            state.gearBySlot["camp"] = "oilskin-tarp";
 
             var next = Migration.Migrate(state, _data);
 
@@ -150,6 +151,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(next.digSites, Is.Empty);
             Assert.That(next.deedCounts, Is.Empty);
             Assert.That(next.verseProgress, Is.Empty);
+            Assert.That(next.gearBySlot, Is.Empty, "the kit is rebuilt cheaply each run, not carried");
         }
 
         [Test]

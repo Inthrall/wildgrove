@@ -34,6 +34,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v12+: Almanac nodes bought with Verdure (absent before the Almanac — none owned).</summary>
         public List<string> almanacNodeIds = new List<string>();
 
+        /// <summary>v13+: the warden's worn kit, one gear id per slot (absent before the gear system — bare hands).</summary>
+        public List<SavedGearSlot> gear = new List<SavedGearSlot>();
+
         /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
         public int carrierCount;
 
@@ -83,6 +86,14 @@ namespace Wildgrove.Sim.Saves
     {
         public string id;
         public double xp;
+    }
+
+    /// <summary>One kit slot's worn gear.</summary>
+    [Serializable]
+    public sealed class SavedGearSlot
+    {
+        public string slot;
+        public string gearId;
     }
 
     /// <summary>One warden deed's lifetime count this run.</summary>

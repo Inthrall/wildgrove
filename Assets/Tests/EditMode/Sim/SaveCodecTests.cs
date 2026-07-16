@@ -384,6 +384,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheWornKit()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.gearBySlot["hands"] = "cordage-wraps";
+            state.gearBySlot["camp"] = "oilskin-tarp";
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.gearBySlot["hands"], Is.EqualTo("cordage-wraps"));
+            Assert.That(restored.gearBySlot["camp"], Is.EqualTo("oilskin-tarp"));
+        }
+
+        [Test]
+        public void TryMigrate_V12Save_GetsBareHands()
+        {
+            // v12 predates the warden's kit.
+            var save = new SaveData { version = 12, gear = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.gear, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V9Save_GetsEmptyRiteProgress()
         {
             // v9 predates the Rite runtime — nothing offered yet.

@@ -46,7 +46,10 @@ namespace Wildgrove.Sim
         private static void Step(GameState state, GameDataAsset data, double deltaSeconds)
         {
             var economy = data.economy;
-            var burstMult = economy?.tending != null ? economy.tending.burstYieldMult : 1.0;
+            // Worn gear can strengthen the burst (the Cordage Wraps' +50%).
+            var burstMult = economy?.tending != null
+                ? economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, data))
+                : 1.0;
             var hauling = economy?.hauling;
             // The Store line's bought levels stretch every basket.
             var basketCapacity = hauling != null

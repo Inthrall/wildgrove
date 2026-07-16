@@ -28,6 +28,9 @@ namespace Wildgrove.Sim
         /// <summary>Almanac nodes bought with Verdure (design §7) — permanent, surviving every Migration. Their costs stay allocated; see Almanac.AvailableVerdure.</summary>
         public List<string> almanacNodeIds = new List<string>();
 
+        /// <summary>The warden's kit (design §4): worn gear id per slot (hands/pack/camp). Persists for the run; Migration resets it — the kit is rebuilt cheaply each run.</summary>
+        public Dictionary<string, string> gearBySlot = new Dictionary<string, string>();
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

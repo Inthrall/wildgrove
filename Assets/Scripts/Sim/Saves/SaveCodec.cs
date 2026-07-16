@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 12;
+        public const int CurrentVersion = 13;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -105,6 +105,11 @@ namespace Wildgrove.Sim.Saves
             foreach (var pair in state.deedCounts)
             {
                 save.deedCounts.Add(new SavedDeedCount { id = pair.Key, count = pair.Value });
+            }
+
+            foreach (var pair in state.gearBySlot)
+            {
+                save.gear.Add(new SavedGearSlot { slot = pair.Key, gearId = pair.Value });
             }
 
             foreach (var verse in state.verseProgress)
@@ -298,6 +303,20 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            state.gearBySlot.Clear();
+            if (save.gear != null)
+            {
+                foreach (var worn in save.gear)
+                {
+                    if (worn?.slot != null && worn.gearId != null)
+                    {
+                        // Unknown gear ids are kept, same policy as elsewhere —
+                        // EquippedEffects skips what the data doesn't know.
+                        state.gearBySlot[worn.slot] = worn.gearId;
+                    }
+                }
+            }
+
             state.verseProgress.Clear();
             if (save.verseProgress != null)
             {
@@ -470,6 +489,12 @@ namespace Wildgrove.Sim.Saves
                         // v11 predates the Almanac — no nodes bought yet.
                         save.almanacNodeIds = save.almanacNodeIds ?? new List<string>();
                         save.version = 12;
+                        break;
+
+                    case 12:
+                        // v12 predates the warden's kit — bare hands.
+                        save.gear = save.gear ?? new List<SavedGearSlot>();
+                        save.version = 13;
                         break;
 
                     default:

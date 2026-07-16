@@ -505,6 +505,18 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>Craft and wear a piece of the kit (design §4) — spends its materials, fills its slot. Returns false when it can't be made.</summary>
+        public bool CraftGear(GearData gear)
+        {
+            if (!Gear.TryCraft(State, Data, gear))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("gear_crafted", ("gear", gear.id), ("slot", gear.slot));
+            return true;
+        }
+
         /// <summary>Verdure not yet allocated to an Almanac node — for the section header and buy buttons.</summary>
         public double AvailableVerdure()
         {

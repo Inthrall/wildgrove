@@ -193,22 +193,43 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Carry-capacity multiplier from owned haulMult upgrades (Waxed
-        /// Satchel ×1.5, Handcart ×2, …) — they multiply together. Additive
-        /// carrierCapacityBonus gear arrives with the gear system.
+        /// Carry-capacity multiplier: haulMult effects (Waxed Satchel ×1.5,
+        /// Handcart ×2, Almanac Sure Paths) multiply together, then the
+        /// additive carrierCapacityBonus band (the Birch Frame Pack's +25%)
+        /// scales the product.
         /// </summary>
         public static double HaulCapacityMultiplier(GameState state, GameDataAsset data)
         {
             var mult = 1.0;
+            var bonus = 0.0;
             foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.HaulMult)
                 {
                     mult *= effect.value;
                 }
+                else if (effect.type == EffectType.CarrierCapacityBonus)
+                {
+                    bonus += effect.value;
+                }
             }
 
-            return mult;
+            return mult * (1.0 + bonus);
+        }
+
+        /// <summary>Extra Tending burst strength from worn gear (the Cordage Wraps' +50%), summed — multiplies the burst's yield multiplier.</summary>
+        public static double TendingBurstBonus(GameState state, GameDataAsset data)
+        {
+            var bonus = 0.0;
+            foreach (var effect in ActiveEffects(state, data))
+            {
+                if (effect.type == EffectType.TendingBurstBonus)
+                {
+                    bonus += effect.value;
+                }
+            }
+
+            return bonus;
         }
 
         /// <summary>
@@ -336,26 +357,37 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The run's offline cap: the base cap, raised (never lowered) to the
-        /// best offlineCapHours upgrade owned (Root Cellar 6 h, Smokehouse 8 h).
-        /// Additive offlineCapBonusHours gear arrives with the gear system.
+        /// best offlineCapHours effect active (Root Cellar 6 h, Smokehouse
+        /// 8 h, the Almanac's Long Watch), plus the additive
+        /// offlineCapBonusHours band (the Oilskin Tarp's +2 h).
         /// </summary>
         public static double OfflineCapHours(GameState state, GameDataAsset data)
         {
             var cap = data.economy.offline.baseCapHours;
+            var bonus = 0.0;
             foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.OfflineCapHours && effect.value > cap)
                 {
                     cap = effect.value;
                 }
+                else if (effect.type == EffectType.OfflineCapBonusHours)
+                {
+                    bonus += effect.value;
+                }
             }
 
-            return cap;
+            return cap + bonus;
         }
 
-        /// <summary>Purchased upgrade effects, completed fossils', and owned Almanac nodes' — everything currently modifying the run.</summary>
+        /// <summary>Purchased upgrade effects, completed fossils', owned Almanac nodes', and worn gear's — everything currently modifying the run.</summary>
         private static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
         {
+            foreach (var effect in Gear.EquippedEffects(state, data))
+            {
+                yield return effect;
+            }
+
             foreach (var effect in PurchasedEffects(state, data))
             {
                 yield return effect;

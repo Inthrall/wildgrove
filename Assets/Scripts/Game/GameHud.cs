@@ -68,6 +68,7 @@ namespace Wildgrove.Game
         private GameObject _migrationSheet;
         private Text _almanacHeader;
         private GameObject _almanacPanel;
+        private Text _kitHeader;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -78,6 +79,7 @@ namespace Wildgrove.Game
         private readonly List<VerseHeadingView> _verseHeadings = new List<VerseHeadingView>();
         private readonly List<RiteSlotRowView> _riteRows = new List<RiteSlotRowView>();
         private readonly List<AlmanacRowView> _almanacRows = new List<AlmanacRowView>();
+        private readonly List<GearRowView> _gearRows = new List<GearRowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
@@ -150,6 +152,7 @@ namespace Wildgrove.Game
             _verseHeadings.Clear();
             _riteRows.Clear();
             _almanacRows.Clear();
+            _gearRows.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
             _boundState = _loop.State;
@@ -375,6 +378,25 @@ namespace Wildgrove.Game
             }
 
             _buildingsHeader.gameObject.SetActive(_buildingRows.Count > 0);
+
+            // The warden's kit (design §4): three slots of crafted survival
+            // gear. Rows show as their craft skill unlocks.
+            _kitHeader = CreateText("KitHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _kitHeader.text = "The Kit";
+            SetPreferredHeight(_kitHeader.gameObject, 48f);
+
+            var kitPanel = CreatePanel("Kit", sections, new Color(0f, 0f, 0f, 0f));
+            var kitLayout = kitPanel.AddComponent<VerticalLayoutGroup>();
+            kitLayout.spacing = 12f;
+            kitLayout.childControlWidth = true;
+            kitLayout.childControlHeight = true;
+            kitLayout.childForceExpandWidth = true;
+            kitLayout.childForceExpandHeight = false;
+
+            foreach (var gearItem in _loop.Data.gear)
+            {
+                _gearRows.Add(BuildGearRow(kitPanel.transform, gearItem));
+            }
 
             // The Rite (design §7): each unlocked zone's verse and its
             // offering slots. Static per data — Refresh drives visibility.
@@ -783,6 +805,39 @@ namespace Wildgrove.Game
             };
         }
 
+        private GearRowView BuildGearRow(Transform parent, GearData gear)
+        {
+            var rowGo = CreatePanel("Gear_" + gear.id, parent, RowColor);
+            SetPreferredHeight(rowGo, 100f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var (craft, craftLabel) = CreateButton("Craft", rowGo.transform, "Craft", () => _loop.CraftGear(gear));
+            SetPreferredWidth(craft.gameObject, 200f);
+
+            return new GearRowView
+            {
+                gear = gear,
+                root = rowGo,
+                info = info,
+                craftButton = craft,
+                craftLabel = craftLabel,
+                // Static per piece — built once, not per frame.
+                materialsLine = string.Join(" + ",
+                    gear.materials.Select(m => m.amount + " " + PrettyName(m.id))),
+            };
+        }
+
         private AlmanacRowView BuildAlmanacRow(Transform parent, AlmanacNodeData node)
         {
             var rowGo = CreatePanel("Almanac_" + node.id, parent, RowColor);
@@ -799,7 +854,7 @@ namespace Wildgrove.Game
             var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
             info.GetComponent<LayoutElement>().flexibleWidth = 1f;
             info.horizontalOverflow = HorizontalWrapMode.Wrap;
-            info.text = node.displayName + "\n<size=24>" + AlmanacEffectSummary(node) + "</size>";
+            info.text = node.displayName + "\n<size=24>" + EffectSummary(node.effects) + "</size>";
 
             var (buy, buyLabel) = CreateButton("Buy", rowGo.transform, "Buy", () => _loop.BuyAlmanacNode(node));
             SetPreferredWidth(buy.gameObject, 200f);
@@ -813,11 +868,11 @@ namespace Wildgrove.Game
             };
         }
 
-        /// <summary>What the node grants, for its row subtitle.</summary>
-        private static string AlmanacEffectSummary(AlmanacNodeData node)
+        /// <summary>What a set of effects grants, for Almanac and Kit row subtitles.</summary>
+        private static string EffectSummary(List<EffectData> effects)
         {
             var parts = new List<string>();
-            foreach (var effect in node.effects)
+            foreach (var effect in effects)
             {
                 switch (effect.type)
                 {
@@ -827,8 +882,14 @@ namespace Wildgrove.Game
                     case EffectType.OfflineCapHours:
                         parts.Add("offline cap " + effect.value + " h");
                         break;
+                    case EffectType.OfflineCapBonusHours:
+                        parts.Add("offline cap +" + effect.value + " h");
+                        break;
                     case EffectType.HaulMult:
                         parts.Add("carry ×" + effect.value);
+                        break;
+                    case EffectType.CarrierCapacityBonus:
+                        parts.Add("+" + (int)(effect.value * 100.0) + "% carry");
                         break;
                     case EffectType.CraftSpeedMult:
                         parts.Add("craft speed ×" + effect.value);
@@ -838,6 +899,9 @@ namespace Wildgrove.Game
                         break;
                     case EffectType.PristineChanceBonus:
                         parts.Add("+" + effect.value * 100.0 + "pt Pristine");
+                        break;
+                    case EffectType.TendingBurstBonus:
+                        parts.Add("tending burst +" + (int)(effect.value * 100.0) + "%");
                         break;
                     default:
                         parts.Add(PrettyName(effect.type.ToString()));
@@ -1167,7 +1231,8 @@ namespace Wildgrove.Game
                 var tending = string.Empty;
                 if (node.tendBurstRemaining > 0.0 && economy.tending != null)
                 {
-                    rate = rate * economy.tending.burstYieldMult + new BigDouble(economy.tending.handGatherPerSecond);
+                    var burstMult = economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, _loop.Data));
+                    rate = rate * burstMult + new BigDouble(economy.tending.handGatherPerSecond);
                     tending = "  (tending)";
                 }
                 var basketFull = economy.hauling != null
@@ -1271,6 +1336,32 @@ namespace Wildgrove.Game
             }
 
             _excavationHeader.gameObject.SetActive(_digRows.Count > 0);
+
+            // The Kit: pieces appear as their craft skill unlocks; worn pieces
+            // show as such and the section hides until anything is craftable.
+            var anyKit = false;
+            var unlockedSkills = Upgrades.UnlockedSkills(state, _loop.Data);
+            foreach (var row in _gearRows)
+            {
+                var worn = Gear.IsEquipped(state, row.gear);
+                var show = worn || string.IsNullOrEmpty(row.gear.skill) || unlockedSkills.Contains(row.gear.skill);
+                row.root.SetActive(show);
+                if (!show)
+                {
+                    continue;
+                }
+
+                anyKit = true;
+                row.info.text = row.gear.displayName + "  <size=24>(" + PrettyName(row.gear.slot) + ")</size>"
+                                + "\n<size=24>" + EffectSummary(row.gear.effects)
+                                + (worn ? "  •  worn" : string.Empty) + "</size>";
+                row.craftLabel.text = worn
+                    ? "Worn"
+                    : "Craft\n<size=20>" + row.materialsLine + "</size>";
+                row.craftButton.interactable = !worn && Gear.CanCraft(state, _loop.Data, row.gear);
+            }
+
+            _kitHeader.gameObject.SetActive(anyKit);
 
             // The Rite: revealed verses show their heading and, while
             // incomplete, their offering slots. A sung verse folds down to its
@@ -1682,6 +1773,16 @@ namespace Wildgrove.Game
             public AlmanacNodeData node;
             public GameObject root;
             public Button buyButton;
+        }
+
+        private sealed class GearRowView
+        {
+            public GearData gear;
+            public GameObject root;
+            public Text info;
+            public Button craftButton;
+            public Text craftLabel;
+            public string materialsLine;
         }
 
         private sealed class VerseHeadingView

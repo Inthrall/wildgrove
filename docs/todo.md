@@ -144,10 +144,14 @@ they're easy to find and delete when resolved.
   verse's reveal still count (lifetime, no per-verse baseline), and partial
   fossil FRAGMENTS survive Migration alongside completed fossils ("every
   fossil"). (`Wildgrove.Sim/Rite.cs`, `Migration.cs`)
-- **`NodeState.yieldMultiplier` only folds in purchased upgrades.** The tick treats
-  it as a black box; `Upgrades.RecomputeYieldMultipliers` rebuilds it from yieldMult /
-  yieldBonus upgrade effects, but gear and tool-tier derivation still multiply in
-  with their systems. (`Assets/Scripts/Sim/Upgrades.cs`)
+- **Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
+  `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
+  spoilage system for them to modify — both are recorded on the worn kit and
+  shown in the HUD, waiting for their mechanics (night-rate with the offline
+  balance pass, spoilage if it ever ships). Also interpretations: crafting
+  into an occupied slot destroys the old piece (no kit bag), and crafted
+  gear is worn immediately — there is no separate equip step.
+  (`Wildgrove.Sim/Gear.cs`)
 - **Tending's Pristine window is live but invisible.** `Simulation.Tend` opens
   the 30 s pristineBonusRemaining window (chance × (1 + pristineChanceBonus))
   alongside the yield burst, but the HUD gives no cue that it's running —
