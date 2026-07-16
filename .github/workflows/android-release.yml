@@ -117,12 +117,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "android-v${{ inputs.versionCode }}" \
-            build/Android/Wildgrove-v${{ inputs.versionCode }}.* \
-            --title "Android v${{ inputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
-            --notes "Signed Android App Bundle of Wildgrove.
+          # Idempotent: re-dispatching a versionCode replaces the assets on the
+          # existing release instead of dying on the duplicate tag (which would
+          # also block the Play upload step below).
+          tag="android-v${{ inputs.versionCode }}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" \
+              build/Android/Wildgrove-v${{ inputs.versionCode }}.* \
+              --clobber
+          else
+            gh release create "$tag" \
+              build/Android/Wildgrove-v${{ inputs.versionCode }}.* \
+              --title "Android v${{ inputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
+              --notes "Signed Android App Bundle of Wildgrove.
 
           Uploaded to Play track: ${{ inputs.uploadToPlay && inputs.track || 'not uploaded' }}."
+          fi
 
       - name: Upload to Google Play
         if: ${{ inputs.uploadToPlay }}
