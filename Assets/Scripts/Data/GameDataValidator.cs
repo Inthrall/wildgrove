@@ -759,6 +759,25 @@ namespace Wildgrove.Data
             {
                 issues.Add($"Fossil card text references unknown fossil '{key}'");
             }
+
+            // The MVP zones ship with their words: a waystone that reveals
+            // nothing on arrival, or a verse with no line at its site, is a
+            // hole the player walks into. Later-scope zones may stay silent
+            // until their content pass.
+            foreach (var zone in data.Zones.Where(z => z.Scope == "mvp"))
+            {
+                if (!data.Dialogue.Waystones.TryGetValue(zone.Id, out var waystone)
+                    || string.IsNullOrWhiteSpace(waystone))
+                {
+                    issues.Add($"MVP zone '{zone.Id}' has no waystone text");
+                }
+
+                if (!data.Dialogue.Verses.TryGetValue(zone.Id, out var verse)
+                    || string.IsNullOrWhiteSpace(verse))
+                {
+                    issues.Add($"MVP zone '{zone.Id}' has no verse text");
+                }
+            }
         }
 
         private static void ValidateEconomy(EconomyConfig economy, List<string> issues)

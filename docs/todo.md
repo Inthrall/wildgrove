@@ -225,11 +225,13 @@ they're easy to find and delete when resolved.
 
 ## Narrative authoring
 
-- **MVP dialogue strings are partly empty** — the silverrun-river waystone and
-  three of four verse lines in `design/data/dialogue.json` are `""`. The
-  validator can't enforce non-empty text until the words are written (that's
-  the §6 narrative budget, an authoring task, not a data bug); add the
-  every-mvp-zone-has-text rule when they land.
+- **MVP dialogue is drafted, not final.** All four waystones, all four verse
+  lines, and all three fossil cards in `design/data/dialogue.json` now have
+  text in the §6 register, and the validator enforces waystone + verse text
+  for every mvp-scope zone. The words are a first draft — re-voice anything
+  that misses the tone before release. Still unwritten (by design, later
+  scope): v1.1+ zone waystones/verses, more Provisioner lines, the final
+  waystones chain.
 
 ## Data-layer review items (open from the data-layer PR review)
 

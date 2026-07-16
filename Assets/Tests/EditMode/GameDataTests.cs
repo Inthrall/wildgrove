@@ -455,6 +455,34 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void Validate_MvpZoneWithoutWaystoneText_IsReported()
+        {
+            var sources = LoadSources();
+            // An MVP zone's waystone must have its inscription — a blank one
+            // is a hole the player walks into on arrival.
+            sources.DialogueJson = sources.DialogueJson.Replace(
+                "The river keeps no ledger. Count what you take, for it will not.",
+                "");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("MVP zone 'silverrun-river' has no waystone text")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_MvpZoneWithoutVerseText_IsReported()
+        {
+            var sources = LoadSources();
+            sources.DialogueJson = sources.DialogueJson.Replace(
+                "Of all you pulled from the water, the river asks the finest back. It knows you have it.",
+                "");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("MVP zone 'silverrun-river' has no verse text")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_ZeroedAmberSection_IsReported()
         {
             var sources = LoadSources();

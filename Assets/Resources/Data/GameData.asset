@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 0f19e337809238db5f6be00e2d861f86e42a892403b18284e95d64cd639e451e
+  sourceHash: e373d75ae9107e1e5d6260e12dad23d4bc6ce55cdba333fe02563ec6ce577830
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1669,16 +1669,19 @@ MonoBehaviour:
     - key: old-growth-wood
       text: These roots drink deeper than you will ever dig. Let them.
     - key: silverrun-river
-      text: 
+      text: The river keeps no ledger. Count what you take, for it will not.
     verses:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.
     - key: bramble-hedgerows
-      text: 
+      text: "Sweetness kept, stone made bright \u2014 show the hedge what the taking
+        taught you."
     - key: old-growth-wood
-      text: 
+      text: Wood made useful, and one bone of what came before. The grove would hold
+        it again.
     - key: silverrun-river
-      text: 
+      text: Of all you pulled from the water, the river asks the finest back. It
+        knows you have it.
     provisioner:
     - id: prov-01
       trigger: first-visit
@@ -1695,6 +1698,8 @@ MonoBehaviour:
       text: A crown of bone for a king of no kingdom. The meadow remembers being
         afraid, and will not say of what.
     - key: sunken-jaw
-      text: 
+      text: A jaw wide as a coracle, teeth worn smooth with patience. The river fed
+        it for ten thousand years, and then one grey spring, did not.
     - key: those-who-planted
-      text: 
+      text: "Rows. Whoever they were, they planted in rows \u2014 right up to the
+        ash. The hands in the strata are smaller than yours, but not by much."

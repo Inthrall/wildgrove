@@ -4,13 +4,13 @@
     "sunfield-meadow":   "Walk gently. The meadow fed them, too, and they are under it.",
     "bramble-hedgerows": "The stone does not grow back. Take it like you mean it.",
     "old-growth-wood":   "These roots drink deeper than you will ever dig. Let them.",
-    "silverrun-river":   ""
+    "silverrun-river":   "The river keeps no ledger. Count what you take, for it will not."
   },
   "verses": {
     "sunfield-meadow":   "What you carry is borrowed. Set some down, and see what follows you home.",
-    "bramble-hedgerows": "",
-    "old-growth-wood":   "",
-    "silverrun-river":   ""
+    "bramble-hedgerows": "Sweetness kept, stone made bright — show the hedge what the taking taught you.",
+    "old-growth-wood":   "Wood made useful, and one bone of what came before. The grove would hold it again.",
+    "silverrun-river":   "Of all you pulled from the water, the river asks the finest back. It knows you have it."
   },
   "provisioner": [
     { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
@@ -22,7 +22,7 @@
   ],
   "fossilCards": {
     "antler-crown":      "A crown of bone for a king of no kingdom. The meadow remembers being afraid, and will not say of what.",
-    "sunken-jaw":        "",
-    "those-who-planted": ""
+    "sunken-jaw":        "A jaw wide as a coracle, teeth worn smooth with patience. The river fed it for ten thousand years, and then one grey spring, did not.",
+    "those-who-planted": "Rows. Whoever they were, they planted in rows — right up to the ash. The hands in the strata are smaller than yours, but not by much."
   }
 }
