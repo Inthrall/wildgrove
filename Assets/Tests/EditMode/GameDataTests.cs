@@ -70,6 +70,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.UpgradesById["copper-sickle"].ToolTier, Is.EqualTo("copper"));
             Assert.That(data.AlmanacById["old-songs-ii"].Requires, Is.EqualTo("old-songs-i"));
             Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
+            Assert.That(data.MuseumSetsById["river-catch"].Entries, Has.Count.EqualTo(4));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
@@ -425,6 +426,21 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_MuseumEntryNotGathered_IsReported()
+        {
+            var sources = LoadSources();
+            // Pristine specimens only come from haul batches — a non-gathered
+            // entry could never be donated.
+            sources.MuseumJson = sources.MuseumJson.Replace(
+                "\"herbs\", \"copper-scree\"]",
+                "\"herbs\", \"bogus-find\"]");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("'bogus-find' is not a gathered resource")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

@@ -505,6 +505,18 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>Donate one Pristine specimen to the Museum (design §5 — permanence over the windfall). Returns false when no set wants it or none is held.</summary>
+        public bool DonatePristine(string resourceId)
+        {
+            if (!Museum.TryDonate(State, Data, resourceId))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("specimen_donated", ("resource", resourceId));
+            return true;
+        }
+
         /// <summary>Craft and wear a piece of the kit (design §4) — spends its materials, fills its slot. Returns false when it can't be made.</summary>
         public bool CraftGear(GearData gear)
         {

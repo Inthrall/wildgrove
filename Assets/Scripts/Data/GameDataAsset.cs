@@ -26,6 +26,7 @@ namespace Wildgrove.Data
         public List<GearData> gear = new List<GearData>();
         public List<FossilData> fossils = new List<FossilData>();
         public List<AlmanacNodeData> almanac = new List<AlmanacNodeData>();
+        public List<MuseumSetData> museumSets = new List<MuseumSetData>();
         public RitesBundle rites;
         public DialogueBundle dialogue;
 

@@ -139,6 +139,16 @@ namespace Wildgrove.Data
         public List<EffectData> effects = new List<EffectData>();
     }
 
+    /// <summary>One Museum set (design §5): donate a Pristine specimen of each entry; completion grants a permanent effect surviving Migration.</summary>
+    [Serializable]
+    public sealed class MuseumSetData
+    {
+        public string id;
+        public string displayName;
+        public List<string> entries = new List<string>();
+        public List<EffectData> effects = new List<EffectData>();
+    }
+
     /// <summary>One node of the Almanac — the permanent Verdure tree (design §7). Ownership survives Migration.</summary>
     [Serializable]
     public sealed class AlmanacNodeData

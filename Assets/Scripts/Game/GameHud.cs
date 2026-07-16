@@ -69,6 +69,9 @@ namespace Wildgrove.Game
         private Text _almanacHeader;
         private GameObject _almanacPanel;
         private Text _kitHeader;
+        private Text _museumHeader;
+        private GameObject _museumPanel;
+        private readonly List<MuseumRowView> _museumRows = new List<MuseumRowView>();
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
@@ -153,6 +156,7 @@ namespace Wildgrove.Game
             _riteRows.Clear();
             _almanacRows.Clear();
             _gearRows.Clear();
+            _museumRows.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
             _boundState = _loop.State;
@@ -378,6 +382,35 @@ namespace Wildgrove.Game
             }
 
             _buildingsHeader.gameObject.SetActive(_buildingRows.Count > 0);
+
+            // The Museum (design §5): set progress and the permanent bonuses
+            // donations have banked. Hidden until specimens enter the picture.
+            _museumHeader = CreateText("MuseumHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _museumHeader.text = "Museum";
+            SetPreferredHeight(_museumHeader.gameObject, 48f);
+
+            _museumPanel = CreatePanel("Museum", sections, new Color(0f, 0f, 0f, 0f));
+            var museumLayout = _museumPanel.AddComponent<VerticalLayoutGroup>();
+            museumLayout.spacing = 12f;
+            museumLayout.childControlWidth = true;
+            museumLayout.childControlHeight = true;
+            museumLayout.childForceExpandWidth = true;
+            museumLayout.childForceExpandHeight = false;
+
+            foreach (var set in _loop.Data.museumSets)
+            {
+                var rowGo = CreatePanel("Set_" + set.id, _museumPanel.transform, RowColor);
+                SetPreferredHeight(rowGo, 100f);
+                var setLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+                setLayout.padding = new RectOffset(16, 16, 12, 12);
+                setLayout.childControlWidth = true;
+                setLayout.childControlHeight = true;
+                setLayout.childForceExpandWidth = true;
+                setLayout.childForceExpandHeight = true;
+                var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+                info.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _museumRows.Add(new MuseumRowView { set = set, root = rowGo, info = info });
+            }
 
             // The warden's kit (design §4): three slots of crafted survival
             // gear. Rows show as their craft skill unlocks.
@@ -998,6 +1031,12 @@ namespace Wildgrove.Game
             info.GetComponent<LayoutElement>().flexibleWidth = 1f;
             info.horizontalOverflow = HorizontalWrapMode.Wrap;
 
+            // The §5 three-way choice, two of its forks side by side: the
+            // windfall sale, or permanence in the Museum. (The third — the
+            // Rite — asks from its own section.)
+            var (donate, _) = CreateButton("Donate", rowGo.transform, "Donate", () => _loop.DonatePristine(resourceId));
+            SetPreferredWidth(donate.gameObject, 150f);
+
             var (sell, sellLabel) = CreateButton("Sell", rowGo.transform, "Sell", () => _loop.SellPristine(resourceId));
             SetPreferredWidth(sell.gameObject, 200f);
 
@@ -1006,6 +1045,7 @@ namespace Wildgrove.Game
                 resourceId = resourceId,
                 root = rowGo,
                 info = info,
+                donateButton = donate,
                 sellButton = sell,
                 sellLabel = sellLabel,
             };
@@ -1297,9 +1337,28 @@ namespace Wildgrove.Game
                     ? "Sell\n<size=22>" + NumberFormat.Short(windfall) + "</size>"
                     : "Sell";
                 row.sellButton.interactable = windfall > BigDouble.Zero;
+                row.donateButton.interactable = Museum.CanDonate(state, _loop.Data, row.resourceId);
             }
 
             _specimensHeader.gameObject.SetActive(anySpecimens);
+
+            // The Museum: set progress, visible once specimens are in play.
+            var museumVisible = anySpecimens || state.donatedResources.Count > 0;
+            _museumHeader.gameObject.SetActive(museumVisible);
+            _museumPanel.SetActive(museumVisible);
+            if (museumVisible)
+            {
+                foreach (var row in _museumRows)
+                {
+                    var complete = Museum.IsSetComplete(state, row.set);
+                    row.info.text = row.set.displayName
+                                    + (complete
+                                        ? "  <size=24>— complete</size>"
+                                        : "  <size=24>— " + Museum.DonatedEntryCount(state, row.set)
+                                          + "/" + row.set.entries.Count + " donated</size>")
+                                    + "\n<size=24>" + EffectSummary(row.set.effects) + "</size>";
+                }
+            }
 
             // Dig sites: who's turning soil, and how each fossil is assembling.
             foreach (var row in _digRows)
@@ -1764,8 +1823,16 @@ namespace Wildgrove.Game
             public string resourceId;
             public GameObject root;
             public Text info;
+            public Button donateButton;
             public Button sellButton;
             public Text sellLabel;
+        }
+
+        private sealed class MuseumRowView
+        {
+            public MuseumSetData set;
+            public GameObject root;
+            public Text info;
         }
 
         private sealed class AlmanacRowView

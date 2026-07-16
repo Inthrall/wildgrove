@@ -31,6 +31,9 @@ namespace Wildgrove.Sim
         /// <summary>The warden's kit (design §4): worn gear id per slot (hands/pack/camp). Persists for the run; Migration resets it — the kit is rebuilt cheaply each run.</summary>
         public Dictionary<string, string> gearBySlot = new Dictionary<string, string>();
 
+        /// <summary>Resources whose Pristine specimen has been donated to the Museum (design §5) — permanent, surviving every Migration.</summary>
+        public List<string> donatedResources = new List<string>();
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

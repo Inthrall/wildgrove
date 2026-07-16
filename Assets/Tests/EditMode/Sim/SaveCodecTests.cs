@@ -408,6 +408,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresMuseumDonations()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.donatedResources.Add("berries");
+
+            Assert.That(RoundTrip(state).donatedResources, Is.EqualTo(new[] { "berries" }));
+        }
+
+        [Test]
+        public void TryMigrate_V13Save_GetsAnEmptyMuseum()
+        {
+            // v13 predates the Museum — nothing donated yet.
+            var save = new SaveData { version = 13, donatedResources = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.donatedResources, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V9Save_GetsEmptyRiteProgress()
         {
             // v9 predates the Rite runtime — nothing offered yet.

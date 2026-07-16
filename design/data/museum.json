@@ -1,0 +1,9 @@
+{
+  "$comment": "Museum sets (design doc §5): groups of Compendium entries completed by DONATING a Pristine specimen of each listed resource. A completed set grants a permanent effect that survives Migration; the Curator's Cabinet upgrade (museumSetBonusMult) scales the granted values while owned. Donation is the three-way Pristine choice made real: sell the windfall, offer it to the Rite, or bank permanence here. Sets and effect sizes are first guesses over the four MVP zones' resources; more sets (and the full Compendium plates around them) come with the content pass.",
+  "sets": [
+    { "id": "meadow-blooms",     "name": "Meadow Blooms",     "entries": ["berries", "wildflowers", "fibres"],       "effects": [{ "type": "yieldBonus", "skill": "foraging", "value": 0.10 }] },
+    { "id": "hedgerow-harvest",  "name": "Hedgerow Harvest",  "entries": ["nuts", "herbs", "copper-scree"],          "effects": [{ "type": "pristineChanceBonus", "value": 0.005 }] },
+    { "id": "old-growth-bounty", "name": "Old-Growth Bounty", "entries": ["timber", "mushrooms", "tin-seam"],        "effects": [{ "type": "offlineCapBonusHours", "value": 1 }] },
+    { "id": "river-catch",       "name": "River Catch",       "entries": ["fish", "reeds", "clay", "iron-gravel"],   "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }] }
+  ]
+}

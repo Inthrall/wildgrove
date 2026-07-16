@@ -17,6 +17,7 @@ namespace Wildgrove.Data
             asset.gear = data.Gear.Select(MapGear).ToList();
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
             asset.almanac = data.Almanac.Select(MapAlmanacNode).ToList();
+            asset.museumSets = data.MuseumSets.Select(MapMuseumSet).ToList();
             asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);
         }
@@ -109,6 +110,17 @@ namespace Wildgrove.Data
                 skill = g.Skill,
                 materials = MapItemAmounts(g.Materials),
                 effects = g.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static MuseumSetData MapMuseumSet(MuseumSetDef m)
+        {
+            return new MuseumSetData
+            {
+                id = m.Id,
+                displayName = m.Name,
+                entries = new List<string>(m.Entries),
+                effects = m.Effects.Select(MapEffect).ToList()
             };
         }
 

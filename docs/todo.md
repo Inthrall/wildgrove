@@ -111,17 +111,17 @@ they're easy to find and delete when resolved.
   iron 5). Tool-tier level gating (§4) waits for the tools system, and the
   Migration skill reset (§7) for the prestige build.
   (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
-- **Quality rolls land per haul batch, but nothing consumes the pools except
-  the Provisioner.** Each delivery rolls once (Common/Fine/Pristine, design
-  §5); Fine stock sells with the common stock at fineValueMult, Pristine
-  specimens wait in the HUD's Specimens section for an explicit windfall
-  sale. The Compendium (lifetime counters, plates), Museum donation, and
-  Rite specimen slots all consume these pools later — a rite "specimen" is a
-  unit of the quality pool of the right resource. Interpretations to confirm
-  in balance: the whole batch takes the rolled tier; pristineValueMult (10×)
-  isn't in the doc; hand-gather and the no-hauling fallback never roll; the
-  staggered-fleet cadence and fullest-basket-first routing.
-  (`Wildgrove.Sim/Quality.cs`, `Simulation.Deliver`)
+- **The Pristine three-way choice is complete; the Compendium's plates and
+  lifetime counters are not.** Quality pools now feed all three forks — the
+  Provisioner windfall, Rite specimen slots, and Museum donations (one
+  Pristine per set entry, permanent set bonuses × the Curator's Cabinet).
+  Still waiting: Compendium entries/plates/lifetime counters (the art +
+  content pass), more Museum sets, and familiar plates. Interpretations to
+  confirm in balance: the whole batch takes the rolled tier;
+  pristineValueMult (10×) isn't in the doc; hand-gather and the no-hauling
+  fallback never roll; staggered-fleet cadence and fullest-basket-first
+  routing; museum set/effect sizes are first guesses.
+  (`Wildgrove.Sim/Quality.cs`, `Museum.cs`)
 - **Crafting and gifts spend only common stock.** Fine finds can't feed a
   recipe or a gift — probably right (they're for selling/offering), but it
   means a run holding only Fine berries can't gift a gatherer. Revisit with

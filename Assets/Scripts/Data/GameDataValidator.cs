@@ -34,6 +34,7 @@ namespace Wildgrove.Data
             CheckIds(data.Gear.Select(g => g.Id), "gear", issues);
             CheckIds(data.Fossils.Select(f => f.Id), "fossil", issues);
             CheckIds(data.Almanac.Select(a => a.Id), "almanac node", issues);
+            CheckIds(data.MuseumSets.Select(m => m.Id), "museum set", issues);
 
             // Everything obtainable: gathered from a zone or produced by a recipe.
             var resourceIds = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
@@ -48,6 +49,7 @@ namespace Wildgrove.Data
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
             ValidateAlmanac(data, resourceIds, issues);
+            ValidateMuseum(data, resourceIds, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
@@ -515,6 +517,34 @@ namespace Wildgrove.Data
                     }
 
                     data.AlmanacById.TryGetValue(current.Requires, out current);
+                }
+            }
+        }
+
+        private static void ValidateMuseum(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            var gathered = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
+            foreach (var set in data.MuseumSets)
+            {
+                if (set.Entries.Count == 0)
+                {
+                    issues.Add($"Museum set '{set.Id}' has no entries");
+                }
+
+                foreach (var entry in set.Entries)
+                {
+                    // Pristine specimens only come from haul batches, so a set
+                    // entry must be a GATHERED resource — a crafted good could
+                    // never be donated.
+                    if (!gathered.Contains(entry))
+                    {
+                        issues.Add($"Museum set '{set.Id}' entry '{entry}' is not a gathered resource");
+                    }
+                }
+
+                foreach (var effect in set.Effects)
+                {
+                    ValidateEffect($"Museum set '{set.Id}'", effect, data, resourceIds, issues);
                 }
             }
         }

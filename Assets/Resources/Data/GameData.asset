@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 0f9ad414595ac05aeeb521461596883b59a5c378679c6abe9bdcf673f440b0b8
+  sourceHash: eb1f569ded15a5d6683f87c048b238cd8d1d20f44a270c4a08f0fc0ca3af9dbc
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1342,6 +1342,60 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.25
+  museumSets:
+  - id: meadow-blooms
+    displayName: Meadow Blooms
+    entries:
+    - berries
+    - wildflowers
+    - fibres
+    effects:
+    - type: 1
+      skill: foraging
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.1
+  - id: hedgerow-harvest
+    displayName: Hedgerow Harvest
+    entries:
+    - nuts
+    - herbs
+    - copper-scree
+    effects:
+    - type: 6
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.005
+  - id: old-growth-bounty
+    displayName: Old-Growth Bounty
+    entries:
+    - timber
+    - mushrooms
+    - tin-seam
+    effects:
+    - type: 9
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      value: 1
+  - id: river-catch
+    displayName: River Catch
+    entries:
+    - fish
+    - reeds
+    - clay
+    - iron-gravel
+    effects:
+    - type: 1
+      skill: fishing
+      zone: 
+      resource: 
+      recipe: 
+      value: 0.15
   rites:
     chooseCount: 3
     rites:

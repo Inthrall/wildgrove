@@ -172,6 +172,29 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_KeepsMuseumDonations_AndTheirSetBonuses()
+        {
+            _data.museumSets = new List<MuseumSetData>
+            {
+                new MuseumSetData
+                {
+                    id = "meadow-blooms", displayName = "Meadow Blooms",
+                    entries = new List<string> { "berries" },
+                    effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.10 } },
+                },
+            };
+            var state = StateWithTheRiteSung();
+            state.AddPristine("berries", 1);
+            Museum.TryDonate(state, _data, "berries");
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.donatedResources, Is.EqualTo(new[] { "berries" }));
+            Assert.That(next.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance),
+                "the Museum's permanence survives the fold");
+        }
+
+        [Test]
         public void Migrate_KeepsTheAlmanac_AndItsEffects()
         {
             _data.almanac = new List<AlmanacNodeData>

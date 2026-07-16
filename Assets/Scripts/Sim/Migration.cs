@@ -62,6 +62,9 @@ namespace Wildgrove.Sim
             // The Almanac is the permanent tree — bought once, kept forever.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);
 
+            // "You keep … the Museum" — donations and their set bonuses too.
+            next.donatedResources.AddRange(state.donatedResources);
+
             // "You keep … every fossil" — completed fossils and the fragments
             // still assembling both survive; the dig chase spans migrations.
             foreach (var pair in state.fossilFragments)

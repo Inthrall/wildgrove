@@ -398,6 +398,11 @@ namespace Wildgrove.Sim
                 yield return effect;
             }
 
+            foreach (var effect in Museum.CompletedSetEffects(state, data))
+            {
+                yield return effect;
+            }
+
             foreach (var nodeId in state.almanacNodeIds)
             {
                 if (!data.AlmanacById.TryGetValue(nodeId, out var node))

@@ -21,6 +21,7 @@ namespace Wildgrove.Data
         public string FossilsJson { get; set; }
         public string RitesJson { get; set; }
         public string AlmanacJson { get; set; }
+        public string MuseumJson { get; set; }
         public string DialogueJson { get; set; }
     }
 
@@ -43,6 +44,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<FossilDef> Fossils { get; private set; }
         public RitesConfig Rites { get; private set; }
         public IReadOnlyList<AlmanacDef> Almanac { get; private set; }
+        public IReadOnlyList<MuseumSetDef> MuseumSets { get; private set; }
         public DialogueData Dialogue { get; private set; }
 
         public IReadOnlyDictionary<string, ResourceDef> ResourcesById { get; private set; }
@@ -53,6 +55,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, GearDef> GearById { get; private set; }
         public IReadOnlyDictionary<string, FossilDef> FossilsById { get; private set; }
         public IReadOnlyDictionary<string, AlmanacDef> AlmanacById { get; private set; }
+        public IReadOnlyDictionary<string, MuseumSetDef> MuseumSetsById { get; private set; }
 
         private GameData()
         {
@@ -74,6 +77,7 @@ namespace Wildgrove.Data
                 Fossils = JsonConvert.DeserializeObject<FossilsFile>(sources.FossilsJson, settings).Fossils,
                 Rites = JsonConvert.DeserializeObject<RitesConfig>(sources.RitesJson, settings),
                 Almanac = JsonConvert.DeserializeObject<AlmanacFile>(sources.AlmanacJson, settings).Nodes,
+                MuseumSets = JsonConvert.DeserializeObject<MuseumFile>(sources.MuseumJson, settings).Sets,
                 Dialogue = JsonConvert.DeserializeObject<DialogueData>(sources.DialogueJson, settings)
             };
 
@@ -101,6 +105,7 @@ namespace Wildgrove.Data
                 FossilsJson = File.ReadAllText(Path.Combine(directory, "fossils.json")),
                 RitesJson = File.ReadAllText(Path.Combine(directory, "rites.json")),
                 AlmanacJson = File.ReadAllText(Path.Combine(directory, "almanac.json")),
+                MuseumJson = File.ReadAllText(Path.Combine(directory, "museum.json")),
                 DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json"))
             };
         }
@@ -114,7 +119,7 @@ namespace Wildgrove.Data
             // this whole file as binary.
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson,
-                sources.AlmanacJson, sources.DialogueJson);
+                sources.AlmanacJson, sources.MuseumJson, sources.DialogueJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -150,6 +155,7 @@ namespace Wildgrove.Data
             GearById = IndexById(Gear, g => g.Id);
             FossilsById = IndexById(Fossils, f => f.Id);
             AlmanacById = IndexById(Almanac, a => a.Id);
+            MuseumSetsById = IndexById(MuseumSets, m => m.Id);
         }
 
         private static IReadOnlyDictionary<string, T> IndexById<T>(IEnumerable<T> items, System.Func<T, string> id)
@@ -205,6 +211,11 @@ namespace Wildgrove.Data
         private sealed class AlmanacFile
         {
             public List<AlmanacDef> Nodes { get; set; }
+        }
+
+        private sealed class MuseumFile
+        {
+            public List<MuseumSetDef> Sets { get; set; }
         }
     }
 }
