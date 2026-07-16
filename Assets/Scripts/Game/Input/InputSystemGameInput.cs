@@ -12,6 +12,15 @@ namespace Wildgrove.Game.Input
     /// </summary>
     public sealed class InputSystemGameInput : IGameInput
     {
+        public bool PointerPressedThisFrame
+        {
+            get
+            {
+                var pointer = Pointer.current;
+                return pointer != null && pointer.press.wasPressedThisFrame;
+            }
+        }
+
         public bool TendTriggered(out Vector2? screenPosition)
         {
             // Non-positional confirms first: the caller resolves these against

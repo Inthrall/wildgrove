@@ -174,6 +174,19 @@ namespace Wildgrove.Game
             }
         }
 
+        private void LateUpdate()
+        {
+            // Runs after the EventSystem has processed the frame's events: a
+            // pointer press (over a widget or not) drops uGUI focus, so focus
+            // stays a controller-navigation concept. Without this, clicking a
+            // button leaves it focused and the next Space/pad-A "tend" would
+            // silently re-press it (uGUI Submit).
+            if (_input != null && _input.PointerPressedThisFrame && EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+
         private void Initialise()
         {
             _input = new InputSystemGameInput();
@@ -230,13 +243,20 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // Space and pad-South are also uGUI's Submit: while a widget holds
+            // focus (controller navigation), the press belongs to the widget —
+            // activating it AND tending would double-fire.
+            if (!screenPosition.HasValue
+                && EventSystem.current != null
+                && EventSystem.current.currentSelectedGameObject != null)
+            {
+                return;
+            }
+
             // A pointer press that landed on a widget is that widget's business
             // (its own onClick runs) — don't also tend behind it, and drop the
             // node selection (row buttons re-select their own node on click,
             // camp-wide widgets leave nothing selected).
-            // NOTE: with a gamepad, pad-South is also uGUI's Submit, so tending
-            // while a button is focused can double-fire — refined in the Phase 2
-            // controller/focus pass.
             var overWidget = screenPosition.HasValue
                              && EventSystem.current != null
                              && EventSystem.current.IsPointerOverGameObject();

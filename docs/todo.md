@@ -56,9 +56,6 @@ they're easy to find and delete when resolved.
   the remaining Phase 2 job; on short landscape screens the scroll section
   absorbs the squeeze and the world strip can collapse to nothing.
   (`GameHud.BuildScrollSection`, `HeightClampedElement`)
-- **Gamepad South double-fire.** Pad-South is also uGUI's Submit, so tending while a
-  widget is focused can fire both the button and the tend. Fix in the controller/focus
-  pass. (`GameHud.HandleTendInput`)
 - **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
   GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
   Replace with a real bootstrap scene when there's content to lay out.
@@ -126,9 +123,11 @@ they're easy to find and delete when resolved.
   + narrative pass — the system layer with lifetime counters, discovery, and
   the field-notes HUD section is live in `Wildgrove.Sim/Compendium.cs`;
   counters record GROSS gathering like skill XP, crafted batches, and
-  Pristine UNITS — units not windfall events, an interpretation), more
-  Museum sets, familiar species plates, and a compendium_entry_discovered
-  telemetry event (skipped for now: offline catch-up would burst-fire it). Interpretations to
+  Pristine UNITS — units not windfall events, an interpretation), familiar
+  species plates, and a compendium_entry_discovered
+  telemetry event (skipped for now: offline catch-up would burst-fire it).
+  Museum sets now cover all eight zones plus the Warden's Gallery capstone
+  (one donation from every zone) — set/effect sizes still first guesses. Interpretations to
   confirm in balance: the whole batch takes the rolled tier;
   pristineValueMult (10×) isn't in the doc; hand-gather and the no-hauling
   fallback never roll; staggered-fleet cadence and fullest-basket-first

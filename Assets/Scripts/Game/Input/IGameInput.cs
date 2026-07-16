@@ -22,5 +22,13 @@ namespace Wildgrove.Game.Input
         /// tends the currently selected node.
         /// </summary>
         bool TendTriggered(out Vector2? screenPosition);
+
+        /// <summary>
+        /// True on the single frame a pointer (touch or mouse) pressed, whether
+        /// or not it landed on a widget — the UI layer uses this to drop stale
+        /// uGUI focus after taps, keeping widget focus a controller-navigation
+        /// concept.
+        /// </summary>
+        bool PointerPressedThisFrame { get; }
     }
 }
