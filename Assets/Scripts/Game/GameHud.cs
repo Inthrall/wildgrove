@@ -26,6 +26,7 @@ namespace Wildgrove.Game
     {
         private static readonly Color PanelColor = new Color(0.12f, 0.16f, 0.13f, 0.92f);
         private static readonly Color SectionHeaderColor = new Color(0.09f, 0.13f, 0.10f, 0.9f);
+        private static readonly Color ZoneHeaderColor = new Color(0.15f, 0.20f, 0.16f, 0.75f);
         private static readonly Color RowColor = new Color(0.18f, 0.23f, 0.19f, 0.90f);
         private static readonly Color RowSelectedColor = new Color(0.24f, 0.34f, 0.24f, 0.95f);
         private static readonly Color AccentColor = new Color(0.35f, 0.55f, 0.34f, 1f);
@@ -100,7 +101,9 @@ namespace Wildgrove.Game
         private NodeState _selected;
         private GameState _boundState;
         private bool _builtLandscape;
+        private GameObject _bondSheet;
         private readonly List<SectionView> _sections = new List<SectionView>();
+        private readonly List<SectionView> _zoneGroups = new List<SectionView>();
 
         private void Update()
         {
@@ -133,7 +136,8 @@ namespace Wildgrove.Game
             // dashboard) — a rotation rebuilds it. Deferred while a modal sheet
             // is up so the rebuild can't eat a welcome-back or Migration confirm.
             if ((Screen.width > Screen.height) != _builtLandscape
-                && _welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null)
+                && _welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null
+                && _bondSheet == null)
             {
                 Initialise();
             }
@@ -150,13 +154,23 @@ namespace Wildgrove.Game
 
             // A waystone reveals on arrival (design §6) — one sheet at a
             // time, and never over another modal.
-            if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null)
+            if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null
+                && _bondSheet == null)
             {
                 var waystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
                 if (waystoneZone != null)
                 {
                     ShowWaystoneSheet(waystoneZone);
                 }
+            }
+
+            // A companion bonding is the rarest thing that can happen (design
+            // §7 — earned, never bought): give it a moment, not just a row
+            // changing text. Waits its turn behind any other sheet.
+            if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null
+                && _bondSheet == null && _loop.PendingBondCelebration != null)
+            {
+                ShowBondSheet(_loop.TakePendingBondCelebration());
             }
         }
 
@@ -188,8 +202,10 @@ namespace Wildgrove.Game
             _gearRows.Clear();
             _museumRows.Clear();
             _sections.Clear();
+            _zoneGroups.Clear();
             _welcomeSheet = null;
             _migrationSheet = null;
+            _bondSheet = null;
             _boundState = _loop.State;
             BuildUi();
             // Compute the layout now so the world-gap rect is valid this frame
@@ -203,7 +219,8 @@ namespace Wildgrove.Game
         {
             // While the welcome-back sheet is up, its dim layer owns the screen —
             // a non-positional confirm (Space / pad-A) shouldn't tend behind it.
-            if (_welcomeSheet != null || _migrationSheet != null || _waystoneSheet != null)
+            if (_welcomeSheet != null || _migrationSheet != null || _waystoneSheet != null
+                || _bondSheet != null)
             {
                 return;
             }
@@ -636,12 +653,24 @@ namespace Wildgrove.Game
         /// </summary>
         private SectionView CreateSection(Transform parent, string id, string title)
         {
-            var go = CreatePanel("SectionHeader_" + id, parent, SectionHeaderColor);
-            SetPreferredHeight(go, 56f);
+            var view = CreateFoldHeader(parent, id, title, 34, 56f, SectionHeaderColor);
+            _sections.Add(view);
+            return view;
+        }
+
+        /// <summary>
+        /// The shared fold-header construction — used by the top-level sections
+        /// and, at a smaller size, by the per-zone groups inside Gathering.
+        /// </summary>
+        private SectionView CreateFoldHeader(Transform parent, string id, string title,
+            int fontSize, float height, Color background)
+        {
+            var go = CreatePanel("SectionHeader_" + id, parent, background);
+            SetPreferredHeight(go, height);
             var button = go.AddComponent<Button>();
             button.targetGraphic = go.GetComponent<Image>();
 
-            var label = CreateText("Label", go.transform, 34, TextAnchor.MiddleLeft, TextColor);
+            var label = CreateText("Label", go.transform, fontSize, TextAnchor.MiddleLeft, TextColor);
             var labelRect = label.GetComponent<RectTransform>();
             StretchFull(labelRect);
             labelRect.offsetMin = new Vector2(20f, 0f);
@@ -656,7 +685,6 @@ namespace Wildgrove.Game
             };
             button.onClick.AddListener(() => ToggleSection(view));
             SetSectionTitle(view, title);
-            _sections.Add(view);
             return view;
         }
 
@@ -947,7 +975,9 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// (Re)create a row per gathering node — called at build, and again
-        /// whenever the node list changes (a trail map unlocked a zone).
+        /// whenever the node list changes (a trail map unlocked a zone). Once
+        /// the camp works more than one zone, the rows group under a fold-able
+        /// sub-header per zone; a single-zone run keeps the flat list.
         /// </summary>
         private void RebuildNodeRows()
         {
@@ -957,9 +987,58 @@ namespace Wildgrove.Game
             }
 
             _rows.Clear();
+
+            foreach (var group in _zoneGroups)
+            {
+                Destroy(group.header);
+                Destroy(group.panel);
+            }
+
+            _zoneGroups.Clear();
+
+            var zoneIds = new List<string>();
             foreach (var node in _loop.State.nodes)
             {
-                _rows.Add(BuildRow(_nodesPanel, node));
+                if (!zoneIds.Contains(node.zoneId))
+                {
+                    zoneIds.Add(node.zoneId);
+                }
+            }
+
+            if (zoneIds.Count <= 1)
+            {
+                foreach (var node in _loop.State.nodes)
+                {
+                    _rows.Add(BuildRow(_nodesPanel, node));
+                }
+            }
+            else
+            {
+                foreach (var zoneId in zoneIds)
+                {
+                    var zoneName = _loop.Data.ZonesById.TryGetValue(zoneId, out var zone)
+                        ? zone.displayName
+                        : PrettyName(zoneId);
+                    var group = CreateFoldHeader(_nodesPanel, "zone-" + zoneId, zoneName,
+                        28, 44f, ZoneHeaderColor);
+                    var zonePanel = CreatePanel("Zone_" + zoneId, _nodesPanel, new Color(0f, 0f, 0f, 0f));
+                    var zoneLayout = zonePanel.AddComponent<VerticalLayoutGroup>();
+                    zoneLayout.spacing = 12f;
+                    zoneLayout.childControlWidth = true;
+                    zoneLayout.childControlHeight = true;
+                    zoneLayout.childForceExpandWidth = true;
+                    zoneLayout.childForceExpandHeight = false;
+                    AttachSectionPanel(group, zonePanel);
+                    _zoneGroups.Add(group);
+
+                    foreach (var node in _loop.State.nodes)
+                    {
+                        if (node.zoneId == zoneId)
+                        {
+                            _rows.Add(BuildRow(zonePanel.transform, node));
+                        }
+                    }
+                }
             }
 
             foreach (var row in _specimenRows)
@@ -1540,6 +1619,65 @@ namespace Wildgrove.Game
                 {
                     Destroy(_waystoneSheet);
                     _waystoneSheet = null;
+                }
+            });
+            SetPreferredHeight(dismiss.gameObject, 96f);
+        }
+
+        /// <summary>
+        /// The bonding moment (design §7): a companion is earned, never bought,
+        /// and rare — a run may see one. It deserves a sheet, not a row edit.
+        /// </summary>
+        private void ShowBondSheet(BondData bond)
+        {
+            if (_bondSheet != null || bond == null)
+            {
+                return;
+            }
+
+            _bondSheet = CreatePanel("Bond", _canvas, new Color(0f, 0f, 0f, 0.65f));
+            StretchFull(_bondSheet.GetComponent<RectTransform>());
+
+            var sheet = CreatePanel("Sheet", _bondSheet.transform, PanelColor);
+            var sheetRect = sheet.GetComponent<RectTransform>();
+            sheetRect.anchorMin = new Vector2(0.06f, 0.5f);
+            sheetRect.anchorMax = new Vector2(0.94f, 0.5f);
+            sheetRect.pivot = new Vector2(0.5f, 0.5f);
+            sheetRect.offsetMin = Vector2.zero;
+            sheetRect.offsetMax = Vector2.zero;
+            var sheetLayout = sheet.AddComponent<VerticalLayoutGroup>();
+            sheetLayout.padding = new RectOffset(40, 40, 36, 36);
+            sheetLayout.spacing = 16f;
+            sheetLayout.childControlWidth = true;
+            sheetLayout.childControlHeight = true;
+            sheetLayout.childForceExpandWidth = true;
+            sheetLayout.childForceExpandHeight = false;
+            var fitter = sheet.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var title = CreateText("Title", sheet.transform, 44, TextAnchor.MiddleCenter, TextColor);
+            title.text = bond.displayName;
+            SetPreferredHeight(title.gameObject, 64f);
+
+            var moment = CreateText("Moment", sheet.transform, 30, TextAnchor.MiddleCenter,
+                new Color(TextColor.r, TextColor.g, TextColor.b, 0.8f));
+            moment.horizontalOverflow = HorizontalWrapMode.Wrap;
+            moment.text = bond.role == "carrier"
+                ? "falls in beside your carriers, hauling with the fleet —\noutside any count, cap, or cost."
+                : "settles wherever you last tended, gathering —\noutside the flock and its caps.";
+            SetPreferredHeight(moment.gameObject, 88f);
+
+            var keepsake = CreateText("Keepsake", sheet.transform, 28, TextAnchor.MiddleCenter,
+                new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
+            keepsake.text = "Earned, never bought. It crosses every Migration with you.";
+            SetPreferredHeight(keepsake.gameObject, 40f);
+
+            var (dismiss, _) = CreateButton("Continue", sheet.transform, "Walk together", () =>
+            {
+                if (_bondSheet != null)
+                {
+                    Destroy(_bondSheet);
+                    _bondSheet = null;
                 }
             });
             SetPreferredHeight(dismiss.gameObject, 96f);

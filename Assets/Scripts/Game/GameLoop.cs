@@ -594,6 +594,21 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The most recently earned bond awaiting its HUD celebration — a
+        /// companion is rare enough to deserve a moment, not just a row
+        /// changing text. Null when none is pending.
+        /// </summary>
+        public BondData PendingBondCelebration { get; private set; }
+
+        /// <summary>Claim the pending bond celebration (clears it), or null.</summary>
+        public BondData TakePendingBondCelebration()
+        {
+            var bond = PendingBondCelebration;
+            PendingBondCelebration = null;
+            return bond;
+        }
+
+        /// <summary>
         /// A bond is earned the moment its source completes — an event worth
         /// the telemetry (design lean: rare enough that each one is one).
         /// Earned state is derived, so diffing against the pre-action set
@@ -606,6 +621,7 @@ namespace Wildgrove.Game
                 if (!bondsBefore.Contains(bond.id))
                 {
                     Telemetry.LogEvent("familiar_bonded", ("bond", bond.id), ("role", bond.role));
+                    PendingBondCelebration = bond;
                 }
             }
         }
