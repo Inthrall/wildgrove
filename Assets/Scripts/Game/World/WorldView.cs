@@ -6,17 +6,20 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node
-    /// and lays them out in the screen gap the HUD leaves open (the HUD reports
-    /// that gap via <see cref="StripScreenRect"/> each frame). Also answers the
+    /// (plus a <see cref="DigSiteWorldView"/> per unlocked dig site) and lays
+    /// them out in the screen gap the HUD leaves open (the HUD reports that gap
+    /// via <see cref="StripScreenRect"/> each frame). Also answers the
     /// positional-tend question — which node, if any, is under a tap. Placeholder
-    /// tier: discs in a strip now; a real region scene replaces the layout when
+    /// tier: shapes in a strip now; a real region scene replaces the layout when
     /// the art lands, but the camera/world seam and hit-testing stay.
     /// </summary>
     [RequireComponent(typeof(GameLoop))]
     public sealed class WorldView : MonoBehaviour
     {
         private const float HitSlop = 1.15f;
-        private static readonly Color RingColour = new Color(0.95f, 0.85f, 0.45f, 0.9f);
+        // Soft white — the gold accents belong to the Pristine window halo and
+        // the bonded-companion marker, so selection reads as its own thing.
+        private static readonly Color RingColour = new Color(0.94f, 0.97f, 0.92f, 0.95f);
 
         /// <summary>The HUD's free gap, in screen pixels — where the node strip lives.</summary>
         public Rect StripScreenRect { get; set; }
@@ -29,10 +32,15 @@ namespace Wildgrove.Game.World
         private GameState _builtFor;
         private Transform _container;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
+        private readonly List<DigSiteWorldView> _digViews = new List<DigSiteWorldView>();
         private Vector2[] _centres = new Vector2[0];
         private float _radiusPx;
 
-        /// <summary>The node whose sprite is under the screen point, or null for a miss.</summary>
+        /// <summary>
+        /// The node whose sprite is under the screen point, or null for a miss.
+        /// Dig-site sprites share the strip but aren't tendable — a tap on one
+        /// resolves as a miss.
+        /// </summary>
         public NodeState NodeAtScreenPoint(Vector2 screenPoint)
         {
             var index = WorldStrip.HitIndex(_centres, _radiusPx, screenPoint);
@@ -51,9 +59,11 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            // Rebuild on a new run/state object, and when the node list itself
-            // grows mid-run (a trail map unlocked a zone).
-            if (_builtFor != _loop.State || _views.Count != _loop.State.nodes.Count)
+            // Rebuild on a new run/state object, and when the strip's population
+            // grows mid-run (a trail map unlocked a zone or opened a dig site).
+            if (_builtFor != _loop.State
+                || _views.Count != _loop.State.nodes.Count
+                || _digViews.Count != _loop.State.digSites.Count)
             {
                 Rebuild();
             }
@@ -67,7 +77,13 @@ namespace Wildgrove.Game.World
 
             foreach (var view in _views)
             {
-                view.Refresh(view.Node == SelectedNode, Time.time);
+                var bonded = Bonds.BondedGatherersAt(_loop.State, _loop.Data, view.Node);
+                view.Refresh(view.Node == SelectedNode, Time.time, bonded);
+            }
+
+            foreach (var digView in _digViews)
+            {
+                digView.Refresh();
             }
         }
 
@@ -83,6 +99,7 @@ namespace Wildgrove.Game.World
             }
 
             _views.Clear();
+            _digViews.Clear();
             _container = new GameObject("WorldNodes").transform;
             _container.SetParent(transform, false);
 
@@ -92,19 +109,34 @@ namespace Wildgrove.Game.World
                     _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour));
             }
 
+            foreach (var site in _loop.State.digSites)
+            {
+                _digViews.Add(DigSiteWorldView.Create(
+                    _container, site, PlaceholderArt.DigSiteColour(site.zoneId)));
+            }
+
             _builtFor = _loop.State;
         }
 
         private void Layout()
         {
-            _centres = WorldStrip.LayoutCentres(StripScreenRect, _views.Count);
-            var diameterPx = WorldStrip.Diameter(StripScreenRect, _views.Count);
+            // Nodes first, dig sites after — one shared strip, so the hit test's
+            // "first N centres are nodes" convention holds.
+            var total = _views.Count + _digViews.Count;
+            _centres = WorldStrip.LayoutCentres(StripScreenRect, total);
+            var diameterPx = WorldStrip.Diameter(StripScreenRect, total);
             _radiusPx = diameterPx * 0.5f * HitSlop;
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             for (var i = 0; i < _views.Count; i++)
             {
                 _views[i].SetPlacement(ScreenToWorld(_centres[i]), diameterPx * worldPerPixel);
+            }
+
+            for (var i = 0; i < _digViews.Count; i++)
+            {
+                _digViews[i].SetPlacement(
+                    ScreenToWorld(_centres[_views.Count + i]), diameterPx * worldPerPixel);
             }
         }
 

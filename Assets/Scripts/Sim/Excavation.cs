@@ -31,6 +31,18 @@ namespace Wildgrove.Sim
                     continue;
                 }
 
+                // Amber (design §10) is the dig's renewable find — a separate
+                // channel rolled before the fossil check, so fully-dug ground
+                // keeps surfacing it. No draw when unconfigured: pre-amber rng
+                // sequences must not shift.
+                var amber = data.economy.amber;
+                if (amber != null && amber.digFindsPerHour > 0.0
+                    && Rng.NextDouble(ref state.rngState)
+                       < site.familiarCount * amber.digFindsPerHour * digMult * (deltaSeconds / 3600.0))
+                {
+                    state.amber += amber.perFind;
+                }
+
                 var eligible = EligibleFossils(state, data, site.zoneId);
                 if (eligible.Count == 0)
                 {

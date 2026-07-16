@@ -66,6 +66,13 @@
     "pristineValueMult": 10,
     "$note": "design §5: quality rolls per haul batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
   },
+  "amber": {
+    "$note": "Amber (design §10): the premium currency's free earn + soft sink. Dig finds roll per tick at diggers * digFindsPerHour * digSpeedMult (a separate channel from fragments — fully-dug ground keeps surfacing amber); a time-skip instantly credits timeSkipHours of full live production for timeSkipCostAmber. All first guesses against the ~40/week-free lean; IAP/ads/weekly cache arrive with the plugin pass.",
+    "digFindsPerHour": 0.06,
+    "perFind": 2,
+    "timeSkipHours": 4,
+    "timeSkipCostAmber": 15
+  },
   "excavation": {
     "pityTimerHoursDug": 4,
     "baseFragmentsPerHour": 0.25,

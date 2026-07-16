@@ -426,6 +426,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresAmber()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 42.0;
+
+            Assert.That(RoundTrip(state).amber, Is.EqualTo(42.0));
+        }
+
+        [Test]
+        public void TryMigrate_V16Save_HoldsNoAmber()
+        {
+            // v16 predates the amber system — none held.
+            var save = new SaveData { version = 16 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.amber, Is.EqualTo(0.0));
+        }
+
+        [Test]
         public void RoundTrip_RestoresTheCompendium()
         {
             var state = GameStateFactory.NewGame(_data);

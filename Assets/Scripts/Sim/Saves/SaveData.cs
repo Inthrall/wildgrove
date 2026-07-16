@@ -43,6 +43,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v15+: the node the bonded gatherers are posted at (null = the first node; earned bonds are derived, never saved).</summary>
         public string bondedPostNodeId;
 
+        /// <summary>v17+: Amber (absent before the amber system — none held).</summary>
+        public double amber;
+
         /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
         public List<SavedResource> lifetimeGathered = new List<SavedResource>();
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();

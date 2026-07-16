@@ -225,6 +225,17 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_KeepsAmber()
+        {
+            var state = StateWithTheRiteSung();
+            state.amber = 37.0;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.amber, Is.EqualTo(37.0).Within(Tolerance), "'you keep … Amber'");
+        }
+
+        [Test]
         public void Migrate_TheCompendiumCrossesWhole()
         {
             var state = StateWithTheRiteSung();

@@ -453,6 +453,27 @@ namespace Wildgrove.Game
             return Economy.SellAll(State, Data);
         }
 
+        /// <summary>Whether the time-skip is configured and affordable — the button's enabled state.</summary>
+        public bool CanTimeSkip()
+        {
+            return Amber.CanTimeSkip(State, Data);
+        }
+
+        /// <summary>Spend Amber to instantly credit hours of full-rate production (design §10). Returns the hours credited (0 = refused).</summary>
+        public double TimeSkip()
+        {
+            var cost = Data.economy?.amber?.timeSkipCostAmber ?? 0.0;
+            var hours = Amber.TryTimeSkip(State, Data);
+            if (hours > 0.0)
+            {
+                Telemetry.LogEvent("time_skip_used",
+                    ("hours", hours),
+                    ("amber_cost", cost));
+            }
+
+            return hours;
+        }
+
         /// <summary>Offer camp stock into a resource slot of the Rite (design §7). Returns the units delivered.</summary>
         public BigDouble OfferResource(RiteVerseData verse, int slotIndex)
         {

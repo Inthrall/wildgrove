@@ -879,6 +879,15 @@ namespace Wildgrove.Data
                 // fragment — every fossil becomes unreachable.
                 issues.Add("Economy excavation values must all be positive");
             }
+
+            if (economy.Amber != null
+                && (economy.Amber.DigFindsPerHour <= 0 || economy.Amber.PerFind <= 0
+                    || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0))
+            {
+                // A present-but-zeroed section would ship an earn with no sink
+                // (or a sink no one can afford) — configure it whole or not at all.
+                issues.Add("Economy amber values must all be positive");
+            }
         }
 
         private static void RequireSection(object section, string name, List<string> issues)

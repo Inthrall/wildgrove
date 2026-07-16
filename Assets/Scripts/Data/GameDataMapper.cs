@@ -304,6 +304,13 @@ namespace Wildgrove.Data
                     pityTimerHoursDug = e.Excavation.PityTimerHoursDug,
                     baseFragmentsPerHour = e.Excavation.BaseFragmentsPerHour
                 },
+                amber = e.Amber == null ? null : new EconomyData.AmberData
+                {
+                    digFindsPerHour = e.Amber.DigFindsPerHour,
+                    perFind = e.Amber.PerFind,
+                    timeSkipHours = e.Amber.TimeSkipHours,
+                    timeSkipCostAmber = e.Amber.TimeSkipCostAmber
+                },
                 tending = new EconomyData.TendingData
                 {
                     burstYieldMult = e.Tending.BurstYieldMult,

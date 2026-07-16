@@ -59,6 +59,9 @@ namespace Wildgrove.Sim
             next.migrationCount = state.migrationCount + 1;
             next.rngState = state.rngState;
 
+            // "You keep … Amber" — the premium currency never resets.
+            next.amber = state.amber;
+
             // The Almanac is the permanent tree — bought once, kept forever.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);
 

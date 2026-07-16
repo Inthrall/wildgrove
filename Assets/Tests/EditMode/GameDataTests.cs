@@ -64,6 +64,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
             Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
             Assert.That(data.Economy.Excavation.BaseFragmentsPerHour, Is.EqualTo(0.25));
+            Assert.That(data.Economy.Amber.DigFindsPerHour, Is.EqualTo(0.06), "the free amber drip from dig sites");
+            Assert.That(data.Economy.Amber.TimeSkipHours, Is.EqualTo(4.0));
+            Assert.That(data.Economy.Amber.TimeSkipCostAmber, Is.EqualTo(15.0));
             Assert.That(data.UpgradesById["map-oldgrowth"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "excavation"),
                 Is.True, "the first dig site's map also teaches excavation");
             Assert.That(data.ZonesById["silverrun-river"].RequiredTool, Is.EqualTo("bronze"));
@@ -449,6 +452,19 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("'bogus-find' is not a gathered resource")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_ZeroedAmberSection_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"perFind\": 2,",
+                "\"perFind\": 0,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("amber values must all be positive")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

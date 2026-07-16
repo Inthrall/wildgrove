@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 16;
+        public const int CurrentVersion = 17;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -34,6 +34,7 @@ namespace Wildgrove.Sim.Saves
                 almanacNodeIds = new List<string>(state.almanacNodeIds),
                 donatedResources = new List<string>(state.donatedResources),
                 bondedPostNodeId = state.bondedPostNodeId,
+                amber = state.amber,
                 carrierCount = state.carrierCount,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -168,6 +169,7 @@ namespace Wildgrove.Sim.Saves
                 ? new List<string>(save.donatedResources)
                 : new List<string>();
             state.bondedPostNodeId = save.bondedPostNodeId;
+            state.amber = save.amber;
 
             state.resources.Clear();
             if (save.resources != null)
@@ -551,6 +553,12 @@ namespace Wildgrove.Sim.Saves
                         save.lifetimeCrafted = save.lifetimeCrafted ?? new List<SavedTally>();
                         save.lifetimePristine = save.lifetimePristine ?? new List<SavedResource>();
                         save.version = 16;
+                        break;
+
+                    case 16:
+                        // v16 predates the amber system — none held (the
+                        // double already defaults to 0).
+                        save.version = 17;
                         break;
 
                     default:

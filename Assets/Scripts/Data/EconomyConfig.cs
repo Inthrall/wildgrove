@@ -17,6 +17,7 @@ namespace Wildgrove.Data
         public OfflineSection Offline { get; set; }
         public QualitySection Quality { get; set; }
         public ExcavationSection Excavation { get; set; }
+        public AmberSection Amber { get; set; }
         public TendingSection Tending { get; set; }
 
         public sealed class CostGrowthSection
@@ -103,6 +104,15 @@ namespace Wildgrove.Data
         {
             public double PityTimerHoursDug { get; set; }
             public double BaseFragmentsPerHour { get; set; }
+        }
+
+        /// <summary>Amber (design §10): the free dig-find earn rate and the time-skip sink. Optional — absent means the system is inert.</summary>
+        public sealed class AmberSection
+        {
+            public double DigFindsPerHour { get; set; }
+            public double PerFind { get; set; }
+            public double TimeSkipHours { get; set; }
+            public double TimeSkipCostAmber { get; set; }
         }
 
         public sealed class TendingSection

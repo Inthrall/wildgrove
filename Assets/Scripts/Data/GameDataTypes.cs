@@ -282,6 +282,9 @@ namespace Wildgrove.Data
         public ExcavationData excavation;
         public TendingData tending;
 
+        /// <summary>Unity can't serialize a null section — treat timeSkipCostAmber &lt;= 0 as "no amber system" (the Configured pattern).</summary>
+        public AmberData amber;
+
         [Serializable]
         public sealed class CostGrowthData
         {
@@ -371,6 +374,15 @@ namespace Wildgrove.Data
             public double fineValueMult;
             public double pristineBaseChance;
             public double pristineValueMult;
+        }
+
+        [Serializable]
+        public sealed class AmberData
+        {
+            public double digFindsPerHour;
+            public double perFind;
+            public double timeSkipHours;
+            public double timeSkipCostAmber;
         }
 
         [Serializable]

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 9a9afef4de6eec540d90776e5a9df68da3ae8c567914f518e2b0f1e72076648b
+  sourceHash: b54a780820537aa1f1dc151f87581768e83040b0e93c27b9781fc342c4939c24
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -81,6 +81,11 @@ MonoBehaviour:
       pristineBonusDurationSec: 30
       pristineChanceBonus: 1
       handGatherPerSecond: 0.5
+    amber:
+      digFindsPerHour: 0.06
+      perFind: 2
+      timeSkipHours: 4
+      timeSkipCostAmber: 15
   resources:
   - id: berries
     sellValue: 1

@@ -41,6 +41,9 @@ namespace Wildgrove.Sim
         /// </summary>
         public string bondedPostNodeId;
 
+        /// <summary>Amber (design §10) — the premium currency; dig sites surface it free, and it survives Migration.</summary>
+        public double amber;
+
         /// <summary>Compendium lifetime counters (design §5) — never reset, never decremented; they survive Migration.</summary>
         public Dictionary<string, BigDouble> lifetimeGathered = new Dictionary<string, BigDouble>();
         public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();

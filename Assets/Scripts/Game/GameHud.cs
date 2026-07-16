@@ -55,6 +55,8 @@ namespace Wildgrove.Game
         private Text _buildingsHeader;
         private Text _sellAllLabel;
         private Button _sellAllButton;
+        private Text _timeSkipLabel;
+        private Button _timeSkipButton;
         private Text _carrierLabel;
         private Button _carrierButton;
         private Transform _canvas;
@@ -528,6 +530,14 @@ namespace Wildgrove.Game
             var (sellAll, sellAllLabel) = CreateButton("SellAll", actionsRow.transform, "Sell All", () => _loop.SellAll());
             _sellAllButton = sellAll;
             _sellAllLabel = sellAllLabel;
+
+            // The Amber time-skip (design §10) — hidden entirely until any
+            // Amber has ever been held, so the pre-dig game never shows a
+            // premium-currency button.
+            var (timeSkip, timeSkipLabel) = CreateButton("TimeSkip", actionsRow.transform, "Skip", () => _loop.TimeSkip());
+            _timeSkipButton = timeSkip;
+            _timeSkipLabel = timeSkipLabel;
+            _timeSkipButton.gameObject.SetActive(false);
 
             var hint = CreateText("Hint", lowerPanel.transform, 28, TextAnchor.MiddleCenter,
                 new Color(TextColor.r, TextColor.g, TextColor.b, 0.6f));
@@ -1336,7 +1346,8 @@ namespace Wildgrove.Game
                                 + "     Carriers " + state.carrierCount
                                 + (carrierSlots != int.MaxValue ? " / " + carrierSlots : string.Empty)
                                 + (bondedCarriers > 0 ? " (+" + bondedCarriers + " bonded)" : string.Empty)
-                                + (state.renown > BigDouble.Zero ? "     Renown " + NumberFormat.Short(state.renown) : string.Empty);
+                                + (state.renown > BigDouble.Zero ? "     Renown " + NumberFormat.Short(state.renown) : string.Empty)
+                                + (state.amber > 0.0 ? "     Amber " + (long)state.amber : string.Empty);
 
             // The skills readout (design §4): each unlocked skill's level.
             if (_skillsLine.Length > 0)
@@ -1679,6 +1690,16 @@ namespace Wildgrove.Game
                 ? "Sell All  (" + NumberFormat.Short(totalSaleValue) + ")"
                 : "Sell All";
             _sellAllButton.interactable = totalSaleValue > BigDouble.Zero;
+
+            var amberEconomy = economy.amber;
+            var showTimeSkip = Amber.Configured(economy) && state.amber > 0.0;
+            _timeSkipButton.gameObject.SetActive(showTimeSkip);
+            if (showTimeSkip)
+            {
+                _timeSkipLabel.text = "Skip " + amberEconomy.timeSkipHours + "h\n<size=22>"
+                                      + amberEconomy.timeSkipCostAmber + " Amber</size>";
+                _timeSkipButton.interactable = _loop.CanTimeSkip();
+            }
         }
 
         /// <summary>

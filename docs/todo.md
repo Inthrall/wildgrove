@@ -66,12 +66,19 @@ they're easy to find and delete when resolved.
 
 ## Phase 3+ — Systems build-out
 
-- **Excavation drops fragments only — no amber, no excavation XP.** Dig sites,
-  diggers, fragment drops (rate + pity), fossil assembly and permanent fossil
-  effects are all live. Deferred: amber (design §5 says sites surface it too —
-  it isn't in resources.json yet), excavation skill XP ("XP from every action"
-  — fragments are too rare for per-unit XP; decide a grant when tool-tier /
-  level gates need the level), and the fossil card lore (Compendium).
+- **Excavation drops fragments and amber — no excavation XP yet.** Dig sites,
+  diggers, fragment drops (rate + pity), fossil assembly, permanent fossil
+  effects, and the amber channel (design §10 — a separate roll, so fully-dug
+  ground keeps surfacing it; a CURRENCY on GameState, not a resources.json
+  entry) are all live. The amber sink is the time-skip (full live-rate hours,
+  no cap — that's what's paid for); amber numbers (digFindsPerHour 0.06,
+  perFind 2, skip 4h/15) are first guesses against the ~40-free-per-week
+  lean. Still waiting: IAP/rewarded-ads/weekly-cache earn paths (the §10
+  plugin pass), amber-find telemetry (sim-side roll can't log), cosmetics/
+  extra craft queues as further sinks, excavation skill XP ("XP from every
+  action" — fragments are too rare for per-unit XP; decide a grant when
+  tool-tier / level gates need the level), and the fossil card lore
+  (Compendium).
   Interpretations to confirm: digger gifts cost gathererBaseGoods of EACH of
   the zone's resources (a dig site has no resource of its own to leave a pile
   of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
