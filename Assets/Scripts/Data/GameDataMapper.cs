@@ -256,7 +256,8 @@ namespace Wildgrove.Data
                 },
                 excavation = new EconomyData.ExcavationData
                 {
-                    pityTimerHoursDug = e.Excavation.PityTimerHoursDug
+                    pityTimerHoursDug = e.Excavation.PityTimerHoursDug,
+                    baseFragmentsPerHour = e.Excavation.BaseFragmentsPerHour
                 },
                 tending = new EconomyData.TendingData
                 {

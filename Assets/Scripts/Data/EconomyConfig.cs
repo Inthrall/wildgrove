@@ -102,6 +102,7 @@ namespace Wildgrove.Data
         public sealed class ExcavationSection
         {
             public double PityTimerHoursDug { get; set; }
+            public double BaseFragmentsPerHour { get; set; }
         }
 
         public sealed class TendingSection

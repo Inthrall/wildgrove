@@ -42,6 +42,13 @@ namespace Wildgrove.Sim.Saves
         public ulong rngState;
 
         public List<SavedNode> nodes = new List<SavedNode>();
+
+        /// <summary>v9+: dig sites and their pity timers (absent before excavation — sites resync from owned upgrades).</summary>
+        public List<SavedDigSite> digSites = new List<SavedDigSite>();
+
+        /// <summary>v9+: fossil fragments surfaced, per fossil id (absent before excavation — nothing found yet).</summary>
+        public List<SavedFossilFragments> fossilFragments = new List<SavedFossilFragments>();
+
         public List<string> purchasedUpgradeIds = new List<string>();
 
         /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
@@ -60,6 +67,23 @@ namespace Wildgrove.Sim.Saves
     {
         public string id;
         public double xp;
+    }
+
+    /// <summary>One dig site's diggers and pity progress (identity resyncs from owned unlockDigSite upgrades on restore).</summary>
+    [Serializable]
+    public sealed class SavedDigSite
+    {
+        public string zoneId;
+        public int familiarCount;
+        public double pityHours;
+    }
+
+    /// <summary>Fragments surfaced toward one fossil.</summary>
+    [Serializable]
+    public sealed class SavedFossilFragments
+    {
+        public string id;
+        public int fragments;
     }
 
     /// <summary>Bought levels of one camp building line (§9 milestone upgrades live in purchasedUpgradeIds).</summary>

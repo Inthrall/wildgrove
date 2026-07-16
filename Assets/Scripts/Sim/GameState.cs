@@ -45,6 +45,12 @@ namespace Wildgrove.Sim
         /// <summary>Every gathering node the player has access to this run.</summary>
         public List<NodeState> nodes = new List<NodeState>();
 
+        /// <summary>Dig sites opened this run (design §5: unlockDigSite upgrades on zones that hold one).</summary>
+        public List<DigSiteState> digSites = new List<DigSiteState>();
+
+        /// <summary>Fossil fragments surfaced this run, keyed by fossil id. A fossil is complete when its count reaches the data's fragments target — completion grants its permanent effects.</summary>
+        public Dictionary<string, int> fossilFragments = new Dictionary<string, int>();
+
         /// <summary>Ids of the one-off §9 upgrades bought this run (reset by Migration).</summary>
         public List<string> purchasedUpgradeIds = new List<string>();
 
@@ -92,13 +98,18 @@ namespace Wildgrove.Sim
             return purchasedUpgradeIds.Contains(upgradeId);
         }
 
-        /// <summary>Total familiars befriended this run across every node — drives the gift-cost curve.</summary>
+        /// <summary>Total familiars befriended this run — every node's gatherers plus every dig site's diggers.</summary>
         public int TotalFamiliars()
         {
             var total = 0;
             foreach (var node in nodes)
             {
                 total += node.familiarCount;
+            }
+
+            foreach (var site in digSites)
+            {
+                total += site.familiarCount;
             }
 
             return total;
@@ -125,6 +136,24 @@ namespace Wildgrove.Sim
 
         /// <summary>Seconds of progress into the in-flight batch.</summary>
         public double progressSeconds;
+    }
+
+    /// <summary>
+    /// One zone's dig site (design §5: familiars set to Excavation slowly turn
+    /// soil, surfacing fossil fragments). Fragments land in
+    /// GameState.fossilFragments; the site itself only tracks who's digging
+    /// and how long since the last find.
+    /// </summary>
+    [Serializable]
+    public sealed class DigSiteState
+    {
+        public string zoneId;
+
+        /// <summary>Familiars turning soil here. Count toward the zone's flock cap like gatherers.</summary>
+        public int familiarCount;
+
+        /// <summary>Hours dug since the last fragment — the pity timer (economy.excavation.pityTimerHoursDug guarantees a find).</summary>
+        public double pityHours;
     }
 
     /// <summary>

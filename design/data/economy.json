@@ -68,7 +68,8 @@
   },
   "excavation": {
     "pityTimerHoursDug": 4,
-    "$note": "guaranteed fragment per pity interval; drop rate = digFamiliars * digSpeed * strataRarity"
+    "baseFragmentsPerHour": 0.25,
+    "$note": "drop rate = digFamiliars * baseFragmentsPerHour * digSpeedMult upgrades * the site's summed incomplete strataRarity, rolled per tick; a fragment is guaranteed once pityTimerHoursDug hours of digging pass without one. baseFragmentsPerHour is a first guess — tune so the first fossil lands inside the MVP playtest."
   },
   "tending": {
     "burstYieldMult": 3.0,

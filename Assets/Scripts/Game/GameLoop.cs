@@ -270,6 +270,35 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>Per-resource size of the next digger's zone-bundle gift — for the gift button's label.</summary>
+        public BigDouble NextDiggerGiftCostEach(DigSiteState site)
+        {
+            return Economy.DiggerGiftCostEach(site, Data.economy);
+        }
+
+        /// <summary>True when a digger gift can land (stock covers the zone bundle, flock under cap) — for the gift button's enabled state.</summary>
+        public bool CanGiftDigger(DigSiteState site)
+        {
+            return Economy.CanGiftDigger(State, Data, site);
+        }
+
+        /// <summary>Gift one digger onto the zone's dig site. Returns false (no change) when stock is short or the flock is capped.</summary>
+        public bool GiftDigger(DigSiteState site)
+        {
+            var costEach = Economy.DiggerGiftCostEach(site, Data.economy);
+            if (!Economy.TryGiftDigger(State, Data, site))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("familiar_gifted",
+                ("role", "digger"),
+                ("zone", site.zoneId),
+                ("goods_cost_each", costEach.ToDouble()),
+                ("site_diggers", site.familiarCount));
+            return true;
+        }
+
         /// <summary>True once the run owns the one-off upgrade.</summary>
         public bool IsUpgradePurchased(UpgradeData upgrade)
         {

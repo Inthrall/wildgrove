@@ -40,6 +40,27 @@ namespace Wildgrove.Sim
                     AddZone(state, data, zone);
                 }
             }
+
+            SyncDigSites(state, data);
+        }
+
+        /// <summary>
+        /// Ensure every owned unlockDigSite effect's site exists, in zone
+        /// order. Sites open empty — the first digger is a gift, there's no
+        /// regional seed for the soil.
+        /// </summary>
+        public static void SyncDigSites(GameState state, GameDataAsset data)
+        {
+            var unlocked = Upgrades.UnlockedDigSiteZones(state, data);
+            var existing = new HashSet<string>(state.digSites.Select(s => s.zoneId));
+
+            foreach (var zone in data.zones.OrderBy(z => z.order))
+            {
+                if (zone.digSite && unlocked.Contains(zone.id) && !existing.Contains(zone.id))
+                {
+                    state.digSites.Add(new DigSiteState { zoneId = zone.id });
+                }
+            }
         }
 
         private static void AddZone(GameState state, GameDataAsset data, ZoneData zone)

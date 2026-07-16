@@ -304,6 +304,7 @@ namespace Wildgrove.Data
         public sealed class ExcavationData
         {
             public double pityTimerHoursDug;
+            public double baseFragmentsPerHour;
         }
 
         [Serializable]

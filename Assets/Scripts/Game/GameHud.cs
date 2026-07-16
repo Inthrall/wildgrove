@@ -61,12 +61,15 @@ namespace Wildgrove.Game
         private Transform _nodesPanel;
         private Text _specimensHeader;
         private Transform _specimensPanel;
+        private Text _excavationHeader;
+        private Transform _excavationPanel;
         private GameObject _welcomeSheet;
         private WorldView _world;
         private RectTransform _worldStrip;
         private static readonly Vector3[] CornerBuffer = new Vector3[4];
         private readonly List<RowView> _rows = new List<RowView>();
         private readonly List<SpecimenRowView> _specimenRows = new List<SpecimenRowView>();
+        private readonly List<DigRowView> _digRows = new List<DigRowView>();
         private readonly List<UpgradeRowView> _upgradeRows = new List<UpgradeRowView>();
         private readonly List<CraftRowView> _craftRows = new List<CraftRowView>();
         private readonly List<BuildingRowView> _buildingRows = new List<BuildingRowView>();
@@ -313,6 +316,22 @@ namespace Wildgrove.Game
             {
                 _craftRows.Add(BuildCraftRow(craftingPanel.transform, recipe));
             }
+
+            // Dig sites (design §5) — appear as trail maps unlock them.
+            _excavationHeader = CreateText("ExcavationHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
+            _excavationHeader.text = "Excavation";
+            SetPreferredHeight(_excavationHeader.gameObject, 48f);
+
+            var excavationPanel = CreatePanel("Excavation", sections, new Color(0f, 0f, 0f, 0f));
+            var excavationLayout = excavationPanel.AddComponent<VerticalLayoutGroup>();
+            excavationLayout.spacing = 12f;
+            excavationLayout.childControlWidth = true;
+            excavationLayout.childControlHeight = true;
+            excavationLayout.childForceExpandWidth = true;
+            excavationLayout.childForceExpandHeight = false;
+            _excavationPanel = excavationPanel.transform;
+
+            RebuildDigRows();
 
             _buildingsHeader = CreateText("BuildingsHeader", sections, 34, TextAnchor.MiddleLeft, TextColor);
             _buildingsHeader.text = "Camp";
@@ -634,6 +653,54 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// (Re)create a row per unlocked dig site — called at build, and again
+        /// whenever a trail map opens a new site.
+        /// </summary>
+        private void RebuildDigRows()
+        {
+            foreach (var row in _digRows)
+            {
+                Destroy(row.root);
+            }
+
+            _digRows.Clear();
+            foreach (var site in _loop.State.digSites)
+            {
+                _digRows.Add(BuildDigRow(_excavationPanel, site));
+            }
+        }
+
+        private DigRowView BuildDigRow(Transform parent, DigSiteState site)
+        {
+            var rowGo = CreatePanel("Dig_" + site.zoneId, parent, RowColor);
+            SetPreferredHeight(rowGo, 120f);
+            var rowLayout = rowGo.AddComponent<HorizontalLayoutGroup>();
+            rowLayout.padding = new RectOffset(16, 16, 12, 12);
+            rowLayout.spacing = 12f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = true;
+            rowLayout.childForceExpandWidth = false;
+            rowLayout.childForceExpandHeight = true;
+            rowLayout.childAlignment = TextAnchor.MiddleLeft;
+
+            var info = CreateText("Info", rowGo.transform, 30, TextAnchor.MiddleLeft, TextColor);
+            info.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            info.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            var (gift, giftLabel) = CreateButton("Gift", rowGo.transform, "Gift", () => _loop.GiftDigger(site));
+            SetPreferredWidth(gift.gameObject, 200f);
+
+            return new DigRowView
+            {
+                site = site,
+                root = rowGo,
+                info = info,
+                giftButton = gift,
+                giftLabel = giftLabel,
+            };
+        }
+
         private SpecimenRowView BuildSpecimenRow(Transform parent, string resourceId)
         {
             var rowGo = CreatePanel("Specimen_" + resourceId, parent, RowColor);
@@ -760,6 +827,11 @@ namespace Wildgrove.Game
                 RebuildNodeRows();
             }
 
+            if (_digRows.Count != state.digSites.Count)
+            {
+                RebuildDigRows();
+            }
+
             // Keep the world layer in step: where the free gap is on screen this
             // frame, and which node should wear the selection ring.
             if (_world != null && _worldStrip != null)
@@ -861,6 +933,42 @@ namespace Wildgrove.Game
             }
 
             _specimensHeader.gameObject.SetActive(anySpecimens);
+
+            // Dig sites: who's turning soil, and how each fossil is assembling.
+            foreach (var row in _digRows)
+            {
+                var zoneName = _loop.Data.ZonesById.TryGetValue(row.site.zoneId, out var zone)
+                    ? zone.displayName
+                    : PrettyName(row.site.zoneId);
+
+                var progress = string.Empty;
+                if (_loop.Data.fossils != null)
+                {
+                    foreach (var fossil in _loop.Data.fossils)
+                    {
+                        if (fossil.digSites == null || !fossil.digSites.Contains(row.site.zoneId))
+                        {
+                            continue;
+                        }
+
+                        var found = Fossils.FragmentCount(state, fossil.id);
+                        progress += "  •  " + fossil.displayName + " "
+                                    + (Fossils.IsComplete(state, fossil)
+                                        ? "assembled!"
+                                        : found + "/" + fossil.fragments);
+                    }
+                }
+
+                row.info.text = zoneName + " dig site"
+                                + "\n<size=24>" + row.site.familiarCount + " diggers" + progress + "</size>";
+
+                var costEach = _loop.NextDiggerGiftCostEach(row.site);
+                row.giftLabel.text = "Gift\n<size=22>+1 Digger\n"
+                                     + NumberFormat.Short(costEach) + " of each zone find</size>";
+                row.giftButton.interactable = _loop.CanGiftDigger(row.site);
+            }
+
+            _excavationHeader.gameObject.SetActive(_digRows.Count > 0);
 
             // Bought upgrades leave the shop; only the next few unpurchased
             // rungs of the ladder are on offer at once.
@@ -1131,6 +1239,15 @@ namespace Wildgrove.Game
             public Text giftLabel;
             public Button sellButton;
             public Text sellLabel;
+        }
+
+        private sealed class DigRowView
+        {
+            public DigSiteState site;
+            public GameObject root;
+            public Text info;
+            public Button giftButton;
+            public Text giftLabel;
         }
 
         private sealed class SpecimenRowView

@@ -86,9 +86,9 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Rebuild every node's tool/upgrade multiplier from the purchased
-        /// upgrades: yieldMult effects multiply together, yieldBonus effects
-        /// add a combined percentage on top. Call after any purchase (and on
-        /// load, once the save system lands).
+        /// upgrades and completed fossils: yieldMult effects multiply together,
+        /// yieldBonus effects add a combined percentage on top. Call after any
+        /// purchase, on restore, and when a fossil completes.
         /// </summary>
         public static void RecomputeYieldMultipliers(GameState state, GameDataAsset data)
         {
@@ -97,7 +97,7 @@ namespace Wildgrove.Sim
                 var mult = 1.0;
                 var bonus = 0.0;
 
-                foreach (var effect in PurchasedEffects(state, data))
+                foreach (var effect in ActiveEffects(state, data))
                 {
                     if (effect.type == EffectType.YieldMult && TargetsNode(effect, node))
                     {
@@ -207,14 +207,14 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Flat Pristine-chance points from owned pristineChanceBonus upgrades
-        /// (Field Press +0.01), summed — design §8's additive band. Fossil and
-        /// Almanac bonuses join this sum when their systems land.
+        /// Flat Pristine-chance points from owned pristineChanceBonus effects
+        /// (Field Press +0.01, the Sunken Jaw fossil +0.01), summed — design
+        /// §8's additive band. Almanac bonuses join when that system lands.
         /// </summary>
         public static double PristineChanceBonus(GameState state, GameDataAsset data)
         {
             var bonus = 0.0;
-            foreach (var effect in PurchasedEffects(state, data))
+            foreach (var effect in ActiveEffects(state, data))
             {
                 if (effect.type == EffectType.PristineChanceBonus)
                 {
@@ -223,6 +223,36 @@ namespace Wildgrove.Sim
             }
 
             return bonus;
+        }
+
+        /// <summary>Dig-speed multiplier from owned digSpeedMult upgrades (Brush Screens ×2) — they multiply together.</summary>
+        public static double DigSpeedMultiplier(GameState state, GameDataAsset data)
+        {
+            var mult = 1.0;
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.DigSpeedMult)
+                {
+                    mult *= effect.value;
+                }
+            }
+
+            return mult;
+        }
+
+        /// <summary>Zones whose dig site an owned unlockDigSite effect has opened.</summary>
+        public static HashSet<string> UnlockedDigSiteZones(GameState state, GameDataAsset data)
+        {
+            var zones = new HashSet<string>();
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                if (effect.type == EffectType.UnlockDigSite && !string.IsNullOrEmpty(effect.zone))
+                {
+                    zones.Add(effect.zone);
+                }
+            }
+
+            return zones;
         }
 
         /// <summary>
@@ -242,6 +272,20 @@ namespace Wildgrove.Sim
             }
 
             return cap;
+        }
+
+        /// <summary>Purchased upgrade effects plus completed fossils' — everything currently modifying the run.</summary>
+        private static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
+        {
+            foreach (var effect in PurchasedEffects(state, data))
+            {
+                yield return effect;
+            }
+
+            foreach (var effect in Fossils.CompletedEffects(state, data))
+            {
+                yield return effect;
+            }
         }
 
         private static IEnumerable<EffectData> PurchasedEffects(GameState state, GameDataAsset data)
@@ -269,7 +313,9 @@ namespace Wildgrove.Sim
                 return effect.zone == node.zoneId;
             }
 
-            return effect.skill == AllGatheringSkill || effect.skill == node.skill;
+            // "all" is the fossil wildcard, "all-gathering" the upgrade one —
+            // the validator accepts both spellings.
+            return effect.skill == AllGatheringSkill || effect.skill == "all" || effect.skill == node.skill;
         }
     }
 }

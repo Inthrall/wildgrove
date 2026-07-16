@@ -691,6 +691,14 @@ namespace Wildgrove.Data
             {
                 issues.Add("Economy tending.pristineChanceBonus must not be negative");
             }
+
+            if (economy.Excavation != null
+                && (economy.Excavation.PityTimerHoursDug <= 0 || economy.Excavation.BaseFragmentsPerHour <= 0))
+            {
+                // Zero rate AND zero pity means dig sites can never surface a
+                // fragment — every fossil becomes unreachable.
+                issues.Add("Economy excavation values must all be positive");
+            }
         }
 
         private static void RequireSection(object section, string name, List<string> issues)

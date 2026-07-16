@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 8;
+        public const int CurrentVersion = 9;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -82,6 +82,21 @@ namespace Wildgrove.Sim.Saves
             foreach (var pair in state.skillXp)
             {
                 save.skillXp.Add(new SavedSkillXp { id = pair.Key, xp = pair.Value });
+            }
+
+            foreach (var site in state.digSites)
+            {
+                save.digSites.Add(new SavedDigSite
+                {
+                    zoneId = site.zoneId,
+                    familiarCount = site.familiarCount,
+                    pityHours = site.pityHours,
+                });
+            }
+
+            foreach (var pair in state.fossilFragments)
+            {
+                save.fossilFragments.Add(new SavedFossilFragments { id = pair.Key, fragments = pair.Value });
             }
 
             return save;
@@ -216,6 +231,38 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            // Dig-site identity was rebuilt by SyncUnlockedZones above (owned
+            // unlockDigSite upgrades); overlay the saved diggers and pity by
+            // zone. A saved site the data no longer grants simply drops away.
+            if (save.digSites != null)
+            {
+                foreach (var savedSite in save.digSites)
+                {
+                    foreach (var site in state.digSites)
+                    {
+                        if (site.zoneId == savedSite?.zoneId)
+                        {
+                            site.familiarCount = savedSite.familiarCount;
+                            site.pityHours = savedSite.pityHours;
+                        }
+                    }
+                }
+            }
+
+            state.fossilFragments.Clear();
+            if (save.fossilFragments != null)
+            {
+                foreach (var fossil in save.fossilFragments)
+                {
+                    if (fossil?.id != null)
+                    {
+                        // Unknown fossil ids are kept, same policy as elsewhere.
+                        state.fossilFragments[fossil.id] = fossil.fragments;
+                    }
+                }
+            }
+
+            // Last, so completed fossils' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
             return state;
         }
@@ -329,6 +376,14 @@ namespace Wildgrove.Sim.Saves
                         save.fineResources = save.fineResources ?? new List<SavedResource>();
                         save.pristineResources = save.pristineResources ?? new List<SavedResource>();
                         save.version = 8;
+                        break;
+
+                    case 8:
+                        // v8 predates excavation — sites resync from owned
+                        // upgrades on restore; no fragments found yet.
+                        save.digSites = save.digSites ?? new List<SavedDigSite>();
+                        save.fossilFragments = save.fossilFragments ?? new List<SavedFossilFragments>();
+                        save.version = 9;
                         break;
 
                     default:

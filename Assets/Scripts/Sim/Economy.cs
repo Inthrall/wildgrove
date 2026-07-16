@@ -83,7 +83,94 @@ namespace Wildgrove.Sim
                 }
             }
 
+            // Diggers live in the zone too — they share its flock cap.
+            foreach (var site in state.digSites)
+            {
+                if (site.zoneId == zoneId)
+                {
+                    total += site.familiarCount;
+                }
+            }
+
             return total;
+        }
+
+        /// <summary>
+        /// Per-resource size of the next digger's gift: the gatherer curve
+        /// (base · gathererGift^n, n = diggers already at the site), paid in a
+        /// bundle of <b>each</b> of the zone's resources — a dig site yields no
+        /// resource of its own to leave a pile of, so the pile is what the
+        /// zone's ground gives (interpretation flagged in todo.md).
+        /// </summary>
+        public static BigDouble DiggerGiftCostEach(DigSiteState site, EconomyData economy)
+        {
+            var growth = BigDouble.Pow(economy.costGrowth.gathererGift, site.familiarCount);
+            return economy.gifts.gathererBaseGoods * growth;
+        }
+
+        /// <summary>The resources a digger's gift bundle asks for: the site's zone yields.</summary>
+        public static List<string> DiggerGiftResources(GameDataAsset data, string zoneId)
+        {
+            return data.ZonesById.TryGetValue(zoneId, out var zone)
+                ? new List<string>(zone.resources)
+                : new List<string>();
+        }
+
+        /// <summary>
+        /// True when a digger gift can land: camp stock covers the whole
+        /// zone-resource bundle AND the zone's flock (gatherers + diggers) is
+        /// under its cap.
+        /// </summary>
+        public static bool CanGiftDigger(GameState state, GameDataAsset data, DigSiteState site)
+        {
+            if (state == null || data == null || site == null)
+            {
+                return false;
+            }
+
+            if (ZoneFamiliarCount(state, site.zoneId) >= Buildings.FlockCap(state, data))
+            {
+                return false;
+            }
+
+            var resources = DiggerGiftResources(data, site.zoneId);
+            if (resources.Count == 0)
+            {
+                return false;
+            }
+
+            var costEach = DiggerGiftCostEach(site, data.economy);
+            foreach (var resourceId in resources)
+            {
+                if (state.GetResource(resourceId) < costEach)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gift one digger onto the site, spending the zone-resource bundle
+        /// from camp stock. Returns false (and changes nothing) when stock is
+        /// short or the zone's flock is at its cap.
+        /// </summary>
+        public static bool TryGiftDigger(GameState state, GameDataAsset data, DigSiteState site)
+        {
+            if (!CanGiftDigger(state, data, site))
+            {
+                return false;
+            }
+
+            var costEach = DiggerGiftCostEach(site, data.economy);
+            foreach (var resourceId in DiggerGiftResources(data, site.zoneId))
+            {
+                state.resources[resourceId] = state.GetResource(resourceId) - costEach;
+            }
+
+            site.familiarCount += 1;
+            return true;
         }
 
         /// <summary>

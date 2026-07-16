@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: aea5e1423fa79a563e3bd9dda079c3081b24328ba2b36085d77b8fb94e336f09
+  sourceHash: 3c669fd10360bd47c692834bd24ccff5e7e70513ce2575f257227e9a365e917f
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -74,6 +74,7 @@ MonoBehaviour:
       pristineValueMult: 10
     excavation:
       pityTimerHoursDug: 4
+      baseFragmentsPerHour: 0.25
     tending:
       burstYieldMult: 3
       burstDurationSec: 5
@@ -488,6 +489,12 @@ MonoBehaviour:
       value: 0
     - type: 15
       skill: logging
+      zone: 
+      resource: 
+      recipe: 
+      value: 0
+    - type: 15
+      skill: excavation
       zone: 
       resource: 
       recipe: 

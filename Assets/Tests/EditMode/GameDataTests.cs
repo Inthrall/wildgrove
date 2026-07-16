@@ -62,6 +62,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
             Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
             Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
+            Assert.That(data.Economy.Excavation.BaseFragmentsPerHour, Is.EqualTo(0.25));
+            Assert.That(data.UpgradesById["map-oldgrowth"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "excavation"),
+                Is.True, "the first dig site's map also teaches excavation");
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
             Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
@@ -417,6 +420,21 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("xp progression is degenerate")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_NonPositiveExcavationRate_IsReported()
+        {
+            var sources = LoadSources();
+            // Rate 0 with any pity means fossils only ever arrive on pity —
+            // rate 0 AND pity 0 means never; both are authoring mistakes.
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"baseFragmentsPerHour\": 0.25,",
+                "\"baseFragmentsPerHour\": 0,");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("excavation values")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

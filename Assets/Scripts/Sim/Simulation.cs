@@ -119,6 +119,8 @@ namespace Wildgrove.Sim
             // After the haul so goods that just reached camp can feed a batch —
             // sub-stepping keeps offline crafting batch-by-batch, like live play.
             Crafting.Advance(state, data, deltaSeconds);
+
+            Excavation.Advance(state, data, deltaSeconds);
         }
 
         /// <summary>

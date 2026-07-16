@@ -284,6 +284,51 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresDigSitesFragmentsAndFossilEffects()
+        {
+            _data.zones[1].digSite = true;
+            _data.upgrades[1].effects.Add(new EffectData { type = EffectType.UnlockDigSite, zone = "bramble-hedgerows" });
+            _data.fossils = new List<FossilData>
+            {
+                new FossilData
+                {
+                    id = "antler-crown", fragments = 3,
+                    digSites = new List<string> { "bramble-hedgerows" }, strataRarity = 1.0,
+                    effects = { new EffectData { type = EffectType.YieldBonus, skill = "all", value = 0.10 } },
+                },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = 1000;
+            Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
+            state.digSites[0].familiarCount = 2;
+            state.digSites[0].pityHours = 1.5;
+            state.fossilFragments["antler-crown"] = 3; // assembled
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.digSites, Has.Count.EqualTo(1));
+            Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
+            Assert.That(restored.digSites[0].familiarCount, Is.EqualTo(2));
+            Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
+            Assert.That(Fossils.FragmentCount(restored, "antler-crown"), Is.EqualTo(3));
+            // The completed fossil's +10% all yields folds into the restored
+            // multipliers alongside owned upgrades.
+            Assert.That(restored.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V8Save_GetsEmptyExcavation()
+        {
+            // v8 predates excavation — nothing dug yet.
+            var save = new SaveData { version = 8, digSites = null, fossilFragments = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.digSites, Is.Empty);
+            Assert.That(save.fossilFragments, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V7Save_GetsEmptyQualityPools()
         {
             // v7 predates quality rolls — nothing found yet.

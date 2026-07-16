@@ -66,10 +66,17 @@ they're easy to find and delete when resolved.
 
 ## Phase 3+ — Systems build-out
 
-- **`unlockDigSite` effects are still inert.** `unlockZone` (trail maps create
-  the zone's nodes), `unlockSkill` and `unlockRecipe` (both gate crafting) are
-  all live; dig sites wait for the excavation system.
-  (`Wildgrove.Sim/Upgrades.cs`)
+- **Excavation drops fragments only — no amber, no excavation XP.** Dig sites,
+  diggers, fragment drops (rate + pity), fossil assembly and permanent fossil
+  effects are all live. Deferred: amber (design §5 says sites surface it too —
+  it isn't in resources.json yet), excavation skill XP ("XP from every action"
+  — fragments are too rare for per-unit XP; decide a grant when tool-tier /
+  level gates need the level), and the fossil card lore (Compendium).
+  Interpretations to confirm: digger gifts cost gathererBaseGoods of EACH of
+  the zone's resources (a dig site has no resource of its own to leave a pile
+  of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
+  (0.25) is a first guess not in the doc.
+  (`Wildgrove.Sim/Excavation.cs`, `Fossils.cs`)
 - **Building perLevel values are first guesses, and two are interpretations.**
   The 5% speed/capacity tapers aren't in the design doc. Interpretive calls to
   confirm in balance: the §9 Store's "storage capacity" is implemented as
@@ -140,8 +147,11 @@ they're easy to find and delete when resolved.
 
 - **Skills vocabulary hardcoded** in `GameDataValidator` as a C# `HashSet` rather than
   sourced from data.
-- **`zone.unlocks` is documentation-only and diverges from upgrade effects** — e.g.
-  excavation is never actually granted through the unlock path.
+- **`zone.unlocks` is documentation-only and diverges from upgrade effects.**
+  The worst case (excavation never granted) was fixed with the excavation
+  system — `map-oldgrowth` now carries `unlockSkill: excavation` — but the
+  field itself still isn't consumed; the validator only reads the starting
+  zone's.
 - **`map-mistfen` grants a zone but no dig site / skills** — flagged for v1.1.
 
 ## Number formatting
