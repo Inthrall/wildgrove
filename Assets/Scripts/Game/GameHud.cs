@@ -126,7 +126,7 @@ namespace Wildgrove.Game
         private readonly List<NavTabView> _navTabs = new List<NavTabView>();
         private GameObject _actionsRow;
         private GameObject _hintGo;
-        private ScrollRect _sectionsScroll;
+        private TrackedScrollRect _sectionsScroll;
 
         private void Update()
         {
@@ -818,6 +818,12 @@ namespace Wildgrove.Game
             ApplySectionState(section);
         }
 
+        /// <summary>Tooling seam (store-screenshot capture): open a nav page by id.</summary>
+        public void OpenTab(string tabId)
+        {
+            SwitchTab(tabId);
+        }
+
         /// <summary>Open a nav page: sections filter to it, gather-only chrome follows, scroll resets.</summary>
         private void SwitchTab(string tabId)
         {
@@ -898,19 +904,28 @@ namespace Wildgrove.Game
         /// </summary>
         private Transform BuildScrollSection(Transform parent, RectTransform canvasRect, float maxCanvasShare)
         {
-            var sectionGo = new GameObject("Sections", typeof(RectTransform), typeof(ScrollRect), typeof(HeightClampedElement));
+            var sectionGo = new GameObject("Sections", typeof(RectTransform), typeof(TrackedScrollRect), typeof(HeightClampedElement));
             sectionGo.transform.SetParent(parent, false);
 
             // The viewport carries a fully transparent Image so presses on the
             // empty space between rows still raycast here — that's what lets a
             // drag anywhere in the section reach the ScrollRect (and keeps the
-            // tend gesture treating the area as "over a widget").
+            // tend gesture treating the area as "over a widget"). The clip is a
+            // stencil Mask, not RectMask2D: the content below is its own nested
+            // canvas, which RectMask2D cannot clip.
             var viewport = CreatePanel("Viewport", sectionGo.transform, new Color(0f, 0f, 0f, 0f));
-            viewport.AddComponent<RectMask2D>();
+            var mask = viewport.AddComponent<Mask>();
+            mask.showMaskGraphic = false;
             var viewportRect = viewport.GetComponent<RectTransform>();
             StretchFull(viewportRect);
 
-            var contentGo = new GameObject("Content", typeof(RectTransform));
+            // The content is a nested canvas so a drag moves ONE canvas
+            // transform instead of dirtying the root canvas — otherwise every
+            // scrolled frame rebatches the whole HUD (header, world markers,
+            // nav, every row), which is exactly the menu-scroll jank on device.
+            // It needs its own raycaster: the root's GraphicRaycaster only sees
+            // graphics that belong to its own canvas.
+            var contentGo = new GameObject("Content", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
             contentGo.transform.SetParent(viewport.transform, false);
             var contentRect = contentGo.GetComponent<RectTransform>();
             contentRect.anchorMin = new Vector2(0f, 1f);
@@ -934,7 +949,7 @@ namespace Wildgrove.Game
             clamp.canvas = canvasRect;
             clamp.maxCanvasShare = maxCanvasShare;
 
-            var scroll = sectionGo.GetComponent<ScrollRect>();
+            var scroll = sectionGo.GetComponent<TrackedScrollRect>();
             scroll.viewport = viewportRect;
             scroll.content = contentRect;
             scroll.horizontal = false;
@@ -1874,6 +1889,15 @@ namespace Wildgrove.Game
 
             _sectionRefreshCountdown -= Time.deltaTime;
             if (_sectionRefreshCountdown > 0f)
+            {
+                return;
+            }
+
+            // A live scroll owns the frame: every label write dirties layout,
+            // and a whole-content layout rebuild mid-drag is a visible hitch.
+            // The pass runs the moment the scroll settles.
+            if (_sectionsScroll != null
+                && (_sectionsScroll.Dragging || Mathf.Abs(_sectionsScroll.velocity.y) > 5f))
             {
                 return;
             }

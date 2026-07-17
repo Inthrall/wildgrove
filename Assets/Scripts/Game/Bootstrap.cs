@@ -15,6 +15,12 @@ namespace Wildgrove.Game
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
         {
+            // Unity's Android default is a 30fps cap (targetFrameRate -1) —
+            // every drag and world animation judders at half rate unless the
+            // app asks for 60. Wants revisiting if battery telemetry ever
+            // argues for an adaptive cap.
+            Application.targetFrameRate = 60;
+
             if (Object.FindFirstObjectByType<GameLoop>() != null)
             {
                 return;
@@ -28,6 +34,7 @@ namespace Wildgrove.Game
             go.AddComponent<GameLoop>();
             go.AddComponent<World.WorldView>();
             go.AddComponent<GameHud>();
+            go.AddComponent<FpsCounter>();
         }
     }
 }

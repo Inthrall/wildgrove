@@ -20,16 +20,10 @@ they're easy to find and delete when resolved.
   bare-node gift bootstrap. Replaced the old burst-only hand-gather so the
   early game is assignment, not a tap surge. Tune so the first gift lands in
   ~20 s of just standing there.
-- **Telemetry sink is the Unity log, not Firebase.** The design calls for
-  Crashlytics + GA events from Phase 1; the events (session_start/end,
-  upgrade_purchased, familiar_gifted, welcome_back) are instrumented behind
-  `ITelemetry`, but the sink is `UnityLogTelemetry` (Debug.Log / logcat) until the
-  Firebase side exists. Remaining steps: create the Firebase project + register
-  `com.inthrall.wildgrove` and download `google-services.json` (console work), then
-  import the Firebase Unity SDK (Analytics + Crashlytics) and swap the sink in
-  `GameLoop.Initialise`. Note the SDK's External Dependency Manager patches
-  `mainTemplate.gradle` — re-check the hand-authored Kotlin pins when it lands.
-  (`Assets/Scripts/Game/Telemetry/`)
+- **The FPS overlay is always on.** `FpsCounter` (top-right: avg fps + worst
+  frame ms) ships visible in every build while performance is being tuned —
+  gate it behind a dev toggle (or strip it) before a store-facing release.
+  (`Assets/Scripts/Game/FpsCounter.cs`, added in `Bootstrap`)
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)
