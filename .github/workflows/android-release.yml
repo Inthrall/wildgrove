@@ -151,6 +151,17 @@ jobs:
             echo "::warning::No symbols.zip produced by the build."
             echo "symbols=" >> "$GITHUB_OUTPUT"
           fi
+          # R8 is on (AndroidMinifyRelease), so Unity drops the deobfuscation map
+          # beside the bundle as <name>_mapping.txt — ship it to Play so crash
+          # and ANR stacks come back readable.
+          map=$(ls build/Android/*_mapping.txt 2>/dev/null | head -1 || true)
+          if [ -n "$map" ]; then
+            sudo mv "$map" "build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.mapping.txt"
+            echo "mapping=build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.mapping.txt" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No R8 mapping.txt produced by the build."
+            echo "mapping=" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Publish GitHub Release
         env:
@@ -182,5 +193,6 @@ jobs:
           packageName: com.inthrall.wildgrove
           releaseFiles: build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.aab
           debugSymbols: ${{ steps.files.outputs.symbols }}
+          mappingFile: ${{ steps.files.outputs.mapping }}
           tracks: ${{ inputs.track }}
           status: completed
