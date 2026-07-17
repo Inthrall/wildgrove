@@ -916,6 +916,10 @@ namespace Wildgrove.Game
             var viewport = CreatePanel("Viewport", sectionGo.transform, new Color(0f, 0f, 0f, 0f));
             var mask = viewport.AddComponent<Mask>();
             mask.showMaskGraphic = false;
+            // The renderer culls fully-transparent meshes by default, and a
+            // culled mask never writes its stencil — every masked child then
+            // fails the stencil test and the whole scroll renders empty.
+            viewport.GetComponent<Image>().canvasRenderer.cullTransparentMesh = false;
             var viewportRect = viewport.GetComponent<RectTransform>();
             StretchFull(viewportRect);
 
