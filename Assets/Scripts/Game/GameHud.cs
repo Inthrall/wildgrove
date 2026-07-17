@@ -910,26 +910,22 @@ namespace Wildgrove.Game
             // The viewport carries a fully transparent Image so presses on the
             // empty space between rows still raycast here — that's what lets a
             // drag anywhere in the section reach the ScrollRect (and keeps the
-            // tend gesture treating the area as "over a widget"). The clip is a
-            // stencil Mask, not RectMask2D: the content below is its own nested
-            // canvas, which RectMask2D cannot clip.
+            // tend gesture treating the area as "over a widget"). It is also a
+            // nested canvas: a drag then only rebatches this sub-canvas, not
+            // the whole HUD (header, world markers, nav) — the menu-scroll
+            // jank on device. The canvas must sit HERE, not on the moving
+            // content, so RectMask2D and the rows share one canvas (it cannot
+            // clip across canvas boundaries — a content-side canvas rendered
+            // the section empty on device). Needs its own raycaster: the
+            // root's only sees graphics belonging to the root canvas.
             var viewport = CreatePanel("Viewport", sectionGo.transform, new Color(0f, 0f, 0f, 0f));
-            var mask = viewport.AddComponent<Mask>();
-            mask.showMaskGraphic = false;
-            // The renderer culls fully-transparent meshes by default, and a
-            // culled mask never writes its stencil — every masked child then
-            // fails the stencil test and the whole scroll renders empty.
-            viewport.GetComponent<Image>().canvasRenderer.cullTransparentMesh = false;
+            viewport.AddComponent<Canvas>();
+            viewport.AddComponent<GraphicRaycaster>();
+            viewport.AddComponent<RectMask2D>();
             var viewportRect = viewport.GetComponent<RectTransform>();
             StretchFull(viewportRect);
 
-            // The content is a nested canvas so a drag moves ONE canvas
-            // transform instead of dirtying the root canvas — otherwise every
-            // scrolled frame rebatches the whole HUD (header, world markers,
-            // nav, every row), which is exactly the menu-scroll jank on device.
-            // It needs its own raycaster: the root's GraphicRaycaster only sees
-            // graphics that belong to its own canvas.
-            var contentGo = new GameObject("Content", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+            var contentGo = new GameObject("Content", typeof(RectTransform));
             contentGo.transform.SetParent(viewport.transform, false);
             var contentRect = contentGo.GetComponent<RectTransform>();
             contentRect.anchorMin = new Vector2(0f, 1f);

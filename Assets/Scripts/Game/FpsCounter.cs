@@ -44,7 +44,9 @@ namespace Wildgrove.Game
 
             var fps = Mathf.RoundToInt(_frames / _elapsed);
             var worstMs = Mathf.RoundToInt(_worstFrame * 1000f);
-            var shown = fps + " fps  " + worstMs + " ms";
+            // The version leads so "which build am I actually running" is
+            // never a question a Play-internal rollout can leave open.
+            var shown = "v" + Application.version + "  " + fps + " fps  " + worstMs + " ms";
             if (shown != _lastShown)
             {
                 _label.text = shown;
