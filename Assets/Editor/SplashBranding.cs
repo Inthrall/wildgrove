@@ -1,7 +1,9 @@
 using UnityEditor;
+using UnityEngine;
+#if UNITY_ANDROID
 using UnityEditor.Android;
 using UnityEditor.Build;
-using UnityEngine;
+#endif
 
 namespace Wildgrove.EditorTools
 {
@@ -52,6 +54,10 @@ namespace Wildgrove.EditorTools
             splash.SaveAndReimport();
         }
 
+        // AndroidPlatformIconKind ships with the Android build-support module,
+        // which the CI test image doesn't have — compile the icon wiring out
+        // when the active target isn't Android.
+#if UNITY_ANDROID
         private static void AssignIcons()
         {
             var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-foreground.png");
@@ -82,6 +88,12 @@ namespace Wildgrove.EditorTools
 
             PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy, legacyKind);
         }
+#else
+        private static void AssignIcons()
+        {
+            Debug.LogWarning("SplashBranding: active build target is not Android — icon assignment skipped.");
+        }
+#endif
 
         private static void ConfigureSplash()
         {
