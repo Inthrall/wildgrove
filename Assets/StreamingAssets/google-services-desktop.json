@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "769777673875",
+    "project_id": "wildgrove-ed59a",
+    "storage_bucket": "wildgrove-ed59a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769777673875:android:538c70effb2eecc6664f66",
+        "android_client_info": {
+          "package_name": "com.inthrall.wildgrove"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmrJ2c4cachmYyLKR_By2WM8imucJGTTI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

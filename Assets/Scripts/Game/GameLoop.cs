@@ -114,7 +114,14 @@ namespace Wildgrove.Game
                 throw;
             }
 
+            // In the editor the plain log sink keeps tests and Play mode free
+            // of Firebase init churn; on device Firebase is the real sink,
+            // with the log sink mirrored underneath for logcat.
+#if UNITY_EDITOR
             Telemetry = new UnityLogTelemetry();
+#else
+            Telemetry = new FirebaseTelemetry(new UnityLogTelemetry());
+#endif
 
             if (SaveFile.TryLoad(out var save))
             {
