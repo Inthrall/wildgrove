@@ -1,0 +1,32 @@
+Wildgrove — Proprietary License
+
+Copyright (c) 2026 Mo Nicholson. All rights reserved.
+
+This source code and all associated assets, designs, documents, and data in
+this repository (together, "the Software") are made publicly viewable for
+reference only. They are NOT open source and NO license is granted by mere
+access to this repository.
+
+Any use of the Software requires a paid commercial license from the
+copyright holder. Without such a license, you may not:
+
+  - use, run, or deploy the Software or any part of it;
+  - copy, reproduce, or redistribute the Software in any form;
+  - modify, adapt, translate, or create derivative works from it;
+  - incorporate any portion of it into another project, product, or
+    service, whether commercial or non-commercial;
+  - use the Software or its contents to train, fine-tune, or evaluate
+    machine-learning models.
+
+The only permission granted without payment is to view the source code in
+this repository for personal reference.
+
+To obtain a paid usage license, contact the copyright holder via the
+repository owner's GitHub profile (https://github.com/Inthrall).
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
+DEALINGS IN THE SOFTWARE.

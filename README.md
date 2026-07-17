@@ -22,3 +22,9 @@ The collection layer (Compendium + Fossil Wing, hand-drawn naturalist plates) an
 ## Stack (planned)
 
 Unity 6 LTS · URP 2D · Vulkan-primary · Play Games Services v2 · AdMob
+
+## License
+
+Copyright © 2026 Mo Nicholson. All rights reserved. This repository is
+publicly viewable for reference only — **any usage requires a paid
+license**. See [LICENSE](LICENSE) for the full terms.
