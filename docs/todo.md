@@ -2,8 +2,70 @@
 
 A living list of the deliberate placeholders and deferred work in the codebase, so
 nothing quietly ships as "done". Grouped by the phase that retires it (see
-`design-doc.md` §12 MVP development plan). Keep entries pointing at the code so
+`design-doc.md` §13 MVP development plan). Keep entries pointing at the code so
 they're easy to find and delete when resolved.
+
+## v0.11 design realignment — shipped code diverges from the doc
+
+Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals the
+current sim does not yet implement. These are the headline rework items; the phase
+lists below are annotated **v0.11:** where a decision touches them. Each points at
+the code/data that has to change.
+
+- **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
+  everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +
+  `economy.tools.baseCostCoin`), `mapCostCoin` (zones), `resources.json sellValue`,
+  `Economy.SellResource/SellPristine`. The design replaces all of it: tools = skill
+  gate + ingot batch; buildings = material bundles; trail maps = provisions bundles;
+  selling = **the Exchange**, a goods↔goods barter caravan whose rates derive from a
+  single trade-value table (`exchangeRate(a→b)=tradeValue(a)/tradeValue(b)·(1−spread)`,
+  spread ~15%, rounds in the player's favour). **The Exchange does not exist** — the
+  current Provisioner sells stock for Coin. Renown becomes the single always-climbing
+  number, and the Phase 1 gate now asks *"can a new player say what anything is worth
+  without Coin?"* (`Economy.cs`, `GameState.cs`, `upgrades.json`, `buildings.json`,
+  `zones.json`, `resources.json`, `economy.json`)
+- **Flock + carriers → a stationed crew of five (§2, §4).** Shipped model: per-node
+  gatherer counts (`NodeState.familiarCount`), a camp carrier pool
+  (`GameState.carrierCount`), flock/carrier caps (`economy.familiarCaps`), and gift
+  cost curves (`economy.gifts`). Design: up to **5 named roster familiars**, each with
+  a level and an authored **powerup** build (a choice every 5 levels from a
+  deterministic species pool), **stationed** at a post; **carrying is a post (the
+  trail post), not a species** — no carrier type. An unassigned familiar **wanders** at
+  ×0.5 rate/XP with no powerups; the warden never wanders (post = last tended).
+  **Levels never scale output** (throughput comes from tools/hauling/powerups/richness).
+  Stationing, powerups, roster, and crew slots are all absent from code.
+- **Bonds → Kinship two-track (§4).** `Bonds.cs`/`bonds.json` model bonded familiars by
+  `role: "carrier"|"gatherer"`. Design: every roster familiar carries a permanent
+  **Kinship** track (run XP → Kinship XP at Migration via √ conversion; perks = higher
+  starting level + XP rate at MVP, signature traits at 1.1). **Bonding** — crossing the
+  fold — becomes a separate, rarer honour; the carrier/gatherer roles disappear because
+  carrying is a post. Kinship is absent from code.
+- **Museum → the Folio / one journal (§6).** `Museum.cs`/`museum.json` model donation
+  "sets" (`donatedResources`, `curators-cabinet`, `wardens-gallery`). Design: there is
+  no museum — Pristine specimens are **fixed into the Folio** (the journal's back
+  pages) and spreads of 4–8 grant permanent bonuses. Curation is the collection craft
+  producing "Folio fixings"; the Compendium (records) and Deep Pages (fossil rubbings)
+  round out the one journal. No Folio/spread concept exists in code.
+- **Fossils: uncover · record · rebury — nothing dug up is kept (§6).** Shipped: fossils
+  **assemble** from `fragments` and are kept forever (`Fossils.cs FragmentCount/
+  IsComplete`, `GameState.fossilFragments`, `economy.excavation.baseFragmentsPerHour`).
+  Design: excavation yields **field sketches** of **portions**; the fossil is
+  **reburied** (a wordless sign); the completed plate is a book of rubbings granting the
+  same permanent multiplier + lore. Rename `fragment` → `sketch`/`portion` across
+  `Excavation.cs`, `Fossils.cs`, `fossils.json`, and the Rite's `RiteSlotType.Fragment`/
+  `DeliverFragment` (a sketch offering is torn out → its portion must be re-uncovered).
+  **Amber stays takeable** (the exception); fossils still survive Migration as knowledge.
+- **Replanting & planters — a new fourth output lane (§3).** Entirely absent from
+  code/data. Each node gains a **richness** level raised by replanting its own resource
+  (`replantCost(L)=base·r^L`, per node per run, raising base yield); **planters** are
+  Bushcraft-built structures costing *other* zones' goods that raise a node's capacity /
+  regrowth / second yield lane / dig steadiness. Both reset at Migration except one
+  saved by the Almanac's **The First Planting**. The craft split becomes **four-way**
+  (kit / caravan / spirits / land); the Carving Bench (#14) unlocks Planter recipes.
+- **Reachability is now stationing-aware (§2, §8).** The Rite validator's "≥3 reachable
+  slots" must mean *satisfiable under plausible stationing with the current crew size*,
+  not merely zone-unlocked. Shipped reachability is zone-unlock/warden-presence only
+  (`Rite.IsVerseRevealed` via `Upgrades.UnlockedZoneIds`).
 
 ## Phase 1 — Core loop slice (current)
 
@@ -15,11 +77,16 @@ they're easy to find and delete when resolved.
   the bundle broadens as new nodes come into work, so a freshly-gifted node briefly
   raises the carrier price in a resource the camp barely holds — probably desirable
   tension, but confirm it in balance.
+  **v0.11:** superseded by the crew reversal (§4) — there is no carrier type and gifts
+  become one-shot *recruitment events* (crew slot 3, unlocked by verse 1), not a cost
+  curve. Retire `gifts.carrierBaseGoods`/`carrierGift` with the stationing rework.
 - **Warden gather rate is a first guess.** `warden.gatherPerSecond = 0.5` — the
   warden's passive trickle at their post (always on, burst-boosted), and the
   bare-node gift bootstrap. Replaced the old burst-only hand-gather so the
   early game is assignment, not a tap surge. Tune so the first gift lands in
   ~20 s of just standing there.
+  **v0.11:** still the mechanism, and §3 confirms it — the warden's post trickle
+  now also **self-funds a virgin node's first replant** (presence, not currency).
 - **The FPS overlay is dev-only now.** `FpsCounter` (top-right: avg fps + worst
   frame ms) is gated behind `Debug.isDebugBuild` in `Bootstrap` — visible in the
   editor and development builds, stripped from release/store builds. Flip a
@@ -31,6 +98,8 @@ they're easy to find and delete when resolved.
   ladder in order; material-costed rungs appear (with their costs shown) before
   crafting exists to pay them — an honest preview, but they sit unaffordable
   until the crafting system lands. (`GameHud.UpgradeShopWindow`)
+  **v0.11:** with Coin gone (§9), rungs are priced by **skill gate + material
+  bundle**, not `costCoin` — the shop's cost display changes with the economy rework.
 
 ## Phase 2 — Adaptive UI & input
 
@@ -77,6 +146,12 @@ they're easy to find and delete when resolved.
   of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
   (0.25) is a first guess not in the doc.
   (`Wildgrove.Sim/Excavation.cs`, `Fossils.cs`)
+  **v0.11 (§6):** the deep chase is now **uncover · record · rebury** — nothing dug
+  up is kept. `fragments` become **field sketches** of **portions** (3–5/fossil, pity
+  per 4 h), the fossil is **reburied** with a wordless sign, and the completed plate is
+  a book of rubbings keeping the same permanent multiplier + lore. Rename
+  `fragment`→`sketch`/`portion` here and in `fossils.json`; "diggers share the zone
+  flock cap" is superseded by stationing. Amber stays takeable (unchanged).
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
@@ -87,6 +162,9 @@ they're easy to find and delete when resolved.
   requirement. Tool-tier gating of *recipes* (§4 "levels gate recipes and
   tool tiers") still waits on skill-level design.
   (`Upgrades.ToolTierIndex/MeetsToolRequirement`)
+  **v0.11 (§9):** with Coin gone, §8's toolCost formula is settled the way this item
+  already leans — a tool tier is purely **skill gate + ingot batch**, no wallet term.
+  Drop the "Coin+ingot" phrasing when the economy rework lands.
 - **Building perLevel values are first guesses, and two are interpretations.**
   The 5% speed/capacity tapers aren't in the design doc. Interpretive calls to
   confirm in balance: the §9 Store's "storage capacity" is implemented as
@@ -94,6 +172,10 @@ they're easy to find and delete when resolved.
   simply the forge line's first bought level (its ~8,000 debut price is the
   line's baseCostCoin). The Spare Wing's +1 carrier slot (§10) arrives with
   the PGS rewards layer. (`design/data/buildings.json`)
+  **v0.11:** buildings are now a **goods sink**, not a Coin sink (§10) — `baseCostCoin`
+  becomes a material bundle; Roosts & Burrows re-scopes to **familiar comfort** (+XP
+  rate per level, roster capacity at late levels), not headcount caps; and the Spare
+  Wing grants **+1 trail post**, not a carrier slot (§11) — carrying is a post now.
 - **`crafting.baseCraftSeconds` (5 s, uniform) is a first guess.** Not in the
   design doc, and one duration for every recipe is a placeholder — tune against
   the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
@@ -109,8 +191,11 @@ they're easy to find and delete when resolved.
   pays XP) and xp.craftPerBatch (25) aren't in the design doc, nor are the
   per-recipe skillLevel picks (skewer/trout 2, reed baskets and bronze 3,
   iron 5). Tool-tier level gating (§4) waits for the tools system, and the
-  Migration skill reset (§7) for the prestige build.
+  Migration skill reset (§8) for the prestige build.
   (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
+  **v0.11 (§5):** "levels are the gate, materials are the cost, everywhere" is now
+  decided — the skill-XP spine carries the pacing that Coin used to. Familiar XP joins
+  it as the second track (earned at the post), which the crew rework introduces.
 - **The Pristine three-way choice is complete; the Compendium's plates and
   lifetime counters are not.** Quality pools now feed all three forks — the
   Provisioner windfall, Rite specimen slots, and Museum donations (one
@@ -129,6 +214,13 @@ they're easy to find and delete when resolved.
   fallback never roll; staggered-fleet cadence and fullest-basket-first
   routing; museum set/effect sizes are first guesses.
   (`Wildgrove.Sim/Quality.cs`, `Museum.cs`)
+  **v0.11 (§6):** the Museum is **retired** — the three-way choice survives, but the
+  keep-fork becomes **fixing a Pristine into the Folio** (the journal's back pages),
+  where **spreads** of 4–8 grant the permanent bonus. `Museum.cs`/`museum.json`/
+  `donatedResources` reframe as the Folio; sets → spreads (one MVP spread grants crew
+  slot 5's moment); `wardens-gallery`/`curators-cabinet` become Folio furniture. The
+  buried past is never kept (see the excavation item) — only the *living* land's gifts
+  can be fixed.
 - **Crafting and gifts spend only common stock.** Fine finds can't feed a
   recipe or a gift — probably right (they're for selling/offering), but it
   means a run holding only Fine berries can't gift a gatherer. Revisit with
@@ -166,6 +258,13 @@ they're easy to find and delete when resolved.
   verse's reveal still count (lifetime, no per-verse baseline), and partial
   fossil FRAGMENTS survive Migration alongside completed fossils ("every
   fossil"). (`Wildgrove.Sim/Rite.cs`, `RiteGenerator.cs`, `Migration.cs`)
+  **v0.11 (§6, §8):** the `Fragment` offering slot becomes a **field-sketch** slot —
+  the page is torn out and that portion must be **re-uncovered** (the pity timer keeps
+  it fair); it stays the steepest offering, priced highest in Renown. The generator's
+  ≥3-reachable-slots guarantee must become **stationing-aware** (satisfiable under
+  plausible stationing with the current crew size, §2), replacing zone-unlock
+  reachability. Migration now also keeps the **roster + every Kinship level** (§4)
+  alongside the journal/Verdure/fossils.
 - **Bonded familiars are live; species abilities are not.** Two MVP bonds
   (design §7): Sootwing, a pack raven (carrier) bonds when the Meadow Blooms
   Museum set completes; Burr, a meadow vole (gatherer) crosses with the
@@ -181,6 +280,13 @@ they're easy to find and delete when resolved.
   lean. Waiting: species abilities (v1.1), more bonds, a bonding
   moment/celebration in the HUD (currently just rows changing text), world
   sprites for companions. (`Wildgrove.Sim/Bonds.cs`, `design/data/bonds.json`)
+  **v0.11 (§4):** bonds are reframed under the **two-track familiar model**. Every
+  roster familiar now carries a permanent **Kinship** track (run XP → Kinship XP at
+  Migration, √ conversion; perks = higher starting level + XP rate at MVP, signature
+  traits at 1.1); **bonding** (crossing the fold, present from minute one) becomes the
+  separate rarer honour this item already describes. The `role: carrier|gatherer`
+  split goes away — carrying is a post, so a bonded familiar is stationed like any
+  other. Final bond counts/rarity still Mo's to settle (§14).
 - **Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
   `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
   spoilage system for them to modify — both are recorded on the worn kit and
@@ -196,6 +302,9 @@ they're easy to find and delete when resolved.
 - **Verdure / almanac / museum / fossil / boost multipliers.** `Simulation.YieldPerSecond`
   folds in the Verdure global bonus only; the other multipliers arrive with their
   systems and multiply in there.
+  **v0.11 (§9):** the yield formula gains **`richnessMult(node)` and `planterMult`**
+  (per-node, from replanting/planters) and "museum" becomes **Folio spreads**
+  (`museumSets` → spread bonuses) — fold both in with their systems.
 
 - **The Almanac is 12 nodes of existing effect types; costs and the
   allocation model are interpretations.** Verdure is never destroyed — a node
@@ -205,6 +314,10 @@ they're easy to find and delete when resolved.
   nodes (starting tool tiers, auto-craft, starting-zone skips) wait for
   their systems; all costs are first guesses tuned to ~10 Verdure from the
   first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
+  **v0.11 (§3, §8):** add **The First Planting** — a node that lets one planter survive
+  the fold — once replanting/planters land. The Almanac deliberately gets **no
+  familiar-power nodes** (§4): its crew-adjacent scope is limited to slot access (crew
+  slot 4) and The First Planting.
 
 - **The narrative display layer is live; most of the words are not.**
   Waystones reveal once per zone on arrival (modal sheet, marks read on
@@ -218,12 +331,15 @@ they're easy to find and delete when resolved.
   provisioner trigger lines (first-visit / after-migration), waystones as
   tappable world objects (the modal stands in), and most of the ~1,200-word
   budget itself. (`Wildgrove.Sim/Narrative.cs`)
+  **v0.11 (§7):** narrative grows to **six channels** — a new **plate-inscription**
+  channel adds a margin line to a familiar's plate at Kinship milestones (the only
+  channel about individuals), which lands with the Kinship system.
 
 ## Narrative authoring
 
 - **MVP dialogue is drafted, not final.** All four waystones, all four verse
   lines, and all three fossil cards in `design/data/dialogue.json` now have
-  text in the §6 register, and the validator enforces waystone + verse text
+  text in the §7 register, and the validator enforces waystone + verse text
   for every mvp-scope zone. The words are a first draft — re-voice anything
   that misses the tone before release. Still unwritten (by design, later
   scope): v1.1+ zone waystones/verses, more Provisioner lines, the final
