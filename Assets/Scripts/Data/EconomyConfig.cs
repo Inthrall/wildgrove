@@ -136,6 +136,8 @@ namespace Wildgrove.Data
             public double Growth { get; set; }
             public int MaxLevel { get; set; }
             public double XpPerSecond { get; set; }
+            public double KinshipDivisor { get; set; }
+            public double KinshipXpRatePerLevel { get; set; }
         }
     }
 }

@@ -676,11 +676,6 @@ namespace Wildgrove.Data
                 // A spread ≥ 1 makes every trade return nothing; negative mints goods.
                 issues.Add("Exchange spread must be in [0, 1)");
             }
-
-            if (data.Exchange.RoundUpBelow < 0.0)
-            {
-                issues.Add("Exchange roundUpBelow must not be negative");
-            }
         }
 
         private static void ValidateMuseum(GameData data, HashSet<string> resourceIds, List<string> issues)

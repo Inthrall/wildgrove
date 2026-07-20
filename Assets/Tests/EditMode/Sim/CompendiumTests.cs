@@ -125,7 +125,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Trading_NeverErodesTheRecord()
         {
-            _data.exchange = new ExchangeData { spread = 0.15, roundUpBelow = 1000 };
+            _data.exchange = new ExchangeData { spread = 0.15 };
             var state = GameStateFactory.NewGame(_data);
             Simulation.Advance(state, _data, 10.0);
             var recorded = Compendium.LifetimeGathered(state, "berries");

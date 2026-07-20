@@ -126,7 +126,7 @@ namespace Wildgrove.Sim
 
             var amount = perSecond * seconds
                          * (familiar.IsWandering ? Stationing.WanderMultiplier : 1.0)
-                         * Kinship.XpRateMultiplier(familiar);
+                         * Kinship.XpRateMultiplier(familiar, xp.kinshipXpRatePerLevel);
             if (amount <= 0.0)
             {
                 return;

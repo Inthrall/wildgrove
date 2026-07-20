@@ -195,7 +195,7 @@ namespace Wildgrove.Sim.Saves
                         xp = saved.xp,
                         kinshipXp = saved.kinshipXp,
                         powerupIds = saved.powerupIds != null ? new List<string>(saved.powerupIds) : new List<string>(),
-                        stationId = StationValid(state, save, saved.stationId) ? saved.stationId : null,
+                        stationId = StationValid(state, saved.stationId) ? saved.stationId : null,
                         bonded = saved.bonded,
                         bondId = saved.bondId,
                     });
@@ -465,13 +465,26 @@ namespace Wildgrove.Sim.Saves
             return zones.Count;
         }
 
-        /// <summary>Whether a saved familiar's station id is still meaningful under the current data (else it's cleared to wandering).</summary>
-        private static bool StationValid(GameState state, SaveData save, string stationId)
+        /// <summary>Whether a saved familiar's station id still resolves under the current data (else it's cleared to wandering, so the familiar isn't stranded as a silent no-op).</summary>
+        private static bool StationValid(GameState state, string stationId)
         {
-            if (string.IsNullOrEmpty(stationId) || stationId == Familiar.TrailStation
-                || stationId.StartsWith(Familiar.DigStationPrefix))
+            if (string.IsNullOrEmpty(stationId) || stationId == Familiar.TrailStation)
             {
                 return true;
+            }
+
+            if (stationId.StartsWith(Familiar.DigStationPrefix))
+            {
+                var zoneId = stationId.Substring(Familiar.DigStationPrefix.Length);
+                foreach (var site in state.digSites)
+                {
+                    if (site.zoneId == zoneId)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             return NodeExists(state, stationId);

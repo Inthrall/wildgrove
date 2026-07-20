@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BreakInfinity;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -61,7 +62,6 @@ namespace Wildgrove.Game
 
         // One open sheet at a time; the dim layer blocks input beneath it.
         private GameObject _sheet;
-        private Familiar _namingFamiliar;
 
         private void Awake()
         {
@@ -80,7 +80,6 @@ namespace Wildgrove.Game
                 return;
             }
 
-            RefreshHeader();
             ReportWorldStrip();
             HandleTend();
             PumpSheets();
@@ -89,6 +88,7 @@ namespace Wildgrove.Game
             if (_refreshCountdown <= 0f)
             {
                 _refreshCountdown = RefreshInterval;
+                RefreshHeader(); // cadence, not per-frame — avoids a header string alloc every frame
                 var signature = StructureSignature();
                 if (_dirty || signature != _structureSignature)
                 {
@@ -449,20 +449,31 @@ namespace Wildgrove.Game
         private void BuildUpgradesSection()
         {
             Section("Upgrades");
-            var shown = 0;
-            foreach (var upgrade in _loop.Data.upgrades)
-            {
-                if (shown >= UpgradeWindow)
-                {
-                    break;
-                }
 
+            // The next few unpurchased rungs of the §9 ladder, in order.
+            var next = new List<UpgradeData>();
+            foreach (var upgrade in _loop.Data.upgrades.OrderBy(u => u.order))
+            {
                 if (_loop.IsUpgradePurchased(upgrade))
                 {
                     continue;
                 }
 
-                shown++;
+                next.Add(upgrade);
+                if (next.Count >= UpgradeWindow)
+                {
+                    break;
+                }
+            }
+
+            if (next.Count == 0)
+            {
+                MakeText(Row().transform, "Every upgrade owned.", 18, TextAnchor.MiddleLeft);
+                return;
+            }
+
+            foreach (var upgrade in next)
+            {
                 var captured = upgrade;
                 var row = Row();
                 var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft);
@@ -483,16 +494,6 @@ namespace Wildgrove.Game
                     buy.interactable = ok;
                     SetButtonTint(buy, ok);
                 });
-
-                if (_loop.IsUpgradePurchased(upgrade))
-                {
-                    shown--;
-                }
-            }
-
-            if (shown == 0)
-            {
-                MakeText(Row().transform, "Every upgrade owned.", 18, TextAnchor.MiddleLeft);
             }
         }
 

@@ -12,11 +12,8 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Kinship
     {
-        /// <summary>K_f in kinshipGain = floor(√(runXP / K_f)) — first guess, todo.md to data-drive.</summary>
-        public const double Divisor = 1000.0;
-
-        /// <summary>+XP rate per Kinship level (design §4 "+XP rate"). First guess.</summary>
-        public const double XpRatePerLevel = 0.02;
+        /// <summary>K_f used only when economy.familiarXp is absent (hand-built fixtures); real data drives it.</summary>
+        private const double FallbackDivisor = 1000.0;
 
         /// <summary>A familiar's Kinship level (kinshipXp stores it directly — each Migration adds the √ gain).</summary>
         public static int Level(Familiar familiar)
@@ -25,9 +22,9 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>Kinship gained at Migration from this run's familiar XP (design §8 √ conversion).</summary>
-        public static double GainFrom(double runXp)
+        public static double GainFrom(double runXp, double divisor)
         {
-            return runXp <= 0.0 ? 0.0 : Math.Floor(Math.Sqrt(runXp / Divisor));
+            return runXp <= 0.0 || divisor <= 0.0 ? 0.0 : Math.Floor(Math.Sqrt(runXp / divisor));
         }
 
         /// <summary>The run XP a familiar begins the next run with — enough to start at level 1 + Kinship level (design §4 "higher starting level").</summary>
@@ -38,9 +35,9 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>XP-rate multiplier a familiar's Kinship grants (design §4 "+XP rate").</summary>
-        public static double XpRateMultiplier(Familiar familiar)
+        public static double XpRateMultiplier(Familiar familiar, double ratePerLevel)
         {
-            return 1.0 + XpRatePerLevel * Level(familiar);
+            return 1.0 + ratePerLevel * Level(familiar);
         }
 
         /// <summary>
@@ -55,7 +52,9 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            familiar.kinshipXp += GainFrom(familiar.xp);
+            var xp = data.economy?.familiarXp;
+            var divisor = xp != null && xp.kinshipDivisor > 0.0 ? xp.kinshipDivisor : FallbackDivisor;
+            familiar.kinshipXp += GainFrom(familiar.xp, divisor);
             familiar.powerupIds.Clear();
             familiar.stationId = null;
             familiar.xp = StartingXp(familiar, data);

@@ -1,4 +1,3 @@
-using System;
 using BreakInfinity;
 using Wildgrove.Data;
 
@@ -40,7 +39,13 @@ namespace Wildgrove.Sim
             return valueFrom / valueTo * new BigDouble(1.0 - data.exchange.spread);
         }
 
-        /// <summary>Units of <paramref name="to"/> received for spending <paramref name="amount"/> of <paramref name="from"/>, rounded up in the player's favour on small trades.</summary>
+        /// <summary>
+        /// Units of <paramref name="to"/> received for spending <paramref name="amount"/>
+        /// of <paramref name="from"/>: the exact rate × amount. Deliberately NOT
+        /// rounded — goods are fractional (BigDouble) throughout, and any
+        /// round-*up* mints value on a round trip (a 1-unit A→B→A cycle would net
+        /// positive despite the spread), which the naive favourable-rounding did.
+        /// </summary>
         public static BigDouble Quote(GameState state, GameDataAsset data, string from, string to, BigDouble amount)
         {
             if (amount <= BigDouble.Zero)
@@ -49,22 +54,7 @@ namespace Wildgrove.Sim
             }
 
             var rate = Rate(state, data, from, to);
-            if (rate <= BigDouble.Zero)
-            {
-                return BigDouble.Zero;
-            }
-
-            var received = rate * amount;
-
-            // Small trades round up — the caravan is dry, not petty (design §9).
-            // A small received amount always fits double, so the rounding is safe.
-            var roundUpBelow = data.exchange.roundUpBelow;
-            if (roundUpBelow > 0.0 && received < new BigDouble(roundUpBelow))
-            {
-                received = new BigDouble(Math.Ceiling(received.ToDouble()));
-            }
-
-            return received;
+            return rate <= BigDouble.Zero ? BigDouble.Zero : rate * amount;
         }
 
         /// <summary>

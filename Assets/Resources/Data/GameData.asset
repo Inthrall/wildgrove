@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: de98e3e1e9738e63504de77d569edaec8c3c3bd21e172ad4f11e7c3541e274a6
+  sourceHash: faf9c7f8f15f43dc54c8f40a423d462f0ea84f306cd0bea09839bf37de7c3423
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -87,6 +87,8 @@ MonoBehaviour:
       growth: 1.12
       maxLevel: 99
       xpPerSecond: 1
+      kinshipDivisor: 1000
+      kinshipXpRatePerLevel: 0.02
     amber:
       digFindsPerHour: 0.06
       perFind: 2
@@ -320,7 +322,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: fibres
+      amount: 80
+    - id: wildflowers
+      amount: 30
     effects:
     - type: 3
       skill: 
@@ -371,7 +377,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: fibres
+      amount: 150
+    - id: berries
+      amount: 40
     effects:
     - type: 2
       skill: 
@@ -386,7 +396,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: fibres
+      amount: 100
+    - id: berries
+      amount: 40
     effects:
     - type: 15
       skill: firecraft
@@ -436,7 +450,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: fibres
+      amount: 150
+    - id: wildflowers
+      amount: 60
     effects:
     - type: 8
       skill: 
@@ -531,7 +549,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: timber
+      amount: 60
+    - id: fibres
+      amount: 40
     effects:
     - type: 15
       skill: bushcraft
@@ -588,7 +610,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: planks
+      amount: 15
+    - id: cordage
+      amount: 6
     effects:
     - type: 6
       skill: 
@@ -639,7 +665,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: planks
+      amount: 50
+    - id: timber
+      amount: 60
     effects:
     - type: 8
       skill: 
@@ -761,7 +791,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: planks
+      amount: 60
+    - id: timber
+      amount: 60
     effects:
     - type: 7
       skill: 
@@ -810,7 +844,11 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
-    materials: []
+    materials:
+    - id: planks
+      amount: 80
+    - id: timber
+      amount: 100
     effects:
     - type: 18
       skill: 
@@ -1518,7 +1556,6 @@ MonoBehaviour:
       resource: 
   exchange:
     spread: 0.15
-    roundUpBelow: 1000
   rites:
     chooseCount: 3
     generator:

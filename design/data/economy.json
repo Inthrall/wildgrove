@@ -94,6 +94,8 @@
     "growth": 1.12,
     "maxLevel": 99,
     "xpPerSecond": 1.0,
-    "$note": "design §4: familiar run XP. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). Levels never scale output — only XP/Kinship pacing. All first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
+    "kinshipDivisor": 1000,
+    "kinshipXpRatePerLevel": 0.02,
+    "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. All first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
   }
 }

@@ -22,8 +22,7 @@ namespace Wildgrove.Data
             asset.species = data.Species.Select(MapSpecies).ToList();
             asset.exchange = data.Exchange == null ? null : new ExchangeData
             {
-                spread = data.Exchange.Spread,
-                roundUpBelow = data.Exchange.RoundUpBelow
+                spread = data.Exchange.Spread
             };
             asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);
@@ -358,7 +357,9 @@ namespace Wildgrove.Data
                     baseXp = e.FamiliarXp.Base,
                     growth = e.FamiliarXp.Growth,
                     maxLevel = e.FamiliarXp.MaxLevel,
-                    xpPerSecond = e.FamiliarXp.XpPerSecond
+                    xpPerSecond = e.FamiliarXp.XpPerSecond,
+                    kinshipDivisor = e.FamiliarXp.KinshipDivisor,
+                    kinshipXpRatePerLevel = e.FamiliarXp.KinshipXpRatePerLevel
                 }
             };
         }

@@ -246,7 +246,6 @@ namespace Wildgrove.Data
     public sealed class ExchangeData
     {
         public double spread;
-        public double roundUpBelow;
     }
 
     /// <summary>
@@ -468,6 +467,12 @@ namespace Wildgrove.Data
 
             /// <summary>Base run XP a stationed familiar earns per second at its post (wanderers ×0.5).</summary>
             public double xpPerSecond;
+
+            /// <summary>K_f in kinshipGain = floor(√(runXP / kinshipDivisor)) at Migration (design §8).</summary>
+            public double kinshipDivisor;
+
+            /// <summary>+XP rate per Kinship level (design §4).</summary>
+            public double kinshipXpRatePerLevel;
         }
     }
 }

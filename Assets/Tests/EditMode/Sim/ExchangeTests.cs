@@ -26,7 +26,7 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
             };
-            _data.exchange = new ExchangeData { spread = 0.15, roundUpBelow = 1000 };
+            _data.exchange = new ExchangeData { spread = 0.15 };
             _data.resources = new List<ResourceData>
             {
                 new ResourceData { id = "berries", sellValue = 2 },
@@ -75,11 +75,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Quote_SmallTrade_RoundsUpInThePlayersFavour()
+        public void Quote_IsExactRateTimesAmount()
         {
-            // 10 · (2/3 · 0.85) = 5.667 → 6 (the caravan is dry, not petty).
+            // Exact, not rounded — 10 · (2/3 · 0.85). Rounding up would let a
+            // round trip mint value despite the spread.
             Assert.That(Exchange.Quote(new GameState(), _data, "berries", "nuts", new BigDouble(10.0)).ToDouble(),
-                Is.EqualTo(6.0).Within(Tolerance));
+                Is.EqualTo(10.0 * (2.0 / 3.0 * 0.85)).Within(Tolerance));
+        }
+
+        [Test]
+        public void RoundTrip_NeverProfits()
+        {
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(500.0));
+
+            var nuts = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(500.0));
+            Exchange.TryTrade(state, _data, "nuts", "berries", nuts);
+
+            // Two spreads applied — a there-and-back can only lose.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.LessThan(500.0));
         }
 
         [Test]
@@ -89,10 +103,11 @@ namespace Wildgrove.Sim.Tests
             state.AddResource("berries", new BigDouble(10.0));
 
             var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0));
+            var expected = 10.0 * (2.0 / 3.0 * 0.85);
 
-            Assert.That(received.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(received.ToDouble(), Is.EqualTo(expected).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(expected).Within(Tolerance));
         }
 
         [Test]
