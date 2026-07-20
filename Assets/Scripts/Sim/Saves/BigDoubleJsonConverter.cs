@@ -16,8 +16,19 @@ namespace Wildgrove.Sim.Saves
     {
         public override void WriteJson(JsonWriter writer, BigDouble value, JsonSerializer serializer)
         {
+            // A NaN/Infinity mantissa (a sim bug poisoned the value) would
+            // serialise fine but fail ReadJson's TryParse on next launch,
+            // condemning the whole save as corrupt. Write zero instead: one
+            // poisoned stat resets rather than the run being set aside.
+            var mantissa = value.Mantissa;
+            if (double.IsNaN(mantissa) || double.IsInfinity(mantissa))
+            {
+                writer.WriteValue("0e0");
+                return;
+            }
+
             writer.WriteValue(
-                value.Mantissa.ToString("R", CultureInfo.InvariantCulture)
+                mantissa.ToString("R", CultureInfo.InvariantCulture)
                 + "e" + value.Exponent.ToString(CultureInfo.InvariantCulture));
         }
 

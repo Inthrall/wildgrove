@@ -426,6 +426,37 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Restore_DanglingWardenPost_ClearsToTheFirstNodeFallback()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            // A content update renamed/removed the posted node — the saved id
+            // matches nothing in the rebuilt list.
+            state.wardenPostNodeId = "retired-zone:retired-resource";
+
+            var restored = RoundTrip(state);
+
+            // Cleared, not kept: a dangling post would strand the warden (and
+            // every bonded gatherer sharing it) matching no node at all.
+            Assert.That(restored.wardenPostNodeId, Is.Null);
+            Assert.That(Warden.IsPosted(restored, restored.nodes[0]), Is.True);
+        }
+
+        [Test]
+        public void RoundTrip_NaNPoisonedValue_SavesAsZeroInsteadOfCorruptingTheFile()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.coin = new BigDouble(double.NaN, 0);
+            state.AddResource("berries", new BigDouble(42.0));
+
+            // Must not throw on reload — a non-finite write would fail the
+            // reader's TryParse and condemn the whole save as corrupt.
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.coin.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.0).Within(Tolerance));
+        }
+
+        [Test]
         public void RoundTrip_RestoresReadWaystones()
         {
             var state = GameStateFactory.NewGame(_data);
@@ -671,6 +702,26 @@ namespace Wildgrove.Sim.Tests
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
             Assert.That(save.carrierCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryMigrate_MultiZoneV1Save_GrantsACarrierPerZone()
+        {
+            // The live path grants one seed carrier per zone opened — a v1
+            // save that had walked two zones must not come back with one.
+            var save = new SaveData
+            {
+                version = 1,
+                nodes = new List<SavedNode>
+                {
+                    new SavedNode { id = "sunfield-meadow:berries" },
+                    new SavedNode { id = "sunfield-meadow:wildflowers" },
+                    new SavedNode { id = "bramble-hedgerows:nuts" },
+                },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.carrierCount, Is.EqualTo(2));
         }
 
         [Test]

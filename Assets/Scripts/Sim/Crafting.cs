@@ -211,7 +211,10 @@ namespace Wildgrove.Sim
                         station.progressSeconds = 0.0;
                     }
 
-                    var step = System.Math.Min(remaining, duration - station.progressSeconds);
+                    // Duration is live (speed upgrades mid-batch shrink it); never
+                    // let it undercut banked progress or the negative step would
+                    // refund time into `remaining` and mint free batches.
+                    var step = System.Math.Min(remaining, System.Math.Max(0.0, duration - station.progressSeconds));
                     station.progressSeconds += step;
                     remaining -= step;
 

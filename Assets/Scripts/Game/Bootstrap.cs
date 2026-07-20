@@ -34,7 +34,13 @@ namespace Wildgrove.Game
             go.AddComponent<GameLoop>();
             go.AddComponent<World.WorldView>();
             go.AddComponent<GameHud>();
-            go.AddComponent<FpsCounter>();
+
+            // Perf readout is a dev instrument, not a store-facing element —
+            // editor and development builds only.
+            if (Debug.isDebugBuild)
+            {
+                go.AddComponent<FpsCounter>();
+            }
         }
     }
 }

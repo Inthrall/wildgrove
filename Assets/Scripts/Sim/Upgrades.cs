@@ -61,9 +61,11 @@ namespace Wildgrove.Sim
 
             // A trail map's unlockZone effect takes hold immediately: the new
             // zone's nodes appear (with the design §2 regional seed) before the
-            // multipliers are rebuilt so they're covered too.
+            // multipliers are rebuilt so they're covered too. The newly
+            // revealed verse then credits deeds already done.
             GameStateFactory.SyncUnlockedZones(state, data);
             RecomputeYieldMultipliers(state, data);
+            Rite.SyncDeedSlots(state, data);
             return true;
         }
 

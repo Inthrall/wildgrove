@@ -169,7 +169,14 @@ namespace Wildgrove.Sim.Saves
             state.donatedResources = save.donatedResources != null
                 ? new List<string>(save.donatedResources)
                 : new List<string>();
-            state.wardenPostNodeId = save.wardenPostNodeId;
+            // A post at a node the current data no longer builds (zone or
+            // resource retuned) would strand the warden — and the bonded
+            // gatherers who share the post — matching no node at all. Dangling
+            // post ids self-correct on restore like nodes do: cleared, so the
+            // first-node fallback takes over.
+            state.wardenPostNodeId = NodeExists(state, save.wardenPostNodeId)
+                ? save.wardenPostNodeId
+                : null;
             state.amber = save.amber;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
@@ -390,7 +397,48 @@ namespace Wildgrove.Sim.Saves
 
             // Last, so completed fossils' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
+
+            // A verse that revealed since this save was taken (or a deed slot
+            // an older build left unsynced) credits deeds already done.
+            Rite.SyncDeedSlots(state, data);
             return state;
+        }
+
+        /// <summary>Distinct zones among a save's nodes (ids are "zone:resource") — the v1 carrier back-grant.</summary>
+        private static int CountZones(SaveData save)
+        {
+            var zones = new HashSet<string>();
+            if (save.nodes != null)
+            {
+                foreach (var node in save.nodes)
+                {
+                    var split = node?.id?.IndexOf(':') ?? -1;
+                    if (split > 0)
+                    {
+                        zones.Add(node.id.Substring(0, split));
+                    }
+                }
+            }
+
+            return zones.Count;
+        }
+
+        private static bool NodeExists(GameState state, string nodeId)
+        {
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            foreach (var node in state.nodes)
+            {
+                if (node.id == nodeId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void RestorePool(Dictionary<string, BigDouble> pool, List<SavedResource> saved)
@@ -459,9 +507,10 @@ namespace Wildgrove.Sim.Saves
                 {
                     case 1:
                         // v1 predates carriers and baskets. Grant the regional
-                        // seed carrier (a fresh v2 run starts with one); baskets
+                        // seed carrier per zone the save had opened, matching
+                        // what the live path would have accrued; baskets
                         // default to empty via the missing-field default.
-                        save.carrierCount = 1;
+                        save.carrierCount = System.Math.Max(1, CountZones(save));
                         save.version = 2;
                         break;
 

@@ -43,7 +43,12 @@ namespace Wildgrove.Sim
                     state.amber += amber.perFind;
                 }
 
-                var eligible = EligibleFossils(state, data, site.zoneId);
+                // Reused scratch: this runs per site per 1 s substep — a full
+                // offline catch-up is tens of thousands of walks, so the list
+                // must not be a fresh allocation each time.
+                state.fossilScratch = state.fossilScratch ?? new List<FossilData>();
+                var eligible = state.fossilScratch;
+                EligibleFossilsInto(state, data, site.zoneId, eligible);
                 if (eligible.Count == 0)
                 {
                     // Everything this ground holds has been found — the site
@@ -90,9 +95,16 @@ namespace Wildgrove.Sim
         public static List<FossilData> EligibleFossils(GameState state, GameDataAsset data, string zoneId)
         {
             var eligible = new List<FossilData>();
+            EligibleFossilsInto(state, data, zoneId, eligible);
+            return eligible;
+        }
+
+        private static void EligibleFossilsInto(GameState state, GameDataAsset data, string zoneId, List<FossilData> eligible)
+        {
+            eligible.Clear();
             if (data.fossils == null)
             {
-                return eligible;
+                return;
             }
 
             foreach (var fossil in data.fossils)
@@ -102,8 +114,6 @@ namespace Wildgrove.Sim
                     eligible.Add(fossil);
                 }
             }
-
-            return eligible;
         }
 
         private static FossilData WeightedPick(GameState state, List<FossilData> eligible, double totalRarity)

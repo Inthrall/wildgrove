@@ -20,16 +20,31 @@ namespace Wildgrove.EditorTools
     /// sizes the GameView to phone portrait, and enters Play — where
     /// <see cref="StoreCaptureRunner"/> walks the nav pages and captures one
     /// shot each. A poller watches for the runner's done-marker, exits Play,
-    /// restores the save, and closes the editor.
+    /// restores the save, and closes the editor. If the editor died mid-run,
+    /// the poller's load-time sweep restores the set-aside save on the next
+    /// launch instead.
     /// </summary>
     public static class StoreScreenshots
     {
-        private const string SessionFlag = "wildgrove.storeCapture";
-        private const string BackupSuffix = ".store-backup";
+        internal const string SessionFlag = "wildgrove.storeCapture";
+        internal const string BackupSuffix = ".store-backup";
+        // Marks "no real save existed before staging" — so a crash recovery
+        // knows to delete the staged save rather than leave it playable.
+        internal const string NoneMarkerSuffix = ".store-none";
+        internal const string CaptureEnvVar = "WILDGROVE_STORE_CAPTURE";
 
         [MenuItem("Wildgrove/Capture Store Screenshots")]
         public static void CaptureForCli()
         {
+            // The runner is gated on the same env var, and the poller
+            // hard-exits the editor when it was set — a bare menu click would
+            // capture nothing, then kill the session 240s later.
+            if (System.Environment.GetEnvironmentVariable(CaptureEnvVar) == null)
+            {
+                Debug.LogError("[store-shots] Set " + CaptureEnvVar + "=1 (and WILDGROVE_SHOT_DIR) and launch via -executeMethod — this harness closes the editor when it finishes, so it must own the session.");
+                return;
+            }
+
             var data = AssetDatabase.LoadAssetAtPath<GameDataAsset>("Assets/Resources/Data/GameData.asset");
             if (data == null)
             {
@@ -41,6 +56,11 @@ namespace Wildgrove.EditorTools
             if (System.IO.File.Exists(SaveFile.Path))
             {
                 System.IO.File.Copy(SaveFile.Path, SaveFile.Path + BackupSuffix, true);
+            }
+            else
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(SaveFile.Path));
+                System.IO.File.WriteAllText(SaveFile.Path + NoneMarkerSuffix, string.Empty);
             }
 
             var save = SaveCodec.Capture(StageShowcaseState(data),
@@ -54,6 +74,28 @@ namespace Wildgrove.EditorTools
             SessionState.SetBool(SessionFlag, true);
             SessionState.SetFloat(SessionFlag + ".start", (float)EditorApplication.timeSinceStartup);
             EditorApplication.EnterPlaymode();
+        }
+
+        /// <summary>Put the player's real save back (or remove the staged one when none existed).</summary>
+        internal static void RestoreRealSave()
+        {
+            var backup = SaveFile.Path + BackupSuffix;
+            var noneMarker = SaveFile.Path + NoneMarkerSuffix;
+            if (System.IO.File.Exists(backup))
+            {
+                System.IO.File.Copy(backup, SaveFile.Path, true);
+                System.IO.File.Delete(backup);
+            }
+            else if (System.IO.File.Exists(SaveFile.Path))
+            {
+                // No prior save existed — don't leave the staged one behind.
+                System.IO.File.Delete(SaveFile.Path);
+            }
+
+            if (System.IO.File.Exists(noneMarker))
+            {
+                System.IO.File.Delete(noneMarker);
+            }
         }
 
         /// <summary>
@@ -120,17 +162,28 @@ namespace Wildgrove.EditorTools
         }
     }
 
-    /// <summary>Watches for the runner's done-marker across the play-mode domain reload.</summary>
+    /// <summary>
+    /// Watches for the runner's done-marker across the play-mode domain
+    /// reload, and sweeps up after a crashed capture on the next editor
+    /// launch (SessionState dies with the session, the set-aside files
+    /// don't — their presence with no live capture flag IS the crash signal).
+    /// </summary>
     [InitializeOnLoad]
     internal static class StoreScreenshotPoller
     {
-        private const string SessionFlag = "wildgrove.storeCapture";
-
         static StoreScreenshotPoller()
         {
-            if (SessionState.GetBool(SessionFlag, false))
+            if (SessionState.GetBool(StoreScreenshots.SessionFlag, false))
             {
                 EditorApplication.update += Poll;
+                return;
+            }
+
+            if (System.IO.File.Exists(SaveFile.Path + StoreScreenshots.BackupSuffix)
+                || System.IO.File.Exists(SaveFile.Path + StoreScreenshots.NoneMarkerSuffix))
+            {
+                Debug.LogWarning("[store-shots] Found a set-aside save from an interrupted capture — restoring it.");
+                StoreScreenshots.RestoreRealSave();
             }
         }
 
@@ -140,7 +193,7 @@ namespace Wildgrove.EditorTools
                       ?? Application.persistentDataPath;
             var done = System.IO.File.Exists(System.IO.Path.Combine(dir, "capture-done.marker"));
             var timedOut = EditorApplication.timeSinceStartup
-                           - SessionState.GetFloat(SessionFlag + ".start", 0f) > 240.0;
+                           - SessionState.GetFloat(StoreScreenshots.SessionFlag + ".start", 0f) > 240.0;
 
             if (EditorApplication.isPlaying && (done || timedOut))
             {
@@ -152,21 +205,15 @@ namespace Wildgrove.EditorTools
                 && (done || timedOut))
             {
                 EditorApplication.update -= Poll;
-                SessionState.SetBool(SessionFlag, false);
+                SessionState.SetBool(StoreScreenshots.SessionFlag, false);
+                StoreScreenshots.RestoreRealSave();
 
-                var backup = SaveFile.Path + ".store-backup";
-                if (System.IO.File.Exists(backup))
+                // Only the CLI launch owns the session — never hard-exit an
+                // interactive editor (Exit skips the unsaved-scene prompt).
+                if (System.Environment.GetEnvironmentVariable(StoreScreenshots.CaptureEnvVar) != null)
                 {
-                    System.IO.File.Copy(backup, SaveFile.Path, true);
-                    System.IO.File.Delete(backup);
+                    EditorApplication.Exit(done ? 0 : 1);
                 }
-                else if (System.IO.File.Exists(SaveFile.Path))
-                {
-                    // No prior save existed — don't leave the staged one behind.
-                    System.IO.File.Delete(SaveFile.Path);
-                }
-
-                EditorApplication.Exit(done ? 0 : 1);
             }
         }
     }

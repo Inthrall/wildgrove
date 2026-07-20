@@ -27,7 +27,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(30), "design doc §9 defines exactly 30 named upgrades");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(29),
+                "design doc §9 defines 30 named upgrades; Mistfen's trail map is held back until the zone's v1.1 companions (skills, dig site, waystone) ship with it");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -120,6 +121,95 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(LoadSources()));
 
             Assert.That(issues, Is.Empty, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_StartingZoneRenamed_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"id\": \"sunfield-meadow\"",
+                "\"id\": \"meadow-prime\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            // The runtime seeds NewGame from the fixed id — a rename must not
+            // pass validation green and then throw on first launch.
+            Assert.That(issues.Any(i => i.Contains("Starting zone") && i.Contains("does not exist")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_StartingZoneNotLowestOrder_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"id\": \"sunfield-meadow\",    \"order\": 1",
+                "\"id\": \"sunfield-meadow\",    \"order\": 99");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("not the lowest-order zone")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_UnknownRecipeKind_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"kind\": \"trade\"",
+                "\"kind\": \"trading\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            // The sim switches on the literal — a typo silently makes the
+            // good unsellable.
+            Assert.That(issues.Any(i => i.Contains("unknown kind 'trading'")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_UnrecordableDeed_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"deed\": \"tend\"",
+                "\"deed\": \"forage\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("'forage'") && i.Contains("never records")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_VerseZoneNoTrailMapOpens_IsReported()
+        {
+            var sources = LoadSources();
+            // the-hollows exists but is staged content — nothing unlocks it.
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"zone\": \"silverrun-river\"",
+                "\"zone\": \"the-hollows\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("the-hollows") && i.Contains("never unlockable")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_ZeroOfflineRateMultiplier_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"rateMultiplier\": 1.0",
+                "\"rateMultiplier\": 0.0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("rateMultiplier must be positive")),
+                Is.True, string.Join("\n", issues));
         }
 
         [Test]

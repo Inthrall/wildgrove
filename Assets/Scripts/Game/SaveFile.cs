@@ -8,9 +8,10 @@ namespace Wildgrove.Game
     /// <summary>
     /// The on-device save slot: one JSON file in persistentDataPath, written
     /// atomically (temp file, then swap) so a crash mid-write can't destroy
-    /// the previous save. A file that no longer reads — corrupt, or written by
-    /// a future build — is set aside as *.corrupt for post-mortem rather than
-    /// deleted. Cloud Saved Games layers on top of this in Phase 5.
+    /// the previous save. A file that no longer reads is set aside rather than
+    /// deleted: *.corrupt for unreadable data, *.newer for a healthy save from
+    /// a future build (each its own slot, so one can't overwrite the other).
+    /// Cloud Saved Games layers on top of this in Phase 5.
     /// </summary>
     public static class SaveFile
     {
@@ -54,7 +55,19 @@ namespace Wildgrove.Game
 
             if (parsed == null || !SaveCodec.TryMigrate(parsed))
             {
-                SetAsideCorrupt();
+                // A future-build save (APK rollback, staged-rollout downgrade)
+                // is healthy data this build can't read — park it in its own
+                // slot so a later genuine corruption can't overwrite it, and
+                // re-upgrading can recover it by hand.
+                if (parsed != null && parsed.version > SaveCodec.CurrentVersion)
+                {
+                    SetAside(".newer", "Save is from a newer build (v" + parsed.version + ")");
+                }
+                else
+                {
+                    SetAside(".corrupt", "Save file was unreadable");
+                }
+
                 return false;
             }
 
@@ -85,18 +98,18 @@ namespace Wildgrove.Game
             }
         }
 
-        private static void SetAsideCorrupt()
+        private static void SetAside(string suffix, string reason)
         {
-            var corrupt = Path + ".corrupt";
+            var target = Path + suffix;
             try
             {
-                File.Copy(Path, corrupt, true);
+                File.Copy(Path, target, true);
                 File.Delete(Path);
-                Debug.LogError("Save file was unreadable — set aside as " + corrupt + ", starting fresh.");
+                Debug.LogError(reason + " — set aside as " + target + ", starting fresh.");
             }
             catch (Exception e)
             {
-                Debug.LogError("Save file was unreadable and could not be set aside: " + e.Message);
+                Debug.LogError(reason + " and could not be set aside: " + e.Message);
             }
         }
     }

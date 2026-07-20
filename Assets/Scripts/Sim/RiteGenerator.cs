@@ -138,7 +138,7 @@ namespace Wildgrove.Sim
                         // price in taps and luck, not goods; only the Renown
                         // they're worth grows with the run.
                         count = slot.count,
-                        renownGrant = (long)Math.Round(slot.renownGrant * scale)
+                        renownGrant = ToLongSaturating(slot.renownGrant * scale)
                     });
                 }
             }
@@ -154,7 +154,7 @@ namespace Wildgrove.Sim
         private static RiteSlotData GoodsSlot(GameDataAsset data, string goodsId, double target)
         {
             var unit = Economy.NotionalUnitValue(data, goodsId).ToDouble();
-            var amount = Math.Max(1L, (long)Math.Round(target / unit));
+            var amount = Math.Max(1L, ToLongSaturating(target / unit));
             return new RiteSlotData
             {
                 type = RiteSlotType.Resource,
@@ -162,8 +162,28 @@ namespace Wildgrove.Sim
                 amount = amount,
                 renownGrant = Economy.TradeUnitValue(data, goodsId) > BigDouble.Zero
                     ? 0L
-                    : (long)Math.Round(amount * unit)
+                    : ToLongSaturating(amount * unit)
             };
+        }
+
+        /// <summary>
+        /// Casting a double beyond long range is unchecked (long.MinValue) —
+        /// a demand-growth power at deep migration counts would turn a grant
+        /// negative and corrupt Renown. Saturate instead.
+        /// </summary>
+        private static long ToLongSaturating(double value)
+        {
+            if (double.IsNaN(value) || value <= 0.0)
+            {
+                return 0L;
+            }
+
+            if (value >= long.MaxValue)
+            {
+                return long.MaxValue;
+            }
+
+            return (long)Math.Round(value);
         }
 
         /// <summary>

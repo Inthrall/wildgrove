@@ -35,6 +35,15 @@ namespace Wildgrove.Data
     /// </summary>
     public sealed class GameData
     {
+        /// <summary>
+        /// The zone every fresh run opens in. Lives here (not in the sim's
+        /// GameStateFactory) so the validator can enforce that the id exists
+        /// and is the lowest-order zone — the two definitions of "starting
+        /// zone" must never diverge, or validation proves reachability
+        /// against a different zone than the one the runtime actually seeds.
+        /// </summary>
+        public const string StartingZoneId = "sunfield-meadow";
+
         public EconomyConfig Economy { get; private set; }
         public IReadOnlyList<ResourceDef> Resources { get; private set; }
         public IReadOnlyList<ZoneDef> Zones { get; private set; }

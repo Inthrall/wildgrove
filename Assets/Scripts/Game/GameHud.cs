@@ -116,6 +116,7 @@ namespace Wildgrove.Game
         private readonly HashSet<string> _availableRecipeIds = new HashSet<string>();
         private string _skillsLine = string.Empty;
         private float _sectionRefreshCountdown;
+        private ZoneData _pendingWaystoneZone;
         private NodeState _selected;
         private GameState _boundState;
         private bool _builtLandscape;
@@ -170,21 +171,27 @@ namespace Wildgrove.Game
 
             // A pause→resume catch-up can queue a summary while the HUD is
             // already built — surface it the same way the load-time one shows.
-            if (_welcomeSheet == null && _loop.PendingOfflineSummary != null)
+            // Same full guard as the other sheets: one modal at a time.
+            if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null
+                && _bondSheet == null && _loop.PendingOfflineSummary != null)
             {
                 ShowWelcomeBackIfEarned();
             }
 
             // A waystone reveals on arrival (design §6) — one sheet at a
-            // time, and never over another modal.
+            // time, and never over another modal. The lookup itself lives on
+            // the slow cadence (it walks the unlock set — too hot for every
+            // frame); the re-check here keeps a just-dismissed stone from
+            // re-showing off the stale pending value.
             if (_welcomeSheet == null && _migrationSheet == null && _waystoneSheet == null
-                && _bondSheet == null)
+                && _bondSheet == null && _pendingWaystoneZone != null)
             {
-                var waystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
-                if (waystoneZone != null)
+                if (!_loop.State.seenWaystoneZoneIds.Contains(_pendingWaystoneZone.id))
                 {
-                    ShowWaystoneSheet(waystoneZone);
+                    ShowWaystoneSheet(_pendingWaystoneZone);
                 }
+
+                _pendingWaystoneZone = null;
             }
 
             // A companion bonding is the rarest thing that can happen (design
@@ -847,6 +854,9 @@ namespace Wildgrove.Game
 
             if (_sectionsScroll != null)
             {
+                // Kill any fling first — residual velocity both drags the new
+                // page off the top and holds off the label pass below.
+                _sectionsScroll.StopMovement();
                 _sectionsScroll.verticalNormalizedPosition = 1f;
             }
 
@@ -1904,6 +1914,7 @@ namespace Wildgrove.Game
 
             _sectionRefreshCountdown = SectionRefreshInterval;
             RefreshSectionCaches();
+            _pendingWaystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
             RefreshSlow();
         }
 

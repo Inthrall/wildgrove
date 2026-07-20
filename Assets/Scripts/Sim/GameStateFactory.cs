@@ -13,7 +13,7 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class GameStateFactory
     {
-        public const string StartingZoneId = "sunfield-meadow";
+        public const string StartingZoneId = GameData.StartingZoneId;
 
         public static GameState NewGame(GameDataAsset data)
         {

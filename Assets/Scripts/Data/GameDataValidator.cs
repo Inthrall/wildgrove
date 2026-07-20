@@ -20,6 +20,14 @@ namespace Wildgrove.Data
 
         private static readonly HashSet<string> KnownScopes = new HashSet<string> { "mvp", "v1.1", "v1.2" };
 
+        // The sim switches on the literal (Economy.cs sell pricing, rite slot
+        // classification) — a typo'd kind silently makes a good unsellable.
+        private static readonly HashSet<string> KnownRecipeKinds = new HashSet<string> { "material", "trade" };
+
+        // Deeds a running sim can actually record (Simulation.RecordDeed call
+        // sites) — a slot naming anything else could never fill.
+        private static readonly HashSet<string> KnownDeeds = new HashSet<string> { "tend" };
+
         private static readonly HashSet<string> KnownSpecimenQualities = new HashSet<string> { "fine", "pristine" };
 
         public static IReadOnlyList<string> Validate(GameData data)
@@ -112,6 +120,20 @@ namespace Wildgrove.Data
             foreach (var duplicate in data.Zones.GroupBy(z => z.Order).Where(g => g.Count() > 1))
             {
                 issues.Add($"Duplicate zone order {duplicate.Key}");
+            }
+
+            // The runtime seeds every fresh run from the fixed id, while this
+            // validator proves reachability against the lowest-order zone —
+            // the two must be the same zone or a rename/reorder ships green
+            // and NewGame throws on first launch.
+            var lowestOrder = data.Zones.OrderBy(z => z.Order).FirstOrDefault();
+            if (!data.ZonesById.ContainsKey(GameData.StartingZoneId))
+            {
+                issues.Add($"Starting zone '{GameData.StartingZoneId}' does not exist in zones.json");
+            }
+            else if (lowestOrder != null && lowestOrder.Id != GameData.StartingZoneId)
+            {
+                issues.Add($"Starting zone '{GameData.StartingZoneId}' is not the lowest-order zone ('{lowestOrder.Id}' is)");
             }
 
             // Only the starting zone's unlocks are mechanically live (they
@@ -238,6 +260,11 @@ namespace Wildgrove.Data
                 if (!KnownSkills.Contains(recipe.Skill))
                 {
                     issues.Add($"Recipe '{recipe.Id}' has unknown skill '{recipe.Skill}'");
+                }
+
+                if (!KnownRecipeKinds.Contains(recipe.Kind))
+                {
+                    issues.Add($"Recipe '{recipe.Id}' has unknown kind '{recipe.Kind}' — expected 'material' or 'trade'");
                 }
 
                 if (recipe.ValueMult <= 0)
@@ -632,6 +659,22 @@ namespace Wildgrove.Data
                 }
             }
 
+            // CurrentRite takes the FIRST rite matching a migration index —
+            // a duplicate silently shadows its twin forever.
+            foreach (var duplicate in data.Rites.Rites.GroupBy(r => r.Migration).Where(g => g.Count() > 1))
+            {
+                issues.Add($"Duplicate rite migration index {duplicate.Key} — only the first is ever served");
+            }
+
+            // A verse only accepts offerings once its zone is unlocked, and
+            // the Rite needs EVERY verse complete — a verse keyed to a zone
+            // no trail map opens would block Migration permanently.
+            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
+            unlockableZones.UnionWith(data.Upgrades
+                .SelectMany(u => u.Effects)
+                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
+                .Select(e => e.Zone));
+
             foreach (var rite in data.Rites.Rites)
             {
                 if (rite.Migration < 0)
@@ -649,6 +692,10 @@ namespace Wildgrove.Data
                     if (verse.Zone == null || !data.ZonesById.ContainsKey(verse.Zone))
                     {
                         issues.Add($"Verse '{verse.Id}' references unknown zone '{verse.Zone}'");
+                    }
+                    else if (!unlockableZones.Contains(verse.Zone))
+                    {
+                        issues.Add($"Verse '{verse.Id}' zone '{verse.Zone}' is never unlockable — no upgrade grants it, so the Rite could never complete");
                     }
 
                     // The choose-N-of-M safety valve only exists if M > N.
@@ -698,6 +745,10 @@ namespace Wildgrove.Data
                     if (string.IsNullOrWhiteSpace(slot.Deed))
                     {
                         issues.Add($"Verse '{verseId}' deed slot names no deed");
+                    }
+                    else if (!KnownDeeds.Contains(slot.Deed))
+                    {
+                        issues.Add($"Verse '{verseId}' deed slot names '{slot.Deed}', which the sim never records — it could never fill");
                     }
 
                     RequireCountAndGrant(verseId, slot, issues);
@@ -844,6 +895,15 @@ namespace Wildgrove.Data
                 issues.Add("Economy tools.tiers is empty");
             }
 
+            if (economy.Tools != null
+                && (economy.Tools.BaseCostCoin <= 0 || economy.Tools.CostMultPerTier <= 1
+                    || economy.Tools.YieldMultPerTier <= 1))
+            {
+                // Cost ≤ 0 makes tiers free; a mult ≤ 1 makes each tier cheaper
+                // or weaker than the last — the ladder inverts.
+                issues.Add("Economy tools progression is degenerate");
+            }
+
             if (economy.Xp != null && (economy.Xp.Base <= 0 || economy.Xp.Growth <= 1 || economy.Xp.MaxLevel <= 1))
             {
                 // Base ≤ 0 means every rung costs nothing — all skills read
@@ -863,9 +923,21 @@ namespace Wildgrove.Data
                 issues.Add("Economy mastery progression is degenerate");
             }
 
+            if (economy.Mastery != null && economy.Mastery.YieldBonusPerLevel < 0)
+            {
+                issues.Add("Economy mastery.yieldBonusPerLevel must not be negative");
+            }
+
             if (economy.Offline != null && economy.Offline.BaseCapHours <= 0)
             {
                 issues.Add("Economy offline.baseCapHours must be positive");
+            }
+
+            if (economy.Offline != null && economy.Offline.RateMultiplier <= 0)
+            {
+                // The sim multiplies every offline second by this — zero
+                // silently voids all offline earnings.
+                issues.Add("Economy offline.rateMultiplier must be positive");
             }
 
             if (economy.Quality != null

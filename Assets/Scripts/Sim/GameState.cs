@@ -55,6 +55,14 @@ namespace Wildgrove.Sim
         /// <summary>Cached derived modifiers — see Modifiers.Of. Never saved.</summary>
         public ModifierSnapshot modifierSnapshot;
 
+        /// <summary>Memoised generated rite for this run's migration — see Rite.CurrentRite. Never saved.</summary>
+        public Wildgrove.Data.RiteData generatedRite;
+        public int generatedRiteMigration = -1;
+        public Wildgrove.Data.GameDataAsset generatedRiteFrom;
+
+        /// <summary>Reusable scratch for the dig tick's eligible-fossil walk — see Excavation.Advance. Never saved.</summary>
+        public List<Wildgrove.Data.FossilData> fossilScratch;
+
         /// <summary>Invalidate the cached modifier snapshot after an effect-source mutation.</summary>
         public void BumpModifiers()
         {

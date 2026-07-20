@@ -25,6 +25,7 @@ namespace Wildgrove.Game.Telemetry
         private readonly ITelemetry _fallback;
         private readonly Queue<(string name, (string key, object value)[] parameters)> _buffer =
             new Queue<(string, (string, object)[])>();
+        private readonly Queue<Exception> _exceptionBuffer = new Queue<Exception>();
 
         private bool _ready;
         private bool _failed;
@@ -34,25 +35,45 @@ namespace Wildgrove.Game.Telemetry
             _fallback = fallback;
             FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
             {
-                if (task.Result == DependencyStatus.Available)
+                // The dependency check THROWS (rather than returning a status)
+                // on some broken Play-services devices — reading task.Result
+                // would rethrow here and leave both flags unset, wedging the
+                // buffer forever. Treat a faulted check as unavailable.
+                if (task.IsFaulted || task.IsCanceled)
                 {
-                    // Unhandled Unity exceptions count as crashes, not silent
-                    // non-fatals — the stability metric must see them.
-                    Crashlytics.ReportUncaughtExceptionsAsFatal = true;
-                    _ready = true;
-                    while (_buffer.Count > 0)
-                    {
-                        var buffered = _buffer.Dequeue();
-                        Send(buffered.name, buffered.parameters);
-                    }
+                    MarkFailed("dependency check faulted: " + task.Exception?.GetBaseException().Message);
+                    return;
                 }
-                else
+
+                if (task.Result != DependencyStatus.Available)
                 {
-                    _failed = true;
-                    _buffer.Clear();
-                    UnityEngine.Debug.LogWarning("[telemetry] Firebase unavailable: " + task.Result);
+                    MarkFailed(task.Result.ToString());
+                    return;
+                }
+
+                // Unhandled Unity exceptions count as crashes, not silent
+                // non-fatals — the stability metric must see them.
+                Crashlytics.ReportUncaughtExceptionsAsFatal = true;
+                _ready = true;
+                while (_buffer.Count > 0)
+                {
+                    var buffered = _buffer.Dequeue();
+                    Send(buffered.name, buffered.parameters);
+                }
+
+                while (_exceptionBuffer.Count > 0)
+                {
+                    Crashlytics.LogException(_exceptionBuffer.Dequeue());
                 }
             });
+        }
+
+        private void MarkFailed(string reason)
+        {
+            _failed = true;
+            _buffer.Clear();
+            _exceptionBuffer.Clear();
+            UnityEngine.Debug.LogWarning("[telemetry] Firebase unavailable: " + reason);
         }
 
         public void LogEvent(string name, params (string key, object value)[] parameters)
@@ -75,6 +96,12 @@ namespace Wildgrove.Game.Telemetry
             if (_ready)
             {
                 Crashlytics.LogException(exception);
+            }
+            else if (!_failed && _exceptionBuffer.Count < MaxBuffered)
+            {
+                // Startup non-fatals (the first ~1-2s before init resolves)
+                // matter most — hold them for the flush like events.
+                _exceptionBuffer.Enqueue(exception);
             }
         }
 

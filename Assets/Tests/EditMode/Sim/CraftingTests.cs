@@ -196,6 +196,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_SpeedUpgradeMidBatch_CompletesWithoutMintingCraftTime()
+        {
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(100.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            // 4 s banked into the 5 s batch, THEN the ×2 speed upgrade lands:
+            // the new 2.5 s duration is below the banked progress.
+            Crafting.Advance(state, _data, 4.0);
+            state.purchasedUpgradeIds.Add("quick-hands");
+
+            Crafting.Advance(state, _data, 0.1);
+
+            // The over-banked batch completes, but the 1.5 s of surplus must
+            // not refund into the tick — the next batch has seen exactly the
+            // 0.1 s this Advance carried, nothing minted.
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(Crafting.Progress(state, _data, Recipe("berry-jam")),
+                Is.EqualTo(0.1 / 2.5).Within(Tolerance));
+        }
+
+        [Test]
         public void AvailableRecipes_StationLine_GatesUntilBuilt()
         {
             _data.buildings = new List<BuildingData>

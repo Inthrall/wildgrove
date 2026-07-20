@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 8e605c382d0d3fad63279c41a4ba8a23870753bd49c0b9fc2998e5afa851b232
+  sourceHash: 7961f2a50e50dc610d49b1c374604e8b8425021a56fedc539a375a9df2bdd93a
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -871,22 +871,6 @@ MonoBehaviour:
     - type: 18
       skill: 
       zone: 
-      resource: 
-      recipe: 
-      value: 0
-  - order: 30
-    id: map-mistfen
-    displayName: 'Trail Map: Mistfen Marsh'
-    track: trail
-    toolTier: 
-    costCoin:
-      mantissa: 1
-      exponent: 7
-    materials: []
-    effects:
-    - type: 14
-      skill: 
-      zone: mistfen-marsh
       resource: 
       recipe: 
       value: 0

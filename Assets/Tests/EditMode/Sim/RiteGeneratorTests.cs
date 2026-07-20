@@ -157,6 +157,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Generate_DeepMigrationCounts_SaturateInsteadOfOverflowingNegative()
+        {
+            // demandGrowth^500 is far past long range — the unchecked cast
+            // would land on long.MinValue and a completed slot would SUBTRACT
+            // ~9.2e18 renown. Saturation keeps every demand and grant sane.
+            var rite = RiteGenerator.Generate(_data, 500);
+
+            foreach (var slot in rite.verses.SelectMany(v => v.slots))
+            {
+                Assert.That(slot.renownGrant, Is.GreaterThanOrEqualTo(0L),
+                    $"slot {slot.type}/{slot.resource} grant overflowed negative");
+                if (slot.type == RiteSlotType.Resource)
+                {
+                    Assert.That(slot.amount, Is.GreaterThanOrEqualTo(1L));
+                }
+            }
+        }
+
+        [Test]
         public void Generate_DemandScalesByGrowthPerMigration()
         {
             // Verse 1's candidates are all foraging, so both goods slots sit

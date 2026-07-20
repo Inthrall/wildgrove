@@ -29,7 +29,6 @@
     { "order": 26, "id": "curators-cabinet",    "name": "Curator's Cabinet",            "track": "compendium", "costCoin": 2200000,  "effects": [{ "type": "museumSetBonusMult", "value": 1.5 }] },
     { "order": 27, "id": "steel-toolset",       "name": "Steel Toolset",                "track": "tools",      "toolTier": "steel",     "costCoin": 3200000,  "materials": { "iron-ingot": 10, "charcoal": 20 }, "effects": [{ "type": "yieldMult", "skill": "all-gathering", "value": 2 }] },
     { "order": 28, "id": "raven-panniers",      "name": "Raven Panniers",               "track": "carriers",    "costCoin": 4700000,  "effects": [{ "type": "haulMult", "value": 2 }] },
-    { "order": 29, "id": "almanac-desk",        "name": "Almanac Desk",                 "track": "camp",       "costCoin": 7000000,  "effects": [{ "type": "unlockVerdureForecast" }] },
-    { "order": 30, "id": "map-mistfen",         "name": "Trail Map: Mistfen Marsh",     "track": "trail",      "costCoin": 10000000, "effects": [{ "type": "unlockZone", "zone": "mistfen-marsh" }] }
+    { "order": 29, "id": "almanac-desk",        "name": "Almanac Desk",                 "track": "camp",       "costCoin": 7000000,  "effects": [{ "type": "unlockVerdureForecast" }] }
   ]
 }

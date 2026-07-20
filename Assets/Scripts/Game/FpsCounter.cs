@@ -4,7 +4,8 @@ using UnityEngine.UI;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// A small always-on framerate readout in the top-right corner: average
+    /// A small framerate readout in the top-right corner (editor and
+    /// development builds only — Bootstrap gates it out of release): average
     /// fps over the last half second, plus the worst single frame in that
     /// window (the number that exposes hitches an average hides). It lives on
     /// its own canvas so its own text updates never dirty the HUD canvas —

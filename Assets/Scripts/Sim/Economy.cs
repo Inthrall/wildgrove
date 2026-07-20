@@ -299,15 +299,25 @@ namespace Wildgrove.Sim
                 return 1.0;
             }
 
+            // Camp stock is pooled, so goods carry no provenance — when the
+            // same resource grows in more than one zone, price by the most
+            // practised node rather than whichever happens to sit first.
+            var bestLevel = -1;
             foreach (var node in state.nodes)
             {
                 if (node.resourceId == resourceId)
                 {
-                    return 1.0 + data.economy.mastery.yieldBonusPerLevel * Mastery.Level(node, data.economy);
+                    var level = Mastery.Level(node, data.economy);
+                    if (level > bestLevel)
+                    {
+                        bestLevel = level;
+                    }
                 }
             }
 
-            return 1.0;
+            return bestLevel >= 0
+                ? 1.0 + data.economy.mastery.yieldBonusPerLevel * bestLevel
+                : 1.0;
         }
 
         /// <summary>

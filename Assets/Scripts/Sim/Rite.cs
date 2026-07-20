@@ -18,17 +18,14 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Rite
     {
-        private static RiteData _generated;
-        private static int _generatedMigration = -1;
-        private static GameDataAsset _generatedFrom;
-
         /// <summary>
         /// The rite this run is walking: an authored rite matching the
         /// migration count when one exists (run 1 = migration 0), otherwise
-        /// the generated rite for this migration (memoised — generation is
-        /// deterministic, so regenerating is safe but wasteful). Data without
-        /// generator tuning re-walks the authored first rite. Null when the
-        /// data has no rites at all.
+        /// the generated rite for this migration (memoised on the state —
+        /// generation is deterministic, so regenerating is safe but wasteful,
+        /// and a per-state cache keeps the sim free of static mutable state).
+        /// Data without generator tuning re-walks the authored first rite.
+        /// Null when the data has no rites at all.
         /// </summary>
         public static RiteData CurrentRite(GameState state, GameDataAsset data)
         {
@@ -51,14 +48,16 @@ namespace Wildgrove.Sim
                 return rites[0];
             }
 
-            if (_generated == null || _generatedMigration != state.migrationCount || _generatedFrom != data)
+            if (state.generatedRite == null
+                || state.generatedRiteMigration != state.migrationCount
+                || !ReferenceEquals(state.generatedRiteFrom, data))
             {
-                _generated = RiteGenerator.Generate(data, state.migrationCount);
-                _generatedMigration = state.migrationCount;
-                _generatedFrom = data;
+                state.generatedRite = RiteGenerator.Generate(data, state.migrationCount);
+                state.generatedRiteMigration = state.migrationCount;
+                state.generatedRiteFrom = data;
             }
 
-            return _generated;
+            return state.generatedRite;
         }
 
         /// <summary>A verse is revealed when the run has opened its zone (the warden has stood at the verse site).</summary>
@@ -261,7 +260,17 @@ namespace Wildgrove.Sim
         {
             state.deedCounts.TryGetValue(deed, out var count);
             state.deedCounts[deed] = count + 1;
+            SyncDeedSlots(state, data);
+        }
 
+        /// <summary>
+        /// Mirror the run's lifetime deed counts into every revealed verse's
+        /// deed slots. Called on each deed, and when a verse reveals (zone
+        /// unlock, restore) — deeds done before the reveal still count toward
+        /// the slot rather than waiting for the next deed to sync them.
+        /// </summary>
+        public static void SyncDeedSlots(GameState state, GameDataAsset data)
+        {
             var rite = CurrentRite(state, data);
             if (rite == null)
             {
@@ -278,13 +287,19 @@ namespace Wildgrove.Sim
                 for (var i = 0; i < verse.slots.Count; i++)
                 {
                     var slot = verse.slots[i];
-                    if (slot.type != RiteSlotType.Deed || slot.deed != deed)
+                    if (slot.type != RiteSlotType.Deed)
+                    {
+                        continue;
+                    }
+
+                    state.deedCounts.TryGetValue(slot.deed ?? string.Empty, out var count);
+                    if (count <= 0)
                     {
                         continue;
                     }
 
                     var progress = SlotProgress(state, verse, i);
-                    progress.delivered = System.Math.Min(count + 1, slot.count);
+                    progress.delivered = System.Math.Max(progress.delivered, System.Math.Min(count, slot.count));
                     if (!progress.granted && progress.delivered >= slot.count)
                     {
                         progress.granted = true;
