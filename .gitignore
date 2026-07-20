@@ -65,3 +65,7 @@ crashlytics-build.properties
 # OS
 Thumbs.db
 .DS_Store
+
+# Google/Firebase Unity packages — fetched by tools/fetch-google-packages.sh, not committed (61 MB blobs)
+Packages/GooglePackages/*.tgz
+Packages/GooglePackages/*.tgz.part

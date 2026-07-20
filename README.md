@@ -23,6 +23,15 @@ The collection layer (Compendium + Fossil Wing, hand-drawn naturalist plates) an
 
 Unity 6 LTS · URP 2D · Vulkan-primary · Play Games Services v2 · AdMob
 
+## After cloning
+
+The Google/Firebase Unity packages referenced by `Packages/manifest.json` are
+not committed (61 MB of tarballs). Fetch them once before opening the project:
+
+```bash
+tools/fetch-google-packages.sh
+```
+
 ## License
 
 Copyright © 2026 Mo Nicholson. All rights reserved. This repository is

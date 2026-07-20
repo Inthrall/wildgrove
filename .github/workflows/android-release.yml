@@ -42,9 +42,6 @@ on:
           - beta
           - production
 
-permissions:
-  contents: write   # needed to create the GitHub Release
-
 # Two concurrent blank-versionCode dispatches would resolve the same number
 # and race the tag + Play upload — queue them instead.
 concurrency:
@@ -52,9 +49,64 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A release must not ship a sim regression: the full EditMode suite runs
+  # first and a red suite blocks the build/upload outright — dispatching
+  # from an untested ref is otherwise invisible.
+  test:
+    name: EditMode tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h /
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # The Google/Firebase tarballs manifest.json references are not
+      # committed — fetch them before anything hashes or resolves Packages/.
+      - name: Fetch Google packages
+        run: bash tools/fetch-google-packages.sh
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Tests-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Tests-
+
+      - name: Run EditMode tests
+        uses: game-ci/unity-test-runner@0ff419b913a3630032cbe0de48a0099b5a9f0ed9 # v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editmode-test-results
+          path: artifacts
+          retention-days: 14
+
   release:
     name: Build signed Android AAB
     runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: write   # needed to create the GitHub Release
     steps:
       # The Unity Android editor image is ~12 GB; ubuntu-latest runners don't
       # have room for it unless the preinstalled toolchains are removed first.
@@ -68,6 +120,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      # The Google/Firebase tarballs manifest.json references are not
+      # committed — fetch them before anything hashes or resolves Packages/.
+      - name: Fetch Google packages
+        run: bash tools/fetch-google-packages.sh
 
       # Inputs reach the shell via env, never inline interpolation — a crafted
       # input must not become shell syntax — and are validated before use.
@@ -159,8 +216,11 @@ jobs:
             sudo mv "$map" "build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.mapping.txt"
             echo "mapping=build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.mapping.txt" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::No R8 mapping.txt produced by the build."
-            echo "mapping=" >> "$GITHUB_OUTPUT"
+            # R8 is on (AndroidMinifyRelease: 1), so a missing map means the
+            # glob no longer matches Unity's output naming — shipping without
+            # it makes every crash/ANR stack unreadable, silently. Fail loud.
+            echo "::error::No R8 mapping.txt produced by the build — refusing to release an unmappable bundle."
+            exit 1
           fi
 
       - name: Publish GitHub Release

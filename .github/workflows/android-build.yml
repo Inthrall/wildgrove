@@ -39,6 +39,11 @@ jobs:
         with:
           lfs: true
 
+      # The Google/Firebase tarballs manifest.json references are not
+      # committed — fetch them before anything hashes or resolves Packages/.
+      - name: Fetch Google packages
+        run: bash tools/fetch-google-packages.sh
+
       - name: Cache Library
         uses: actions/cache@v4
         with:
@@ -68,6 +73,8 @@ jobs:
   build-android:
     name: Build Android AAB
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       # The Unity Android editor image is ~12 GB; ubuntu-latest runners don't
       # have room for it unless the preinstalled toolchains are removed first.
@@ -81,6 +88,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      # The Google/Firebase tarballs manifest.json references are not
+      # committed — fetch them before anything hashes or resolves Packages/.
+      - name: Fetch Google packages
+        run: bash tools/fetch-google-packages.sh
 
       - name: Cache Library
         uses: actions/cache@v4
