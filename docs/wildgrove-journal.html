@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Wildgrove v0.11 — the Warden's Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Caveat:wght@400;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper-0: #f2ead6; --paper-1: #eae0c6; --paper-2: #ddcfae;
+    --ink: #3a3126; --ink-2: #6e6047; --rule: #cdbd99;
+    --moss: #6d7d51; --moss-deep: #55643f; --ochre: #a05a36;
+    --wash: rgba(109,125,81,.16); --wash-ochre: rgba(160,90,54,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: "Lora", Georgia, serif; background: #c9b892; color: var(--ink); display: flex; justify-content: center; min-height: 100vh; }
+
+  .page { width: min(430px,100vw); min-height: 100dvh; position: relative; background: var(--paper-0);
+    box-shadow: 0 0 40px rgba(58,49,38,.35); padding: 14px 18px 84px 30px; overflow: hidden; }
+  .page::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .page::after { content:""; position:absolute; top:0; bottom:0; left:13px; border-left:2px dashed rgba(110,96,71,.45); pointer-events:none; }
+
+  .head { text-align:center; padding: 2px 0; }
+  .eyebrow { font-family:"IM Fell English SC",serif; font-size:.68rem; letter-spacing:.26em; color:var(--ink-2); }
+  .title { font-family:"IM Fell English",serif; font-size:1.5rem; line-height:1.15; margin:1px 0; }
+  .head-rule { width:120px; margin:4px auto 0; border:none; border-top:1px solid var(--ink-2); position:relative; }
+  .head-rule::after { content:"❧"; position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+    background:var(--paper-0); padding:0 8px; color:var(--ink-2); font-size:.78rem; }
+
+  .ledger { display:flex; justify-content:center; gap:2px 11px; flex-wrap:wrap; margin:7px 0 2px;
+    padding:5px 4px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+  .ledger .entry { font-size:.78rem; white-space:nowrap; }
+  .ledger .entry b { font-variant-numeric:tabular-nums; font-weight:600; transition:color .25s ease; }
+  .ledger .entry.tick b { color:var(--moss-deep); }
+  .ledger .entry.renown { font-family:"IM Fell English SC",serif; letter-spacing:.06em; }
+  .ledger .entry.renown b { color:var(--ochre); font-size:.88rem; }
+  .ledger .entry.verd b { color:var(--moss-deep); }
+
+  .margin-note { font-family:"Caveat",cursive; font-size:.95rem; color:var(--ink-2); transform:rotate(-1.1deg);
+    margin:3px 2px; min-height:1.3em; }
+  .margin-note.fine { color:var(--ochre); }
+
+  /* pinned Rite tracker / fold forecast */
+  .tracker { border:1px solid var(--ink-2); background:var(--paper-1); margin:4px 2px 6px; padding:6px 9px;
+    font-family:"IM Fell English",serif; font-style:italic; font-size:.8rem; text-align:center; cursor:pointer; }
+  .tracker b { color:var(--ochre); font-style:normal; }
+  .tracker .spot { color:var(--ochre); font-size:.74rem; }
+  .tracker.fold { border-color:var(--ochre); font-style:normal; }
+  .tracker .fold-btn { font-family:"IM Fell English SC",serif; font-size:.68rem; letter-spacing:.06em;
+    border:1px solid var(--ochre); color:var(--ochre); background:var(--wash-ochre); padding:2px 8px; margin-left:6px; cursor:pointer; }
+  .mig-confirm { border:1px solid var(--ochre); background:var(--paper-1); margin:0 2px 6px; padding:8px 10px;
+    font-size:.76rem; text-align:center; line-height:1.5; }
+  .mig-confirm .keep { color:var(--moss-deep); }
+  .mig-confirm .row-btns { margin-top:6px; display:flex; gap:8px; justify-content:center; }
+
+  .book > section { display:none; } .book > section.open { display:block; }
+  .running-head { display:none; }
+
+  .ink-btn { font-family:"IM Fell English SC",serif; font-size:.7rem; letter-spacing:.05em; color:var(--ink);
+    background:var(--paper-0); border:1px solid var(--ink-2); padding:4px 8px; cursor:pointer; transition:transform .1s ease, background .15s ease; }
+  .ink-btn:active { transform:scale(.94); background:var(--paper-2); }
+  .ink-btn:disabled { opacity:.45; cursor:default; }
+  .ink-btn.primary { background:var(--wash); }
+  .ink-btn.grave { background:var(--wash-ochre); border-color:var(--ochre); color:var(--ochre); }
+
+  .card { border:1px solid var(--ink-2); outline:1px solid var(--rule); outline-offset:3px; background:var(--paper-1);
+    padding:10px 11px 9px; margin:12px 2px; position:relative; }
+  .card-head { text-align:center; font-family:"IM Fell English SC",serif; letter-spacing:.16em; font-size:.74rem; color:var(--ink-2); margin-bottom:6px; }
+  .row { display:flex; align-items:center; gap:8px; padding:6px 2px; border-top:1px solid var(--rule); font-size:.82rem; }
+  .row:last-child { border-bottom:1px solid var(--rule); }
+  .row .r-main { flex:1; min-width:0; }
+  .row .r-sub { font-size:.7rem; color:var(--ink-2); }
+  .row.locked { opacity:.5; } .row.locked .r-name { font-style:italic; }
+  .bar { height:4px; margin-top:4px; border:1px solid var(--ink-2); background:var(--paper-0); }
+  .bar .fill { height:100%; width:0%; background:var(--wash); box-shadow:inset 0 0 0 10px var(--wash); }
+  .tag { font-family:"IM Fell English SC",serif; font-size:.58rem; letter-spacing:.08em; color:var(--ink-2);
+    border:1px solid var(--rule); padding:1px 5px; white-space:nowrap; }
+  .tag.gear { color:var(--moss-deep); border-color:var(--moss); }
+  .tag.offer { color:var(--ochre); border-color:var(--ochre); }
+
+  /* ---- TRAIL ---- */
+  .plates { display:grid; grid-template-columns:1fr; gap:12px; margin:6px 0 4px; }
+  .plate { position:relative; border:1px solid var(--ink-2); outline:1px solid var(--rule); outline-offset:3px;
+    background:var(--paper-1); padding:8px 10px 8px; }
+  .plate .top { display:flex; gap:10px; align-items:center; }
+  .plate .art { position:relative; width:78px; height:64px; display:grid; place-items:center; flex-shrink:0; }
+  .plate .art .wash-blob { position:absolute; width:56px; height:42px; border-radius:50% 46% 54% 50%; background:var(--wash); filter:blur(3px); }
+  .lineart path,.lineart circle,.lineart ellipse { stroke:var(--ink); fill:none; stroke-width:1.4; stroke-linecap:round; }
+  .lineart .fill-berry { fill:rgba(90,62,84,.35); } .lineart .fill-petal { fill:rgba(196,150,60,.3); } .lineart .fill-fur { fill:rgba(110,96,71,.2); }
+  .plate .fig-no { font-family:"IM Fell English SC",serif; font-size:.62rem; letter-spacing:.14em; color:var(--ink-2); }
+  .plate .p-name { font-family:"IM Fell English",serif; font-size:1rem; line-height:1.1; }
+  .plate .rich { font-family:"Caveat",cursive; font-size:.88rem; color:var(--moss-deep); }
+  .plate .posted { font-family:"Caveat",cursive; font-size:.9rem; color:var(--ink-2); min-height:1.2em; }
+  .basket { height:5px; margin:6px 2px; border:1px solid var(--ink-2); background:var(--paper-0); }
+  .basket .b-fill { height:100%; width:0%; background:var(--wash); box-shadow:inset 0 0 0 10px var(--wash); transition:width .3s linear; }
+  .basket.full .b-fill { background:var(--wash-ochre); box-shadow:inset 0 0 0 10px var(--wash-ochre); }
+  .p-actions { display:flex; gap:5px; flex-wrap:wrap; }
+  .tend-flash { position:absolute; top:6px; right:8px; font-family:"Caveat",cursive; font-size:1rem; color:var(--moss-deep);
+    opacity:0; pointer-events:none; transition:opacity .5s ease, transform .5s ease; }
+  .tend-flash.go { opacity:1; transform:translateY(-8px); }
+  .fallow { position:absolute; top:6px; right:8px; font-family:"IM Fell English SC",serif; font-size:.6rem; letter-spacing:.12em; color:var(--rule); }
+
+  .trail-row { display:flex; align-items:center; gap:10px; padding:6px 4px 0; font-size:.76rem; color:var(--ink-2); }
+  .trail-line { flex:1; border-top:1px dotted var(--ink-2); position:relative; height:1px; }
+  .carrier { position:absolute; top:-9px; left:0%; font-family:"Caveat",cursive; font-size:.95rem; color:var(--ink); transition:left 2.6s linear; }
+
+  .rite-site { text-align:center; font-family:"IM Fell English",serif; font-size:.98rem; margin:0 0 2px; }
+  .verse-line { font-family:"IM Fell English",serif; font-style:italic; text-align:center; font-size:.84rem; margin-bottom:7px; }
+  .slot-row { display:flex; align-items:center; gap:8px; padding:5px 2px; border-top:1px solid var(--rule); font-size:.82rem; }
+  .slot-row:last-of-type { border-bottom:1px solid var(--rule); }
+  .slot-row .s-name { flex:1; } .slot-row .spot-mark { color:var(--ochre); font-size:.78rem; }
+  .slot-row .s-progress { font-variant-numeric:tabular-nums; font-size:.76rem; color:var(--ink-2); min-width:56px; text-align:right; }
+  .slot-row.done { color:var(--moss-deep); }
+  .slot-row.done .s-name::after { content:" — set down"; font-style:italic; font-size:.74rem; }
+  .slot-row.expired { opacity:.4; text-decoration:line-through; }
+  .sign { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:20px;
+    background:rgba(242,234,214,.94); font-family:"IM Fell English",serif; font-style:italic; font-size:.98rem;
+    line-height:1.5; opacity:0; pointer-events:none; transition:opacity 1.2s ease; z-index:5; }
+  .sign.show { opacity:1; }
+  .waystone { margin:12px 6px 2px; text-align:center; font-family:"IM Fell English",serif; font-style:italic;
+    font-size:.82rem; color:var(--ink-2); line-height:1.5; }
+  .waystone small { display:block; font-family:"IM Fell English SC",serif; font-style:normal; font-size:.6rem; letter-spacing:.2em; margin-top:3px; }
+
+  /* ---- WARDEN ---- */
+  .kit { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:8px 2px 2px; }
+  .kit .slot-box { border:1px dashed var(--ink-2); background:var(--paper-1); text-align:center; padding:7px 4px 6px; min-height:62px; }
+  .kit .slot-name { font-family:"IM Fell English SC",serif; font-size:.62rem; letter-spacing:.14em; color:var(--ink-2); }
+  .kit .slot-item { font-family:"IM Fell English",serif; font-size:.82rem; margin-top:4px; }
+  .kit .slot-effect { font-family:"Caveat",cursive; font-size:.8rem; color:var(--moss-deep); }
+  .kit .empty { font-family:"Caveat",cursive; font-size:.84rem; color:var(--ink-2); margin-top:8px; }
+
+  .fam-card { display:flex; gap:10px; padding:8px 2px; border-top:1px solid var(--rule); }
+  .fam-card:last-child { border-bottom:1px solid var(--rule); }
+  .fam-card .art { width:64px; height:52px; flex-shrink:0; display:grid; place-items:center; border:1px solid var(--rule); background:var(--paper-0); }
+  .fam-card .info { flex:1; min-width:0; }
+  .fam-card .f-name { font-family:"IM Fell English",serif; font-size:.94rem; }
+  .fam-card .f-kin { font-family:"IM Fell English SC",serif; font-size:.62rem; letter-spacing:.1em; color:var(--ochre); }
+  .fam-card .f-lvl { font-size:.72rem; color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .fam-card .picks { font-family:"Caveat",cursive; font-size:.86rem; color:var(--moss-deep); }
+  .post-btns { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+  .post-btns .ink-btn { font-size:.62rem; padding:2px 6px; }
+  .post-btns .ink-btn.on { background:var(--wash); border-color:var(--moss-deep); color:var(--moss-deep); }
+  .powerup-choice { border:1px solid var(--ochre); background:var(--wash-ochre); padding:6px 8px; margin-top:5px; font-size:.74rem; }
+  .powerup-choice .ink-btn { margin:3px 3px 0 0; }
+  .skill-line { font-size:.8rem; padding:5px 2px; border-top:1px solid var(--rule); }
+  .skill-line:last-child { border-bottom:1px solid var(--rule); }
+
+  /* ---- RECORD ---- */
+  .comp-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:8px 2px 2px; }
+  .comp-plate { border:1px solid var(--ink-2); outline:1px solid var(--rule); outline-offset:2px; background:var(--paper-1);
+    text-align:center; padding:6px 4px 5px; }
+  .comp-plate .art { height:50px; display:grid; place-items:center; }
+  .comp-plate .c-name { font-family:"IM Fell English",serif; font-size:.72rem; line-height:1.1; }
+  .comp-plate .c-sub { font-family:"Caveat",cursive; font-size:.74rem; color:var(--ink-2); }
+  .comp-plate.unknown { opacity:.65; }
+  .comp-plate.unknown .art { font-family:"IM Fell English",serif; font-size:1.4rem; color:var(--rule); }
+  .comp-plate .fig-no { font-family:"IM Fell English SC",serif; font-size:.56rem; letter-spacing:.12em; color:var(--ink-2); }
+  .spread { display:flex; justify-content:center; gap:10px; margin:8px 0 6px; }
+  .press { width:44px; height:56px; border:1px solid var(--ink-2); background:var(--paper-0); display:grid; place-items:center; opacity:.35; }
+  .press.fixed { opacity:1; background:var(--wash); }
+  .press.never { border-style:dashed; }
+  .frag-row { display:flex; justify-content:center; gap:8px; margin:8px 0 4px; }
+  .frag { width:34px; height:26px; border:1px solid var(--ink-2); background:var(--paper-0);
+    clip-path:polygon(8% 20%,60% 0%,100% 45%,80% 100%,15% 88%); opacity:.35; }
+  .fossil-note { font-family:"IM Fell English",serif; font-style:italic; font-size:.78rem; color:var(--ink-2); text-align:center; line-height:1.45; }
+
+  /* ---- vignette ---- */
+  .vignette { position:fixed; inset:0; z-index:100; background:#17130d; display:grid; place-items:center;
+    opacity:0; pointer-events:none; transition:opacity .9s ease; }
+  .vignette.show { opacity:1; pointer-events:auto; }
+  .v-inner { text-align:center; font-family:"IM Fell English",serif; font-style:italic; color:#e8dcc0; font-size:1.12rem; line-height:2.05; padding:20px; }
+  .v-inner p { opacity:0; transition:opacity 1.3s ease; }
+  .v-inner p.on { opacity:1; }
+  .v-gains { font-style:normal; font-family:"IM Fell English SC",serif; letter-spacing:.18em; font-size:.8rem; color:#9fae7e; margin-top:14px; }
+  .v-skip { position:absolute; bottom:26px; left:0; right:0; text-align:center; font-family:"IM Fell English SC",serif;
+    font-size:.62rem; letter-spacing:.2em; color:rgba(232,220,192,.45); }
+
+  .tabs { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:min(430px,100vw); display:flex;
+    justify-content:center; gap:5px; padding:0 12px calc(0px + env(safe-area-inset-bottom)); pointer-events:none; z-index:10; }
+  .tab { pointer-events:auto; font-family:"IM Fell English SC",serif; font-size:.72rem; letter-spacing:.07em; color:var(--ink-2);
+    background:var(--paper-2); border:1px solid var(--ink-2); border-bottom:none; border-radius:7px 7px 0 0;
+    padding:7px 12px 9px; cursor:pointer; transform:translateY(4px); transition:transform .15s ease, background .15s ease, color .15s ease; }
+  .tab.active { background:var(--paper-0); color:var(--ink); transform:translateY(0); }
+
+  .mote { position:absolute; width:3px; height:3px; border-radius:50%; background:rgba(110,96,71,.35); opacity:0;
+    animation:drift 14s ease-in-out infinite; pointer-events:none; }
+  @keyframes drift { 0%{opacity:0;transform:translate(0,0);} 20%{opacity:.5;} 80%{opacity:.3;} 100%{opacity:0;transform:translate(30px,-70px);} }
+
+  @media (min-width: 880px) {
+    body.wide .page { width:min(960px,97vw); padding:14px 30px 84px; }
+    body.wide .page::after { left:50%; }
+    body.wide .book { display:grid; grid-template-columns:1fr 1fr; column-gap:52px; align-items:start; }
+    body.wide .book > section.open { grid-column:1; grid-row:1; }
+    body.wide #pg-trail { display:block; grid-column:2; grid-row:1; }
+    body.wide .tab[data-pg="pg-trail"] { display:none; }
+    body.wide .tabs { width:min(960px,97vw); justify-content:flex-start; padding-left:40px; }
+    body.wide .running-head { display:block; text-align:center; font-family:"IM Fell English SC",serif; font-size:.62rem;
+      letter-spacing:.3em; color:var(--ink-2); border-bottom:1px solid var(--rule); padding-bottom:4px; margin-bottom:6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mote { display:none; } .carrier { transition:none; }
+    .sign,.vignette,.v-inner p { transition:opacity .2s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <header class="head">
+    <div class="eyebrow" id="hd-eyebrow">THE TRAIL · ZONE I</div>
+    <h1 class="title" id="hd-title">Sunfield Meadow</h1>
+    <hr class="head-rule">
+  </header>
+
+  <div class="ledger">
+    <span class="entry" data-res="berries">berries <b>0</b></span>
+    <span class="entry" data-res="wildflowers">wildflowers <b>0</b></span>
+    <span class="entry" data-res="fibres">fibres <b>0</b></span>
+    <span class="entry" data-res="nuts">nuts <b>0</b></span>
+    <span class="entry" data-res="preserve">preserves <b>0</b></span>
+    <span class="entry renown">RENOWN <b id="renown-val">0</b></span>
+    <span class="entry verd">verdure <b id="verd-val">0</b></span>
+  </div>
+
+  <div class="margin-note" id="note">the land sent a vole and a raven before I had unpacked. one digs; one flies the trail.</div>
+
+  <div class="tracker" id="tracker"></div>
+  <div class="mig-confirm" id="mig-confirm" hidden></div>
+
+  <div class="book" id="book">
+
+    <!-- TRAIL -->
+    <section id="pg-trail" class="open">
+      <div class="running-head">THE TRAIL</div>
+      <main class="plates" id="plates"></main>
+      <div class="trail-row">
+        <span>the trail home</span>
+        <div class="trail-line"><span class="carrier" id="carrier">🧺</span></div>
+        <span id="haul-label">the trail waits</span>
+      </div>
+      <div class="card" id="verse-card">
+        <div class="card-head">FIRST VERSE</div>
+        <div class="rite-site">the fire circle</div>
+        <div class="verse-line">“What you carry is borrowed. Set some down, and see what follows you home.”</div>
+        <div id="slots"></div>
+        <div class="sign" id="sign">The wind turns over the meadow,<br>and the grass leans toward the fire circle.<br><br><span style="font-size:.78rem">The verse is answered.</span></div>
+      </div>
+      <footer class="waystone">“Walk gently. The meadow fed them, too, and they are under it.”<small>WAYSTONE · SUNFIELD MEADOW</small></footer>
+    </section>
+
+    <!-- CAMP -->
+    <section id="pg-camp">
+      <div class="running-head">THE CAMP</div>
+      <div class="card"><div class="card-head">THE FIRE & BENCH</div><div id="recipes"></div></div>
+      <div class="card"><div class="card-head">BUILDING LINES</div><div id="build-rows"></div></div>
+      <div class="card">
+        <div class="card-head">THE EXCHANGE</div>
+        <div class="fossil-note" id="prov-line" style="margin-bottom:4px">a caravan idles at the camp edge. it trades; it does not sell.</div>
+        <div id="trade-rows"></div>
+      </div>
+    </section>
+
+    <!-- WARDEN -->
+    <section id="pg-warden">
+      <div class="running-head">THE WARDEN</div>
+      <div class="kit">
+        <div class="slot-box" data-slot="hands"></div>
+        <div class="slot-box" data-slot="pack"></div>
+        <div class="slot-box" data-slot="campslot"></div>
+      </div>
+      <div class="margin-note" style="text-align:center; transform:rotate(.6deg);">the kit — worn for the run, folded at Migration</div>
+      <div class="card"><div class="card-head">CRAFTS</div><div id="skills"></div></div>
+      <div class="card"><div class="card-head">THE CREW · roster & posts</div><div id="roster"></div>
+        <div class="fossil-note" style="margin-top:6px" id="crew-note">two came unasked — the land decides the rest.</div></div>
+      <div class="card"><div class="card-head">THIS RUN</div><div id="run-stats" class="fossil-note"></div></div>
+    </section>
+
+    <!-- RECORD -->
+    <section id="pg-record">
+      <div class="running-head">THE RECORD</div>
+      <div class="comp-grid" id="comp-grid"></div>
+      <div class="card">
+        <div class="card-head">THE FOLIO · MEADOW BLOOMS</div>
+        <div class="spread" id="spread"></div>
+        <div class="fossil-note" id="spread-note"></div>
+        <div style="text-align:center; margin-top:6px"><button class="ink-btn primary" id="fix-btn">Fix a Fine find</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head">THE DEEP PAGES</div>
+        <div class="fossil-note">The Antler Crown — three portions, sleeping under the Old-Growth roots.</div>
+        <div class="frag-row"><span class="frag"></span><span class="frag"></span><span class="frag"></span></div>
+        <div class="fossil-note" style="font-size:.72rem">the first dig site lies two zones ahead.<br>nothing you uncover will leave the ground — only these pages.</div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-pg="pg-trail">Trail</button>
+    <button class="tab" data-pg="pg-camp">Camp</button>
+    <button class="tab" data-pg="pg-warden">Warden</button>
+    <button class="tab" data-pg="pg-record">Record</button>
+  </nav>
+
+  <div class="vignette" id="vignette">
+    <div class="v-inner">
+      <p>The camp folds.</p>
+      <p>The land exhales.</p>
+      <p>What you gave, it keeps.</p>
+      <p class="v-gains" id="v-gains"></p>
+    </div>
+    <div class="v-skip">TAP TO WALK ON</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ================= state ================= */
+  var run = 1, lush = false;
+  var goods = { berries:0, wildflowers:0, fibres:0, nuts:0, preserve:0 };
+  var tv = { berries:1, wildflowers:1.5, fibres:1.2, nuts:1.5, preserve:4 };
+  var renown = 0, verdure = 0, renownRate = 0;
+  var tendCount = 0, fineRun = 0, fineLife = 0;
+  var buildings = { rack:0, roosts:0 };
+  var kit = { hands:false };
+  var wardenXP = 0;
+  var verseDone = false, migConfirm = false;
+  var discovered = { berries:false, wildflowers:false, fibres:false };
+  var folioFixed = [false,false,false];
+  var K_V = 10, K_F = 40;
+  var wardenPost = "n1";
+
+  var arts = {
+    berries:'<svg class="lineart" width="70" height="60" viewBox="0 0 70 64"><path d="M35 58 C34 40 30 26 22 14"/><path d="M28 30 C36 28 42 30 47 36"/><circle class="fill-berry" cx="47" cy="38" r="5"/><circle class="fill-berry" cx="54" cy="30" r="4.4"/><circle class="fill-berry" cx="42" cy="26" r="4"/><path d="M22 14 C26 12 30 12 33 15"/></svg>',
+    wildflowers:'<svg class="lineart" width="70" height="60" viewBox="0 0 70 64"><path d="M35 58 C35 42 34 30 35 22"/><ellipse class="fill-petal" cx="35" cy="14" rx="4" ry="7"/><ellipse class="fill-petal" cx="27" cy="20" rx="7" ry="4"/><ellipse class="fill-petal" cx="43" cy="20" rx="7" ry="4"/><circle cx="35" cy="20" r="3.4"/><path d="M35 40 C29 38 25 34 24 29"/></svg>',
+    fibres:'<svg class="lineart" width="70" height="60" viewBox="0 0 70 64"><path d="M30 58 C28 40 24 24 18 12"/><path d="M35 58 C35 38 36 24 38 10"/><path d="M40 58 C44 42 50 28 56 18"/><path d="M33 58 C31 46 27 34 24 26"/></svg>',
+    vole:'<svg class="lineart" width="60" height="46" viewBox="0 0 64 48"><ellipse class="fill-fur" cx="30" cy="30" rx="17" ry="11"/><circle cx="47" cy="25" r="6.5"/><circle cx="49" cy="24" r="1" style="fill:var(--ink)"/><path d="M13 32 C6 34 3 38 4 42"/><path d="M44 19 C44 16 46 15 48 16"/></svg>',
+    raven:'<svg class="lineart" width="60" height="46" viewBox="0 0 64 48"><path class="fill-fur" d="M18 30 C24 18 40 16 48 22 C44 24 42 26 41 30 C38 38 26 40 18 36 Z"/><path d="M48 22 L56 20 L49 26"/><circle cx="46" cy="23" r="1" style="fill:var(--ink)"/><path d="M26 38 L24 44 M32 38 L31 44"/></svg>',
+    wren:'<svg class="lineart" width="60" height="46" viewBox="0 0 64 48"><ellipse class="fill-fur" cx="30" cy="28" rx="13" ry="9"/><circle cx="43" cy="22" r="5"/><circle cx="45" cy="21" r=".9" style="fill:var(--ink)"/><path d="M47 23 L53 22"/><path d="M22 24 C16 20 14 16 15 12"/><path d="M28 37 L27 43 M33 37 L33 43"/></svg>'
+  };
+
+  var nodes = [
+    { id:"n1", fig:1, name:"Berry Bramble",    res:"berries",     rate:.35, cap:12, rich:0 },
+    { id:"n2", fig:2, name:"Wildflower Drift", res:"wildflowers", rate:.26, cap:10, rich:0 },
+    { id:"n3", fig:3, name:"Fibre Grasses",    res:"fibres",      rate:.30, cap:12, rich:0 }
+  ];
+  nodes.forEach(function(n){ n.basket=0; n.tendBoost=0; });
+
+  var pools = {
+    vole: [ {id:"berrywise", name:"Berry-wise", desc:"+40% yield at the bramble", node:"n1"},
+            {id:"softpaws",  name:"Soft paws",  desc:"finer finds where it works", node:null} ],
+    wren: [ {id:"flowerwise",name:"Flower-wise",desc:"+40% yield at the drift", node:"n2"},
+            {id:"deeppockets",name:"Deep pockets",desc:"carries 2 more when it holds the trail", node:null} ],
+    raven:[ {id:"deeppockets",name:"Deep pockets",desc:"carries 2 more when it holds the trail", node:null},
+            {id:"swiftwings", name:"Swift wings", desc:"trail trips 25% faster", node:null} ]
+  };
+  var roster = [
+    { id:"g1", name:"Bramble", species:"meadow vole", art:"vole", level:1, xp:0, runXP:0, kinship:0, picks:[], pending:null, post:"n1" },
+    { id:"c1", name:"Sable", species:"pack raven", art:"raven", level:1, xp:0, runXP:0, kinship:0, picks:[], pending:null, post:"trail" }
+  ];
+  var g2Joined = false, giftOpen = false;
+
+  /* ================= helpers ================= */
+  function fmt(n){ return Math.floor(n).toLocaleString(); }
+  function setLedger(key){
+    var e=document.querySelector('.entry[data-res="'+key+'"]');
+    if(e){ e.querySelector("b").textContent=fmt(goods[key]); e.classList.add("tick"); setTimeout(function(){e.classList.remove("tick");},280); }
+    refreshRecipes(); refreshTrades(); refreshBuilds(); refreshCompendium();
+  }
+  function addRenown(n){ renown+=n; renownRate=renownRate*.9+n*.1; document.getElementById("renown-val").textContent=fmt(renown); renderTracker(); }
+  function note(t,fine){ var n=document.getElementById("note"); n.textContent=t; n.classList.toggle("fine",!!fine); }
+  function yieldMult(){ return 1+0.02*verdure; }
+  function agentsAt(id){
+    var c = (wardenPost===id)?1:0;
+    roster.forEach(function(f){ if(f.post===id){ c++; } });
+    return c;
+  }
+  function specMult(f,node){
+    var m=1;
+    f.picks.forEach(function(p){ if((p==="berrywise"&&node.id==="n1")||(p==="flowerwise"&&node.id==="n2")){ m=1.4; } });
+    return m;
+  }
+  function anyPick(id){ return roster.some(function(f){ return f.picks.indexOf(id)>=0 && f.post && f.post!=="trail"; }); }
+  function pickWander(){
+    if(!trailHolder()&&Math.random()<0.4){ return "trail"; }
+    return nodes[Math.floor(Math.random()*nodes.length)].id;
+  }
+
+  /* ================= tabs & layout ================= */
+  var current="pg-trail";
+  var headers={ "pg-trail":["THE TRAIL · ZONE I","Sunfield Meadow"], "pg-camp":["THE CAMP","Fire, Bench & Caravan"],
+    "pg-warden":["THE WARDEN","Kit, Crafts & Crew"], "pg-record":["THE RECORD","The Journal's Back Pages"] };
+  var mqWide=window.matchMedia("(min-width: 880px)");
+  function isWide(){ return mqWide.matches; }
+  function openPage(id){
+    if(isWide()&&id==="pg-trail"){ id="pg-camp"; }
+    current=id;
+    document.querySelectorAll(".book > section").forEach(function(s){ s.classList.toggle("open",s.id===id); });
+    document.querySelectorAll(".tab").forEach(function(t){ t.classList.toggle("active",t.dataset.pg===id); });
+    applyHeader();
+  }
+  function applyHeader(){
+    var h=isWide()?["THE WARDEN'S JOURNAL"+(run>1?" · "+["","SECOND","THIRD"][run-1]+" CAMP":""),"Sunfield Meadow"]:headers[current];
+    var eb=headers[current][0];
+    if(!isWide()&&current==="pg-trail"&&run>1){ eb+=" · "+["","SECOND","THIRD"][run-1]+" CAMP · LUSH"; }
+    document.getElementById("hd-eyebrow").textContent=isWide()?h[0]:eb;
+    document.getElementById("hd-title").textContent=h[1];
+  }
+  function applyLayout(){
+    document.body.classList.toggle("wide",isWide());
+    if(isWide()&&current==="pg-trail"){ openPage("pg-camp"); } else { applyHeader(); }
+  }
+  if(mqWide.addEventListener){ mqWide.addEventListener("change",applyLayout); } else { mqWide.addListener(applyLayout); }
+  document.querySelectorAll(".tab").forEach(function(t){ t.addEventListener("click",function(){ openPage(t.dataset.pg); }); });
+
+  /* ================= TRAIL: nodes ================= */
+  var platesHost=document.getElementById("plates");
+  nodes.forEach(function(n){
+    var el=document.createElement("div"); el.className="plate";
+    el.innerHTML='<div class="top"><div class="art"><span class="wash-blob"></span>'+arts[n.res]+'</div>'+
+      '<div style="flex:1"><div class="fig-no">FIG. '+n.fig+'.</div><div class="p-name">'+n.name+'</div>'+
+      '<div class="rich"></div><div class="posted"></div></div></div>'+
+      '<div class="basket"><div class="b-fill"></div></div>'+
+      '<div class="p-actions">'+
+      '<button class="ink-btn primary a-tend">Tend here</button>'+
+      '<button class="ink-btn a-replant"></button>'+
+      '<button class="ink-btn a-gift" hidden>Leave a gift (15)</button></div>'+
+      '<span class="tend-flash">+ yield</span><span class="fallow" hidden>FALLOW</span>';
+    platesHost.appendChild(el); n.el=el;
+
+    el.querySelector(".a-tend").addEventListener("click",function(){
+      wardenPost=n.id;
+      var burst=(2+agentsAt(n.id))*(kit.hands?1.5:1)*(1+0.1*n.rich)*yieldMult();
+      n.basket=Math.min(n.basket+burst,n.cap);
+      n.tendBoost=6; tendCount++; wardenXP+=3; addRenown(2);
+      var f=el.querySelector(".tend-flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+      renderNodes(); refreshSlots(); renderWarden();
+      note("turned the soil at the "+n.name.toLowerCase()+". the warden works here now.");
+    });
+    el.querySelector(".a-replant").addEventListener("click",function(){
+      var cost=Math.ceil(8*Math.pow(1.35,n.rich));
+      if(goods[n.res]<cost){ note("not enough "+n.res+" to plant back. the land can wait."); return; }
+      if(n.rich>=8){ note("this ground is as rich as these hands can make it."); return; }
+      goods[n.res]-=cost; n.rich++; setLedger(n.res); renderNodes();
+      note("planted "+cost+" "+n.res+" back into the "+n.name.toLowerCase()+". it earns tone, not numbers.");
+      if(n.rich===5){ note("the meadow does not need you. it is letting you help.",true); }
+    });
+    el.querySelector(".a-gift").addEventListener("click",function(){
+      if(goods[n.res]<15){ note("the pile must be worth their while — 15 "+n.res+"."); return; }
+      goods[n.res]-=15; setLedger(n.res);
+      g2Joined=true; giftOpen=false;
+      roster.push({ id:"g2", name:"Fern", species:"hedge wren", art:"wren", level:1, xp:0, runXP:0, kinship:0, picks:[], pending:null, post:n.id });
+      renderNodes(); renderWarden(); refreshCompendium();
+      note("left a pile by the "+n.name.toLowerCase()+". a wren looked twice, then stayed. Fern joins the crew.",true);
+    });
+  });
+
+  function renderNodes(){
+    nodes.forEach(function(n){
+      var ag=agentsAt(n.id);
+      var names=[]; if(wardenPost===n.id){ names.push("the warden"); }
+      roster.forEach(function(f){ if(f.post===n.id){ names.push(f.name); } });
+      var passing=[]; roster.forEach(function(f){ if(!f.post&&f.wt===n.id){ passing.push(f.name); } });
+      var ptxt = ag>0 ? "posted: "+names.join(", ") : "";
+      if(passing.length){ ptxt+=(ptxt?" · ":"")+"passing: "+passing.join(", "); }
+      n.el.querySelector(".posted").textContent = ptxt;
+      n.el.querySelector(".fallow").hidden = ag>0||passing.length>0;
+      n.el.querySelector(".rich").textContent = "richness "+["—","I","II","III","IV","V","VI","VII","VIII"][n.rich];
+      var b=n.el.querySelector(".basket");
+      b.querySelector(".b-fill").style.width=(n.basket/n.cap*100)+"%";
+      b.classList.toggle("full",n.basket>=n.cap);
+      n.el.querySelector(".a-replant").textContent="Plant back ("+Math.ceil(8*Math.pow(1.35,n.rich))+")";
+      n.el.querySelector(".a-gift").hidden=!giftOpen;
+    });
+  }
+
+  /* gather + familiar XP tick */
+  setInterval(function(){
+    nodes.forEach(function(n){
+      if(n.basket>=n.cap){ return; }
+      var boost=n.tendBoost>0?1.6:1;
+      if(n.tendBoost>0){ n.tendBoost-=.5; }
+      var lushM=(lush&&n.id==="n2")?1.25:1;
+      var amt=0;
+      if(wardenPost===n.id){ amt+=n.rate; }
+      roster.forEach(function(f){
+        if(f.post===n.id){ amt+=n.rate*specMult(f,n); }
+        else if(!f.post&&f.wt===n.id){ amt+=n.rate*0.5; }
+      });
+      amt*= (1+0.1*n.rich)*lushM*boost*yieldMult();
+      n.basket=Math.min(n.basket+amt,n.cap);
+    });
+    roster.forEach(function(f){
+      if(!f.post){
+        if(!f.wu||Date.now()>f.wu){ f.wt=pickWander(); f.wu=Date.now()+8000; }
+      } else { f.wt=null; }
+      if(!f.post&&!f.wt){ return; }
+      var gain=(f.post?1.2:0.6)*(1+0.02*f.kinship)*(1+0.1*buildings.roosts);
+      f.xp+=gain; f.runXP+=gain; addRenown(gain*.3);
+      var need=20*Math.pow(1.3,f.level);
+      if(f.xp>=need){
+        f.xp-=need; f.level++;
+        addRenown(8);
+        if(f.level===3&&f.picks.length===0){
+          f.pending=pools[f.art];
+          note(f.name+" has learned something. choose what — the Warden page.",true);
+        }
+      }
+    });
+    renderNodes(); renderWarden();
+  },500);
+
+  /* the trail post — hauling is a job, not a species */
+  var carrierEl=document.getElementById("carrier"), haulLabel=document.getElementById("haul-label"), hauling=false, overflowNoted=false;
+  function trailHolder(){ for(var i=0;i<roster.length;i++){ if(roster[i].post==="trail"){ return roster[i]; } } return null; }
+  setInterval(function(){
+    if(hauling){ return; }
+    var h=trailHolder(), wandering=false;
+    if(!h){
+      for(var i=0;i<roster.length;i++){ if(!roster[i].post&&roster[i].wt==="trail"){ h=roster[i]; wandering=true; break; } }
+    }
+    if(!h){
+      var anyFree=roster.some(function(f){ return !f.post; });
+      haulLabel.textContent=anyFree?"the trail is loosely watched":"the trail is empty";
+      if(!overflowNoted && !anyFree && nodes.every(function(n){ return n.basket>=n.cap; })){
+        overflowNoted=true;
+        note("the baskets overflow. every hand is spoken for, and none of them carry.",true);
+      }
+      return;
+    }
+    var cap=wandering?4:(8+(h.picks.indexOf("deeppockets")>=0?2:0));
+    var load={}, total=0;
+    nodes.forEach(function(n){
+      if(total>=cap){ return; }
+      var take=Math.min(Math.floor(n.basket),cap-total);
+      if(take>0){ load[n.res]=(load[n.res]||0)+take; n.basket-=take; total+=take; }
+    });
+    if(total===0){ haulLabel.textContent=h.name+" waits"; return; }
+    hauling=true; haulLabel.textContent=wandering?h.name+" wanders the trail ("+total+")":h.name+" hauling "+total;
+    var trip=reduced?300:(h.picks.indexOf("swiftwings")>=0?2000:2700);
+    if(!reduced){ carrierEl.style.left="0%"; requestAnimationFrame(function(){ carrierEl.style.left="88%"; }); }
+    setTimeout(function(){
+      var val=0;
+      Object.keys(load).forEach(function(k){ goods[k]+=load[k]; val+=load[k]*tv[k]; setLedger(k); });
+      addRenown(val*.6);
+      var chance=.06*(anyPick("softpaws")?1.6:1);
+      if(Math.random()<chance){ fineRun++; fineLife++; note("one came home perfect — a Fine find, kept aside for the Folio or the fire circle.",true); }
+      refreshSlots(); renderRecord(); renderWarden();
+      hauling=false;
+      var h2=trailHolder(); haulLabel.textContent=h2?h2.name+" waits":"the trail waits";
+      if(!reduced){ carrierEl.style.transition="none"; carrierEl.style.left="0%"; void carrierEl.offsetWidth; carrierEl.style.transition=""; }
+    },trip);
+  },3400);
+
+  /* ================= RITE ================= */
+  var slots=[];
+  function buildVerse(){
+    var sc=Math.pow(1.4,run-1), s1=run===1;
+    slots=[
+      { key:"berries",     label:"Berries",         need:Math.round(30*sc), have:0, spot:s1,  type:"res" },
+      { key:"wildflowers", label:"Wildflowers",     need:Math.round(15*sc), have:0, spot:s1,  type:"res" },
+      { key:"fibres",      label:"Fibres",          need:Math.round(20*sc), have:0, spot:!s1, type:"res" },
+      { key:"tend",        label:"Tend the meadow", need:Math.round(10*sc), have:0, spot:!s1, type:"deed", grant:20 },
+      { key:"fine",        label:"One Fine find",   need:1, have:0, spot:false, type:"fine", grant:40 }
+    ];
+    var host=document.getElementById("slots"); host.innerHTML="";
+    slots.forEach(function(s){
+      var row=document.createElement("div"); row.className="slot-row";
+      row.innerHTML='<span class="s-name">'+(s.spot?'<span class="spot-mark">✳ </span>':'')+s.label+'</span>'+
+        '<span class="s-progress"></span>'+(s.type==="res"?'<button class="ink-btn s-give">Set down</button>':(s.type==="fine"?'<button class="ink-btn s-give">Offer one</button>':''));
+      host.appendChild(row); s.el=row;
+      var btn=row.querySelector(".s-give");
+      if(btn){ btn.addEventListener("click",function(){
+        if(verseDone||s.have>=s.need){ return; }
+        if(s.type==="fine"){
+          if(fineRun<1){ note("no Fine find in hand. the fire circle is patient."); return; }
+          fineRun--; s.have=1; addRenown(s.grant); refreshSlots(); renderRecord();
+          note("set the perfect one down. it deserved better than a page, maybe.");
+          return;
+        }
+        var give=Math.min(Math.floor(goods[s.key]),s.need-s.have);
+        if(give<=0){ note("nothing in the stores to set down."); return; }
+        goods[s.key]-=give; s.have+=give; addRenown(give*tv[s.key]); setLedger(s.key); refreshSlots();
+        note("set down "+give+" "+s.key+". no answer. not yet.");
+      }); }
+    });
+    refreshSlots();
+  }
+  function refreshSlots(){
+    slots.forEach(function(s){
+      if(s.type==="deed"){ var was=s.have; s.have=Math.min(tendCount,s.need); if(s.have>=s.need&&was<s.need){ addRenown(s.grant); } }
+      var done=s.have>=s.need;
+      s.el.classList.toggle("done",done);
+      s.el.querySelector(".s-progress").textContent=Math.floor(s.have)+" / "+s.need;
+      var b=s.el.querySelector(".s-give"); if(b){ b.disabled=done||verseDone; }
+    });
+    var doneCount=slots.filter(function(s){ return s.have>=s.need; }).length;
+    if(doneCount>=3&&!verseDone){
+      verseDone=true;
+      slots.forEach(function(s){ if(s.have<s.need){ s.el.classList.add("expired"); } });
+      giftOpen=!g2Joined; renderNodes();
+      setTimeout(function(){
+        var sg=document.getElementById("sign"); sg.classList.add("show");
+        note(g2Joined?"the fire circle is quiet in a new way now.":"something in the hedgerow has been watching you give. a pile might tempt it — any node.",true);
+        setTimeout(function(){ sg.classList.remove("show"); },5000);
+      },500);
+    }
+    renderTracker();
+  }
+
+  /* ================= tracker / fold forecast ================= */
+  function forecastV(){ return Math.floor(Math.sqrt(renown/K_V)); }
+  function famGains(){ return roster.map(function(f){ return {f:f,k:Math.floor(Math.sqrt(f.runXP/K_F))}; }).filter(function(x){ return x.k>0; }); }
+  function renderTracker(){
+    var t=document.getElementById("tracker");
+    if(!verseDone){
+      var dc=slots.filter(function(s){ return s.have>=s.need; }).length;
+      t.classList.remove("fold");
+      t.innerHTML="First Verse, the fire circle — <b>"+Math.min(dc,3)+" of 3</b> answered · <span class='spot'>✳ "+(run===1?"Foraging":"the grasses & the hands")+"</span>";
+      t.onclick=function(){ openPage("pg-trail"); };
+      return;
+    }
+    var v=forecastV();
+    var gains=famGains().map(function(x){ return x.f.name+" +"+x.k+" kinship"; }).join(" · ");
+    var eta="—";
+    if(renownRate>0.05){ var need=Math.pow(v+1,2)*K_V-renown; eta="~"+Math.max(1,Math.round(need/(renownRate*2*60)))+" min"; }
+    t.classList.add("fold");
+    t.innerHTML="THE FOLD · +<b>"+v+"</b> Verdure"+(gains?" · "+gains:"")+" · next Verdure "+eta+" · ahead: a lush region "+
+      '<button class="fold-btn" id="fold-go">Fold the camp</button>';
+    t.onclick=null;
+    var go=document.getElementById("fold-go");
+    if(go){ go.addEventListener("click",function(ev){ ev.stopPropagation(); showConfirm(); }); }
+  }
+  function showConfirm(){
+    var c=document.getElementById("mig-confirm"); c.hidden=false;
+    var v=forecastV();
+    var gains=famGains().map(function(x){ return x.f.name+" +"+x.k; }).join(", ");
+    c.innerHTML="Everything stays behind: the stores, the kit, the richness, the buildings — <em>they were never yours</em>.<br>"+
+      '<span class="keep">The journal crosses entire, with +'+v+' Verdure'+(gains?" and kinship ("+gains+")":"")+'.</span>'+
+      '<div class="row-btns"><button class="ink-btn" id="mig-stay">Stay a while</button><button class="ink-btn grave" id="mig-yes">Migrate</button></div>';
+    document.getElementById("mig-stay").addEventListener("click",function(){ c.hidden=true; note("stayed. the fire needed watching anyway."); });
+    document.getElementById("mig-yes").addEventListener("click",doMigrate);
+  }
+  function doMigrate(){
+    document.getElementById("mig-confirm").hidden=true;
+    var v=forecastV(), gains=famGains();
+    var gtxt="+"+v+" VERDURE"+gains.map(function(x){ return " · "+x.f.name.toUpperCase()+" +"+x.k+" KINSHIP"; }).join("");
+    document.getElementById("v-gains").textContent=gtxt;
+    var vg=document.getElementById("vignette"), lines=vg.querySelectorAll(".v-inner p");
+    lines.forEach(function(p){ p.classList.remove("on"); });
+    vg.classList.add("show");
+    var delays=reduced?[200,450,700,950]:[1000,2500,4000,5400];
+    lines.forEach(function(p,i){ setTimeout(function(){ p.classList.add("on"); },delays[i]); });
+    setTimeout(function(){ resetRun(v,gains); },reduced?300:1400);
+    var ok=false; setTimeout(function(){ ok=true; },reduced?1200:2000);
+    function dismiss(){ if(!ok){ return; } vg.classList.remove("show"); vg.removeEventListener("click",dismiss);
+      note("a new meadow, near enough the old one to ache. this region is lush — the flowers come easy."); }
+    vg.addEventListener("click",dismiss); setTimeout(dismiss,reduced?2000:8000);
+  }
+  function resetRun(v,gains){
+    verdure+=v; run++; lush=true;
+    document.getElementById("verd-val").textContent=verdure;
+    gains.forEach(function(x){ x.f.kinship+=x.k; });
+    Object.keys(goods).forEach(function(k){ goods[k]=0; });
+    nodes.forEach(function(n){ n.rich=0; n.basket=0; n.tendBoost=0; });
+    buildings.rack=0; buildings.roosts=0; kit.hands=false; resetKit();
+    tendCount=0; fineRun=0; renown=0; renownRate=0; verseDone=false; giftOpen=false;
+    document.getElementById("renown-val").textContent="0";
+    roster.forEach(function(f){ f.level=1+f.kinship; f.xp=0; f.runXP=0; f.picks=[]; f.pending=null; f.post=(f.id==="g1")?"n1":(f.id==="c1"?"trail":null); });
+    wardenPost="n1";
+    recipes.forEach(function(r){ if(r.iv){ clearInterval(r.iv); } r.busy=false;
+      r.el.querySelector(".fill").style.width="0%"; var b=r.el.querySelector(".r-go"); if(b){ b.textContent="Craft"; } });
+    buildVerse(); renderNodes(); renderWarden(); renderRecord();
+    Object.keys(goods).forEach(setLedger); applyHeader(); renderTracker();
+  }
+
+  /* ================= CAMP ================= */
+  var recipes=[
+    { name:"Berry Preserve", sub:"berries ×8 · nuts ×4 — nuts come from the caravan, this far in", tag:"TRADE GOOD · ×4", tagCls:"offer",
+      cost:{berries:8,nuts:4}, out:"preserve", secs:4 },
+    { name:"Cordage Wraps", sub:"fibres ×12 · worn on the hands", tag:"GEAR · HANDS", tagCls:"gear",
+      cost:{fibres:12}, gear:"hands", effect:"tending burst +50%", secs:5 },
+    { name:"Pitch Torch", sub:"needs deadfall timber — two zones ahead", tag:"GEAR · CAMP", tagCls:"gear", locked:true }
+  ];
+  recipes.forEach(function(r){
+    var row=document.createElement("div"); row.className="row"+(r.locked?" locked":"");
+    row.innerHTML='<span class="r-main"><span class="r-name">'+r.name+'</span><div class="r-sub">'+r.sub+'</div>'+
+      (r.locked?'':'<div class="bar"><div class="fill"></div></div>')+'</span>'+
+      '<span class="tag '+r.tagCls+'">'+r.tag+'</span>'+(r.locked?'':'<button class="ink-btn primary r-go">Craft</button>');
+    document.getElementById("recipes").appendChild(row); r.el=row;
+    if(r.locked){ return; }
+    var btn=row.querySelector(".r-go"), fill=row.querySelector(".fill"); r.busy=false;
+    btn.addEventListener("click",function(){
+      if(r.busy){ return; }
+      if(r.gear&&kit[r.gear]){ return; }
+      var short=Object.keys(r.cost).filter(function(k){ return goods[k]<r.cost[k]; });
+      if(short.length){ note("the stores are short of "+short.join(" and ")+"."); return; }
+      Object.keys(r.cost).forEach(function(k){ goods[k]-=r.cost[k]; setLedger(k); });
+      r.busy=true; btn.disabled=true;
+      var t0=Date.now();
+      r.iv=setInterval(function(){
+        var p=Math.min((Date.now()-t0)/(r.secs*1000),1);
+        fill.style.width=p*100+"%";
+        if(p>=1){ clearInterval(r.iv); r.busy=false; fill.style.width="0%";
+          wardenXP+=10; addRenown(15);
+          if(r.gear){ kit[r.gear]=true; equip(r.gear,r.name,r.effect); btn.textContent="Worn";
+            note("bound the wraps tight. the bramble will mind them less than these knuckles did."); }
+          else { goods[r.out]+=1; setLedger(r.out); btn.disabled=false;
+            note("a jar of preserve, sealed while warm. the caravan weighs these kindly."); }
+          refreshRecipes(); renderWarden();
+        }
+      },100);
+    });
+  });
+  function refreshRecipes(){
+    recipes.forEach(function(r){
+      if(r.locked||r.busy){ return; }
+      var btn=r.el.querySelector(".r-go");
+      if(r.gear&&kit[r.gear]){ btn.disabled=true; btn.textContent="Worn"; return; }
+      btn.textContent="Craft";
+      btn.disabled=!Object.keys(r.cost).every(function(k){ return goods[k]>=r.cost[k]; });
+    });
+  }
+
+  var buildDefs=[
+    { key:"rack", name:"Drying Rack", sub:"berries weigh +25% more at the Exchange", cost:{fibres:40,wildflowers:15} },
+    { key:"roosts", name:"Roosts & Burrows", sub:"the crew learns +10% faster per level", cost:{fibres:30,berries:20} }
+  ];
+  buildDefs.forEach(function(b){
+    var row=document.createElement("div"); row.className="row";
+    row.innerHTML='<span class="r-main"><span class="r-name">'+b.name+'</span><div class="r-sub">'+b.sub+'</div>'+
+      '<div class="r-sub b-cost"></div></span><button class="ink-btn b-buy">Raise</button>';
+    document.getElementById("build-rows").appendChild(row); b.el=row;
+    row.querySelector(".b-buy").addEventListener("click",function(){
+      var m=Math.pow(1.25,buildings[b.key]);
+      var short=Object.keys(b.cost).filter(function(k){ return goods[k]<Math.ceil(b.cost[k]*m); });
+      if(short.length){ return; }
+      Object.keys(b.cost).forEach(function(k){ goods[k]-=Math.ceil(b.cost[k]*m); setLedger(k); });
+      buildings[b.key]++; addRenown(10); refreshBuilds(); refreshTrades();
+      note(b.key==="rack"?"racks up. the caravan raised an eyebrow, and its ratios.":"new burrows at the camp edge. the crew sleeps closer to the work.");
+    });
+  });
+  function refreshBuilds(){
+    buildDefs.forEach(function(b){
+      var m=Math.pow(1.25,buildings[b.key]);
+      var costTxt=Object.keys(b.cost).map(function(k){ return Math.ceil(b.cost[k]*m)+" "+k; }).join(" + ");
+      b.el.querySelector(".b-cost").textContent="level "+buildings[b.key]+" · next: "+costTxt;
+      b.el.querySelector(".b-buy").disabled=!Object.keys(b.cost).every(function(k){ return goods[k]>=Math.ceil(b.cost[k]*m); });
+    });
+  }
+
+  var trades=[
+    { give:"berries", giveN:10, get:"nuts" },
+    { give:"preserve", giveN:1, get:"fibres" }
+  ];
+  function berryTV(){ return tv.berries*(1+0.25*buildings.rack); }
+  function tradeOut(t){
+    var gv=(t.give==="berries"?berryTV():tv[t.give])*t.giveN*(1-0.15);
+    return Math.max(1,Math.ceil(gv/tv[t.get]));
+  }
+  trades.forEach(function(t){
+    var row=document.createElement("div"); row.className="row";
+    row.innerHTML='<span class="r-main"><span class="r-name t-name"></span><div class="r-sub">rates from the trade-value table, less the caravan\'s cut · small trades round your way</div></span>'+
+      '<button class="ink-btn t-go">Trade</button>';
+    document.getElementById("trade-rows").appendChild(row); t.el=row;
+    row.querySelector(".t-go").addEventListener("click",function(){
+      if(goods[t.give]<t.giveN){ return; }
+      var out=tradeOut(t);
+      goods[t.give]-=t.giveN; goods[t.get]+=out;
+      setLedger(t.give); setLedger(t.get); addRenown(3);
+      note("traded "+t.giveN+" "+t.give+" for "+out+" "+t.get+". a nod. gone before the count.");
+      var lines=["“Sell me nothing you would weep to lose. I do not give refunds, and the land does not either.”",
+        "the caravan weighs the jars without comment."];
+      document.getElementById("prov-line").textContent=lines[Math.min(tradeCount++,1)];
+    });
+  });
+  var tradeCount=0;
+  function refreshTrades(){
+    trades.forEach(function(t){
+      t.el.querySelector(".t-name").textContent=t.giveN+" "+t.give+" → "+tradeOut(t)+" "+t.get;
+      t.el.querySelector(".t-go").disabled=goods[t.give]<t.giveN;
+    });
+  }
+
+  /* ================= WARDEN ================= */
+  var kitEmpty={ hands:'<div class="slot-name">HANDS</div><div class="empty">bare</div>',
+    pack:'<div class="slot-name">PACK</div><div class="empty">a pocket</div>',
+    campslot:'<div class="slot-name">CAMP</div><div class="empty">cold ground</div>' };
+  function resetKit(){ Object.keys(kitEmpty).forEach(function(s){ document.querySelector('.slot-box[data-slot="'+s+'"]').innerHTML=kitEmpty[s]; }); }
+  function equip(slot,name,eff){ document.querySelector('.slot-box[data-slot="'+slot+'"]').innerHTML=
+    '<div class="slot-name">'+slot.replace("campslot","camp").toUpperCase()+'</div><div class="slot-item">'+name+'</div><div class="slot-effect">'+eff+'</div>'; }
+  resetKit();
+
+  function foragingLevel(){ var L=1,x=wardenXP; while(x>=30*Math.pow(1.4,L)){ x-=30*Math.pow(1.4,L); L++; } return L; }
+  function renderWarden(){
+    document.getElementById("skills").innerHTML=
+      '<div class="skill-line">Foraging — level '+foragingLevel()+' <span class="r-sub">(gates tools & recipes; no wallet involved)</span></div>'+
+      '<div class="skill-line" style="opacity:.5"><em>Firecraft, Bushcraft — awakened by the camp stations</em></div>';
+    var host=document.getElementById("roster"); host.innerHTML="";
+    roster.forEach(function(f){
+      var card=document.createElement("div"); card.className="fam-card";
+      var need=20*Math.pow(1.3,f.level);
+      var picks=f.picks.map(function(p){ var d=pools[f.art].filter(function(x){return x.id===p;})[0]; return d?d.name:p; }).join(" · ");
+      card.innerHTML='<div class="art">'+arts[f.art]+'</div><div class="info">'+
+        '<span class="f-name">'+f.name+'</span> <span class="r-sub">'+f.species+'</span>'+
+        (f.kinship>0?' <span class="f-kin">KINSHIP '+["","I","II","III","IV","V"][Math.min(f.kinship,5)]+'</span>':'')+
+        '<div class="f-lvl">level '+f.level+' · '+Math.floor(f.xp)+'/'+Math.floor(need)+' xp'+(f.kinship>0?' · learns +'+(2*f.kinship)+'% faster':'')+'</div>'+
+        (picks?'<div class="picks">'+picks+'</div>':'')+
+        '<div class="post-btns"></div>'+
+        (f.pending?'<div class="powerup-choice"><b>'+f.name+' has learned something — choose:</b><br></div>':'')+
+        '</div>';
+      host.appendChild(card);
+      var pb=card.querySelector(".post-btns");
+      nodes.forEach(function(n){
+        var b=document.createElement("button"); b.className="ink-btn"+(f.post===n.id?" on":"");
+        b.textContent=n.name.split(" ")[0];
+        b.addEventListener("click",function(){ f.post=n.id; renderNodes(); renderWarden();
+          note(f.name+" walks the trail to the "+n.name.toLowerCase()+"."); });
+        pb.appendChild(b);
+      });
+      var trailB=document.createElement("button"); trailB.className="ink-btn"+(f.post==="trail"?" on":"");
+      trailB.textContent="Trail";
+      trailB.addEventListener("click",function(){
+        var prev=null;
+        roster.forEach(function(o){ if(o!==f&&o.post==="trail"){ o.post=null; prev=o; } });
+        f.post="trail"; overflowNoted=false; renderNodes(); renderWarden();
+        note(f.name+" takes the trail post"+(prev?"; "+prev.name+" is benched":"")+". a gatherer's hands, spent on carrying.");
+      });
+      pb.appendChild(trailB);
+      var bench=document.createElement("button"); bench.className="ink-btn"+(f.post===null?" on":"");
+      bench.textContent="Wander";
+      bench.addEventListener("click",function(){ f.post=null; f.wt=null; f.wu=0; renderNodes(); renderWarden();
+        note(f.name+" wanders — half a hand everywhere, a whole hand nowhere."); });
+      pb.appendChild(bench);
+      if(f.pending){
+        var pc=card.querySelector(".powerup-choice");
+        f.pending.forEach(function(opt){
+          var b=document.createElement("button"); b.className="ink-btn primary"; b.textContent=opt.name+" — "+opt.desc;
+          b.addEventListener("click",function(){ f.picks.push(opt.id); f.pending=null; addRenown(10);
+            note(f.name+" chose: "+opt.name.toLowerCase()+". a build is a commitment."); renderWarden(); });
+          pc.appendChild(b);
+        });
+      }
+    });
+    document.getElementById("crew-note").textContent = g2Joined ?
+      "three in the crew — the unassigned wander at half strength. the fourth waits in the Almanac." :
+      (verseDone?"something is watching the piles you leave. a gift might tempt it — any node on the Trail.":"two came unasked. the third waits on the first verse — answer it with your own hands.");
+    document.getElementById("run-stats").innerHTML="camp "+["first","second","third"][Math.min(run-1,2)]+" · renown "+fmt(renown)+
+      " · tended "+tendCount+" · Fine finds in hand "+fineRun+" · lifetime Fine "+fineLife;
+  }
+
+  /* ================= RECORD ================= */
+  var compDefs=[
+    { key:"berries", fig:"PLATE I", name:"Meadow Berry", sub:"sweet, and argued over", art:"berries" },
+    { key:"wildflowers", fig:"PLATE II", name:"Wildflower", sub:"the bees knew first", art:"wildflowers" },
+    { key:"fibres", fig:"PLATE III", name:"Fibre Grass", sub:"rope, given time", art:"fibres" },
+    { key:"poppy", fig:"PLATE IV", name:"Sunburst Poppy", sub:"keystone — unfound", art:null, never:true },
+    { key:"vole", fig:"PLATE V", name:"Bramble", sub:"meadow vole · crew", art:"vole", always:true },
+    { key:"raven", fig:"PLATE VI", name:"Sable", sub:"pack raven · crew", art:"raven", always:true },
+    { key:"wren", fig:"PLATE VII", name:"Fern", sub:"hedge wren · crew", art:"wren", cond:function(){ return g2Joined; } }
+  ];
+  var compGrid=document.getElementById("comp-grid");
+  compDefs.forEach(function(c){ var el=document.createElement("div"); el.className="comp-plate"; compGrid.appendChild(el); c.el=el; });
+  function refreshCompendium(){
+    ["berries","wildflowers","fibres"].forEach(function(k){ if(goods[k]>0){ discovered[k]=true; } });
+    compDefs.forEach(function(c){
+      var found=c.always||(c.cond&&c.cond())||(!c.never&&!c.cond&&discovered[c.key]);
+      c.el.style.display=(c.cond&&!c.cond())?"none":"";
+      c.el.classList.toggle("unknown",!found);
+      c.el.innerHTML='<div class="fig-no">'+c.fig+'</div><div class="art">'+(found?arts[c.art]:"?")+'</div>'+
+        '<div class="c-name">'+(found?c.name:"unrecorded")+'</div>'+
+        '<div class="c-sub">'+(found?c.sub:(c.never?"the meadow keeps one secret":"not yet seen"))+'</div>';
+    });
+  }
+  var pressArts=["🌿","✿","𝄙"];
+  function renderRecord(){
+    var sp=document.getElementById("spread"); sp.innerHTML="";
+    for(var i=0;i<3;i++){ var d=document.createElement("div"); d.className="press"+(folioFixed[i]?" fixed":""); d.textContent=folioFixed[i]?pressArts[i]:""; sp.appendChild(d); }
+    var never=document.createElement("div"); never.className="press never"; never.textContent="?"; sp.appendChild(never);
+    var n=folioFixed.filter(Boolean).length;
+    document.getElementById("spread-note").innerHTML=n+" of 4 fixed — the Sunburst Poppy withholds itself.<br>"+
+      "<span style='font-size:.72rem'>a finished spread outlives every Migration: +5% to all yields.<br>fixing consumes the find — the page keeps it instead of you.</span>";
+    document.getElementById("fix-btn").disabled=fineRun<1||n>=3;
+  }
+  document.getElementById("fix-btn").addEventListener("click",function(){
+    var i=folioFixed.indexOf(false);
+    if(fineRun<1||i<0){ return; }
+    fineRun--; folioFixed[i]=true; addRenown(25); renderRecord(); renderWarden();
+    note("pressed it between these pages, where it will outlast the camp.",true);
+  });
+
+  /* ================= init ================= */
+  buildVerse(); renderNodes(); renderWarden(); renderRecord(); refreshCompendium();
+  refreshRecipes(); refreshBuilds(); refreshTrades(); renderTracker(); applyLayout();
+  Object.keys(goods).forEach(setLedger);
+
+  if(!reduced){
+    var page=document.getElementById("page");
+    for(var i=0;i<5;i++){
+      var m=document.createElement("div"); m.className="mote";
+      m.style.left=(15+Math.random()*70)+"%"; m.style.top=(20+Math.random()*40)+"%";
+      m.style.animationDelay=(Math.random()*-14)+"s"; page.appendChild(m);
+    }
+  }
+})();
+</script>
+</body>
+</html>

@@ -17,7 +17,8 @@ The collection layer (Compendium + Fossil Wing, hand-drawn naturalist plates) an
 ## Documents
 
 - [Design document](docs/design-doc.md) — vision, systems, economy math, narrative, Level Up compliance, MVP plan
-- [docs/wildgrove-design-doc.html](docs/wildgrove-design-doc.html) — the same document, styled (field-journal treatment)
+- [The Warden's Journal](docs/wildgrove-journal.html) — the same document, styled (field-journal treatment)
+- [Economy model](docs/economy-model.xlsx) — Phase 3 pacing spreadsheet: the hour-six spend proof and solved starting constants
 
 ## Stack (planned)
 
