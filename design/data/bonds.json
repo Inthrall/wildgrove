@@ -3,13 +3,15 @@
   "bonds": [
     {
       "id": "sootwing",
-      "name": "Sootwing, a pack raven",
+      "name": "Sootwing",
+      "species": "pack-raven",
       "role": "carrier",
       "source": { "type": "museumSet", "id": "meadow-blooms" }
     },
     {
       "id": "burr",
-      "name": "Burr, a meadow vole",
+      "name": "Burr",
+      "species": "meadow-vole",
       "role": "gatherer",
       "source": { "type": "almanacNode", "id": "old-friend" }
     }

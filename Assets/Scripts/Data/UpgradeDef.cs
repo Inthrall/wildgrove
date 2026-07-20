@@ -12,7 +12,10 @@ namespace Wildgrove.Data
         /// <summary>The tool tier this upgrade represents owning (economy.tools.tiers), for zone gating; null for non-tier upgrades.</summary>
         public string ToolTier { get; set; }
 
-        public long CostCoin { get; set; }
+        /// <summary>Skill gate (design §9 money→XP): the skill that must reach <see cref="GateLevel"/> before this can be bought. Null/empty = no skill gate.</summary>
+        public string GateSkill { get; set; }
+        public int GateLevel { get; set; }
+
         public Dictionary<string, int> Materials { get; set; } = new Dictionary<string, int>();
         public List<EffectDef> Effects { get; set; } = new List<EffectDef>();
     }

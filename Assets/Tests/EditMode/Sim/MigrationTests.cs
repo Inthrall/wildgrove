@@ -119,31 +119,26 @@ namespace Wildgrove.Sim.Tests
         public void Migrate_ResetsTheRun()
         {
             var state = StateWithTheRiteSung();
-            state.coin = new BigDouble(9999.0);
             state.AddResource("berries", 500);
             state.AddFine("berries", 5);
             state.AddPristine("berries", 2);
-            state.nodes[0].familiarCount = 7;
             state.nodes[0].masteryXp = 500.0;
-            state.carrierCount = 4;
             state.purchasedUpgradeIds.Add("flint-sickle");
             state.buildingLevels["fire"] = 3;
             state.stations.Add(new StationState { stationId = "fire", recipeId = "berry-preserve" });
             state.skillXp["foraging"] = 1000.0;
-            state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId, familiarCount = 2 });
+            state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
             state.deedCounts["tend"] = 9;
             state.gearBySlot["camp"] = "oilskin-tarp";
 
             var next = Migration.Migrate(state, _data);
 
-            // Back to the fresh-run seeds — the §2 bootstrap, nothing else.
-            Assert.That(next.coin.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            // The run's own state resets to the fresh-run baseline (the crew
+            // itself crosses — see Migrate_CarriesTheCrewFolded).
             Assert.That(next.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(next.nodes[0].familiarCount, Is.EqualTo(1));
             Assert.That(next.nodes[0].masteryXp, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(next.carrierCount, Is.EqualTo(1));
             Assert.That(next.purchasedUpgradeIds, Is.Empty);
             Assert.That(next.buildingLevels, Is.Empty);
             Assert.That(next.stations, Is.Empty);
@@ -195,6 +190,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheCrewFolded()
+        {
+            var state = StateWithTheRiteSung();
+            state.roster[0].xp = 5000.0;
+            state.roster[0].stationId = state.nodes[0].id;
+            state.roster[0].powerupIds.Add("berry-wise");
+            var count = state.roster.Count;
+
+            var next = Migration.Migrate(state, _data);
+
+            // The roster crosses the fold; each familiar returns to a clean run
+            // build — station cleared, powerups dropped — with run XP banked into
+            // permanent Kinship (design §4).
+            Assert.That(next.roster.Count, Is.EqualTo(count), "the crew crosses whole");
+            Assert.That(next.roster[0].kinshipXp, Is.GreaterThan(0.0), "run XP banks into Kinship");
+            Assert.That(next.roster[0].powerupIds, Is.Empty, "run build resets");
+            Assert.That(next.roster.TrueForAll(f => f.IsWandering), Is.True, "stations reset");
+        }
+
+        [Test]
         public void Migrate_BondedFamiliarsCross_ButThePostResets()
         {
             _data.museumSets = new List<MuseumSetData>
@@ -209,7 +224,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new BondData
                 {
-                    id = "sootwing", displayName = "Sootwing, a pack raven", role = "carrier",
+                    id = "sootwing", displayName = "Sootwing", species = "pack-raven", role = "carrier",
                     source = new BondSourceData { type = "museumSet", id = "meadow-blooms" },
                 },
             };
@@ -219,7 +234,7 @@ namespace Wildgrove.Sim.Tests
 
             var next = Migration.Migrate(state, _data);
 
-            Assert.That(Bonds.BondedCarriers(next, _data), Is.EqualTo(1),
+            Assert.That(next.roster.Exists(f => f.bonded && f.bondId == "sootwing"), Is.True,
                 "the bond is derived from the donations the fold carries — Sootwing crosses too");
             Assert.That(next.wardenPostNodeId, Is.Null, "the post resets with the camp");
         }

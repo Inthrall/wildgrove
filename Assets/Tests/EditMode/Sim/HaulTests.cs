@@ -47,7 +47,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 2, id = "waxed-satchel", costCoin = 150,
+                    order = 2, id = "waxed-satchel",
                     effects = { new EffectData { type = EffectType.HaulMult, value = 1.5 } },
                 },
             };
@@ -91,7 +91,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_NoCarriers_NothingReachesCamp()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.carrierCount = 0;
+            state.roster.RemoveAll(f => f.IsOnTrail);
 
             Simulation.Advance(state, _data, 5.0);
 
@@ -117,7 +117,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CarriersAlternateBetweenEquallyBusyNodes()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[1].familiarCount = 1; // both nodes gathering at 1/s
+            TestCrew.Station(state, state.nodes[1].id, 1); // both nodes gathering at 1/s
 
             Simulation.Advance(state, _data, 4.0);
 
@@ -146,7 +146,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_ADeliveryIsOneResource()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[0].familiarCount = 0;
+            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
             state.nodes[0].basket = new BigDouble(5.0);
             state.nodes[1].basket = new BigDouble(2.0);
 
@@ -164,7 +164,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_MoreCarriers_ShortenTheDeliveryCadence()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.carrierCount = 2; // staggered fleet: a delivery every 1 s
+            TestCrew.Station(state, Familiar.TrailStation, 1); // second carrier: a delivery every 1 s
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -175,7 +175,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_IdleCarriers_DoNotBankTripProgress()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[0].familiarCount = 0; // nothing gathering anywhere
+            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id); // nothing gathering anywhere
 
             Simulation.Advance(state, _data, 10.0);
             state.nodes[0].basket = new BigDouble(5.0);
@@ -194,7 +194,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_PartialLoad_DeliversWhatIsWaiting()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[0].familiarCount = 0;
+            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
             state.nodes[0].basket = new BigDouble(0.4);
 
             Simulation.Advance(state, _data, 2.0);

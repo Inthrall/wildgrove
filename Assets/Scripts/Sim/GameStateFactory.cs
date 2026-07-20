@@ -19,7 +19,21 @@ namespace Wildgrove.Sim
         {
             var state = new GameState { rngState = Rng.NewSeed() };
             AddZone(state, data, data.ZonesById[StartingZoneId]);
+            SeedStartingCrew(state, data);
+            Roster.SyncBonded(state, data);
             return state;
+        }
+
+        /// <summary>
+        /// The land's first gesture (design §4 slots 1 &amp; 2): a vole and a
+        /// raven arrive unasked — one gathers the first node, one takes the trail
+        /// post. The bootstrap, twice. Player names them on arrival.
+        /// </summary>
+        private static void SeedStartingCrew(GameState state, GameDataAsset data)
+        {
+            var firstNode = state.nodes.Count > 0 ? state.nodes[0].id : null;
+            Roster.Recruit(state, data, "meadow-vole", firstNode);
+            Roster.Recruit(state, data, "pack-raven", Familiar.TrailStation);
         }
 
         /// <summary>
@@ -65,8 +79,9 @@ namespace Wildgrove.Sim
 
         private static void AddZone(GameState state, GameDataAsset data, ZoneData zone)
         {
-            var firstNewIndex = state.nodes.Count;
-
+            // Just the nodes now — the crew is a roster of stationed individuals
+            // (design §2/§4), seeded once at run birth, not per-zone. A newly
+            // opened zone's nodes wait for the player to station someone there.
             foreach (var resourceId in zone.resources)
             {
                 state.nodes.Add(new NodeState
@@ -75,18 +90,8 @@ namespace Wildgrove.Sim
                     zoneId = zone.id,
                     resourceId = resourceId,
                     skill = SkillFor(data, zone, resourceId),
-                    familiarCount = 0,
                 });
             }
-
-            // The design §2 regional seed: immediate agency in the new zone,
-            // and goods flow to camp from the first frame.
-            if (state.nodes.Count > firstNewIndex)
-            {
-                state.nodes[firstNewIndex].familiarCount = 1;
-            }
-
-            state.carrierCount += 1;
         }
 
         public static string NodeId(string zoneId, string resourceId)

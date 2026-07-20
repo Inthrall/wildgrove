@@ -50,7 +50,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 26, id = "curators-cabinet", costCoin = 100,
+                    order = 26, id = "curators-cabinet",
                     effects = { new EffectData { type = EffectType.MuseumSetBonusMult, value = 1.5 } },
                 },
             };

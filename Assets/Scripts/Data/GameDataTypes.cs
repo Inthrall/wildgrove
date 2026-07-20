@@ -54,8 +54,6 @@ namespace Wildgrove.Data
         /// <summary>Tool tier the zone's trail map demands (design §3); null/empty = ungated.</summary>
         public string requiredTool;
 
-        public bool priced;
-        public BigDouble mapCostCoin;
         public string scope;
     }
 
@@ -70,7 +68,10 @@ namespace Wildgrove.Data
         /// <summary>The tool tier owning this upgrade represents (economy.tools.tiers), for zone gating; null/empty for non-tier upgrades.</summary>
         public string toolTier;
 
-        public BigDouble costCoin;
+        /// <summary>Skill gate (design §9 money→XP): the skill that must reach <see cref="gateLevel"/> to buy this. Null/empty = no skill gate.</summary>
+        public string gateSkill;
+        public int gateLevel;
+
         public List<ItemAmount> materials = new List<ItemAmount>();
         public List<EffectData> effects = new List<EffectData>();
     }
@@ -103,7 +104,10 @@ namespace Wildgrove.Data
     {
         public string id;
         public string displayName;
-        public BigDouble baseCostCoin;
+
+        /// <summary>Base material bundle for the next level (design §9 money→XP), scaled by costGrowth.building^level.</summary>
+        public List<ItemAmount> materials = new List<ItemAmount>();
+
         public List<string> milestoneUpgradeIds = new List<string>();
         public BuildingPerLevelData perLevel;
     }
@@ -211,10 +215,55 @@ namespace Wildgrove.Data
         public string id;
         public string displayName;
 
-        /// <summary>"gatherer" or "carrier".</summary>
+        /// <summary>Species id (into species.json) — drives the bonded familiar's powerup pool.</summary>
+        public string species;
+
+        /// <summary>Legacy role hint ("gatherer"/"carrier") — flavour only now that carrying is a post.</summary>
         public string role;
 
         public BondSourceData source;
+    }
+
+    /// <summary>One powerup in a species' authored pool (design §4). Kept for the run once chosen; interpreted by the sim by <see cref="kind"/>.</summary>
+    [Serializable]
+    public sealed class PowerupData
+    {
+        public string id;
+        public string displayName;
+        public string description;
+
+        /// <summary>nodeYieldBonus / trailThroughputBonus / pristineBonus / digSpeedBonus / offlineBonus.</summary>
+        public string kind;
+
+        public double value;
+
+        /// <summary>Resource this powerup is specialised to, or null when it applies wherever the familiar is posted.</summary>
+        public string resource;
+    }
+
+    /// <summary>The Exchange's barter constants (design §9) — rates derive from the trade-value table.</summary>
+    [Serializable]
+    public sealed class ExchangeData
+    {
+        public double spread;
+        public double roundUpBelow;
+    }
+
+    /// <summary>
+    /// A familiar species (design §4): a role lean, suggested names for the
+    /// player to accept or edit on arrival, and a fixed powerup pool.
+    /// </summary>
+    [Serializable]
+    public sealed class SpeciesData
+    {
+        public string id;
+        public string displayName;
+
+        /// <summary>"gatherer" or "carrier" — the natural lean, never a hard restriction on stationing.</summary>
+        public string roleLean;
+
+        public List<string> suggestedNames = new List<string>();
+        public List<PowerupData> powerups = new List<PowerupData>();
     }
 
     [Serializable]
@@ -282,6 +331,7 @@ namespace Wildgrove.Data
         public ExcavationData excavation;
         public TendingData tending;
         public WardenData warden;
+        public FamiliarXpData familiarXp;
 
         /// <summary>Unity can't serialize a null section — treat timeSkipCostAmber &lt;= 0 as "no amber system" (the Configured pattern).</summary>
         public AmberData amber;
@@ -405,8 +455,19 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class WardenData
         {
-            /// <summary>The warden's own gather rate at their post, straight to camp — the bare-node gift bootstrap.</summary>
+            /// <summary>The warden's own gather rate at their post, straight to camp — the bare-node replant bootstrap.</summary>
             public double gatherPerSecond;
+        }
+
+        [Serializable]
+        public sealed class FamiliarXpData
+        {
+            public double baseXp;
+            public double growth;
+            public int maxLevel;
+
+            /// <summary>Base run XP a stationed familiar earns per second at its post (wanderers ×0.5).</summary>
+            public double xpPerSecond;
         }
     }
 }

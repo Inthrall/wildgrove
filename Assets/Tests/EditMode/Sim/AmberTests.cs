@@ -65,7 +65,8 @@ namespace Wildgrove.Sim.Tests
         private GameState StateWithADigger()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId, familiarCount = 1 });
+            state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
+            TestCrew.Station(state, Familiar.DigStationPrefix + GameStateFactory.StartingZoneId, 1);
             return state;
         }
 
@@ -98,7 +99,7 @@ namespace Wildgrove.Sim.Tests
             var state = StateWithADigger();
             state.fossilFragments["antler-crown"] = 3; // the fragment channel is quiet too
             var rngBefore = state.rngState;
-            state.nodes[0].familiarCount = 0;
+            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
 
             Simulation.Advance(state, _data, 1.0);
 

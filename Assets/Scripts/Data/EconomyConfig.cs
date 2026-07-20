@@ -20,6 +20,7 @@ namespace Wildgrove.Data
         public AmberSection Amber { get; set; }
         public TendingSection Tending { get; set; }
         public WardenSection Warden { get; set; }
+        public FamiliarXpSection FamiliarXp { get; set; }
 
         public sealed class CostGrowthSection
         {
@@ -127,6 +128,14 @@ namespace Wildgrove.Data
         public sealed class WardenSection
         {
             public double GatherPerSecond { get; set; }
+        }
+
+        public sealed class FamiliarXpSection
+        {
+            public double Base { get; set; }
+            public double Growth { get; set; }
+            public int MaxLevel { get; set; }
+            public double XpPerSecond { get; set; }
         }
     }
 }

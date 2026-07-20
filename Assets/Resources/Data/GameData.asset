@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 7961f2a50e50dc610d49b1c374604e8b8425021a56fedc539a375a9df2bdd93a
+  sourceHash: de98e3e1e9738e63504de77d569edaec8c3c3bd21e172ad4f11e7c3541e274a6
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -82,6 +82,11 @@ MonoBehaviour:
       pristineChanceBonus: 1
     warden:
       gatherPerSecond: 0.5
+    familiarXp:
+      baseXp: 60
+      growth: 1.12
+      maxLevel: 99
+      xpPerSecond: 1
     amber:
       digFindsPerHour: 0.06
       perFind: 2
@@ -174,10 +179,6 @@ MonoBehaviour:
     digSite: 0
     verseSite: the fire circle
     requiredTool: 
-    priced: 1
-    mapCostCoin:
-      mantissa: 0
-      exponent: 0
     scope: mvp
   - id: bramble-hedgerows
     order: 2
@@ -193,10 +194,6 @@ MonoBehaviour:
     digSite: 0
     verseSite: the hollow oak
     requiredTool: flint
-    priced: 1
-    mapCostCoin:
-      mantissa: 4
-      exponent: 2
     scope: mvp
   - id: old-growth-wood
     order: 3
@@ -213,10 +210,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: the oldest root
     requiredTool: copper
-    priced: 1
-    mapCostCoin:
-      mantissa: 6.5
-      exponent: 3
     scope: mvp
   - id: silverrun-river
     order: 4
@@ -232,10 +225,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: the river bend
     requiredTool: bronze
-    priced: 1
-    mapCostCoin:
-      mantissa: 3.2
-      exponent: 5
     scope: mvp
   - id: mistfen-marsh
     order: 5
@@ -251,10 +240,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: iron
-    priced: 1
-    mapCostCoin:
-      mantissa: 1
-      exponent: 7
     scope: v1.1
   - id: the-hollows
     order: 6
@@ -269,10 +254,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: steel
-    priced: 0
-    mapCostCoin:
-      mantissa: 0
-      exponent: 0
     scope: v1.1
   - id: highland-crags
     order: 7
@@ -287,10 +268,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: steel
-    priced: 0
-    mapCostCoin:
-      mantissa: 0
-      exponent: 0
     scope: v1.2
   - id: cloudreach-peaks
     order: 8
@@ -304,10 +281,6 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: steel
-    priced: 0
-    mapCostCoin:
-      mantissa: 0
-      exponent: 0
     scope: v1.2
   upgrades:
   - order: 1
@@ -315,9 +288,8 @@ MonoBehaviour:
     displayName: Flint Sickle
     track: tools
     toolTier: flint
-    costCoin:
-      mantissa: 1
-      exponent: 2
+    gateSkill: foraging
+    gateLevel: 2
     materials: []
     effects:
     - type: 0
@@ -329,11 +301,10 @@ MonoBehaviour:
   - order: 2
     id: waxed-satchel
     displayName: Waxed Satchel
-    track: carriers
+    track: hauling
     toolTier: 
-    costCoin:
-      mantissa: 1.5
-      exponent: 2
+    gateSkill: foraging
+    gateLevel: 4
     materials: []
     effects:
     - type: 2
@@ -347,9 +318,8 @@ MonoBehaviour:
     displayName: Drying Rack
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 2.5
-      exponent: 2
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 3
@@ -363,9 +333,8 @@ MonoBehaviour:
     displayName: 'Trail Map: Bramble Hedgerows'
     track: trail
     toolTier: 
-    costCoin:
-      mantissa: 4
-      exponent: 2
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 14
@@ -385,9 +354,8 @@ MonoBehaviour:
     displayName: Rawhide Gloves
     track: tools
     toolTier: 
-    costCoin:
-      mantissa: 6
-      exponent: 2
+    gateSkill: foraging
+    gateLevel: 8
     materials: []
     effects:
     - type: 0
@@ -399,11 +367,10 @@ MonoBehaviour:
   - order: 6
     id: handcart
     displayName: Handcart
-    track: carriers
+    track: hauling
     toolTier: 
-    costCoin:
-      mantissa: 9
-      exponent: 2
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 2
@@ -417,9 +384,8 @@ MonoBehaviour:
     displayName: Camp Fire Ring
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 1.3
-      exponent: 3
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 15
@@ -451,9 +417,8 @@ MonoBehaviour:
     displayName: Copper Sickle
     track: tools
     toolTier: copper
-    costCoin:
-      mantissa: 2
-      exponent: 3
+    gateSkill: foraging
+    gateLevel: 12
     materials:
     - id: copper-ingot
       amount: 5
@@ -469,9 +434,8 @@ MonoBehaviour:
     displayName: Root Cellar
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 3
-      exponent: 3
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 8
@@ -485,9 +449,8 @@ MonoBehaviour:
     displayName: Preserving Jars
     track: firecraft
     toolTier: 
-    costCoin:
-      mantissa: 4.5
-      exponent: 3
+    gateSkill: firecraft
+    gateLevel: 10
     materials: []
     effects:
     - type: 3
@@ -501,9 +464,8 @@ MonoBehaviour:
     displayName: 'Trail Map: Old-Growth Wood'
     track: trail
     toolTier: 
-    costCoin:
-      mantissa: 6.5
-      exponent: 3
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 14
@@ -535,9 +497,8 @@ MonoBehaviour:
     displayName: Bronze Hatchet
     track: tools
     toolTier: bronze
-    costCoin:
-      mantissa: 1
-      exponent: 4
+    gateSkill: logging
+    gateLevel: 5
     materials:
     - id: bronze-ingot
       amount: 5
@@ -551,11 +512,10 @@ MonoBehaviour:
   - order: 13
     id: stag-harness
     displayName: Stag Harness
-    track: carriers
+    track: hauling
     toolTier: 
-    costCoin:
-      mantissa: 1.5
-      exponent: 4
+    gateSkill: bushcraft
+    gateLevel: 12
     materials: []
     effects:
     - type: 2
@@ -569,9 +529,8 @@ MonoBehaviour:
     displayName: Carving Bench
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 2.2
-      exponent: 4
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 15
@@ -597,9 +556,8 @@ MonoBehaviour:
     displayName: Whetstone
     track: tools
     toolTier: 
-    costCoin:
-      mantissa: 3.2
-      exponent: 4
+    gateSkill: mining
+    gateLevel: 10
     materials: []
     effects:
     - type: 1
@@ -613,9 +571,8 @@ MonoBehaviour:
     displayName: Forager's Skewers
     track: firecraft
     toolTier: 
-    costCoin:
-      mantissa: 4.8
-      exponent: 4
+    gateSkill: firecraft
+    gateLevel: 18
     materials: []
     effects:
     - type: 16
@@ -629,9 +586,8 @@ MonoBehaviour:
     displayName: Field Press
     track: compendium
     toolTier: 
-    costCoin:
-      mantissa: 7
-      exponent: 4
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 6
@@ -645,9 +601,8 @@ MonoBehaviour:
     displayName: Bellows Forge
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 1
-      exponent: 5
+    gateSkill: forgecraft
+    gateLevel: 15
     materials: []
     effects:
     - type: 4
@@ -665,11 +620,10 @@ MonoBehaviour:
   - order: 19
     id: wagon
     displayName: Wagon
-    track: carriers
+    track: hauling
     toolTier: 
-    costCoin:
-      mantissa: 1.5
-      exponent: 5
+    gateSkill: bushcraft
+    gateLevel: 20
     materials: []
     effects:
     - type: 2
@@ -683,9 +637,8 @@ MonoBehaviour:
     displayName: Smokehouse
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 2.2
-      exponent: 5
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 8
@@ -699,9 +652,8 @@ MonoBehaviour:
     displayName: 'Trail Map: Silverrun River'
     track: trail
     toolTier: 
-    costCoin:
-      mantissa: 3.2
-      exponent: 5
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 14
@@ -727,9 +679,8 @@ MonoBehaviour:
     displayName: Iron Toolset
     track: tools
     toolTier: iron
-    costCoin:
-      mantissa: 4.7
-      exponent: 5
+    gateSkill: forgecraft
+    gateLevel: 20
     materials:
     - id: iron-ingot
       amount: 8
@@ -757,9 +708,8 @@ MonoBehaviour:
     displayName: Brush Screens
     track: excavation
     toolTier: 
-    costCoin:
-      mantissa: 7
-      exponent: 5
+    gateSkill: excavation
+    gateLevel: 8
     materials: []
     effects:
     - type: 5
@@ -773,9 +723,8 @@ MonoBehaviour:
     displayName: Smoking Racks + Willow Rod
     track: firecraft
     toolTier: 
-    costCoin:
-      mantissa: 1
-      exponent: 6
+    gateSkill: firecraft
+    gateLevel: 28
     materials: []
     effects:
     - type: 16
@@ -795,9 +744,8 @@ MonoBehaviour:
     displayName: Reed Weaving
     track: bushcraft
     toolTier: 
-    costCoin:
-      mantissa: 1.5
-      exponent: 6
+    gateSkill: bushcraft
+    gateLevel: 30
     materials: []
     effects:
     - type: 16
@@ -811,9 +759,8 @@ MonoBehaviour:
     displayName: Curator's Cabinet
     track: compendium
     toolTier: 
-    costCoin:
-      mantissa: 2.2
-      exponent: 6
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 7
@@ -827,9 +774,8 @@ MonoBehaviour:
     displayName: Steel Toolset
     track: tools
     toolTier: steel
-    costCoin:
-      mantissa: 3.2
-      exponent: 6
+    gateSkill: forgecraft
+    gateLevel: 30
     materials:
     - id: iron-ingot
       amount: 10
@@ -845,11 +791,10 @@ MonoBehaviour:
   - order: 28
     id: raven-panniers
     displayName: Raven Panniers
-    track: carriers
+    track: hauling
     toolTier: 
-    costCoin:
-      mantissa: 4.7
-      exponent: 6
+    gateSkill: bushcraft
+    gateLevel: 35
     materials: []
     effects:
     - type: 2
@@ -863,9 +808,8 @@ MonoBehaviour:
     displayName: Almanac Desk
     track: camp
     toolTier: 
-    costCoin:
-      mantissa: 7
-      exponent: 6
+    gateSkill: 
+    gateLevel: 0
     materials: []
     effects:
     - type: 18
@@ -1020,9 +964,11 @@ MonoBehaviour:
   buildings:
   - id: fire
     displayName: The Fire
-    baseCostCoin:
-      mantissa: 1.3
-      exponent: 3
+    materials:
+    - id: fibres
+      amount: 40
+    - id: wildflowers
+      amount: 20
     milestoneUpgradeIds:
     - camp-fire-ring
     perLevel:
@@ -1031,9 +977,11 @@ MonoBehaviour:
       value: 0.05
   - id: forge
     displayName: The Forge
-    baseCostCoin:
-      mantissa: 8
-      exponent: 3
+    materials:
+    - id: copper-scree
+      amount: 30
+    - id: timber
+      amount: 20
     milestoneUpgradeIds:
     - bellows-forge
     perLevel:
@@ -1042,9 +990,11 @@ MonoBehaviour:
       value: 0.05
   - id: bench
     displayName: The Bench
-    baseCostCoin:
-      mantissa: 2.2
-      exponent: 4
+    materials:
+    - id: timber
+      amount: 40
+    - id: fibres
+      amount: 30
     milestoneUpgradeIds:
     - carving-bench
     perLevel:
@@ -1053,9 +1003,11 @@ MonoBehaviour:
       value: 0.05
   - id: store
     displayName: The Store
-    baseCostCoin:
-      mantissa: 3
-      exponent: 3
+    materials:
+    - id: fibres
+      amount: 40
+    - id: timber
+      amount: 20
     milestoneUpgradeIds:
     - root-cellar
     - smokehouse
@@ -1065,9 +1017,11 @@ MonoBehaviour:
       value: 0.05
   - id: roosts
     displayName: Roosts & Burrows
-    baseCostCoin:
-      mantissa: 2
-      exponent: 3
+    materials:
+    - id: fibres
+      amount: 30
+    - id: berries
+      amount: 20
     milestoneUpgradeIds: []
     perLevel:
       type: familiarCaps
@@ -1462,17 +1416,109 @@ MonoBehaviour:
       value: 0.1
   bonds:
   - id: sootwing
-    displayName: Sootwing, a pack raven
+    displayName: Sootwing
+    species: pack-raven
     role: carrier
     source:
       type: museumSet
       id: meadow-blooms
   - id: burr
-    displayName: Burr, a meadow vole
+    displayName: Burr
+    species: meadow-vole
     role: gatherer
     source:
       type: almanacNode
       id: old-friend
+  species:
+  - id: meadow-vole
+    displayName: meadow vole
+    roleLean: gatherer
+    suggestedNames:
+    - Bramble
+    - Burr
+    - Clover
+    - Nettle
+    - Sorrel
+    - Pip
+    - Thistle
+    - Hazel
+    powerups:
+    - id: berry-wise
+      displayName: Berry-wise
+      description: +40% yield at berry nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: berries
+    - id: soft-paws
+      displayName: Soft paws
+      description: +1pt Pristine chance at its node
+      kind: pristineBonus
+      value: 0.01
+      resource: 
+    - id: early-riser
+      displayName: Early riser
+      description: its post's offline earnings +20%
+      kind: offlineBonus
+      value: 0.2
+      resource: 
+    - id: keen-forager
+      displayName: Keen forager
+      description: +25% yield at its node
+      kind: nodeYieldBonus
+      value: 0.25
+      resource: 
+    - id: patient-digger
+      displayName: Patient digger
+      description: +40% dig speed at a dig site
+      kind: digSpeedBonus
+      value: 0.4
+      resource: 
+  - id: pack-raven
+    displayName: pack raven
+    roleLean: carrier
+    suggestedNames:
+    - Sootwing
+    - Corvus
+    - Jet
+    - Rook
+    - Ash
+    - Grackle
+    - Cinder
+    - Onyx
+    powerups:
+    - id: deep-pockets
+      displayName: Deep pockets
+      description: +25% throughput when it holds the trail post
+      kind: trailThroughputBonus
+      value: 0.25
+      resource: 
+    - id: tireless-wings
+      displayName: Tireless wings
+      description: +15% throughput when it holds the trail post
+      kind: trailThroughputBonus
+      value: 0.15
+      resource: 
+    - id: sharp-eyed
+      displayName: Sharp-eyed
+      description: +25% yield at its node
+      kind: nodeYieldBonus
+      value: 0.25
+      resource: 
+    - id: timber-sense
+      displayName: Timber-sense
+      description: +40% yield at deadfall timber
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: timber
+    - id: windrider
+      displayName: Windrider
+      description: its post's offline earnings +20%
+      kind: offlineBonus
+      value: 0.2
+      resource: 
+  exchange:
+    spread: 0.15
+    roundUpBelow: 1000
   rites:
     chooseCount: 3
     generator:

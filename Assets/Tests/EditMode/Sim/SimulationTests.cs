@@ -68,7 +68,7 @@ namespace Wildgrove.Sim.Tests
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 2.0 };
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[0].familiarCount = 0;
+            state.roster.Clear(); // isolate the warden — no crew gathering or wandering
 
             Simulation.Advance(state, _data, 5.0);
 
@@ -89,20 +89,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NewGame_SeedsOneFamiliarOnFirstNodeOnly()
+        public void NewGame_SeedsOneGathererOnFirstNodeOnly()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(state.nodes[0].familiarCount, Is.EqualTo(1));
-            Assert.That(state.nodes.Skip(1).All(n => n.familiarCount == 0), Is.True);
+            Assert.That(Stationing.CountAssignedTo(state, state.nodes[0].id), Is.EqualTo(1));
+            Assert.That(state.nodes.Skip(1).All(n => Stationing.CountAssignedTo(state, n.id) == 0), Is.True);
         }
 
         [Test]
-        public void NewGame_SeedsOneCarrier()
+        public void NewGame_SeedsOneOnTheTrail()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(state.carrierCount, Is.EqualTo(1));
+            // Slots 1 & 2 (design §4): a vole gathers, a raven takes the trail.
+            Assert.That(Stationing.OnTrail(state), Is.EqualTo(1));
+            Assert.That(state.roster.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -231,10 +233,7 @@ namespace Wildgrove.Sim.Tests
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.wardenPostNodeId = state.nodes[1].id;
-            foreach (var node in state.nodes)
-            {
-                node.familiarCount = 0;
-            }
+            state.roster.Clear(); // only the warden works, and only at its post
 
             Simulation.Advance(state, _data, 2.0);
 
@@ -247,8 +246,8 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            state.carrierCount = 0;
-            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 familiar, the default post
+            state.roster.RemoveAll(f => f.IsOnTrail); // no carrier: basket can't drain
+            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 gatherer, the default post
 
             Simulation.Advance(state, _data, 2.0);
 
@@ -301,7 +300,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_CountsGoodsStillInBaskets()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.carrierCount = 0;
+            state.roster.RemoveAll(f => f.IsOnTrail); // no carrier: goods stay in the basket
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 
@@ -332,8 +331,8 @@ namespace Wildgrove.Sim.Tests
                 yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.25,
             };
             // Rungs 0 and 1 cost 50 + 57.5 — mastery level 2.
-            var node = new NodeState { familiarCount = 1, masteryXp = 107.5 };
-            var state = new GameState();
+            var node = new NodeState { id = "n", masteryXp = 107.5 };
+            var state = TestCrew.WithGatherers("n", 1);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
@@ -359,8 +358,9 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void YieldPerSecond_AppliesVerdureGlobalBonus()
         {
-            var node = new NodeState { familiarCount = 1 };
+            var node = new NodeState { id = "n" };
             var state = new GameState { verdurePoints = 10 };
+            TestCrew.Station(state, "n", 1);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
@@ -371,8 +371,8 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void YieldPerSecond_ScalesWithFamiliarsAndMultiplier()
         {
-            var node = new NodeState { familiarCount = 4, yieldMultiplier = 2.0 };
-            var state = new GameState();
+            var node = new NodeState { id = "n", yieldMultiplier = 2.0 };
+            var state = TestCrew.WithGatherers("n", 4);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 

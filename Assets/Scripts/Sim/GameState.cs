@@ -13,13 +13,15 @@ namespace Wildgrove.Sim
     [Serializable]
     public sealed class GameState
     {
-        /// <summary>Per-run soft currency, spent on tools, buildings and maps (and, as a Phase-1 placeholder, familiar gifts).</summary>
-        public BigDouble coin = BigDouble.Zero;
-
         /// <summary>Meta currency carried across migrations; drives the global yield bonus.</summary>
         public double verdurePoints;
 
-        /// <summary>Lifetime Renown from Rite offerings (design §7) — Verdure derives from it at Migration and it is never spent.</summary>
+        /// <summary>
+        /// Lifetime Renown (design §9): all XP earned this run (warden skills +
+        /// familiars) plus Rite offering credits. The ledger's single climbing
+        /// number now that Coin is gone; Verdure derives from it at Migration
+        /// and it is never spent.
+        /// </summary>
         public BigDouble renown = BigDouble.Zero;
 
         /// <summary>Completed Migrations (design §7) — selects the run's Rite and drives achievements.</summary>
@@ -95,14 +97,24 @@ namespace Wildgrove.Sim
         /// <summary>Xorshift64* state for the run's rolls (quality, later loot). Seeded at run birth, saved with the run — the sim itself stays deterministic.</summary>
         public ulong rngState = 0x9E3779B97F4A7C15UL;
 
-        /// <summary>Carrier familiars hauling for the camp (design §8: a camp-wide pool, not per-node).</summary>
-        public int carrierCount;
+        /// <summary>
+        /// The warden's crew (design §4): every familiar befriended this run,
+        /// each an individual with a name, species, level (derived from xp),
+        /// Kinship, powerups, and a stationing post. Replaces the anonymous
+        /// per-node/per-camp counts — stationed roster members do the gathering
+        /// and hauling now (see <see cref="Stationing"/>). Bonded familiars
+        /// (design §4) live here too, materialised each run from their source.
+        /// </summary>
+        public List<Familiar> roster = new List<Familiar>();
+
+        /// <summary>Sequence for minting stable per-run roster ids — see <see cref="NextFamiliarId"/>.</summary>
+        public int nextFamiliarSeq = 1;
 
         /// <summary>
         /// Seconds accrued toward the fleet's next delivery (design §5: hauling
-        /// lands in discrete batches, one every tripSeconds / carrierCount).
-        /// Only accrues while a basket has goods waiting; reset when the
-        /// carriers run out of work.
+        /// lands in discrete batches, one every tripSeconds / carriers). Only
+        /// accrues while a basket has goods waiting; reset when the trail runs
+        /// out of work.
         /// </summary>
         public double haulTripProgress;
 
@@ -162,21 +174,35 @@ namespace Wildgrove.Sim
             return purchasedUpgradeIds.Contains(upgradeId);
         }
 
-        /// <summary>Total familiars befriended this run — every node's gatherers plus every dig site's diggers.</summary>
+        /// <summary>Mint the next stable per-run roster id (e.g. "fam-1").</summary>
+        public string NextFamiliarId()
+        {
+            return "fam-" + (nextFamiliarSeq++);
+        }
+
+        /// <summary>Total familiars in the crew this run — the whole roster (bonded and not).</summary>
         public int TotalFamiliars()
         {
-            var total = 0;
-            foreach (var node in nodes)
+            return roster.Count;
+        }
+
+        /// <summary>The roster familiar with this id, or null.</summary>
+        public Familiar FamiliarById(string familiarId)
+        {
+            if (string.IsNullOrEmpty(familiarId))
             {
-                total += node.familiarCount;
+                return null;
             }
 
-            foreach (var site in digSites)
+            foreach (var familiar in roster)
             {
-                total += site.familiarCount;
+                if (familiar.id == familiarId)
+                {
+                    return familiar;
+                }
             }
 
-            return total;
+            return null;
         }
     }
 
@@ -236,10 +262,7 @@ namespace Wildgrove.Sim
     {
         public string zoneId;
 
-        /// <summary>Familiars turning soil here. Count toward the zone's flock cap like gatherers.</summary>
-        public int familiarCount;
-
-        /// <summary>Hours dug since the last fragment — the pity timer (economy.excavation.pityTimerHoursDug guarantees a find).</summary>
+        /// <summary>Hours dug since the last fragment — the pity timer (economy.excavation.pityTimerHoursDug guarantees a find). Diggers are roster familiars stationed here (see <see cref="Stationing"/>).</summary>
         public double pityHours;
     }
 
@@ -258,9 +281,6 @@ namespace Wildgrove.Sim
 
         /// <summary>The gathering skill working this node (e.g. "foraging").</summary>
         public string skill;
-
-        /// <summary>Number of familiars working the node; the base gather rate is one unit per familiar per second.</summary>
-        public int familiarCount;
 
         /// <summary>
         /// Mastery XP earned gathering this node's resource (design §4). Levels

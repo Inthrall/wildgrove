@@ -64,7 +64,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 4, id = "map-bramble", costCoin = 400,
+                    order = 4, id = "map-bramble",
                     effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
                 },
             };

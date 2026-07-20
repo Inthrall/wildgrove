@@ -6,10 +6,11 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the one-off upgrade ladder: purchasing (Coin + materials), the
-    /// yield-multiplier recompute, sell-value bonuses and the offline-cap
-    /// raise. Uses a hand-built content asset so no scene or Resources asset
-    /// is loaded.
+    /// Pins the one-off upgrade ladder under money→XP (design §9): purchasing is
+    /// gated by a skill level plus a material bundle — no Coin — and drives the
+    /// yield-multiplier recompute, sell-value bonuses, and the offline-cap raise.
+    /// Trail maps open a zone's nodes (no regional crew seed — the crew is a
+    /// roster stationed by the player). Hand-built content asset, no scene.
     /// </summary>
     public class UpgradesTests
     {
@@ -42,8 +43,6 @@ namespace Wildgrove.Sim.Tests
                     resources = new List<string> { "berries", "wildflowers", "fibres" },
                     unlocks = new List<string> { "foraging" },
                 },
-                // Deliberately lists a non-gathering skill first (like the real
-                // Bramble) — node skills must come from the resources, not here.
                 new ZoneData
                 {
                     id = "bramble-hedgerows",
@@ -56,53 +55,53 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 4, id = "map-bramble", costCoin = 400,
+                    order = 4, id = "map-bramble",
                     effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
                 },
                 new UpgradeData
                 {
-                    order = 1, id = "flint-sickle", costCoin = 100,
+                    order = 1, id = "flint-sickle",
                     effects = { new EffectData { type = EffectType.YieldMult, skill = "foraging", value = 2 } },
                 },
                 new UpgradeData
                 {
-                    order = 2, id = "waxed-satchel", costCoin = 150,
+                    order = 2, id = "waxed-satchel",
                     effects = { new EffectData { type = EffectType.HaulMult, value = 1.5 } },
                 },
                 new UpgradeData
                 {
-                    order = 3, id = "drying-rack", costCoin = 250,
+                    order = 3, id = "drying-rack",
                     effects = { new EffectData { type = EffectType.SellValueBonus, resource = "berries", value = 0.25 } },
                 },
                 new UpgradeData
                 {
-                    order = 5, id = "rawhide-gloves", costCoin = 50,
+                    order = 5, id = "rawhide-gloves",
                     effects = { new EffectData { type = EffectType.YieldMult, zone = GameStateFactory.StartingZoneId, value = 1.5 } },
                 },
                 new UpgradeData
                 {
-                    order = 8, id = "copper-sickle", costCoin = 100,
+                    order = 8, id = "copper-sickle",
                     materials = { new ItemAmount { id = "copper-ingot", amount = 5 } },
                     effects = { new EffectData { type = EffectType.YieldMult, skill = "foraging", value = 2 } },
                 },
                 new UpgradeData
                 {
-                    order = 9, id = "root-cellar", costCoin = 300,
+                    order = 9, id = "root-cellar",
                     effects = { new EffectData { type = EffectType.OfflineCapHours, value = 6 } },
                 },
                 new UpgradeData
                 {
-                    order = 15, id = "whetstone", costCoin = 50,
+                    order = 15, id = "whetstone",
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.25 } },
                 },
                 new UpgradeData
                 {
-                    order = 7, id = "camp-fire-ring", costCoin = 100,
+                    order = 7, id = "camp-fire-ring",
                     effects = { new EffectData { type = EffectType.UnlockSkill, skill = "firecraft" } },
                 },
                 new UpgradeData
                 {
-                    order = 18, id = "bellows-forge", costCoin = 100,
+                    order = 18, id = "bellows-forge",
                     effects = { new EffectData { type = EffectType.CraftSpeedMult, skill = "firecraft", value = 2 } },
                 },
             };
@@ -120,56 +119,55 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryPurchase_WhenAffordable_SpendsCoinAndRecordsUpgrade()
+        public void TryPurchase_WhenAffordable_RecordsUpgrade()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 150;
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 
             Assert.That(bought, Is.True);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(50.0).Within(Tolerance));
             Assert.That(state.HasUpgrade("flint-sickle"), Is.True);
         }
 
         [Test]
-        public void TryPurchase_WhenCoinShort_LeavesStateUnchanged()
+        public void TryPurchase_WhenSkillGateUnmet_LeavesStateUnchanged()
         {
-            var state = GameStateFactory.NewGame(_data);
-            state.coin = 99;
+            _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99 };
+            Upgrade("flint-sickle").gateSkill = "foraging";
+            Upgrade("flint-sickle").gateLevel = 3;
+            var state = GameStateFactory.NewGame(_data); // foraging level 1
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 
             Assert.That(bought, Is.False);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(99.0).Within(Tolerance));
             Assert.That(state.HasUpgrade("flint-sickle"), Is.False);
+            Assert.That(Stationing.GatherAgentsAt(state, _data, state.nodes[0]) > 0, Is.True);
             Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
+
+            // Levels 2 and 3 cost 100 + 110 — earn them and the gate opens.
+            state.skillXp["foraging"] = 210.0;
+            Assert.That(Upgrades.MeetsSkillGate(state, _data, Upgrade("flint-sickle")), Is.True);
+            Assert.That(Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle")), Is.True);
         }
 
         [Test]
         public void TryPurchase_WhenAlreadyOwned_RefusesSecondPurchase()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 300;
             Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 
-            var boughtAgain = Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
-
-            Assert.That(boughtAgain, Is.False);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(200.0).Within(Tolerance));
+            Assert.That(Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle")), Is.False);
         }
 
         [Test]
-        public void TryPurchase_WithMaterials_SpendsCoinAndMaterials()
+        public void TryPurchase_WithMaterials_SpendsMaterials()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 200;
             state.AddResource("copper-ingot", 7);
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("copper-sickle"));
 
             Assert.That(bought, Is.True);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
             Assert.That(state.GetResource("copper-ingot").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
         }
 
@@ -177,13 +175,11 @@ namespace Wildgrove.Sim.Tests
         public void TryPurchase_WhenMaterialsShort_LeavesStateUnchanged()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 200;
             state.AddResource("copper-ingot", 3);
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("copper-sickle"));
 
             Assert.That(bought, Is.False);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(200.0).Within(Tolerance));
             Assert.That(state.GetResource("copper-ingot").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
             Assert.That(state.HasUpgrade("copper-sickle"), Is.False);
         }
@@ -193,7 +189,6 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             state.nodes.Add(new NodeState { zoneId = "elsewhere", skill = "mining" });
-            state.coin = 100;
 
             Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 
@@ -206,7 +201,6 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             state.nodes.Add(new NodeState { zoneId = "elsewhere", skill = "foraging" });
-            state.coin = 50;
 
             Upgrades.TryPurchase(state, _data, Upgrade("rawhide-gloves"));
 
@@ -218,7 +212,6 @@ namespace Wildgrove.Sim.Tests
         public void TryPurchase_StackedUpgrades_MultiplyMultsAndAddBonuses()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 200;
 
             Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
             Upgrades.TryPurchase(state, _data, Upgrade("rawhide-gloves"));
@@ -229,24 +222,19 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void SellResource_WithSellValueBonus_PaysBoostedValue()
+        public void TradeValuePerUnit_WithSellValueBonus_IsBoosted()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 250;
             Upgrades.TryPurchase(state, _data, Upgrade("drying-rack"));
-            state.AddResource("berries", 4);
 
-            var gained = Economy.SellResource(state, _data, "berries");
-
-            // 4 * 2 * 1.25 = 10
-            Assert.That(gained.ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
+            // The Drying Rack raises berries' trade value 2 → 2 · 1.25 = 2.5.
+            Assert.That(Economy.TradeValuePerUnit(state, _data, "berries").ToDouble(), Is.EqualTo(2.5).Within(Tolerance));
         }
 
         [Test]
         public void AdvanceOffline_WithOfflineCapUpgrade_UsesRaisedCap()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 300;
             Upgrades.TryPurchase(state, _data, Upgrade("root-cellar"));
 
             // Away 10 h, base cap 4 h, Root Cellar raises it to 6 h.
@@ -259,13 +247,10 @@ namespace Wildgrove.Sim.Tests
         public void TryPurchase_HaulMultUpgrade_LeavesYieldMultipliersAlone()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 150;
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("waxed-satchel"));
 
             Assert.That(bought, Is.True);
-            Assert.That(state.HasUpgrade("waxed-satchel"), Is.True);
-            // Carry capacity is the haul sim's lever — gather rates don't move.
             foreach (var node in state.nodes)
             {
                 Assert.That(node.yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
@@ -273,10 +258,9 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryPurchase_TrailMap_CreatesTheZonesNodesWithRegionalSeed()
+        public void TryPurchase_TrailMap_CreatesTheZonesNodesWithoutSeedingCrew()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 400;
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
 
@@ -285,11 +269,10 @@ namespace Wildgrove.Sim.Tests
             var nuts = state.nodes[3];
             var copper = state.nodes[4];
             Assert.That(nuts.id, Is.EqualTo("bramble-hedgerows:nuts"));
-            // The design §2 regional seed: one gatherer on the zone's first
-            // node, one carrier joining the camp pool (1 starting + 1).
-            Assert.That(nuts.familiarCount, Is.EqualTo(1));
-            Assert.That(copper.familiarCount, Is.EqualTo(0));
-            Assert.That(state.carrierCount, Is.EqualTo(2));
+            // A newly opened zone waits for the player to station the crew — no
+            // regional seed (design §2/§4: the crew is a roster, not per-zone).
+            Assert.That(Stationing.CountAssignedTo(state, nuts.id), Is.EqualTo(0));
+            Assert.That(Stationing.CountAssignedTo(state, copper.id), Is.EqualTo(0));
             // Node skills come from the resources, not the zone's unlock list.
             Assert.That(nuts.skill, Is.EqualTo("foraging"));
             Assert.That(copper.skill, Is.EqualTo("mining"));
@@ -299,13 +282,10 @@ namespace Wildgrove.Sim.Tests
         public void TryPurchase_TrailMap_NewNodesGetOwnedUpgradeMultipliers()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 500;
             Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 
             Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
 
-            // The foraging sickle covers the new zone's foraging node too;
-            // its mining node is untouched.
             Assert.That(state.nodes[3].yieldMultiplier, Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.nodes[4].yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance));
         }
@@ -314,14 +294,12 @@ namespace Wildgrove.Sim.Tests
         public void TryPurchase_TrailMap_BoughtTwiceNeverDuplicatesNodes()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 800;
             Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
 
             Upgrades.TryPurchase(state, _data, Upgrade("map-bramble"));
             GameStateFactory.SyncUnlockedZones(state, _data);
 
             Assert.That(state.nodes.Count, Is.EqualTo(5));
-            Assert.That(state.carrierCount, Is.EqualTo(2));
         }
 
         [Test]
@@ -406,13 +384,11 @@ namespace Wildgrove.Sim.Tests
             EnableToolGate();
             var state = GameStateFactory.NewGame(_data);
             state.purchasedUpgradeIds.Add("flint-sickle"); // one tier short
-            state.coin = 1000;
 
             var bought = Upgrades.TryPurchase(state, _data, _data.upgrades[0]);
 
-            // Design §3: the trail map demands the tool tier, not just Coin.
+            // Design §3: the trail map demands the tool tier.
             Assert.That(bought, Is.False);
-            Assert.That(state.coin.ToDouble(), Is.EqualTo(1000.0).Within(Tolerance));
             Assert.That(state.nodes.TrueForAll(n => n.zoneId == GameStateFactory.StartingZoneId), Is.True);
         }
 
@@ -422,7 +398,6 @@ namespace Wildgrove.Sim.Tests
             EnableToolGate();
             var state = GameStateFactory.NewGame(_data);
             state.purchasedUpgradeIds.Add("copper-sickle");
-            state.coin = 1000;
 
             var bought = Upgrades.TryPurchase(state, _data, _data.upgrades[0]);
 
@@ -445,8 +420,6 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void MeetsToolRequirement_DataWithoutTools_NeverGates()
         {
-            // The fixture default: no tools section — the pre-gate behaviour
-            // every other test in this file relies on.
             _data.zones[1].requiredTool = "copper";
             var state = GameStateFactory.NewGame(_data);
 

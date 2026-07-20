@@ -51,33 +51,6 @@ namespace Wildgrove.Sim
             }
         }
 
-        /// <summary>Bonded carriers hauling with the fleet — outside carrierCount, its slots, and its gift curve.</summary>
-        public static int BondedCarriers(GameState state, GameDataAsset data)
-        {
-            return Modifiers.Of(state, data).bondedCarriers;
-        }
-
-        /// <summary>
-        /// Bonded gatherers working this node. They follow the warden — all
-        /// of them work the node last tended (the starting node until the
-        /// first tend of a run), outside the flock count and its cap.
-        /// </summary>
-        public static int BondedGatherersAt(GameState state, GameDataAsset data, NodeState node)
-        {
-            if (node == null || node.id != PostNodeId(state))
-            {
-                return 0;
-            }
-
-            return Modifiers.Of(state, data).bondedGatherers;
-        }
-
-        /// <summary>Where the bonded gatherers are posted: at the warden's side (design §7).</summary>
-        public static string PostNodeId(GameState state)
-        {
-            return Warden.PostNodeId(state);
-        }
-
         /// <summary>The bond a source grants, if any — for the HUD to promise the companion before it's earned.</summary>
         public static BondData BondForSource(GameDataAsset data, string sourceType, string sourceId)
         {

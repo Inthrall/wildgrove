@@ -11,7 +11,10 @@ namespace Wildgrove.Data
     {
         public string Id { get; set; }
         public string Name { get; set; }
-        public long BaseCostCoin { get; set; }
+
+        /// <summary>The base material bundle for the line's next level (design §9 money→XP: buildings are a goods sink). Scaled by costGrowth.building^level.</summary>
+        public Dictionary<string, int> Materials { get; set; } = new Dictionary<string, int>();
+
         public List<string> MilestoneUpgradeIds { get; set; } = new List<string>();
         public BuildingPerLevelDef PerLevel { get; set; }
     }

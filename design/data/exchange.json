@@ -1,0 +1,5 @@
+{
+  "$comment": "The Exchange (design §9): the silent barter caravan. Rates derive from the single trade-value table (resources.json values + recipe derivation), never authored per pair — exchangeRate(a->b) = tradeValue(a)/tradeValue(b)*(1-spread). Small trades round up in the player's favour (the caravan is dry, not petty). There is no Coin — goods buy goods; off-zone inputs (berries for nuts) are its real job. spread and roundUpBelow are first guesses.",
+  "spread": 0.15,
+  "roundUpBelow": 1000
+}

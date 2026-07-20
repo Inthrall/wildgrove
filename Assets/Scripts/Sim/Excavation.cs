@@ -26,7 +26,11 @@ namespace Wildgrove.Sim
             var digMult = Upgrades.DigSpeedMultiplier(state, data);
             foreach (var site in state.digSites)
             {
-                if (site.familiarCount <= 0)
+                // Diggers are the roster familiars stationed at this site
+                // (design §2); their per-familiar dig-speed powerups fold into
+                // the count via Stationing.DigAgentsAt.
+                var diggers = Stationing.DigAgentsAt(state, data, site.zoneId);
+                if (diggers <= 0.0)
                 {
                     continue;
                 }
@@ -38,7 +42,7 @@ namespace Wildgrove.Sim
                 var amber = data.economy.amber;
                 if (amber != null && amber.digFindsPerHour > 0.0
                     && Rng.NextDouble(ref state.rngState)
-                       < site.familiarCount * amber.digFindsPerHour * digMult * (deltaSeconds / 3600.0))
+                       < diggers * amber.digFindsPerHour * digMult * (deltaSeconds / 3600.0))
                 {
                     state.amber += amber.perFind;
                 }
@@ -66,7 +70,7 @@ namespace Wildgrove.Sim
                     totalRarity += fossil.strataRarity;
                 }
 
-                var chance = site.familiarCount * excavation.baseFragmentsPerHour * digMult * totalRarity * hoursDug;
+                var chance = diggers * excavation.baseFragmentsPerHour * digMult * totalRarity * hoursDug;
                 var dropped = Rng.NextDouble(ref state.rngState) < chance;
                 if (!dropped && excavation.pityTimerHoursDug > 0.0 && site.pityHours >= excavation.pityTimerHoursDug)
                 {

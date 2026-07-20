@@ -5,12 +5,45 @@ nothing quietly ships as "done". Grouped by the phase that retires it (see
 `design-doc.md` §13 MVP development plan). Keep entries pointing at the code so
 they're easy to find and delete when resolved.
 
-## v0.11 design realignment — shipped code diverges from the doc
+## v0.11 design realignment
 
-Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals the
-current sim does not yet implement. These are the headline rework items; the phase
-lists below are annotated **v0.11:** where a decision touches them. Each points at
-the code/data that has to change.
+Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals. The
+per-item detail below points at the code/data; the phase lists further down are
+annotated **v0.11:** where a decision touches them.
+
+**IMPLEMENTED 2026-07-21 (crew + money→XP + Exchange + naming; 370/370 EditMode green):**
+- ✅ **Coin is gone — money becomes XP.** `GameState.coin` removed; Renown = lifetime
+  XP (warden skills + familiars) + offering credits; upgrades reprice to skill-gate
+  (`gateSkill`/`gateLevel`) + material bundle; buildings → material bundles; zones drop
+  `mapCostCoin`. New **Exchange** (`Exchange.cs` + `exchange.json`) barters goods↔goods
+  off the trade-value table (`Economy.TradeValuePerUnit`), spread + player-favourable
+  rounding.
+- ✅ **Crew of individuals + stationing.** `NodeState.familiarCount`/`GameState.carrierCount`
+  gone; `GameState.roster` of `Familiar {name, species, xp→level, kinshipXp, powerupIds,
+  stationId, bonded}`. `Stationing.cs` sums stationed agents (wanderers ×0.5). Powerups
+  (`Powerups.cs`, `species.json` pools) chosen every 5 levels. Familiar XP + Kinship
+  (`Familiars.cs`/`Kinship.cs`; run XP → Kinship √ at Migration, +start level +XP rate).
+- ✅ **Bonds → roster.** Bonded familiars materialise into the roster (`Roster.SyncBonded`),
+  stationed like any other; role split retired (carrying is a post).
+- ✅ **Naming.** Player names a familiar on arrival (HUD `InputField` sheet) and can rename;
+  default from `species.json suggestedNames`.
+
+**Interpretations / placeholders shipped with it (tune/confirm):**
+- Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
+  flat ×0.5 lane when anyone wanders (`Stationing.cs`).
+- Kinship constants (`Divisor` 1000, `XpRatePerLevel` 0.02) are consts in `Kinship.cs` — move
+  to a data section. `economy.familiarXp` {base 60, growth 1.12, xpPerSecond 1} are first guesses.
+- Familiar XP is a flat per-second at any post (no postMatch/comfort multipliers yet, design §8).
+- Ungated/material-less upgrades are free once their skill gate opens (§10 material bundles are
+  placeholders); building material bundles are placeholders.
+- Crew is fully persisted across Migration (no presence-lapse/benching yet); the 5-slot cap
+  ladder, the verse-1 gift-event (slot 3), and Roosts "comfort" XP are NOT wired.
+- Pristine "sell" dropped — Pristine is offer/donate only for now.
+- `familiarCaps` economy section + roosts `familiarCaps` perLevel are now vestigial (RoostLevel kept).
+
+**STILL TO DO (v0.11 reversals not yet built):** the Folio (Museum retheme), fossils
+uncover·record·rebury (rename fragment→sketch), replanting & planters, and
+stationing-aware Rite reachability. Detail in the items below.
 
 - **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
   everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +

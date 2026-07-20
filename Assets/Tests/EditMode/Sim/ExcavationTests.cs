@@ -54,7 +54,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 11, id = "map-oldgrowth", costCoin = 100,
+                    order = 11, id = "map-oldgrowth",
                     effects =
                     {
                         new EffectData { type = EffectType.UnlockZone, zone = "old-growth-wood" },
@@ -63,7 +63,7 @@ namespace Wildgrove.Sim.Tests
                 },
                 new UpgradeData
                 {
-                    order = 23, id = "brush-screens", costCoin = 100,
+                    order = 23, id = "brush-screens",
                     effects = { new EffectData { type = EffectType.DigSpeedMult, value = 2 } },
                 },
             };
@@ -87,7 +87,6 @@ namespace Wildgrove.Sim.Tests
         private GameState NewGameWithDigSite()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 100;
             Upgrades.TryPurchase(state, _data, _data.upgrades[0]);
             return state;
         }
@@ -99,15 +98,15 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(state.digSites, Has.Count.EqualTo(1));
             Assert.That(state.digSites[0].zoneId, Is.EqualTo("old-growth-wood"));
-            // No regional seed for the soil — the first digger is a gift.
-            Assert.That(state.digSites[0].familiarCount, Is.EqualTo(0));
+            // Sites open empty — a digger is stationed there, never seeded.
+            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));
         }
 
         [Test]
         public void Advance_DiggerAtACertainRate_SurfacesAFragment()
         {
             var state = NewGameWithDigSite();
-            state.digSites[0].familiarCount = 1;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -132,7 +131,7 @@ namespace Wildgrove.Sim.Tests
             // Effectively-zero rate: only the pity guarantee can drop.
             _data.economy.excavation.baseFragmentsPerHour = 1e-12;
             var state = NewGameWithDigSite();
-            state.digSites[0].familiarCount = 1;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
             Simulation.Advance(state, _data, 4.5 * 3600.0);
 
@@ -146,7 +145,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CompletingAFossil_GrantsItsEffectsImmediately()
         {
             var state = NewGameWithDigSite();
-            state.digSites[0].familiarCount = 1;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.fossilFragments["antler-crown"] = 2;
 
             Simulation.Advance(state, _data, 1.0);
@@ -164,7 +163,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_FullyDugSite_FallsQuietWithoutBurningRng()
         {
             var state = NewGameWithDigSite();
-            state.digSites[0].familiarCount = 1;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.fossilFragments["antler-crown"] = 3; // already assembled
             var seedBefore = state.rngState;
 
@@ -186,7 +185,7 @@ namespace Wildgrove.Sim.Tests
                 fragments = 5, digSites = new List<string> { "old-growth-wood" }, strataRarity = 0.35,
             });
             var state = NewGameWithDigSite();
-            state.digSites[0].familiarCount = 1;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.fossilFragments["antler-crown"] = 3; // assembled — out of the pick
 
             Simulation.Advance(state, _data, 1.0);
@@ -223,48 +222,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryGiftDigger_SpendsTheZoneBundle()
+        public void StationedDiggers_CountTowardTheSite()
         {
             var state = NewGameWithDigSite();
-            state.AddResource("timber", 25);
-            state.AddResource("mushrooms", 25);
+            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));
 
-            var gifted = Economy.TryGiftDigger(state, _data, state.digSites[0]);
+            // Diggers are stationed (design §2) — no cost, no cap, just where the crew stands.
+            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 2);
 
-            // 10 of EACH of the zone's finds (base · 1.09^0) — depth pricing
-            // per site, breadth across the zone's ground.
-            Assert.That(gifted, Is.True);
-            Assert.That(state.digSites[0].familiarCount, Is.EqualTo(1));
-            Assert.That(state.GetResource("timber").ToDouble(), Is.EqualTo(15.0).Within(Tolerance));
-            Assert.That(state.GetResource("mushrooms").ToDouble(), Is.EqualTo(15.0).Within(Tolerance));
-        }
-
-        [Test]
-        public void TryGiftDigger_ShortOnAnyBundleResource_Refuses()
-        {
-            var state = NewGameWithDigSite();
-            state.AddResource("timber", 25);
-            state.AddResource("mushrooms", 5); // short
-
-            Assert.That(Economy.TryGiftDigger(state, _data, state.digSites[0]), Is.False);
-            Assert.That(state.digSites[0].familiarCount, Is.EqualTo(0));
-            Assert.That(state.GetResource("timber").ToDouble(), Is.EqualTo(25.0).Within(Tolerance));
-        }
-
-        [Test]
-        public void TryGiftDigger_DiggersShareTheZoneFlockCap()
-        {
-            _data.economy.familiarCaps = new EconomyData.FamiliarCapsData
-            {
-                flockCapBase = 1, flockCapPerRoostLevel = 1, carrierSlotsBase = 2, carrierSlotsPerRoostLevel = 1,
-            };
-            var state = NewGameWithDigSite();
-            state.AddResource("timber", 100);
-            state.AddResource("mushrooms", 100);
-
-            // The zone's regional seed gatherer already fills the cap of 1.
-            Assert.That(Economy.CanGiftDigger(state, _data, state.digSites[0]), Is.False);
-            Assert.That(Economy.TryGiftDigger(state, _data, state.digSites[0]), Is.False);
+            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(2));
         }
     }
 }

@@ -53,7 +53,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 17, id = "field-press", costCoin = 70000,
+                    order = 17, id = "field-press",
                     effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.01 } },
                 },
             };

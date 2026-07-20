@@ -32,8 +32,6 @@ namespace Wildgrove.Sim
         public readonly Dictionary<string, double> sellValueBonusByResource = new Dictionary<string, double>();
         public readonly HashSet<string> unlockedSkills = new HashSet<string>();
         public readonly HashSet<string> unlockedRecipeIds = new HashSet<string>();
-        public int bondedGatherers;
-        public int bondedCarriers;
     }
 
     public static class Modifiers
@@ -149,22 +147,9 @@ namespace Wildgrove.Sim
             Upgrades.BuildUnlockedRecipeIds(state, data, snapshot.unlockedRecipeIds);
             snapshot.basketCapacityMultiplier = Buildings.ComputeBasketCapacityMultiplier(state, data);
 
-            foreach (var bond in data.bonds ?? new List<BondData>())
-            {
-                if (!Bonds.IsEarned(state, data, bond))
-                {
-                    continue;
-                }
-
-                if (bond.role == "carrier")
-                {
-                    snapshot.bondedCarriers++;
-                }
-                else
-                {
-                    snapshot.bondedGatherers++;
-                }
-            }
+            // Bonded familiars are ordinary roster members now (materialised by
+            // Roster.SyncBonded) — they gather and haul through Stationing like
+            // any other, so there's no separate bonded accumulator here.
 
             return snapshot;
         }

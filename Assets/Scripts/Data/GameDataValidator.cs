@@ -52,13 +52,15 @@ namespace Wildgrove.Data
             ValidateZones(data, issues);
             ValidateRecipes(data, resourceIds, issues);
             ValidateRecipeObtainability(data, issues);
-            ValidateBuildings(data, issues);
+            ValidateBuildings(data, resourceIds, issues);
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
             ValidateAlmanac(data, resourceIds, issues);
             ValidateMuseum(data, resourceIds, issues);
             ValidateBonds(data, issues);
+            ValidateSpecies(data, issues);
+            ValidateExchange(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
@@ -353,16 +355,30 @@ namespace Wildgrove.Data
             "stationSpeedBonus", "basketCapacityBonus", "familiarCaps"
         };
 
-        private static void ValidateBuildings(GameData data, List<string> issues)
+        private static void ValidateBuildings(GameData data, HashSet<string> resourceIds, List<string> issues)
         {
             var upgradeIds = new HashSet<string>(data.Upgrades.Select(u => u.Id));
             var stations = new HashSet<string>(data.Recipes.Select(r => r.Station).Where(s => s != null));
 
             foreach (var building in data.Buildings)
             {
-                if (building.BaseCostCoin <= 0)
+                // Money→XP (design §9): building levels cost a material bundle,
+                // not Coin. A line with no bundle could never be levelled.
+                if (building.Materials == null || building.Materials.Count == 0)
                 {
-                    issues.Add($"Building '{building.Id}' has non-positive baseCostCoin");
+                    issues.Add($"Building '{building.Id}' has no material cost bundle");
+                }
+                else
+                {
+                    foreach (var material in building.Materials.Keys.Where(m => !resourceIds.Contains(m)))
+                    {
+                        issues.Add($"Building '{building.Id}' material '{material}' is not gathered from any zone or produced by any recipe");
+                    }
+
+                    foreach (var material in building.Materials.Where(kv => kv.Value <= 0))
+                    {
+                        issues.Add($"Building '{building.Id}' material '{material.Key}' amount must be positive");
+                    }
                 }
 
                 foreach (var milestone in building.MilestoneUpgradeIds.Where(m => !upgradeIds.Contains(m)))
@@ -415,9 +431,15 @@ namespace Wildgrove.Data
         {
             foreach (var upgrade in data.Upgrades)
             {
-                if (upgrade.CostCoin <= 0)
+                // Money→XP (design §9): the cost is a skill gate + materials, no Coin.
+                if (!string.IsNullOrEmpty(upgrade.GateSkill) && !KnownSkills.Contains(upgrade.GateSkill))
                 {
-                    issues.Add($"Upgrade '{upgrade.Id}' has non-positive costCoin");
+                    issues.Add($"Upgrade '{upgrade.Id}' gateSkill '{upgrade.GateSkill}' is unknown");
+                }
+
+                if (upgrade.GateLevel < 0)
+                {
+                    issues.Add($"Upgrade '{upgrade.Id}' gateLevel must not be negative");
                 }
 
                 foreach (var material in upgrade.Materials.Keys.Where(m => !resourceIds.Contains(m)))
@@ -433,15 +455,6 @@ namespace Wildgrove.Data
                 foreach (var effect in upgrade.Effects)
                 {
                     ValidateEffect($"Upgrade '{upgrade.Id}'", effect, data, resourceIds, issues);
-
-                    // Trail-map price must agree with the zone's own mapCostCoin.
-                    if (effect.Type == EffectType.UnlockZone
-                        && data.ZonesById.TryGetValue(effect.Zone ?? string.Empty, out var zone)
-                        && zone.MapCostCoin.HasValue
-                        && zone.MapCostCoin.Value != upgrade.CostCoin)
-                    {
-                        issues.Add($"Upgrade '{upgrade.Id}' costs {upgrade.CostCoin} but zone '{zone.Id}' mapCostCoin is {zone.MapCostCoin.Value}");
-                    }
                 }
             }
         }
@@ -564,6 +577,11 @@ namespace Wildgrove.Data
                     issues.Add($"Bond '{bond.Id}' has unknown role '{bond.Role}'");
                 }
 
+                if (string.IsNullOrEmpty(bond.Species) || !data.SpeciesById.ContainsKey(bond.Species))
+                {
+                    issues.Add($"Bond '{bond.Id}' references unknown species '{bond.Species}'");
+                }
+
                 if (bond.Source == null || !KnownBondSourceTypes.Contains(bond.Source.Type))
                 {
                     issues.Add($"Bond '{bond.Id}' has an unknown source type '{bond.Source?.Type}'");
@@ -585,6 +603,83 @@ namespace Wildgrove.Data
                 {
                     issues.Add($"Bond '{bond.Id}' shares its source {bond.Source.Type} '{bond.Source.Id}' with another bond — one companion per source");
                 }
+            }
+        }
+
+        private static readonly HashSet<string> KnownRoleLeans = new HashSet<string> { "gatherer", "carrier" };
+
+        // The powerup kinds the sim knows how to apply (Powerups.cs) — a typo'd
+        // kind would be recorded on a familiar's build but do nothing.
+        private static readonly HashSet<string> KnownPowerupKinds = new HashSet<string>
+        {
+            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus", "offlineBonus"
+        };
+
+        private static void ValidateSpecies(GameData data, List<string> issues)
+        {
+            CheckIds(data.Species.Select(s => s.Id), "species", issues);
+
+            foreach (var species in data.Species)
+            {
+                if (!KnownRoleLeans.Contains(species.RoleLean))
+                {
+                    issues.Add($"Species '{species.Id}' has unknown roleLean '{species.RoleLean}'");
+                }
+
+                if (species.SuggestedNames == null || species.SuggestedNames.Count == 0)
+                {
+                    issues.Add($"Species '{species.Id}' has no suggested names — arrival naming needs at least one");
+                }
+
+                if (species.Powerups == null || species.Powerups.Count == 0)
+                {
+                    issues.Add($"Species '{species.Id}' has no powerups");
+                    continue;
+                }
+
+                var seenPowerups = new HashSet<string>();
+                foreach (var powerup in species.Powerups)
+                {
+                    if (string.IsNullOrEmpty(powerup.Id) || !seenPowerups.Add(powerup.Id))
+                    {
+                        issues.Add($"Species '{species.Id}' has a missing or duplicate powerup id '{powerup.Id}'");
+                    }
+
+                    if (!KnownPowerupKinds.Contains(powerup.Kind))
+                    {
+                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') has unknown kind '{powerup.Kind}'");
+                    }
+
+                    if (powerup.Value <= 0.0)
+                    {
+                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') must have a positive value");
+                    }
+
+                    if (!string.IsNullOrEmpty(powerup.Resource) && !data.ResourcesById.ContainsKey(powerup.Resource))
+                    {
+                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') references unknown resource '{powerup.Resource}'");
+                    }
+                }
+            }
+        }
+
+        private static void ValidateExchange(GameData data, List<string> issues)
+        {
+            if (data.Exchange == null)
+            {
+                issues.Add("Exchange config is missing");
+                return;
+            }
+
+            if (data.Exchange.Spread < 0.0 || data.Exchange.Spread >= 1.0)
+            {
+                // A spread ≥ 1 makes every trade return nothing; negative mints goods.
+                issues.Add("Exchange spread must be in [0, 1)");
+            }
+
+            if (data.Exchange.RoundUpBelow < 0.0)
+            {
+                issues.Add("Exchange roundUpBelow must not be negative");
             }
         }
 
@@ -853,6 +948,7 @@ namespace Wildgrove.Data
             RequireSection(economy.Excavation, "excavation", issues);
             RequireSection(economy.Tending, "tending", issues);
             RequireSection(economy.Warden, "warden", issues);
+            RequireSection(economy.FamiliarXp, "familiarXp", issues);
 
             if (economy.CostGrowth != null
                 && (economy.CostGrowth.GathererGift <= 1 || economy.CostGrowth.CarrierGift <= 1 || economy.CostGrowth.Building <= 1))
@@ -914,6 +1010,17 @@ namespace Wildgrove.Data
             if (economy.Xp != null && (economy.Xp.GatherPerUnit < 0 || economy.Xp.CraftPerBatch < 0))
             {
                 issues.Add("Economy xp gains must not be negative");
+            }
+
+            if (economy.FamiliarXp != null
+                && (economy.FamiliarXp.Base <= 0 || economy.FamiliarXp.Growth <= 1 || economy.FamiliarXp.MaxLevel <= 1))
+            {
+                issues.Add("Economy familiarXp progression is degenerate");
+            }
+
+            if (economy.FamiliarXp != null && economy.FamiliarXp.XpPerSecond < 0)
+            {
+                issues.Add("Economy familiarXp.xpPerSecond must not be negative");
             }
 
             if (economy.Mastery != null

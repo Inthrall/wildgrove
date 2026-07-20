@@ -78,14 +78,28 @@ namespace Wildgrove.Game.World
             var postNodeId = Warden.PostNodeId(_loop.State);
             foreach (var view in _views)
             {
-                var bonded = Bonds.BondedGatherersAt(_loop.State, _loop.Data, view.Node);
-                view.Refresh(view.Node == SelectedNode, Time.time, bonded, view.Node.id == postNodeId);
+                var working = Stationing.CountAssignedTo(_loop.State, view.Node.id);
+                var hasBonded = HasBondedAt(view.Node.id);
+                view.Refresh(view.Node == SelectedNode, Time.time, working, hasBonded, view.Node.id == postNodeId);
             }
 
             foreach (var digView in _digViews)
             {
-                digView.Refresh();
+                digView.Refresh(Stationing.AtDigSite(_loop.State, digView.Site.zoneId));
             }
+        }
+
+        private bool HasBondedAt(string nodeId)
+        {
+            foreach (var familiar in _loop.State.roster)
+            {
+                if (familiar.bonded && !familiar.IsWandering && familiar.stationId == nodeId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void Rebuild()

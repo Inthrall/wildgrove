@@ -35,6 +35,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Fossils, Is.Not.Empty);
             Assert.That(data.Rites.Rites, Is.Not.Empty);
             Assert.That(data.Bonds, Is.Not.Empty);
+            Assert.That(data.Species, Is.Not.Empty, "design §4 defines the familiar species");
+            Assert.That(data.Exchange, Is.Not.Null, "design §9 the Exchange spread");
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
             Assert.That(data.Dialogue.Verses, Is.Not.Empty);
         }
@@ -51,7 +53,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
             Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
             Assert.That(data.Economy.FamiliarCaps.FlockCapBase, Is.EqualTo(8));
-            Assert.That(data.BuildingsById["forge"].BaseCostCoin, Is.EqualTo(8000L));
+            Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
             Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("familiarCaps"));
             Assert.That(data.RecipesById["iron-ingot"].StationLevel, Is.EqualTo(2), "iron heat is forge 2");
@@ -84,8 +86,6 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.AlmanacById["old-friend"].Effects, Is.Empty, "the bond node's promise is the companion, not an effect");
             Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
             Assert.That(data.Rites.Generator.OffSpotlightPremium, Is.EqualTo(1.5));
-            Assert.That(data.ZonesById["sunfield-meadow"].MapCostCoin, Is.EqualTo(0L));
-            Assert.That(data.ZonesById["the-hollows"].MapCostCoin, Is.Null, "unpriced zones stay null, not zero");
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
             Assert.That(data.UpgradesById["flint-sickle"].Effects.Single().Type, Is.EqualTo(EffectType.YieldMult));
             Assert.That(data.RecipesById["bronze-ingot"].Inputs["tin-seam"], Is.EqualTo(2));
@@ -786,13 +786,14 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void ImportedAsset_SurfacesCurrencyAsBigDouble()
+        public void ImportedAsset_SurfacesUpgradeGatesAndBuildingMaterials()
         {
             var asset = GameDataAsset.LoadFromResources();
 
-            Assert.That(asset.UpgradesById["flint-sickle"].costCoin.ToDouble(), Is.EqualTo(100d));
-            Assert.That(asset.ZonesById["silverrun-river"].mapCostCoin.ToDouble(), Is.EqualTo(320000d));
-            Assert.That(asset.ZonesById["the-hollows"].priced, Is.False, "unpriced zones carry priced=false, not a zero cost");
+            // Money→XP (design §9): upgrades gate on a skill level + materials, no Coin.
+            Assert.That(asset.UpgradesById["flint-sickle"].gateSkill, Is.EqualTo("foraging"));
+            Assert.That(asset.UpgradesById["flint-sickle"].gateLevel, Is.EqualTo(2));
+            Assert.That(asset.BuildingsById["forge"].materials.Exists(m => m.id == "copper-scree"), Is.True);
         }
 
         [Test]

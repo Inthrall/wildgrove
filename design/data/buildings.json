@@ -1,15 +1,15 @@
 {
-  "$comment": "Camp building lines (design §9) — the repeatable Coin sink. Named §9 upgrades are milestone levels of their line (milestoneUpgradeIds); every further level is bought at baseCostCoin · costGrowth.building^L forever, where L is the line's current total level (bought + owned milestones). perLevel is what each BOUGHT level grants; milestone levels grant their upgrade's own effects. The roosts line's caps use economy.json familiarCaps (§8 formulas). Lines named fire/forge/bench gate the matching recipe station: a recipe needs its station line at level ≥ its stationLevel (iron heat = forge 2). Debut costs are the §9 table's; all first-pass.",
+  "$comment": "Camp building lines (design §9) — the repeatable GOODS sink now that money is XP. Named §9 upgrades are milestone levels of their line (milestoneUpgradeIds); every further level costs the material bundle below scaled by costGrowth.building^L forever, where L is the line's current total level (bought + owned milestones), paid from camp stock. perLevel is what each BOUGHT level grants; milestone levels grant their upgrade's own effects. Lines named fire/forge/bench gate the matching recipe station: a recipe needs its station line at level >= its stationLevel (iron heat = forge 2). Material bundles are all first-pass placeholders (design §10) — tune in balance.",
   "buildings": [
-    { "id": "fire",   "name": "The Fire",          "baseCostCoin": 1300,  "milestoneUpgradeIds": ["camp-fire-ring"],
+    { "id": "fire",   "name": "The Fire",          "materials": { "fibres": 40, "wildflowers": 20 }, "milestoneUpgradeIds": ["camp-fire-ring"],
       "perLevel": { "type": "stationSpeedBonus", "station": "fire", "value": 0.05 } },
-    { "id": "forge",  "name": "The Forge",         "baseCostCoin": 8000,  "milestoneUpgradeIds": ["bellows-forge"],
+    { "id": "forge",  "name": "The Forge",         "materials": { "copper-scree": 30, "timber": 20 }, "milestoneUpgradeIds": ["bellows-forge"],
       "perLevel": { "type": "stationSpeedBonus", "station": "forge", "value": 0.05 } },
-    { "id": "bench",  "name": "The Bench",         "baseCostCoin": 22000, "milestoneUpgradeIds": ["carving-bench"],
+    { "id": "bench",  "name": "The Bench",         "materials": { "timber": 40, "fibres": 30 }, "milestoneUpgradeIds": ["carving-bench"],
       "perLevel": { "type": "stationSpeedBonus", "station": "bench", "value": 0.05 } },
-    { "id": "store",  "name": "The Store",         "baseCostCoin": 3000,  "milestoneUpgradeIds": ["root-cellar", "smokehouse"],
+    { "id": "store",  "name": "The Store",         "materials": { "fibres": 40, "timber": 20 }, "milestoneUpgradeIds": ["root-cellar", "smokehouse"],
       "perLevel": { "type": "basketCapacityBonus", "value": 0.05 } },
-    { "id": "roosts", "name": "Roosts & Burrows",  "baseCostCoin": 2000,  "milestoneUpgradeIds": [],
+    { "id": "roosts", "name": "Roosts & Burrows",  "materials": { "fibres": 30, "berries": 20 }, "milestoneUpgradeIds": [],
       "perLevel": { "type": "familiarCaps" } }
   ]
 }

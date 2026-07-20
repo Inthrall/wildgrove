@@ -106,11 +106,20 @@ namespace Wildgrove.EditorTools
         {
             var state = GameStateFactory.NewGame(data);
 
-            // March up the §9 ladder far enough to open Bramble and Old-Growth —
-            // granting the coin and materials each rung asks for.
+            // Skill XP up front so the §9 ladder's skill gates open (money→XP).
+            if (data.economy?.xp != null)
+            {
+                Skills.AddGatherXp(state, data, "foraging", new BigDouble(200000));
+                Skills.AddGatherXp(state, data, "mining", new BigDouble(80000));
+                Skills.AddGatherXp(state, data, "logging", new BigDouble(60000));
+                Skills.AddGatherXp(state, data, "firecraft", new BigDouble(60000));
+                Skills.AddGatherXp(state, data, "forgecraft", new BigDouble(60000));
+                Skills.AddGatherXp(state, data, "bushcraft", new BigDouble(60000));
+            }
+
+            // March up the ladder, granting the materials each rung asks for.
             foreach (var upgrade in data.upgrades.OrderBy(u => u.order).Take(16))
             {
-                state.coin = BigDouble.Max(state.coin, new BigDouble(upgrade.costCoin) * 2);
                 foreach (var material in upgrade.materials)
                 {
                     state.AddResource(material.id, new BigDouble(material.amount));
@@ -119,26 +128,27 @@ namespace Wildgrove.EditorTools
                 Upgrades.TryPurchase(state, data, upgrade);
             }
 
-            state.coin = new BigDouble(2.4e6);
-            state.carrierCount = 7;
             state.renown = new BigDouble(1250);
             state.amber = 12;
 
+            // A crew worth photographing: gatherers across the nodes, three on the trail.
             var flockSizes = new[] { 5, 3, 6, 2, 4, 3, 5, 2, 3 };
             for (var i = 0; i < state.nodes.Count; i++)
             {
                 var node = state.nodes[i];
-                node.familiarCount = flockSizes[i % flockSizes.Length];
+                for (var f = 0; f < flockSizes[i % flockSizes.Length]; f++)
+                {
+                    Roster.Recruit(state, data, "meadow-vole", node.id);
+                }
+
                 node.masteryXp = 1800 + i * 700;
                 node.basket = new BigDouble(12 + i * 7);
                 state.AddResource(node.resourceId, new BigDouble(900 + i * 2100));
             }
 
-            if (data.economy?.xp != null)
+            for (var t = 0; t < 3; t++)
             {
-                Skills.AddGatherXp(state, data, "foraging", new BigDouble(45000));
-                Skills.AddGatherXp(state, data, "mining", new BigDouble(16000));
-                Skills.AddGatherXp(state, data, "logging", new BigDouble(9000));
+                Roster.Recruit(state, data, "pack-raven", Familiar.TrailStation);
             }
 
             state.AddResource("copper-ingot", new BigDouble(14));
@@ -150,7 +160,10 @@ namespace Wildgrove.EditorTools
 
             foreach (var site in state.digSites)
             {
-                site.familiarCount = 2;
+                for (var d = 0; d < 2; d++)
+                {
+                    Roster.Recruit(state, data, "meadow-vole", Familiar.DigStationPrefix + site.zoneId);
+                }
             }
 
             state.fossilFragments["antler-crown"] = 2;

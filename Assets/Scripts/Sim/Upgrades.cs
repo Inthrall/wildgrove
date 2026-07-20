@@ -17,10 +17,10 @@ namespace Wildgrove.Sim
         /// <summary>The Whetstone-style wildcard: a skill target matching every gathering node.</summary>
         private const string AllGatheringSkill = "all-gathering";
 
-        /// <summary>True when the run holds the Coin and every listed material.</summary>
+        /// <summary>True when the run holds every listed material (design §9: money→XP — the cost is goods + a skill gate, no Coin).</summary>
         public static bool CanAfford(GameState state, UpgradeData upgrade)
         {
-            if (state == null || upgrade == null || state.coin < upgrade.costCoin)
+            if (state == null || upgrade == null)
             {
                 return false;
             }
@@ -37,21 +37,35 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Buy <paramref name="upgrade"/> if it isn't already owned and the run
-        /// can pay (Coin and materials both), then recompute the node
-        /// multipliers its effects feed. Returns false (and changes nothing)
+        /// The skill gate (design §9): the run's level in the upgrade's gateSkill
+        /// must reach gateLevel. Ungated upgrades (no gateSkill) always pass.
+        /// </summary>
+        public static bool MeetsSkillGate(GameState state, GameDataAsset data, UpgradeData upgrade)
+        {
+            if (upgrade == null || string.IsNullOrEmpty(upgrade.gateSkill))
+            {
+                return true;
+            }
+
+            return Skills.Level(state, data, upgrade.gateSkill) >= upgrade.gateLevel;
+        }
+
+        /// <summary>
+        /// Buy <paramref name="upgrade"/> if it isn't owned and the run clears
+        /// every gate — skill level, tool tier, and material cost — then recompute
+        /// the node multipliers its effects feed. Returns false (no change)
         /// otherwise, so the caller can leave the button disabled.
         /// </summary>
         public static bool TryPurchase(GameState state, GameDataAsset data, UpgradeData upgrade)
         {
             if (state == null || data == null || upgrade == null
                 || state.HasUpgrade(upgrade.id) || !CanAfford(state, upgrade)
-                || !MeetsToolRequirement(state, data, upgrade))
+                || !MeetsToolRequirement(state, data, upgrade)
+                || !MeetsSkillGate(state, data, upgrade))
             {
                 return false;
             }
 
-            state.coin -= upgrade.costCoin;
             foreach (var material in upgrade.materials)
             {
                 state.resources[material.id] = state.GetResource(material.id) - material.amount;

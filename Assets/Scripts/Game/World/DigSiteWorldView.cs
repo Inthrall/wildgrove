@@ -63,13 +63,13 @@ namespace Wildgrove.Game.World
             transform.localScale = Vector3.one * worldDiameter;
         }
 
-        public void Refresh()
+        public void Refresh(int diggerCount)
         {
             var colour = _colour;
-            colour.a = Site.familiarCount > 0 ? 1f : IdleAlpha;
+            colour.a = diggerCount > 0 ? 1f : IdleAlpha;
             _heap.color = colour;
 
-            var dots = Mathf.Min(Site.familiarCount, MaxDiggerDots);
+            var dots = Mathf.Min(diggerCount, MaxDiggerDots);
             for (var i = 0; i < _diggerDots.Length; i++)
             {
                 _diggerDots[i].enabled = i < dots;

@@ -166,7 +166,7 @@ namespace Wildgrove.Sim
             }
             else
             {
-                state.renown += giving * Economy.SellValuePerUnit(state, data, slot.resource);
+                state.renown += giving * Economy.TradeValuePerUnit(state, data, slot.resource);
             }
 
             return giving;

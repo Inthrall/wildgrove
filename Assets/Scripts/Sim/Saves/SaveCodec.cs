@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 19;
+        public const int CurrentVersion = 20;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -27,7 +27,6 @@ namespace Wildgrove.Sim.Saves
             {
                 version = CurrentVersion,
                 savedAtUnixMs = savedAtUnixMs,
-                coin = state.coin,
                 verdurePoints = state.verdurePoints,
                 renown = state.renown,
                 migrationCount = state.migrationCount,
@@ -36,11 +35,27 @@ namespace Wildgrove.Sim.Saves
                 wardenPostNodeId = state.wardenPostNodeId,
                 amber = state.amber,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
-                carrierCount = state.carrierCount,
+                nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
+
+            foreach (var familiar in state.roster)
+            {
+                save.roster.Add(new SavedFamiliar
+                {
+                    id = familiar.id,
+                    name = familiar.name,
+                    speciesId = familiar.speciesId,
+                    xp = familiar.xp,
+                    kinshipXp = familiar.kinshipXp,
+                    powerupIds = new List<string>(familiar.powerupIds),
+                    stationId = familiar.stationId,
+                    bonded = familiar.bonded,
+                    bondId = familiar.bondId,
+                });
+            }
 
             foreach (var pair in state.resources)
             {
@@ -77,7 +92,6 @@ namespace Wildgrove.Sim.Saves
                 save.nodes.Add(new SavedNode
                 {
                     id = node.id,
-                    familiarCount = node.familiarCount,
                     masteryXp = node.masteryXp,
                     tendBurstRemaining = node.tendBurstRemaining,
                     pristineBonusRemaining = node.pristineBonusRemaining,
@@ -111,7 +125,6 @@ namespace Wildgrove.Sim.Saves
                 save.digSites.Add(new SavedDigSite
                 {
                     zoneId = site.zoneId,
-                    familiarCount = site.familiarCount,
                     pityHours = site.pityHours,
                 });
             }
@@ -159,7 +172,46 @@ namespace Wildgrove.Sim.Saves
                 : new List<string>();
             GameStateFactory.SyncUnlockedZones(state, data);
 
-            state.coin = save.coin;
+            // Replace the fresh-run seed crew with the saved roster of
+            // individuals (design §4). A station pointing at a node the current
+            // data no longer builds is cleared to wandering, like the warden
+            // post; an empty name (a v19→v20 migrated familiar) gets a
+            // species-appropriate default.
+            state.roster = new List<Familiar>();
+            if (save.roster != null)
+            {
+                foreach (var saved in save.roster)
+                {
+                    if (saved == null)
+                    {
+                        continue;
+                    }
+
+                    state.roster.Add(new Familiar
+                    {
+                        id = saved.id,
+                        name = saved.name,
+                        speciesId = saved.speciesId,
+                        xp = saved.xp,
+                        kinshipXp = saved.kinshipXp,
+                        powerupIds = saved.powerupIds != null ? new List<string>(saved.powerupIds) : new List<string>(),
+                        stationId = StationValid(state, save, saved.stationId) ? saved.stationId : null,
+                        bonded = saved.bonded,
+                        bondId = saved.bondId,
+                    });
+                }
+            }
+
+            state.nextFamiliarSeq = save.nextFamiliarSeq > 0 ? save.nextFamiliarSeq : state.roster.Count + 1;
+
+            foreach (var familiar in state.roster)
+            {
+                if (string.IsNullOrEmpty(familiar.name))
+                {
+                    familiar.name = Roster.SuggestName(state, data, familiar.speciesId);
+                }
+            }
+
             state.verdurePoints = save.verdurePoints;
             state.renown = save.renown;
             state.migrationCount = save.migrationCount;
@@ -231,30 +283,16 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            // Zones the save knew contributed their seed carrier to the saved
-            // carrierCount already; zones materialising for the first time in
-            // this restore keep the +1 the live unlock path would have granted.
-            var newZones = new HashSet<string>();
-            var savedZones = new HashSet<string>();
-            foreach (var node in state.nodes)
-            {
-                (savedById.ContainsKey(node.id) ? savedZones : newZones).Add(node.zoneId);
-            }
-
-            newZones.ExceptWith(savedZones);
-            state.carrierCount = save.carrierCount + newZones.Count;
             state.haulTripProgress = save.haulTripProgress;
 
             foreach (var node in state.nodes)
             {
-                // A node the save predates keeps its fresh-run defaults
-                // (including the first-node starter familiar).
+                // A node the save predates keeps its fresh-run defaults.
                 if (!savedById.TryGetValue(node.id, out var saved))
                 {
                     continue;
                 }
 
-                node.familiarCount = saved.familiarCount;
                 node.masteryXp = saved.masteryXp;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
                 node.pristineBonusRemaining = saved.pristineBonusRemaining;
@@ -319,7 +357,6 @@ namespace Wildgrove.Sim.Saves
                     {
                         if (site.zoneId == savedSite?.zoneId)
                         {
-                            site.familiarCount = savedSite.familiarCount;
                             site.pityHours = savedSite.pityHours;
                         }
                     }
@@ -395,6 +432,11 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            // A bond whose source (a kept Museum set / Almanac node) is already
+            // satisfied must have its companion present — materialise any the
+            // saved roster lacks (idempotent by bondId).
+            Roster.SyncBonded(state, data);
+
             // Last, so completed fossils' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
 
@@ -421,6 +463,60 @@ namespace Wildgrove.Sim.Saves
             }
 
             return zones.Count;
+        }
+
+        /// <summary>Whether a saved familiar's station id is still meaningful under the current data (else it's cleared to wandering).</summary>
+        private static bool StationValid(GameState state, SaveData save, string stationId)
+        {
+            if (string.IsNullOrEmpty(stationId) || stationId == Familiar.TrailStation
+                || stationId.StartsWith(Familiar.DigStationPrefix))
+            {
+                return true;
+            }
+
+            return NodeExists(state, stationId);
+        }
+
+        /// <summary>
+        /// The v19→v20 crew rebuild: turn the anonymous per-node gatherer,
+        /// per-site digger, and camp carrier counts into individual roster
+        /// familiars (voles gather and dig, ravens hold the trail — the seed
+        /// species). Names are left blank for Restore to fill with species
+        /// defaults, since these familiars were never named.
+        /// </summary>
+        private static List<SavedFamiliar> BuildRosterFromCounts(SaveData save)
+        {
+            var roster = new List<SavedFamiliar>();
+            var seq = 1;
+
+            if (save.nodes != null)
+            {
+                foreach (var node in save.nodes)
+                {
+                    for (var i = 0; i < node.familiarCount; i++)
+                    {
+                        roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "meadow-vole", stationId = node.id });
+                    }
+                }
+            }
+
+            if (save.digSites != null)
+            {
+                foreach (var site in save.digSites)
+                {
+                    for (var i = 0; i < site.familiarCount; i++)
+                    {
+                        roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "meadow-vole", stationId = Familiar.DigStationPrefix + site.zoneId });
+                    }
+                }
+            }
+
+            for (var i = 0; i < save.carrierCount; i++)
+            {
+                roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "pack-raven", stationId = Familiar.TrailStation });
+            }
+
+            return roster;
         }
 
         private static bool NodeExists(GameState state, string nodeId)
@@ -627,6 +723,17 @@ namespace Wildgrove.Sim.Saves
                         // meaning (the last-tended node), wider role.
                         save.wardenPostNodeId = save.bondedPostNodeId;
                         save.version = 19;
+                        break;
+
+                    case 19:
+                        // v19 predates the crew roster: familiars were anonymous
+                        // per-node/per-camp counts, and Coin was the currency.
+                        // Rebuild the counts into a roster of individuals; Coin
+                        // simply drops (money became XP — the run's Renown is
+                        // recomputed from XP, and nothing was owed).
+                        save.roster = BuildRosterFromCounts(save);
+                        save.nextFamiliarSeq = save.roster.Count + 1;
+                        save.version = 20;
                         break;
 
                     default:

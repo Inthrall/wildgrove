@@ -19,6 +19,12 @@ namespace Wildgrove.Data
             asset.almanac = data.Almanac.Select(MapAlmanacNode).ToList();
             asset.museumSets = data.MuseumSets.Select(MapMuseumSet).ToList();
             asset.bonds = data.Bonds.Select(MapBond).ToList();
+            asset.species = data.Species.Select(MapSpecies).ToList();
+            asset.exchange = data.Exchange == null ? null : new ExchangeData
+            {
+                spread = data.Exchange.Spread,
+                roundUpBelow = data.Exchange.RoundUpBelow
+            };
             asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);
         }
@@ -46,8 +52,6 @@ namespace Wildgrove.Data
                 digSite = z.DigSite,
                 verseSite = z.VerseSite,
                 requiredTool = z.RequiredTool,
-                priced = z.MapCostCoin.HasValue,
-                mapCostCoin = z.MapCostCoin ?? 0,
                 scope = z.Scope
             };
         }
@@ -61,7 +65,8 @@ namespace Wildgrove.Data
                 displayName = u.Name,
                 track = u.Track,
                 toolTier = u.ToolTier,
-                costCoin = u.CostCoin,
+                gateSkill = u.GateSkill,
+                gateLevel = u.GateLevel,
                 materials = MapItemAmounts(u.Materials),
                 effects = u.Effects.Select(MapEffect).ToList()
             };
@@ -90,7 +95,7 @@ namespace Wildgrove.Data
             {
                 id = b.Id,
                 displayName = b.Name,
-                baseCostCoin = b.BaseCostCoin,
+                materials = MapItemAmounts(b.Materials),
                 milestoneUpgradeIds = new List<string>(b.MilestoneUpgradeIds),
                 perLevel = b.PerLevel == null ? null : new BuildingPerLevelData
                 {
@@ -131,8 +136,34 @@ namespace Wildgrove.Data
             {
                 id = b.Id,
                 displayName = b.Name,
+                species = b.Species,
                 role = b.Role,
                 source = b.Source == null ? null : new BondSourceData { type = b.Source.Type, id = b.Source.Id }
+            };
+        }
+
+        private static SpeciesData MapSpecies(SpeciesDef s)
+        {
+            return new SpeciesData
+            {
+                id = s.Id,
+                displayName = s.Name,
+                roleLean = s.RoleLean,
+                suggestedNames = new List<string>(s.SuggestedNames),
+                powerups = s.Powerups.Select(MapPowerup).ToList()
+            };
+        }
+
+        private static PowerupData MapPowerup(PowerupDef p)
+        {
+            return new PowerupData
+            {
+                id = p.Id,
+                displayName = p.Name,
+                description = p.Description,
+                kind = p.Kind,
+                value = p.Value,
+                resource = p.Resource
             };
         }
 
@@ -321,6 +352,13 @@ namespace Wildgrove.Data
                 warden = new EconomyData.WardenData
                 {
                     gatherPerSecond = e.Warden.GatherPerSecond
+                },
+                familiarXp = e.FamiliarXp == null ? null : new EconomyData.FamiliarXpData
+                {
+                    baseXp = e.FamiliarXp.Base,
+                    growth = e.FamiliarXp.Growth,
+                    maxLevel = e.FamiliarXp.MaxLevel,
+                    xpPerSecond = e.FamiliarXp.XpPerSecond
                 }
             };
         }

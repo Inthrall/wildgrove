@@ -50,12 +50,12 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 1, id = "flint-sickle", costCoin = 100,
+                    order = 1, id = "flint-sickle",
                     effects = { new EffectData { type = EffectType.YieldMult, skill = "foraging", value = 2 } },
                 },
                 new UpgradeData
                 {
-                    order = 4, id = "map-bramble", costCoin = 400,
+                    order = 4, id = "map-bramble",
                     effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
                 },
             };
@@ -80,39 +80,35 @@ namespace Wildgrove.Sim.Tests
         public void RoundTrip_RestoresCurrenciesResourcesAndNodeProgress()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = new BigDouble(1234.5);
             state.verdurePoints = 7.5;
-            state.carrierCount = 3;
             state.AddResource("berries", new BigDouble(42.25));
-            state.nodes[1].familiarCount = 3;
             state.nodes[1].masteryXp = 107.5;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
+            TestCrew.Station(state, state.nodes[1].id, 3);
 
             var restored = RoundTrip(state);
 
-            Assert.That(restored.coin.ToDouble(), Is.EqualTo(1234.5).Within(Tolerance));
             Assert.That(restored.verdurePoints, Is.EqualTo(7.5).Within(Tolerance));
-            Assert.That(restored.carrierCount, Is.EqualTo(3));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
-            Assert.That(restored.nodes[1].familiarCount, Is.EqualTo(3));
             Assert.That(restored.nodes[1].masteryXp, Is.EqualTo(107.5).Within(Tolerance));
             Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
-            // The starter familiar was captured on node 0, not re-seeded on top.
-            Assert.That(restored.nodes[0].familiarCount, Is.EqualTo(1));
+            // The crew round-trips: 3 stationed at node 1, plus the seed vole at node 0.
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[1].id), Is.EqualTo(3));
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[0].id), Is.EqualTo(1));
         }
 
         [Test]
         public void RoundTrip_PreservesBigDoublesBeyondDoubleRange_Exactly()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = new BigDouble(1.2345678901234567, 3000);
+            state.renown = new BigDouble(1.2345678901234567, 3000);
 
             var restored = RoundTrip(state);
 
-            Assert.That(restored.coin.Mantissa, Is.EqualTo(1.2345678901234567));
-            Assert.That(restored.coin.Exponent, Is.EqualTo(3000L));
+            Assert.That(restored.renown.Mantissa, Is.EqualTo(1.2345678901234567));
+            Assert.That(restored.renown.Exponent, Is.EqualTo(3000L));
         }
 
         [Test]
@@ -158,27 +154,24 @@ namespace Wildgrove.Sim.Tests
             var restored = SaveCodec.Restore(save, _data);
 
             var fibres = restored.nodes.Single(n => n.resourceId == "fibres");
-            Assert.That(fibres.familiarCount, Is.EqualTo(0));
+            Assert.That(Stationing.CountAssignedTo(restored, fibres.id), Is.EqualTo(0));
         }
 
         [Test]
         public void Restore_RebuildsUnlockedZoneNodes_AndOverlaysTheirProgress()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 400;
             Upgrades.TryPurchase(state, _data, _data.UpgradesById["map-bramble"]);
             var nuts = state.nodes.Single(n => n.resourceId == "nuts");
-            nuts.familiarCount = 4;
-            state.carrierCount = 7;
+            TestCrew.Station(state, nuts.id, 4);
 
             var restored = RoundTrip(state);
 
-            // The unlocked zone's nodes exist again, carrying the saved
-            // progress — not the fresh regional seed, and no seed carrier
-            // inflating the saved pool.
+            // The unlocked zone's nodes exist again, and the crew stationed
+            // there round-trips through the roster.
             Assert.That(restored.nodes.Count, Is.EqualTo(5));
-            Assert.That(restored.nodes.Single(n => n.resourceId == "nuts").familiarCount, Is.EqualTo(4));
-            Assert.That(restored.carrierCount, Is.EqualTo(7));
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes.Single(n => n.resourceId == "nuts").id),
+                Is.EqualTo(4));
         }
 
         [Test]
@@ -298,9 +291,8 @@ namespace Wildgrove.Sim.Tests
                 },
             };
             var state = GameStateFactory.NewGame(_data);
-            state.coin = 1000;
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
-            state.digSites[0].familiarCount = 2;
+            TestCrew.Station(state, Familiar.DigStationPrefix + "bramble-hedgerows", 2);
             state.digSites[0].pityHours = 1.5;
             state.fossilFragments["antler-crown"] = 3; // assembled
 
@@ -308,7 +300,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(restored.digSites, Has.Count.EqualTo(1));
             Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
-            Assert.That(restored.digSites[0].familiarCount, Is.EqualTo(2));
+            Assert.That(Stationing.AtDigSite(restored, "bramble-hedgerows"), Is.EqualTo(2));
             Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
             Assert.That(Fossils.FragmentCount(restored, "antler-crown"), Is.EqualTo(3));
             // The completed fossil's +10% all yields folds into the restored
@@ -445,14 +437,14 @@ namespace Wildgrove.Sim.Tests
         public void RoundTrip_NaNPoisonedValue_SavesAsZeroInsteadOfCorruptingTheFile()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.coin = new BigDouble(double.NaN, 0);
+            state.renown = new BigDouble(double.NaN, 0);
             state.AddResource("berries", new BigDouble(42.0));
 
             // Must not throw on reload — a non-finite write would fail the
             // reader's TryParse and condemn the whole save as corrupt.
             var restored = RoundTrip(state);
 
-            Assert.That(restored.coin.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(restored.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.0).Within(Tolerance));
         }
 
@@ -663,25 +655,44 @@ namespace Wildgrove.Sim.Tests
             // Bit-rot inside a BigDouble string must land on the corrupt-file
             // path, not crash the launch: a parse failure here used to escape
             // as FormatException past the JsonException catch.
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": \"1.5e\" }"), Is.Null);
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": \"1.x5e42\" }"), Is.Null);
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"coin\": 100 }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": \"1.5e\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": \"1.x5e42\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": 100 }"), Is.Null);
         }
 
         [Test]
-        public void Restore_ZoneUnlockedSinceTheSave_KeepsItsSeedCarrier()
+        public void Restore_ZoneUnlockedSinceTheSave_MaterialisesItsNodesUnstaffed()
         {
             // A data update granted unlockZone to an upgrade the save already
-            // owns: the save has none of the zone's nodes. The live purchase
-            // path seeds a gatherer AND a carrier — restore must agree.
+            // owns: the save has none of the zone's nodes. Restore rebuilds them
+            // — with no regional crew seed (the crew is a roster, design §2/§4).
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.purchasedUpgradeIds.Add("map-bramble");
 
             var restored = SaveCodec.Restore(save, _data);
 
             Assert.That(restored.nodes.Any(n => n.zoneId == "bramble-hedgerows"), Is.True);
-            Assert.That(restored.nodes.Single(n => n.resourceId == "nuts").familiarCount, Is.EqualTo(1));
-            Assert.That(restored.carrierCount, Is.EqualTo(2));
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes.Single(n => n.resourceId == "nuts").id),
+                Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TryMigrate_V19Save_RebuildsAnonymousCountsIntoARoster()
+        {
+            // v19 predates the crew roster: familiars were per-node/per-camp
+            // counts. The v19→v20 step turns each into an individual.
+            var save = new SaveData
+            {
+                version = 19,
+                carrierCount = 1,
+                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-meadow:berries", familiarCount = 2 } },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.roster.Count, Is.EqualTo(3), "2 gatherers + 1 carrier become three roster familiars");
+            Assert.That(save.roster.FindAll(f => f.stationId == "sunfield-meadow:berries").Count, Is.EqualTo(2));
+            Assert.That(save.roster.FindAll(f => f.stationId == "trail").Count, Is.EqualTo(1));
         }
 
         [Test]

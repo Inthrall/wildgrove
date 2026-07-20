@@ -38,7 +38,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 1, id = "flint-sickle", costCoin = 100,
+                    order = 1, id = "flint-sickle",
                     effects = { new EffectData { type = EffectType.YieldMult, skill = "foraging", value = 2 } },
                 },
             };

@@ -87,6 +87,13 @@
   },
   "warden": {
     "gatherPerSecond": 0.5,
-    "$note": "first guess. The warden's own hands at their post (the last-tended node) — always on, boosted by a live burst, straight to camp stock. It's the early-game kickstart (assignment, not a tap surge) AND how a bare node earns its first own-resource gift (design §13 decision), so it must stay positive."
+    "$note": "first guess. The warden's own hands at their post (the last-tended node) — always on, boosted by a live burst, straight to camp stock. It's the early-game kickstart (assignment, not a tap surge) AND how a bare node earns its first own-resource replant (design §3), so it must stay positive."
+  },
+  "familiarXp": {
+    "base": 60,
+    "growth": 1.12,
+    "maxLevel": 99,
+    "xpPerSecond": 1.0,
+    "$note": "design §4: familiar run XP. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). Levels never scale output — only XP/Kinship pacing. All first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
   }
 }

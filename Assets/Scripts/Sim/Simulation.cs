@@ -132,6 +132,25 @@ namespace Wildgrove.Sim
             Crafting.Advance(state, data, deltaSeconds);
 
             Excavation.Advance(state, data, deltaSeconds);
+
+            // Every familiar earns run XP at its post (design §4) — a trickle
+            // that also feeds Renown (§9). Wanderers earn half (handled in
+            // AddPostXp). Runs each sub-step so offline catch-up credits it too.
+            AccrueFamiliarXp(state, data, deltaSeconds);
+        }
+
+        private static void AccrueFamiliarXp(GameState state, GameDataAsset data, double deltaSeconds)
+        {
+            var famXp = data.economy?.familiarXp;
+            if (famXp == null || famXp.xpPerSecond <= 0.0)
+            {
+                return;
+            }
+
+            foreach (var familiar in state.roster)
+            {
+                Familiars.AddPostXp(state, data, familiar, famXp.xpPerSecond, deltaSeconds);
+            }
         }
 
         /// <summary>
@@ -148,10 +167,12 @@ namespace Wildgrove.Sim
         /// </summary>
         private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
         {
-            // Bonded carriers (design §7) haul with the fleet from minute one
-            // of every run — outside carrierCount, its slots, and its gifts.
-            var carriers = state.carrierCount + Bonds.BondedCarriers(state, data);
-            if (carriers <= 0)
+            // Hauling is a post (design §2): the familiars holding the trail
+            // carry, at their throughput powerups; an unheld trail is covered
+            // badly by wanderers (a half-lane). Bonded familiars are just
+            // roster members that persist, so they count here when stationed.
+            var carriers = Stationing.TrailCarriers(state, data);
+            if (carriers <= 0.0)
             {
                 return;
             }
@@ -368,14 +389,18 @@ namespace Wildgrove.Sim
             return YieldPerSecond(node, state, null, economy);
         }
 
-        /// <summary>Data-aware overload: bonded gatherers (design §7) work at the warden's side, outside the flock count.</summary>
+        /// <summary>
+        /// Data-aware overload: the stationed crew (design §2) does the
+        /// gathering — assigned familiars at full rate with their powerups, plus
+        /// the wanderers' half-help share (see <see cref="Stationing"/>).
+        /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
         {
             var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * Mastery.Level(node, economy);
             var global = 1.0 + economy.verdure.yieldBonusPerPoint * state.verdurePoints;
-            var familiars = node.familiarCount + (data != null ? Bonds.BondedGatherersAt(state, data, node) : 0);
+            var agents = Stationing.GatherAgentsAt(state, data, node);
 
-            return new BigDouble(familiars) * node.yieldMultiplier * masteryBonus * global;
+            return new BigDouble(agents) * node.yieldMultiplier * masteryBonus * global;
         }
     }
 

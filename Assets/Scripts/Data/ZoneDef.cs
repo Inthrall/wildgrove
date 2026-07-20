@@ -17,7 +17,6 @@ namespace Wildgrove.Data
 
         /// <summary>Tool tier the zone's trail map demands (design doc §3: Zone 2 flint … deeper steel+); null = ungated.</summary>
         public string RequiredTool { get; set; }
-        public long? MapCostCoin { get; set; }
         public string Scope { get; set; }
     }
 }

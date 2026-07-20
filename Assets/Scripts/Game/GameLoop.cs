@@ -12,9 +12,10 @@ namespace Wildgrove.Game
     /// <summary>
     /// The scene-side driver that turns the pure simulation into a running game:
     /// it owns the content asset and the live <see cref="GameState"/>, advances
-    /// the tick every frame, and exposes the core-loop player actions (gift a
-    /// familiar, sell to the Provisioner) for the input/UI layer to call. All game logic
-    /// lives in Wildgrove.Sim; this class is deliberately thin wiring.
+    /// the tick every frame, and exposes the core-loop player actions (station
+    /// the crew, name and level familiars, barter at the Exchange, buy upgrades)
+    /// for the input/UI layer to call. All game logic lives in Wildgrove.Sim;
+    /// this class is deliberately thin wiring.
     /// </summary>
     public sealed class GameLoop : MonoBehaviour
     {
@@ -39,13 +40,20 @@ namespace Wildgrove.Game
         /// </summary>
         public OfflineSummary PendingOfflineSummary { get; private set; }
 
-        /// <summary>The analytics/crash-reporting sink (Debug.Log until Firebase lands — see docs/todo.md).</summary>
+        /// <summary>The analytics/crash-reporting sink (Debug.Log in editor, Firebase on device).</summary>
         public ITelemetry Telemetry { get; private set; }
 
         private double _autosaveCountdown = AutosaveIntervalSeconds;
         private float _sessionStartRealtime;
         private bool _sessionOpen;
         private long _lastSavedUnixMs;
+
+        // Familiars the player has been introduced to (in-memory — a loaded crew
+        // has already been met). A newly arrived, non-bonded familiar queues for
+        // the naming sheet; bonded familiars have canonical names and their own
+        // celebration (design §4).
+        private readonly Queue<Familiar> _pendingArrivals = new Queue<Familiar>();
+        private readonly HashSet<string> _announcedFamiliars = new HashSet<string>();
 
         private void Awake()
         {
@@ -63,6 +71,7 @@ namespace Wildgrove.Game
             }
 
             Simulation.Advance(State, Data, Time.deltaTime);
+            RefreshArrivals();
 
             _autosaveCountdown -= Time.deltaTime;
             if (_autosaveCountdown <= 0.0)
@@ -89,7 +98,6 @@ namespace Wildgrove.Game
                 // a second, so the hours away must be credited here exactly
                 // like a cold launch credits them (the pause branch saved on
                 // the way out, making the last save the absence baseline).
-                // Without this the next autosave would forfeit the absence.
                 CreditAbsence((NowUnixMs() - _lastSavedUnixMs) / 1000.0);
                 StartSession();
             }
@@ -126,10 +134,14 @@ namespace Wildgrove.Game
             if (SaveFile.TryLoad(out var save))
             {
                 State = SaveCodec.Restore(save, Data);
+                // A loaded crew has already been met and named — don't re-prompt.
+                MarkArrivalsSeen();
                 CreditAbsence((NowUnixMs() - save.savedAtUnixMs) / 1000.0);
             }
             else
             {
+                // A fresh run's seed crew (a vole and a raven, design §4) arrives
+                // to be named — RefreshArrivals queues them on the first tick.
                 State = GameStateFactory.NewGame(Data);
             }
 
@@ -207,104 +219,133 @@ namespace Wildgrove.Game
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         }
 
-        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action, counted as a Rite deed).</summary>
+        // ─────────────────────────── The crew (design §4) ────────────────────
+
+        /// <summary>Queue any newly arrived, un-met, non-bonded familiar for the naming sheet.</summary>
+        private void RefreshArrivals()
+        {
+            if (State == null)
+            {
+                return;
+            }
+
+            foreach (var familiar in State.roster)
+            {
+                if (_announcedFamiliars.Add(familiar.id) && !familiar.bonded)
+                {
+                    _pendingArrivals.Enqueue(familiar);
+                }
+            }
+        }
+
+        private void MarkArrivalsSeen()
+        {
+            foreach (var familiar in State.roster)
+            {
+                _announcedFamiliars.Add(familiar.id);
+            }
+        }
+
+        /// <summary>The next familiar awaiting a name (without dequeuing), or null.</summary>
+        public Familiar PeekPendingArrival()
+        {
+            return _pendingArrivals.Count > 0 ? _pendingArrivals.Peek() : null;
+        }
+
+        /// <summary>Claim the next arrival (the naming sheet dismisses it once named/accepted).</summary>
+        public Familiar TakePendingArrival()
+        {
+            return _pendingArrivals.Count > 0 ? _pendingArrivals.Dequeue() : null;
+        }
+
+        /// <summary>Rename a familiar (design §4: name at arrival, rename any time). Returns false when the name is blank.</summary>
+        public bool RenameFamiliar(Familiar familiar, string name)
+        {
+            return Roster.Rename(familiar, name);
+        }
+
+        /// <summary>Station a familiar at a post — a node id, "trail", a "dig:{zone}" site, or null to wander (design §2).</summary>
+        public void StationFamiliar(Familiar familiar, string stationId)
+        {
+            Roster.Station(State, Data, familiar, stationId);
+        }
+
+        /// <summary>A familiar's current run level (design §4).</summary>
+        public int FamiliarLevel(Familiar familiar)
+        {
+            return Familiars.Level(familiar, Data);
+        }
+
+        /// <summary>Fraction of the way to the familiar's next level.</summary>
+        public double FamiliarLevelProgress(Familiar familiar)
+        {
+            return Familiars.ProgressToNextLevel(familiar, Data);
+        }
+
+        /// <summary>The familiar's permanent Kinship level (design §4).</summary>
+        public int FamiliarKinship(Familiar familiar)
+        {
+            return Kinship.Level(familiar);
+        }
+
+        /// <summary>True when a familiar has reached a level-5 milestone whose powerup it hasn't chosen — the pick prompt.</summary>
+        public bool HasPendingPowerup(Familiar familiar)
+        {
+            return Familiars.HasPendingPowerup(familiar, Data);
+        }
+
+        /// <summary>The powerups still offerable to a familiar (species pool minus chosen) — for the pick sheet.</summary>
+        public List<PowerupData> OfferablePowerups(Familiar familiar)
+        {
+            return Familiars.OfferablePowerups(familiar, Data);
+        }
+
+        /// <summary>Choose a powerup for a familiar with a pending pick. Returns false (no change) otherwise.</summary>
+        public bool ChoosePowerup(Familiar familiar, string powerupId)
+        {
+            if (!Familiars.ChoosePowerup(State, Data, familiar, powerupId))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("powerup_chosen", ("familiar", familiar.id), ("powerup", powerupId));
+            return true;
+        }
+
+        // ─────────────────────────── The Exchange (design §9) ────────────────
+
+        /// <summary>Units of <paramref name="to"/> per one unit of <paramref name="from"/> at the Exchange.</summary>
+        public BigDouble ExchangeRate(string from, string to)
+        {
+            return Exchange.Rate(State, Data, from, to);
+        }
+
+        /// <summary>Units of <paramref name="to"/> received for spending <paramref name="amount"/> of <paramref name="from"/> (player-favourable rounding).</summary>
+        public BigDouble ExchangeQuote(string from, string to, BigDouble amount)
+        {
+            return Exchange.Quote(State, Data, from, to, amount);
+        }
+
+        /// <summary>Barter goods for goods at the Exchange. Returns units received (0 = refused).</summary>
+        public BigDouble TradeAtExchange(string from, string to, BigDouble amount)
+        {
+            var received = Exchange.TryTrade(State, Data, from, to, amount);
+            if (received > BigDouble.Zero)
+            {
+                Telemetry.LogEvent("exchange_trade",
+                    ("from", from), ("to", to),
+                    ("spent", amount.ToDouble()), ("received", received.ToDouble()));
+            }
+
+            return received;
+        }
+
+        // ─────────────────────────── Tending & crafting ──────────────────────
+
+        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action; also moves the warden's post and counts as a Rite deed).</summary>
         public void Tend(NodeState node)
         {
             Simulation.Tend(State, Data, node);
-        }
-
-        /// <summary>Size of the node's next gatherer gift, in units of its own resource — for the gift button's label and enabled state.</summary>
-        public BigDouble NextGathererGiftCost(NodeState node)
-        {
-            return Economy.GathererGiftCost(node, Data.economy);
-        }
-
-        /// <summary>True when a gatherer gift can land on the node (stock covers it and the zone's flock is under cap).</summary>
-        public bool CanGiftGatherer(NodeState node)
-        {
-            return Economy.CanGiftGatherer(State, Data, node);
-        }
-
-        /// <summary>Gift one gatherer onto the node, paying in its own resource. Returns false (no change) if stock is short or the flock is at cap.</summary>
-        public bool GiftGatherer(NodeState node)
-        {
-            var cost = Economy.GathererGiftCost(node, Data.economy);
-            if (!Economy.TryGiftGatherer(State, Data, node))
-            {
-                return false;
-            }
-
-            Telemetry.LogEvent("familiar_gifted",
-                ("role", "gatherer"),
-                ("node", node.id),
-                ("goods_cost", cost.ToDouble()),
-                ("total_familiars", State.TotalFamiliars()));
-            return true;
-        }
-
-        /// <summary>Per-resource size of the next carrier's Feeder bundle — for the gift button's label.</summary>
-        public BigDouble NextCarrierGiftCostEach()
-        {
-            return Economy.CarrierGiftCostEach(State, Data.economy);
-        }
-
-        /// <summary>True when the Feeder can be filled (stock covers the bundle and a carrier slot is free) — for the gift button's enabled state.</summary>
-        public bool CanGiftCarrier()
-        {
-            return Economy.CanGiftCarrier(State, Data);
-        }
-
-        /// <summary>Camp-wide carrier slots (design §8, raised by the roosts line) — for the header readout.</summary>
-        public int CarrierSlots()
-        {
-            return Buildings.CarrierSlots(State, Data);
-        }
-
-        /// <summary>Fill the Feeder to gift one carrier into the camp pool. Returns false (no change) if any of the bundle is short or the slots are full.</summary>
-        public bool GiftCarrier()
-        {
-            var costEach = Economy.CarrierGiftCostEach(State, Data.economy);
-            var bundleSize = Economy.FeederResources(State).Count;
-            if (!Economy.TryGiftCarrier(State, Data))
-            {
-                return false;
-            }
-
-            Telemetry.LogEvent("familiar_gifted",
-                ("role", "carrier"),
-                ("goods_cost_each", costEach.ToDouble()),
-                ("bundle_resources", bundleSize),
-                ("total_carriers", State.carrierCount));
-            return true;
-        }
-
-        /// <summary>Per-resource size of the next digger's zone-bundle gift — for the gift button's label.</summary>
-        public BigDouble NextDiggerGiftCostEach(DigSiteState site)
-        {
-            return Economy.DiggerGiftCostEach(site, Data.economy);
-        }
-
-        /// <summary>True when a digger gift can land (stock covers the zone bundle, flock under cap) — for the gift button's enabled state.</summary>
-        public bool CanGiftDigger(DigSiteState site)
-        {
-            return Economy.CanGiftDigger(State, Data, site);
-        }
-
-        /// <summary>Gift one digger onto the zone's dig site. Returns false (no change) when stock is short or the flock is capped.</summary>
-        public bool GiftDigger(DigSiteState site)
-        {
-            var costEach = Economy.DiggerGiftCostEach(site, Data.economy);
-            if (!Economy.TryGiftDigger(State, Data, site))
-            {
-                return false;
-            }
-
-            Telemetry.LogEvent("familiar_gifted",
-                ("role", "digger"),
-                ("zone", site.zoneId),
-                ("goods_cost_each", costEach.ToDouble()),
-                ("site_diggers", site.familiarCount));
-            return true;
         }
 
         /// <summary>True once the run owns the one-off upgrade.</summary>
@@ -319,13 +360,19 @@ namespace Wildgrove.Game
             return Upgrades.MissingToolTier(State, Data, upgrade);
         }
 
-        /// <summary>True when the run holds the upgrade's Coin and material costs — for the buy button's enabled state.</summary>
+        /// <summary>True when the run holds the upgrade's materials (money→XP: no Coin) — for the buy button's enabled state.</summary>
         public bool CanAffordUpgrade(UpgradeData upgrade)
         {
             return Upgrades.CanAfford(State, upgrade);
         }
 
-        /// <summary>Buy a one-off upgrade. Returns false (no change) when owned or unaffordable.</summary>
+        /// <summary>True when the run's skill level clears the upgrade's gate (design §9).</summary>
+        public bool MeetsUpgradeSkillGate(UpgradeData upgrade)
+        {
+            return Upgrades.MeetsSkillGate(State, Data, upgrade);
+        }
+
+        /// <summary>Buy a one-off upgrade. Returns false (no change) when owned, gated, or unaffordable.</summary>
         public bool PurchaseUpgrade(UpgradeData upgrade)
         {
             if (!Upgrades.TryPurchase(State, Data, upgrade))
@@ -333,9 +380,7 @@ namespace Wildgrove.Game
                 return false;
             }
 
-            Telemetry.LogEvent("upgrade_purchased",
-                ("upgrade_id", upgrade.id),
-                ("coin_cost", upgrade.costCoin.ToDouble()));
+            Telemetry.LogEvent("upgrade_purchased", ("upgrade_id", upgrade.id));
             return true;
         }
 
@@ -345,16 +390,21 @@ namespace Wildgrove.Game
             return Buildings.TotalLevel(State, building);
         }
 
-        /// <summary>Coin cost of the line's next level — for the build button's label.</summary>
-        public BigDouble NextBuildingCost(BuildingData building)
+        /// <summary>The material bundle for the line's next level (money→XP: buildings are a goods sink) — for the build button's label.</summary>
+        public List<Buildings.MaterialCost> NextBuildingBundle(BuildingData building)
         {
-            return Buildings.NextLevelCost(State, Data, building);
+            return Buildings.NextLevelBundle(State, Data, building);
         }
 
-        /// <summary>Buy the line's next level. Returns false (no change) when the purse can't cover it.</summary>
+        /// <summary>True when camp stock covers the line's next-level bundle.</summary>
+        public bool CanAffordBuilding(BuildingData building)
+        {
+            return Buildings.CanAfford(State, Data, building);
+        }
+
+        /// <summary>Buy the line's next level. Returns false (no change) when the bundle can't be covered.</summary>
         public bool BuyBuildingLevel(BuildingData building)
         {
-            var cost = Buildings.NextLevelCost(State, Data, building);
             if (!Buildings.TryBuyLevel(State, Data, building))
             {
                 return false;
@@ -362,13 +412,12 @@ namespace Wildgrove.Game
 
             Telemetry.LogEvent("building_level_bought",
                 ("building", building.id),
-                ("level", Buildings.TotalLevel(State, building)),
-                ("coin_cost", cost.ToDouble()));
+                ("level", Buildings.TotalLevel(State, building)));
             return true;
         }
 
         /// <summary>The recipes the run can see — for the HUD's crafting section (level-locked ones included, as visible goals).</summary>
-        public System.Collections.Generic.List<RecipeData> AvailableRecipes()
+        public List<RecipeData> AvailableRecipes()
         {
             return Crafting.AvailableRecipes(State, Data);
         }
@@ -398,10 +447,10 @@ namespace Wildgrove.Game
         }
 
         /// <summary>The skills this run has opened, for the HUD's readout — stable alphabetical order.</summary>
-        public System.Collections.Generic.List<string> UnlockedSkills()
+        public List<string> UnlockedSkills()
         {
-            var skills = new System.Collections.Generic.List<string>(Upgrades.UnlockedSkills(State, Data));
-            skills.Sort(System.StringComparer.Ordinal);
+            var skills = new List<string>(Upgrades.UnlockedSkills(State, Data));
+            skills.Sort(StringComparer.Ordinal);
             return skills;
         }
 
@@ -423,10 +472,7 @@ namespace Wildgrove.Game
             return Crafting.Progress(State, Data, recipe);
         }
 
-        /// <summary>
-        /// Start the recipe on its station (displacing whatever it was working,
-        /// in-flight inputs refunded), or stop it if it's already running.
-        /// </summary>
+        /// <summary>Start the recipe on its station (displacing whatever it was working, in-flight inputs refunded), or stop it if it's already running.</summary>
         public void ToggleCraft(RecipeData recipe)
         {
             if (IsCrafting(recipe))
@@ -435,8 +481,6 @@ namespace Wildgrove.Game
                 return;
             }
 
-            // Gated: Assign would refuse anyway, but bail here so the
-            // telemetry can't report a craft that never started.
             if (!Crafting.IsWorkable(State, Data, recipe))
             {
                 return;
@@ -446,18 +490,6 @@ namespace Wildgrove.Game
             Telemetry.LogEvent("craft_started",
                 ("recipe", recipe.id),
                 ("station", recipe.station));
-        }
-
-        /// <summary>Sell the whole stock of one resource to the Provisioner. Returns Coin gained.</summary>
-        public BigDouble SellResource(string resourceId)
-        {
-            return Economy.SellResource(State, Data, resourceId);
-        }
-
-        /// <summary>Sell every sellable resource on hand. Returns total Coin gained.</summary>
-        public BigDouble SellAll()
-        {
-            return Economy.SellAll(State, Data);
         }
 
         /// <summary>Mark a zone's waystone inscription as read (design §6 — shown once on arrival, re-readable in the Compendium).</summary>
@@ -480,9 +512,7 @@ namespace Wildgrove.Game
             var hours = Amber.TryTimeSkip(State, Data);
             if (hours > 0.0)
             {
-                Telemetry.LogEvent("time_skip_used",
-                    ("hours", hours),
-                    ("amber_cost", cost));
+                Telemetry.LogEvent("time_skip_used", ("hours", hours), ("amber_cost", cost));
             }
 
             return hours;
@@ -496,9 +526,7 @@ namespace Wildgrove.Game
             if (given > BigDouble.Zero)
             {
                 Telemetry.LogEvent("offering_made",
-                    ("verse", verse.id),
-                    ("slot", slotIndex),
-                    ("amount", given.ToDouble()));
+                    ("verse", verse.id), ("slot", slotIndex), ("amount", given.ToDouble()));
                 AfterOffering(verse, wasComplete);
             }
 
@@ -516,9 +544,7 @@ namespace Wildgrove.Game
             }
 
             Telemetry.LogEvent("offering_made",
-                ("verse", verse.id),
-                ("slot", slotIndex),
-                ("specimen", resourceId));
+                ("verse", verse.id), ("slot", slotIndex), ("specimen", resourceId));
             AfterOffering(verse, wasComplete);
             return true;
         }
@@ -534,9 +560,7 @@ namespace Wildgrove.Game
             }
 
             Telemetry.LogEvent("offering_made",
-                ("verse", verse.id),
-                ("slot", slotIndex),
-                ("fragment_from", fossilId));
+                ("verse", verse.id), ("slot", slotIndex), ("fragment_from", fossilId));
             AfterOffering(verse, wasComplete);
             return true;
         }
@@ -582,9 +606,7 @@ namespace Wildgrove.Game
                 return false;
             }
 
-            Telemetry.LogEvent("almanac_node_bought",
-                ("node", node.id),
-                ("verdure_cost", node.costVerdure));
+            Telemetry.LogEvent("almanac_node_bought", ("node", node.id), ("verdure_cost", node.costVerdure));
             ReportNewBonds(bondsBefore);
             return true;
         }
@@ -602,8 +624,7 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The most recently earned bond awaiting its HUD celebration — a
-        /// companion is rare enough to deserve a moment, not just a row
-        /// changing text. Null when none is pending.
+        /// companion is rare enough to deserve a moment. Null when none is pending.
         /// </summary>
         public BondData PendingBondCelebration { get; private set; }
 
@@ -616,10 +637,9 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// A bond is earned the moment its source completes — an event worth
-        /// the telemetry (design lean: rare enough that each one is one).
-        /// Earned state is derived, so diffing against the pre-action set
-        /// finds exactly the newly bonded companions.
+        /// A bond is earned the moment its source completes. Its companion is
+        /// materialised into the roster by Museum/Almanac restore paths; here we
+        /// just surface the celebration and telemetry for the newly earned ones.
         /// </summary>
         private void ReportNewBonds(HashSet<string> bondsBefore)
         {
@@ -627,8 +647,11 @@ namespace Wildgrove.Game
             {
                 if (!bondsBefore.Contains(bond.id))
                 {
-                    Telemetry.LogEvent("familiar_bonded", ("bond", bond.id), ("role", bond.role));
+                    Telemetry.LogEvent("familiar_bonded", ("bond", bond.id));
                     PendingBondCelebration = bond;
+                    // Materialise the companion now so it's present immediately.
+                    Roster.SyncBonded(State, Data);
+                    MarkArrivalsSeen();
                 }
             }
         }
@@ -646,9 +669,10 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Fold the camp (design §7): swap in the next run's state, keeping
-        /// the permanents, and save at once so the old run can't be resumed
-        /// by force-closing. Returns false when the Rite hasn't consented.
+        /// Fold the camp (design §7): swap in the next run's state, keeping the
+        /// permanents (and the crew, with run XP banked into Kinship), and save
+        /// at once so the old run can't be resumed by force-closing. Returns
+        /// false when the Rite hasn't consented.
         /// </summary>
         public bool Migrate()
         {
@@ -663,6 +687,8 @@ namespace Wildgrove.Game
                 ("verdure", next.verdurePoints),
                 ("renown", State.renown.ToDouble()));
             State = next;
+            // The carried crew has already been met — don't re-prompt naming.
+            MarkArrivalsSeen();
             SaveNow();
             return true;
         }
@@ -677,18 +703,6 @@ namespace Wildgrove.Game
                     Telemetry.LogEvent("rite_completed", ("renown", State.renown.ToDouble()));
                 }
             }
-        }
-
-        /// <summary>The windfall: sell one resource's Pristine specimens (design §5 — always an explicit act). Returns Coin gained.</summary>
-        public BigDouble SellPristine(string resourceId)
-        {
-            var coin = Economy.SellPristine(State, Data, resourceId);
-            if (coin > BigDouble.Zero)
-            {
-                Telemetry.LogEvent("pristine_sold", ("resource", resourceId), ("coin", coin.ToDouble()));
-            }
-
-            return coin;
         }
     }
 }

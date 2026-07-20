@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BreakInfinity;
 using Wildgrove.Data;
 
@@ -36,32 +37,66 @@ namespace Wildgrove.Sim
             return level;
         }
 
-        /// <summary>Coin cost of the line's next level: base · growth^currentLevel (design §8).</summary>
-        public static BigDouble NextLevelCost(GameState state, GameDataAsset data, BuildingData building)
+        /// <summary>One material cost in a building level's bundle (BigDouble so late-run scaling can't overflow).</summary>
+        public struct MaterialCost
         {
-            var growth = BigDouble.Pow(data.economy.costGrowth.building, TotalLevel(state, building));
-            return building.baseCostCoin * growth;
+            public string id;
+            public BigDouble amount;
         }
 
         /// <summary>
-        /// Buy the line's next level if the purse covers it. Returns false
-        /// (and changes nothing) otherwise, so the caller can leave the
+        /// The material bundle for the line's next level (design §9 money→XP):
+        /// each base material × costGrowth.building^currentLevel. Paid in goods,
+        /// competing with the Exchange, offerings, kit, and replanting.
+        /// </summary>
+        public static List<MaterialCost> NextLevelBundle(GameState state, GameDataAsset data, BuildingData building)
+        {
+            var growth = BigDouble.Pow(data.economy.costGrowth.building, TotalLevel(state, building));
+            var bundle = new List<MaterialCost>();
+            foreach (var material in building.materials)
+            {
+                bundle.Add(new MaterialCost { id = material.id, amount = new BigDouble(material.amount) * growth });
+            }
+
+            return bundle;
+        }
+
+        /// <summary>True when camp stock covers the next level's whole bundle. A line with no bundle can't be levelled.</summary>
+        public static bool CanAfford(GameState state, GameDataAsset data, BuildingData building)
+        {
+            if (state == null || building == null || building.materials.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var cost in NextLevelBundle(state, data, building))
+            {
+                if (state.GetResource(cost.id) < cost.amount)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Buy the line's next level if camp stock covers the bundle. Returns
+        /// false (and changes nothing) otherwise, so the caller can leave the
         /// button disabled.
         /// </summary>
         public static bool TryBuyLevel(GameState state, GameDataAsset data, BuildingData building)
         {
-            if (state == null || building == null)
+            if (!CanAfford(state, data, building))
             {
                 return false;
             }
 
-            var cost = NextLevelCost(state, data, building);
-            if (state.coin < cost)
+            foreach (var cost in NextLevelBundle(state, data, building))
             {
-                return false;
+                state.resources[cost.id] = state.GetResource(cost.id) - cost.amount;
             }
 
-            state.coin -= cost;
             state.buildingLevels[building.id] = BoughtLevels(state, building.id) + 1;
             // Basket capacity is snapshot-cached — a bought level changes it.
             state.BumpModifiers();
@@ -123,34 +158,6 @@ namespace Wildgrove.Sim
             }
 
             return level;
-        }
-
-        /// <summary>
-        /// Gatherer familiars allowed per zone (design §8: flockCap = base +
-        /// perRoostLevel · roostLevel). Unlimited when the data has no caps —
-        /// hand-built test data predating the cap system.
-        /// </summary>
-        public static int FlockCap(GameState state, GameDataAsset data)
-        {
-            var caps = data.economy?.familiarCaps;
-            if (caps == null)
-            {
-                return int.MaxValue;
-            }
-
-            return caps.flockCapBase + caps.flockCapPerRoostLevel * RoostLevel(state, data);
-        }
-
-        /// <summary>Camp-wide carrier slots (design §8: base + perRoostLevel · roostLevel). Unlimited without cap data.</summary>
-        public static int CarrierSlots(GameState state, GameDataAsset data)
-        {
-            var caps = data.economy?.familiarCaps;
-            if (caps == null)
-            {
-                return int.MaxValue;
-            }
-
-            return caps.carrierSlotsBase + caps.carrierSlotsPerRoostLevel * RoostLevel(state, data);
         }
     }
 }

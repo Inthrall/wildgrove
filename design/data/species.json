@@ -1,0 +1,31 @@
+{
+  "$comment": "Familiar species (design doc S4). The small flock is made of individuals: each familiar is drawn from a species with a role lean, a pool of suggested names (the player names it on arrival, renameable later), and a fixed, authored powerup pool (deterministic per species at MVP — the Rite generator can rely on what any crew can become). Every 5 levels a familiar offers a choice of 2-3 unlocked powerups from its species pool, kept for the run. Powerup kinds: nodeYieldBonus (its node; optional resource narrows it), trailThroughputBonus (when it holds the trail post), pristineBonus (points at its node), digSpeedBonus (at a dig site), offlineBonus (its post's offline earnings). Values are first guesses.",
+  "species": [
+    {
+      "id": "meadow-vole",
+      "name": "meadow vole",
+      "roleLean": "gatherer",
+      "suggestedNames": ["Bramble", "Burr", "Clover", "Nettle", "Sorrel", "Pip", "Thistle", "Hazel"],
+      "powerups": [
+        { "id": "berry-wise",    "name": "Berry-wise",    "description": "+40% yield at berry nodes",             "kind": "nodeYieldBonus",        "value": 0.40, "resource": "berries" },
+        { "id": "soft-paws",     "name": "Soft paws",     "description": "+1pt Pristine chance at its node",      "kind": "pristineBonus",         "value": 0.01 },
+        { "id": "early-riser",   "name": "Early riser",   "description": "its post's offline earnings +20%",      "kind": "offlineBonus",          "value": 0.20 },
+        { "id": "keen-forager",  "name": "Keen forager",  "description": "+25% yield at its node",                "kind": "nodeYieldBonus",        "value": 0.25 },
+        { "id": "patient-digger","name": "Patient digger","description": "+40% dig speed at a dig site",          "kind": "digSpeedBonus",         "value": 0.40 }
+      ]
+    },
+    {
+      "id": "pack-raven",
+      "name": "pack raven",
+      "roleLean": "carrier",
+      "suggestedNames": ["Sootwing", "Corvus", "Jet", "Rook", "Ash", "Grackle", "Cinder", "Onyx"],
+      "powerups": [
+        { "id": "deep-pockets",  "name": "Deep pockets",  "description": "+25% throughput when it holds the trail post", "kind": "trailThroughputBonus", "value": 0.25 },
+        { "id": "tireless-wings","name": "Tireless wings","description": "+15% throughput when it holds the trail post", "kind": "trailThroughputBonus", "value": 0.15 },
+        { "id": "sharp-eyed",    "name": "Sharp-eyed",    "description": "+25% yield at its node",                "kind": "nodeYieldBonus",        "value": 0.25 },
+        { "id": "timber-sense",  "name": "Timber-sense",  "description": "+40% yield at deadfall timber",         "kind": "nodeYieldBonus",        "value": 0.40, "resource": "timber" },
+        { "id": "windrider",     "name": "Windrider",     "description": "its post's offline earnings +20%",      "kind": "offlineBonus",          "value": 0.20 }
+      ]
+    }
+  ]
+}

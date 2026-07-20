@@ -19,9 +19,6 @@ namespace Wildgrove.Sim.Saves
         /// <summary>UTC wall-clock of the save, unix milliseconds — the baseline for offline credit on the next load.</summary>
         public long savedAtUnixMs;
 
-        [JsonConverter(typeof(BigDoubleJsonConverter))]
-        public BigDouble coin;
-
         public double verdurePoints;
 
         /// <summary>v10+: lifetime Renown from Rite offerings (absent before the Rite runtime — nothing offered yet).</summary>
@@ -57,8 +54,14 @@ namespace Wildgrove.Sim.Saves
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();
         public List<SavedResource> lifetimePristine = new List<SavedResource>();
 
-        /// <summary>v2+: the camp-wide carrier pool (v1 saves predate carriers; migration grants the regional seed).</summary>
+        /// <summary>v2–v19 legacy: the anonymous camp-wide carrier count. Read only by the v19→v20 migration, which rebuilds it into <see cref="roster"/>.</summary>
         public int carrierCount;
+
+        /// <summary>v20+: the warden's crew — every familiar as an individual (design §4). Replaces the anonymous per-node/per-camp counts.</summary>
+        public List<SavedFamiliar> roster = new List<SavedFamiliar>();
+
+        /// <summary>v20+: sequence for minting roster ids.</summary>
+        public int nextFamiliarSeq;
 
         /// <summary>v7+: seconds toward the fleet's next delivery (absent before discrete hauling — defaults to a fresh trip).</summary>
         public double haulTripProgress;
@@ -108,6 +111,21 @@ namespace Wildgrove.Sim.Saves
         public double xp;
     }
 
+    /// <summary>One crew familiar (design §4). Level derives from xp; Kinship, powerups, station, and bond marker persist.</summary>
+    [Serializable]
+    public sealed class SavedFamiliar
+    {
+        public string id;
+        public string name;
+        public string speciesId;
+        public double xp;
+        public double kinshipXp;
+        public List<string> powerupIds = new List<string>();
+        public string stationId;
+        public bool bonded;
+        public string bondId;
+    }
+
     /// <summary>One kit slot's worn gear.</summary>
     [Serializable]
     public sealed class SavedGearSlot
@@ -145,7 +163,10 @@ namespace Wildgrove.Sim.Saves
     public sealed class SavedDigSite
     {
         public string zoneId;
+
+        /// <summary>v9–v19 legacy anonymous digger count; the v19→v20 migration rebuilds it into the roster.</summary>
         public int familiarCount;
+
         public double pityHours;
     }
 
@@ -201,6 +222,8 @@ namespace Wildgrove.Sim.Saves
     public sealed class SavedNode
     {
         public string id;
+
+        /// <summary>v2–v19 legacy anonymous gatherer count; the v19→v20 migration rebuilds it into the roster.</summary>
         public int familiarCount;
 
         /// <summary>v6+: mastery XP (replaces v≤5's masteryLevel, which nothing ever granted — dropped on read).</summary>

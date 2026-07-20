@@ -54,6 +54,21 @@ namespace Wildgrove.Sim
             }
 
             var next = GameStateFactory.NewGame(data);
+
+            // The crew crosses the fold (design §4): the roster and every
+            // Kinship level persist — run XP banks into Kinship (√), and each
+            // familiar returns to a clean run build (level, powerups, station
+            // reset). This replaces the fresh run's seed crew with the carried
+            // one. (Presence-lapse — benching non-bonded familiars to re-meet —
+            // is a v1.1 refinement; at MVP the whole roster stays present.)
+            foreach (var familiar in state.roster)
+            {
+                Kinship.Fold(familiar, data);
+            }
+
+            next.roster = state.roster;
+            next.nextFamiliarSeq = state.nextFamiliarSeq;
+
             next.verdurePoints = VerdureAfterMigration(state, data);
             next.renown = state.renown;
             next.migrationCount = state.migrationCount + 1;
@@ -94,6 +109,11 @@ namespace Wildgrove.Sim
             {
                 next.lifetimePristine[pair.Key] = pair.Value;
             }
+
+            // A bond whose source is a kept permanent (Museum set / Almanac node)
+            // stays earned — make sure its companion is present in the carried
+            // roster (idempotent by bondId).
+            Roster.SyncBonded(next, data);
 
             // Fossil effects fold into the fresh run's multipliers at once.
             Upgrades.RecomputeYieldMultipliers(next, data);

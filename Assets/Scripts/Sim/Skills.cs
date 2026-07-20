@@ -97,6 +97,10 @@ namespace Wildgrove.Sim
 
             var gained = amount >= new BigDouble(headroom) ? headroom : amount.ToDouble();
             state.skillXp[skill] = current + gained;
+
+            // Money becomes XP (design §9): warden craft/gather XP is the
+            // ledger's climbing number now — every point earned credits Renown.
+            state.renown += new BigDouble(gained);
         }
     }
 }

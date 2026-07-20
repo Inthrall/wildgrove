@@ -20,7 +20,10 @@ namespace Wildgrove.Data
         public string Id { get; set; }
         public string Name { get; set; }
 
-        /// <summary>"gatherer" or "carrier" — a carrier bonds as a carrier.</summary>
+        /// <summary>Species id (into species.json) the bonded familiar belongs to — drives its powerup pool.</summary>
+        public string Species { get; set; }
+
+        /// <summary>Legacy role hint ("gatherer"/"carrier") — flavour only now that carrying is a post (design §4); stationing is free.</summary>
         public string Role { get; set; }
 
         public BondSourceDef Source { get; set; }

@@ -52,7 +52,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    id = "map-bramble", displayName = "Trail Map: Bramble", costCoin = 400,
+                    id = "map-bramble", displayName = "Trail Map: Bramble",
                     effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble" } },
                 },
             };

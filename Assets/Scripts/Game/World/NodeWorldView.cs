@@ -92,7 +92,7 @@ namespace Wildgrove.Game.World
             _diameter = worldDiameter;
         }
 
-        public void Refresh(bool selected, float time, int bondedGatherers, bool wardenPosted)
+        public void Refresh(bool selected, float time, int workingCount, bool hasBonded, bool wardenPosted)
         {
             _wardenMarker.enabled = wardenPosted;
 
@@ -116,12 +116,14 @@ namespace Wildgrove.Game.World
 
             // The warden counts as somebody working it — a bare node at the
             // post shouldn't read as idle.
-            var working = Node.familiarCount + bondedGatherers > 0 || wardenPosted;
+            var working = workingCount > 0 || wardenPosted;
             var colour = _colour;
             colour.a = working ? 1f : IdleAlpha;
             _disc.color = colour;
 
-            var dots = Mathf.Min(Node.familiarCount, MaxFlockDots);
+            // One dot per familiar stationed here (design §2) — a glance shows
+            // where the crew stands.
+            var dots = Mathf.Min(workingCount, MaxFlockDots);
             for (var i = 0; i < _flockDots.Length; i++)
             {
                 _flockDots[i].enabled = i < dots;
@@ -134,7 +136,7 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            _bondedMarker.enabled = bondedGatherers > 0;
+            _bondedMarker.enabled = hasBonded;
         }
 
         private static SpriteRenderer CreateSprite(Transform parent, string name, Sprite sprite, Color colour, int sortingOrder)

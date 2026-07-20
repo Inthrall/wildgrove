@@ -66,12 +66,12 @@ namespace Wildgrove.Sim.Tests
             {
                 new UpgradeData
                 {
-                    order = 7, id = "camp-fire-ring", costCoin = 100,
+                    order = 7, id = "camp-fire-ring",
                     effects = { new EffectData { type = EffectType.UnlockSkill, skill = "firecraft" } },
                 },
                 new UpgradeData
                 {
-                    order = 18, id = "quick-hands", costCoin = 100,
+                    order = 18, id = "quick-hands",
                     effects = { new EffectData { type = EffectType.CraftSpeedMult, skill = "foraging", value = 2 } },
                 },
             };
@@ -224,7 +224,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new BuildingData
                 {
-                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    id = "fire", displayName = "The Fire",
                     milestoneUpgradeIds = new List<string> { "camp-fire-ring" },
                     perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 0.05 },
                 },
@@ -248,7 +248,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new BuildingData
                 {
-                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    id = "fire", displayName = "The Fire",
                     perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 1.0 },
                 },
             };
@@ -360,7 +360,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new BuildingData
                 {
-                    id = "fire", displayName = "The Fire", baseCostCoin = 1300,
+                    id = "fire", displayName = "The Fire",
                     perLevel = new BuildingPerLevelData { type = "stationSpeedBonus", station = "fire", value = 0.05 },
                 },
             };
@@ -383,12 +383,14 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void SimulationAdvance_OfflineCatchup_CraftsBatchByBatchAsGoodsArrive()
         {
-            var state = new GameState { carrierCount = 1 };
+            var state = new GameState();
             state.nodes.Add(new NodeState
             {
                 id = "sunfield-meadow:berries", zoneId = GameStateFactory.StartingZoneId,
-                resourceId = "berries", skill = "foraging", familiarCount = 1,
+                resourceId = "berries", skill = "foraging",
             });
+            TestCrew.Station(state, "sunfield-meadow:berries", 1); // a gatherer
+            TestCrew.Station(state, Familiar.TrailStation, 1); // a carrier
             Crafting.Assign(state, _data, Recipe("berry-jam"));
 
             Simulation.Advance(state, _data, 30.0);
