@@ -83,6 +83,7 @@ namespace Wildgrove.Sim.Tests
             state.verdurePoints = 7.5;
             state.AddResource("berries", new BigDouble(42.25));
             state.nodes[1].masteryXp = 107.5;
+            state.nodes[1].richnessLevel = 4;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
             TestCrew.Station(state, state.nodes[1].id, 3);
@@ -92,6 +93,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.verdurePoints, Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
             Assert.That(restored.nodes[1].masteryXp, Is.EqualTo(107.5).Within(Tolerance));
+            Assert.That(restored.nodes[1].richnessLevel, Is.EqualTo(4));
             Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
             // The crew round-trips: 3 stationed at node 1, plus the seed vole at node 0.
@@ -306,6 +308,21 @@ namespace Wildgrove.Sim.Tests
             // The completed fossil's +10% all yields folds into the restored
             // multipliers alongside owned upgrades.
             Assert.That(restored.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance));
+        }
+
+        [Test]
+        public void RoundTrip_RestoresBuiltPlanters()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var nodeId = state.nodes[0].id;
+            state.builtPlanters.Add(new BuiltPlanter { planterId = "timber-frame", targetId = nodeId });
+            state.builtPlanters.Add(new BuiltPlanter { planterId = "reed-screen", targetId = "old-growth-wood" });
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.builtPlanters, Has.Count.EqualTo(2));
+            Assert.That(restored.HasPlanter(nodeId, "timber-frame"), Is.True);
+            Assert.That(restored.HasPlanter("old-growth-wood", "reed-screen"), Is.True);
         }
 
         [Test]

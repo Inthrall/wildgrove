@@ -97,5 +97,11 @@
     "kinshipDivisor": 1000,
     "kinshipXpRatePerLevel": 0.02,
     "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. All first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
+  },
+  "replant": {
+    "baseCost": 20,
+    "growth": 1.5,
+    "richnessPerLevel": 0.10,
+    "$note": "design §3: replanting a node's own resource raises its richness — the fourth output lane. replantCost(L) = baseCost·growth^L units of the node's OWN resource, spent from camp stock, per node per run; each level adds richnessPerLevel to the node's base yield (richnessMult = 1 + richnessPerLevel·level). No Renown — it pays back in yield, not the ledger. The warden's post trickle self-funds a virgin node's first replant (§3). Richness resets at Migration (except the Almanac's First Planting — a later slice). All first guesses."
   }
 }

@@ -35,6 +35,9 @@ namespace Wildgrove.Sim
                     continue;
                 }
 
+                // Reed-screen planters (design §3) steady this site's sketching.
+                var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
+
                 // Amber (design §10) is the dig's renewable find — a separate
                 // channel rolled before the fossil check, so fully-dug ground
                 // keeps surfacing it. No draw when unconfigured: pre-amber rng
@@ -42,7 +45,7 @@ namespace Wildgrove.Sim
                 var amber = data.economy.amber;
                 if (amber != null && amber.digFindsPerHour > 0.0
                     && Rng.NextDouble(ref state.rngState)
-                       < diggers * amber.digFindsPerHour * digMult * (deltaSeconds / 3600.0))
+                       < diggers * amber.digFindsPerHour * siteDigMult * (deltaSeconds / 3600.0))
                 {
                     state.amber += amber.perFind;
                 }
@@ -70,7 +73,7 @@ namespace Wildgrove.Sim
                     totalRarity += fossil.strataRarity;
                 }
 
-                var chance = diggers * excavation.baseFragmentsPerHour * digMult * totalRarity * hoursDug;
+                var chance = diggers * excavation.baseFragmentsPerHour * siteDigMult * totalRarity * hoursDug;
                 var dropped = Rng.NextDouble(ref state.rngState) < chance;
                 if (!dropped && excavation.pityTimerHoursDug > 0.0 && site.pityHours >= excavation.pityTimerHoursDug)
                 {

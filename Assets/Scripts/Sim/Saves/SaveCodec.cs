@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 21;
+        public const int CurrentVersion = 23;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -93,6 +93,7 @@ namespace Wildgrove.Sim.Saves
                 {
                     id = node.id,
                     masteryXp = node.masteryXp,
+                    richnessLevel = node.richnessLevel,
                     tendBurstRemaining = node.tendBurstRemaining,
                     pristineBonusRemaining = node.pristineBonusRemaining,
                     basket = node.basket,
@@ -127,6 +128,11 @@ namespace Wildgrove.Sim.Saves
                     zoneId = site.zoneId,
                     pityHours = site.pityHours,
                 });
+            }
+
+            foreach (var planter in state.builtPlanters)
+            {
+                save.builtPlanters.Add(new SavedPlanter { planterId = planter.planterId, targetId = planter.targetId });
             }
 
             foreach (var pair in state.fossilFragments)
@@ -294,6 +300,7 @@ namespace Wildgrove.Sim.Saves
                 }
 
                 node.masteryXp = saved.masteryXp;
+                node.richnessLevel = saved.richnessLevel;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
                 node.pristineBonusRemaining = saved.pristineBonusRemaining;
                 node.basket = saved.basket;
@@ -359,6 +366,20 @@ namespace Wildgrove.Sim.Saves
                         {
                             site.pityHours = savedSite.pityHours;
                         }
+                    }
+                }
+            }
+
+            state.builtPlanters.Clear();
+            if (save.builtPlanters != null)
+            {
+                foreach (var planter in save.builtPlanters)
+                {
+                    if (planter?.planterId != null && planter.targetId != null)
+                    {
+                        // Unknown planter ids or stale target ids are kept, same
+                        // policy as elsewhere — Planters skips them harmlessly.
+                        state.builtPlanters.Add(new BuiltPlanter { planterId = planter.planterId, targetId = planter.targetId });
                     }
                 }
             }
@@ -755,6 +776,20 @@ namespace Wildgrove.Sim.Saves
                         // kept for permanence), renamed with the retheme.
                         save.fixedResources = save.donatedResources ?? new List<string>();
                         save.version = 21;
+                        break;
+
+                    case 21:
+                        // v21 predates replanting — every node starts at richness
+                        // 0 (SavedNode.richnessLevel's missing-field default).
+                        save.version = 22;
+                        break;
+
+                    case 22:
+                        // v22 predates planters — a fresh run has none built
+                        // (SaveData.builtPlanters's initializer covers the
+                        // missing field).
+                        save.builtPlanters = save.builtPlanters ?? new List<SavedPlanter>();
+                        save.version = 23;
                         break;
 
                     default:

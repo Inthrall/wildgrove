@@ -265,6 +265,28 @@ namespace Wildgrove.Data
         public List<PowerupData> powerups = new List<PowerupData>();
     }
 
+    /// <summary>
+    /// A planter (design §3): a built structure improving one gather node or dig
+    /// site, paid in another zone's goods. Interpreted by <see cref="kind"/>.
+    /// </summary>
+    [Serializable]
+    public sealed class PlanterData
+    {
+        public string id;
+        public string displayName;
+
+        /// <summary>"basketCapacityMult" | "nodeYieldMult" | "digSpeedMult".</summary>
+        public string kind;
+
+        /// <summary>The fractional bonus added to the target (0.5 = +50%).</summary>
+        public double value;
+
+        /// <summary>"node" (a gather node) or "digSite".</summary>
+        public string target;
+
+        public List<ItemAmount> materials = new List<ItemAmount>();
+    }
+
     [Serializable]
     public sealed class RiteGeneratorConfigData
     {
@@ -331,6 +353,7 @@ namespace Wildgrove.Data
         public TendingData tending;
         public WardenData warden;
         public FamiliarXpData familiarXp;
+        public ReplantData replant;
 
         /// <summary>Unity can't serialize a null section — treat timeSkipCostAmber &lt;= 0 as "no amber system" (the Configured pattern).</summary>
         public AmberData amber;
@@ -473,6 +496,18 @@ namespace Wildgrove.Data
 
             /// <summary>+XP rate per Kinship level (design §4).</summary>
             public double kinshipXpRatePerLevel;
+        }
+
+        /// <summary>Replanting (design §3): raising a node's richness with its own resource.</summary>
+        [Serializable]
+        public sealed class ReplantData
+        {
+            /// <summary>Units of the node's own resource the first richness level costs; scales by growth^level.</summary>
+            public BigDouble baseCost;
+            public double growth;
+
+            /// <summary>Yield added per richness level (richnessMult = 1 + richnessPerLevel·level).</summary>
+            public double richnessPerLevel;
         }
     }
 }

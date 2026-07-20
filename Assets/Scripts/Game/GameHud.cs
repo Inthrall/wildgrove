@@ -321,6 +321,7 @@ namespace Wildgrove.Game
             BuildUpgradesSection();
             BuildCraftingSection();
             BuildBuildingsSection();
+            BuildPlantersSection();
             BuildRiteSection();
             BuildAlmanacSection();
             BuildKitSection();
@@ -404,14 +405,26 @@ namespace Wildgrove.Game
                     _loop.Tend(captured);
                 });
 
+                var replant = Button(row.transform, "Replant", 200, () =>
+                {
+                    _loop.Replant(captured);
+                    _dirty = true;
+                });
+
                 _liveUpdaters.Add(() =>
                 {
                     var rate = Simulation.YieldPerSecond(captured, _loop.State, _loop.Data, _loop.Data.economy);
                     var here = Stationing.CountAssignedTo(_loop.State, captured.id);
                     var stock = _loop.State.GetResource(captured.resourceId);
+                    var rich = captured.richnessLevel > 0 ? " · rich " + captured.richnessLevel : string.Empty;
                     label.text = captured.resourceId + "  <size=18>" + NumberFormat.Rate(rate) + "/s · "
-                                 + here + " here · " + NumberFormat.Short(stock) + " at camp</size>";
+                                 + here + " here" + rich + " · " + NumberFormat.Short(stock) + " at camp</size>";
                     rowImage.color = captured == _selected ? RowSelectedColor : RowColor;
+
+                    SetButtonLabel(replant, "Replant\n<size=16>" + NumberFormat.Short(_loop.ReplantCost(captured)) + "</size>");
+                    var ok = _loop.CanReplant(captured);
+                    replant.interactable = ok;
+                    SetButtonTint(replant, ok);
                 });
             }
         }
@@ -583,6 +596,71 @@ namespace Wildgrove.Game
                     SetButtonTint(build, ok);
                 });
             }
+        }
+
+        private void BuildPlantersSection()
+        {
+            // Bushcraft-gated (design §3): the section stays hidden until the
+            // Carving Bench opens planter recipes.
+            if (!_loop.PlantersUnlocked())
+            {
+                return;
+            }
+
+            Section("Planters");
+
+            foreach (var node in _loop.State.nodes)
+            {
+                var capturedNode = node;
+                foreach (var planter in _loop.NodePlanters())
+                {
+                    AddPlanterRow(planter, capturedNode.id, capturedNode.resourceId);
+                }
+            }
+
+            foreach (var site in _loop.State.digSites)
+            {
+                var capturedSite = site;
+                foreach (var planter in _loop.DigSitePlanters())
+                {
+                    AddPlanterRow(planter, capturedSite.zoneId, capturedSite.zoneId + " dig");
+                }
+            }
+        }
+
+        private void AddPlanterRow(PlanterData planter, string targetId, string targetLabel)
+        {
+            var capturedPlanter = planter;
+            var capturedTarget = targetId;
+            var row = Row();
+            var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft);
+            Flexible(label.gameObject, 1f);
+
+            // A built planter is a structural change (BuildPlanter sets _dirty),
+            // so the row is decided once at build time rather than toggled live.
+            if (_loop.PlanterBuilt(capturedPlanter, capturedTarget))
+            {
+                label.text = targetLabel + " — " + capturedPlanter.displayName + "  <size=16>✓ built</size>";
+                return;
+            }
+
+            label.text = targetLabel + " — " + capturedPlanter.displayName
+                         + "  <size=16>" + BundleLabel(capturedPlanter.materials) + "</size>";
+
+            var build = Button(row.transform, "Build", 200, () =>
+            {
+                if (_loop.BuildPlanter(capturedPlanter, capturedTarget))
+                {
+                    _dirty = true;
+                }
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var ok = _loop.CanBuildPlanter(capturedPlanter, capturedTarget);
+                build.interactable = ok;
+                SetButtonTint(build, ok);
+            });
         }
 
         private void BuildRiteSection()

@@ -29,6 +29,7 @@ namespace Wildgrove.Data
         public List<FolioSpreadData> folioSpreads = new List<FolioSpreadData>();
         public List<BondData> bonds = new List<BondData>();
         public List<SpeciesData> species = new List<SpeciesData>();
+        public List<PlanterData> planters = new List<PlanterData>();
         public ExchangeData exchange;
         public RitesBundle rites;
         public DialogueBundle dialogue;
@@ -42,6 +43,7 @@ namespace Wildgrove.Data
         private Dictionary<string, FossilData> fossilsById;
         private Dictionary<string, AlmanacNodeData> almanacById;
         private Dictionary<string, SpeciesData> speciesById;
+        private Dictionary<string, PlanterData> plantersById;
 
         public IReadOnlyDictionary<string, ResourceData> ResourcesById => resourcesById ??= Index(resources, r => r.id);
         public IReadOnlyDictionary<string, ZoneData> ZonesById => zonesById ??= Index(zones, z => z.id);
@@ -52,6 +54,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, FossilData> FossilsById => fossilsById ??= Index(fossils, f => f.id);
         public IReadOnlyDictionary<string, AlmanacNodeData> AlmanacById => almanacById ??= Index(almanac, a => a.id);
         public IReadOnlyDictionary<string, SpeciesData> SpeciesById => speciesById ??= Index(species, s => s.id);
+        public IReadOnlyDictionary<string, PlanterData> PlantersById => plantersById ??= Index(planters, p => p.id);
 
         public static GameDataAsset LoadFromResources()
         {

@@ -26,6 +26,7 @@ namespace Wildgrove.Data
         public string SpeciesJson { get; set; }
         public string ExchangeJson { get; set; }
         public string DialogueJson { get; set; }
+        public string PlantersJson { get; set; }
     }
 
     /// <summary>
@@ -59,6 +60,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<FolioSpreadDef> Spreads { get; private set; }
         public IReadOnlyList<BondDef> Bonds { get; private set; }
         public IReadOnlyList<SpeciesDef> Species { get; private set; }
+        public IReadOnlyList<PlanterDef> Planters { get; private set; }
         public ExchangeConfig Exchange { get; private set; }
         public DialogueData Dialogue { get; private set; }
 
@@ -73,6 +75,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, FolioSpreadDef> SpreadsById { get; private set; }
         public IReadOnlyDictionary<string, BondDef> BondsById { get; private set; }
         public IReadOnlyDictionary<string, SpeciesDef> SpeciesById { get; private set; }
+        public IReadOnlyDictionary<string, PlanterDef> PlantersById { get; private set; }
 
         private GameData()
         {
@@ -97,6 +100,7 @@ namespace Wildgrove.Data
                 Spreads = JsonConvert.DeserializeObject<FolioFile>(sources.FolioJson, settings).Spreads,
                 Bonds = JsonConvert.DeserializeObject<BondsFile>(sources.BondsJson, settings).Bonds,
                 Species = JsonConvert.DeserializeObject<SpeciesFile>(sources.SpeciesJson, settings).Species,
+                Planters = JsonConvert.DeserializeObject<PlantersFile>(sources.PlantersJson, settings).Planters,
                 Exchange = JsonConvert.DeserializeObject<ExchangeConfig>(sources.ExchangeJson, settings),
                 Dialogue = JsonConvert.DeserializeObject<DialogueData>(sources.DialogueJson, settings)
             };
@@ -129,7 +133,8 @@ namespace Wildgrove.Data
                 BondsJson = File.ReadAllText(Path.Combine(directory, "bonds.json")),
                 SpeciesJson = File.ReadAllText(Path.Combine(directory, "species.json")),
                 ExchangeJson = File.ReadAllText(Path.Combine(directory, "exchange.json")),
-                DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json"))
+                DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json")),
+                PlantersJson = File.ReadAllText(Path.Combine(directory, "planters.json"))
             };
         }
 
@@ -142,7 +147,8 @@ namespace Wildgrove.Data
             // this whole file as binary.
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson,
-                sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson);
+                sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson,
+                sources.PlantersJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -181,6 +187,7 @@ namespace Wildgrove.Data
             SpreadsById = IndexById(Spreads, s => s.Id);
             BondsById = IndexById(Bonds, b => b.Id);
             SpeciesById = IndexById(Species, s => s.Id);
+            PlantersById = IndexById(Planters, p => p.Id);
         }
 
         private static IReadOnlyDictionary<string, T> IndexById<T>(IEnumerable<T> items, System.Func<T, string> id)
@@ -246,6 +253,11 @@ namespace Wildgrove.Data
         private sealed class SpeciesFile
         {
             public List<SpeciesDef> Species { get; set; }
+        }
+
+        private sealed class PlantersFile
+        {
+            public List<PlanterDef> Planters { get; set; }
         }
 
         private sealed class FolioFile

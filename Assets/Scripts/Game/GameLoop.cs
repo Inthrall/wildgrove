@@ -348,6 +348,86 @@ namespace Wildgrove.Game
             Simulation.Tend(State, Data, node);
         }
 
+        /// <summary>The node's next replant cost, in units of its own resource (design §3) — for the button label.</summary>
+        public BigDouble ReplantCost(NodeState node)
+        {
+            return Replanting.ReplantCost(node, Data.economy);
+        }
+
+        /// <summary>True when camp stock covers the node's next replant — the button's enabled state.</summary>
+        public bool CanReplant(NodeState node)
+        {
+            return Replanting.CanReplant(State, Data, node);
+        }
+
+        /// <summary>Replant a node's own resource to raise its richness (design §3 — the fourth lane). Returns false (no change) when stock is short.</summary>
+        public bool Replant(NodeState node)
+        {
+            if (!Replanting.TryReplant(State, Data, node))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("replanted", ("node", node.id), ("richness", node.richnessLevel));
+            return true;
+        }
+
+        /// <summary>True once the Carving Bench has opened Bushcraft and its planter recipes (design §3) — gates the planter UI.</summary>
+        public bool PlantersUnlocked()
+        {
+            return Planters.Unlocked(State, Data);
+        }
+
+        /// <summary>The planter types that attach to a gather node (design §3).</summary>
+        public List<PlanterData> NodePlanters()
+        {
+            return PlantersForTarget("node");
+        }
+
+        /// <summary>The planter types that attach to a dig site (design §3).</summary>
+        public List<PlanterData> DigSitePlanters()
+        {
+            return PlantersForTarget("digSite");
+        }
+
+        private List<PlanterData> PlantersForTarget(string target)
+        {
+            var matching = new List<PlanterData>();
+            foreach (var planter in Data.planters)
+            {
+                if (planter.target == target)
+                {
+                    matching.Add(planter);
+                }
+            }
+
+            return matching;
+        }
+
+        /// <summary>True when this planter is already built at the target.</summary>
+        public bool PlanterBuilt(PlanterData planter, string targetId)
+        {
+            return State.HasPlanter(targetId, planter.id);
+        }
+
+        /// <summary>True when the planter can be built here (unlocked, absent, stock covers the bundle) — the build button's enabled state.</summary>
+        public bool CanBuildPlanter(PlanterData planter, string targetId)
+        {
+            return Planters.CanBuild(State, Data, planter, targetId);
+        }
+
+        /// <summary>Build a planter at a node or dig site (design §3). Returns false (no change) when it can't be built.</summary>
+        public bool BuildPlanter(PlanterData planter, string targetId)
+        {
+            if (!Planters.TryBuild(State, Data, planter, targetId))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("planter-built", ("planter", planter.id), ("target", targetId));
+            return true;
+        }
+
         /// <summary>True once the run owns the one-off upgrade.</summary>
         public bool IsUpgradePurchased(UpgradeData upgrade)
         {

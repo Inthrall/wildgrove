@@ -85,6 +85,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v9+: dig sites and their pity timers (absent before excavation — sites resync from owned upgrades).</summary>
         public List<SavedDigSite> digSites = new List<SavedDigSite>();
 
+        /// <summary>v23+: planters built this run (design §3), each attached to a node or dig site (absent before — none built).</summary>
+        public List<SavedPlanter> builtPlanters = new List<SavedPlanter>();
+
         /// <summary>v9+: fossil fragments surfaced, per fossil id (absent before excavation — nothing found yet).</summary>
         public List<SavedFossilFragments> fossilFragments = new List<SavedFossilFragments>();
 
@@ -173,6 +176,14 @@ namespace Wildgrove.Sim.Saves
         public double pityHours;
     }
 
+    /// <summary>One built planter and the node or dig site it's attached to (design §3).</summary>
+    [Serializable]
+    public sealed class SavedPlanter
+    {
+        public string planterId;
+        public string targetId;
+    }
+
     /// <summary>Fragments surfaced toward one fossil.</summary>
     [Serializable]
     public sealed class SavedFossilFragments
@@ -231,6 +242,9 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>v6+: mastery XP (replaces v≤5's masteryLevel, which nothing ever granted — dropped on read).</summary>
         public double masteryXp;
+
+        /// <summary>v22+: replanting richness level (design §3; absent before — defaults to 0).</summary>
+        public int richnessLevel;
 
         public double tendBurstRemaining;
 

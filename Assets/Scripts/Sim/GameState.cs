@@ -124,6 +124,14 @@ namespace Wildgrove.Sim
         /// <summary>Dig sites opened this run (design §5: unlockDigSite upgrades on zones that hold one).</summary>
         public List<DigSiteState> digSites = new List<DigSiteState>();
 
+        /// <summary>
+        /// Planters built this run (design §3), each attached to one gather node
+        /// or dig site by target id. Each improves that target's basket capacity,
+        /// yield, or dig speed (see <see cref="Planters"/>). One planter of each
+        /// type per target. Reset at Migration — cheap to rebuild each run.
+        /// </summary>
+        public List<BuiltPlanter> builtPlanters = new List<BuiltPlanter>();
+
         /// <summary>Fossil fragments surfaced this run, keyed by fossil id. A fossil is complete when its count reaches the data's fragments target — completion grants its permanent effects.</summary>
         public Dictionary<string, int> fossilFragments = new Dictionary<string, int>();
 
@@ -172,6 +180,20 @@ namespace Wildgrove.Sim
         public bool HasUpgrade(string upgradeId)
         {
             return purchasedUpgradeIds.Contains(upgradeId);
+        }
+
+        /// <summary>True when a planter of this type is already built at the given target.</summary>
+        public bool HasPlanter(string targetId, string planterId)
+        {
+            foreach (var planter in builtPlanters)
+            {
+                if (planter.targetId == targetId && planter.planterId == planterId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>Mint the next stable per-run roster id (e.g. "fam-1").</summary>
@@ -267,6 +289,21 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
+    /// One built planter (design §3): a planter type attached to one gather node
+    /// or dig site. The target id is a node id for node planters, or a zone id
+    /// for dig-site planters (see <see cref="Planters"/>).
+    /// </summary>
+    [Serializable]
+    public sealed class BuiltPlanter
+    {
+        /// <summary>Planter id from planters.json.</summary>
+        public string planterId;
+
+        /// <summary>Node id (node planters) or zone id (dig-site planters) this is attached to.</summary>
+        public string targetId;
+    }
+
+    /// <summary>
     /// One worked resource node — a single resource within a zone, gathered by
     /// that zone's flock of familiars. Familiars accrue the resource
     /// automatically each tick.
@@ -281,6 +318,13 @@ namespace Wildgrove.Sim
 
         /// <summary>The gathering skill working this node (e.g. "foraging").</summary>
         public string skill;
+
+        /// <summary>
+        /// Richness level (design §3): raised by replanting the node's own
+        /// resource, each level adding economy.replant.richnessPerLevel to the
+        /// node's yield. Per node, per run — reset at Migration.
+        /// </summary>
+        public int richnessLevel;
 
         /// <summary>
         /// Mastery XP earned gathering this node's resource (design §4). Levels

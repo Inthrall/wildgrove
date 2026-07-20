@@ -1,0 +1,8 @@
+{
+  "$comment": "Planters (design §3): built structures that improve a specific node or dig site, paid in OTHER zones' goods (the backward flow — Zone 3 timber has a job in Zone 1). Bushcraft-gated (the Carving Bench unlocks them). kind: basketCapacityMult (a bigger basket at a node), nodeYieldMult (a second yield lane), digSpeedMult (steady a dig site's sketching). target: node | digSite. One of each planter per target. Reset at Migration (except the Almanac's First Planting — a later slice). The clay-bed 'regrowth' planter is deferred until a regrowth mechanic exists. Material bundles + values are first guesses.",
+  "planters": [
+    { "id": "timber-frame",    "name": "Timber Frame",    "kind": "basketCapacityMult", "value": 0.5,  "target": "node",    "materials": { "timber": 20 } },
+    { "id": "cordage-trellis", "name": "Cordage Trellis", "kind": "nodeYieldMult",      "value": 0.25, "target": "node",    "materials": { "cordage": 6 } },
+    { "id": "reed-screen",     "name": "Reed Screen",     "kind": "digSpeedMult",       "value": 0.5,  "target": "digSite", "materials": { "reeds": 20 } }
+  ]
+}

@@ -60,6 +60,7 @@ namespace Wildgrove.Data
             ValidateFolio(data, resourceIds, issues);
             ValidateBonds(data, issues);
             ValidateSpecies(data, issues);
+            ValidatePlanters(data, resourceIds, issues);
             ValidateExchange(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
@@ -663,6 +664,67 @@ namespace Wildgrove.Data
             }
         }
 
+        // The planter kinds the sim knows how to apply (Planters.cs) — a typo'd
+        // kind would build a planter that does nothing.
+        private static readonly HashSet<string> KnownPlanterKinds = new HashSet<string>
+        {
+            "basketCapacityMult", "nodeYieldMult", "digSpeedMult"
+        };
+
+        private static readonly HashSet<string> KnownPlanterTargets = new HashSet<string> { "node", "digSite" };
+
+        private static void ValidatePlanters(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            CheckIds(data.Planters.Select(p => p.Id), "planter", issues);
+
+            foreach (var planter in data.Planters)
+            {
+                if (!KnownPlanterKinds.Contains(planter.Kind))
+                {
+                    issues.Add($"Planter '{planter.Id}' has unknown kind '{planter.Kind}'");
+                }
+
+                if (!KnownPlanterTargets.Contains(planter.Target))
+                {
+                    issues.Add($"Planter '{planter.Id}' has unknown target '{planter.Target}'");
+                }
+
+                // A dig site is sketched, not gathered into a basket — a
+                // capacity/yield planter on a dig site would do nothing.
+                if (planter.Target == "digSite" && planter.Kind != "digSpeedMult")
+                {
+                    issues.Add($"Planter '{planter.Id}' targets a dig site but its kind '{planter.Kind}' only applies to gather nodes");
+                }
+
+                if (planter.Target == "node" && planter.Kind == "digSpeedMult")
+                {
+                    issues.Add($"Planter '{planter.Id}' targets a gather node but digSpeedMult only applies to dig sites");
+                }
+
+                if (planter.Value <= 0.0)
+                {
+                    issues.Add($"Planter '{planter.Id}' must have a positive value");
+                }
+
+                if (planter.Materials == null || planter.Materials.Count == 0)
+                {
+                    issues.Add($"Planter '{planter.Id}' has no material cost bundle");
+                }
+                else
+                {
+                    foreach (var material in planter.Materials.Keys.Where(m => !resourceIds.Contains(m)))
+                    {
+                        issues.Add($"Planter '{planter.Id}' material '{material}' is not gathered from any zone or produced by any recipe");
+                    }
+
+                    foreach (var material in planter.Materials.Where(kv => kv.Value <= 0))
+                    {
+                        issues.Add($"Planter '{planter.Id}' material '{material.Key}' amount must be positive");
+                    }
+                }
+            }
+        }
+
         private static void ValidateExchange(GameData data, List<string> issues)
         {
             if (data.Exchange == null)
@@ -944,6 +1006,7 @@ namespace Wildgrove.Data
             RequireSection(economy.Tending, "tending", issues);
             RequireSection(economy.Warden, "warden", issues);
             RequireSection(economy.FamiliarXp, "familiarXp", issues);
+            RequireSection(economy.Replant, "replant", issues);
 
             if (economy.CostGrowth != null
                 && (economy.CostGrowth.GathererGift <= 1 || economy.CostGrowth.CarrierGift <= 1 || economy.CostGrowth.Building <= 1))
@@ -1016,6 +1079,14 @@ namespace Wildgrove.Data
             if (economy.FamiliarXp != null && economy.FamiliarXp.XpPerSecond < 0)
             {
                 issues.Add("Economy familiarXp.xpPerSecond must not be negative");
+            }
+
+            if (economy.Replant != null
+                && (economy.Replant.BaseCost <= 0 || economy.Replant.Growth <= 1 || economy.Replant.RichnessPerLevel <= 0))
+            {
+                // BaseCost ≤ 0 makes richness free; growth ≤ 1 never escalates; a
+                // non-positive richnessPerLevel makes replanting do nothing.
+                issues.Add("Economy replant is degenerate (baseCost > 0, growth > 1, richnessPerLevel > 0)");
             }
 
             if (economy.Mastery != null

@@ -21,6 +21,7 @@ namespace Wildgrove.Data
         public TendingSection Tending { get; set; }
         public WardenSection Warden { get; set; }
         public FamiliarXpSection FamiliarXp { get; set; }
+        public ReplantSection Replant { get; set; }
 
         public sealed class CostGrowthSection
         {
@@ -138,6 +139,13 @@ namespace Wildgrove.Data
             public double XpPerSecond { get; set; }
             public double KinshipDivisor { get; set; }
             public double KinshipXpRatePerLevel { get; set; }
+        }
+
+        public sealed class ReplantSection
+        {
+            public long BaseCost { get; set; }
+            public double Growth { get; set; }
+            public double RichnessPerLevel { get; set; }
         }
     }
 }

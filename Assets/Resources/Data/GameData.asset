@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 4d49a01edc0d7ccd8affaaa63481e57d56cfc8dadd739d0d640d31a5b5943b41
+  sourceHash: 005a92377b201c554d9cc34814e3a21ff11872787360d874fa0892c25f5ff3e8
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -89,6 +89,12 @@ MonoBehaviour:
       xpPerSecond: 1
       kinshipDivisor: 1000
       kinshipXpRatePerLevel: 0.02
+    replant:
+      baseCost:
+        mantissa: 2
+        exponent: 1
+      growth: 1.5
+      richnessPerLevel: 0.1
     amber:
       digFindsPerHour: 0.06
       perFind: 2
@@ -1554,6 +1560,31 @@ MonoBehaviour:
       kind: offlineBonus
       value: 0.2
       resource: 
+  planters:
+  - id: timber-frame
+    displayName: Timber Frame
+    kind: basketCapacityMult
+    value: 0.5
+    target: node
+    materials:
+    - id: timber
+      amount: 20
+  - id: cordage-trellis
+    displayName: Cordage Trellis
+    kind: nodeYieldMult
+    value: 0.25
+    target: node
+    materials:
+    - id: cordage
+      amount: 6
+  - id: reed-screen
+    displayName: Reed Screen
+    kind: digSpeedMult
+    value: 0.5
+    target: digSite
+    materials:
+    - id: reeds
+      amount: 20
   exchange:
     spread: 0.15
   rites:

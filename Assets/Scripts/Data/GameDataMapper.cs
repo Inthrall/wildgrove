@@ -20,6 +20,7 @@ namespace Wildgrove.Data
             asset.folioSpreads = data.Spreads.Select(MapSpread).ToList();
             asset.bonds = data.Bonds.Select(MapBond).ToList();
             asset.species = data.Species.Select(MapSpecies).ToList();
+            asset.planters = data.Planters.Select(MapPlanter).ToList();
             asset.exchange = data.Exchange == null ? null : new ExchangeData
             {
                 spread = data.Exchange.Spread
@@ -163,6 +164,19 @@ namespace Wildgrove.Data
                 kind = p.Kind,
                 value = p.Value,
                 resource = p.Resource
+            };
+        }
+
+        private static PlanterData MapPlanter(PlanterDef p)
+        {
+            return new PlanterData
+            {
+                id = p.Id,
+                displayName = p.Name,
+                kind = p.Kind,
+                value = p.Value,
+                target = p.Target,
+                materials = MapItemAmounts(p.Materials)
             };
         }
 
@@ -360,6 +374,12 @@ namespace Wildgrove.Data
                     xpPerSecond = e.FamiliarXp.XpPerSecond,
                     kinshipDivisor = e.FamiliarXp.KinshipDivisor,
                     kinshipXpRatePerLevel = e.FamiliarXp.KinshipXpRatePerLevel
+                },
+                replant = e.Replant == null ? null : new EconomyData.ReplantData
+                {
+                    baseCost = e.Replant.BaseCost,
+                    growth = e.Replant.Growth,
+                    richnessPerLevel = e.Replant.RichnessPerLevel
                 }
             };
         }

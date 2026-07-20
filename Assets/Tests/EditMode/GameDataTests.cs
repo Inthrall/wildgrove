@@ -36,6 +36,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Rites.Rites, Is.Not.Empty);
             Assert.That(data.Bonds, Is.Not.Empty);
             Assert.That(data.Species, Is.Not.Empty, "design §4 defines the familiar species");
+            Assert.That(data.Planters, Is.Not.Empty, "design §3 defines the planters");
             Assert.That(data.Exchange, Is.Not.Null, "design §9 the Exchange spread");
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
             Assert.That(data.Dialogue.Verses, Is.Not.Empty);
@@ -64,6 +65,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
+            Assert.That(data.Economy.Replant.RichnessPerLevel, Is.EqualTo(0.10), "design §3 replanting richness");
             Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
             Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
             Assert.That(data.Economy.Excavation.BaseFragmentsPerHour, Is.EqualTo(0.25));

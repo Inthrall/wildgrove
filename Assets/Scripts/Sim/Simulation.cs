@@ -85,7 +85,10 @@ namespace Wildgrove.Sim
                     {
                         // Into the basket, clamped at capacity — a full basket
                         // overflows and the excess is lost (the §2 bottleneck).
-                        node.basket = BigDouble.Min(node.basket + gained, basketCapacity);
+                        // Timber-frame planters (design §3) stretch this node's
+                        // basket beyond the global Store line.
+                        var nodeCapacity = basketCapacity * Planters.BasketCapacityMultiplier(state, data, node);
+                        node.basket = BigDouble.Min(node.basket + gained, nodeCapacity);
                     }
                     else
                     {
@@ -398,9 +401,12 @@ namespace Wildgrove.Sim
         {
             var masteryBonus = 1.0 + economy.mastery.yieldBonusPerLevel * Mastery.Level(node, economy);
             var global = 1.0 + economy.verdure.yieldBonusPerPoint * state.verdurePoints;
+            var richness = Replanting.RichnessMultiplier(node, economy);
+            // Cordage-trellis planters (design §3): a second yield lane at the node.
+            var planters = Planters.NodeYieldMultiplier(state, data, node);
             var agents = Stationing.GatherAgentsAt(state, data, node);
 
-            return new BigDouble(agents) * node.yieldMultiplier * masteryBonus * global;
+            return new BigDouble(agents) * node.yieldMultiplier * masteryBonus * richness * planters * global;
         }
     }
 
