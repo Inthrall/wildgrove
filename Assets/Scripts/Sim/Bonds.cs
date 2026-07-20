@@ -4,14 +4,13 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// Bonded familiars (design §7): the rare exception to the Migration
+    /// Bonded familiars (design §4): the rare exception to the Migration
     /// reset — earned, never bought. Earned state is DERIVED from the bond's
-    /// source (a completed Museum set or an owned Almanac node, both of which
-    /// already survive Migration), so bonds cross with the warden for free
-    /// and can never be lost to a stale save. Bonds are role-locked and sit
-    /// outside the gift count, the cost curves, and the familiar caps: a
-    /// bonded carrier hauls alongside the fleet without holding a slot, and a
-    /// bonded gatherer works at the warden's side — the node last tended.
+    /// source (a completed Folio spread or an owned Almanac node, both of which
+    /// already survive Migration), so bonds cross with the warden for free and
+    /// can never be lost to a stale save. A bonded familiar is materialised into
+    /// the roster (see <see cref="Roster.SyncBonded"/>) and stationed like any
+    /// other — carrying is a post now, not a species.
     /// </summary>
     public static class Bonds
     {
@@ -24,10 +23,10 @@ namespace Wildgrove.Sim
 
             switch (bond.source.type)
             {
-                case "museumSet":
-                    return data.museumSets != null
-                        && FindMuseumSet(data, bond.source.id) is MuseumSetData set
-                        && Museum.IsSetComplete(state, set);
+                case "folioSpread":
+                    return data.folioSpreads != null
+                        && FindSpread(data, bond.source.id) is FolioSpreadData spread
+                        && Folio.IsSpreadComplete(state, spread);
                 case "almanacNode":
                     return state.almanacNodeIds.Contains(bond.source.id);
                 default:
@@ -70,13 +69,13 @@ namespace Wildgrove.Sim
             return null;
         }
 
-        private static MuseumSetData FindMuseumSet(GameDataAsset data, string setId)
+        private static FolioSpreadData FindSpread(GameDataAsset data, string spreadId)
         {
-            foreach (var set in data.museumSets)
+            foreach (var spread in data.folioSpreads)
             {
-                if (set.id == setId)
+                if (spread.id == spreadId)
                 {
-                    return set;
+                    return spread;
                 }
             }
 

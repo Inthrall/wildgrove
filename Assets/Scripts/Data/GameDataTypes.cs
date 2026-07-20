@@ -143,9 +143,9 @@ namespace Wildgrove.Data
         public List<EffectData> effects = new List<EffectData>();
     }
 
-    /// <summary>One Museum set (design §5): donate a Pristine specimen of each entry; completion grants a permanent effect surviving Migration.</summary>
+    /// <summary>One Folio spread (design §6): fix a Pristine specimen of each entry into the journal; completion grants a permanent effect surviving Migration.</summary>
     [Serializable]
-    public sealed class MuseumSetData
+    public sealed class FolioSpreadData
     {
         public string id;
         public string displayName;
@@ -199,7 +199,7 @@ namespace Wildgrove.Data
     [Serializable]
     public sealed class BondSourceData
     {
-        /// <summary>"museumSet" or "almanacNode".</summary>
+        /// <summary>"folioSpread" or "almanacNode".</summary>
         public string type;
         public string id;
     }

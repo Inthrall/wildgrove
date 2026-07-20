@@ -6,7 +6,7 @@
       "name": "Sootwing",
       "species": "pack-raven",
       "role": "carrier",
-      "source": { "type": "museumSet", "id": "meadow-blooms" }
+      "source": { "type": "folioSpread", "id": "meadow-blooms" }
     },
     {
       "id": "burr",

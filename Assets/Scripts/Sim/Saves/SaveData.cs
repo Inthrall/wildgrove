@@ -34,8 +34,11 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v13+: the warden's worn kit, one gear id per slot (absent before the gear system — bare hands).</summary>
         public List<SavedGearSlot> gear = new List<SavedGearSlot>();
 
-        /// <summary>v14+: resources whose Pristine specimen was donated to the Museum (absent before the Museum — nothing donated).</summary>
+        /// <summary>v14–v20 legacy wire name for fixed specimens — read only by the v20→v21 migration.</summary>
         public List<string> donatedResources = new List<string>();
+
+        /// <summary>v21+: resources whose Pristine specimen was fixed into the Folio (design §6). Renamed from donatedResources.</summary>
+        public List<string> fixedResources = new List<string>();
 
         /// <summary>v15–v18 wire name for the warden's post — read only by the v18→v19 migration.</summary>
         public string bondedPostNodeId;

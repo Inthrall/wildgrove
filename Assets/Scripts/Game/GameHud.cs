@@ -325,6 +325,31 @@ namespace Wildgrove.Game
             BuildAlmanacSection();
             BuildKitSection();
             BuildSpecimensSection();
+            BuildFolioSection();
+        }
+
+        private void BuildFolioSection()
+        {
+            if (_loop.Data.folioSpreads == null || _loop.Data.folioSpreads.Count == 0)
+            {
+                return;
+            }
+
+            Section("The Folio");
+            foreach (var spread in _loop.Data.folioSpreads)
+            {
+                var captured = spread;
+                var label = MakeText(Row().transform, string.Empty, 18, TextAnchor.MiddleLeft);
+                Flexible(label.gameObject, 1f);
+                _liveUpdaters.Add(() =>
+                {
+                    var done = Folio.IsSpreadComplete(_loop.State, captured);
+                    var progress = done
+                        ? "complete"
+                        : Folio.FixedEntryCount(_loop.State, captured) + " / " + captured.entries.Count + " fixed";
+                    label.text = captured.displayName + "  <size=16>" + progress + "</size>";
+                });
+            }
         }
 
         private void BuildCrewSection()
@@ -714,9 +739,9 @@ namespace Wildgrove.Game
                 var row = Row();
                 var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft);
                 Flexible(label.gameObject, 1f);
-                Button(row.transform, "Donate", 160, () =>
+                Button(row.transform, "Fix", 160, () =>
                 {
-                    _loop.DonatePristine(resourceId);
+                    _loop.FixSpecimen(resourceId);
                     _dirty = true;
                 });
 

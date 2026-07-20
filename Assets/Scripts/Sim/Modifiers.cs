@@ -78,7 +78,7 @@ namespace Wildgrove.Sim
 
             return state.purchasedUpgradeIds.Count
                    + state.almanacNodeIds.Count * 1000L
-                   + state.donatedResources.Count * 1000_000L
+                   + state.fixedResources.Count * 1000_000L
                    + state.gearBySlot.Count * 1000_000_000L
                    + buildingLevels * 1000_000_000_000L
                    + fragments * 1000_000_000_000_000L;

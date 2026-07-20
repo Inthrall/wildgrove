@@ -167,11 +167,11 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Migrate_KeepsMuseumDonations_AndTheirSetBonuses()
+        public void Migrate_KeepsFolioFixings_AndTheirSpreadBonuses()
         {
-            _data.museumSets = new List<MuseumSetData>
+            _data.folioSpreads = new List<FolioSpreadData>
             {
-                new MuseumSetData
+                new FolioSpreadData
                 {
                     id = "meadow-blooms", displayName = "Meadow Blooms",
                     entries = new List<string> { "berries" },
@@ -180,13 +180,13 @@ namespace Wildgrove.Sim.Tests
             };
             var state = StateWithTheRiteSung();
             state.AddPristine("berries", 1);
-            Museum.TryDonate(state, _data, "berries");
+            Folio.TryFix(state, _data, "berries");
 
             var next = Migration.Migrate(state, _data);
 
-            Assert.That(next.donatedResources, Is.EqualTo(new[] { "berries" }));
+            Assert.That(next.fixedResources, Is.EqualTo(new[] { "berries" }));
             Assert.That(next.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance),
-                "the Museum's permanence survives the fold");
+                "the Folio's permanence survives the fold");
         }
 
         [Test]
@@ -212,9 +212,9 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Migrate_BondedFamiliarsCross_ButThePostResets()
         {
-            _data.museumSets = new List<MuseumSetData>
+            _data.folioSpreads = new List<FolioSpreadData>
             {
-                new MuseumSetData
+                new FolioSpreadData
                 {
                     id = "meadow-blooms", displayName = "Meadow Blooms",
                     entries = new List<string> { "berries" },
@@ -225,11 +225,11 @@ namespace Wildgrove.Sim.Tests
                 new BondData
                 {
                     id = "sootwing", displayName = "Sootwing", species = "pack-raven", role = "carrier",
-                    source = new BondSourceData { type = "museumSet", id = "meadow-blooms" },
+                    source = new BondSourceData { type = "folioSpread", id = "meadow-blooms" },
                 },
             };
             var state = StateWithTheRiteSung();
-            state.donatedResources.Add("berries");
+            state.fixedResources.Add("berries");
             state.wardenPostNodeId = state.nodes[0].id;
 
             var next = Migration.Migrate(state, _data);

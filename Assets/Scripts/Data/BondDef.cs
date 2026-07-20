@@ -1,9 +1,9 @@
 namespace Wildgrove.Data
 {
-    /// <summary>What earns a bond: a completed Museum set or an owned Almanac node.</summary>
+    /// <summary>What earns a bond: a completed Folio spread or an owned Almanac node.</summary>
     public sealed class BondSourceDef
     {
-        /// <summary>"museumSet" or "almanacNode".</summary>
+        /// <summary>"folioSpread" or "almanacNode".</summary>
         public string Type { get; set; }
 
         /// <summary>The id of the set or node that grants this companion.</summary>

@@ -400,12 +400,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresMuseumDonations()
+        public void RoundTrip_RestoresFolioFixings()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.donatedResources.Add("berries");
+            state.fixedResources.Add("berries");
 
-            Assert.That(RoundTrip(state).donatedResources, Is.EqualTo(new[] { "berries" }));
+            Assert.That(RoundTrip(state).fixedResources, Is.EqualTo(new[] { "berries" }));
         }
 
         [Test]
@@ -541,14 +541,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V13Save_GetsAnEmptyMuseum()
+        public void TryMigrate_V13Save_GetsAnEmptyFolio()
         {
-            // v13 predates the Museum — nothing donated yet.
+            // v13 predates the Museum/Folio — nothing fixed yet.
             var save = new SaveData { version = 13, donatedResources = null };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.donatedResources, Is.Empty);
+            Assert.That(save.fixedResources, Is.Empty);
+        }
+
+        [Test]
+        public void TryMigrate_V20Save_CarriesDonationsToFixedResources()
+        {
+            // v20's Museum "donatedResources" becomes the Folio's "fixedResources".
+            var save = new SaveData { version = 20, donatedResources = new List<string> { "berries", "nuts" } };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.fixedResources, Is.EqualTo(new[] { "berries", "nuts" }));
         }
 
         [Test]

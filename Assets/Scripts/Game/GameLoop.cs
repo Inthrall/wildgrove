@@ -565,16 +565,16 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>Donate one Pristine specimen to the Museum (design §5 — permanence over the windfall). Returns false when no set wants it or none is held.</summary>
-        public bool DonatePristine(string resourceId)
+        /// <summary>Fix one Pristine specimen into the Folio (design §6 — permanence over the windfall). Returns false when no spread wants it or none is held.</summary>
+        public bool FixSpecimen(string resourceId)
         {
             var bondsBefore = EarnedBondIds();
-            if (!Museum.TryDonate(State, Data, resourceId))
+            if (!Folio.TryFix(State, Data, resourceId))
             {
                 return false;
             }
 
-            Telemetry.LogEvent("specimen_donated", ("resource", resourceId));
+            Telemetry.LogEvent("specimen_fixed", ("resource", resourceId));
             ReportNewBonds(bondsBefore);
             return true;
         }
@@ -638,7 +638,7 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// A bond is earned the moment its source completes. Its companion is
-        /// materialised into the roster by Museum/Almanac restore paths; here we
+        /// materialised into the roster by Folio/Almanac restore paths; here we
         /// just surface the celebration and telemetry for the newly earned ones.
         /// </summary>
         private void ReportNewBonds(HashSet<string> bondsBefore)

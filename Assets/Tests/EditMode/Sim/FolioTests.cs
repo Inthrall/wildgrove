@@ -6,12 +6,12 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the Museum (design §5): donating a Pristine specimen consumes it
-    /// forever, a set completes when every entry is donated, completed sets
+    /// Pins the Folio (design §6): fixing a Pristine specimen consumes it
+    /// forever, a spread completes when every entry is fixed, completed spreads
     /// grant permanent effects (scaled by the Curator's Cabinet while owned),
-    /// and donations are the permanence fork of the Pristine three-way choice.
+    /// and fixing is the permanence fork of the Pristine three-way choice.
     /// </summary>
-    public class MuseumTests
+    public class FolioTests
     {
         private const double Tolerance = 1e-9;
 
@@ -37,9 +37,9 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
-            _data.museumSets = new List<MuseumSetData>
+            _data.folioSpreads = new List<FolioSpreadData>
             {
-                new MuseumSetData
+                new FolioSpreadData
                 {
                     id = "meadow-blooms", displayName = "Meadow Blooms",
                     entries = new List<string> { "berries", "wildflowers" },
@@ -51,7 +51,7 @@ namespace Wildgrove.Sim.Tests
                 new UpgradeData
                 {
                     order = 26, id = "curators-cabinet",
-                    effects = { new EffectData { type = EffectType.MuseumSetBonusMult, value = 1.5 } },
+                    effects = { new EffectData { type = EffectType.FolioSpreadBonusMult, value = 1.5 } },
                 },
             };
         }
@@ -63,67 +63,67 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryDonate_ConsumesTheSpecimenForever()
+        public void TryFix_ConsumesTheSpecimenForever()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddPristine("berries", 2);
 
-            var donated = Museum.TryDonate(state, _data, "berries");
+            var fixedOk = Folio.TryFix(state, _data, "berries");
 
-            Assert.That(donated, Is.True);
+            Assert.That(fixedOk, Is.True);
             Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
-            Assert.That(Museum.IsDonated(state, "berries"), Is.True);
-            // One entry per resource — a second donation has nowhere to go.
-            Assert.That(Museum.TryDonate(state, _data, "berries"), Is.False);
+            Assert.That(Folio.IsFixed(state, "berries"), Is.True);
+            // One entry per resource — a second fixing has nowhere to go.
+            Assert.That(Folio.TryFix(state, _data, "berries"), Is.False);
             Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
-        public void TryDonate_NoSetWantsIt_Refuses()
+        public void TryFix_NoSpreadWantsIt_Refuses()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.AddPristine("fibres", 1); // gathered, but no set lists it
+            state.AddPristine("fibres", 1); // gathered, but no spread lists it
 
-            Assert.That(Museum.TryDonate(state, _data, "fibres"), Is.False);
+            Assert.That(Folio.TryFix(state, _data, "fibres"), Is.False);
             Assert.That(state.GetPristine("fibres").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
-        public void TryDonate_NoSpecimenHeld_Refuses()
+        public void TryFix_NoSpecimenHeld_Refuses()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddFine("berries", 5); // fine isn't pristine
 
-            Assert.That(Museum.TryDonate(state, _data, "berries"), Is.False);
+            Assert.That(Folio.TryFix(state, _data, "berries"), Is.False);
         }
 
         [Test]
-        public void CompletedSet_GrantsItsPermanentEffect()
+        public void CompletedSpread_GrantsItsPermanentEffect()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddPristine("berries", 1);
             state.AddPristine("wildflowers", 1);
 
-            Museum.TryDonate(state, _data, "berries");
-            Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance), "one of two donated — no bonus yet");
+            Folio.TryFix(state, _data, "berries");
+            Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.0).Within(Tolerance), "one of two fixed — no bonus yet");
 
-            Museum.TryDonate(state, _data, "wildflowers");
-            Assert.That(Museum.IsSetComplete(state, _data.museumSets[0]), Is.True);
+            Folio.TryFix(state, _data, "wildflowers");
+            Assert.That(Folio.IsSpreadComplete(state, _data.folioSpreads[0]), Is.True);
             Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance));
         }
 
         [Test]
-        public void CuratorsCabinet_ScalesTheSetBonus()
+        public void CuratorsCabinet_ScalesTheSpreadBonus()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddPristine("berries", 1);
             state.AddPristine("wildflowers", 1);
-            Museum.TryDonate(state, _data, "berries");
-            Museum.TryDonate(state, _data, "wildflowers");
+            Folio.TryFix(state, _data, "berries");
+            Folio.TryFix(state, _data, "wildflowers");
             state.purchasedUpgradeIds.Add("curators-cabinet");
             Upgrades.RecomputeYieldMultipliers(state, _data);
 
-            // The set's +10% is displayed through the cabinet's ×1.5 lens.
+            // The spread's +10% is displayed through the cabinet's ×1.5 lens.
             Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.15).Within(Tolerance));
         }
     }

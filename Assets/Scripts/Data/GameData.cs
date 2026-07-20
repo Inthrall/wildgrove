@@ -21,7 +21,7 @@ namespace Wildgrove.Data
         public string FossilsJson { get; set; }
         public string RitesJson { get; set; }
         public string AlmanacJson { get; set; }
-        public string MuseumJson { get; set; }
+        public string FolioJson { get; set; }
         public string BondsJson { get; set; }
         public string SpeciesJson { get; set; }
         public string ExchangeJson { get; set; }
@@ -56,7 +56,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<FossilDef> Fossils { get; private set; }
         public RitesConfig Rites { get; private set; }
         public IReadOnlyList<AlmanacDef> Almanac { get; private set; }
-        public IReadOnlyList<MuseumSetDef> MuseumSets { get; private set; }
+        public IReadOnlyList<FolioSpreadDef> Spreads { get; private set; }
         public IReadOnlyList<BondDef> Bonds { get; private set; }
         public IReadOnlyList<SpeciesDef> Species { get; private set; }
         public ExchangeConfig Exchange { get; private set; }
@@ -70,7 +70,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, GearDef> GearById { get; private set; }
         public IReadOnlyDictionary<string, FossilDef> FossilsById { get; private set; }
         public IReadOnlyDictionary<string, AlmanacDef> AlmanacById { get; private set; }
-        public IReadOnlyDictionary<string, MuseumSetDef> MuseumSetsById { get; private set; }
+        public IReadOnlyDictionary<string, FolioSpreadDef> SpreadsById { get; private set; }
         public IReadOnlyDictionary<string, BondDef> BondsById { get; private set; }
         public IReadOnlyDictionary<string, SpeciesDef> SpeciesById { get; private set; }
 
@@ -94,7 +94,7 @@ namespace Wildgrove.Data
                 Fossils = JsonConvert.DeserializeObject<FossilsFile>(sources.FossilsJson, settings).Fossils,
                 Rites = JsonConvert.DeserializeObject<RitesConfig>(sources.RitesJson, settings),
                 Almanac = JsonConvert.DeserializeObject<AlmanacFile>(sources.AlmanacJson, settings).Nodes,
-                MuseumSets = JsonConvert.DeserializeObject<MuseumFile>(sources.MuseumJson, settings).Sets,
+                Spreads = JsonConvert.DeserializeObject<FolioFile>(sources.FolioJson, settings).Spreads,
                 Bonds = JsonConvert.DeserializeObject<BondsFile>(sources.BondsJson, settings).Bonds,
                 Species = JsonConvert.DeserializeObject<SpeciesFile>(sources.SpeciesJson, settings).Species,
                 Exchange = JsonConvert.DeserializeObject<ExchangeConfig>(sources.ExchangeJson, settings),
@@ -125,7 +125,7 @@ namespace Wildgrove.Data
                 FossilsJson = File.ReadAllText(Path.Combine(directory, "fossils.json")),
                 RitesJson = File.ReadAllText(Path.Combine(directory, "rites.json")),
                 AlmanacJson = File.ReadAllText(Path.Combine(directory, "almanac.json")),
-                MuseumJson = File.ReadAllText(Path.Combine(directory, "museum.json")),
+                FolioJson = File.ReadAllText(Path.Combine(directory, "folio.json")),
                 BondsJson = File.ReadAllText(Path.Combine(directory, "bonds.json")),
                 SpeciesJson = File.ReadAllText(Path.Combine(directory, "species.json")),
                 ExchangeJson = File.ReadAllText(Path.Combine(directory, "exchange.json")),
@@ -142,7 +142,7 @@ namespace Wildgrove.Data
             // this whole file as binary.
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson,
-                sources.AlmanacJson, sources.MuseumJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson);
+                sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -178,7 +178,7 @@ namespace Wildgrove.Data
             GearById = IndexById(Gear, g => g.Id);
             FossilsById = IndexById(Fossils, f => f.Id);
             AlmanacById = IndexById(Almanac, a => a.Id);
-            MuseumSetsById = IndexById(MuseumSets, m => m.Id);
+            SpreadsById = IndexById(Spreads, s => s.Id);
             BondsById = IndexById(Bonds, b => b.Id);
             SpeciesById = IndexById(Species, s => s.Id);
         }
@@ -248,9 +248,9 @@ namespace Wildgrove.Data
             public List<SpeciesDef> Species { get; set; }
         }
 
-        private sealed class MuseumFile
+        private sealed class FolioFile
         {
-            public List<MuseumSetDef> Sets { get; set; }
+            public List<FolioSpreadDef> Spreads { get; set; }
         }
     }
 }

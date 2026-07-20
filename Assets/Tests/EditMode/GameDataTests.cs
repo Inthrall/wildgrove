@@ -77,11 +77,11 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.UpgradesById["copper-sickle"].ToolTier, Is.EqualTo("copper"));
             Assert.That(data.AlmanacById["old-songs-ii"].Requires, Is.EqualTo("old-songs-i"));
             Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
-            Assert.That(data.MuseumSetsById["river-catch"].Entries, Has.Count.EqualTo(4));
+            Assert.That(data.SpreadsById["river-catch"].Entries, Has.Count.EqualTo(4));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
             Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(2.5), "the run-2+ generator's d in baseQty · d^m");
             Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
-            Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("museumSet"));
+            Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("folioSpread"));
             Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
             Assert.That(data.AlmanacById["old-friend"].Effects, Is.Empty, "the bond node's promise is the companion, not an effect");
             Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
@@ -530,12 +530,12 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_MuseumEntryNotGathered_IsReported()
+        public void Validate_FolioEntryNotGathered_IsReported()
         {
             var sources = LoadSources();
             // Pristine specimens only come from haul batches — a non-gathered
-            // entry could never be donated.
-            sources.MuseumJson = sources.MuseumJson.Replace(
+            // entry could never be fixed into the Folio.
+            sources.FolioJson = sources.FolioJson.Replace(
                 "\"herbs\", \"copper-scree\"]",
                 "\"herbs\", \"bogus-find\"]");
 
@@ -605,12 +605,12 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.BondsJson = sources.BondsJson.Replace(
-                "\"source\": { \"type\": \"museumSet\", \"id\": \"meadow-blooms\" }",
-                "\"source\": { \"type\": \"museumSet\", \"id\": \"lost-set\" }");
+                "\"source\": { \"type\": \"folioSpread\", \"id\": \"meadow-blooms\" }",
+                "\"source\": { \"type\": \"folioSpread\", \"id\": \"lost-set\" }");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("unknown museumSet 'lost-set'")), Is.True, string.Join("\n", issues));
+            Assert.That(issues.Any(i => i.Contains("unknown folioSpread 'lost-set'")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

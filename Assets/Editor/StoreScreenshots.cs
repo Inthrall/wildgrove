@@ -156,7 +156,7 @@ namespace Wildgrove.EditorTools
             state.AddPristine("berries", new BigDouble(3));
             state.AddPristine("wildflowers", new BigDouble(1));
             state.AddFine("nuts", new BigDouble(45));
-            Museum.TryDonate(state, data, "wildflowers");
+            Folio.TryFix(state, data, "wildflowers");
 
             foreach (var site in state.digSites)
             {

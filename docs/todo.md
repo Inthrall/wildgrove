@@ -27,6 +27,13 @@ annotated **v0.11:** where a decision touches them.
   stationed like any other; role split retired (carrying is a post).
 - ✅ **Naming.** Player names a familiar on arrival (HUD `InputField` sheet) and can rename;
   default from `species.json suggestedNames`.
+- ✅ **The Folio (Museum retheme).** Museum→Folio, set→spread, donate→fix throughout
+  (`Folio.cs`/`folio.json`/`FolioSpreadDef`/`FolioSpreadData`/`GameState.fixedResources`,
+  `EffectType.FolioSpreadBonusMult`, bond source `folioSpread`); save migrated v20→v21
+  (`donatedResources`→`fixedResources`); HUD shows a Folio spread-progress section.
+  Mechanic unchanged (fix a Pristine of each entry → complete spread → permanent bonus
+  surviving Migration). Deferred: spreads are still 2–4 entries (design wants 4–8, a balance
+  pass) and no spread grants crew slot 5 yet (the slot ladder isn't built).
 
 **Interpretations / placeholders shipped with it (tune/confirm):**
 - Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
@@ -41,9 +48,9 @@ annotated **v0.11:** where a decision touches them.
 - Pristine "sell" dropped — Pristine is offer/donate only for now.
 - `familiarCaps` economy section + roosts `familiarCaps` perLevel are now vestigial (RoostLevel kept).
 
-**STILL TO DO (v0.11 reversals not yet built):** the Folio (Museum retheme), fossils
-uncover·record·rebury (rename fragment→sketch), replanting & planters, and
-stationing-aware Rite reachability. Detail in the items below.
+**STILL TO DO (v0.11 reversals not yet built):** fossils uncover·record·rebury
+(rename fragment→sketch), replanting & planters, and stationing-aware Rite
+reachability. Detail in the items below.
 
 - **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
   everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +

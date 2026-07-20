@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: faf9c7f8f15f43dc54c8f40a423d462f0ea84f306cd0bea09839bf37de7c3423
+  sourceHash: 4d49a01edc0d7ccd8affaaa63481e57d56cfc8dadd739d0d640d31a5b5943b41
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -1329,7 +1329,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.25
-  museumSets:
+  folioSpreads:
   - id: meadow-blooms
     displayName: Meadow Blooms
     entries:
@@ -1458,7 +1458,7 @@ MonoBehaviour:
     species: pack-raven
     role: carrier
     source:
-      type: museumSet
+      type: folioSpread
       id: meadow-blooms
   - id: burr
     displayName: Burr

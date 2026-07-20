@@ -42,7 +42,7 @@ namespace Wildgrove.Data
             CheckIds(data.Gear.Select(g => g.Id), "gear", issues);
             CheckIds(data.Fossils.Select(f => f.Id), "fossil", issues);
             CheckIds(data.Almanac.Select(a => a.Id), "almanac node", issues);
-            CheckIds(data.MuseumSets.Select(m => m.Id), "museum set", issues);
+            CheckIds(data.Spreads.Select(s => s.Id), "folio spread", issues);
 
             // Everything obtainable: gathered from a zone or produced by a recipe.
             var resourceIds = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
@@ -57,7 +57,7 @@ namespace Wildgrove.Data
             ValidateGear(data, resourceIds, issues);
             ValidateFossils(data, resourceIds, issues);
             ValidateAlmanac(data, resourceIds, issues);
-            ValidateMuseum(data, resourceIds, issues);
+            ValidateFolio(data, resourceIds, issues);
             ValidateBonds(data, issues);
             ValidateSpecies(data, issues);
             ValidateExchange(data, issues);
@@ -563,7 +563,7 @@ namespace Wildgrove.Data
         }
 
         private static readonly HashSet<string> KnownBondRoles = new HashSet<string> { "gatherer", "carrier" };
-        private static readonly HashSet<string> KnownBondSourceTypes = new HashSet<string> { "museumSet", "almanacNode" };
+        private static readonly HashSet<string> KnownBondSourceTypes = new HashSet<string> { "folioSpread", "almanacNode" };
 
         private static void ValidateBonds(GameData data, List<string> issues)
         {
@@ -588,8 +588,8 @@ namespace Wildgrove.Data
                     continue;
                 }
 
-                var exists = bond.Source.Type == "museumSet"
-                    ? data.MuseumSetsById.ContainsKey(bond.Source.Id ?? string.Empty)
+                var exists = bond.Source.Type == "folioSpread"
+                    ? data.SpreadsById.ContainsKey(bond.Source.Id ?? string.Empty)
                     : data.AlmanacById.ContainsKey(bond.Source.Id ?? string.Empty);
                 if (!exists)
                 {
@@ -678,30 +678,30 @@ namespace Wildgrove.Data
             }
         }
 
-        private static void ValidateMuseum(GameData data, HashSet<string> resourceIds, List<string> issues)
+        private static void ValidateFolio(GameData data, HashSet<string> resourceIds, List<string> issues)
         {
             var gathered = new HashSet<string>(data.Zones.SelectMany(z => z.Resources));
-            foreach (var set in data.MuseumSets)
+            foreach (var spread in data.Spreads)
             {
-                if (set.Entries.Count == 0)
+                if (spread.Entries.Count == 0)
                 {
-                    issues.Add($"Museum set '{set.Id}' has no entries");
+                    issues.Add($"Folio spread '{spread.Id}' has no entries");
                 }
 
-                foreach (var entry in set.Entries)
+                foreach (var entry in spread.Entries)
                 {
-                    // Pristine specimens only come from haul batches, so a set
+                    // Pristine specimens only come from haul batches, so a spread
                     // entry must be a GATHERED resource — a crafted good could
-                    // never be donated.
+                    // never be fixed into the Folio.
                     if (!gathered.Contains(entry))
                     {
-                        issues.Add($"Museum set '{set.Id}' entry '{entry}' is not a gathered resource");
+                        issues.Add($"Folio spread '{spread.Id}' entry '{entry}' is not a gathered resource");
                     }
                 }
 
-                foreach (var effect in set.Effects)
+                foreach (var effect in spread.Effects)
                 {
-                    ValidateEffect($"Museum set '{set.Id}'", effect, data, resourceIds, issues);
+                    ValidateEffect($"Folio spread '{spread.Id}'", effect, data, resourceIds, issues);
                 }
             }
         }
@@ -1128,7 +1128,7 @@ namespace Wildgrove.Data
 
                 case EffectType.HaulMult:
                 case EffectType.DigSpeedMult:
-                case EffectType.MuseumSetBonusMult:
+                case EffectType.FolioSpreadBonusMult:
                 case EffectType.PristineChanceBonus:
                 case EffectType.OfflineCapHours:
                 case EffectType.OfflineCapBonusHours:

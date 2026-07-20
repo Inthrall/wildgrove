@@ -362,7 +362,7 @@ namespace Wildgrove.Sim
                 yield return effect;
             }
 
-            foreach (var effect in Museum.CompletedSetEffects(state, data))
+            foreach (var effect in Folio.CompletedSpreadEffects(state, data))
             {
                 yield return effect;
             }

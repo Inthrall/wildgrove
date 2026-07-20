@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 20;
+        public const int CurrentVersion = 21;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -31,7 +31,7 @@ namespace Wildgrove.Sim.Saves
                 renown = state.renown,
                 migrationCount = state.migrationCount,
                 almanacNodeIds = new List<string>(state.almanacNodeIds),
-                donatedResources = new List<string>(state.donatedResources),
+                fixedResources = new List<string>(state.fixedResources),
                 wardenPostNodeId = state.wardenPostNodeId,
                 amber = state.amber,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
@@ -218,8 +218,8 @@ namespace Wildgrove.Sim.Saves
             state.almanacNodeIds = save.almanacNodeIds != null
                 ? new List<string>(save.almanacNodeIds)
                 : new List<string>();
-            state.donatedResources = save.donatedResources != null
-                ? new List<string>(save.donatedResources)
+            state.fixedResources = save.fixedResources != null
+                ? new List<string>(save.fixedResources)
                 : new List<string>();
             // A post at a node the current data no longer builds (zone or
             // resource retuned) would strand the warden — and the bonded
@@ -747,6 +747,14 @@ namespace Wildgrove.Sim.Saves
                         save.roster = BuildRosterFromCounts(save);
                         save.nextFamiliarSeq = save.roster.Count + 1;
                         save.version = 20;
+                        break;
+
+                    case 20:
+                        // v20's Museum "donatedResources" became the Folio's
+                        // "fixedResources" — same meaning (Pristine specimens
+                        // kept for permanence), renamed with the retheme.
+                        save.fixedResources = save.donatedResources ?? new List<string>();
+                        save.version = 21;
                         break;
 
                     default:

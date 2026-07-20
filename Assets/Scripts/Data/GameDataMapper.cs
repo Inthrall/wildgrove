@@ -17,7 +17,7 @@ namespace Wildgrove.Data
             asset.gear = data.Gear.Select(MapGear).ToList();
             asset.fossils = data.Fossils.Select(MapFossil).ToList();
             asset.almanac = data.Almanac.Select(MapAlmanacNode).ToList();
-            asset.museumSets = data.MuseumSets.Select(MapMuseumSet).ToList();
+            asset.folioSpreads = data.Spreads.Select(MapSpread).ToList();
             asset.bonds = data.Bonds.Select(MapBond).ToList();
             asset.species = data.Species.Select(MapSpecies).ToList();
             asset.exchange = data.Exchange == null ? null : new ExchangeData
@@ -118,14 +118,14 @@ namespace Wildgrove.Data
             };
         }
 
-        private static MuseumSetData MapMuseumSet(MuseumSetDef m)
+        private static FolioSpreadData MapSpread(FolioSpreadDef s)
         {
-            return new MuseumSetData
+            return new FolioSpreadData
             {
-                id = m.Id,
-                displayName = m.Name,
-                entries = new List<string>(m.Entries),
-                effects = m.Effects.Select(MapEffect).ToList()
+                id = s.Id,
+                displayName = s.Name,
+                entries = new List<string>(s.Entries),
+                effects = s.Effects.Select(MapEffect).ToList()
             };
         }
 

@@ -7,7 +7,7 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins bonded familiars (design §4): earned — never bought — from a
-    /// completed Museum set or an owned Almanac node, with earned state DERIVED
+    /// completed Folio spread or an owned Almanac node, with earned state DERIVED
     /// from the source (so a bond crosses Migration for free). Under the roster
     /// model a bond materialises into the crew as an ordinary stationed
     /// familiar (Roster.SyncBonded), idempotently.
@@ -41,9 +41,9 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
-            _data.museumSets = new List<MuseumSetData>
+            _data.folioSpreads = new List<FolioSpreadData>
             {
-                new MuseumSetData
+                new FolioSpreadData
                 {
                     id = "meadow-blooms",
                     displayName = "Meadow Blooms",
@@ -59,7 +59,7 @@ namespace Wildgrove.Sim.Tests
                 new BondData
                 {
                     id = "sootwing", displayName = "Sootwing", species = "pack-raven", role = "carrier",
-                    source = new BondSourceData { type = "museumSet", id = "meadow-blooms" },
+                    source = new BondSourceData { type = "folioSpread", id = "meadow-blooms" },
                 },
                 new BondData
                 {
@@ -81,16 +81,16 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void IsEarned_CarrierBond_ArrivesWithTheCompletedMuseumSet()
+        public void IsEarned_CarrierBond_ArrivesWithTheCompletedFolioSpread()
         {
             var state = GameStateFactory.NewGame(_data);
 
             Assert.That(Bonds.IsEarned(state, _data, Bond("sootwing")), Is.False);
 
-            state.donatedResources.Add("berries");
+            state.fixedResources.Add("berries");
             Assert.That(Bonds.IsEarned(state, _data, Bond("sootwing")), Is.False, "a half-done set bonds nothing");
 
-            state.donatedResources.Add("nuts");
+            state.fixedResources.Add("nuts");
             Assert.That(Bonds.IsEarned(state, _data, Bond("sootwing")), Is.True);
         }
 
@@ -109,8 +109,8 @@ namespace Wildgrove.Sim.Tests
         public void SyncBonded_MaterialisesEarnedBondsIntoTheRoster()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.donatedResources.Add("berries");
-            state.donatedResources.Add("nuts");
+            state.fixedResources.Add("berries");
+            state.fixedResources.Add("nuts");
 
             Roster.SyncBonded(state, _data);
 
