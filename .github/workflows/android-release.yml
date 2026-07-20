@@ -66,7 +66,7 @@ jobs:
           df -h /
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true
 
@@ -76,7 +76,7 @@ jobs:
         run: bash tools/fetch-google-packages.sh
 
       - name: Cache Library
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: Library
           key: Library-Tests-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -117,7 +117,7 @@ jobs:
           df -h /
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           lfs: true
 
@@ -168,7 +168,7 @@ jobs:
       # Same cache key family as android-build.yml so release builds reuse the
       # Library populated by the push builds.
       - name: Cache Library
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: Library
           key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -177,7 +177,7 @@ jobs:
 
       # Pinned by SHA — this action receives the upload keystore.
       - name: Build with Unity (signed)
-        uses: game-ci/unity-builder@1d4ee0697f193f54668e98961d79907911f4b4f2 # v4
+        uses: game-ci/unity-builder@d829bfc901f2347c8fe18898f06712b66916ef42 # v5
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
