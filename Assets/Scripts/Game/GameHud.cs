@@ -1414,9 +1414,22 @@ namespace Wildgrove.Game
                 {
                     var crafting = _loop.IsCrafting(captured);
                     var progress = crafting ? "  " + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f) + "%" : string.Empty;
-                    var need = _loop.IsRecipeLevelMet(captured)
-                        ? string.Empty
-                        : "  <color=" + OchreHex + ">needs " + captured.skill + " " + captured.skillLevel + "</color>";
+                    var need = string.Empty;
+                    if (!_loop.IsRecipeLevelMet(captured))
+                    {
+                        need += "  <color=" + OchreHex + ">needs " + captured.skill + " " + captured.skillLevel + "</color>";
+                    }
+
+                    if (!Crafting.StationLevelMet(_loop.State, _loop.Data, captured))
+                    {
+                        // The one gate the bundle line can't explain — a cold
+                        // station looks ready when every input is in stock.
+                        var line = _loop.Data.BuildingsById.TryGetValue(captured.station, out var building)
+                            ? building.displayName
+                            : captured.station;
+                        need += "  <color=" + OchreHex + ">needs " + line + " level " + captured.stationLevel + "</color>";
+                    }
+
                     label.text = captured.output + progress + need
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.inputs) + "</color></size>";
                     SetButtonLabel(toggle, crafting ? "Stop" : "Craft");
@@ -1862,8 +1875,25 @@ namespace Wildgrove.Game
 
                 _liveUpdaters.Add(() =>
                 {
+                    var isFixed = Folio.IsFixed(_loop.State, resourceId);
+                    var wanted = false;
+                    foreach (var spread in _loop.Data.folioSpreads)
+                    {
+                        if (spread.entries.Contains(resourceId))
+                        {
+                            wanted = true;
+                            break;
+                        }
+                    }
+
+                    // A dead Fix button explains nothing — say why the page
+                    // won't take it, and only offer the button when it might.
+                    var hint = isFixed
+                        ? "  ·  <color=" + MossDeepHex + ">fixed — the page keeps it</color>"
+                        : !wanted ? "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>" : string.Empty;
                     label.text = "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
-                                 + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color></size>";
+                                 + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + hint + "</size>";
+                    fix.gameObject.SetActive(!isFixed && wanted);
                     var ok = Folio.CanFix(_loop.State, _loop.Data, resourceId);
                     fix.interactable = ok;
                     SetButtonTint(fix, ok);
