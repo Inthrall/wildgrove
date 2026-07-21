@@ -1172,6 +1172,11 @@ namespace Wildgrove.Game
             var element = go.GetComponent<LayoutElement>();
             element.preferredWidth = width;
             element.minWidth = width;
+            // Intrinsic height so buttons don't collapse to zero in a vertical
+            // layout that controls height without force-expanding it (the sheets);
+            // in rows, force-expand already governs, so this is a harmless floor.
+            element.preferredHeight = 72;
+            element.minHeight = 72;
             var button = go.GetComponent<Button>();
             button.onClick.AddListener(onClick);
             var label = MakeText(go.transform, text, 20, TextAnchor.MiddleCenter);
