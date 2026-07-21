@@ -570,7 +570,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - Camp building lines + station gating (`buildings.json`), costed in material bundles; Roosts as comfort
 - **The Exchange in full:** derived rate table, spread, player-favour rounding; provisions bundles
 - **Familiar system in full:** XP at post, deterministic species pools (content-filtered), powerup choice UI, roster & fielding
-- **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; validator extended to stationing-aware ≥3-reachable-slots analysis
+- **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; reachability made stationing-aware — a slot counts only if its good's raw-input footprint fits the crew's gather posts (per-slot; `RiteGenerator.StationingFootprint` ≤ `CrewGatherPosts`), enforced in the generator's candidate picks and the runs-2–10 ≥3-reachable proof
 - Observation as **observe · sketch · release**: two observation sites, portion pity timer, three insect plates, the release beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per haul batch; Folio spreads
 - Familiar world-sprites (static + light bob is fine) — creatures at posts, the trail post's runner on the trail, baskets overflowing
 - Waystones 1–4, verse lines, caravan lines + the **teaching pass** (each system's first margin note is its instruction, §7)

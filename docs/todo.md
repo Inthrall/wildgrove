@@ -68,8 +68,10 @@ annotated **v0.11:** where a decision touches them.
   whitelist still lists a now-unused `"excavation"`. The §6 lore lines + §7 backstory in
   `design-doc.md` are a **draft to re-voice**.
 
-**STILL TO DO (v0.11 reversals not yet built):** stationing-aware Rite
-reachability (replanting & planters landed earlier in `b0ad84a`). Detail below.
+**STILL TO DO (v0.11 reversals not yet built):** none — all seven reversals
+have landed (Coin/Exchange, crew-of-5/stationing, Kinship, Folio, insects,
+replanting/planters, stationing-aware reachability). Remaining v0.11 work is
+MVP tails / balance, tracked in the items below.
 
 - **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
   everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +
@@ -117,10 +119,22 @@ reachability (replanting & planters landed earlier in `b0ad84a`). Detail below.
   regrowth / second yield lane / dig steadiness. Both reset at Migration except one
   saved by the Almanac's **The First Planting**. The craft split becomes **four-way**
   (kit / caravan / spirits / land); the Carving Bench (#14) unlocks Planter recipes.
-- **Reachability is now stationing-aware (§2, §8).** The Rite validator's "≥3 reachable
-  slots" must mean *satisfiable under plausible stationing with the current crew size*,
-  not merely zone-unlocked. Shipped reachability is zone-unlock/warden-presence only
-  (`Rite.IsVerseRevealed` via `Upgrades.UnlockedZoneIds`).
+- ✅ **DONE 2026-07-21 — reachability is now stationing-aware (§2, §8).** Model
+  (Mo's call): **per-slot footprint**. A slot counts as reachable only if its good's
+  production footprint — the distinct raw-resource gather nodes needed to make it
+  (a raw find = 1; a crafted good = the distinct raw leaves of its input tree) —
+  fits `RiteGenerator.CrewGatherPosts` (= 4: MVP crew of 5 minus the trail post).
+  `RiteGenerator.StationingFootprint()` computes it; `CandidateGoods` filters picks
+  by it so the generator never asks for a good the crew can't keep produced; the
+  runs-2–10 proof (`RiteGeneratorTests`) now counts reachable with the footprint gate.
+  Deed/specimen/sketch each need one post, always within budget. MVP content is well
+  under budget (footprints ≤ 2), so this is a guardrail for future content, not a
+  behaviour change today. INTERPRETATIONS/DEFERRED: `CrewGatherPosts` is a first-guess
+  constant — derive it from the crew-slot ladder (unbuilt) / move to data later; the
+  three chosen slots are **not** budgeted together (per-slot only, by design choice);
+  the import-time validator's authored-run-1 rite is NOT yet given a stationing-aware
+  ≥chooseCount check (the guarantee lives in the generator + proof, which is where
+  generated rites are checkable) — a cheap follow-up if wanted.
 
 ## Phase 1 — Core loop slice (current)
 

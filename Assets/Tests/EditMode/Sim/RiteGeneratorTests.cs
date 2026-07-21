@@ -13,7 +13,9 @@ namespace Wildgrove.Sim.Tests
     /// zone-order gating of what a verse may ask, material grants, and the
     /// authored-template slot shape. The real-data tests are the "spreadsheet
     /// proof" the design doc demands — runs 2–10 generated from the shipping
-    /// JSON must always leave at least chooseCount reachable slots per verse.
+    /// JSON must always leave at least chooseCount reachable slots per verse,
+    /// where reachable is stationing-aware (§2): a slot's good must fit the
+    /// crew's gather posts, not merely be content-obtainable.
     /// </summary>
     public class RiteGeneratorTests
     {
@@ -292,6 +294,49 @@ namespace Wildgrove.Sim.Tests
             Assert.That(state.renown.ToDouble(), Is.EqualTo(80.0).Within(1e-9), "the scaled grant lands once");
         }
 
+        [Test]
+        public void StationingFootprint_RawIsOnePost_CraftedCountsDistinctRawLeaves()
+        {
+            Assert.That(RiteGenerator.StationingFootprint(_data, "berries"), Is.EqualTo(1),
+                "a raw find is one gather post");
+            Assert.That(RiteGenerator.StationingFootprint(_data, "copper-ingot"), Is.EqualTo(1),
+                "copper-ingot reduces to a single raw leaf (copper)");
+            Assert.That(RiteGenerator.StationingFootprint(_data, "no-such-good"), Is.EqualTo(int.MaxValue),
+                "an unproducible good is never reachable");
+        }
+
+        [Test]
+        public void Generate_ExcludesGoodsWiderThanTheCrewCanStaff()
+        {
+            // A good needing five distinct raw finds has a footprint of 5 > the
+            // four posts a plausible crew can hold — the generator must never
+            // ask for it, however order-available it is (design §2).
+            _data.resources.Add(new ResourceData { id = "r2", sellValue = 1, skill = "foraging" });
+            _data.resources.Add(new ResourceData { id = "r3", sellValue = 1, skill = "foraging" });
+            _data.resources.Add(new ResourceData { id = "r4", sellValue = 1, skill = "foraging" });
+            _data.resources.Add(new ResourceData { id = "r5", sellValue = 1, skill = "foraging" });
+            _data.zones[0].resources.AddRange(new[] { "r2", "r3", "r4", "r5" });
+            _data.recipes.Add(new RecipeData
+            {
+                id = "wide", output = "wide", kind = "good", skill = "foraging", valueMult = 1, defaultKnown = true,
+                inputs = new List<ItemAmount>
+                {
+                    new ItemAmount { id = "berries", amount = 1 }, new ItemAmount { id = "r2", amount = 1 },
+                    new ItemAmount { id = "r3", amount = 1 }, new ItemAmount { id = "r4", amount = 1 },
+                    new ItemAmount { id = "r5", amount = 1 },
+                },
+            });
+
+            Assert.That(RiteGenerator.StationingFootprint(_data, "wide"), Is.EqualTo(5));
+
+            for (var m = 1; m <= 5; m++)
+            {
+                var verse = RiteGenerator.Generate(_data, m).verses[0];
+                Assert.That(verse.slots.Any(s => s.resource == "wide"), Is.False,
+                    $"migration {m}: a 5-node good exceeds the crew's {RiteGenerator.CrewGatherPosts} posts");
+            }
+        }
+
         // ---- The real-data proof (design §12: "verify runs 2+ before wiring
         // UI") — generated Rites from the shipping JSON must never be able to
         // hard-stick a run.
@@ -358,8 +403,14 @@ namespace Wildgrove.Sim.Tests
 
                     foreach (var verse in rite.verses)
                     {
+                        // Stationing-aware reachability (§2): a resource slot
+                        // counts only if its good is content-obtainable AND
+                        // producible within the crew's gather posts (its raw
+                        // footprint <= CrewGatherPosts). Deed/specimen/sketch
+                        // each need a single post, always within budget.
                         var reachable = verse.slots.Count(slot =>
-                            (slot.type == RiteSlotType.Resource && offerable.Contains(slot.resource) && slot.amount > 0)
+                            (slot.type == RiteSlotType.Resource && offerable.Contains(slot.resource) && slot.amount > 0
+                                && RiteGenerator.StationingFootprint(data, slot.resource) <= RiteGenerator.CrewGatherPosts)
                             || (slot.type == RiteSlotType.Deed && slot.deed == "tend")
                             || (slot.type == RiteSlotType.Specimen && SpecimenChance(data, slot.quality) > 0)
                             || (slot.type == RiteSlotType.Sketch && grantsDigSite && data.insects.Count > 0));

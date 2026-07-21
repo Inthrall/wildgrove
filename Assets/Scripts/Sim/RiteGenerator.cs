@@ -20,6 +20,67 @@ namespace Wildgrove.Sim
     public static class RiteGenerator
     {
         /// <summary>
+        /// Gather posts a plausible crew can hold at once: the MVP crew of five
+        /// active familiars (§4) minus the one familiar usually on the trail
+        /// (§2). A good whose production needs raw inputs from more distinct
+        /// gather nodes than this can't be kept produced under plausible
+        /// stationing, so the generator never asks for it and the reachability
+        /// proof (§8) doesn't count it. First-guess; derive from the crew-slot
+        /// ladder / move to data when the ladder lands (todo.md).
+        /// </summary>
+        public const int CrewGatherPosts = 4;
+
+        /// <summary>
+        /// The stationing footprint of a good (design §2 reachability): how
+        /// many distinct raw-resource gather nodes a crew must be able to post
+        /// to in order to produce it. A raw find is one node; a crafted good is
+        /// the distinct raw leaves of its whole input tree. int.MaxValue when
+        /// nothing produces it (a cycle or a missing source) — never reachable.
+        /// A slot is stationing-reachable when this is &lt;= CrewGatherPosts.
+        /// </summary>
+        public static int StationingFootprint(GameDataAsset data, string goodsId)
+        {
+            var leaves = new HashSet<string>();
+            CollectRawLeaves(data, goodsId, leaves, new HashSet<string>());
+            return leaves.Count > 0 ? leaves.Count : int.MaxValue;
+        }
+
+        private static void CollectRawLeaves(GameDataAsset data, string goodsId, HashSet<string> leaves, HashSet<string> visiting)
+        {
+            if (IsRawResource(data, goodsId))
+            {
+                leaves.Add(goodsId);
+                return;
+            }
+
+            var recipe = FindRecipeProducing(data, goodsId);
+            if (recipe == null || !visiting.Add(goodsId))
+            {
+                return;
+            }
+
+            foreach (var input in recipe.inputs)
+            {
+                CollectRawLeaves(data, input.id, leaves, visiting);
+            }
+
+            visiting.Remove(goodsId);
+        }
+
+        private static bool IsRawResource(GameDataAsset data, string goodsId)
+        {
+            foreach (var zone in data.zones)
+            {
+                if (zone.resources.Contains(goodsId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Whether the data carries generator tuning. Unity serialization
         /// can't round-trip a null section, so a zeroed demandGrowth also
         /// reads as "no generator" (the Configured pattern).
@@ -221,6 +282,11 @@ namespace Wildgrove.Sim
                 }
             }
 
+            // Stationing-aware reachability (§2): never ask for a good the crew
+            // could not keep produced — its raw inputs must fit the gather posts
+            // a plausible crew can hold. Order-gating keeps a verse answerable in
+            // time; this keeps it answerable with the hands you have.
+            candidates.RemoveAll(goods => StationingFootprint(data, goods) > CrewGatherPosts);
             return candidates;
         }
 
