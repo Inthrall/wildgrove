@@ -909,6 +909,14 @@ namespace Wildgrove.Game
             var card = Card(null);
             var cardImage = card.GetComponent<Image>();
 
+            // The resource's plate heads the card — the journal's FIG. figure,
+            // the same specimen the world strip pins above the node.
+            var face = ArtLibrary.ForResource(captured.resourceId);
+            if (face != null)
+            {
+                PlateImage(card, face, 300f);
+            }
+
             // Tending lives on the world plate above, so the card's top row
             // keeps just the figure label with Plant back at the right.
             var figRow = Row(card);
@@ -1754,7 +1762,31 @@ namespace Wildgrove.Game
             foreach (var skill in _loop.UnlockedSkills())
             {
                 var captured = skill;
-                var line = MakeText(card, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+
+                // The craft's mark leads its line. The glyphs are monochrome
+                // silhouettes (some white-on-transparent), so ink-tint them for
+                // a coherent sepia mark on the paper; no glyph → bare line.
+                var glyph = ArtLibrary.ForSkill(captured);
+                Text line;
+                if (glyph != null)
+                {
+                    var craftRow = MakeRect("CraftRow", card).gameObject;
+                    var layout = craftRow.AddComponent<HorizontalLayoutGroup>();
+                    layout.childControlWidth = true;
+                    layout.childControlHeight = true;
+                    layout.childForceExpandWidth = false;
+                    layout.childForceExpandHeight = false;
+                    layout.childAlignment = TextAnchor.MiddleLeft;
+                    layout.spacing = 10;
+                    IconImage(craftRow.transform, glyph, 40f, Ink);
+                    line = MakeText(craftRow.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+                    FlexibleWidth(line.gameObject, 1f);
+                }
+                else
+                {
+                    line = MakeText(card, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+                }
+
                 _liveUpdaters.Add(() =>
                 {
                     var progress = Mathf.RoundToInt((float)_loop.SkillProgress(captured) * 100f);
@@ -1781,6 +1813,12 @@ namespace Wildgrove.Game
             {
                 var captured = familiar;
                 var row = Row(card);
+                var portrait = ArtLibrary.ForSpecies(captured.speciesId);
+                if (portrait != null)
+                {
+                    IconImage(row.transform, portrait, 64f, Color.white);
+                }
+
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
                 var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
@@ -3050,6 +3088,48 @@ namespace Wildgrove.Game
             var go = new GameObject(name, typeof(Image));
             go.transform.SetParent(parent, false);
             go.GetComponent<Image>().color = color;
+            return go;
+        }
+
+        /// <summary>
+        /// A naturalist plate pinned into a card: full card width, fixed height,
+        /// aspect preserved (so a portrait plate letterboxes rather than
+        /// stretches). Decorative — never a raycast target.
+        /// </summary>
+        private GameObject PlateImage(Transform parent, Sprite sprite, float height)
+        {
+            var go = new GameObject("Plate", typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            var element = go.GetComponent<LayoutElement>();
+            element.minHeight = height;
+            element.preferredHeight = height;
+            return go;
+        }
+
+        /// <summary>
+        /// A small square glyph for a row's leading edge (craft mark, roster
+        /// portrait). <paramref name="tint"/> recolours monochrome line-art —
+        /// the craft glyphs are silhouettes, some white-on-transparent, so the
+        /// crafts card tints them to ink; full-colour plates pass white.
+        /// </summary>
+        private GameObject IconImage(Transform parent, Sprite sprite, float size, Color tint)
+        {
+            var go = new GameObject("Glyph", typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = tint;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            var element = go.GetComponent<LayoutElement>();
+            element.minWidth = size;
+            element.preferredWidth = size;
+            element.minHeight = size;
+            element.preferredHeight = size;
             return go;
         }
 

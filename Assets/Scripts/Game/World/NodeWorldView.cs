@@ -21,6 +21,11 @@ namespace Wildgrove.Game.World
         private const float HaloPulseSpeed = 3f;
         private const float IdleAlpha = 0.55f;
 
+        // The node plate's longest side, in local units before the parent's
+        // per-diameter scale — a shade under the ring (RingScale 1.3) so the
+        // selection ring still frames it.
+        private const float PlateFit = 1.05f;
+
         // Beyond this the dots stop being countable anyway; the HUD row
         // carries the exact number.
         private const int MaxFlockDots = 8;
@@ -36,6 +41,7 @@ namespace Wildgrove.Game.World
         public NodeState Node { get; private set; }
 
         private SpriteRenderer _disc;
+        private SpriteRenderer _plate;
         private SpriteRenderer _ring;
         private SpriteRenderer _halo;
         private SpriteRenderer _bondedMarker;
@@ -45,7 +51,7 @@ namespace Wildgrove.Game.World
         private Color _colour;
         private float _diameter = 1f;
 
-        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Color ringColour, Font labelFont)
+        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Color ringColour, Font labelFont, Sprite face)
         {
             var go = new GameObject("Node_" + node.resourceId);
             go.transform.SetParent(parent, false);
@@ -64,6 +70,22 @@ namespace Wildgrove.Game.World
             view._halo.transform.localScale = Vector3.one * HaloScale;
 
             view._disc = CreateSprite(go.transform, "Disc", PlaceholderArt.Disc, colour, 2);
+
+            // The resource's naturalist plate, pinned over the disc — the disc's
+            // resource colour peeks around the portrait as a card mount. Scaled
+            // so its longest side ≈ one node diameter (the plate is authored at
+            // 100 px/unit, so a ~1200 px plate is ~12 units before this fit).
+            if (face != null)
+            {
+                view._plate = CreateSprite(go.transform, "Plate", face, Color.white, 3);
+                var longest = Mathf.Max(face.bounds.size.x, face.bounds.size.y);
+                view._plate.transform.localScale = Vector3.one * (longest > 0f ? PlateFit / longest : 1f);
+
+                // The plate is the node's face now — hide the coloured disc so it
+                // doesn't peek around the specimen. Its colour still tints the
+                // flock dots below, so the resource stays glanceable.
+                view._disc.enabled = false;
+            }
 
             // The flock: one small dot per working familiar, arced under the
             // disc — a darker shade of the resource so it reads as "at" the node.
@@ -132,6 +154,13 @@ namespace Wildgrove.Game.World
             var colour = _colour;
             colour.a = working ? 1f : IdleAlpha;
             _disc.color = colour;
+
+            // The plate wears the same idle dimming so a fallow node reads as
+            // fallow whether it shows a plate or the bare disc.
+            if (_plate != null)
+            {
+                _plate.color = new Color(1f, 1f, 1f, working ? 1f : IdleAlpha);
+            }
 
             // One dot per familiar stationed here (design §2) — a glance shows
             // where the kith stands.

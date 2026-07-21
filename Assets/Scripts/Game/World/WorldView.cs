@@ -160,7 +160,8 @@ namespace Wildgrove.Game.World
             foreach (var node in _loop.State.nodes)
             {
                 _views.Add(NodeWorldView.Create(
-                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour, _labelFont));
+                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour, _labelFont,
+                    ArtLibrary.ForResource(node.resourceId)));
             }
 
             foreach (var site in _loop.State.digSites)
