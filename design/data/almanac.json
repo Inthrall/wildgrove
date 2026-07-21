@@ -11,7 +11,7 @@
     { "id": "long-watch-ii",  "name": "The Long Watch II", "costVerdure": 6,  "requires": "long-watch-i", "effects": [{ "type": "offlineCapHours", "value": 8 }] },
     { "id": "sure-paths-ii",  "name": "Sure Paths II",  "costVerdure": 9,  "requires": "sure-paths-i",    "effects": [{ "type": "haulMult", "value": 1.5 }] },
     { "id": "verdant-eye-ii", "name": "Verdant Eye II", "costVerdure": 12, "requires": "verdant-eye-i",   "effects": [{ "type": "pristineChanceBonus", "value": 0.01 }] },
-    { "id": "old-friend",     "name": "The Old Friend", "costVerdure": 12,                                 "effects": [] },
+    { "id": "old-friend",     "name": "The Old Friend", "costVerdure": 12,                                 "effects": [{ "type": "kithSlot", "value": 1 }] },
     { "id": "long-watch-iii", "name": "The Long Watch III", "costVerdure": 16, "requires": "long-watch-ii", "effects": [{ "type": "offlineCapHours", "value": 12 }] },
     { "id": "old-songs-iii",  "name": "Old Songs III",  "costVerdure": 20, "requires": "old-songs-ii",    "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 }] }
   ]

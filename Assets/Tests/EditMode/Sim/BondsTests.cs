@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     /// Pins bonded familiars (design §4): earned — never bought — from a
     /// completed Folio spread or an owned Almanac node, with earned state DERIVED
     /// from the source (so a bond crosses Migration for free). Under the roster
-    /// model a bond materialises into the crew as an ordinary stationed
+    /// model a bond materialises into the kith as an ordinary stationed
     /// familiar (Roster.SyncBonded), idempotently.
     /// </summary>
     public class BondsTests

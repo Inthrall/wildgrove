@@ -19,7 +19,7 @@ namespace Wildgrove.Sim
         {
             var state = new GameState { rngState = Rng.NewSeed() };
             AddZone(state, data, data.ZonesById[StartingZoneId]);
-            SeedStartingCrew(state, data);
+            SeedStartingKith(state, data);
             Roster.SyncBonded(state, data);
             return state;
         }
@@ -29,7 +29,7 @@ namespace Wildgrove.Sim
         /// raven arrive unasked — one gathers the first node, one takes the trail
         /// post. The bootstrap, twice. Player names them on arrival.
         /// </summary>
-        private static void SeedStartingCrew(GameState state, GameDataAsset data)
+        private static void SeedStartingKith(GameState state, GameDataAsset data)
         {
             var firstNode = state.nodes.Count > 0 ? state.nodes[0].id : null;
             Roster.Recruit(state, data, "meadow-vole", firstNode);
@@ -79,7 +79,7 @@ namespace Wildgrove.Sim
 
         private static void AddZone(GameState state, GameDataAsset data, ZoneData zone)
         {
-            // Just the nodes now — the crew is a roster of stationed individuals
+            // Just the nodes now — the kith is a roster of stationed individuals
             // (design §2/§4), seeded once at run birth, not per-zone. A newly
             // opened zone's nodes wait for the player to station someone there.
             foreach (var resourceId in zone.resources)

@@ -272,8 +272,8 @@
       </div>
       <div class="margin-note" style="text-align:center; transform:rotate(.6deg);">the kit — worn for the run, folded at Migration</div>
       <div class="card"><div class="card-head">CRAFTS</div><div id="skills"></div></div>
-      <div class="card"><div class="card-head">THE CREW · roster & posts</div><div id="roster"></div>
-        <div class="fossil-note" style="margin-top:6px" id="crew-note">two came unasked — the land decides the rest.</div></div>
+      <div class="card"><div class="card-head">THE KITH · roster & posts</div><div id="roster"></div>
+        <div class="fossil-note" style="margin-top:6px" id="kith-note">two came unasked — the land decides the rest.</div></div>
       <div class="card"><div class="card-head">THIS RUN</div><div id="run-stats" class="fossil-note"></div></div>
     </section>
 
@@ -393,7 +393,7 @@
   /* ================= tabs & layout ================= */
   var current="pg-trail";
   var headers={ "pg-trail":["THE TRAIL · ZONE I","Sunfield Meadow"], "pg-camp":["THE CAMP","Fire, Bench & Caravan"],
-    "pg-warden":["THE WARDEN","Kit, Crafts & Crew"], "pg-record":["THE RECORD","The Journal's Back Pages"] };
+    "pg-warden":["THE WARDEN","Kit, Crafts & Kith"], "pg-record":["THE RECORD","The Journal's Back Pages"] };
   var mqWide=window.matchMedia("(min-width: 880px)");
   function isWide(){ return mqWide.matches; }
   function openPage(id){
@@ -455,7 +455,7 @@
       g2Joined=true; giftOpen=false;
       roster.push({ id:"g2", name:"Fern", species:"hedge wren", art:"wren", level:1, xp:0, runXP:0, kinship:0, picks:[], pending:null, post:n.id });
       renderNodes(); renderWarden(); refreshCompendium();
-      note("left a pile by the "+n.name.toLowerCase()+". a wren looked twice, then stayed. Fern joins the crew.",true);
+      note("left a pile by the "+n.name.toLowerCase()+". a wren looked twice, then stayed. Fern joins the kith.",true);
     });
   });
 
@@ -728,7 +728,7 @@
 
   var buildDefs=[
     { key:"rack", name:"Drying Rack", sub:"berries weigh +25% more at the Exchange", cost:{fibres:40,wildflowers:15} },
-    { key:"roosts", name:"Roosts & Burrows", sub:"the crew learns +10% faster per level", cost:{fibres:30,berries:20} }
+    { key:"roosts", name:"Roosts & Burrows", sub:"the kith learns +10% faster per level", cost:{fibres:30,berries:20} }
   ];
   buildDefs.forEach(function(b){
     var row=document.createElement("div"); row.className="row";
@@ -741,7 +741,7 @@
       if(short.length){ return; }
       Object.keys(b.cost).forEach(function(k){ goods[k]-=Math.ceil(b.cost[k]*m); setLedger(k); });
       buildings[b.key]++; addRenown(10); refreshBuilds(); refreshTrades();
-      note(b.key==="rack"?"racks up. the caravan raised an eyebrow, and its ratios.":"new burrows at the camp edge. the crew sleeps closer to the work.");
+      note(b.key==="rack"?"racks up. the caravan raised an eyebrow, and its ratios.":"new burrows at the camp edge. the kith sleeps closer to the work.");
     });
   });
   function refreshBuilds(){
@@ -846,8 +846,8 @@
         });
       }
     });
-    document.getElementById("crew-note").textContent = g2Joined ?
-      "three in the crew — the unassigned wander at half strength. the fourth waits in the Almanac." :
+    document.getElementById("kith-note").textContent = g2Joined ?
+      "three in the kith — the unassigned wander at half strength. the fourth waits in the Almanac." :
       (verseDone?"something is watching the piles you leave. a gift might tempt it — any node on the Trail.":"two came unasked. the third waits on the first verse — answer it with your own hands.");
     document.getElementById("run-stats").innerHTML="camp "+["first","second","third"][Math.min(run-1,2)]+" · renown "+fmt(renown)+
       " · tended "+tendCount+" · Fine finds in hand "+fineRun+" · lifetime Fine "+fineLife;
@@ -859,9 +859,9 @@
     { key:"wildflowers", fig:"PLATE II", name:"Wildflower", sub:"the bees knew first", art:"wildflowers" },
     { key:"fibres", fig:"PLATE III", name:"Fibre Grass", sub:"rope, given time", art:"fibres" },
     { key:"poppy", fig:"PLATE IV", name:"Sunburst Poppy", sub:"keystone — unfound", art:null, never:true },
-    { key:"vole", fig:"PLATE V", name:"Bramble", sub:"meadow vole · crew", art:"vole", always:true },
-    { key:"raven", fig:"PLATE VI", name:"Sable", sub:"pack raven · crew", art:"raven", always:true },
-    { key:"wren", fig:"PLATE VII", name:"Fern", sub:"hedge wren · crew", art:"wren", cond:function(){ return g2Joined; } }
+    { key:"vole", fig:"PLATE V", name:"Bramble", sub:"meadow vole · kith", art:"vole", always:true },
+    { key:"raven", fig:"PLATE VI", name:"Sable", sub:"pack raven · kith", art:"raven", always:true },
+    { key:"wren", fig:"PLATE VII", name:"Fern", sub:"hedge wren · kith", art:"wren", cond:function(){ return g2Joined; } }
   ];
   var compGrid=document.getElementById("comp-grid");
   compDefs.forEach(function(c){ var el=document.createElement("div"); el.className="comp-plate"; compGrid.appendChild(el); c.el=el; });

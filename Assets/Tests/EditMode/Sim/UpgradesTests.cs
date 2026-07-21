@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     /// Pins the one-off upgrade ladder under money→XP (design §9): purchasing is
     /// gated by a skill level plus a material bundle — no Coin — and drives the
     /// yield-multiplier recompute, sell-value bonuses, and the offline-cap raise.
-    /// Trail maps open a zone's nodes (no regional crew seed — the crew is a
+    /// Trail maps open a zone's nodes (no regional kith seed — the kith is a
     /// roster stationed by the player). Hand-built content asset, no scene.
     /// </summary>
     public class UpgradesTests
@@ -258,7 +258,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryPurchase_TrailMap_CreatesTheZonesNodesWithoutSeedingCrew()
+        public void TryPurchase_TrailMap_CreatesTheZonesNodesWithoutSeedingKith()
         {
             var state = GameStateFactory.NewGame(_data);
 
@@ -269,8 +269,8 @@ namespace Wildgrove.Sim.Tests
             var nuts = state.nodes[3];
             var copper = state.nodes[4];
             Assert.That(nuts.id, Is.EqualTo("bramble-hedgerows:nuts"));
-            // A newly opened zone waits for the player to station the crew — no
-            // regional seed (design §2/§4: the crew is a roster, not per-zone).
+            // A newly opened zone waits for the player to station the kith — no
+            // regional seed (design §2/§4: the kith is a roster, not per-zone).
             Assert.That(Stationing.CountAssignedTo(state, nuts.id), Is.EqualTo(0));
             Assert.That(Stationing.CountAssignedTo(state, copper.id), Is.EqualTo(0));
             // Node skills come from the resources, not the zone's unlock list.

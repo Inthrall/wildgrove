@@ -86,7 +86,7 @@ namespace Wildgrove.Sim.Tests
             state.nodes[1].richnessLevel = 4;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
-            TestCrew.Station(state, state.nodes[1].id, 3);
+            TestKith.Station(state, state.nodes[1].id, 3);
 
             var restored = RoundTrip(state);
 
@@ -96,7 +96,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.nodes[1].richnessLevel, Is.EqualTo(4));
             Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
-            // The crew round-trips: 3 stationed at node 1, plus the seed vole at node 0.
+            // The kith round-trips: 3 stationed at node 1, plus the seed vole at node 0.
             Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[1].id), Is.EqualTo(3));
             Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[0].id), Is.EqualTo(1));
         }
@@ -165,11 +165,11 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.UpgradesById["map-bramble"]);
             var nuts = state.nodes.Single(n => n.resourceId == "nuts");
-            TestCrew.Station(state, nuts.id, 4);
+            TestKith.Station(state, nuts.id, 4);
 
             var restored = RoundTrip(state);
 
-            // The unlocked zone's nodes exist again, and the crew stationed
+            // The unlocked zone's nodes exist again, and the kith stationed
             // there round-trips through the roster.
             Assert.That(restored.nodes.Count, Is.EqualTo(5));
             Assert.That(Stationing.CountAssignedTo(restored, restored.nodes.Single(n => n.resourceId == "nuts").id),
@@ -294,7 +294,7 @@ namespace Wildgrove.Sim.Tests
             };
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
-            TestCrew.Station(state, Familiar.DigStationPrefix + "bramble-hedgerows", 2);
+            TestKith.Station(state, Familiar.DigStationPrefix + "bramble-hedgerows", 2);
             state.digSites[0].pityHours = 1.5;
             state.insectSketches["stags-herald"] = 3; // assembled
 
@@ -693,7 +693,7 @@ namespace Wildgrove.Sim.Tests
         {
             // A data update granted unlockZone to an upgrade the save already
             // owns: the save has none of the zone's nodes. Restore rebuilds them
-            // — with no regional crew seed (the crew is a roster, design §2/§4).
+            // — with no regional kith seed (the kith is a roster, design §2/§4).
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.purchasedUpgradeIds.Add("map-bramble");
 
@@ -707,7 +707,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void TryMigrate_V19Save_RebuildsAnonymousCountsIntoARoster()
         {
-            // v19 predates the crew roster: familiars were per-node/per-camp
+            // v19 predates the kith roster: familiars were per-node/per-camp
             // counts. The v19→v20 step turns each into an individual.
             var save = new SaveData
             {
@@ -721,6 +721,36 @@ namespace Wildgrove.Sim.Tests
             Assert.That(save.roster.Count, Is.EqualTo(3), "2 gatherers + 1 carrier become three roster familiars");
             Assert.That(save.roster.FindAll(f => f.stationId == "sunfield-meadow:berries").Count, Is.EqualTo(2));
             Assert.That(save.roster.FindAll(f => f.stationId == "trail").Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Restore_OversizedRoster_ClampsToTheLadderCeiling_BondedAndDeepestKinshipFirst()
+        {
+            // A long-lived save run through the v19→v20 rebuild could mint one
+            // familiar per anonymous head — far past the six-slot ladder, and
+            // enough UI rows to freeze the HUD. Restore keeps bonded companions
+            // first, then the deepest Kinship; the rest slip back into the grass.
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.roster.Clear();
+            for (var i = 1; i <= 20; i++)
+            {
+                save.roster.Add(new SavedFamiliar
+                {
+                    id = "fam-" + i,
+                    speciesId = "meadow-vole",
+                    kinshipXp = i == 7 ? 500.0 : 0.0,
+                    bonded = i == 15,
+                    bondId = i == 15 ? "sootwing" : null,
+                });
+            }
+
+            save.nextFamiliarSeq = 21;
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.roster.Count, Is.EqualTo(6), "clamped to the ladder's slotsMax ceiling");
+            Assert.That(restored.roster[0].bondId, Is.EqualTo("sootwing"), "the bonded companion is never dropped");
+            Assert.That(restored.roster.Any(f => f.kinshipXp >= 500.0), Is.True, "the deepest Kinship is kept next");
         }
 
         [Test]

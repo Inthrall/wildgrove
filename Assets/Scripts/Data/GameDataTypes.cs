@@ -341,7 +341,7 @@ namespace Wildgrove.Data
         public CostGrowthData costGrowth;
         public GiftsData gifts;
         public HaulingData hauling;
-        public FamiliarCapsData familiarCaps;
+        public KithData kith;
         public CraftingData crafting;
         public ToolsData tools;
         public MasteryData mastery;
@@ -382,12 +382,10 @@ namespace Wildgrove.Data
         }
 
         [Serializable]
-        public sealed class FamiliarCapsData
+        public sealed class KithData
         {
-            public int flockCapBase;
-            public int flockCapPerRoostLevel;
-            public int carrierSlotsBase;
-            public int carrierSlotsPerRoostLevel;
+            public int slotsBase;
+            public int slotsMax;
         }
 
         [Serializable]

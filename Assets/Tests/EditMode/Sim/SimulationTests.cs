@@ -68,7 +68,7 @@ namespace Wildgrove.Sim.Tests
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 2.0 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.Clear(); // isolate the warden — no crew gathering or wandering
+            state.roster.Clear(); // isolate the warden — no kith gathering or wandering
 
             Simulation.Advance(state, _data, 5.0);
 
@@ -332,7 +332,7 @@ namespace Wildgrove.Sim.Tests
             };
             // Rungs 0 and 1 cost 50 + 57.5 — mastery level 2.
             var node = new NodeState { id = "n", masteryXp = 107.5 };
-            var state = TestCrew.WithGatherers("n", 1);
+            var state = TestKith.WithGatherers("n", 1);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
@@ -360,7 +360,7 @@ namespace Wildgrove.Sim.Tests
         {
             var node = new NodeState { id = "n" };
             var state = new GameState { verdurePoints = 10 };
-            TestCrew.Station(state, "n", 1);
+            TestKith.Station(state, "n", 1);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 
@@ -372,7 +372,7 @@ namespace Wildgrove.Sim.Tests
         public void YieldPerSecond_ScalesWithFamiliarsAndMultiplier()
         {
             var node = new NodeState { id = "n", yieldMultiplier = 2.0 };
-            var state = TestCrew.WithGatherers("n", 4);
+            var state = TestKith.WithGatherers("n", 4);
 
             var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
 

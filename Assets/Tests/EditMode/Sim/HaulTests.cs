@@ -117,7 +117,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CarriersAlternateBetweenEquallyBusyNodes()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestCrew.Station(state, state.nodes[1].id, 1); // both nodes gathering at 1/s
+            TestKith.Station(state, state.nodes[1].id, 1); // both nodes gathering at 1/s
 
             Simulation.Advance(state, _data, 4.0);
 
@@ -164,7 +164,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_MoreCarriers_ShortenTheDeliveryCadence()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestCrew.Station(state, Familiar.TrailStation, 1); // second carrier: a delivery every 1 s
+            TestKith.Station(state, Familiar.TrailStation, 1); // second carrier: a delivery every 1 s
 
             Simulation.Advance(state, _data, 1.0);
 

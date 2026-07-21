@@ -60,7 +60,7 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v2–v19 legacy: the anonymous camp-wide carrier count. Read only by the v19→v20 migration, which rebuilds it into <see cref="roster"/>.</summary>
         public int carrierCount;
 
-        /// <summary>v20+: the warden's crew — every familiar as an individual (design §4). Replaces the anonymous per-node/per-camp counts.</summary>
+        /// <summary>v20+: the warden's kith — every familiar as an individual (design §4). Replaces the anonymous per-node/per-camp counts.</summary>
         public List<SavedFamiliar> roster = new List<SavedFamiliar>();
 
         /// <summary>v20+: sequence for minting roster ids.</summary>
@@ -117,7 +117,7 @@ namespace Wildgrove.Sim.Saves
         public double xp;
     }
 
-    /// <summary>One crew familiar (design §4). Level derives from xp; Kinship, powerups, station, and bond marker persist.</summary>
+    /// <summary>One kith familiar (design §4). Level derives from xp; Kinship, powerups, station, and bond marker persist.</summary>
     [Serializable]
     public sealed class SavedFamiliar
     {

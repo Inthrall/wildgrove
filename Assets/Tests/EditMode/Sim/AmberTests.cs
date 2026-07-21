@@ -66,7 +66,7 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
-            TestCrew.Station(state, Familiar.DigStationPrefix + GameStateFactory.StartingZoneId, 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + GameStateFactory.StartingZoneId, 1);
             return state;
         }
 

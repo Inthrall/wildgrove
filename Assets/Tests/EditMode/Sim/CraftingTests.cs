@@ -389,8 +389,8 @@ namespace Wildgrove.Sim.Tests
                 id = "sunfield-meadow:berries", zoneId = GameStateFactory.StartingZoneId,
                 resourceId = "berries", skill = "foraging",
             });
-            TestCrew.Station(state, "sunfield-meadow:berries", 1); // a gatherer
-            TestCrew.Station(state, Familiar.TrailStation, 1); // a carrier
+            TestKith.Station(state, "sunfield-meadow:berries", 1); // a gatherer
+            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier
             Crafting.Assign(state, _data, Recipe("berry-jam"));
 
             Simulation.Advance(state, _data, 30.0);

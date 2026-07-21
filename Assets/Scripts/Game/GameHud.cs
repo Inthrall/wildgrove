@@ -397,7 +397,7 @@ namespace Wildgrove.Game
                     break;
                 case TabWarden:
                     eyebrow = "THE WARDEN";
-                    title = "Kit, Crafts & Crew";
+                    title = "Kit, Crafts & Kith";
                     break;
                 case TabRecord:
                     eyebrow = "THE RECORD";
@@ -1260,7 +1260,7 @@ namespace Wildgrove.Game
         {
             BuildKitCard();
             BuildCraftsCard();
-            BuildCrewCard();
+            BuildKithCard();
             BuildRunCard();
         }
 
@@ -1322,9 +1322,19 @@ namespace Wildgrove.Game
             }
         }
 
-        private void BuildCrewCard()
+        private void BuildKithCard()
         {
-            var card = Card("THE CREW · roster & posts");
+            var card = Card("THE KITH · roster & posts");
+            var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                var held = _loop.KithCount();
+                var slots = _loop.KithSlots();
+                var max = _loop.Data.economy?.kith != null ? _loop.Data.economy.kith.slotsMax : slots;
+                slotsLine.text = "<i>" + held + " of " + slots + " slots walked"
+                                 + (slots < max ? " · the land holds the rest" : string.Empty) + "</i>";
+            });
+
             foreach (var familiar in _loop.State.roster)
             {
                 var captured = familiar;
@@ -1724,7 +1734,7 @@ namespace Wildgrove.Game
             MakeText(sheet, "Everything stays behind: the stores, the kit, the richness,\nthe buildings — <i>they were never yours</i>.",
                 20, TextAnchor.MiddleCenter, Ink2, _serif);
             MakeText(sheet, "<color=" + MossDeepHex + ">The journal crosses entire, with +"
-                            + Mathf.FloorToInt((float)gain) + " Verdure.\nThe crew walks with you.</color>",
+                            + Mathf.FloorToInt((float)gain) + " Verdure.\nThe kith walks with you.</color>",
                 20, TextAnchor.MiddleCenter, Ink);
             Button(sheet, "Stay a while", 320, CloseSheet);
             var migrate = Button(sheet, "Migrate", 320, () =>

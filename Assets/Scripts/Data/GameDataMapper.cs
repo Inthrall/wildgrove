@@ -291,12 +291,10 @@ namespace Wildgrove.Data
                     tripSeconds = e.Hauling.TripSeconds,
                     basketCapacity = e.Hauling.BasketCapacity
                 },
-                familiarCaps = new EconomyData.FamiliarCapsData
+                kith = new EconomyData.KithData
                 {
-                    flockCapBase = e.FamiliarCaps.FlockCapBase,
-                    flockCapPerRoostLevel = e.FamiliarCaps.FlockCapPerRoostLevel,
-                    carrierSlotsBase = e.FamiliarCaps.CarrierSlotsBase,
-                    carrierSlotsPerRoostLevel = e.FamiliarCaps.CarrierSlotsPerRoostLevel
+                    slotsBase = e.Kith.SlotsBase,
+                    slotsMax = e.Kith.SlotsMax
                 },
                 crafting = new EconomyData.CraftingData
                 {

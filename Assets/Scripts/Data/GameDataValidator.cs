@@ -994,7 +994,7 @@ namespace Wildgrove.Data
             RequireSection(economy.CostGrowth, "costGrowth", issues);
             RequireSection(economy.Gifts, "gifts", issues);
             RequireSection(economy.Hauling, "hauling", issues);
-            RequireSection(economy.FamiliarCaps, "familiarCaps", issues);
+            RequireSection(economy.Kith, "kith", issues);
             RequireSection(economy.Crafting, "crafting", issues);
             RequireSection(economy.Tools, "tools", issues);
             RequireSection(economy.Mastery, "mastery", issues);
@@ -1032,11 +1032,10 @@ namespace Wildgrove.Data
                 issues.Add("Economy hauling values must all be positive");
             }
 
-            if (economy.FamiliarCaps != null
-                && (economy.FamiliarCaps.FlockCapBase <= 0 || economy.FamiliarCaps.FlockCapPerRoostLevel <= 0
-                    || economy.FamiliarCaps.CarrierSlotsBase <= 0 || economy.FamiliarCaps.CarrierSlotsPerRoostLevel <= 0))
+            if (economy.Kith != null
+                && (economy.Kith.SlotsBase <= 0 || economy.Kith.SlotsMax < economy.Kith.SlotsBase))
             {
-                issues.Add("Economy familiarCaps values must all be positive");
+                issues.Add("Economy kith needs a positive slotsBase and slotsMax >= slotsBase");
             }
 
             if (economy.Crafting != null && economy.Crafting.BaseCraftSeconds <= 0)
@@ -1255,6 +1254,17 @@ namespace Wildgrove.Data
 
                 case EffectType.UnlockVerdureForecast:
                 case EffectType.OfflineNightFullRate:
+                    break;
+
+                case EffectType.KithSlot:
+                    // Whole slots only — the sim sums these as ints and the
+                    // spread multiplier deliberately never scales them.
+                    if (!effect.Value.HasValue || effect.Value.Value < 1
+                        || effect.Value.Value != System.Math.Floor(effect.Value.Value))
+                    {
+                        issues.Add($"{owner} kithSlot effect needs a whole value >= 1");
+                    }
+
                     break;
 
                 default:

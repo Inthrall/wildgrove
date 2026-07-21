@@ -6,7 +6,7 @@ namespace Wildgrove.Data
     /// One powerup a species can offer (design doc §4): a fixed, authored pick
     /// a familiar chooses at a level-5 milestone and keeps for the run. Pools
     /// are deterministic per species at MVP — the Rite generator can rely on
-    /// what any crew can become.
+    /// what any kith can become.
     /// </summary>
     public sealed class PowerupDef
     {

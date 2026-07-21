@@ -190,7 +190,7 @@ namespace Wildgrove.Sim.Tests
         public void YieldPerSecond_IncludesTheTrellisLane()
         {
             var node = new NodeState { id = "n", resourceId = "berries" };
-            var state = TestCrew.WithGatherers("n", 1);
+            var state = TestKith.WithGatherers("n", 1);
             state.builtPlanters.Add(new BuiltPlanter { planterId = "cordage-trellis", targetId = "n" });
 
             // 1 agent · (1 + 0.25 trellis) = 1.25

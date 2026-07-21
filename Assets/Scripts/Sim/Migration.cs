@@ -55,10 +55,10 @@ namespace Wildgrove.Sim
 
             var next = GameStateFactory.NewGame(data);
 
-            // The crew crosses the fold (design §4): the roster and every
+            // The kith crosses the fold (design §4): the roster and every
             // Kinship level persist — run XP banks into Kinship (√), and each
             // familiar returns to a clean run build (level, powerups, station
-            // reset). This replaces the fresh run's seed crew with the carried
+            // reset). This replaces the fresh run's seed kith with the carried
             // one. (Presence-lapse — benching non-bonded familiars to re-meet —
             // is a v1.1 refinement; at MVP the whole roster stays present.)
             foreach (var familiar in state.roster)

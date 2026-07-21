@@ -122,7 +122,7 @@ namespace Wildgrove.Game.World
             _disc.color = colour;
 
             // One dot per familiar stationed here (design §2) — a glance shows
-            // where the crew stands.
+            // where the kith stands.
             var dots = Mathf.Min(workingCount, MaxFlockDots);
             for (var i = 0; i < _flockDots.Length; i++)
             {

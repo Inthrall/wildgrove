@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using BreakInfinity;
 using Newtonsoft.Json;
 using Wildgrove.Data;
@@ -178,7 +179,7 @@ namespace Wildgrove.Sim.Saves
                 : new List<string>();
             GameStateFactory.SyncUnlockedZones(state, data);
 
-            // Replace the fresh-run seed crew with the saved roster of
+            // Replace the fresh-run seed kith with the saved roster of
             // individuals (design §4). A station pointing at a node the current
             // data no longer builds is cleared to wandering, like the warden
             // post; an empty name (a v19→v20 migrated familiar) gets a
@@ -453,6 +454,23 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            // The kith ladder's ceiling caps the roster (design §4). Only a
+            // pathological save exceeds it — chiefly the v19→v20 count rebuild,
+            // which could mint one familiar per anonymous head on a long-lived
+            // save (enough to freeze the HUD). Clamp to slotsMax, not the
+            // currently-earned slot count, so a data retune never quietly drops
+            // a companion: bonded stay first, then the deepest Kinship — the
+            // rest slip back into the grass.
+            var slotsMax = Kith.SlotsMax(data);
+            if (state.roster.Count > slotsMax)
+            {
+                state.roster = state.roster
+                    .OrderByDescending(f => f.bonded)
+                    .ThenByDescending(f => f.kinshipXp)
+                    .Take(slotsMax)
+                    .ToList();
+            }
+
             // A bond whose source (a kept Museum set / Almanac node) is already
             // satisfied must have its companion present — materialise any the
             // saved roster lacks (idempotent by bondId).
@@ -512,7 +530,7 @@ namespace Wildgrove.Sim.Saves
         }
 
         /// <summary>
-        /// The v19→v20 crew rebuild: turn the anonymous per-node gatherer,
+        /// The v19→v20 kith rebuild: turn the anonymous per-node gatherer,
         /// per-site digger, and camp carrier counts into individual roster
         /// familiars (voles gather and dig, ravens hold the trail — the seed
         /// species). Names are left blank for Restore to fill with species
@@ -760,7 +778,7 @@ namespace Wildgrove.Sim.Saves
                         break;
 
                     case 19:
-                        // v19 predates the crew roster: familiars were anonymous
+                        // v19 predates the kith roster: familiars were anonymous
                         // per-node/per-camp counts, and Coin was the currency.
                         // Rebuild the counts into a roster of individuals; Coin
                         // simply drops (money became XP — the run's Renown is

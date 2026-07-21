@@ -16,12 +16,10 @@
     "basketCapacity": 60,
     "$note": "first-guess Phase-1 numbers, not in design doc — a carrier's throughput is baseCarryCapacity/tripSeconds (x carry-capacity upgrades); gathered goods wait in a per-node basket of basketCapacity and overflow is lost. Tune with the loop playtest."
   },
-  "familiarCaps": {
-    "flockCapBase": 8,
-    "flockCapPerRoostLevel": 2,
-    "carrierSlotsBase": 2,
-    "carrierSlotsPerRoostLevel": 1,
-    "$note": "design §8: flockCap(zone) = base + perLevel·roostLevel (gatherers per zone) · carrierSlots = base + perLevel·roostLevel (camp-wide; the +1 Spare Wing reward arrives with the PGS layer). Roost level = bought levels of the roosts building line."
+  "kith": {
+    "slotsBase": 4,
+    "slotsMax": 6,
+    "$note": "design §4 ladder: six kith slots, four free from minute one; the last two are earned as kithSlot effects (The Old Friend Almanac node, the Warden's Gallery spread). slotsMax is the hard ceiling however many kithSlot effects future content grants."
   },
   "crafting": {
     "baseCraftSeconds": 5,

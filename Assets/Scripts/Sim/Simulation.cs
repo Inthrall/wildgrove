@@ -393,7 +393,7 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Data-aware overload: the stationed crew (design §2) does the
+        /// Data-aware overload: the stationed kith (design §2) does the
         /// gathering — assigned familiars at full rate with their powerups, plus
         /// the wanderers' half-help share (see <see cref="Stationing"/>).
         /// </summary>

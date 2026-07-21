@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// One member of the warden's crew (design §4): an individual with a name,
+    /// One member of the warden's kith (design §4): an individual with a name,
     /// a species, a run-track level (derived from <see cref="xp"/>), a permanent
     /// Kinship track, chosen powerups, and a stationing post. Replaces the
     /// anonymous per-node/per-camp familiar counts — the flock is a roster of

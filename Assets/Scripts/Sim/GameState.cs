@@ -98,7 +98,7 @@ namespace Wildgrove.Sim
         public ulong rngState = 0x9E3779B97F4A7C15UL;
 
         /// <summary>
-        /// The warden's crew (design §4): every familiar befriended this run,
+        /// The warden's kith (design §4): every familiar befriended this run,
         /// each an individual with a name, species, level (derived from xp),
         /// Kinship, powerups, and a stationing post. Replaces the anonymous
         /// per-node/per-camp counts — stationed roster members do the gathering
@@ -202,7 +202,7 @@ namespace Wildgrove.Sim
             return "fam-" + (nextFamiliarSeq++);
         }
 
-        /// <summary>Total familiars in the crew this run — the whole roster (bonded and not).</summary>
+        /// <summary>Total familiars in the kith this run — the whole roster (bonded and not).</summary>
         public int TotalFamiliars()
         {
             return roster.Count;

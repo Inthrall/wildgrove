@@ -106,7 +106,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_WatcherAtACertainRate_SurfacesASketch()
         {
             var state = NewGameWithDigSite();
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -131,7 +131,7 @@ namespace Wildgrove.Sim.Tests
             // Effectively-zero rate: only the pity guarantee can drop.
             _data.economy.observation.baseSketchesPerHour = 1e-12;
             var state = NewGameWithDigSite();
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
             Simulation.Advance(state, _data, 4.5 * 3600.0);
 
@@ -145,7 +145,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CompletingAPlate_GrantsItsEffectsImmediately()
         {
             var state = NewGameWithDigSite();
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.insectSketches["stags-herald"] = 2;
 
             Simulation.Advance(state, _data, 1.0);
@@ -163,7 +163,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_FullyRecordedSite_FallsQuietWithoutBurningRng()
         {
             var state = NewGameWithDigSite();
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.insectSketches["stags-herald"] = 3; // already assembled
             var seedBefore = state.rngState;
 
@@ -185,7 +185,7 @@ namespace Wildgrove.Sim.Tests
                 sketches = 5, habitats = new List<string> { "old-growth-wood" }, rarity = 0.35,
             });
             var state = NewGameWithDigSite();
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
             state.insectSketches["stags-herald"] = 3; // assembled — out of the pick
 
             Simulation.Advance(state, _data, 1.0);
@@ -227,8 +227,8 @@ namespace Wildgrove.Sim.Tests
             var state = NewGameWithDigSite();
             Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));
 
-            // Diggers are stationed (design §2) — no cost, no cap, just where the crew stands.
-            TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 2);
+            // Diggers are stationed (design §2) — no cost, no cap, just where the kith stands.
+            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 2);
 
             Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(2));
         }

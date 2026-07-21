@@ -20,23 +20,29 @@ namespace Wildgrove.Sim
     public static class RiteGenerator
     {
         /// <summary>
-        /// Gather posts a plausible crew can hold at once: the MVP crew of five
-        /// active familiars (§4) minus the one familiar usually on the trail
-        /// (§2). A good whose production needs raw inputs from more distinct
-        /// gather nodes than this can't be kept produced under plausible
-        /// stationing, so the generator never asks for it and the reachability
-        /// proof (§8) doesn't count it. First-guess; derive from the crew-slot
-        /// ladder / move to data when the ladder lands (todo.md).
+        /// Gather posts a plausible kith can hold at once: the free rungs of
+        /// the slot ladder (economy.kith.slotsBase — earned slots are never
+        /// assumed) minus the one familiar usually on the trail (§2). A good
+        /// whose production needs raw inputs from more distinct gather nodes
+        /// than this can't be kept produced under plausible stationing, so the
+        /// generator never asks for it and the reachability proof (§8) doesn't
+        /// count it.
         /// </summary>
-        public const int CrewGatherPosts = 4;
+        public static int KithGatherPosts(GameDataAsset data)
+        {
+            var slotsBase = data?.economy?.kith != null && data.economy.kith.slotsBase > 0
+                ? data.economy.kith.slotsBase
+                : 4;
+            return Math.Max(1, slotsBase - 1);
+        }
 
         /// <summary>
         /// The stationing footprint of a good (design §2 reachability): how
-        /// many distinct raw-resource gather nodes a crew must be able to post
+        /// many distinct raw-resource gather nodes the kith must be able to post
         /// to in order to produce it. A raw find is one node; a crafted good is
         /// the distinct raw leaves of its whole input tree. int.MaxValue when
         /// nothing produces it (a cycle or a missing source) — never reachable.
-        /// A slot is stationing-reachable when this is &lt;= CrewGatherPosts.
+        /// A slot is stationing-reachable when this is &lt;= KithGatherPosts.
         /// </summary>
         public static int StationingFootprint(GameDataAsset data, string goodsId)
         {
@@ -282,11 +288,12 @@ namespace Wildgrove.Sim
                 }
             }
 
-            // Stationing-aware reachability (§2): never ask for a good the crew
+            // Stationing-aware reachability (§2): never ask for a good the kith
             // could not keep produced — its raw inputs must fit the gather posts
-            // a plausible crew can hold. Order-gating keeps a verse answerable in
+            // a plausible kith can hold. Order-gating keeps a verse answerable in
             // time; this keeps it answerable with the hands you have.
-            candidates.RemoveAll(goods => StationingFootprint(data, goods) > CrewGatherPosts);
+            var gatherPosts = KithGatherPosts(data);
+            candidates.RemoveAll(goods => StationingFootprint(data, goods) > gatherPosts);
             return candidates;
         }
 

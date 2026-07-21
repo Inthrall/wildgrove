@@ -11,14 +11,14 @@ Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals. The
 per-item detail below points at the code/data; the phase lists further down are
 annotated **v0.11:** where a decision touches them.
 
-**IMPLEMENTED 2026-07-21 (crew + money→XP + Exchange + naming; 370/370 EditMode green):**
+**IMPLEMENTED 2026-07-21 (kith + money→XP + Exchange + naming; 370/370 EditMode green):**
 - ✅ **Coin is gone — money becomes XP.** `GameState.coin` removed; Renown = lifetime
   XP (warden skills + familiars) + offering credits; upgrades reprice to skill-gate
   (`gateSkill`/`gateLevel`) + material bundle; buildings → material bundles; zones drop
   `mapCostCoin`. New **Exchange** (`Exchange.cs` + `exchange.json`) barters goods↔goods
   off the trade-value table (`Economy.TradeValuePerUnit`), spread + player-favourable
   rounding.
-- ✅ **Crew of individuals + stationing.** `NodeState.familiarCount`/`GameState.carrierCount`
+- ✅ **Kith of individuals + stationing.** `NodeState.familiarCount`/`GameState.carrierCount`
   gone; `GameState.roster` of `Familiar {name, species, xp→level, kinshipXp, powerupIds,
   stationId, bonded}`. `Stationing.cs` sums stationed agents (wanderers ×0.5). Powerups
   (`Powerups.cs`, `species.json` pools) chosen every 5 levels. Familiar XP + Kinship
@@ -33,7 +33,46 @@ annotated **v0.11:** where a decision touches them.
   (`donatedResources`→`fixedResources`); HUD shows a Folio spread-progress section.
   Mechanic unchanged (fix a Pristine of each entry → complete spread → permanent bonus
   surviving Migration). Deferred: spreads are still 2–4 entries (design wants 4–8, a balance
-  pass) and no spread grants crew slot 5 yet (the slot ladder isn't built).
+  pass).
+
+**IMPLEMENTED 2026-07-21 (the kith slot ladder — six slots, four free; and "crew"
+is now the kith):**
+- ✅ **Vocabulary: crew → kith** (Mo's call: a better-fitting name; pairs with
+  Kinship — the kith is who walks with you, Kinship is what they remember).
+  Renamed across code, tests (`TestCrew`→`TestKith`), HUD copy, design-doc,
+  journal mock, and this file.
+- ✅ **The ladder (design §4, decided 2026-07-21): six slots total, four free.**
+  `economy.kith {slotsBase 4, slotsMax 6}` (replaces the vestigial `familiarCaps`
+  section); new `EffectType.KithSlot`; `Kith.cs` derives active slots =
+  slotsBase + owned kithSlot effects, ceilinged at slotsMax. Slot 5 = **The Old
+  Friend** Almanac node (now carries `kithSlot` — the node opens the slot AND
+  its bond Burr fills it, one purchase one arrival). Slot 6 = **the Warden's
+  Gallery** spread capstone (`kithSlot` alongside its yield bonus; the Curator's
+  Cabinet multiplier deliberately never scales a slot).
+- ✅ **Capacity enforced.** `Roster.Recruit` returns null with no room (future
+  gift event just works); `Roster.SyncBonded` leaves an earned bond waiting in
+  the grass until a slot opens (GameLoop re-syncs after Almanac buys and
+  specimen fixes so the wait ends the moment it can).
+- ✅ **Legacy-save freeze fixed.** Restore clamps an oversized roster to
+  `slotsMax` (bonded first, then deepest Kinship) — the v19→v20 count rebuild
+  could mint ~96 familiars on a long-lived save and freeze the HUD on open.
+- ✅ **Rite budget derived.** `RiteGenerator.CrewGatherPosts` (const 4) →
+  `KithGatherPosts(data)` = slotsBase − 1 trail post = **3**; conservative by
+  design (earned slots are never assumed). MVP footprints are ≤2, so no
+  behaviour change today.
+- HUD: the Kith card shows "N of M slots walked · the land holds the rest".
+
+**Interpretations / deferred with it (tune/confirm):**
+- "Four are free" = slot *capacity*; arrivals still fill them (2 seeds + gift
+  event + first bond at MVP). Slot 6 is headroom until more sources exist.
+- A bond earned with no room open still fires its celebration sheet
+  (`PendingBondCelebration`) even though the companion waits — unreachable at
+  MVP (sources ≤ slots at every rung), revisit if sources ever outpace slots.
+- Restore clamps to `slotsMax`, not currently-earned slots — a data retune can
+  never quietly drop a companion; excess familiars are dropped, not converted
+  to Renown.
+- Roosts `perLevel: "familiarCaps"` marker string kept as the RoostLevel
+  counter (comfort track, unbuilt); rename when Roosts comfort lands.
 
 **Interpretations / placeholders shipped with it (tune/confirm):**
 - Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
@@ -43,10 +82,10 @@ annotated **v0.11:** where a decision touches them.
 - Familiar XP is a flat per-second at any post (no postMatch/comfort multipliers yet, design §8).
 - Ungated/material-less upgrades are free once their skill gate opens (§10 material bundles are
   placeholders); building material bundles are placeholders.
-- Crew is fully persisted across Migration (no presence-lapse/benching yet); the 5-slot cap
-  ladder, the verse-1 gift-event (slot 3), and Roosts "comfort" XP are NOT wired.
+- Kith is fully persisted across Migration (no presence-lapse/benching yet); the slot
+  ladder landed 2026-07-21 (six slots, four free — see below); the verse-1 gift-event
+  and Roosts "comfort" XP are NOT wired.
 - Pristine "sell" dropped — Pristine is offer/donate only for now.
-- `familiarCaps` economy section + roosts `familiarCaps` perLevel are now vestigial (RoostLevel kept).
 
 **IMPLEMENTED 2026-07-21 (the deep chase → living insects; headless suite green):**
 - ✅ **Insects replace fossils — observe · sketch · release (§6).** Mo's call: the
@@ -69,9 +108,10 @@ annotated **v0.11:** where a decision touches them.
   `design-doc.md` are a **draft to re-voice**.
 
 **STILL TO DO (v0.11 reversals not yet built):** none — all seven reversals
-have landed (Coin/Exchange, crew-of-5/stationing, Kinship, Folio, insects,
-replanting/planters, stationing-aware reachability). Remaining v0.11 work is
-MVP tails / balance, tracked in the items below.
+have landed (Coin/Exchange, the kith + stationing, Kinship, Folio, insects,
+replanting/planters, stationing-aware reachability), plus the slot ladder
+(six slots, four free — 2026-07-21). Remaining v0.11 work is MVP tails /
+balance, tracked in the items below.
 
 - **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
   everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +
@@ -85,16 +125,17 @@ MVP tails / balance, tracked in the items below.
   number, and the Phase 1 gate now asks *"can a new player say what anything is worth
   without Coin?"* (`Economy.cs`, `GameState.cs`, `upgrades.json`, `buildings.json`,
   `zones.json`, `resources.json`, `economy.json`)
-- **Flock + carriers → a stationed crew of five (§2, §4).** Shipped model: per-node
+- **Flock + carriers → a stationed kith of five (§2, §4).** Shipped model: per-node
   gatherer counts (`NodeState.familiarCount`), a camp carrier pool
   (`GameState.carrierCount`), flock/carrier caps (`economy.familiarCaps`), and gift
-  cost curves (`economy.gifts`). Design: up to **5 named roster familiars**, each with
+  cost curves (`economy.gifts`). Design: up to **6 named roster familiars** (four
+  slots free, two earned — revised from 5 on 2026-07-21), each with
   a level and an authored **powerup** build (a choice every 5 levels from a
   deterministic species pool), **stationed** at a post; **carrying is a post (the
   trail post), not a species** — no carrier type. An unassigned familiar **wanders** at
   ×0.5 rate/XP with no powerups; the warden never wanders (post = last tended).
   **Levels never scale output** (throughput comes from tools/hauling/powerups/richness).
-  Stationing, powerups, roster, and crew slots are all absent from code.
+  Stationing, powerups, roster, and kith slots are all absent from code.
 - **Bonds → Kinship two-track (§4).** `Bonds.cs`/`bonds.json` model bonded familiars by
   `role: "carrier"|"gatherer"`. Design: every roster familiar carries a permanent
   **Kinship** track (run XP → Kinship XP at Migration via √ conversion; perks = higher
@@ -123,14 +164,14 @@ MVP tails / balance, tracked in the items below.
   (Mo's call): **per-slot footprint**. A slot counts as reachable only if its good's
   production footprint — the distinct raw-resource gather nodes needed to make it
   (a raw find = 1; a crafted good = the distinct raw leaves of its input tree) —
-  fits `RiteGenerator.CrewGatherPosts` (= 4: MVP crew of 5 minus the trail post).
+  fits `RiteGenerator.KithGatherPosts(data)` (slot-ladder-derived since 2026-07-21:
+  `economy.kith.slotsBase` − 1 trail post = 3 — conservative, earned slots never assumed).
   `RiteGenerator.StationingFootprint()` computes it; `CandidateGoods` filters picks
-  by it so the generator never asks for a good the crew can't keep produced; the
+  by it so the generator never asks for a good the kith can't keep produced; the
   runs-2–10 proof (`RiteGeneratorTests`) now counts reachable with the footprint gate.
   Deed/specimen/sketch each need one post, always within budget. MVP content is well
   under budget (footprints ≤ 2), so this is a guardrail for future content, not a
-  behaviour change today. INTERPRETATIONS/DEFERRED: `CrewGatherPosts` is a first-guess
-  constant — derive it from the crew-slot ladder (unbuilt) / move to data later; the
+  behaviour change today. INTERPRETATIONS/DEFERRED: the
   three chosen slots are **not** budgeted together (per-slot only, by design choice);
   the import-time validator's authored-run-1 rite is NOT yet given a stationing-aware
   ≥chooseCount check (the guarantee lives in the generator + proof, which is where
@@ -146,9 +187,9 @@ MVP tails / balance, tracked in the items below.
   the bundle broadens as new nodes come into work, so a freshly-gifted node briefly
   raises the carrier price in a resource the camp barely holds — probably desirable
   tension, but confirm it in balance.
-  **v0.11:** superseded by the crew reversal (§4) — there is no carrier type and gifts
-  become one-shot *recruitment events* (crew slot 3, unlocked by verse 1), not a cost
-  curve. Retire `gifts.carrierBaseGoods`/`carrierGift` with the stationing rework.
+  **v0.11:** superseded by the kith reversal (§4) — there is no carrier type and gifts
+  become one-shot *recruitment events* filling a free kith slot (unlocked by verse 1),
+  not a cost curve. Retire `gifts.carrierBaseGoods`/`carrierGift` with the gift event.
 - **Warden gather rate is a first guess.** `warden.gatherPerSecond = 0.5` — the
   warden's passive trickle at their post (always on, burst-boosted), and the
   bare-node gift bootstrap. Replaced the old burst-only hand-gather so the
@@ -193,7 +234,7 @@ MVP tails / balance, tracked in the items below.
     only — per-familiar Kinship gains aren't itemised.
   - The **waystone arrival modal is restored** (it had been dropped in the v0.11
     HUD rewrite); it queues behind arrival/bond/welcome sheets.
-  - Crew **post buttons are a fixed 5-column grid** of node/trail/watch/wander;
+  - Kith **post buttons are a fixed 5-column grid** of node/trail/watch/wander;
     fine at MVP station counts, revisit when zones multiply.
   - Store capture pages renamed to the four tabs (`StoreCaptureRunner`); legacy
     page names still map inside `GameHud.OpenTab`.
@@ -292,7 +333,7 @@ MVP tails / balance, tracked in the items below.
   (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
   **v0.11 (§5):** "levels are the gate, materials are the cost, everywhere" is now
   decided — the skill-XP spine carries the pacing that Coin used to. Familiar XP joins
-  it as the second track (earned at the post), which the crew rework introduces.
+  it as the second track (earned at the post), which the kith rework introduces.
 - **The Pristine three-way choice is complete; the Compendium's plates and
   lifetime counters are not.** Quality pools now feed all three forks — the
   Provisioner windfall, Rite specimen slots, and Museum donations (one
@@ -314,7 +355,7 @@ MVP tails / balance, tracked in the items below.
   **v0.11 (§6):** the Museum is **retired** — the three-way choice survives, but the
   keep-fork becomes **fixing a Pristine into the Folio** (the journal's back pages),
   where **spreads** of 4–8 grant the permanent bonus. `Museum.cs`/`museum.json`/
-  `donatedResources` reframe as the Folio; sets → spreads (one MVP spread grants crew
+  `donatedResources` reframe as the Folio; sets → spreads (one MVP spread grants kith
   slot 5's moment); `wardens-gallery`/`curators-cabinet` become Folio furniture. The
   buried past is never kept (see the excavation item) — only the *living* land's gifts
   can be fixed.
@@ -359,7 +400,7 @@ MVP tails / balance, tracked in the items below.
   the page is torn out and that portion must be **re-uncovered** (the pity timer keeps
   it fair); it stays the steepest offering, priced highest in Renown. The generator's
   ≥3-reachable-slots guarantee must become **stationing-aware** (satisfiable under
-  plausible stationing with the current crew size, §2), replacing zone-unlock
+  plausible stationing with the current kith size, §2), replacing zone-unlock
   reachability. Migration now also keeps the **roster + every Kinship level** (§4)
   alongside the journal/Verdure/fossils.
 - **Bonded familiars are live; species abilities are not.** Two MVP bonds
@@ -413,7 +454,7 @@ MVP tails / balance, tracked in the items below.
   first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
   **v0.11 (§3, §8):** add **The First Planting** — a node that lets one planter survive
   the fold — once replanting/planters land. The Almanac deliberately gets **no
-  familiar-power nodes** (§4): its crew-adjacent scope is limited to slot access (crew
+  familiar-power nodes** (§4): its kith-adjacent scope is limited to slot access (kith
   slot 4) and The First Planting.
 
 - **The narrative display layer is live; most of the words are not.**

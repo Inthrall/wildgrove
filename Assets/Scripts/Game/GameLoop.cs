@@ -13,7 +13,7 @@ namespace Wildgrove.Game
     /// The scene-side driver that turns the pure simulation into a running game:
     /// it owns the content asset and the live <see cref="GameState"/>, advances
     /// the tick every frame, and exposes the core-loop player actions (station
-    /// the crew, name and level familiars, barter at the Exchange, buy upgrades)
+    /// the kith, name and level familiars, barter at the Exchange, buy upgrades)
     /// for the input/UI layer to call. All game logic lives in Wildgrove.Sim;
     /// this class is deliberately thin wiring.
     /// </summary>
@@ -48,7 +48,7 @@ namespace Wildgrove.Game
         private bool _sessionOpen;
         private long _lastSavedUnixMs;
 
-        // Familiars the player has been introduced to (in-memory — a loaded crew
+        // Familiars the player has been introduced to (in-memory — a loaded kith
         // has already been met). A newly arrived, non-bonded familiar queues for
         // the naming sheet; bonded familiars have canonical names and their own
         // celebration (design §4).
@@ -134,13 +134,13 @@ namespace Wildgrove.Game
             if (SaveFile.TryLoad(out var save))
             {
                 State = SaveCodec.Restore(save, Data);
-                // A loaded crew has already been met and named — don't re-prompt.
+                // A loaded kith has already been met and named — don't re-prompt.
                 MarkArrivalsSeen();
                 CreditAbsence((NowUnixMs() - save.savedAtUnixMs) / 1000.0);
             }
             else
             {
-                // A fresh run's seed crew (a vole and a raven, design §4) arrives
+                // A fresh run's seed kith (a vole and a raven, design §4) arrives
                 // to be named — RefreshArrivals queues them on the first tick.
                 State = GameStateFactory.NewGame(Data);
             }
@@ -219,7 +219,7 @@ namespace Wildgrove.Game
             return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         }
 
-        // ─────────────────────────── The crew (design §4) ────────────────────
+        // ─────────────────────────── The kith (design §4) ────────────────────
 
         /// <summary>Queue any newly arrived, un-met, non-bonded familiar for the naming sheet.</summary>
         private void RefreshArrivals()
@@ -256,6 +256,18 @@ namespace Wildgrove.Game
         public Familiar TakePendingArrival()
         {
             return _pendingArrivals.Count > 0 ? _pendingArrivals.Dequeue() : null;
+        }
+
+        /// <summary>Active kith slots on the ladder (design §4): four free, The Old Friend and the Warden's Gallery earn the rest.</summary>
+        public int KithSlots()
+        {
+            return Kith.Slots(State, Data);
+        }
+
+        /// <summary>Familiars currently walking with the warden — the held slots.</summary>
+        public int KithCount()
+        {
+            return Kith.Count(State);
         }
 
         /// <summary>Rename a familiar (design §4: name at arrival, rename any time). Returns false when the name is blank.</summary>
@@ -656,6 +668,9 @@ namespace Wildgrove.Game
 
             Telemetry.LogEvent("specimen_fixed", ("resource", resourceId));
             ReportNewBonds(bondsBefore);
+            // A completed Gallery opens kith slot 6 — a bond that was waiting
+            // for room steps in now (SyncBonded is idempotent).
+            Roster.SyncBonded(State, Data);
             return true;
         }
 
@@ -688,6 +703,9 @@ namespace Wildgrove.Game
 
             Telemetry.LogEvent("almanac_node_bought", ("node", node.id), ("verdure_cost", node.costVerdure));
             ReportNewBonds(bondsBefore);
+            // The Old Friend opens kith slot 5 — a bond that was waiting for
+            // room steps in now (SyncBonded is idempotent).
+            Roster.SyncBonded(State, Data);
             return true;
         }
 
@@ -750,7 +768,7 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Fold the camp (design §7): swap in the next run's state, keeping the
-        /// permanents (and the crew, with run XP banked into Kinship), and save
+        /// permanents (and the kith, with run XP banked into Kinship), and save
         /// at once so the old run can't be resumed by force-closing. Returns
         /// false when the Rite hasn't consented.
         /// </summary>
@@ -767,7 +785,7 @@ namespace Wildgrove.Game
                 ("verdure", next.verdurePoints),
                 ("renown", State.renown.ToDouble()));
             State = next;
-            // The carried crew has already been met — don't re-prompt naming.
+            // The carried kith has already been met — don't re-prompt naming.
             MarkArrivalsSeen();
             SaveNow();
             return true;

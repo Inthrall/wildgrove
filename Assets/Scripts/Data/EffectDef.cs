@@ -22,7 +22,10 @@ namespace Wildgrove.Data
         UnlockDigSite,
 
         /// <summary>Reveals the live Verdure forecast (the Almanac Desk). Migration itself is gated by the Rite, not an upgrade.</summary>
-        UnlockVerdureForecast
+        UnlockVerdureForecast,
+
+        /// <summary>+value active kith slots (design §4 ladder — The Old Friend, the Warden's Gallery). Never scaled by spread multipliers.</summary>
+        KithSlot
     }
 
     /// <summary>

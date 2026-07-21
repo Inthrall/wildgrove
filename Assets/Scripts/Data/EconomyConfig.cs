@@ -8,7 +8,7 @@ namespace Wildgrove.Data
         public CostGrowthSection CostGrowth { get; set; }
         public GiftsSection Gifts { get; set; }
         public HaulingSection Hauling { get; set; }
-        public FamiliarCapsSection FamiliarCaps { get; set; }
+        public KithSection Kith { get; set; }
         public CraftingSection Crafting { get; set; }
         public ToolsSection Tools { get; set; }
         public MasterySection Mastery { get; set; }
@@ -43,12 +43,10 @@ namespace Wildgrove.Data
             public double BasketCapacity { get; set; }
         }
 
-        public sealed class FamiliarCapsSection
+        public sealed class KithSection
         {
-            public int FlockCapBase { get; set; }
-            public int FlockCapPerRoostLevel { get; set; }
-            public int CarrierSlotsBase { get; set; }
-            public int CarrierSlotsPerRoostLevel { get; set; }
+            public int SlotsBase { get; set; }
+            public int SlotsMax { get; set; }
         }
 
         public sealed class CraftingSection

@@ -71,7 +71,7 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             state.roster.RemoveAll(f => f.IsOnTrail);
             state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
-            TestCrew.Station(state, state.nodes[0].id, 10);
+            TestKith.Station(state, state.nodes[0].id, 10);
 
             Simulation.Advance(state, _data, 10.0);
 

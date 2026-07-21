@@ -97,7 +97,7 @@ namespace Wildgrove.Sim.Tests
         public void Richness_RaisesNodeYield()
         {
             var node = new NodeState { id = "n", resourceId = "berries", richnessLevel = 5 };
-            var state = TestCrew.WithGatherers("n", 1);
+            var state = TestKith.WithGatherers("n", 1);
 
             // 1 agent · (1 + 0.10 · 5 richness) = 1.5
             Assert.That(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble(),

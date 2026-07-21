@@ -133,8 +133,8 @@ namespace Wildgrove.Sim.Tests
 
             var next = Migration.Migrate(state, _data);
 
-            // The run's own state resets to the fresh-run baseline (the crew
-            // itself crosses — see Migrate_CarriesTheCrewFolded).
+            // The run's own state resets to the fresh-run baseline (the kith
+            // itself crosses — see Migrate_CarriesTheKithFolded).
             Assert.That(next.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
@@ -190,7 +190,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Migrate_CarriesTheCrewFolded()
+        public void Migrate_CarriesTheKithFolded()
         {
             var state = StateWithTheRiteSung();
             state.roster[0].xp = 5000.0;
@@ -203,7 +203,7 @@ namespace Wildgrove.Sim.Tests
             // The roster crosses the fold; each familiar returns to a clean run
             // build — station cleared, powerups dropped — with run XP banked into
             // permanent Kinship (design §4).
-            Assert.That(next.roster.Count, Is.EqualTo(count), "the crew crosses whole");
+            Assert.That(next.roster.Count, Is.EqualTo(count), "the kith crosses whole");
             Assert.That(next.roster[0].kinshipXp, Is.GreaterThan(0.0), "run XP banks into Kinship");
             Assert.That(next.roster[0].powerupIds, Is.Empty, "run build resets");
             Assert.That(next.roster.TrueForAll(f => f.IsWandering), Is.True, "stations reset");

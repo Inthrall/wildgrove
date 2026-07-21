@@ -1,11 +1,11 @@
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Test helpers for the v0.11 crew model: stationing individual familiars in
+    /// Test helpers for the v0.11 kith model: stationing individual familiars in
     /// place of the old anonymous per-node/per-camp counts. Keeps the sim tests
     /// terse — "put 4 gatherers on this node" is one call.
     /// </summary>
-    internal static class TestCrew
+    internal static class TestKith
     {
         /// <summary>Add <paramref name="count"/> familiars stationed at <paramref name="stationId"/> (a node id, "trail", or "dig:{zone}").</summary>
         public static void Station(GameState state, string stationId, int count)

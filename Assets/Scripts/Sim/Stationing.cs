@@ -4,7 +4,7 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// Where the crew stands (design §2) — the moment-to-moment allocation.
+    /// Where the kith stands (design §2) — the moment-to-moment allocation.
     /// Assigned familiars work their post at full rate (with powerups); an
     /// unassigned familiar wanders at ×0.5 with no powerups, its half-help
     /// spread evenly across the unlocked gather nodes; an unheld trail is
@@ -95,7 +95,7 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Effective carrier lanes on the trail: the familiars holding the trail
         /// post (scaled by their throughput powerups), or a flat half-lane when
-        /// the trail is unheld but the crew has anyone to drift onto it.
+        /// the trail is unheld but the kith has anyone to drift onto it.
         /// </summary>
         public static double TrailCarriers(GameState state, GameDataAsset data)
         {

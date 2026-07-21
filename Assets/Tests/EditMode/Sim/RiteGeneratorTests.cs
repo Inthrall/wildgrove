@@ -15,7 +15,7 @@ namespace Wildgrove.Sim.Tests
     /// proof" the design doc demands — runs 2–10 generated from the shipping
     /// JSON must always leave at least chooseCount reachable slots per verse,
     /// where reachable is stationing-aware (§2): a slot's good must fit the
-    /// crew's gather posts, not merely be content-obtainable.
+    /// kith's gather posts, not merely be content-obtainable.
     /// </summary>
     public class RiteGeneratorTests
     {
@@ -306,11 +306,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Generate_ExcludesGoodsWiderThanTheCrewCanStaff()
+        public void Generate_ExcludesGoodsWiderThanTheKithCanStaff()
         {
             // A good needing five distinct raw finds has a footprint of 5 > the
-            // four posts a plausible crew can hold — the generator must never
-            // ask for it, however order-available it is (design §2).
+            // three posts a plausible kith can hold (four free slots minus the
+            // trail) — the generator must never ask for it, however
+            // order-available it is (design §2).
             _data.resources.Add(new ResourceData { id = "r2", sellValue = 1, skill = "foraging" });
             _data.resources.Add(new ResourceData { id = "r3", sellValue = 1, skill = "foraging" });
             _data.resources.Add(new ResourceData { id = "r4", sellValue = 1, skill = "foraging" });
@@ -333,7 +334,7 @@ namespace Wildgrove.Sim.Tests
             {
                 var verse = RiteGenerator.Generate(_data, m).verses[0];
                 Assert.That(verse.slots.Any(s => s.resource == "wide"), Is.False,
-                    $"migration {m}: a 5-node good exceeds the crew's {RiteGenerator.CrewGatherPosts} posts");
+                    $"migration {m}: a 5-node good exceeds the kith's {RiteGenerator.KithGatherPosts(_data)} posts");
             }
         }
 
@@ -405,12 +406,12 @@ namespace Wildgrove.Sim.Tests
                     {
                         // Stationing-aware reachability (§2): a resource slot
                         // counts only if its good is content-obtainable AND
-                        // producible within the crew's gather posts (its raw
-                        // footprint <= CrewGatherPosts). Deed/specimen/sketch
+                        // producible within the kith's gather posts (its raw
+                        // footprint <= KithGatherPosts). Deed/specimen/sketch
                         // each need a single post, always within budget.
                         var reachable = verse.slots.Count(slot =>
                             (slot.type == RiteSlotType.Resource && offerable.Contains(slot.resource) && slot.amount > 0
-                                && RiteGenerator.StationingFootprint(data, slot.resource) <= RiteGenerator.CrewGatherPosts)
+                                && RiteGenerator.StationingFootprint(data, slot.resource) <= RiteGenerator.KithGatherPosts(data))
                             || (slot.type == RiteSlotType.Deed && slot.deed == "tend")
                             || (slot.type == RiteSlotType.Specimen && SpecimenChance(data, slot.quality) > 0)
                             || (slot.type == RiteSlotType.Sketch && grantsDigSite && data.insects.Count > 0));

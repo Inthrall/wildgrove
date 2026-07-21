@@ -4,7 +4,7 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// Building and naming the crew (design §4): recruitment events mint named
+    /// Building and naming the kith (design §4): recruitment events mint named
     /// familiars, the player renames them, and stationing sets their post.
     /// Bonded familiars (source-earned) are materialised idempotently here so
     /// they're present from minute one of every run.
@@ -14,10 +14,16 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Recruit a familiar of a species to a station (null = wandering), with a
         /// suggested default name the player can accept or change. Returns the new
-        /// roster entry (for the arrival naming sheet).
+        /// roster entry (for the arrival naming sheet), or null when every kith
+        /// slot is held (design §4 ladder — recruitment waits for an open slot).
         /// </summary>
         public static Familiar Recruit(GameState state, GameDataAsset data, string speciesId, string stationId, string name = null)
         {
+            if (!Kith.HasRoom(state, data))
+            {
+                return null;
+            }
+
             var familiar = new Familiar
             {
                 id = state.NextFamiliarId(),
@@ -91,7 +97,9 @@ namespace Wildgrove.Sim
         /// Materialise a roster entry for every earned bond not yet present
         /// (idempotent by bondId) — a bonded familiar is present from minute one
         /// of every run (design §4). Call at new game, on load, after Migration,
-        /// and after any action that can complete a bond's source.
+        /// and after any action that can complete a bond's source or open a kith
+        /// slot: an earned bond with no slot open waits in the grass and steps
+        /// in on the next sync with room.
         /// </summary>
         public static void SyncBonded(GameState state, GameDataAsset data)
         {
@@ -109,6 +117,11 @@ namespace Wildgrove.Sim
                 if (present.Contains(bond.id))
                 {
                     continue;
+                }
+
+                if (!Kith.HasRoom(state, data))
+                {
+                    return;
                 }
 
                 state.roster.Add(new Familiar

@@ -10,7 +10,9 @@ namespace Wildgrove.Sim
     /// run owns; the next bought level always costs baseCostCoin ·
     /// costGrowth.building^level, forever. Bought levels each grant the
     /// line's perLevel effect: station craft speed, basket capacity, or the
-    /// roosts line's familiar caps (§8 formulas via economy.familiarCaps).
+    /// roosts line's comfort track (perLevel type "familiarCaps" is the
+    /// legacy marker RoostLevel counts — kith headcount is the §4 slot
+    /// ladder now, not a roost formula).
     /// Station lines (fire / forge / bench) also gate recipes: a recipe needs
     /// its station's line at ≥ its stationLevel.
     /// </summary>

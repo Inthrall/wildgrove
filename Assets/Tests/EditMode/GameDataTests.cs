@@ -53,7 +53,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
             Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
-            Assert.That(data.Economy.FamiliarCaps.FlockCapBase, Is.EqualTo(8));
+            Assert.That(data.Economy.Kith.SlotsBase, Is.EqualTo(4), "design §4 ladder: four kith slots free");
+            Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
             Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
             Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("familiarCaps"));
@@ -85,7 +86,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
             Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("folioSpread"));
             Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
-            Assert.That(data.AlmanacById["old-friend"].Effects, Is.Empty, "the bond node's promise is the companion, not an effect");
+            Assert.That(data.AlmanacById["old-friend"].Effects.Single().Type, Is.EqualTo(EffectType.KithSlot),
+                "the Old Friend opens kith slot 5 — and its bond fills it");
+            Assert.That(data.SpreadsById["wardens-gallery"].Effects.Any(e => e.Type == EffectType.KithSlot), Is.True,
+                "the Gallery capstone opens kith slot 6 (design §4 completed-spread moment)");
             Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
             Assert.That(data.Rites.Generator.OffSpotlightPremium, Is.EqualTo(1.5));
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));

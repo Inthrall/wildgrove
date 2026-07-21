@@ -2,7 +2,7 @@
 
 *Design document v0.11 · July 2026 · Working title · Prior rationale lives in repo history*
 
-> An idle gathering & collecting game about tending a wilderness that remembers. Walk deeper with a small crew of wild companions, craft to survive, plant back more than you take — and listen when the land speaks, which is rarely.
+> An idle gathering & collecting game about tending a wilderness that remembers. Walk deeper with a small kith of wild companions, craft to survive, plant back more than you take — and listen when the land speaks, which is rarely.
 
 ## Contents
 
@@ -27,25 +27,25 @@
 
 ### Tend, don't take
 
-You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the crew brings home into the gear and goods a camp needs to push deeper. Some finds are **Pristine**: specimens worth keeping forever. Some the land only lets you watch — the rare **insects** that gather at quiet sites: observed and drawn in careful sketches, then let go — each plate a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the crew slips back into the grass, and the land — and the creatures — remember how you treated them.
+You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the kith brings home into the gear and goods a camp needs to push deeper. Some finds are **Pristine**: specimens worth keeping forever. Some the land only lets you watch — the rare **insects** that gather at quiet sites: observed and drawn in careful sketches, then let go — each plate a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the kith slips back into the grass, and the land — and the creatures — remember how you treated them.
 
 The fantasy is *stewardship, not extraction*. You are a guest who works hard, with a few friends who noticed.
 
 ### Direction note — leaning into Obelisk (decided)
 
-Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, deliberately, its heart: a small crew of individually upgradeable workers whose builds and postings are the run's central decisions.
+Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, deliberately, its heart: a small kith of individually upgradeable workers whose builds and postings are the run's central decisions.
 
 | Axis          | Lineage                              | Description                                                                                           |
 | ------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | **The Trail** | Spine · Idle Obelisk                 | Push deeper through eight zones. Each opens new resources, a new craft, a waystone, and — from Zone 3 — observation sites. |
-| **Familiars** | Crew · Idle Obelisk (the drones)     | Up to five active companions (decided). Each levels at its post, chooses powerups, and is missed when it wanders. |
+| **Familiars** | Kith · Idle Obelisk (the drones)     | Up to six active companions — four slots free, two earned (decided). Each levels at its post, chooses powerups, and is missed when it wanders. |
 | **Crafts**    | Breadth · Melvor Idle                | Parallel gathering and survival-crafting skills with XP, mastery, tools, and gear — the economy's backbone (§9). |
 | **The Rite**  | Gate · Idle Obelisk (minus fighting) | A staged ritual of offerings — five slots a verse, any three. The finished Rite unlocks Migration.       |
 | **Migration** | Meta · Egg Inc                       | Prestige resets the region and banks Verdure — the land's memory — into the permanent Almanac.           |
 
 **Guard rails.** Two things Obelisk does not have, and Wildgrove must keep: nine crafts that genuinely interlock (ore → ingot → tool; timber → planter → yield), and a land that is a character, not a mine. If a change makes the familiars feel like appliances or the zones like ore veins, it has gone too far. The target is *obelisk with a heartbeat*.
 
-**The collecting identity:** the Compendium (living things, your crew among them), the Folio, and the Deep Pages are the axes that never reset. They carry the spread bonuses, the 40+ achievements, nearly all of the story — and the familiar roster you actually play (§4).
+**The collecting identity:** the Compendium (living things, your kith among them), the Folio, and the Deep Pages are the axes that never reset. They carry the spread bonuses, the 40+ achievements, nearly all of the story — and the familiar roster you actually play (§4).
 
 ### Art direction — the naturalist's plates (decided)
 
@@ -71,7 +71,7 @@ gather at their posts        hauls home          │
      └───────── tools, gear, provisions, planter materials ◄─────────┘
 ```
 
-1. **Agents at posts.** The warden and each active familiar can be **stationed** at a post; an unassigned familiar **wanders** (stationing rules, below) — half-hearted help, never zero. Up to five in the crew, one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the crew stands* is the moment-to-moment decision.
+1. **Agents at posts.** The warden and each active familiar can be **stationed** at a post; an unassigned familiar **wanders** (stationing rules, below) — half-hearted help, never zero. Up to six in the kith (four slots free, two earned — §4), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
 2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Pristine chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
 3. Harvest travels home by whoever holds the **trail post** — hauling is a post like any node, not a species (DECIDED 2026-07-18). The pack raven arrives at minute one and takes it first. Under-invest in the post and baskets overflow at the node: the visible bottleneck.
 4. The **fire and benches** turn raw finds into four kinds of output: **survival gear** (the kit — permanent-for-the-run buffs), **trade goods** (dense barter weight at the Exchange), **offerings** (consumed by the Rite, §8), and **planter materials** (given back to the nodes, §3).
@@ -86,9 +86,9 @@ The single most load-bearing rule set in the game — written down so every syst
 - **Assigned or wandering (DECIDED 2026-07-18).** An assigned agent works its post deliberately. An **unassigned familiar wanders** — it drifts to work on its own, a random unlocked node, or the trail when baskets back up and no one holds the post — at **×0.5 rate and ×0.5 XP**, with no powerup effects. Help, never zero: deliberate assignment is optimization, not a chore. The warden never wanders — the warden's post is wherever they last tended.
 - **Unattended nodes.** A node with no assigned agent keeps its richness, planters, and basket; only wanderers touch it, glancingly.
 - **Transit.** Reassignment is always allowed and never costs goods; the agent *walks* — seconds, scaled by trail distance, producing nothing en route and visible on the trail. The map is honest.
-- **The trail post.** Hauling is a stationing assignment: one trail post at MVP, a second via Spare Wing (§11). The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the crew carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
-- **Offline.** Per node: `earn = min(gather rate, trail-post throughput) · min(t, cap)`, with wanderers counting at ×0.5 and an unheld trail moving ×0.5 of one lane. The welcome-back sheet always names what limited the night (the haul cap, or wanderers covering the trail). Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small crew still feels generous (magnitudes in the Phase 3 spreadsheet).
-- **Reachability.** Anywhere the design says "reachable" — most importantly the Rite validator (§8) — it means *satisfiable under plausible stationing with the current crew size*, not merely unlocked.
+- **The trail post.** Hauling is a stationing assignment: one trail post at MVP, a second via Spare Wing (§11). The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the kith carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
+- **Offline.** Per node: `earn = min(gather rate, trail-post throughput) · min(t, cap)`, with wanderers counting at ×0.5 and an unheld trail moving ×0.5 of one lane. The welcome-back sheet always names what limited the night (the haul cap, or wanderers covering the trail). Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet).
+- **Reachability.** Anywhere the design says "reachable" — most importantly the Rite validator (§8) — it means *satisfiable under plausible stationing with the current kith size*, not merely unlocked.
 
 ---
 
@@ -125,28 +125,27 @@ Nodes are not fixed faucets; they can be **made richer**, and the making costs g
 
 ### The small flock (decided)
 
-Familiars are not a count; they are a **crew**. Each is an individual: a name, a Compendium plate, a level, a build, and — over many seasons — a memory of you.
+Familiars are not a count; they are a **kith**. Each is an individual: a name, a Compendium plate, a level, a build, and — over many seasons — a memory of you.
 
-**Active slots** — the ladder:
+**Active slots** — the ladder (decided 2026-07-21: **six slots, four free**):
 
-There is no carrier type — carrying is a **post** (the trail), and any familiar can hold it. Slots are just slots:
+There is no carrier type — carrying is a **post** (the trail), and any familiar can hold it. Slots are just slots. Four are free from minute one — slots cost nothing; *companions* still have to arrive to fill them — and the last two are earned:
 
 | Slot        | When                        | How                                                                    |
 | ----------- | --------------------------- | ----------------------------------------------------------------------- |
-| 1 & 2       | Minute one                  | The land's first gesture — a vole and a raven arrive unasked. One gathers; one takes the trail post. The bootstrap, twice. |
-| 3           | First hour                  | A **gift event**, unlocked by verse 1's completion (decided 2026-07-18): leave a pile of goods at a node; something says yes. The first verse is answered by the warden's own hands. |
-| 4           | Mid-game (early Migrations) | Almanac node — the land trusts you with another.                        |
-| 5           | Late mid / endgame          | A keystone or completed-spread moment. Every slot arrival is an *event*. |
+| 1–4         | Free from minute one        | The land's first gesture fills two — a vole and a raven arrive unasked; one gathers, one takes the trail post. The gift event (below) and the first bond fill the rest. |
+| 5           | Mid-game (early Migrations) | **The Old Friend** Almanac node — the land trusts you with another. The node grants the slot *and* its bond fills it: one purchase, one arrival, no empty promise. |
+| 6           | Endgame                     | **The Warden's Gallery** — the completed-spread moment (§6): one fixing from every zone opens the last slot. Every slot arrival is an *event*. |
 | Trail posts | 1 at MVP · 2nd via **Spare Wing** (§11) | A second haul lane — at these counts, enormous; hauling equipment (§10) is tuned assuming two posts eventually exist (§14). |
 
-Gifts are *recruitment events* — one pile, one yes — keeping the <60s first-companion beat without a cost curve. Nothing repeatedly buys a creature; nothing ever has.
+The **gift event** (unlocked by verse 1's completion, decided 2026-07-18) fills a free slot in the first hour: leave a pile of goods at a node; something says yes. The first verse is answered by the warden's own hands. Gifts are *recruitment events* — one pile, one yes — keeping the <60s first-companion beat without a cost curve. Nothing repeatedly buys a creature; nothing ever has. Recruitment always waits for an open slot; an earned bond with no room waits in the grass and steps in the moment one opens.
 
 **Mini-wardens.** A familiar is stationed exactly as the warden is: one agent system (§2), and the trail is simply another post. Assign it to a node and it works there — a steady gather trickle, and a slow tending cadence if its build allows; assign it to the trail and it carries. Stationing scarce agents across abundant nodes is the Obelisk allocation decision.
 
 **XP & powerups** — the build system:
 
 - A familiar earns **XP at its post**, from its own work — faster where specialized, a trickle offline.
-- Every 5 levels it offers a **choice of 2–3 powerups**, drawn from its species' **fixed, authored pool** (DECIDED 2026-07-18: pools are deterministic per species at MVP, never rolled — the Rite generator can rely on what any crew can become; rolled variety is a v1.1 lever) and filtered to unlocked content (no dead picks — a timber powerup is never offered before the Wood opens). Chosen once, **kept for the run** — no respec; a build is a commitment. (Species pools lean by nature: the raven's favours the trail, the vole's the ground.)
+- Every 5 levels it offers a **choice of 2–3 powerups**, drawn from its species' **fixed, authored pool** (DECIDED 2026-07-18: pools are deterministic per species at MVP, never rolled — the Rite generator can rely on what any kith can become; rolled variety is a v1.1 lever) and filtered to unlocked content (no dead picks — a timber powerup is never offered before the Wood opens). Chosen once, **kept for the run** — no respec; a build is a commitment. (Species pools lean by nature: the raven's favours the trail, the vole's the ground.)
 - **Levels never scale output.** A familiar's level paces XP and Kinship only; throughput and yield come from tools and hauling equipment (the post's levers), powerups (the holder's), and richness. No double-scaling — and no grinding a hauler.
 
 | Pool (examples)    | Effect                                     | Flavour                                  |
@@ -171,7 +170,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 
 **Bonding** is the separate, rarer honour (earned, never bought): a **bonded** familiar crosses the fold and is present from minute one — and its Kinship is why it is also *good* from minute one. Most of the roster slips back into the grass at Migration and is re-met in later regions — a quiet reunion beat, never a re-grind: roster and Kinship persist, only presence lapses. MVP: 1–2 bondable (final counts and rarity: Mo to settle, §14).
 
-**Deliberately not adopted:** Almanac-mediated familiar power ("familiars start at level 5" Verdure nodes). Familiar permanence is exclusively Kinship — the relationship is with the creature, not purchased from the tree. The Almanac's familiar-adjacent nodes are limited to slot access (crew slot 4) and *The First Planting*.
+**Deliberately not adopted:** Almanac-mediated familiar power ("familiars start at level 5" Verdure nodes). Familiar permanence is exclusively Kinship — the relationship is with the creature, not purchased from the tree. The Almanac's familiar-adjacent nodes are limited to slot access (kith slot 5, The Old Friend) and *The First Planting*.
 
 **Roosts & Burrows:** the building line levels **familiar comfort** — +XP rate for all stationed familiars per level; late levels add roster capacity. Depth, not headcount.
 
@@ -245,7 +244,7 @@ There is no museum. There was never anywhere to put one. Everything the collecti
 
 Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **Pristine** (~0.5% base, upgradeable). Quality rolls happen per **haul batch**, not per unit — at idle rates a per-unit roll would shower Pristines and cheapen the windfall. A Pristine find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
 
-**The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — and one MVP spread grants crew slot 5's moment (§4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
+**The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — and the Warden's Gallery capstone grants kith slot 6's moment (§4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
 
 ### Insects — the deep chase (observe · sketch · release — DECIDED 2026-07-21)
 
@@ -327,7 +326,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 - **Verses**, one revealed per zone at its verse site (four at MVP) — visible and chippable from session one. Workable in parallel, any order; Migration requires every revealed verse complete.
 - **Choose 3 of 5.** Five offering slots — raw finds, crafted goods, occasionally a Fine or Pristine specimen, occasionally a deed (Tend N times) — any three finish the verse. One or two **spotlight crafts** are the cheapest path, rotating run to run. Unchosen slots expire, no partial credit.
 - **Offerings** are delivered incrementally, consumed on delivery, and **credit Renown at full trade value** (§9): you give up liquidity, never prestige progress. Deed, specimen, and field-sketch slots carry fixed Renown grants — the sketch's is the largest, as the steepest thing a warden can give (§6). Gifts and replanting earn no Renown — feeding the spirits is remembered; feeding the voles is lunch.
-- **Authored once, generated after.** Run 1 hand-authored (`rites.json`) as the tutorial; from run 2 a generator builds each Rite from migration count × region modifier × unlocked content — validator-guaranteed ≥3 reachable slots per verse, where *reachable* means satisfiable under plausible stationing with the current crew size (§2), not merely unlocked.
+- **Authored once, generated after.** Run 1 hand-authored (`rites.json`) as the tutorial; from run 2 a generator builds each Rite from migration count × region modifier × unlocked content — validator-guaranteed ≥3 reachable slots per verse, where *reachable* means satisfiable under plausible stationing with the current kith size (§2), not merely unlocked.
 - **Not for sale.** Amber never fills a verse slot.
 
 ### Migration
@@ -335,7 +334,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 When the Rite completes and the region slows, the camp folds. Levels, builds, richness, planters, buildings, gear, kit, and zone progress reset. You keep **the journal entire** — Compendium, Folio spreads, insect plates — plus the roster and every **Kinship** level, Amber, and newly banked **Verdure**.
 
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
-- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, crew slot 4, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
+- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, kith slot 5 (The Old Friend), *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
 - **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed) flavour each run and feed the Rite generator.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
@@ -361,7 +360,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 | Trail Maps            | **Provisions** — a goods bundle; you pack for the walk, you don't buy it            |
 | Selling               | **The Exchange** — the caravan barters goods for goods. Rates are **always derived from the single trade-value table** (never authored per pair — hand-set pairs breed arbitrage), less a spread; small trades **round in the player's favour** — the caravan is dry, not petty. Off-zone inputs (berries for nuts) are its real job; trade goods remain the densest barter weight. |
 
-**The pacing spine is XP**, on two tracks: warden craft XP (nine skills, gating tools and recipes) and familiar XP (gating powerups; earned at the post — *where the crew stands is how the run is spent*).
+**The pacing spine is XP**, on two tracks: warden craft XP (nine skills, gating tools and recipes) and familiar XP (gating powerups; earned at the post — *where the kith stands is how the run is spent*).
 
 **The readability rule:** Coin was the single climbing number and the universal price signal. In its place: (1) **Renown is the ledger's big number** — always visible, always climbing; the Verdure input and the score; (2) trade-value weights keep a de facto price signal at the Exchange; (3) the Phase 1 gate asks *can a new player say what anything is worth?* Fallback if not: a cosmetic skin over Renown, never a returned wallet.
 
@@ -426,7 +425,7 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 | Zone 2 + first waystone                         | ~12 min     | New content, first tone                                     |
 | First recipe cooked                             | ~20 min     | Second system online                                        |
 | Verse 1 complete                                | ~30 min     | First sign from the land — and it unlocks the gift event    |
-| Third familiar gifted                           | ~45–60 min  | Assignment outgrows the crew; the puzzle begins             |
+| Third familiar gifted                           | ~45–60 min  | Assignment outgrows the kith; the puzzle begins             |
 | Zone 3: Logging + first observation site                | ~50 min     | Parallel skills; insect hook                                |
 | First portion sketched                          | ~Day 1      | The long chase starts                                       |
 | Fold forecast visible (Almanac Desk)            | Day 1       | Meta-math revealed early                                    |
@@ -570,11 +569,11 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - Camp building lines + station gating (`buildings.json`), costed in material bundles; Roosts as comfort
 - **The Exchange in full:** derived rate table, spread, player-favour rounding; provisions bundles
 - **Familiar system in full:** XP at post, deterministic species pools (content-filtered), powerup choice UI, roster & fielding
-- **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; reachability made stationing-aware — a slot counts only if its good's raw-input footprint fits the crew's gather posts (per-slot; `RiteGenerator.StationingFootprint` ≤ `CrewGatherPosts`), enforced in the generator's candidate picks and the runs-2–10 ≥3-reachable proof
+- **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; reachability made stationing-aware — a slot counts only if its good's raw-input footprint fits the kith's gather posts (per-slot; `RiteGenerator.StationingFootprint` ≤ `KithGatherPosts`), enforced in the generator's candidate picks and the runs-2–10 ≥3-reachable proof
 - Observation as **observe · sketch · release**: two observation sites, portion pity timer, three insect plates, the release beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per haul batch; Folio spreads
 - Familiar world-sprites (static + light bob is fine) — creatures at posts, the trail post's runner on the trail, baskets overflowing
 - Waystones 1–4, verse lines, caravan lines + the **teaching pass** (each system's first margin note is its instruction, §7)
-- Upgrades 4–30 recosted; balance spreadsheet vs. §9 pacing targets — including Rite demands, **offline magnitude for a small crew**, and the **hour-six spend proof** (a run's sixth hour must always have a meaningful next purchase). Seed model shipped with this revision (`economy-model.xlsx`): the proof **passes on defaults**, with the building lines holding the 10–90 min purchase band all run; per-level replants go trivial after H2, so raise `r` toward ~1.5 or sell replants in batches before this becomes the late-run lever. Solved starting constants: K ≈ 425, K_f ≈ 650 (derived from the pacing targets, recomputed automatically as inputs move)
+- Upgrades 4–30 recosted; balance spreadsheet vs. §9 pacing targets — including Rite demands, **offline magnitude for a small kith**, and the **hour-six spend proof** (a run's sixth hour must always have a meaningful next purchase). Seed model shipped with this revision (`economy-model.xlsx`): the proof **passes on defaults**, with the building lines holding the 10–90 min purchase band all run; per-level replants go trivial after H2, so raise `r` toward ~1.5 or sell replants in batches before this becomes the late-run lever. Solved starting constants: K ≈ 425, K_f ≈ 650 (derived from the pacing targets, recomputed automatically as inputs move)
 
 **Gate:** pacing table holds ±30% through hour one; a bar is always filling — checked on the **Trail and Camp pages separately**; verse 1 completes unprompted; at least one tester asks what the Long Winter is.
 
@@ -586,7 +585,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - Almanac tree (12 nodes, incl. Gatherer 3 and The First Planting); region modifiers; first bonded familiar; kit re-craft tuned to ~2 minutes
 - Second-run tuning: run 2 reaches the old wall in ~⅓ the time
 
-**Gate:** testers migrate voluntarily; run 2 feels faster, worth it, and asks something different; the crew's return feels like a reunion, not a re-grind; and testers can articulate what staying another hour would have bought — the unified forecast doing its job.
+**Gate:** testers migrate voluntarily; run 2 feels faster, worth it, and asks something different; the kith's return feels like a reunion, not a re-grind; and testers can articulate what staying another hour would have bought — the unified forecast doing its job.
 
 ### Phase 5 — Play Games layer (2–3 wks)
 
@@ -620,7 +619,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Species pool contents:** author the deterministic pools (structure is decided; the entries are a writing/balance task).
 - **Planter caps:** per-run richness cap, and whether the self-funding loop (berries→berries) needs a clamp beyond the cost curve. Spreadsheet proof alongside the generator's.
 - **Exchange spread value:** ~15% starting point — big enough to stop arbitrage hoarding, small enough to feel generous.
-- **Offline magnitude:** per-agent base rates and caps for a ≤5-agent crew — a night away must still feel generous.
+- **Offline magnitude:** per-agent base rates and caps for a ≤6-agent kith — a night away must still feel generous.
 - **Spare Wing verification:** hauling equipment (#2, #6, #13, #19, #28) tuned assuming two trail posts eventually exist; verify the bottleneck triangle survives the reward.
 - **Amber earn rate:** lean generous — ~40/week free between dig finds and the weekly cache.
 
