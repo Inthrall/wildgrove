@@ -909,8 +909,28 @@ namespace Wildgrove.Game
             var card = Card(null);
             var cardImage = card.GetComponent<Image>();
 
-            var fig = MakeText(card, "FIG. " + figure + ".", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
+            // Tending lives on the world plate above, so the card's top row
+            // keeps just the figure label with Plant back at the right.
+            var figRow = Row(card);
+            var fig = MakeText(figRow.transform, "FIG. " + figure + ".", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
             fig.gameObject.name = "Fig";
+            FlexibleWidth(fig.gameObject, 1f);
+            Button replant = null;
+            replant = Button(figRow.transform, "Plant back", 230, () =>
+            {
+                if (_loop.Replant(captured))
+                {
+                    Flash(replant, "planted back", true);
+                    SetNote("planted " + captured.resourceId + " back into the ground. it earns tone, not numbers.");
+                    _dirty = true;
+                }
+                else
+                {
+                    Flash(replant, "not enough " + captured.resourceId, false);
+                    SetNote("not enough " + captured.resourceId + " to plant back. the land can wait.");
+                }
+            });
+
             var nameLine = MakeText(card, string.Empty, 26, TextAnchor.MiddleLeft, Ink, _serif);
             var postedLine = MakeText(card, string.Empty, 21, TextAnchor.MiddleLeft, Ink2, _hand);
             // Posting happens where the land is — tapping the line opens the
@@ -924,7 +944,7 @@ namespace Wildgrove.Game
             var statsLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
 
             // The tend flash — the mock's "+ yield" that rises and fades; sits
-            // outside the layout at the plate's top-right corner.
+            // outside the layout at the plate's top edge, left of Plant back.
             var flash = MakeText(card, "+ yield", 24, TextAnchor.MiddleRight, MossDeep, _hand);
             flash.gameObject.name = "TendFlash";
             flash.raycastTarget = false;
@@ -934,7 +954,7 @@ namespace Wildgrove.Game
             flashRect.anchorMax = new Vector2(1f, 1f);
             flashRect.pivot = new Vector2(1f, 1f);
             flashRect.sizeDelta = new Vector2(260f, 52f);
-            flashRect.anchoredPosition = new Vector2(-12f, -6f);
+            flashRect.anchoredPosition = new Vector2(-254f, -6f);
             flash.color = new Color(MossDeep.r, MossDeep.g, MossDeep.b, 0f);
             _tendFlashes[captured.id] = flash;
             _frameUpdaters.Add(() =>
@@ -948,7 +968,7 @@ namespace Wildgrove.Game
                 _flashAges[captured.id] = age;
                 var t = Mathf.Clamp01(age);
                 flash.color = new Color(MossDeep.r, MossDeep.g, MossDeep.b, 1f - t);
-                flashRect.anchoredPosition = new Vector2(-12f, -6f + 20f * t);
+                flashRect.anchoredPosition = new Vector2(-254f, -6f + 20f * t);
             });
 
             // The basket bar — fill width driven by the live updater.
@@ -966,32 +986,9 @@ namespace Wildgrove.Game
             fillRect.offsetMax = Vector2.zero;
             AddBorder(barGo, Ink2);
 
-            var actions = ActionRow(card);
-            var tend = Button(actions, "Tend here", 200, () =>
-            {
-                _selected = captured;
-                DoTend(captured);
-            });
-            tend.GetComponent<Image>().color = MossWash;
-
-            Button replant = null;
-            replant = Button(actions, "Plant back", 230, () =>
-            {
-                if (_loop.Replant(captured))
-                {
-                    Flash(replant, "planted back", true);
-                    SetNote("planted " + captured.resourceId + " back into the ground. it earns tone, not numbers.");
-                    _dirty = true;
-                }
-                else
-                {
-                    Flash(replant, "not enough " + captured.resourceId, false);
-                    SetNote("not enough " + captured.resourceId + " to plant back. the land can wait.");
-                }
-            });
-
             if (_loop.PlantersUnlocked())
             {
+                var actions = ActionRow(card);
                 foreach (var planter in _loop.NodePlanters())
                 {
                     AddPlanterAction(actions, planter, captured.id);
@@ -1606,9 +1603,13 @@ namespace Wildgrove.Game
                     }
                 });
 
+                // What the rung gives is fixed data — settle it once; only the
+                // requirement line and affordability move.
+                var gives = EffectsLabel(captured.effects);
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.displayName
+                                 + (gives.Length > 0 ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>" : string.Empty)
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + UpgradeRequirement(captured) + "</color></size>";
                     var ok = !_loop.IsUpgradePurchased(captured) && _loop.CanAffordUpgrade(captured)
                              && _loop.MeetsUpgradeSkillGate(captured) && string.IsNullOrEmpty(_loop.MissingToolTier(captured));
@@ -1657,10 +1658,14 @@ namespace Wildgrove.Game
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
 
+                var gives = EffectsLabel(captured.effects);
+                var givesLine = gives.Length > 0
+                    ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>"
+                    : string.Empty;
                 if (Gear.IsEquipped(_loop.State, captured))
                 {
                     label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
-                                 + "  <color=" + MossDeepHex + ">worn</color>";
+                                 + "  <color=" + MossDeepHex + ">worn</color>" + givesLine;
                     continue;
                 }
 
@@ -1676,7 +1681,7 @@ namespace Wildgrove.Game
                 });
                 _liveUpdaters.Add(() =>
                 {
-                    label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
+                    label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName + givesLine
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials) + "</color>" + skillHint + "</size>";
                     var ok = Gear.CanCraft(_loop.State, _loop.Data, captured);
                     craft.interactable = ok;
@@ -2361,6 +2366,109 @@ namespace Wildgrove.Game
 
             var index = options.IndexOf(current);
             return options[(index + 1) % options.Count];
+        }
+
+        /// <summary>
+        /// What a rung or kit piece actually does, in journal ink — effects
+        /// are machine-readable, so this is where they turn into words.
+        /// </summary>
+        private string EffectsLabel(List<EffectData> effects)
+        {
+            if (effects == null || effects.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var parts = new List<string>();
+            foreach (var effect in effects)
+            {
+                var label = EffectLabel(effect);
+                if (!string.IsNullOrEmpty(label))
+                {
+                    parts.Add(label);
+                }
+            }
+
+            return string.Join(" · ", parts);
+        }
+
+        private string EffectLabel(EffectData effect)
+        {
+            switch (effect.type)
+            {
+                case EffectType.YieldMult:
+                    return YieldTarget(effect) + " ×" + PlainNumber(effect.value);
+                case EffectType.YieldBonus:
+                    return YieldTarget(effect) + " +" + Percent(effect.value);
+                case EffectType.HaulMult:
+                    return "hauling ×" + PlainNumber(effect.value);
+                case EffectType.SellValueBonus:
+                    return effect.resource + " sells +" + Percent(effect.value);
+                case EffectType.CraftSpeedMult:
+                    return (string.IsNullOrEmpty(effect.skill) ? "crafting" : effect.skill) + " ×" + PlainNumber(effect.value) + " faster";
+                case EffectType.DigSpeedMult:
+                    return "digs ×" + PlainNumber(effect.value) + " faster";
+                case EffectType.PristineChanceBonus:
+                    return "pristine chance +" + Percent(effect.value);
+                case EffectType.FolioSpreadBonusMult:
+                    return "folio spreads ×" + PlainNumber(effect.value);
+                case EffectType.OfflineCapHours:
+                    return "away credit up to " + PlainNumber(effect.value) + "h";
+                case EffectType.OfflineCapBonusHours:
+                    return "away credit +" + PlainNumber(effect.value) + "h";
+                case EffectType.OfflineNightFullRate:
+                    return "full pace through the night away";
+                case EffectType.TendingBurstBonus:
+                    return "tending burst +" + Percent(effect.value);
+                case EffectType.CarrierCapacityBonus:
+                    return "carriers hold +" + Percent(effect.value);
+                case EffectType.NoSpoilage:
+                    return effect.resource + " never spoils";
+                case EffectType.UnlockZone:
+                    return "opens " + ZoneName(effect.zone);
+                case EffectType.UnlockSkill:
+                    return "unlocks " + effect.skill;
+                case EffectType.UnlockRecipe:
+                    return "teaches " + effect.recipe;
+                case EffectType.UnlockDigSite:
+                    return "opens the watch in " + ZoneName(effect.zone);
+                case EffectType.UnlockVerdureForecast:
+                    return "reveals the verdure forecast";
+                case EffectType.KithSlot:
+                    return "+" + PlainNumber(effect.value) + " kith " + (effect.value > 1 ? "slots" : "slot");
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private string YieldTarget(EffectData effect)
+        {
+            if (!string.IsNullOrEmpty(effect.skill))
+            {
+                return effect.skill + " yield";
+            }
+
+            if (!string.IsNullOrEmpty(effect.zone))
+            {
+                return ZoneName(effect.zone) + " yield";
+            }
+
+            if (!string.IsNullOrEmpty(effect.resource))
+            {
+                return effect.resource + " yield";
+            }
+
+            return "all yields";
+        }
+
+        private static string PlainNumber(double value)
+        {
+            return value % 1.0 == 0.0 ? ((long)value).ToString() : value.ToString("0.##");
+        }
+
+        private static string Percent(double value)
+        {
+            return Mathf.RoundToInt((float)(value * 100.0)) + "%";
         }
 
         private string StationLabel(string stationId)
