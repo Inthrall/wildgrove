@@ -236,10 +236,17 @@ namespace Wildgrove.Game
             trackerLayout.childControlWidth = true;
             trackerLayout.childControlHeight = true;
             trackerLayout.childForceExpandWidth = false;
-            trackerLayout.childForceExpandHeight = true;
+            // Force-expanded children make the GROUP report flexibleHeight >= 1,
+            // and the root then hands the tracker a full share of screen slack —
+            // the compact strip becomes a giant half-empty box. Children centre
+            // via childAlignment instead, and the explicit LayoutElement pins
+            // the panel out of the flexible pool for good.
+            trackerLayout.childForceExpandHeight = false;
             trackerLayout.childAlignment = TextAnchor.MiddleCenter;
-            trackerLayout.padding = new RectOffset(12, 12, 6, 6);
+            trackerLayout.padding = new RectOffset(12, 12, 10, 10);
             trackerLayout.spacing = 10;
+            var trackerElement = trackerGo.AddComponent<LayoutElement>();
+            trackerElement.flexibleHeight = 0;
             var trackerButton = trackerGo.AddComponent<Button>();
             trackerButton.onClick.AddListener(() => OpenTab(TabTrail));
             AddBorder(trackerGo, Ink2);
@@ -262,13 +269,10 @@ namespace Wildgrove.Game
             // The journal tabs along the bottom edge.
             BuildTabsBar(root);
 
-            // The page paper itself — behind the whole column.
-            var paper = new GameObject("Paper", typeof(Image));
-            paper.transform.SetParent(canvasGo.transform, false);
-            paper.transform.SetAsFirstSibling();
-            paper.GetComponent<Image>().color = PagePaper;
-            paper.GetComponent<Image>().raycastTarget = false;
-            Stretch((RectTransform)paper.transform);
+            // The page paper is the WORLD CAMERA's background (WorldView sets
+            // it), not a canvas image — an overlay canvas draws above every
+            // camera, so an opaque paper Image here would permanently hide the
+            // world strip's node sprites in the gap.
 
             // Paper grain over the whole page (the mock's noise overlay sits
             // above content too, at low opacity), and the stitched spine.
@@ -680,7 +684,7 @@ namespace Wildgrove.Game
             flashRect.anchorMin = new Vector2(1f, 1f);
             flashRect.anchorMax = new Vector2(1f, 1f);
             flashRect.pivot = new Vector2(1f, 1f);
-            flashRect.sizeDelta = new Vector2(180f, 34f);
+            flashRect.sizeDelta = new Vector2(260f, 52f);
             flashRect.anchoredPosition = new Vector2(-12f, -6f);
             flash.color = new Color(MossDeep.r, MossDeep.g, MossDeep.b, 0f);
             _tendFlashes[captured.id] = flash;
@@ -760,7 +764,7 @@ namespace Wildgrove.Game
                 fillRect.anchorMax = new Vector2(fraction, 1f);
                 fill.color = fraction >= 0.999f ? OchreWash : MossWash;
 
-                SetButtonLabel(replant, "Plant back\n<size=15>" + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
+                SetButtonLabel(replant, "Plant back\n" + SizeOpen(15) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
                 var ok = _loop.CanReplant(captured);
                 replant.interactable = ok;
                 SetButtonTint(replant, ok);
@@ -903,7 +907,7 @@ namespace Wildgrove.Game
             }
 
             var build = Button(actions, "Raise " + capturedPlanter.displayName
-                                        + "\n<size=14>" + BundleLabel(capturedPlanter.materials) + "</size>", 250, () =>
+                                        + "\n" + SizeOpen(14) + BundleLabel(capturedPlanter.materials) + "</size>", 250, () =>
             {
                 if (_loop.BuildPlanter(capturedPlanter, capturedTarget))
                 {
@@ -1066,7 +1070,7 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var footer = MakeText(_body, "<i>“" + text + "”</i>\n<size=14>WAYSTONE · " + zone.displayName.ToUpperInvariant() + "</size>",
+            var footer = MakeText(_body, "<i>“" + text + "”</i>\n" + SizeOpen(14) + "WAYSTONE · " + zone.displayName.ToUpperInvariant() + "</size>",
                 18, TextAnchor.MiddleCenter, Ink2, _serif);
             footer.gameObject.name = "Waystone";
         }
@@ -1110,7 +1114,7 @@ namespace Wildgrove.Game
                         ? string.Empty
                         : "  <color=" + OchreHex + ">needs " + captured.skill + " " + captured.skillLevel + "</color>";
                     label.text = captured.output + progress + need
-                                 + "\n<size=15><color=" + Ink2Hex + ">" + BundleLabel(captured.inputs) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleLabel(captured.inputs) + "</color></size>";
                     SetButtonLabel(toggle, crafting ? "Stop" : "Craft");
                     var ok = crafting || _loop.IsRecipeWorkable(captured);
                     toggle.interactable = ok;
@@ -1140,7 +1144,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.displayName + "  <color=" + Ink2Hex + ">level " + _loop.BuildingLevel(captured) + "</color>"
-                                 + "\n<size=15><color=" + Ink2Hex + ">next: " + BundleLabel(_loop.NextBuildingBundle(captured)) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">next: " + BundleLabel(_loop.NextBuildingBundle(captured)) + "</color></size>";
                     var ok = _loop.CanAffordBuilding(captured);
                     build.interactable = ok;
                     SetButtonTint(build, ok);
@@ -1253,7 +1257,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.displayName
-                                 + "\n<size=15><color=" + Ink2Hex + ">" + UpgradeRequirement(captured) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + UpgradeRequirement(captured) + "</color></size>";
                     var ok = !_loop.IsUpgradePurchased(captured) && _loop.CanAffordUpgrade(captured)
                              && _loop.MeetsUpgradeSkillGate(captured) && string.IsNullOrEmpty(_loop.MissingToolTier(captured));
                     buy.interactable = ok;
@@ -1296,7 +1300,7 @@ namespace Wildgrove.Game
                 }
 
                 label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
-                             + "\n<size=15><color=" + Ink2Hex + ">" + BundleLabel(captured.materials) + "</color></size>";
+                             + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleLabel(captured.materials) + "</color></size>";
                 var craft = Button(row.transform, "Craft", 160, () =>
                 {
                     if (_loop.CraftGear(captured))
@@ -1325,7 +1329,7 @@ namespace Wildgrove.Game
                 {
                     var progress = Mathf.RoundToInt((float)_loop.SkillProgress(captured) * 100f);
                     line.text = captured + " — level " + _loop.SkillLevel(captured)
-                                + "  <size=15><color=" + Ink2Hex + ">" + progress + "% to next</color></size>";
+                                + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + progress + "% to next</color></size>";
                 });
             }
         }
@@ -1358,13 +1362,13 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     var species = SpeciesName(captured.speciesId);
-                    var bonded = captured.bonded ? " <size=15><color=" + OchreHex + ">BONDED</color></size>" : string.Empty;
+                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + OchreHex + ">BONDED</color></size>" : string.Empty;
                     var kin = _loop.FamiliarKinship(captured) > 0
                         ? "  <color=" + OchreHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
                         : string.Empty;
                     var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
-                    label.text = captured.name + bonded + "  <size=16><color=" + Ink2Hex + ">" + species + "</color></size>" + kin
-                                 + "\n<size=16><color=" + Ink2Hex + ">level " + _loop.FamiliarLevel(captured)
+                    label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
+                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + _loop.FamiliarLevel(captured)
                                  + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>";
                     powerup.gameObject.SetActive(_loop.HasPendingPowerup(captured));
                     foreach (var pair in posts)
@@ -1380,14 +1384,20 @@ namespace Wildgrove.Game
         {
             var gridGo = MakeRect("Posts", card).gameObject;
             var grid = gridGo.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(196, 58);
             grid.spacing = new Vector2(6, 6);
             grid.padding = new RectOffset(12, 12, 0, 6);
             // Fixed columns so the grid reports a deterministic preferred height
             // inside the content-size-fitted page (flexible constraint needs a
             // settled width, which the first layout pass doesn't have).
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 5;
+            grid.constraintCount = 4;
+            // Cells sized to the page, never a fixed width: a GridLayoutGroup's
+            // min width IS its preferred width, so oversized cells force the
+            // whole card past the screen edge (the kith card's right clipping).
+            var available = _body.rect.width - 28f - grid.padding.horizontal
+                            - grid.spacing.x * (grid.constraintCount - 1);
+            var cell = available > 0f ? Mathf.Floor(available / grid.constraintCount) : 200f;
+            grid.cellSize = new Vector2(cell, 76);
 
             var buttons = new List<(Button, string)>();
             foreach (var node in _loop.State.nodes)
@@ -1483,7 +1493,7 @@ namespace Wildgrove.Game
                 var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 _liveUpdaters.Add(() =>
                 {
-                    line.text = captured.id + "  <size=15><color=" + Ink2Hex + ">lifetime "
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id)) + "</color></size>";
                 });
             }
@@ -1507,7 +1517,7 @@ namespace Wildgrove.Game
                     var progress = done
                         ? "<color=" + MossDeepHex + ">complete — it outlives every Migration</color>"
                         : Folio.FixedEntryCount(_loop.State, captured) + " of " + captured.entries.Count + " fixed";
-                    line.text = captured.displayName + "  <size=15>" + progress + "</size>";
+                    line.text = captured.displayName + "  " + SizeOpen(15) + progress + "</size>";
                 });
             }
 
@@ -1535,7 +1545,7 @@ namespace Wildgrove.Game
 
                 _liveUpdaters.Add(() =>
                 {
-                    label.text = "Pristine " + resourceId + "  <size=15><color=" + Ink2Hex + ">"
+                    label.text = "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                  + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color></size>";
                     var ok = Folio.CanFix(_loop.State, _loop.Data, resourceId);
                     fix.interactable = ok;
@@ -1564,7 +1574,7 @@ namespace Wildgrove.Game
                 {
                     var plate = Narrative.InsectPlate(_loop.Data, captured.id);
                     MakeText(card, captured.displayName + "  <color=" + MossDeepHex + ">recorded</color>"
-                                   + (string.IsNullOrEmpty(plate) ? string.Empty : "\n<size=15><i>" + plate + "</i></size>"),
+                                   + (string.IsNullOrEmpty(plate) ? string.Empty : "\n" + SizeOpen(15) + "<i>" + plate + "</i></size>"),
                         18, TextAnchor.MiddleLeft, Ink);
                     continue;
                 }
@@ -1620,7 +1630,7 @@ namespace Wildgrove.Game
 
                 _liveUpdaters.Add(() =>
                 {
-                    label.text = captured.displayName + "  <size=15><color=" + Ink2Hex + ">"
+                    label.text = captured.displayName + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                  + Mathf.CeilToInt((float)captured.costVerdure) + " Verdure</color></size>";
                     var ok = _loop.AvailableVerdure() >= captured.costVerdure;
                     buy.interactable = ok;
@@ -2137,10 +2147,10 @@ namespace Wildgrove.Game
             go.GetComponent<Image>().color = CardPaper;
             AddBorder(go, Ink2);
             var element = go.GetComponent<LayoutElement>();
-            element.preferredWidth = 520;
-            element.minWidth = 520;
-            element.preferredHeight = 72;
-            element.minHeight = 72;
+            element.preferredWidth = 560;
+            element.minWidth = 560;
+            element.preferredHeight = 96;
+            element.minHeight = 96;
 
             var text = MakeText(go.transform, value, 24, TextAnchor.MiddleLeft, Ink);
             var textRect = (RectTransform)text.transform;
@@ -2173,13 +2183,27 @@ namespace Wildgrove.Game
             return MakeText(parent, value, size, anchor, color, _font);
         }
 
+        /// <summary>
+        /// Global type scale. Authored sizes track the mock's rem values 1:1,
+        /// but on a phone the mock's page is ~2.25x the CSS pixel size while
+        /// the canvas reference gives ~1.5x — this closes the gap. Applied in
+        /// MakeText and SizeOpen so every glyph scales together.
+        /// </summary>
+        private const float FontScale = 1.5f;
+
+        /// <summary>An inline rich-text size tag, scaled like MakeText sizes.</summary>
+        private static string SizeOpen(int size)
+        {
+            return "<size=" + Mathf.RoundToInt(size * FontScale) + ">";
+        }
+
         private Text MakeText(Transform parent, string value, int size, TextAnchor anchor, Color color, Font font)
         {
             var go = new GameObject("Text", typeof(Text));
             go.transform.SetParent(parent, false);
             var text = go.GetComponent<Text>();
             text.font = font;
-            text.fontSize = size;
+            text.fontSize = Mathf.RoundToInt(size * FontScale);
             text.color = color;
             text.alignment = anchor;
             text.supportRichText = true;

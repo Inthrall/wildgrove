@@ -172,18 +172,22 @@ namespace Wildgrove.Game.World
         private bool EnsureCamera()
         {
             _camera = Camera.main;
-            if (_camera != null)
+            if (_camera == null)
             {
-                return true;
+                // Zero-scene-setup fallback, matching Bootstrap's philosophy: if the
+                // open scene has no camera, make a plain orthographic one.
+                var go = new GameObject("Main Camera") { tag = "MainCamera" };
+                _camera = go.AddComponent<Camera>();
+                _camera.orthographic = true;
+                _camera.orthographicSize = 5f;
+                _camera.transform.position = new Vector3(0f, 0f, -10f);
             }
 
-            // Zero-scene-setup fallback, matching Bootstrap's philosophy: if the
-            // open scene has no camera, make a plain orthographic one.
-            var go = new GameObject("Main Camera") { tag = "MainCamera" };
-            _camera = go.AddComponent<Camera>();
-            _camera.orthographic = true;
-            _camera.orthographicSize = 5f;
-            _camera.transform.position = new Vector3(0f, 0f, -10f);
+            // The camera's clear colour IS the journal's page paper (#F2EAD6,
+            // GameHud.PagePaper) — the HUD deliberately has no backdrop image,
+            // so the world strip shows through the gap it leaves open.
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = new Color(0.949f, 0.918f, 0.839f, 1f);
             return true;
         }
     }
