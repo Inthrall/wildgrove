@@ -85,7 +85,6 @@ namespace Wildgrove.Game
         private ScrollRect _scroll;
         private LayoutElement _worldGapElement;
         private RectTransform _feedbackLayer;
-        private RectTransform _kithCard;
         private RectTransform _firstVerseCard;
         private string _pendingScroll;
         private string _builtTab;
@@ -732,7 +731,6 @@ namespace Wildgrove.Game
             _builtTab = _tab;
             var landmark = _pendingScroll;
             _pendingScroll = null;
-            _kithCard = null;
             _firstVerseCard = null;
 
             _liveUpdaters.Clear();
@@ -763,9 +761,8 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Open the Trail tab and bring a landmark card ("kith" or "verse")
-        /// into view — the tracker and the fallow lines deep-link into a page
-        /// that is otherwise a long scroll.
+        /// Open the Trail tab and bring a landmark card ("verse") into view —
+        /// the tracker deep-links into a page that is otherwise a long scroll.
         /// </summary>
         private void ScrollToOnTrail(string landmark)
         {
@@ -783,8 +780,6 @@ namespace Wildgrove.Game
         {
             switch (landmark)
             {
-                case "kith":
-                    return _kithCard;
                 case "verse":
                     return _firstVerseCard;
                 default:
@@ -918,17 +913,14 @@ namespace Wildgrove.Game
             fig.gameObject.name = "Fig";
             var nameLine = MakeText(card, string.Empty, 26, TextAnchor.MiddleLeft, Ink, _serif);
             var postedLine = MakeText(card, string.Empty, 21, TextAnchor.MiddleLeft, Ink2, _hand);
-            // The fallow state is the plate's call to action — tapping it
-            // jumps to the kith card, where posting actually happens.
+            // Posting happens where the land is — tapping the line opens the
+            // who-walks-here sheet for this node; fallow draws it as an empty
+            // post (dashed outline) waiting to be filled in.
             var postedButton = postedLine.gameObject.AddComponent<Button>();
             postedButton.transition = Selectable.Transition.None;
-            postedButton.onClick.AddListener(() =>
-            {
-                if (PostedNames(captured).Count == 0)
-                {
-                    ScrollToOnTrail("kith");
-                }
-            });
+            postedButton.onClick.AddListener(() => OpenPostingSheet(captured.id));
+            postedLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            var postedDashes = AddDashedBorder(postedLine.gameObject);
             var statsLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
 
             // The tend flash — the mock's "+ yield" that rises and fades; sits
@@ -1019,6 +1011,7 @@ namespace Wildgrove.Game
                     postedLine.font = _hand;
                     postedLine.fontSize = Mathf.RoundToInt(21 * FontScale);
                     postedLine.text = "posted: " + string.Join(", ", names);
+                    postedDashes.SetActive(false);
                 }
                 else
                 {
@@ -1026,7 +1019,8 @@ namespace Wildgrove.Game
                     // out inked where the player is already looking.
                     postedLine.font = _font;
                     postedLine.fontSize = Mathf.RoundToInt(17 * FontScale);
-                    postedLine.text = "fallow — <color=" + OchreInkHex + ">post someone  »</color>";
+                    postedLine.text = "<color=" + OchreInkHex + ">+  post someone here</color>";
+                    postedDashes.SetActive(true);
                 }
 
                 var cap = NodeBasketCapacity(captured);
@@ -1117,6 +1111,10 @@ namespace Wildgrove.Game
             dotRect.sizeDelta = new Vector2(14f, 14f);
 
             var status = MakeText(rowGo.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
+            var statusButton = status.gameObject.AddComponent<Button>();
+            statusButton.transition = Selectable.Transition.None;
+            statusButton.onClick.AddListener(() => OpenPostingSheet(Familiar.TrailStation));
+            var statusDashes = AddDashedBorder(status.gameObject);
 
             _frameUpdaters.Add(() =>
             {
@@ -1143,7 +1141,16 @@ namespace Wildgrove.Game
                     names.Add(familiar.name);
                 }
 
-                status.text = names.Count > 0 ? string.Join(", ", names) + " carrying" : "the trail waits";
+                if (names.Count > 0)
+                {
+                    status.text = string.Join(", ", names) + " carrying";
+                    statusDashes.SetActive(false);
+                }
+                else
+                {
+                    status.text = "<color=" + OchreInkHex + ">+ send a carrier</color>";
+                    statusDashes.SetActive(true);
+                }
             });
         }
 
@@ -1152,6 +1159,11 @@ namespace Wildgrove.Game
             var captured = site;
             var card = Card("THE WATCH · " + ZoneName(site.zoneId).ToUpperInvariant());
             var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
+            var lineButton = line.gameObject.AddComponent<Button>();
+            lineButton.transition = Selectable.Transition.None;
+            lineButton.onClick.AddListener(() => OpenPostingSheet(Familiar.DigStationPrefix + captured.zoneId));
+            line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            var lineDashes = AddDashedBorder(line.gameObject);
 
             if (_loop.PlantersUnlocked() && _loop.DigSitePlanters().Count > 0)
             {
@@ -1165,9 +1177,16 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(() =>
             {
                 var watchers = Stationing.AtDigSite(_loop.State, captured.zoneId);
-                line.text = watchers > 0
-                    ? watchers + " watching where the small lives cross"
-                    : "no one watches — station a familiar here from the Warden page";
+                if (watchers > 0)
+                {
+                    line.text = watchers + " watching where the small lives cross";
+                    lineDashes.SetActive(false);
+                }
+                else
+                {
+                    line.text = "<color=" + OchreInkHex + ">+ station a watcher</color>";
+                    lineDashes.SetActive(true);
+                }
             });
         }
 
@@ -1685,8 +1704,6 @@ namespace Wildgrove.Game
         private void BuildKithCard()
         {
             var card = Card("THE KITH · roster & posts");
-            // The fallow lines on the node plates deep-link here.
-            _kithCard = card;
             var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
@@ -1704,10 +1721,12 @@ namespace Wildgrove.Game
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
                 var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
+                // Posting moved out to the land — each node plate, the trail
+                // row, and the watch plates carry their own "post someone"
+                // affordance. The roster keeps only the recall.
+                var wander = Button(row.transform, "Let wander", 190, () => Station(captured, null));
                 var powerup = Button(row.transform, "A lesson", 170, () => OpenPowerupSheet(captured));
                 powerup.GetComponent<Image>().color = OchreWash;
-
-                var posts = PostButtonsGrid(card, captured);
 
                 _liveUpdaters.Add(() =>
                 {
@@ -1721,63 +1740,70 @@ namespace Wildgrove.Game
                                  + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + _loop.FamiliarLevel(captured)
                                  + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>";
                     powerup.gameObject.SetActive(_loop.HasPendingPowerup(captured));
-                    foreach (var pair in posts)
-                    {
-                        pair.button.GetComponent<Image>().color =
-                            PostMatches(captured.stationId, pair.stationId) ? MossWash : DeepPaper;
-                    }
+                    wander.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
                 });
             }
         }
 
-        private List<(Button button, string stationId)> PostButtonsGrid(RectTransform card, Familiar familiar)
+        /// <summary>
+        /// The posting sheet — every post affordance lives on the plate it
+        /// fills (node, trail, watch), so the sheet asks only "who".
+        /// </summary>
+        private void OpenPostingSheet(string stationId)
         {
-            var gridGo = MakeRect("Posts", card).gameObject;
-            var grid = gridGo.AddComponent<GridLayoutGroup>();
-            grid.spacing = new Vector2(6, 6);
-            grid.padding = new RectOffset(12, 12, 0, 6);
-            // Fixed columns so the grid reports a deterministic preferred height
-            // inside the content-size-fitted page (flexible constraint needs a
-            // settled width, which the first layout pass doesn't have).
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 4;
-            // Cells sized to the page, never a fixed width: a GridLayoutGroup's
-            // min width IS its preferred width, so oversized cells force the
-            // whole card past the screen edge (the kith card's right clipping).
-            var available = _body.rect.width - 28f - grid.padding.horizontal
-                            - grid.spacing.x * (grid.constraintCount - 1);
-            var cell = available > 0f ? Mathf.Floor(available / grid.constraintCount) : 200f;
-            grid.cellSize = new Vector2(cell, 76);
+            var sheet = BeginSheet();
+            MakeText(sheet, "Who walks here?", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, StationLabel(stationId).ToUpperInvariant(), 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            var buttons = new List<(Button, string)>();
-            foreach (var node in _loop.State.nodes)
+            // The warden can only stand at a node — no warden entry on the
+            // trail or watch sheets.
+            var node = FindNode(stationId);
+            if (node != null)
             {
-                var captured = node;
-                buttons.Add((PostButton(grid.transform, captured.resourceId, () => Station(familiar, captured.id)), captured.id));
+                var wardenHere = Warden.PostNodeId(_loop.State) == node.id;
+                var warden = Button(sheet, "the warden" + (wardenHere
+                    ? "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">already here</color></size>"
+                    : string.Empty), 560, () =>
+                {
+                    _loop.PostWarden(node);
+                    SetNote("the warden walks to " + StationLabel(node.id) + ".");
+                    CloseSheet();
+                });
+                warden.interactable = !wardenHere;
+                SetButtonTint(warden, !wardenHere);
             }
 
-            buttons.Add((PostButton(grid.transform, "the trail", () => Station(familiar, Familiar.TrailStation)), Familiar.TrailStation));
-            foreach (var site in _loop.State.digSites)
+            foreach (var familiar in _loop.State.roster)
             {
-                var stationId = Familiar.DigStationPrefix + site.zoneId;
-                buttons.Add((PostButton(grid.transform, "watch: " + ZoneName(site.zoneId), () => Station(familiar, stationId)), stationId));
+                var captured = familiar;
+                var here = PostMatches(captured.stationId, stationId);
+                var detail = here ? "posted here — tap to let them wander" : "now: " + StationLabel(captured.stationId);
+                var button = Button(sheet, captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
+                                           + SpeciesName(captured.speciesId) + " · " + detail + "</color></size>", 560, () =>
+                {
+                    Station(captured, here ? null : stationId);
+                    CloseSheet();
+                });
+                if (here)
+                {
+                    button.GetComponent<Image>().color = MossWash;
+                }
             }
 
-            buttons.Add((PostButton(grid.transform, "wander", () => Station(familiar, null)), null));
-            return buttons;
+            Button(sheet, "Never mind", 320, CloseSheet);
         }
 
-        private Button PostButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        private NodeState FindNode(string stationId)
         {
-            var go = new GameObject("Post", typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            go.GetComponent<Image>().color = DeepPaper;
-            AddBorder(go, Ink2);
-            var button = go.GetComponent<Button>();
-            button.onClick.AddListener(onClick);
-            var text = MakeText(go.transform, label, 16, TextAnchor.MiddleCenter, Ink, _smallCaps);
-            Stretch((RectTransform)text.transform);
-            return button;
+            foreach (var node in _loop.State.nodes)
+            {
+                if (node.id == stationId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
         }
 
         private static bool PostMatches(string stationId, string buttonStationId)
@@ -2661,6 +2687,7 @@ namespace Wildgrove.Game
         private static Sprite _borderSprite;
         private static Sprite _grainSprite;
         private static Sprite _dashSprite;
+        private static Sprite _dashAcrossSprite;
         private static Sprite _spineSprite;
 
         /// <summary>A sliced border-only sprite — the journal's ruled ink outlines.</summary>
@@ -2769,6 +2796,68 @@ namespace Wildgrove.Game
             }
 
             return _dashSprite;
+        }
+
+        /// <summary>A horizontal dash pattern — the dashed outlines' top and bottom rules.</summary>
+        private static Sprite DashAcrossSprite()
+        {
+            if (_dashAcrossSprite == null)
+            {
+                const int width = 24;
+                const int height = 4;
+                var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                for (var y = 0; y < height; y++)
+                {
+                    for (var x = 0; x < width; x++)
+                    {
+                        texture.SetPixel(x, y, x < width / 2 ? new Color(Ink2.r, Ink2.g, Ink2.b, 0.45f) : Color.clear);
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Point;
+                _dashAcrossSprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _dashAcrossSprite;
+        }
+
+        /// <summary>
+        /// A dashed outline drawn just outside a control's bounds — the empty
+        /// post: a pencilled box waiting for someone to stand in it. Toggle
+        /// the returned object with the fallow/filled state.
+        /// </summary>
+        private GameObject AddDashedBorder(GameObject host)
+        {
+            var go = MakeRect("DashedBorder", (RectTransform)host.transform).gameObject;
+            go.AddComponent<LayoutElement>().ignoreLayout = true;
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            // Breathe a little past the text so the first glyph never sits on the rule.
+            rect.offsetMin = new Vector2(-10f, -4f);
+            rect.offsetMax = new Vector2(10f, 4f);
+
+            DashStrip(rect, DashSprite(), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(3f, 0f));
+            DashStrip(rect, DashSprite(), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(3f, 0f));
+            DashStrip(rect, DashAcrossSprite(), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 3f));
+            DashStrip(rect, DashAcrossSprite(), new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 3f));
+            return go;
+        }
+
+        private static void DashStrip(RectTransform parent, Sprite sprite, Vector2 anchorMin, Vector2 anchorMax, Vector2 thickness)
+        {
+            var go = new GameObject("Dash", typeof(Image));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.sprite = sprite;
+            image.type = Image.Type.Tiled;
+            image.raycastTarget = false;
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            // The stretched axis follows the anchors; sizeDelta only widens the collapsed one.
+            rect.sizeDelta = thickness;
         }
 
         /// <summary>Overlay a ruled outline on a panel. Positive inset draws it outside the bounds (the mock's offset outline).</summary>

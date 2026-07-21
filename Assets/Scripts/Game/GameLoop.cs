@@ -282,6 +282,12 @@ namespace Wildgrove.Game
             Roster.Station(State, Data, familiar, stationId);
         }
 
+        /// <summary>Walk the warden to a node without tending it — the post moves, the picking starts on arrival (design §13).</summary>
+        public void PostWarden(NodeState node)
+        {
+            State.wardenPostNodeId = node.id;
+        }
+
         /// <summary>A familiar's current run level (design §4).</summary>
         public int FamiliarLevel(Familiar familiar)
         {
