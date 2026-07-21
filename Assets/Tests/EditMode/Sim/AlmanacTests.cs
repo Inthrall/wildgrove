@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     /// Pins the Almanac (design §7): nodes allocate banked Verdure (never
     /// destroy it — the +2%/pt passive keeps counting the full total),
     /// prerequisites gate the tree, and a bought node's permanent effects
-    /// join the same accumulators as upgrades and fossils.
+    /// join the same accumulators as upgrades and insects.
     /// </summary>
     public class AlmanacTests
     {

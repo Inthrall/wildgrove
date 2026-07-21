@@ -1,0 +1,8 @@
+{
+  "$comment": "MVP insect plates (design §6: observe · sketch · release). A field sketch (one portion) is recorded per observation tick, weighted by rarity; the pity timer lives in economy.json (observation). Nothing is taken — the insect is released; a completed plate (all portions sketched) is a book of rubbings granting a permanent multiplier. Plate lore lives in dialogue.json (insectPlates). habitats = zones with an observation site.",
+  "insects": [
+    { "id": "stags-herald",   "name": "The Stag's Herald",  "sketches": 3, "habitats": ["old-growth-wood"],                    "rarity": 1.0,  "effects": [{ "type": "yieldBonus", "skill": "all", "value": 0.10 }] },
+    { "id": "silver-skimmer", "name": "The Silver Skimmer", "sketches": 4, "habitats": ["silverrun-river"],                    "rarity": 0.7,  "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }, { "type": "pristineChanceBonus", "value": 0.01 }] },
+    { "id": "those-who-sow",  "name": "Those Who Sow",      "sketches": 5, "habitats": ["old-growth-wood", "silverrun-river"], "rarity": 0.35, "effects": [{ "type": "yieldBonus", "skill": "all", "value": 0.20 }] }
+  ]
+}

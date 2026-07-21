@@ -11,7 +11,7 @@ namespace Wildgrove.Data
 
         public List<ProvisionerLine> Provisioner { get; set; } = new List<ProvisionerLine>();
         public List<string> MigrationVignette { get; set; } = new List<string>();
-        public Dictionary<string, string> FossilCards { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> InsectPlates { get; set; } = new Dictionary<string, string>();
 
         public sealed class ProvisionerLine
         {

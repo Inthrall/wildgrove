@@ -100,7 +100,7 @@ namespace Wildgrove.Sim.Tests
                                 {
                                     new RiteSlotData { type = RiteSlotType.Resource, resource = "copper", amount = 200 },
                                     new RiteSlotData { type = RiteSlotType.Resource, resource = "copper-ingot", amount = 5, renownGrant = 150 },
-                                    new RiteSlotData { type = RiteSlotType.Fragment, count = 1, renownGrant = 100 },
+                                    new RiteSlotData { type = RiteSlotType.Sketch, count = 1, renownGrant = 100 },
                                 },
                             },
                         },
@@ -152,7 +152,7 @@ namespace Wildgrove.Sim.Tests
             }));
             Assert.That(rite.verses[1].slots.Select(s => s.type), Is.EqualTo(new[]
             {
-                RiteSlotType.Resource, RiteSlotType.Resource, RiteSlotType.Fragment,
+                RiteSlotType.Resource, RiteSlotType.Resource, RiteSlotType.Sketch,
             }));
         }
 
@@ -239,7 +239,7 @@ namespace Wildgrove.Sim.Tests
 
             var deed = rite.verses[0].slots.Single(s => s.type == RiteSlotType.Deed);
             var specimen = rite.verses[0].slots.Single(s => s.type == RiteSlotType.Specimen);
-            var fragment = rite.verses[1].slots.Single(s => s.type == RiteSlotType.Fragment);
+            var fragment = rite.verses[1].slots.Single(s => s.type == RiteSlotType.Sketch);
 
             Assert.That(deed.deed, Is.EqualTo("tend"));
             Assert.That(deed.count, Is.EqualTo(10), "deeds price in taps, not goods — the count stays authored");
@@ -362,7 +362,7 @@ namespace Wildgrove.Sim.Tests
                             (slot.type == RiteSlotType.Resource && offerable.Contains(slot.resource) && slot.amount > 0)
                             || (slot.type == RiteSlotType.Deed && slot.deed == "tend")
                             || (slot.type == RiteSlotType.Specimen && SpecimenChance(data, slot.quality) > 0)
-                            || (slot.type == RiteSlotType.Fragment && grantsDigSite && data.fossils.Count > 0));
+                            || (slot.type == RiteSlotType.Sketch && grantsDigSite && data.insects.Count > 0));
 
                         Assert.That(reachable, Is.GreaterThanOrEqualTo(data.rites.chooseCount),
                             $"migration {migration}, verse '{verse.id}': a generated Rite can never hard-stick a run");

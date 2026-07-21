@@ -6,12 +6,12 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins design §5 excavation: trail maps open dig sites, gifted diggers
-    /// surface fossil fragments (rate rolls + the pity guarantee, both from
-    /// the run's saved rng), fragments assemble fossils whose permanent
-    /// effects go live at once, and a fully-dug site falls quiet.
+    /// Pins design §6 observation: trail maps open observation sites, stationed
+    /// watchers record field sketches (rate rolls + the pity guarantee, both
+    /// from the run's saved rng), sketches complete an insect plate whose
+    /// permanent effects go live at once, and a fully-recorded site falls quiet.
     /// </summary>
-    public class ExcavationTests
+    public class ObservationTests
     {
         private const double Tolerance = 1e-9;
 
@@ -30,7 +30,7 @@ namespace Wildgrove.Sim.Tests
                 gifts = new EconomyData.GiftsData { gathererBaseGoods = 10, carrierBaseGoods = 8 },
                 // 3600/h → a certain drop every 1 s sub-step; tests that need
                 // the pity path dial this down to (effectively) zero instead.
-                excavation = new EconomyData.ExcavationData { pityTimerHoursDug = 4, baseFragmentsPerHour = 3600.0 },
+                observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 3600.0 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -67,12 +67,12 @@ namespace Wildgrove.Sim.Tests
                     effects = { new EffectData { type = EffectType.DigSpeedMult, value = 2 } },
                 },
             };
-            _data.fossils = new List<FossilData>
+            _data.insects = new List<InsectData>
             {
-                new FossilData
+                new InsectData
                 {
-                    id = "antler-crown", displayName = "The Antler Crown",
-                    fragments = 3, digSites = new List<string> { "old-growth-wood" }, strataRarity = 1.0,
+                    id = "stags-herald", displayName = "The Antler Crown",
+                    sketches = 3, habitats = new List<string> { "old-growth-wood" }, rarity = 1.0,
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all", value = 0.10 } },
                 },
             };
@@ -103,33 +103,33 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_DiggerAtACertainRate_SurfacesAFragment()
+        public void Advance_WatcherAtACertainRate_SurfacesASketch()
         {
             var state = NewGameWithDigSite();
             TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
             Simulation.Advance(state, _data, 1.0);
 
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(1));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(1));
             Assert.That(state.digSites[0].pityHours, Is.EqualTo(0.0).Within(Tolerance), "a find resets the pity timer");
         }
 
         [Test]
-        public void Advance_NoDiggers_SurfacesNothing()
+        public void Advance_NoWatchers_SurfacesNothing()
         {
             var state = NewGameWithDigSite();
 
             Simulation.Advance(state, _data, 10.0);
 
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(0));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(0));
             Assert.That(state.digSites[0].pityHours, Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
-        public void Advance_PityTimer_GuaranteesAFragmentInDryGround()
+        public void Advance_PityTimer_GuaranteesASketchInAQuietSite()
         {
             // Effectively-zero rate: only the pity guarantee can drop.
-            _data.economy.excavation.baseFragmentsPerHour = 1e-12;
+            _data.economy.observation.baseSketchesPerHour = 1e-12;
             var state = NewGameWithDigSite();
             TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
 
@@ -137,77 +137,77 @@ namespace Wildgrove.Sim.Tests
 
             // One pity find at the 4-hour mark; the next is half an hour in.
             // (Tolerance spans one 1 s sub-step of FP accumulation drift.)
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(1));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(1));
             Assert.That(state.digSites[0].pityHours, Is.EqualTo(0.5).Within(1e-3));
         }
 
         [Test]
-        public void Advance_CompletingAFossil_GrantsItsEffectsImmediately()
+        public void Advance_CompletingAPlate_GrantsItsEffectsImmediately()
         {
             var state = NewGameWithDigSite();
             TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
-            state.fossilFragments["antler-crown"] = 2;
+            state.insectSketches["stags-herald"] = 2;
 
             Simulation.Advance(state, _data, 1.0);
 
-            Assert.That(Fossils.IsComplete(state, _data.fossils[0]), Is.True);
+            Assert.That(Insects.IsRecorded(state, _data.insects[0]), Is.True);
             // The Antler Crown's +10% all yields lands on every node at once.
             foreach (var node in state.nodes)
             {
                 Assert.That(node.yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance),
-                    "fossil yieldBonus should fold into " + node.id);
+                    "insect yieldBonus should fold into " + node.id);
             }
         }
 
         [Test]
-        public void Advance_FullyDugSite_FallsQuietWithoutBurningRng()
+        public void Advance_FullyRecordedSite_FallsQuietWithoutBurningRng()
         {
             var state = NewGameWithDigSite();
             TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
-            state.fossilFragments["antler-crown"] = 3; // already assembled
+            state.insectSketches["stags-herald"] = 3; // already assembled
             var seedBefore = state.rngState;
 
             Simulation.Advance(state, _data, 10.0);
 
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(3));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(3));
             Assert.That(state.digSites[0].pityHours, Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.rngState, Is.EqualTo(seedBefore));
         }
 
         [Test]
-        public void Advance_FragmentsGoOnlyToIncompleteFossils()
+        public void Advance_SketchesGoOnlyToUnrecordedPlates()
         {
             // High enough that even the 0.35-rarity stratum is a certain drop.
-            _data.economy.excavation.baseFragmentsPerHour = 36000.0;
-            _data.fossils.Add(new FossilData
+            _data.economy.observation.baseSketchesPerHour = 36000.0;
+            _data.insects.Add(new InsectData
             {
-                id = "those-who-planted", displayName = "Those Who Planted",
-                fragments = 5, digSites = new List<string> { "old-growth-wood" }, strataRarity = 0.35,
+                id = "those-who-sow", displayName = "Those Who Planted",
+                sketches = 5, habitats = new List<string> { "old-growth-wood" }, rarity = 0.35,
             });
             var state = NewGameWithDigSite();
             TestCrew.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
-            state.fossilFragments["antler-crown"] = 3; // assembled — out of the pick
+            state.insectSketches["stags-herald"] = 3; // assembled — out of the pick
 
             Simulation.Advance(state, _data, 1.0);
 
-            Assert.That(Fossils.FragmentCount(state, "those-who-planted"), Is.EqualTo(1));
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(3));
+            Assert.That(Insects.SketchCount(state, "those-who-sow"), Is.EqualTo(1));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(3));
         }
 
         [Test]
-        public void CompletedFossil_PristineChanceBonus_JoinsTheQualityChance()
+        public void RecordedPlate_PristineChanceBonus_JoinsTheQualityChance()
         {
             _data.economy.quality = new EconomyData.QualityData
             {
                 fineChance = 0.035, fineValueMult = 1.5, pristineBaseChance = 0.005, pristineValueMult = 10.0,
             };
-            _data.fossils[0].effects.Add(new EffectData { type = EffectType.PristineChanceBonus, value = 0.01 });
+            _data.insects[0].effects.Add(new EffectData { type = EffectType.PristineChanceBonus, value = 0.01 });
             var state = NewGameWithDigSite();
-            state.fossilFragments["antler-crown"] = 3;
+            state.insectSketches["stags-herald"] = 3;
 
             var chance = Quality.PristineChance(state, _data, state.nodes[0]);
 
-            // 0.5% base + the fossil's 1pt — same additive band as upgrades.
+            // 0.5% base + the insect's 1pt — same additive band as upgrades.
             Assert.That(chance, Is.EqualTo(0.015).Within(Tolerance));
         }
 
@@ -222,7 +222,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void StationedDiggers_CountTowardTheSite()
+        public void StationedWatchers_CountTowardTheSite()
         {
             var state = NewGameWithDigSite();
             Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));

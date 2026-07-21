@@ -26,7 +26,7 @@ namespace Wildgrove.Data
     }
 
     /// <summary>
-    /// One machine-readable effect from upgrades/gear/fossils. Which of the
+    /// One machine-readable effect from upgrades/gear/insects. Which of the
     /// optional target fields is populated depends on <see cref="Type"/>.
     /// </summary>
     public sealed class EffectDef

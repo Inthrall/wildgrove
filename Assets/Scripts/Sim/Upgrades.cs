@@ -181,9 +181,9 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Rebuild every node's tool/upgrade multiplier from the purchased
-        /// upgrades and completed fossils: yieldMult effects multiply together,
+        /// upgrades and completed insects: yieldMult effects multiply together,
         /// yieldBonus effects add a combined percentage on top. Call after any
-        /// purchase, on restore, and when a fossil completes.
+        /// purchase, on restore, and when an insect plate is recorded.
         /// </summary>
         public static void RecomputeYieldMultipliers(GameState state, GameDataAsset data)
         {
@@ -297,7 +297,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Flat Pristine-chance points from owned pristineChanceBonus effects
-        /// (Field Press +0.01, the Sunken Jaw fossil +0.01), summed — design
+        /// (Field Press +0.01, the Sunken Jaw insect +0.01), summed — design
         /// §8's additive band. Almanac bonuses join when that system lands.
         /// </summary>
         public static double PristineChanceBonus(GameState state, GameDataAsset data)
@@ -340,7 +340,7 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Purchased upgrade effects, completed fossils', owned Almanac nodes',
+        /// Purchased upgrade effects, completed insects', owned Almanac nodes',
         /// and worn gear's — everything currently modifying the run. The RAW
         /// walk (the Museum leg clones) — per-tick consumers read the
         /// <see cref="Modifiers"/> snapshot instead.
@@ -357,7 +357,7 @@ namespace Wildgrove.Sim
                 yield return effect;
             }
 
-            foreach (var effect in Fossils.CompletedEffects(state, data))
+            foreach (var effect in Insects.RecordedEffects(state, data))
             {
                 yield return effect;
             }
@@ -406,7 +406,7 @@ namespace Wildgrove.Sim
                 return effect.zone == node.zoneId;
             }
 
-            // "all" is the fossil wildcard, "all-gathering" the upgrade one —
+            // "all" is the insect wildcard, "all-gathering" the upgrade one —
             // the validator accepts both spellings.
             return effect.skill == AllGatheringSkill || effect.skill == "all" || effect.skill == node.skill;
         }

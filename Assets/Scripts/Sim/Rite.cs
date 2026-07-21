@@ -10,7 +10,7 @@ namespace Wildgrove.Sim
     /// Rite completes when every verse is sung, granting Migration
     /// eligibility (Migration itself is the prestige build). Offerings are
     /// delivered incrementally, consumed from camp stock (or the quality
-    /// pools, or dug fragments), and credit Renown as they land: plain
+    /// pools, or recorded sketches), and credit Renown as they land: plain
     /// resources at their trade value, everything else via the slot's
     /// authored renownGrant (pro-rata for partial deliveries; deeds grant
     /// once, on completion). Amber can never fill a slot — the gate is not
@@ -206,15 +206,16 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Offer one dug fossil fragment — taken from the richest fossil still
-        /// assembling, so a completed fossil is never broken up. A real
-        /// sacrifice: the fragment leaves the dig chase. Returns the fossil id
-        /// it came from, or null when nothing can be offered.
+        /// Offer one field sketch — torn from the richest insect plate still
+        /// being recorded, so a completed plate is never broken up. A real
+        /// sacrifice: the page leaves the record and that portion must be
+        /// re-observed. Returns the insect id it came from, or null when
+        /// nothing can be offered.
         /// </summary>
-        public static string DeliverFragment(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
+        public static string DeliverSketch(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
             var slot = verse.slots[slotIndex];
-            if (slot.type != RiteSlotType.Fragment || !IsVerseRevealed(state, data, verse)
+            if (slot.type != RiteSlotType.Sketch || !IsVerseRevealed(state, data, verse)
                 || IsSlotComplete(state, verse, slotIndex))
             {
                 return null;
@@ -222,14 +223,14 @@ namespace Wildgrove.Sim
 
             string richest = null;
             var most = 0;
-            if (data.fossils != null)
+            if (data.insects != null)
             {
-                foreach (var fossil in data.fossils)
+                foreach (var insect in data.insects)
                 {
-                    var held = Fossils.FragmentCount(state, fossil.id);
-                    if (held > most && !Fossils.IsComplete(state, fossil))
+                    var held = Insects.SketchCount(state, insect.id);
+                    if (held > most && !Insects.IsRecorded(state, insect))
                     {
-                        richest = fossil.id;
+                        richest = insect.id;
                         most = held;
                     }
                 }
@@ -240,7 +241,7 @@ namespace Wildgrove.Sim
                 return null;
             }
 
-            state.fossilFragments[richest] = most - 1;
+            state.insectSketches[richest] = most - 1;
             var progress = SlotProgress(state, verse, slotIndex);
             progress.delivered += 1.0;
             if (slot.count > 0)

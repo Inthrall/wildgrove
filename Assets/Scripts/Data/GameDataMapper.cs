@@ -15,7 +15,7 @@ namespace Wildgrove.Data
             asset.recipes = data.Recipes.Select(MapRecipe).ToList();
             asset.buildings = data.Buildings.Select(MapBuilding).ToList();
             asset.gear = data.Gear.Select(MapGear).ToList();
-            asset.fossils = data.Fossils.Select(MapFossil).ToList();
+            asset.insects = data.Insects.Select(MapInsect).ToList();
             asset.almanac = data.Almanac.Select(MapAlmanacNode).ToList();
             asset.folioSpreads = data.Spreads.Select(MapSpread).ToList();
             asset.bonds = data.Bonds.Select(MapBond).ToList();
@@ -192,15 +192,15 @@ namespace Wildgrove.Data
             };
         }
 
-        private static FossilData MapFossil(FossilDef f)
+        private static InsectData MapInsect(InsectDef f)
         {
-            return new FossilData
+            return new InsectData
             {
                 id = f.Id,
                 displayName = f.Name,
-                fragments = f.Fragments,
-                digSites = new List<string>(f.DigSites),
-                strataRarity = f.StrataRarity,
+                sketches = f.Sketches,
+                habitats = new List<string>(f.Habitats),
+                rarity = f.Rarity,
                 effects = f.Effects.Select(MapEffect).ToList()
             };
         }
@@ -261,7 +261,7 @@ namespace Wildgrove.Data
                 verses = d.Verses.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
                 provisioner = d.Provisioner.Select(p => new ProvisionerEntry { id = p.Id, trigger = p.Trigger, line = p.Line }).ToList(),
                 migrationVignette = new List<string>(d.MigrationVignette),
-                fossilCards = d.FossilCards.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList()
+                insectPlates = d.InsectPlates.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList()
             };
         }
 
@@ -343,10 +343,10 @@ namespace Wildgrove.Data
                     pristineBaseChance = e.Quality.PristineBaseChance,
                     pristineValueMult = e.Quality.PristineValueMult
                 },
-                excavation = new EconomyData.ExcavationData
+                observation = new EconomyData.ObservationData
                 {
-                    pityTimerHoursDug = e.Excavation.PityTimerHoursDug,
-                    baseFragmentsPerHour = e.Excavation.BaseFragmentsPerHour
+                    pityTimerHoursWatched = e.Observation.PityTimerHoursWatched,
+                    baseSketchesPerHour = e.Observation.BaseSketchesPerHour
                 },
                 amber = e.Amber == null ? null : new EconomyData.AmberData
                 {

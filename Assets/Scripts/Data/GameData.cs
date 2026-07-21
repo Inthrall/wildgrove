@@ -18,7 +18,7 @@ namespace Wildgrove.Data
         public string RecipesJson { get; set; }
         public string BuildingsJson { get; set; }
         public string GearJson { get; set; }
-        public string FossilsJson { get; set; }
+        public string InsectsJson { get; set; }
         public string RitesJson { get; set; }
         public string AlmanacJson { get; set; }
         public string FolioJson { get; set; }
@@ -54,7 +54,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<RecipeDef> Recipes { get; private set; }
         public IReadOnlyList<BuildingDef> Buildings { get; private set; }
         public IReadOnlyList<GearDef> Gear { get; private set; }
-        public IReadOnlyList<FossilDef> Fossils { get; private set; }
+        public IReadOnlyList<InsectDef> Insects { get; private set; }
         public RitesConfig Rites { get; private set; }
         public IReadOnlyList<AlmanacDef> Almanac { get; private set; }
         public IReadOnlyList<FolioSpreadDef> Spreads { get; private set; }
@@ -70,7 +70,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, RecipeDef> RecipesById { get; private set; }
         public IReadOnlyDictionary<string, BuildingDef> BuildingsById { get; private set; }
         public IReadOnlyDictionary<string, GearDef> GearById { get; private set; }
-        public IReadOnlyDictionary<string, FossilDef> FossilsById { get; private set; }
+        public IReadOnlyDictionary<string, InsectDef> InsectsById { get; private set; }
         public IReadOnlyDictionary<string, AlmanacDef> AlmanacById { get; private set; }
         public IReadOnlyDictionary<string, FolioSpreadDef> SpreadsById { get; private set; }
         public IReadOnlyDictionary<string, BondDef> BondsById { get; private set; }
@@ -94,7 +94,7 @@ namespace Wildgrove.Data
                 Recipes = JsonConvert.DeserializeObject<RecipesFile>(sources.RecipesJson, settings).Recipes,
                 Buildings = JsonConvert.DeserializeObject<BuildingsFile>(sources.BuildingsJson, settings).Buildings,
                 Gear = JsonConvert.DeserializeObject<GearFile>(sources.GearJson, settings).Gear,
-                Fossils = JsonConvert.DeserializeObject<FossilsFile>(sources.FossilsJson, settings).Fossils,
+                Insects = JsonConvert.DeserializeObject<InsectsFile>(sources.InsectsJson, settings).Insects,
                 Rites = JsonConvert.DeserializeObject<RitesConfig>(sources.RitesJson, settings),
                 Almanac = JsonConvert.DeserializeObject<AlmanacFile>(sources.AlmanacJson, settings).Nodes,
                 Spreads = JsonConvert.DeserializeObject<FolioFile>(sources.FolioJson, settings).Spreads,
@@ -126,7 +126,7 @@ namespace Wildgrove.Data
                 RecipesJson = File.ReadAllText(Path.Combine(directory, "recipes.json")),
                 BuildingsJson = File.ReadAllText(Path.Combine(directory, "buildings.json")),
                 GearJson = File.ReadAllText(Path.Combine(directory, "gear.json")),
-                FossilsJson = File.ReadAllText(Path.Combine(directory, "fossils.json")),
+                InsectsJson = File.ReadAllText(Path.Combine(directory, "insects.json")),
                 RitesJson = File.ReadAllText(Path.Combine(directory, "rites.json")),
                 AlmanacJson = File.ReadAllText(Path.Combine(directory, "almanac.json")),
                 FolioJson = File.ReadAllText(Path.Combine(directory, "folio.json")),
@@ -146,7 +146,7 @@ namespace Wildgrove.Data
             // sequence — a raw NUL byte here once made git and grep treat
             // this whole file as binary.
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
-                sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.FossilsJson, sources.RitesJson,
+                sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.InsectsJson, sources.RitesJson,
                 sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson,
                 sources.PlantersJson);
             using (var sha = SHA256.Create())
@@ -182,7 +182,7 @@ namespace Wildgrove.Data
             RecipesById = IndexById(Recipes, r => r.Id);
             BuildingsById = IndexById(Buildings, b => b.Id);
             GearById = IndexById(Gear, g => g.Id);
-            FossilsById = IndexById(Fossils, f => f.Id);
+            InsectsById = IndexById(Insects, f => f.Id);
             AlmanacById = IndexById(Almanac, a => a.Id);
             SpreadsById = IndexById(Spreads, s => s.Id);
             BondsById = IndexById(Bonds, b => b.Id);
@@ -235,9 +235,9 @@ namespace Wildgrove.Data
             public List<GearDef> Gear { get; set; }
         }
 
-        private sealed class FossilsFile
+        private sealed class InsectsFile
         {
-            public List<FossilDef> Fossils { get; set; }
+            public List<InsectDef> Insects { get; set; }
         }
 
         private sealed class AlmanacFile

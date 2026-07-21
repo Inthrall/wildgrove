@@ -32,7 +32,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
-            Assert.That(data.Fossils, Is.Not.Empty);
+            Assert.That(data.Insects, Is.Not.Empty);
             Assert.That(data.Rites.Rites, Is.Not.Empty);
             Assert.That(data.Bonds, Is.Not.Empty);
             Assert.That(data.Species, Is.Not.Empty, "design §4 defines the familiar species");
@@ -68,12 +68,12 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Replant.RichnessPerLevel, Is.EqualTo(0.10), "design §3 replanting richness");
             Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
             Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
-            Assert.That(data.Economy.Excavation.BaseFragmentsPerHour, Is.EqualTo(0.25));
+            Assert.That(data.Economy.Observation.BaseSketchesPerHour, Is.EqualTo(0.25));
             Assert.That(data.Economy.Amber.DigFindsPerHour, Is.EqualTo(0.06), "the free amber drip from dig sites");
             Assert.That(data.Economy.Amber.TimeSkipHours, Is.EqualTo(4.0));
             Assert.That(data.Economy.Amber.TimeSkipCostAmber, Is.EqualTo(15.0));
-            Assert.That(data.UpgradesById["map-oldgrowth"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "excavation"),
-                Is.True, "the first dig site's map also teaches excavation");
+            Assert.That(data.UpgradesById["map-oldgrowth"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "entomology"),
+                Is.True, "the first observation site's map also teaches entomology");
             Assert.That(data.ZonesById["silverrun-river"].RequiredTool, Is.EqualTo("bronze"));
             Assert.That(data.ZonesById["sunfield-meadow"].RequiredTool, Is.Null, "the starting zone is ungated");
             Assert.That(data.UpgradesById["copper-sickle"].ToolTier, Is.EqualTo("copper"));
@@ -91,7 +91,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));
             Assert.That(data.UpgradesById["flint-sickle"].Effects.Single().Type, Is.EqualTo(EffectType.YieldMult));
             Assert.That(data.RecipesById["bronze-ingot"].Inputs["tin-seam"], Is.EqualTo(2));
-            Assert.That(data.FossilsById["those-who-planted"].DigSites, Has.Count.EqualTo(2));
+            Assert.That(data.InsectsById["those-who-sow"].Habitats, Has.Count.EqualTo(2));
             Assert.That(data.ZonesById["sunfield-meadow"].VerseSite, Is.EqualTo("the fire circle"));
             Assert.That(data.Rites.ChooseCount, Is.EqualTo(3));
             Assert.That(data.Rites.Rites.Single().Verses.First().Slots.First().Type, Is.EqualTo(RiteSlotType.Resource));
@@ -280,16 +280,16 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_FossilAtNonDigSiteZone_IsReported()
+        public void Validate_InsectAtNonObservationSiteZone_IsReported()
         {
             var sources = LoadSources();
-            sources.FossilsJson = sources.FossilsJson.Replace(
-                "\"digSites\": [\"old-growth-wood\"],",
-                "\"digSites\": [\"sunfield-meadow\"],");
+            sources.InsectsJson = sources.InsectsJson.Replace(
+                "\"habitats\": [\"old-growth-wood\"],",
+                "\"habitats\": [\"sunfield-meadow\"],");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("not a dig site")), Is.True, string.Join("\n", issues));
+            Assert.That(issues.Any(i => i.Contains("no observation site")), Is.True, string.Join("\n", issues));
         }
 
         [Test]
@@ -358,10 +358,10 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_FossilEffectWithUnknownResource_IsReported()
+        public void Validate_InsectEffectWithUnknownResource_IsReported()
         {
             var sources = LoadSources();
-            sources.FossilsJson = sources.FossilsJson.Replace(
+            sources.InsectsJson = sources.InsectsJson.Replace(
                 "{ \"type\": \"pristineChanceBonus\", \"value\": 0.01 }",
                 "{ \"type\": \"noSpoilage\", \"resource\": \"bogus-item\" }");
 
@@ -711,18 +711,18 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_NonPositiveExcavationRate_IsReported()
+        public void Validate_NonPositiveObservationRate_IsReported()
         {
             var sources = LoadSources();
-            // Rate 0 with any pity means fossils only ever arrive on pity —
+            // Rate 0 with any pity means field sketches only ever arrive on pity —
             // rate 0 AND pity 0 means never; both are authoring mistakes.
             sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"baseFragmentsPerHour\": 0.25,",
-                "\"baseFragmentsPerHour\": 0,");
+                "\"baseSketchesPerHour\": 0.25,",
+                "\"baseSketchesPerHour\": 0,");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("excavation values")), Is.True, string.Join("\n", issues));
+            Assert.That(issues.Any(i => i.Contains("observation values")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

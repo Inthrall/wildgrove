@@ -7,7 +7,7 @@ namespace Wildgrove.Sim
     /// Rite; the camp folds and the run starts over (Coin, familiars, tools,
     /// gear, zone progress, skill levels — all wiped back to a fresh region),
     /// keeping what the design says the land remembers: Verdure (recomputed
-    /// from lifetime Renown), the Renown itself, and every fossil. The
+    /// from lifetime Renown), the Renown itself, and every insect plate. The
     /// Compendium and Museum join the kept list when they exist.
     /// </summary>
     public static class Migration
@@ -42,7 +42,7 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Fold the camp: returns the next run's fresh state carrying the
         /// permanents (Verdure banked from lifetime Renown, the Renown itself,
-        /// every fossil fragment dug, the rng thread, and the migration
+        /// every field sketch recorded, the rng thread, and the migration
         /// count), or null when the Rite hasn't consented. The caller swaps
         /// its live state for the returned one and saves.
         /// </summary>
@@ -87,11 +87,11 @@ namespace Wildgrove.Sim
             // "You keep … the Folio" — fixed specimens and their spread bonuses too.
             next.fixedResources.AddRange(state.fixedResources);
 
-            // "You keep … every fossil" — completed fossils and the fragments
-            // still assembling both survive; the dig chase spans migrations.
-            foreach (var pair in state.fossilFragments)
+            // "You keep … every plate" — recorded plates and the sketches
+            // still being drawn both survive; the record spans migrations.
+            foreach (var pair in state.insectSketches)
             {
-                next.fossilFragments[pair.Key] = pair.Value;
+                next.insectSketches[pair.Key] = pair.Value;
             }
 
             // "You keep … the Compendium" — the lifetime record crosses whole.
@@ -115,7 +115,7 @@ namespace Wildgrove.Sim
             // roster (idempotent by bondId).
             Roster.SyncBonded(next, data);
 
-            // Fossil effects fold into the fresh run's multipliers at once.
+            // Recorded plates' effects fold into the fresh run's multipliers at once.
             Upgrades.RecomputeYieldMultipliers(next, data);
             return next;
         }

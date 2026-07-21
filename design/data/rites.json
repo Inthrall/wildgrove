@@ -45,7 +45,7 @@
             { "type": "resource", "resource": "cordage",         "amount": 12, "renownGrant": 200 },
             { "type": "resource", "resource": "mushroom-skewer", "amount": 12 },
             { "type": "resource", "resource": "bronze-ingot",    "amount": 4,  "renownGrant": 550 },
-            { "type": "fragment", "count": 1, "renownGrant": 500 }
+            { "type": "sketch", "count": 1, "renownGrant": 500 }
           ]
         },
         {

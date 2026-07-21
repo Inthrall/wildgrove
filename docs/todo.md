@@ -48,9 +48,28 @@ annotated **v0.11:** where a decision touches them.
 - Pristine "sell" dropped — Pristine is offer/donate only for now.
 - `familiarCaps` economy section + roosts `familiarCaps` perLevel are now vestigial (RoostLevel kept).
 
-**STILL TO DO (v0.11 reversals not yet built):** fossils uncover·record·rebury
-(rename fragment→sketch), replanting & planters, and stationing-aware Rite
-reachability. Detail in the items below.
+**IMPLEMENTED 2026-07-21 (the deep chase → living insects; headless suite green):**
+- ✅ **Insects replace fossils — observe · sketch · release (§6).** Mo's call: the
+  collectible is now living insects watched at an **observation site**, recorded as
+  **field sketches** (portions), then **released** — nothing is kept; a completed plate
+  is a book of drawings granting the same permanent multiplier + lore. Renames:
+  `Fossils`→`Insects`, `Excavation`→`Observation`, `fragment`→`sketch`,
+  `strataRarity`→`rarity`, the collectible's `digSites`→`habitats`,
+  `fossilCards`→`insectPlates`, Rite `Fragment` slot→`Sketch` (offering tears the page
+  out → re-observe), `GameState.fossilFragments`→`insectSketches`. Save **v23→v24**
+  (old fossil ids don't map — that progress drops). Observation skill is now
+  **entomology** (map-oldgrowth grants it; Brush Screens gates on it). MVP plates:
+  The Stag's Herald / The Silver Skimmer / Those Who Sow. Amber unchanged (still surfaced
+  at the sites, now framed as ancient resin — the one takeable creature and the only
+  deep-past window).
+  Seams left deliberately: the **`digSite`/`DigSpeed` tokens are kept** as the shared
+  site/speed plumbing (zones, planters, species powerups, gear, almanac all feed them),
+  reinterpreted in comments as the observation site; the `GameDataValidator` KnownSkills
+  whitelist still lists a now-unused `"excavation"`. The §6 lore lines + §7 backstory in
+  `design-doc.md` are a **draft to re-voice**.
+
+**STILL TO DO (v0.11 reversals not yet built):** stationing-aware Rite
+reachability (replanting & planters landed earlier in `b0ad84a`). Detail below.
 
 - **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
   everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +
@@ -86,15 +105,11 @@ reachability. Detail in the items below.
   pages) and spreads of 4–8 grant permanent bonuses. Curation is the collection craft
   producing "Folio fixings"; the Compendium (records) and Deep Pages (fossil rubbings)
   round out the one journal. No Folio/spread concept exists in code.
-- **Fossils: uncover · record · rebury — nothing dug up is kept (§6).** Shipped: fossils
-  **assemble** from `fragments` and are kept forever (`Fossils.cs FragmentCount/
-  IsComplete`, `GameState.fossilFragments`, `economy.excavation.baseFragmentsPerHour`).
-  Design: excavation yields **field sketches** of **portions**; the fossil is
-  **reburied** (a wordless sign); the completed plate is a book of rubbings granting the
-  same permanent multiplier + lore. Rename `fragment` → `sketch`/`portion` across
-  `Excavation.cs`, `Fossils.cs`, `fossils.json`, and the Rite's `RiteSlotType.Fragment`/
-  `DeliverFragment` (a sketch offering is torn out → its portion must be re-uncovered).
-  **Amber stays takeable** (the exception); fossils still survive Migration as knowledge.
+- ✅ **DONE 2026-07-21 — built as living insects (observe · sketch · release), not
+  fossils.** See the IMPLEMENTED note at the top of this section. `Insects.cs`/
+  `Observation.cs`/`insects.json`; `GameState.insectSketches`; the Rite `Sketch` slot
+  (torn out → re-observe); save v24. Amber unchanged. Deep-time lore now rides on amber;
+  the §6/§7 prose is a draft to re-voice.
 - **Replanting & planters — a new fourth output lane (§3).** Entirely absent from
   code/data. Each node gains a **richness** level raised by replanting its own resource
   (`replantCost(L)=base·r^L`, per node per run, raising base yield); **planters** are

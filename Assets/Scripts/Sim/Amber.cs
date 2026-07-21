@@ -5,7 +5,7 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Amber (design §10): the premium currency, kept generous and
     /// player-initiated. This is the in-game economy layer — the free earn
-    /// (dig sites surface it, rolled in <see cref="Excavation"/>) and the
+    /// (observation sites surface it, rolled in <see cref="Observation"/>) and the
     /// time-skip sink. IAP, rewarded ads, and the weekly Play Games cache
     /// arrive with the plugin pass. Amber survives Migration ("you keep …
     /// Amber") and can never fill a verse slot — the gate is not for sale,

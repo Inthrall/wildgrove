@@ -279,16 +279,16 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresDigSitesFragmentsAndFossilEffects()
+        public void RoundTrip_RestoresSitesSketchesAndPlateEffects()
         {
             _data.zones[1].digSite = true;
             _data.upgrades[1].effects.Add(new EffectData { type = EffectType.UnlockDigSite, zone = "bramble-hedgerows" });
-            _data.fossils = new List<FossilData>
+            _data.insects = new List<InsectData>
             {
-                new FossilData
+                new InsectData
                 {
-                    id = "antler-crown", fragments = 3,
-                    digSites = new List<string> { "bramble-hedgerows" }, strataRarity = 1.0,
+                    id = "stags-herald", sketches = 3,
+                    habitats = new List<string> { "bramble-hedgerows" }, rarity = 1.0,
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all", value = 0.10 } },
                 },
             };
@@ -296,7 +296,7 @@ namespace Wildgrove.Sim.Tests
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
             TestCrew.Station(state, Familiar.DigStationPrefix + "bramble-hedgerows", 2);
             state.digSites[0].pityHours = 1.5;
-            state.fossilFragments["antler-crown"] = 3; // assembled
+            state.insectSketches["stags-herald"] = 3; // assembled
 
             var restored = RoundTrip(state);
 
@@ -304,8 +304,8 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
             Assert.That(Stationing.AtDigSite(restored, "bramble-hedgerows"), Is.EqualTo(2));
             Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
-            Assert.That(Fossils.FragmentCount(restored, "antler-crown"), Is.EqualTo(3));
-            // The completed fossil's +10% all yields folds into the restored
+            Assert.That(Insects.SketchCount(restored, "stags-herald"), Is.EqualTo(3));
+            // The completed insect's +10% all yields folds into the restored
             // multipliers alongside owned upgrades.
             Assert.That(restored.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance));
         }
@@ -592,15 +592,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V8Save_GetsEmptyExcavation()
+        public void TryMigrate_V8Save_GetsEmptyObservation()
         {
             // v8 predates excavation — nothing dug yet.
-            var save = new SaveData { version = 8, digSites = null, fossilFragments = null };
+            var save = new SaveData { version = 8, digSites = null, insectSketches = null };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
             Assert.That(save.digSites, Is.Empty);
-            Assert.That(save.fossilFragments, Is.Empty);
+            Assert.That(save.insectSketches, Is.Empty);
         }
 
         [Test]

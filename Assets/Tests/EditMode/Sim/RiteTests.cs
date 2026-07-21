@@ -68,17 +68,17 @@ namespace Wildgrove.Sim.Tests
                     effects = { new EffectData { type = EffectType.UnlockZone, zone = "bramble-hedgerows" } },
                 },
             };
-            _data.fossils = new List<FossilData>
+            _data.insects = new List<InsectData>
             {
-                new FossilData
+                new InsectData
                 {
-                    id = "antler-crown", fragments = 3,
-                    digSites = new List<string> { "bramble-hedgerows" }, strataRarity = 1.0,
+                    id = "stags-herald", sketches = 3,
+                    habitats = new List<string> { "bramble-hedgerows" }, rarity = 1.0,
                 },
-                new FossilData
+                new InsectData
                 {
-                    id = "sunken-jaw", fragments = 4,
-                    digSites = new List<string> { "bramble-hedgerows" }, strataRarity = 0.7,
+                    id = "silver-skimmer", sketches = 4,
+                    habitats = new List<string> { "bramble-hedgerows" }, rarity = 0.7,
                 },
             };
             _sunfieldVerse = new RiteVerseData
@@ -91,7 +91,7 @@ namespace Wildgrove.Sim.Tests
                     new RiteSlotData { type = RiteSlotType.Resource, resource = "copper-ingot", amount = 5, renownGrant = 375 },
                     new RiteSlotData { type = RiteSlotType.Deed, deed = "tend", count = 3, renownGrant = 50 },
                     new RiteSlotData { type = RiteSlotType.Specimen, quality = "fine", count = 1, renownGrant = 100 },
-                    new RiteSlotData { type = RiteSlotType.Fragment, count = 1, renownGrant = 500 },
+                    new RiteSlotData { type = RiteSlotType.Sketch, count = 1, renownGrant = 500 },
                 },
             };
             _brambleVerse = new RiteVerseData
@@ -223,28 +223,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void DeliverFragment_TakesFromTheRichestIncompleteFossil()
+        public void DeliverSketch_TakesFromTheRichestUnrecordedPlate()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.fossilFragments["antler-crown"] = 3; // assembled — untouchable
-            state.fossilFragments["sunken-jaw"] = 2;   // still assembling
+            state.insectSketches["stags-herald"] = 3; // assembled — untouchable
+            state.insectSketches["silver-skimmer"] = 2;   // still assembling
 
-            var offeredFrom = Rite.DeliverFragment(state, _data, _sunfieldVerse, 4);
+            var offeredFrom = Rite.DeliverSketch(state, _data, _sunfieldVerse, 4);
 
-            // The sacrifice comes from the dig chase, never a finished fossil.
-            Assert.That(offeredFrom, Is.EqualTo("sunken-jaw"));
-            Assert.That(Fossils.FragmentCount(state, "sunken-jaw"), Is.EqualTo(1));
-            Assert.That(Fossils.FragmentCount(state, "antler-crown"), Is.EqualTo(3));
+            // The sacrifice comes from the dig chase, never a finished insect.
+            Assert.That(offeredFrom, Is.EqualTo("silver-skimmer"));
+            Assert.That(Insects.SketchCount(state, "silver-skimmer"), Is.EqualTo(1));
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(3));
             Assert.That(state.renown.ToDouble(), Is.EqualTo(500.0).Within(Tolerance));
         }
 
         [Test]
-        public void DeliverFragment_NoLooseFragments_ReturnsNull()
+        public void DeliverSketch_NoLooseFragments_ReturnsNull()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.fossilFragments["antler-crown"] = 3; // complete — not offerable
+            state.insectSketches["stags-herald"] = 3; // complete — not offerable
 
-            Assert.That(Rite.DeliverFragment(state, _data, _sunfieldVerse, 4), Is.Null);
+            Assert.That(Rite.DeliverSketch(state, _data, _sunfieldVerse, 4), Is.Null);
         }
 
         [Test]

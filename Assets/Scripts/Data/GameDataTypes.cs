@@ -133,13 +133,13 @@ namespace Wildgrove.Data
     }
 
     [Serializable]
-    public sealed class FossilData
+    public sealed class InsectData
     {
         public string id;
         public string displayName;
-        public int fragments;
-        public List<string> digSites = new List<string>();
-        public double strataRarity;
+        public int sketches;
+        public List<string> habitats = new List<string>();
+        public double rarity;
         public List<EffectData> effects = new List<EffectData>();
     }
 
@@ -332,7 +332,7 @@ namespace Wildgrove.Data
         public List<StringEntry> verses = new List<StringEntry>();
         public List<ProvisionerEntry> provisioner = new List<ProvisionerEntry>();
         public List<string> migrationVignette = new List<string>();
-        public List<StringEntry> fossilCards = new List<StringEntry>();
+        public List<StringEntry> insectPlates = new List<StringEntry>();
     }
 
     [Serializable]
@@ -349,7 +349,7 @@ namespace Wildgrove.Data
         public XpData xp;
         public OfflineData offline;
         public QualityData quality;
-        public ExcavationData excavation;
+        public ObservationData observation;
         public TendingData tending;
         public WardenData warden;
         public FamiliarXpData familiarXp;
@@ -459,10 +459,10 @@ namespace Wildgrove.Data
         }
 
         [Serializable]
-        public sealed class ExcavationData
+        public sealed class ObservationData
         {
-            public double pityTimerHoursDug;
-            public double baseFragmentsPerHour;
+            public double pityTimerHoursWatched;
+            public double baseSketchesPerHour;
         }
 
         [Serializable]

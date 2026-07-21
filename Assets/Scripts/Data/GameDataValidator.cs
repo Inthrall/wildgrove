@@ -40,7 +40,7 @@ namespace Wildgrove.Data
             CheckIds(data.Recipes.Select(r => r.Id), "recipe", issues);
             CheckIds(data.Buildings.Select(b => b.Id), "building", issues);
             CheckIds(data.Gear.Select(g => g.Id), "gear", issues);
-            CheckIds(data.Fossils.Select(f => f.Id), "fossil", issues);
+            CheckIds(data.Insects.Select(f => f.Id), "insect", issues);
             CheckIds(data.Almanac.Select(a => a.Id), "almanac node", issues);
             CheckIds(data.Spreads.Select(s => s.Id), "folio spread", issues);
 
@@ -55,7 +55,7 @@ namespace Wildgrove.Data
             ValidateBuildings(data, resourceIds, issues);
             ValidateUpgrades(data, resourceIds, issues);
             ValidateGear(data, resourceIds, issues);
-            ValidateFossils(data, resourceIds, issues);
+            ValidateInsects(data, resourceIds, issues);
             ValidateAlmanac(data, resourceIds, issues);
             ValidateFolio(data, resourceIds, issues);
             ValidateBonds(data, issues);
@@ -486,40 +486,40 @@ namespace Wildgrove.Data
             }
         }
 
-        private static void ValidateFossils(GameData data, HashSet<string> resourceIds, List<string> issues)
+        private static void ValidateInsects(GameData data, HashSet<string> resourceIds, List<string> issues)
         {
-            foreach (var fossil in data.Fossils)
+            foreach (var insect in data.Insects)
             {
-                if (fossil.Fragments <= 0)
+                if (insect.Sketches <= 0)
                 {
-                    issues.Add($"Fossil '{fossil.Id}' has non-positive fragment count");
+                    issues.Add($"Insect '{insect.Id}' has non-positive sketch count");
                 }
 
-                if (fossil.StrataRarity <= 0 || fossil.StrataRarity > 1)
+                if (insect.Rarity <= 0 || insect.Rarity > 1)
                 {
-                    issues.Add($"Fossil '{fossil.Id}' strataRarity {fossil.StrataRarity} is outside (0, 1]");
+                    issues.Add($"Insect '{insect.Id}' rarity {insect.Rarity} is outside (0, 1]");
                 }
 
-                if (fossil.DigSites.Count == 0)
+                if (insect.Habitats.Count == 0)
                 {
-                    issues.Add($"Fossil '{fossil.Id}' has no dig sites");
+                    issues.Add($"Insect '{insect.Id}' has no habitats");
                 }
 
-                foreach (var site in fossil.DigSites)
+                foreach (var site in insect.Habitats)
                 {
                     if (!data.ZonesById.TryGetValue(site, out var zone))
                     {
-                        issues.Add($"Fossil '{fossil.Id}' references unknown zone '{site}'");
+                        issues.Add($"Insect '{insect.Id}' references unknown zone '{site}'");
                     }
                     else if (!zone.DigSite)
                     {
-                        issues.Add($"Fossil '{fossil.Id}' references zone '{site}' which is not a dig site");
+                        issues.Add($"Insect '{insect.Id}' references zone '{site}' which has no observation site");
                     }
                 }
 
-                foreach (var effect in fossil.Effects)
+                foreach (var effect in insect.Effects)
                 {
-                    ValidateEffect($"Fossil '{fossil.Id}'", effect, data, resourceIds, issues);
+                    ValidateEffect($"Insect '{insect.Id}'", effect, data, resourceIds, issues);
                 }
             }
         }
@@ -915,7 +915,7 @@ namespace Wildgrove.Data
                     RequireCountAndGrant(verseId, slot, issues);
                     break;
 
-                case RiteSlotType.Fragment:
+                case RiteSlotType.Sketch:
                     RequireCountAndGrant(verseId, slot, issues);
                     break;
 
@@ -958,9 +958,9 @@ namespace Wildgrove.Data
                 issues.Add($"Verse text references unknown zone '{key}'");
             }
 
-            foreach (var key in data.Dialogue.FossilCards.Keys.Where(k => !data.FossilsById.ContainsKey(k)))
+            foreach (var key in data.Dialogue.InsectPlates.Keys.Where(k => !data.InsectsById.ContainsKey(k)))
             {
-                issues.Add($"Fossil card text references unknown fossil '{key}'");
+                issues.Add($"Insect plate text references unknown insect '{key}'");
             }
 
             // The MVP zones ship with their words: a waystone that reveals
@@ -1002,7 +1002,7 @@ namespace Wildgrove.Data
             RequireSection(economy.Xp, "xp", issues);
             RequireSection(economy.Offline, "offline", issues);
             RequireSection(economy.Quality, "quality", issues);
-            RequireSection(economy.Excavation, "excavation", issues);
+            RequireSection(economy.Observation, "observation", issues);
             RequireSection(economy.Tending, "tending", issues);
             RequireSection(economy.Warden, "warden", issues);
             RequireSection(economy.FamiliarXp, "familiarXp", issues);
@@ -1137,12 +1137,12 @@ namespace Wildgrove.Data
                 issues.Add("Economy tending.pristineChanceBonus must not be negative");
             }
 
-            if (economy.Excavation != null
-                && (economy.Excavation.PityTimerHoursDug <= 0 || economy.Excavation.BaseFragmentsPerHour <= 0))
+            if (economy.Observation != null
+                && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0))
             {
-                // Zero rate AND zero pity means dig sites can never surface a
-                // fragment — every fossil becomes unreachable.
-                issues.Add("Economy excavation values must all be positive");
+                // Zero rate AND zero pity means an observation site can never
+                // surface a field sketch — every insect plate becomes unreachable.
+                issues.Add("Economy observation values must all be positive");
             }
 
             if (economy.Amber != null

@@ -6,8 +6,8 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the Amber economy layer (design §10): dig sites surface it as a
-    /// separate channel from fragments (fully-dug ground keeps producing),
+    /// Pins the Amber economy layer (design §10): observation sites surface it as a
+    /// separate channel from field sketches (a fully-recorded site keeps producing),
     /// unconfigured data draws no rng, and the time-skip sink credits full
     /// live-rate production for its cost — refused when short. IAP/ads are
     /// the plugin pass; the Rite can never be paid in Amber by construction.
@@ -27,7 +27,7 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { renownDivisor = 5000, exponent = 0.5, yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
-                excavation = new EconomyData.ExcavationData { pityTimerHoursDug = 4, baseFragmentsPerHour = 0.25 },
+                observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 0.25 },
                 // digFindsPerHour high enough that one 1-second sub-step is a
                 // certain find — the chance test would flake otherwise.
                 amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15 },
@@ -46,12 +46,12 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
-            _data.fossils = new List<FossilData>
+            _data.insects = new List<InsectData>
             {
-                new FossilData
+                new InsectData
                 {
-                    id = "antler-crown", fragments = 3,
-                    digSites = new List<string> { GameStateFactory.StartingZoneId }, strataRarity = 1.0,
+                    id = "stags-herald", sketches = 3,
+                    habitats = new List<string> { GameStateFactory.StartingZoneId }, rarity = 1.0,
                 },
             };
         }
@@ -84,12 +84,12 @@ namespace Wildgrove.Sim.Tests
         public void FullyDugGround_KeepsSurfacingAmber()
         {
             var state = StateWithADigger();
-            state.fossilFragments["antler-crown"] = 3; // nothing left to find
+            state.insectSketches["stags-herald"] = 3; // nothing left to find
 
             Simulation.Advance(state, _data, 1.0);
 
             Assert.That(state.amber, Is.EqualTo(2.0).Within(Tolerance),
-                "amber is the dig's renewable — the fossil channel falling quiet doesn't stop it");
+                "amber is the dig's renewable — the insect channel falling quiet doesn't stop it");
         }
 
         [Test]
@@ -97,7 +97,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.amber = null;
             var state = StateWithADigger();
-            state.fossilFragments["antler-crown"] = 3; // the fragment channel is quiet too
+            state.insectSketches["stags-herald"] = 3; // the sketch channel is quiet too
             var rngBefore = state.rngState;
             state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
 

@@ -44,12 +44,12 @@ namespace Wildgrove.Sim
         /// </summary>
         public string wardenPostNodeId;
 
-        /// <summary>Amber (design §10) — the premium currency; dig sites surface it free, and it survives Migration.</summary>
+        /// <summary>Amber (design §10) — the premium currency; observation sites surface it free, and it survives Migration.</summary>
         public double amber;
 
         /// <summary>
         /// Monotonic version of the effect sources (purchases, donations,
-        /// fossils, gear, Almanac, buildings) — bumping it invalidates the
+        /// insects, gear, Almanac, buildings) — bumping it invalidates the
         /// cached <see cref="modifierSnapshot"/>. Never saved.
         /// </summary>
         public int modifierVersion;
@@ -62,8 +62,8 @@ namespace Wildgrove.Sim
         public int generatedRiteMigration = -1;
         public Wildgrove.Data.GameDataAsset generatedRiteFrom;
 
-        /// <summary>Reusable scratch for the dig tick's eligible-fossil walk — see Excavation.Advance. Never saved.</summary>
-        public List<Wildgrove.Data.FossilData> fossilScratch;
+        /// <summary>Reusable scratch for the observation tick's eligible-insect walk — see Observation.Advance. Never saved.</summary>
+        public List<Wildgrove.Data.InsectData> insectScratch;
 
         /// <summary>Invalidate the cached modifier snapshot after an effect-source mutation.</summary>
         public void BumpModifiers()
@@ -132,8 +132,8 @@ namespace Wildgrove.Sim
         /// </summary>
         public List<BuiltPlanter> builtPlanters = new List<BuiltPlanter>();
 
-        /// <summary>Fossil fragments surfaced this run, keyed by fossil id. A fossil is complete when its count reaches the data's fragments target — completion grants its permanent effects.</summary>
-        public Dictionary<string, int> fossilFragments = new Dictionary<string, int>();
+        /// <summary>Field sketches recorded this run, keyed by insect id. A plate is recorded when its count reaches the data's sketches target — recording grants its permanent effects.</summary>
+        public Dictionary<string, int> insectSketches = new Dictionary<string, int>();
 
         /// <summary>Ids of the one-off §9 upgrades bought this run (reset by Migration).</summary>
         public List<string> purchasedUpgradeIds = new List<string>();
@@ -266,7 +266,7 @@ namespace Wildgrove.Sim
     [Serializable]
     public sealed class SlotProgressState
     {
-        /// <summary>Units (resource slots) or count (deed/specimen/fragment slots) delivered so far.</summary>
+        /// <summary>Units (resource slots) or count (deed/specimen/sketch slots) delivered so far.</summary>
         public double delivered;
 
         /// <summary>True once a completion-granted slot (deeds) has credited its renownGrant — keeps the grant one-shot.</summary>
@@ -274,17 +274,17 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One zone's dig site (design §5: familiars set to Excavation slowly turn
-    /// soil, surfacing fossil fragments). Fragments land in
-    /// GameState.fossilFragments; the site itself only tracks who's digging
-    /// and how long since the last find.
+    /// One zone's observation site (design §6: familiars set to Observation
+    /// watch what lives there and record it, adding field sketches). Sketches
+    /// land in GameState.insectSketches; the site itself only tracks who's
+    /// watching and how long since the last sketch.
     /// </summary>
     [Serializable]
     public sealed class DigSiteState
     {
         public string zoneId;
 
-        /// <summary>Hours dug since the last fragment — the pity timer (economy.excavation.pityTimerHoursDug guarantees a find). Diggers are roster familiars stationed here (see <see cref="Stationing"/>).</summary>
+        /// <summary>Hours watched since the last sketch — the pity timer (economy.observation.pityTimerHoursWatched guarantees a sketch). Watchers are roster familiars stationed here (see <see cref="Stationing"/>).</summary>
         public double pityHours;
     }
 

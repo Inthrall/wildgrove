@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 005a92377b201c554d9cc34814e3a21ff11872787360d874fa0892c25f5ff3e8
+  sourceHash: 15c69c84bcee6f414bcfcfd6cfa89ade88e05b43ca67106269de6e000a46c6c4
   economy:
     costGrowth:
       gathererGift: 1.09
@@ -72,9 +72,9 @@ MonoBehaviour:
       fineValueMult: 1.5
       pristineBaseChance: 0.005
       pristineValueMult: 10
-    excavation:
-      pityTimerHoursDug: 4
-      baseFragmentsPerHour: 0.25
+    observation:
+      pityTimerHoursWatched: 4
+      baseSketchesPerHour: 0.25
     tending:
       burstYieldMult: 3
       burstDurationSec: 5
@@ -213,7 +213,7 @@ MonoBehaviour:
     unlocks:
     - logging
     - bushcraft
-    - excavation
+    - entomology
     keystone: ancient-acorn
     digSite: 1
     verseSite: the oldest root
@@ -505,7 +505,7 @@ MonoBehaviour:
       recipe: 
       value: 0
     - type: 15
-      skill: excavation
+      skill: entomology
       zone: 
       resource: 
       recipe: 
@@ -742,9 +742,9 @@ MonoBehaviour:
   - order: 23
     id: brush-screens
     displayName: Brush Screens
-    track: excavation
+    track: entomology
     toolTier: 
-    gateSkill: excavation
+    gateSkill: entomology
     gateLevel: 8
     materials: []
     effects:
@@ -1150,13 +1150,13 @@ MonoBehaviour:
       resource: fish
       recipe: 
       value: 0
-  fossils:
-  - id: antler-crown
-    displayName: The Antler Crown
-    fragments: 3
-    digSites:
+  insects:
+  - id: stags-herald
+    displayName: The Stag's Herald
+    sketches: 3
+    habitats:
     - old-growth-wood
-    strataRarity: 1
+    rarity: 1
     effects:
     - type: 1
       skill: all
@@ -1164,12 +1164,12 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.1
-  - id: sunken-jaw
-    displayName: The Sunken Jaw
-    fragments: 4
-    digSites:
+  - id: silver-skimmer
+    displayName: The Silver Skimmer
+    sketches: 4
+    habitats:
     - silverrun-river
-    strataRarity: 0.7
+    rarity: 0.7
     effects:
     - type: 1
       skill: fishing
@@ -1183,13 +1183,13 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.01
-  - id: those-who-planted
-    displayName: Those Who Planted
-    fragments: 5
-    digSites:
+  - id: those-who-sow
+    displayName: Those Who Sow
+    sketches: 5
+    habitats:
     - old-growth-wood
     - silverrun-river
-    strataRarity: 0.35
+    rarity: 0.35
     effects:
     - type: 1
       skill: all
@@ -1792,13 +1792,15 @@ MonoBehaviour:
     migrationVignette:
     - The camp folds. The land exhales.
     - What you gave, it keeps.
-    fossilCards:
-    - key: antler-crown
-      text: A crown of bone for a king of no kingdom. The meadow remembers being
-        afraid, and will not say of what.
-    - key: sunken-jaw
-      text: A jaw wide as a coracle, teeth worn smooth with patience. The river fed
-        it for ten thousand years, and then one grey spring, did not.
-    - key: those-who-planted
-      text: "Rows. Whoever they were, they planted in rows \u2014 right up to the
-        ash. The hands in the strata are smaller than yours, but not by much."
+    insectPlates:
+    - key: stags-herald
+      text: Antlers on a beetle no longer than your thumb. It fought something once,
+        or meant to. The drawing is all I keep; the meadow keeps the rest.
+    - key: silver-skimmer
+      text: It held the one reach of river all afternoon and let me sketch it, wings
+        still. The river fed its kind ten thousand years. I gave the page my hand
+        and gave the water back its guest.
+    - key: those-who-sow
+      text: They carry the flowers from field to field without being asked, and have
+        longer than we have. Whoever tends this place, it is not only us. I drew
+        them, and let them go on.

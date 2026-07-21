@@ -1,8 +1,0 @@
-{
-  "$comment": "MVP fossil sets. Fragments drop from dig sites weighted by strataRarity; pity timer in economy.json. loreCard text lives in dialogue.json.",
-  "fossils": [
-    { "id": "antler-crown",      "name": "The Antler Crown",   "fragments": 3, "digSites": ["old-growth-wood"],                     "strataRarity": 1.0,  "effects": [{ "type": "yieldBonus", "skill": "all", "value": 0.10 }] },
-    { "id": "sunken-jaw",        "name": "The Sunken Jaw",     "fragments": 4, "digSites": ["silverrun-river"],                     "strataRarity": 0.7,  "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }, { "type": "pristineChanceBonus", "value": 0.01 }] },
-    { "id": "those-who-planted", "name": "Those Who Planted",  "fragments": 5, "digSites": ["old-growth-wood", "silverrun-river"],  "strataRarity": 0.35, "effects": [{ "type": "yieldBonus", "skill": "all", "value": 0.20 }] }
-  ]
-}

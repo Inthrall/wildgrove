@@ -13,8 +13,8 @@ namespace Wildgrove.Data
         /// <summary>A Fine or Pristine specimen; carries a fixed renownGrant.</summary>
         Specimen,
 
-        /// <summary>A fossil fragment; carries a fixed renownGrant.</summary>
-        Fragment
+        /// <summary>An insect field sketch (design §6); carries a fixed renownGrant.</summary>
+        Sketch
     }
 
     /// <summary>One offering slot in a verse. Which fields apply depends on <see cref="Type"/>.</summary>

@@ -1063,7 +1063,7 @@ namespace Wildgrove.Game
 
             if (stationId.StartsWith(Familiar.DigStationPrefix))
             {
-                return "dig: " + stationId.Substring(Familiar.DigStationPrefix.Length);
+                return "watch: " + stationId.Substring(Familiar.DigStationPrefix.Length);
             }
 
             foreach (var node in _loop.State.nodes)

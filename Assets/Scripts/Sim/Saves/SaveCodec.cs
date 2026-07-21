@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 23;
+        public const int CurrentVersion = 24;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -135,9 +135,9 @@ namespace Wildgrove.Sim.Saves
                 save.builtPlanters.Add(new SavedPlanter { planterId = planter.planterId, targetId = planter.targetId });
             }
 
-            foreach (var pair in state.fossilFragments)
+            foreach (var pair in state.insectSketches)
             {
-                save.fossilFragments.Add(new SavedFossilFragments { id = pair.Key, fragments = pair.Value });
+                save.insectSketches.Add(new SavedInsectSketches { id = pair.Key, sketches = pair.Value });
             }
 
             foreach (var pair in state.deedCounts)
@@ -384,15 +384,15 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            state.fossilFragments.Clear();
-            if (save.fossilFragments != null)
+            state.insectSketches.Clear();
+            if (save.insectSketches != null)
             {
-                foreach (var fossil in save.fossilFragments)
+                foreach (var insect in save.insectSketches)
                 {
-                    if (fossil?.id != null)
+                    if (insect?.id != null)
                     {
-                        // Unknown fossil ids are kept, same policy as elsewhere.
-                        state.fossilFragments[fossil.id] = fossil.fragments;
+                        // Unknown insect ids are kept, same policy as elsewhere.
+                        state.insectSketches[insect.id] = insect.sketches;
                     }
                 }
             }
@@ -458,7 +458,7 @@ namespace Wildgrove.Sim.Saves
             // saved roster lacks (idempotent by bondId).
             Roster.SyncBonded(state, data);
 
-            // Last, so completed fossils' effects fold in with the upgrades'.
+            // Last, so recorded insect plates' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
 
             // A verse that revealed since this save was taken (or a deed slot
@@ -684,10 +684,10 @@ namespace Wildgrove.Sim.Saves
                         break;
 
                     case 8:
-                        // v8 predates excavation — sites resync from owned
-                        // upgrades on restore; no fragments found yet.
+                        // v8 predates the observation system — sites resync
+                        // from owned upgrades on restore; nothing recorded yet.
                         save.digSites = save.digSites ?? new List<SavedDigSite>();
-                        save.fossilFragments = save.fossilFragments ?? new List<SavedFossilFragments>();
+                        save.insectSketches = save.insectSketches ?? new List<SavedInsectSketches>();
                         save.version = 9;
                         break;
 
@@ -790,6 +790,16 @@ namespace Wildgrove.Sim.Saves
                         // missing field).
                         save.builtPlanters = save.builtPlanters ?? new List<SavedPlanter>();
                         save.version = 23;
+                        break;
+
+                    case 23:
+                        // v23's fossil chase became the insect field-sketch
+                        // collection (design §6: observe · sketch · release).
+                        // The content ids changed entirely (antler-crown →
+                        // stags-herald, …), so old fossil-fragment progress
+                        // can't map — it drops, and the plates start empty.
+                        save.insectSketches = save.insectSketches ?? new List<SavedInsectSketches>();
+                        save.version = 24;
                         break;
 
                     default:

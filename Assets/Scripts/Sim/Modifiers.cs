@@ -5,7 +5,7 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Cached snapshot of every effect-derived modifier. The raw derivation
-    /// walks the whole active-effect union (purchased upgrades, fossils,
+    /// walks the whole active-effect union (purchased upgrades, insects,
     /// Museum sets — which clones — Almanac nodes, worn gear); doing that per
     /// accessor per tick made a late run crawl. The union only changes when
     /// something is bought, donated, worn, assembled, or restored — all of
@@ -70,10 +70,10 @@ namespace Wildgrove.Sim
                 buildingLevels += pair.Value;
             }
 
-            var fragments = 0L;
-            foreach (var pair in state.fossilFragments)
+            var sketches = 0L;
+            foreach (var pair in state.insectSketches)
             {
-                fragments += pair.Value;
+                sketches += pair.Value;
             }
 
             return state.purchasedUpgradeIds.Count
@@ -81,7 +81,7 @@ namespace Wildgrove.Sim
                    + state.fixedResources.Count * 1000_000L
                    + state.gearBySlot.Count * 1000_000_000L
                    + buildingLevels * 1000_000_000_000L
-                   + fragments * 1000_000_000_000_000L;
+                   + sketches * 1000_000_000_000_000L;
         }
 
         private static ModifierSnapshot Build(GameState state, GameDataAsset data)
@@ -133,7 +133,7 @@ namespace Wildgrove.Sim
             snapshot.haulCapacityMultiplier = haulMult * (1.0 + carrierBonus);
 
             // Sell-value bonuses are purchased-only (a design decision — set
-            // and fossil bonuses never inflate the Provisioner).
+            // and insect bonuses never inflate the Provisioner).
             foreach (var effect in Upgrades.PurchasedEffects(state, data))
             {
                 if (effect.type == EffectType.SellValueBonus && !string.IsNullOrEmpty(effect.resource))

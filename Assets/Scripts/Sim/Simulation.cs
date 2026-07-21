@@ -134,7 +134,7 @@ namespace Wildgrove.Sim
             // sub-stepping keeps offline crafting batch-by-batch, like live play.
             Crafting.Advance(state, data, deltaSeconds);
 
-            Excavation.Advance(state, data, deltaSeconds);
+            Observation.Advance(state, data, deltaSeconds);
 
             // Every familiar earns run XP at its post (design §4) — a trickle
             // that also feeds Renown (§9). Wanderers earn half (handled in
@@ -384,7 +384,7 @@ namespace Wildgrove.Sim
         /// Gather rate for a node, per design doc §8:
         /// yield/sec = familiars · tool/gear mult · (1 + masteryBonus·mastery) · global.
         /// Base rate is one unit per familiar per second; global folds in the
-        /// permanent Verdure bonus (almanac / museum / fossil / boost factors
+        /// permanent Verdure bonus (almanac / museum / insect / boost factors
         /// arrive with their systems and multiply in here later).
         /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, EconomyData economy)

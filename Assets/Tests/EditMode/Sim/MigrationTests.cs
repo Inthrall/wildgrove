@@ -10,7 +10,7 @@ namespace Wildgrove.Sim.Tests
     /// Pins Migration (design §7): gated by the completed Rite, banking
     /// Verdure from lifetime Renown on the sqrt curve, resetting the run
     /// (coin, familiars, upgrades, buildings, skills, sites, offerings) and
-    /// keeping what the land remembers (Verdure, Renown, every fossil, the
+    /// keeping what the land remembers (Verdure, Renown, every insect, the
     /// rng thread, the migration count).
     /// </summary>
     public class MigrationTests
@@ -44,12 +44,12 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
-            _data.fossils = new List<FossilData>
+            _data.insects = new List<InsectData>
             {
-                new FossilData
+                new InsectData
                 {
-                    id = "antler-crown", fragments = 3,
-                    digSites = new List<string> { GameStateFactory.StartingZoneId }, strataRarity = 1.0,
+                    id = "stags-herald", sketches = 3,
+                    habitats = new List<string> { GameStateFactory.StartingZoneId }, rarity = 1.0,
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all", value = 0.10 } },
                 },
             };
@@ -154,14 +154,14 @@ namespace Wildgrove.Sim.Tests
         {
             var state = StateWithTheRiteSung();
             state.renown = new BigDouble(45000.0);
-            state.fossilFragments["antler-crown"] = 2;
+            state.insectSketches["stags-herald"] = 2;
             state.rngState = 123456789UL;
 
             var next = Migration.Migrate(state, _data);
 
             Assert.That(next.verdurePoints, Is.EqualTo(3.0).Within(Tolerance), "verdure banks from lifetime renown");
             Assert.That(next.renown.ToDouble(), Is.EqualTo(45000.0).Within(Tolerance), "renown is lifetime, never spent");
-            Assert.That(Fossils.FragmentCount(next, "antler-crown"), Is.EqualTo(2), "the dig chase spans migrations");
+            Assert.That(Insects.SketchCount(next, "stags-herald"), Is.EqualTo(2), "the record spans migrations");
             Assert.That(next.migrationCount, Is.EqualTo(1));
             Assert.That(next.rngState, Is.EqualTo(123456789UL));
         }
@@ -301,10 +301,10 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Migrate_CompletedFossilEffects_CarryIntoTheFreshRun()
+        public void Migrate_RecordedPlateEffects_CarryIntoTheFreshRun()
         {
             var state = StateWithTheRiteSung();
-            state.fossilFragments["antler-crown"] = 3; // assembled
+            state.insectSketches["stags-herald"] = 3; // assembled
 
             var next = Migration.Migrate(state, _data);
 

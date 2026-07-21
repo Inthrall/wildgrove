@@ -27,7 +27,7 @@
 
 ### Tend, don't take
 
-You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the crew brings home into the gear and goods a camp needs to push deeper. Some finds are **Pristine**: specimens worth keeping forever. Some are older than that — **fossils**, sleeping under the soil: uncovered with a brush, recorded in careful sketches, and reburied where they lie — each one a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the crew slips back into the grass, and the land — and the creatures — remember how you treated them.
+You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the crew brings home into the gear and goods a camp needs to push deeper. Some finds are **Pristine**: specimens worth keeping forever. Some the land only lets you watch — the rare **insects** that gather at quiet sites: observed and drawn in careful sketches, then let go — each plate a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the crew slips back into the grass, and the land — and the creatures — remember how you treated them.
 
 The fantasy is *stewardship, not extraction*. You are a guest who works hard, with a few friends who noticed.
 
@@ -37,7 +37,7 @@ Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, 
 
 | Axis          | Lineage                              | Description                                                                                           |
 | ------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| **The Trail** | Spine · Idle Obelisk                 | Push deeper through eight zones. Each opens new resources, a new craft, a waystone, and — from Zone 3 — dig sites. |
+| **The Trail** | Spine · Idle Obelisk                 | Push deeper through eight zones. Each opens new resources, a new craft, a waystone, and — from Zone 3 — observation sites. |
 | **Familiars** | Crew · Idle Obelisk (the drones)     | Up to five active companions (decided). Each levels at its post, chooses powerups, and is missed when it wanders. |
 | **Crafts**    | Breadth · Melvor Idle                | Parallel gathering and survival-crafting skills with XP, mastery, tools, and gear — the economy's backbone (§9). |
 | **The Rite**  | Gate · Idle Obelisk (minus fighting) | A staged ritual of offerings — five slots a verse, any three. The finished Rite unlocks Migration.       |
@@ -49,7 +49,7 @@ Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, 
 
 ### Art direction — the naturalist's plates (decided)
 
-- **Every collectible is a plate.** Compendium entries, fossil cards, gear, and every roster familiar: fine ink linework, muted watercolour and sepia washes, numbered figures, hand-written margin annotations.
+- **Every collectible is a plate.** Compendium entries, insect cards, gear, and every roster familiar: fine ink linework, muted watercolour and sepia washes, numbered figures, hand-written margin annotations.
 - **UI is the warden's field journal.** Paper grounds, journal tabs, stitched spines; texture as identity, never as noise.
 - **Zones are the stage, plates are the star.** Layered painted-parallax backdrops, light ambient motion. The illustration budget concentrates where the collecting identity lives.
 - **Solo-scale production:** one fixed plate template; ~60 plates at MVP. Scope pressure cuts *plate count*, never plate quality.
@@ -100,21 +100,21 @@ The single most load-bearing rule set in the game — written down so every syst
 | --- | --------------------- | ------------------------------------- | ------------------------------------------------------ | ------------------- | ----- |
 | 1 | **Sunfield Meadow**   | Berries, wildflowers, fibres          | Foraging (start)                                       | Sunburst Poppy      | MVP   |
 | 2 | **Bramble Hedgerows** | Nuts, herbs, copper scree             | Firecraft, Mining                                      | Amber-Shelled Snail | MVP   |
-| 3 | **Old-Growth Wood**   | Deadfall timber, mushrooms, tin seams | Logging, Bushcraft, **first dig site**                 | Ancient Acorn       | MVP   |
-| 4 | **Silverrun River**   | Fish, reeds, clay, iron-rich gravel   | Fishing, riverbank dig site                            | Moonscale Trout     | MVP   |
+| 3 | **Old-Growth Wood**   | Deadfall timber, mushrooms, tin seams | Logging, Bushcraft, **first observation site**                 | Ancient Acorn       | MVP   |
+| 4 | **Silverrun River**   | Fish, reeds, clay, iron-rich gravel   | Fishing, riverbank observation site                            | Moonscale Trout     | MVP   |
 | 5 | **Mistfen Marsh**     | Peat, rare herbs, fireflies           | Entomology, Apothecary                                 | Lantern Firefly     | v1.1  |
-| 6 | **The Hollows**       | Deep ores, crystals, bone beds        | Delving; the richest fossil strata                     | Echo Geode          | v1.1  |
+| 6 | **The Hollows**       | Deep ores, crystals, bone beds        | Delving; the rarest insects                     | Echo Geode          | v1.1  |
 | 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry                                              | Cloudfleece Ram     | v1.2  |
 | 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2  |
 
-Each zone is a screen: 2–3 nodes, the trail home, one keystone specimen, one **waystone** (the past speaking, §7), and one **verse site** (the present, §8). From Zone 3, a **dig site**. Zone entry costs **provisions** (a goods bundle — you pack for the walk, §9) *and* a tool tier, so Trail progress is paced by economy and craft investment.
+Each zone is a screen: 2–3 nodes, the trail home, one keystone specimen, one **waystone** (the past speaking, §7), and one **verse site** (the present, §8). From Zone 3, a **observation site**. Zone entry costs **provisions** (a goods bundle — you pack for the walk, §9) *and* a tool tier, so Trail progress is paced by economy and craft investment.
 
 ### Replanting & planters — the fourth claim (decided)
 
 Nodes are not fixed faucets; they can be **made richer**, and the making costs goods.
 
 - **Replanting** (node's own resource → richness): each node has a richness level, raised by replanting its own resource back into it — `replantCost(L) = base · r^L`, per node, per run. Richness raises the node's **base yield**. The lever split that keeps the UI legible: *replant the node, level the familiar* (§4) — one improves the place, the other the worker.
-- **Planters** (cross-resource → infrastructure): built structures costing *other zones'* goods. Timber frames raise a meadow node's **capacity** (basket size); clay beds speed **regrowth** after a Tend burst; cordage trellises open a **second yield lane** at flower nodes; reed screens steady a dig site's sketch progress. The backward flow that keeps old zones alive forever: Zone 3 timber has a job in Zone 1.
+- **Planters** (cross-resource → infrastructure): built structures costing *other zones'* goods. Timber frames raise a meadow node's **capacity** (basket size); clay beds speed **regrowth** after a Tend burst; cordage trellises open a **second yield lane** at flower nodes; reed screens steady a observation site's sketch progress. The backward flow that keeps old zones alive forever: Zone 3 timber has a job in Zone 1.
 - **Bootstrap:** the warden's trickle at their post self-funds a virgin node's first replant. Presence, not currency (decided 2026-07-17).
 - **No Renown.** Replanting pays you back in yield; the land's memory (§9) is reserved for what you gave *up*. Dev-facing: replanting is the most on-theme verb in the game — the wardens are the land's experiment in trying again, and this is the trying. It earns tone, not numbers.
 - Richness and planters **reset at Migration**. One Almanac node — *The First Planting* — lets a single planter survive the fold: the land keeping something you built, for once.
@@ -156,7 +156,7 @@ Gifts are *recruitment events* — one pile, one yes — keeping the <60s first-
 | Soft paws          | +1pt Pristine chance at its node           | takes nothing it bruises                 |
 | Deep pockets       | +25% throughput when it holds the trail post | cheeks like saddlebags                 |
 | Green claw         | its node's planters regrow 25% faster      | the land likes how it digs               |
-| Patient digger     | +dig speed at dig sites                    | was going to dig anyway                  |
+| Patient watcher     | +observation speed at observation sites                    | was going to dig anyway                  |
 | Early riser        | its node's offline earnings +20%           | up before the warden, always             |
 
 **Roster > slots.** The **roster** is every familiar ever befriended — gift events, keystones, Museum sets, zone arrivals — each with its own plate. Only slotted familiars work. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play*.
@@ -190,8 +190,8 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Firecraft**  | Survival crafting | Berries, nuts, mushrooms, fish   | Preserves, skewers, meals; torches    | MVP   |
 | **Forgecraft** | Survival crafting | Ores, timber (charcoal), clay    | Ingots → every tool tier; fittings    | MVP   |
 | **Bushcraft**  | Survival crafting | Timber, fibres, reeds, clay      | Cordage, planks, baskets; **planters**; gear | MVP |
-| **Excavation** | Collection        | Dig sites (Zones 3+)             | Field sketches (fossil portions), amber | MVP |
-| **Curation**   | Collection        | Pristine specimens, fossil plates | Folio fixings, spread bonuses         | MVP   |
+| **Observation** | Collection       | Observation sites (Zones 3+)     | Field sketches (insect-plate portions), amber | MVP |
+| **Curation**   | Collection        | Pristine specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
 | **Apothecary** | Survival crafting | Herbs, peat, fungi               | Tinctures (buff consumables)          | v1.1  |
 | **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool                            | v1.2  |
@@ -247,23 +247,25 @@ Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **
 
 **The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — and one MVP spread grants crew slot 5's moment (§4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
 
-### Fossils — the deep chase (uncover · record · rebury — DECIDED 2026-07-18)
+### Insects — the deep chase (observe · sketch · release — DECIDED 2026-07-21)
 
-The one system that used to take. It doesn't anymore: **nothing dug up is kept.** From Zone 3, dig sites hold skeletons and worked stone *sleeping in the strata*. Agents set to Excavation slowly uncover them, portion by portion; each portion uncovered yields a **field sketch** — a rubbing in the warden's hand — and then the soil is closed over it again. **The Deep Pages are a book of rubbings, not a drawer of bones.** The collection is knowledge; the ground keeps its dead.
+The one system that used to take. It doesn't anymore: **nothing is kept.** From Zone 3, each region has an **observation site** where its rare living things gather — beetles, dragonflies, the pollinators. Familiars set to **Observation** watch and wait; each patient watch adds a **field sketch** — one portion of a plate, drawn in the warden's hand — and then the creature goes on about its life. **The Deep Pages are a book of drawings, not a case of pinned specimens.** The collection is knowledge; the living keep their lives.
 
-- A fossil's plate completes when **all portions are sketched** (3–5 per fossil; pity timer: a portion is guaranteed per 4 h dug). A completed plate grants its **large permanent multiplier** unchanged — the land rewarding *restraint witnessed*: it saw you put them back — and its **lore card**, now literally the finished rubbing and its field note.
-- **The reburial beat:** completing a site's final portion plays as a small sign (the soil settles, the grass leans back over it) — never words. The 1.1 active-play prototype (brush away the soil) becomes the *sketching* moment, and gains an ending.
-- **Amber is the exception, and stays takeable:** hardened sap — the one thing the ground offers that the trees already gave. The premium currency's dig-site source is untouched.
-- **Sketches can be offered.** A verse slot may ask for a field sketch: the page is torn out for the spirits and that portion must be re-uncovered (the pity timer keeps this fair). Giving up the *record* is the steepest offering in the game, priced accordingly in Renown.
+- An insect's plate completes when **all portions are sketched** (3–5 per plate; pity timer: a portion is guaranteed per 4 h watched). A completed plate grants its **large permanent multiplier** unchanged — the land rewarding *attention paid* — and its **lore line**, now literally the finished plate and its field note.
+- **The release beat:** completing a plate's final portion plays as a small sign (the creature lifts, circles once, and is gone) — never words. The 1.1 active-play prototype (hold the frame still, draw the line) *is* the sketching moment, and it has an ending.
+- **Amber is the exception, and stays takeable:** old resin with an ancient insect sealed inside — the one creature the land lets you keep, because it was gone long before you came. Its observation-site source is untouched, and it is the only window the ground still opens onto the deep past.
+- **Sketches can be offered.** A verse slot may ask for a field sketch: the page is torn out for the spirits and that portion must be **re-observed** (the pity timer keeps this fair). Giving up the *record* is the steepest offering in the game, priced accordingly in Renown.
 
-| Fossil plate (MVP)       | Portions | Where                 | Bonus                      | What it whispers                                        |
-| ------------------------ | -------- | --------------------- | -------------------------- | -------------------------------------------------------- |
-| **The Antler Crown**     | 3        | Old-Growth roots      | +10% all yields            | A great elk. Something hunted *it*.                      |
-| **The Sunken Jaw**       | 4        | Riverbank             | +15% fishing, +1% Pristine | A river leviathan. The Silverrun was once an ocean.      |
-| **Those Who Planted**    | 5        | Both sites, rare beds | +20% all yields            | Tools. Worked stone. Hands like yours, much older.       |
-| *The Long Winter strata* | —        | Hollows (v1.1)        | —                          | An ash layer above every bed. Every set below stops there. |
+| Insect plate (MVP)       | Portions | Where                  | Bonus                      | What it whispers                                          |
+| ------------------------ | -------- | ---------------------- | -------------------------- | --------------------------------------------------------- |
+| **The Stag's Herald**    | 3        | Old-Growth Wood        | +10% all yields            | A beetle armoured like something ten times its size. It remembers being feared. |
+| **The Silver Skimmer**   | 4        | Silverrun River        | +15% fishing, +1% Pristine | A damselfly older than the river's name. It has watched the water change and change. |
+| **Those Who Sow**        | 5        | Both sites, rare hours | +20% all yields            | The pollinators. They have tended this land far longer than you, and asked for nothing. |
+| *The deep amber* (v1.1)  | —        | Hollows                | —                          | An insect no one living has seen, held in resin. The world it flew through has ended. |
 
 Target: ~6 plates at MVP, ~30 by 1.2 — each a multiplier *and* a chapter.
+
+> **Note (2026-07-21 reframe):** the collectible was fossils (uncover·record·rebury); it is now living insects (observe·sketch·release), and the deep-time lore that fossils used to carry now rides on **amber** (an ancient insect in resin) and the final waystones. The lore lines above and the §7 backstory are a **draft to re-voice**.
 
 ---
 
@@ -277,7 +279,7 @@ Six delivery channels:
 
 - **Waystones** — one per zone, an inscription revealed on arrival. Two lines, never more. Weathered, second-person, addressed to wardens in general — the *past* speaking.
 - **Verses** — the living land's asks, the *present* speaking. A single line naming its offerings. **No spirit is ever seen.** A completed verse is answered with a sign — the wind turns, the fireflies gather — never with words.
-- **Fossil plates** — the load-bearing lore: the completed rubbing and its field note, trailing off. The Long Winter is only ever visible as an absence.
+- **Insect plates** — the load-bearing lore: the completed rubbing and its field note, trailing off. The Long Winter is only ever visible as an absence.
 - **The Exchange** — the caravan speaks one line per visit, maybe. Dry, oblique, faintly amused. Never answers a question the game lets you ask.
 - **Migration vignettes** — three lines over a dark screen. Twelve words.
 - **Plate inscriptions** — a familiar's plate gains a margin line at Kinship milestones, in the warden's hand. The only channel about *individuals*, budgeted inside the 1,200.
@@ -290,10 +292,10 @@ Six delivery channels:
 > — *Waystone · Old-Growth Wood*
 > What you carry is borrowed. Set some down, and see what follows you home.
 > — *First verse · the fire circle, Sunfield Meadow*
-> A crown of bone for a king of no kingdom. The meadow remembers being afraid, and will not say of what.
-> — *Fossil plate · The Antler Crown*
-> Put it back the way you found it. It was sleeping.
-> — *margin note · the first reburial*
+> Antlers on a beetle no longer than your thumb. It fought something once, or meant to.
+> — *Insect plate · The Stag's Herald*
+> Hold still. Let it finish and go — the drawing is enough.
+> — *margin note · the first release*
 > Sell me nothing you would weep to lose. I do not give refunds, and the land does not either.
 > — *the caravan, at the Exchange*
 > The meadow does not need you. It is letting you help.
@@ -306,7 +308,7 @@ Six delivery channels:
 
 ### The authorial truth (dev-facing — never stated in game)
 
-Long before the game begins, a civilization — *Those Who Planted* — worked this land the way the player does, and did not stop. Their taking outran the land's giving, and the Long Winter answered: the ash layer above every fossil bed. The wilderness that regrew is not wilderness; it is a survivor, and it is watching. The wardens are its long experiment in trying again — Verdure is the land's memory of careful hands, **Kinship is a creature's** (the experiment watching back, up close, and deciding it likes you), and Migration happens on the land's terms: that is what the Rite is. The late-game implication, assembled only from the deep fossil sets and the final waystones: the warden order descends from Those Who Planted. You are the apology. Replanting is the apology *practiced*.
+Long before the game begins, a civilization — *Those Who Planted* — worked this land the way the player does, and did not stop. Their taking outran the land's giving, and the Long Winter answered: the ash line the deepest amber is sealed beneath. The wilderness that regrew is not wilderness; it is a survivor, and it is watching. The wardens are its long experiment in trying again — Verdure is the land's memory of careful hands, **Kinship is a creature's** (the experiment watching back, up close, and deciding it likes you), and Migration happens on the land's terms: that is what the Rite is. The late-game implication, assembled only from the deepest amber and the final waystones: the warden order descends from Those Who Planted. You are the apology. Replanting is the apology *practiced*.
 
 ### Writing rules
 
@@ -330,12 +332,12 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 
 ### Migration
 
-When the Rite completes and the region slows, the camp folds. Levels, builds, richness, planters, buildings, gear, kit, and zone progress reset. You keep **the journal entire** — Compendium, Folio spreads, fossil plates — plus the roster and every **Kinship** level, Amber, and newly banked **Verdure**.
+When the Rite completes and the region slows, the camp folds. Levels, builds, richness, planters, buildings, gear, kit, and zone progress reset. You keep **the journal entire** — Compendium, Folio spreads, insect plates — plus the roster and every **Kinship** level, Amber, and newly banked **Verdure**.
 
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
-- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, dig speed, auto-craft, zone skips, crew slot 4, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
+- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, crew slot 4, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
-- **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +dig speed) flavour each run and feed the Rite generator.
+- **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed) flavour each run and feed the Rite generator.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
 
 ### When to migrate — DECIDED (2026-07-18): the fold forecast is the decision
@@ -369,7 +371,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 | ----------- | ---------------- | ------------------------------------------------------- | --------------------------------------------- |
 | **Renown**  | Per-run score    | All XP earned (warden + familiars) + offering credits   | None — the measure, not a wallet              |
 | **Verdure** | Meta (permanent) | Migration (√ of Renown)                                 | Almanac nodes; +2%/pt passive                 |
-| **Amber**   | Hard / premium   | IAP, dig sites, rewarded ads, weekly Play Games Reward  | Time-skips, cosmetics, extra craft queues     |
+| **Amber**   | Hard / premium   | IAP, observation sites, rewarded ads, weekly Play Games Reward  | Time-skips, cosmetics, extra craft queues     |
 | *(Goods)*   | Everything else  | Gathering, crafting                                     | Kit · Exchange · offerings · replanting/planters · buildings · provisions — six sinks competing |
 
 ### Formulas
@@ -377,7 +379,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 ```
 yield/sec         = Σ stationed agents · specMult · richnessMult(node) · planterMult
                     · toolMult · gearMult · (1 + 0.05·mastery) · global
-global            = (1 + 0.02·Verdure) · almanac · museumSets · fossils · boosts
+global            = (1 + 0.02·Verdure) · almanac · museumSets · insects · boosts
 richnessMult(node)= 1 + 0.10 · richnessLevel
 replantCost(n, L) = base · r^L                      node's own resource; per node, per run
 planterCost(tier) = material bundle                 authored per planter type
@@ -396,12 +398,12 @@ Renown            = lifetime XP (warden + familiar) + offering credits (at trade
 verdureGain       = floor( √( Renown / K ) )        K tuned to the XP scale
 offlineEarn       = Σ per node: min(gather, trail rate) · min(t, cap)   wanderers ×0.5; unheld trail ×0.5 lane
 pristineChance    = (0.5% + fieldPress + almanac) · (1 + tendingBonus)
-sketchProgress    = dig agents · digSpeed · strataRarity        pity: portion sketched / 4 h dug
+sketchProgress    = watchers · siteSpeed · rarity              pity: portion sketched / 4 h watched
 verseDemand(m)    = baseQty · d^m · modifierWeight
 spotlight(m)      = rotate(crafts, m + regionSeed)
 ```
 
-The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown ≈ 2× Verdure); offerings crediting Renown in full means the Rite never taxes prestige; Kinship's matching √ means both permanent tracks decelerate in step (§8); the fossil pity timer keeps the deep chase strictly fair.
+The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown ≈ 2× Verdure); offerings crediting Renown in full means the Rite never taxes prestige; Kinship's matching √ means both permanent tracks decelerate in step (§8); the observation pity timer keeps the deep chase strictly fair.
 
 ### Run 1 Rite — paper prototype (placeholder quantities; structure is the shipped run-1 tutorial)
 
@@ -409,7 +411,7 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 | ------------------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
 | 1 · the fire circle, Sunfield   | Foraging              | Berries ×300 · wildflowers ×150 · fibres ×200 · Tend 25 times · 1 Fine specimen          |
 | 2 · the hollow oak, Bramble     | Firecraft, Mining     | Berry Preserves ×8 · nuts ×400 · copper ingots ×5 · herbs ×300 · 1 Fine specimen         |
-| 3 · the oldest root, Old-Growth | Bushcraft, Forgecraft | Planks ×20 · cordage ×12 · Skewers ×12 · bronze ingots ×4 · 1 field sketch (torn out — re-uncover the portion) |
+| 3 · the oldest root, Old-Growth | Bushcraft, Forgecraft | Planks ×20 · cordage ×12 · Skewers ×12 · bronze ingots ×4 · 1 field sketch (torn out — re-observe the portion) |
 | 4 · the river bend, Silverrun   | Fishing               | Fish ×500 · Smoked Trout ×20 · clay ×300 · iron ingots ×6 · 1 Pristine specimen          |
 
 ### Pacing targets
@@ -425,12 +427,12 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 | First recipe cooked                             | ~20 min     | Second system online                                        |
 | Verse 1 complete                                | ~30 min     | First sign from the land — and it unlocks the gift event    |
 | Third familiar gifted                           | ~45–60 min  | Assignment outgrows the crew; the puzzle begins             |
-| Zone 3: Logging + first dig site                | ~50 min     | Parallel skills; fossil hook                                |
+| Zone 3: Logging + first observation site                | ~50 min     | Parallel skills; insect hook                                |
 | First portion sketched                          | ~Day 1      | The long chase starts                                       |
 | Fold forecast visible (Almanac Desk)            | Day 1       | Meta-math revealed early                                    |
 | Rite complete + first Migration (~10 Verdure)   | Day 1–2     | Hook set before the day-3 churn window                      |
 | First Kinship conversion seen                   | Day 1–2     | The two-track promise proven at the first fold              |
-| First plate completed (Antler Crown)            | ~Week 1     | First lore payoff + big multiplier — and the first reburial |
+| First plate completed (Stag's Herald)           | ~Week 1     | First lore payoff + big multiplier — and the first release |
 
 ---
 
@@ -452,7 +454,7 @@ Familiar slots arrive by event (§4), never purchase; the **Hauling** track buys
 | 8  | Copper Sickle                | Tools      | Foraging 12     | Copper ingots ×5                     | Foraging yield ×2                                    |
 | 9  | Root Cellar                  | Camp       | —               | Stone ×80, timber ×20 (Exchange)     | Offline cap 4 h → 6 h                                |
 | 10 | Preserving Jars              | Firecraft  | Firecraft 10    | Clay via Exchange, herbs ×80         | Preserve barter weight +50%                          |
-| 11 | Trail Map: Old-Growth Wood   | Trail      | Copper tools    | Provisions bundle                    | Unlock Zone 3 + Logging + **first dig site**         |
+| 11 | Trail Map: Old-Growth Wood   | Trail      | Copper tools    | Provisions bundle                    | Unlock Zone 3 + Logging + **first observation site**         |
 | 12 | Bronze Hatchet               | Tools      | Logging 5       | Bronze ingots ×5                     | Logging yield ×2                                     |
 | 13 | Stag Harness                 | Hauling    | Bushcraft 12    | Cordage ×10, timber ×40              | Carry capacity ×2                                    |
 | 14 | Carving Bench                | Camp       | —               | Timber ×60, stone ×30                | Unlock Bushcraft + Plank, Cordage & **Planter** recipes |
@@ -462,9 +464,9 @@ Familiar slots arrive by event (§4), never purchase; the **Hauling** track buys
 | 18 | Bellows Forge                | Camp       | Forgecraft 15   | Planks ×30, clay ×80, copper ×10     | Forge L2: iron heat; Forgecraft speed ×2             |
 | 19 | Wagon                        | Hauling    | Bushcraft 20    | Planks ×40, iron fittings ×4         | Carry capacity ×2                                    |
 | 20 | Smokehouse                   | Camp       | —               | Planks ×50, clay ×120, stone ×60     | Offline cap 6 h → 8 h                                |
-| 21 | Trail Map: Silverrun River   | Trail      | Bronze tools    | Provisions bundle                    | Unlock Zone 4 + Fishing + riverbank dig site         |
+| 21 | Trail Map: Silverrun River   | Trail      | Bronze tools    | Provisions bundle                    | Unlock Zone 4 + Fishing + riverbank observation site         |
 | 22 | Iron Toolset                 | Tools      | 3 crafts @ 20   | Iron ingots ×8                       | Foraging, Logging & Mining ×2                        |
-| 23 | Brush Screens                | Excavation | Excavation 8    | Reeds ×80, planks ×20                | Dig speed ×2                                         |
+| 23 | Brush Screens                | Entomology | Entomology 8    | Reeds ×80, planks ×20                | Observation speed ×2                                         |
 | 24 | Smoking Racks + Willow Rod   | Firecraft  | Firecraft 28    | Timber ×80, reeds ×60                | Smoked Trout recipe; Fishing ×2                      |
 | 25 | Reed Weaving                 | Bushcraft  | Bushcraft 30    | Reeds ×150, cordage ×20              | Reed Basket recipe (densest barter weight)           |
 | 26 | Pressing Boards              | Compendium | Curation 15     | Planks ×60, iron fittings ×6         | Folio spread bonuses ×1.5                            |
@@ -512,7 +514,7 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | PGS v2 SDK, init at startup                                   | Unity plugin, initialized in bootstrap scene                                                                                    | 0     |
 | Achievements (10 min / 40+ rec / 4 in first hour)             | 40+ from zones, crafts, spreads, plates, verses, Rites, Migrations, Kinship milestones, powerup builds; first-hour four per §10   | 5     |
-| Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)    | Resources gathered (competitive) · deepest zone, Rites completed (progression) · verses · recipes · specimens · fossil plates · Migrations · Renown earned | 5     |
+| Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)    | Resources gathered (competitive) · deepest zone, Rites completed (progression) · verses · recipes · specimens · insect plates · Migrations · Renown earned | 5     |
 | Cloud save + conflict policy                                  | Saved Games API (<100 KB); conflict = highest lifetime Renown wins, prompt on tie                                               | 5     |
 | Sidekick overlay                                              | App Bundle + Play Console toggle; test early                                                                                    | 5     |
 | Rewards items (2 single-use / 1 repeatable)                   | Cloak, Spare Wing, Weekly Amber Cache                                                                                           | 6     |
@@ -532,7 +534,7 @@ Reference: [Google Play Level Up guidelines](https://developer.android.com/games
 
 ## 13 · MVP development plan
 
-Solo, part-time. Each phase ends at a **gate** — a concrete question answered before more is built. MVP = zones 1–4, nine crafts, the small flock with powerups and Kinship, the warden's kit, the ore→ingot→tool chain, replanting & planters, the Exchange, the four-verse Rite (authored + generator), 6 fossils, Migration + 12-node Almanac, 1–2 bonded familiars, Compendium v1 with roster plates, ~1,200 words, a launch onboarding pass, full PGS layer, monetization.
+Solo, part-time. Each phase ends at a **gate** — a concrete question answered before more is built. MVP = zones 1–4, nine crafts, the small flock with powerups and Kinship, the warden's kit, the ore→ingot→tool chain, replanting & planters, the Exchange, the four-verse Rite (authored + generator), 6 insects, Migration + 12-node Almanac, 1–2 bonded familiars, Compendium v1 with roster plates, ~1,200 words, a launch onboarding pass, full PGS layer, monetization.
 
 ### Phase 0 — Foundations (1–2 wks)
 
@@ -569,7 +571,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **The Exchange in full:** derived rate table, spread, player-favour rounding; provisions bundles
 - **Familiar system in full:** XP at post, deterministic species pools (content-filtered), powerup choice UI, roster & fielding
 - **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; validator extended to stationing-aware ≥3-reachable-slots analysis
-- Excavation as **uncover · sketch · rebury**: two dig sites, portion pity timer, three fossil plates, the reburial beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per haul batch; Folio spreads
+- Observation as **observe · sketch · release**: two observation sites, portion pity timer, three insect plates, the release beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per haul batch; Folio spreads
 - Familiar world-sprites (static + light bob is fine) — creatures at posts, the trail post's runner on the trail, baskets overflowing
 - Waystones 1–4, verse lines, caravan lines + the **teaching pass** (each system's first margin note is its instruction, §7)
 - Upgrades 4–30 recosted; balance spreadsheet vs. §9 pacing targets — including Rite demands, **offline magnitude for a small crew**, and the **hour-six spend proof** (a run's sixth hour must always have a meaningful next purchase). Seed model shipped with this revision (`economy-model.xlsx`): the proof **passes on defaults**, with the building lines holding the 10–90 min purchase band all run; per-level replants go trivial after H2, so raise `r` toward ~1.5 or sell replants in batches before this becomes the late-run lever. Solved starting constants: K ≈ 425, K_f ≈ 650 (derived from the pacing targets, recomputed automatically as inputs move)
@@ -611,7 +613,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 
 **Before Phase 1 ends**
 - **Readability without Coin** — the gate question. Fallback: a cosmetic skin over Renown, never a wallet.
-- **Active-play depth:** ship Tending only; prototype the brush-away-to-sketch dig reveal at 1.1 — doubly tempting now, since the sketch *is* the fossil moment and reburial gives it an ending.
+- **Active-play depth:** ship Tending only; prototype the hold-still-to-sketch observation reveal at 1.1 — doubly tempting now, since the sketch *is* the insect moment and release gives it an ending.
 - **Name:** "Wildgrove" is a working title — check Play Store collisions and trademark before the listing.
 
 **Before Phase 3**
@@ -630,5 +632,5 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Generator guardrails:** slot spread, spotlight-vs-unlock order, quantity clamps, final-verse reachability under stationing, and powerup-pool coverage (simplified by deterministic pools) — spreadsheet proof across runs 2–10 before it ships.
 
 **Carried**
-- **Narrative volume:** 1,200 words is a ceiling. If playtesters want more story, the answer is more fossils, not more words per fossil.
+- **Narrative volume:** 1,200 words is a ceiling. If playtesters want more story, the answer is more insects, not more words per insect.
 - **Waystone vs. verse-site legibility:** the past and the present must read as distinct objects on a zone screen. Check in the Phase 3 playtest.

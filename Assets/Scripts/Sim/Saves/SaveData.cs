@@ -82,14 +82,14 @@ namespace Wildgrove.Sim.Saves
 
         public List<SavedNode> nodes = new List<SavedNode>();
 
-        /// <summary>v9+: dig sites and their pity timers (absent before excavation — sites resync from owned upgrades).</summary>
+        /// <summary>v9+: observation sites and their pity timers (absent before the observation system — sites resync from owned upgrades).</summary>
         public List<SavedDigSite> digSites = new List<SavedDigSite>();
 
         /// <summary>v23+: planters built this run (design §3), each attached to a node or dig site (absent before — none built).</summary>
         public List<SavedPlanter> builtPlanters = new List<SavedPlanter>();
 
-        /// <summary>v9+: fossil fragments surfaced, per fossil id (absent before excavation — nothing found yet).</summary>
-        public List<SavedFossilFragments> fossilFragments = new List<SavedFossilFragments>();
+        /// <summary>v9+: field sketches recorded, per insect id (absent before the observation system — nothing recorded yet). Renamed from v23's fossilFragments — the collectible changed entirely (§6), so old fossil progress does not carry.</summary>
+        public List<SavedInsectSketches> insectSketches = new List<SavedInsectSketches>();
 
         /// <summary>v10+: warden deed counts (absent before the Rite runtime).</summary>
         public List<SavedDeedCount> deedCounts = new List<SavedDeedCount>();
@@ -184,12 +184,12 @@ namespace Wildgrove.Sim.Saves
         public string targetId;
     }
 
-    /// <summary>Fragments surfaced toward one fossil.</summary>
+    /// <summary>Field sketches recorded of one insect (design §6).</summary>
     [Serializable]
-    public sealed class SavedFossilFragments
+    public sealed class SavedInsectSketches
     {
         public string id;
-        public int fragments;
+        public int sketches;
     }
 
     /// <summary>Bought levels of one camp building line (§9 milestone upgrades live in purchasedUpgradeIds).</summary>

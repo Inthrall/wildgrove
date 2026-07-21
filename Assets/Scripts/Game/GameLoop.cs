@@ -629,18 +629,18 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>Offer one dug fossil fragment into a fragment slot — a real sacrifice from the dig chase. Returns true when one was given.</summary>
-        public bool OfferFragment(RiteVerseData verse, int slotIndex)
+        /// <summary>Offer one field sketch into a sketch slot — the page is torn out for the spirits, so that portion must be re-observed (design §6). Returns true when one was given.</summary>
+        public bool OfferSketch(RiteVerseData verse, int slotIndex)
         {
             var wasComplete = Rite.IsVerseComplete(State, Data, verse);
-            var fossilId = Rite.DeliverFragment(State, Data, verse, slotIndex);
-            if (fossilId == null)
+            var insectId = Rite.DeliverSketch(State, Data, verse, slotIndex);
+            if (insectId == null)
             {
                 return false;
             }
 
             Telemetry.LogEvent("offering_made",
-                ("verse", verse.id), ("slot", slotIndex), ("fragment_from", fossilId));
+                ("verse", verse.id), ("slot", slotIndex), ("sketch_from", insectId));
             AfterOffering(verse, wasComplete);
             return true;
         }

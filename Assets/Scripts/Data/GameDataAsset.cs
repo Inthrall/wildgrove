@@ -24,7 +24,7 @@ namespace Wildgrove.Data
         public List<RecipeData> recipes = new List<RecipeData>();
         public List<BuildingData> buildings = new List<BuildingData>();
         public List<GearData> gear = new List<GearData>();
-        public List<FossilData> fossils = new List<FossilData>();
+        public List<InsectData> insects = new List<InsectData>();
         public List<AlmanacNodeData> almanac = new List<AlmanacNodeData>();
         public List<FolioSpreadData> folioSpreads = new List<FolioSpreadData>();
         public List<BondData> bonds = new List<BondData>();
@@ -40,7 +40,7 @@ namespace Wildgrove.Data
         private Dictionary<string, RecipeData> recipesById;
         private Dictionary<string, BuildingData> buildingsById;
         private Dictionary<string, GearData> gearById;
-        private Dictionary<string, FossilData> fossilsById;
+        private Dictionary<string, InsectData> insectsById;
         private Dictionary<string, AlmanacNodeData> almanacById;
         private Dictionary<string, SpeciesData> speciesById;
         private Dictionary<string, PlanterData> plantersById;
@@ -51,7 +51,7 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, RecipeData> RecipesById => recipesById ??= Index(recipes, r => r.id);
         public IReadOnlyDictionary<string, BuildingData> BuildingsById => buildingsById ??= Index(buildings, b => b.id);
         public IReadOnlyDictionary<string, GearData> GearById => gearById ??= Index(gear, g => g.id);
-        public IReadOnlyDictionary<string, FossilData> FossilsById => fossilsById ??= Index(fossils, f => f.id);
+        public IReadOnlyDictionary<string, InsectData> InsectsById => insectsById ??= Index(insects, f => f.id);
         public IReadOnlyDictionary<string, AlmanacNodeData> AlmanacById => almanacById ??= Index(almanac, a => a.id);
         public IReadOnlyDictionary<string, SpeciesData> SpeciesById => speciesById ??= Index(species, s => s.id);
         public IReadOnlyDictionary<string, PlanterData> PlantersById => plantersById ??= Index(planters, p => p.id);

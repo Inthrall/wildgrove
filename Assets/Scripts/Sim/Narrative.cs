@@ -26,10 +26,10 @@ namespace Wildgrove.Sim
             return Find(data.dialogue?.verses, zoneId);
         }
 
-        /// <summary>The assembled fossil's card line, or null when unauthored.</summary>
-        public static string FossilCard(GameDataAsset data, string fossilId)
+        /// <summary>The recorded insect plate's lore line, or null when unauthored.</summary>
+        public static string InsectPlate(GameDataAsset data, string insectId)
         {
-            return Find(data.dialogue?.fossilCards, fossilId);
+            return Find(data.dialogue?.insectPlates, insectId);
         }
 
         /// <summary>

@@ -100,7 +100,7 @@ namespace Wildgrove.EditorTools
 
         /// <summary>
         /// A camp worth photographing: three zones open, flocks working,
-        /// specimens banked, a fossil half-dug, the Rite part-sung.
+        /// specimens banked, an insect plate half-sketched, the Rite part-sung.
         /// </summary>
         private static GameState StageShowcaseState(GameDataAsset data)
         {
@@ -166,7 +166,7 @@ namespace Wildgrove.EditorTools
                 }
             }
 
-            state.fossilFragments["antler-crown"] = 2;
+            state.insectSketches["stags-herald"] = 2;
             state.deedCounts["tend"] = 14;
             state.wardenPostNodeId = state.nodes.Count > 1 ? state.nodes[1].id : null;
 

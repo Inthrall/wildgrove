@@ -8,7 +8,7 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Builds the Rite for runs 2+ (design §7/§8). The authored first Rite is
     /// the template: each generated verse keeps its zone, its slot shape (how
-    /// many goods slots, which deed/specimen/fragment slots) and its value
+    /// many goods slots, which deed/specimen/sketch slots) and its value
     /// anchor — but re-picks WHAT the land asks for from the content
     /// available by that zone's point in the run, rotates the spotlight by
     /// migration count (spotlight(m) = rotate(skills, m)), and scales demand
@@ -109,7 +109,7 @@ namespace Wildgrove.Sim
             }
 
             // Rebuild in template order: goods slots take the picks, the
-            // special slots (deed/specimen/fragment) keep their authored
+            // special slots (deed/specimen/sketch) keep their authored
             // shape with the grant scaled to this run's demand.
             var verse = new RiteVerseData
             {
@@ -134,7 +134,7 @@ namespace Wildgrove.Sim
                         type = slot.type,
                         deed = slot.deed,
                         quality = slot.quality,
-                        // Deed/specimen/fragment counts stay authored — they
+                        // Deed/specimen/sketch counts stay authored — they
                         // price in taps and luck, not goods; only the Renown
                         // they're worth grows with the run.
                         count = slot.count,

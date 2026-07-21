@@ -68,9 +68,9 @@ namespace Wildgrove.Sim.Tests
                     new StringEntry { key = GameStateFactory.StartingZoneId, text = "What you carry is borrowed." },
                     new StringEntry { key = "bramble", text = "   " },
                 },
-                fossilCards =
+                insectPlates =
                 {
-                    new StringEntry { key = "antler-crown", text = "The meadow remembers." },
+                    new StringEntry { key = "stags-herald", text = "The meadow remembers." },
                 },
             };
         }
@@ -125,8 +125,8 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Narrative.VerseLine(_data, "bramble"), Is.Null, "whitespace is unauthored, not content");
             Assert.That(Narrative.VerseLine(_data, "nowhere"), Is.Null);
             Assert.That(Narrative.WaystoneText(_data, "bramble"), Is.EqualTo("The stone does not grow back."));
-            Assert.That(Narrative.FossilCard(_data, "antler-crown"), Is.EqualTo("The meadow remembers."));
-            Assert.That(Narrative.FossilCard(_data, "sunken-jaw"), Is.Null);
+            Assert.That(Narrative.InsectPlate(_data, "stags-herald"), Is.EqualTo("The meadow remembers."));
+            Assert.That(Narrative.InsectPlate(_data, "silver-skimmer"), Is.Null);
         }
     }
 }
