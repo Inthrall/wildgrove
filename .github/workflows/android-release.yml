@@ -1,7 +1,10 @@
 name: Android Release
 
-# Manually-triggered signed release build. Produces a signed .aab, attaches it
-# to a GitHub Release, and (optionally) uploads it to a Google Play track.
+# Signed release build: EditMode tests gate a signed .aab, which is attached
+# to a GitHub Release and uploaded to a Google Play track.
+#
+# Runs on every push to main (auto versionCode, internal track) and by manual
+# dispatch when a specific versionCode/versionName/track is needed.
 #
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD - as for android-build.yml
@@ -16,6 +19,12 @@ name: Android Release
 # Play registers it from the first upload and rejects anything else after that.
 
 on:
+  # Every push to main ships: tests, then a signed build to the internal
+  # track. Dispatch inputs are empty on push events — the resolve steps
+  # below fall back to auto versionCode / internal track.
+  push:
+    branches: [main]
+    paths: ["Assets/**", "Packages/**", "ProjectSettings/**", "design/data/**", ".github/workflows/android-release.yml"]
   workflow_dispatch:
     inputs:
       versionCode:
@@ -42,8 +51,9 @@ on:
           - beta
           - production
 
-# Two concurrent blank-versionCode dispatches would resolve the same number
-# and race the tag + Play upload — queue them instead.
+# Two concurrent blank-versionCode runs (rapid pushes, or a push racing a
+# dispatch) would resolve the same number and race the tag + Play upload —
+# queue them instead.
 concurrency:
   group: android-release
   cancel-in-progress: false
@@ -125,6 +135,23 @@ jobs:
       # committed — fetch them before anything hashes or resolves Packages/.
       - name: Fetch Google packages
         run: bash tools/fetch-google-packages.sh
+
+      # Push events carry no inputs — they always upload, to the internal
+      # track. Dispatches use whatever the form said.
+      - name: Resolve release channel
+        id: channel
+        env:
+          EVENT: ${{ github.event_name }}
+          UPLOAD_INPUT: ${{ inputs.uploadToPlay }}
+          TRACK_INPUT: ${{ inputs.track }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+            echo "track=internal" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=$UPLOAD_INPUT" >> "$GITHUB_OUTPUT"
+            echo "track=$TRACK_INPUT" >> "$GITHUB_OUTPUT"
+          fi
 
       # Inputs reach the shell via env, never inline interpolation — a crafted
       # input must not become shell syntax — and are validated before use.
@@ -241,12 +268,12 @@ jobs:
               --title "Android v${{ steps.vc.outputs.versionCode }} (${{ steps.ver.outputs.versionName }})" \
               --notes "Signed Android App Bundle of Wildgrove.
 
-          Uploaded to Play track: ${{ inputs.uploadToPlay && inputs.track || 'not uploaded' }}."
+          Uploaded to Play track: ${{ steps.channel.outputs.upload == 'true' && steps.channel.outputs.track || 'not uploaded' }}."
           fi
 
       # Pinned by SHA — this action receives the Play service-account key.
       - name: Upload to Google Play
-        if: ${{ inputs.uploadToPlay }}
+        if: ${{ steps.channel.outputs.upload == 'true' }}
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -254,5 +281,5 @@ jobs:
           releaseFiles: build/Android/Wildgrove-v${{ steps.vc.outputs.versionCode }}.aab
           debugSymbols: ${{ steps.files.outputs.symbols }}
           mappingFile: ${{ steps.files.outputs.mapping }}
-          tracks: ${{ inputs.track }}
+          tracks: ${{ steps.channel.outputs.track }}
           status: completed
