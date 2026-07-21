@@ -878,6 +878,13 @@ namespace Wildgrove.Game
                     heading.gameObject.name = "ZoneHeading";
                 }
 
+                // The zone's keystone specimen heads its section (design §3).
+                var keystone = ArtLibrary.ForZone(zone.id);
+                if (keystone != null)
+                {
+                    PlateImage(_body, keystone, 240f).name = "Keystone";
+                }
+
                 foreach (var node in _loop.State.nodes)
                 {
                     if (node.zoneId == zone.id)
@@ -1297,6 +1304,12 @@ namespace Wildgrove.Game
 
             var siteLine = MakeText(card, site, 23, TextAnchor.MiddleCenter, Ink, _serif);
             siteLine.gameObject.name = "Site";
+            var cairn = ArtLibrary.ForJournal("cairn");
+            if (cairn != null)
+            {
+                PlateImage(card, cairn, 200f);
+            }
+
             var verseLine = Narrative.VerseLine(_loop.Data, verse.zone);
             if (!string.IsNullOrEmpty(verseLine))
             {
@@ -1443,6 +1456,12 @@ namespace Wildgrove.Game
                 return;
             }
 
+            var stone = ArtLibrary.ForJournal("waystone");
+            if (stone != null)
+            {
+                PlateImage(_body, stone, 200f).name = "WaystoneMark";
+            }
+
             var footer = MakeText(_body, "<i>“" + text + "”</i>\n" + SizeOpen(14) + "WAYSTONE · " + zone.displayName.ToUpperInvariant() + "</size>",
                 18, TextAnchor.MiddleCenter, Ink2, _serif);
             footer.gameObject.name = "Waystone";
@@ -1471,6 +1490,12 @@ namespace Wildgrove.Game
             {
                 var captured = recipe;
                 var row = Row(card);
+                var goodArt = ArtLibrary.ForGood(captured.output);
+                if (goodArt != null)
+                {
+                    IconImage(row.transform, goodArt, 56f, Color.white);
+                }
+
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
                 var toggle = Button(row.transform, "Craft", 160, () =>
@@ -1567,6 +1592,11 @@ namespace Wildgrove.Game
         {
             var card = Card("THE EXCHANGE");
             MakeText(card, "<i>a caravan idles at the camp edge. it trades; it does not sell.</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
+            var caravan = ArtLibrary.ForJournal("caravan");
+            if (caravan != null)
+            {
+                PlateImage(card, caravan, 200f);
+            }
 
             var tradeable = TradeableResources();
             if (tradeable.Count < 2)
@@ -1721,6 +1751,12 @@ namespace Wildgrove.Game
                 }
 
                 var row = Row(card);
+                var kit = ArtLibrary.ForGear(captured.id);
+                if (kit != null)
+                {
+                    IconImage(row.transform, kit, 64f, Color.white);
+                }
+
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
 
@@ -1778,7 +1814,9 @@ namespace Wildgrove.Game
                     layout.childForceExpandHeight = false;
                     layout.childAlignment = TextAnchor.MiddleLeft;
                     layout.spacing = 10;
-                    IconImage(craftRow.transform, glyph, 40f, Ink);
+                    // Glyphs are baked two-tone sepia — pass white so the ink
+                    // tones show true rather than being multiplied down again.
+                    IconImage(craftRow.transform, glyph, 40f, Color.white);
                     line = MakeText(craftRow.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                     FlexibleWidth(line.gameObject, 1f);
                 }
@@ -2068,6 +2106,14 @@ namespace Wildgrove.Game
                 var captured = insect;
                 if (Insects.IsRecorded(_loop.State, captured))
                 {
+                    // A recorded specimen shows its deep-page plate; unrecorded
+                    // ones stay a mystery (text only), per the design.
+                    var art = ArtLibrary.ForInsect(captured.id);
+                    if (art != null)
+                    {
+                        PlateImage(card, art, 260f);
+                    }
+
                     var plate = Narrative.InsectPlate(_loop.Data, captured.id);
                     MakeText(card, captured.displayName + "  <color=" + MossDeepHex + ">recorded</color>"
                                    + (string.IsNullOrEmpty(plate) ? string.Empty : "\n" + SizeOpen(15) + "<i>" + plate + "</i></size>"),
@@ -2102,6 +2148,12 @@ namespace Wildgrove.Game
             {
                 header.text = Mathf.FloorToInt((float)_loop.AvailableVerdure()) + " Verdure unspent";
             });
+
+            var tree = ArtLibrary.ForJournal("almanac");
+            if (tree != null)
+            {
+                PlateImage(card, tree, 240f);
+            }
 
             foreach (var node in _loop.Data.almanac)
             {

@@ -2,20 +2,22 @@
 
 All source works are public domain (original artworks out of copyright) or openly licensed. Sourced from Wikimedia Commons and cropped/trimmed for use as naturalist plates and UI glyphs. Files live under `Assets/Resources/Art/Plates/` (hero plates: zones, resources, familiars, insects, gear, goods) and `Assets/Resources/Art/UI/` (craft glyphs, journal furniture). They sit under `Resources/` so the runtime `ArtLibrary` can load them by id via `Resources.Load<Sprite>`.
 
-**Attribution required (CC BY):** craft-entomology.png, craft-logging.png, craft-mining.png, insect-deep-amber.jpg, res-amber.jpg, res-peat.jpg. These must carry the attribution string below if shipped; everything else is public-domain equivalent (PD / CC0 / "no known restrictions").
+**Attribution required (CC BY):** craft-entomology.png, craft-mining.png, insect-deep-amber.jpg, res-amber.jpg, res-peat.jpg. These must carry the attribution string below if shipped; everything else is public-domain equivalent (PD / CC0 / "no known restrictions").
+
+*Craft glyphs have been re-baked to a two-tone sepia (HUD ink #3A3126 / #6E6047) for a coherent journal look; the rows below name the original source works.*
 
 | In-game name | File | Original work / artist | Year | Source (Wikimedia Commons) | Licence | Attribution required? |
 |---|---|---|---|---|---|---|
 | Craft Apothecary | craft-apothecary.png | Mortar and pestle with greek cross Pinhead icon.svg — Maki contributors | 2026-02-19 | https://commons.wikimedia.org/w/index.php?curid=185624215 | CC0 | No |
-| Craft Bushcraft | craft-bushcraft.jpg | Granny Knot (PSF).png — Pearson Scott Foresman | 2019-12-01 | https://commons.wikimedia.org/w/index.php?curid=84541954 | Public domain | No |
-| Craft Curation | craft-curation.png | VisualEditor - Icon - Open-book-2.svg — Pointillist | 2013-09-25 12:39:34 | https://commons.wikimedia.org/w/index.php?curid=28554578 | CC0 | No |
+| Craft Bushcraft | craft-bushcraft.png | Granny Knot (PSF).png — Pearson Scott Foresman | 2019-12-01 | https://commons.wikimedia.org/w/index.php?curid=84541954 | Public domain | No |
+| Craft Curation | craft-curation.png | Book Silhouette.svg | | https://commons.wikimedia.org/wiki/File:Book_Silhouette.svg | CC0 | No |
 | Craft Entomology | craft-entomology.png | Butterfly - Lorc - game-icons.svg — Lorc |  | https://commons.wikimedia.org/w/index.php?curid=144127928 | CC BY 3.0 | Yes |
 | Craft Firecraft | craft-firecraft.png | Campfire Pinhead icon.svg — Temaki contributors | 2026-02-19 | https://commons.wikimedia.org/w/index.php?curid=185623603 | CC0 | No |
 | Craft Fishing | craft-fishing.png | Fish under barbed hook Pinhead icon.svg — Quincy Morgan, OSM Carto contributors | 2026-02-19 | https://commons.wikimedia.org/w/index.php?curid=185623899 | CC0 | No |
 | Craft Foraging | craft-foraging.png | Shopping basket Pinhead icon.svg — Maki contributors | 2026-02-19 | https://commons.wikimedia.org/w/index.php?curid=185624773 | CC0 | No |
 | Craft Forgecraft | craft-forgecraft.png | Blacksmith anvil ganson.svg — Gerald_G | 2007-11-14 | https://commons.wikimedia.org/w/index.php?curid=458602 | CC0 | No |
 | Craft Husbandry | craft-husbandry.png | Sheep icon 05.svg — LadyofHats | 2011-08-01 | https://commons.wikimedia.org/w/index.php?curid=15969210 | CC0 | No |
-| Craft Logging | craft-logging.png | Noun Axe 2695653.svg — sbts2018 | 2020-11-28 | https://commons.wikimedia.org/w/index.php?curid=97093073 | CC BY 4.0 | Yes |
+| Craft Logging | craft-logging.png | Ax (PSF).png — Pearson Scott Foresman | | https://commons.wikimedia.org/wiki/File:Ax_(PSF).png | Public domain | No |
 | Craft Mining | craft-mining.png | Pickaxe icon (white).svg — Arthur Shlain - https://thenounproject.com/ArtZ91 | 2019-03-24 | https://commons.wikimedia.org/w/index.php?curid=77540843 | CC BY 3.0 | Yes |
 | Craft Observation | craft-observation.png | Magnifying glass icon mgx2.svg — AlphaZeta | 2011-08-28 | https://commons.wikimedia.org/w/index.php?curid=16256700 | CC0 | No |
 | Hare familiar | familiar-hare.jpg | The handy natural history (Coloured Plate XIII) (5984800981).jpg — Protheroe, Ernest. | 1910 | https://commons.wikimedia.org/w/index.php?curid=43572394 | Public domain | No |
