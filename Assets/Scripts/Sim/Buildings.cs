@@ -10,9 +10,8 @@ namespace Wildgrove.Sim
     /// run owns; the next bought level always costs baseCostCoin ·
     /// costGrowth.building^level, forever. Bought levels each grant the
     /// line's perLevel effect: station craft speed, basket capacity, or the
-    /// roosts line's comfort track (perLevel type "familiarCaps" is the
-    /// legacy marker RoostLevel counts — kith headcount is the §4 slot
-    /// ladder now, not a roost formula).
+    /// Roosts line's comfort (+familiar XP rate while stationed, design §4 —
+    /// kith headcount is the §4 slot ladder, never a roost formula).
     /// Station lines (fire / forge / bench) also gate recipes: a recipe needs
     /// its station's line at ≥ its stationLevel.
     /// </summary>
@@ -147,19 +146,29 @@ namespace Wildgrove.Sim
             return mult;
         }
 
-        /// <summary>The §8 roostLevel: bought levels of lines whose perLevel is familiarCaps.</summary>
-        public static int RoostLevel(GameState state, GameDataAsset data)
+        /// <summary>
+        /// Familiar-comfort XP multiplier from the Roosts line (design §4:
+        /// "the building line levels familiar comfort — +XP rate for all
+        /// stationed familiars per level"): 1 + perLevel value per bought
+        /// level. Wanderers sleep rough — comfort never reaches them.
+        /// </summary>
+        public static double ComfortXpMultiplier(GameState state, GameDataAsset data)
         {
-            var level = 0;
+            var mult = 1.0;
+            if (state == null || data?.buildings == null)
+            {
+                return mult;
+            }
+
             foreach (var building in data.buildings)
             {
-                if (building.perLevel != null && building.perLevel.type == "familiarCaps")
+                if (building.perLevel != null && building.perLevel.type == "comfort")
                 {
-                    level += BoughtLevels(state, building.id);
+                    mult += building.perLevel.value * BoughtLevels(state, building.id);
                 }
             }
 
-            return level;
+            return mult;
         }
     }
 }

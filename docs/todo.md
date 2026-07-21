@@ -71,8 +71,10 @@ is now the kith):**
 - Restore clamps to `slotsMax`, not currently-earned slots — a data retune can
   never quietly drop a companion; excess familiars are dropped, not converted
   to Renown.
-- Roosts `perLevel: "familiarCaps"` marker string kept as the RoostLevel
-  counter (comfort track, unbuilt); rename when Roosts comfort lands.
+- ~~Roosts `perLevel: "familiarCaps"` marker string kept~~ ✅ RESOLVED 2026-07-22:
+  Roosts comfort landed — `perLevel` type renamed to `comfort` with a real value
+  (see the comfort section below); the dead `RoostLevel` counter became
+  `Buildings.ComfortXpMultiplier`.
 
 **IMPLEMENTED 2026-07-22 (the gift event — verse 1 answers back):**
 - ✅ **One pile, one yes (design §4, decided 2026-07-18).** New `Gifts.cs`: once any
@@ -96,17 +98,37 @@ is now the kith):**
   chooses both the resource spent and the newcomer's post.
 - `pileGoods 10` is a first guess; tune so the third familiar lands ~45–60 min (§2).
 
+**IMPLEMENTED 2026-07-22 (Roosts comfort — the building line finally does something):**
+- ✅ **Comfort XP (design §4).** Roosts & Burrows' `perLevel` renamed
+  `familiarCaps` → `comfort` and given a real value (0.1): each bought level
+  grants **+10% familiar XP rate to stationed familiars** —
+  `Buildings.ComfortXpMultiplier` (replaces the dead `RoostLevel` counter),
+  applied in `Familiars.AddPostXp` via `Simulation.AccrueFamiliarXp` (offline
+  catch-up included). Wanderers sleep rough: ×0.5, no comfort. Validator now
+  requires a positive perLevel value on every type.
+- ✅ **Building rows say what a level gives.** HUD `PerLevelGivesLabel`: "each
+  level: +5% craft speed at this station" / "+5% basket capacity" / "+10%
+  familiar XP while posted".
+
+**Interpretations shipped with Roosts comfort (tune/confirm):**
+- `comfort 0.1`/level is a first guess (not in the doc); design §8's
+  postMatch multiplier is still unbuilt — comfort is the only XP-rate lever
+  besides Kinship for now.
+- "Late levels add roster capacity" (§4) deliberately NOT built — headcount
+  stays the slot ladder's job; revisit only if the ladder ever grows sources.
+
 **Interpretations / placeholders shipped with it (tune/confirm):**
 - Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
   flat ×0.5 lane when anyone wanders (`Stationing.cs`).
 - Kinship constants (`Divisor` 1000, `XpRatePerLevel` 0.02) are consts in `Kinship.cs` — move
   to a data section. `economy.familiarXp` {base 60, growth 1.12, xpPerSecond 1} are first guesses.
-- Familiar XP is a flat per-second at any post (no postMatch/comfort multipliers yet, design §8).
+- Familiar XP is a flat per-second at any post (no postMatch multiplier yet, design §8;
+  Roosts comfort landed 2026-07-22).
 - Ungated/material-less upgrades are free once their skill gate opens (§10 material bundles are
   placeholders); building material bundles are placeholders.
 - Kith is fully persisted across Migration (no presence-lapse/benching yet); the slot
   ladder landed 2026-07-21 (six slots, four free — see below); the verse-1 gift-event
-  landed 2026-07-22 (see below); Roosts "comfort" XP is NOT wired.
+  and Roosts comfort XP both landed 2026-07-22 (see below).
 - Pristine "sell" dropped — Pristine is offer/donate only for now.
 
 **IMPLEMENTED 2026-07-21 (the deep chase → living insects; headless suite green):**

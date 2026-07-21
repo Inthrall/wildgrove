@@ -10,7 +10,8 @@ namespace Wildgrove.Sim.Tests
     /// Pins the camp building lines under money→XP (design §9): the level maths
     /// (bought + milestone upgrades), the material-bundle cost curve
     /// (bundle · 1.25^L, paid in goods), and what levels grant — station craft
-    /// speed and basket capacity.
+    /// speed, basket capacity, and Roosts comfort (+familiar XP while posted,
+    /// design §4).
     /// </summary>
     public class BuildingsTests
     {
@@ -49,7 +50,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "roosts", displayName = "Roosts & Burrows",
                     materials = new List<ItemAmount> { new ItemAmount { id = "fibres", amount = 2000 } },
-                    perLevel = new BuildingPerLevelData { type = "familiarCaps" },
+                    perLevel = new BuildingPerLevelData { type = "comfort", value = 0.1 },
                 },
             };
         }
@@ -167,6 +168,37 @@ namespace Wildgrove.Sim.Tests
 
             state.buildingLevels["store"] = 3;
             Assert.That(Buildings.BasketCapacityMultiplier(state, _data), Is.EqualTo(1.3).Within(Tolerance));
+        }
+
+        [Test]
+        public void ComfortXpMultiplier_GrowsWithRoostLevels()
+        {
+            var state = new GameState();
+            Assert.That(Buildings.ComfortXpMultiplier(state, _data), Is.EqualTo(1.0).Within(Tolerance));
+
+            state.buildingLevels["roosts"] = 2;
+            Assert.That(Buildings.ComfortXpMultiplier(state, _data), Is.EqualTo(1.2).Within(Tolerance));
+        }
+
+        [Test]
+        public void AddPostXp_ComfortReachesTheStationed_NeverTheWandering()
+        {
+            _data.economy.familiarXp = new EconomyData.FamiliarXpData
+            {
+                baseXp = 60, growth = 1.12, maxLevel = 99, xpPerSecond = 1.0,
+                kinshipDivisor = 1000, kinshipXpRatePerLevel = 0.02,
+            };
+            var state = new GameState();
+            state.buildingLevels["roosts"] = 2;
+            var comfort = Buildings.ComfortXpMultiplier(state, _data);
+            var posted = new Familiar { id = "fam-1", speciesId = "meadow-vole", stationId = "node-1" };
+            var wanderer = new Familiar { id = "fam-2", speciesId = "meadow-vole" };
+
+            Familiars.AddPostXp(state, _data, posted, 1.0, 10.0, comfort);
+            Familiars.AddPostXp(state, _data, wanderer, 1.0, 10.0, comfort);
+
+            Assert.That(posted.xp, Is.EqualTo(12.0).Within(Tolerance), "10s · 1/s · 1.2 comfort");
+            Assert.That(wanderer.xp, Is.EqualTo(5.0).Within(Tolerance), "wanderers sleep rough — ×0.5, no comfort");
         }
     }
 }

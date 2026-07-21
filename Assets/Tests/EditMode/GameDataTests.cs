@@ -58,7 +58,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
             Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
-            Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("familiarCaps"));
+            Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("comfort"), "Roosts levels familiar comfort (design §4)");
+            Assert.That(data.BuildingsById["roosts"].PerLevel.Value, Is.GreaterThan(0));
             Assert.That(data.RecipesById["iron-ingot"].StationLevel, Is.EqualTo(2), "iron heat is forge 2");
             Assert.That(data.RecipesById["copper-ingot"].StationLevel, Is.EqualTo(1), "absent stationLevel defaults to 1");
             Assert.That(data.RecipesById["iron-ingot"].SkillLevel, Is.EqualTo(5), "iron smelting waits for forgecraft 5");

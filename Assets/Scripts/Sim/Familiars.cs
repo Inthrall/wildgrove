@@ -113,10 +113,12 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Credit run XP to a familiar at its post (design §4), clamped at the
         /// max level's total, and mirror the gain into Renown (§9 — money becomes
-        /// XP). Wandering earns half (§2). Applied to every roster familiar each
-        /// tick; <paramref name="perSecond"/> is economy.familiarXp.xpPerSecond.
+        /// XP). Wandering earns half (§2) and sleeps rough — Roosts comfort
+        /// (<paramref name="comfortMultiplier"/>, §4) reaches stationed familiars
+        /// only. Applied to every roster familiar each tick;
+        /// <paramref name="perSecond"/> is economy.familiarXp.xpPerSecond.
         /// </summary>
-        public static void AddPostXp(GameState state, GameDataAsset data, Familiar familiar, double perSecond, double seconds)
+        public static void AddPostXp(GameState state, GameDataAsset data, Familiar familiar, double perSecond, double seconds, double comfortMultiplier = 1.0)
         {
             var xp = data.economy?.familiarXp;
             if (xp == null || familiar == null || perSecond <= 0.0 || seconds <= 0.0)
@@ -125,7 +127,7 @@ namespace Wildgrove.Sim
             }
 
             var amount = perSecond * seconds
-                         * (familiar.IsWandering ? Stationing.WanderMultiplier : 1.0)
+                         * (familiar.IsWandering ? Stationing.WanderMultiplier : comfortMultiplier)
                          * Kinship.XpRateMultiplier(familiar, xp.kinshipXpRatePerLevel);
             if (amount <= 0.0)
             {

@@ -10,6 +10,6 @@
     { "id": "store",  "name": "The Store",         "materials": { "fibres": 40, "timber": 20 }, "milestoneUpgradeIds": ["root-cellar", "smokehouse"],
       "perLevel": { "type": "basketCapacityBonus", "value": 0.05 } },
     { "id": "roosts", "name": "Roosts & Burrows",  "materials": { "fibres": 30, "berries": 20 }, "milestoneUpgradeIds": [],
-      "perLevel": { "type": "familiarCaps" } }
+      "perLevel": { "type": "comfort", "value": 0.1 } }
   ]
 }

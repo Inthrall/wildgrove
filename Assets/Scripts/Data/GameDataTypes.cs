@@ -115,7 +115,7 @@ namespace Wildgrove.Data
     [Serializable]
     public sealed class BuildingPerLevelData
     {
-        /// <summary>"stationSpeedBonus" | "basketCapacityBonus" | "familiarCaps".</summary>
+        /// <summary>"stationSpeedBonus" | "basketCapacityBonus" | "comfort".</summary>
         public string type;
         public string station;
         public double value;

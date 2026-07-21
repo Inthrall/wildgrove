@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: eac5d9530dbb2d4ceef75ea1efc4a51f7e45ea09b40b03396dd1bfa93b0b75fe
+  sourceHash: 2b2597445ca2c7965de528e69b5aa98bcd96e795a83a7ac778687fae7bb5a8f9
   economy:
     costGrowth:
       building: 1.25
@@ -1062,9 +1062,9 @@ MonoBehaviour:
       amount: 20
     milestoneUpgradeIds: []
     perLevel:
-      type: familiarCaps
+      type: comfort
       station: 
-      value: 0
+      value: 0.1
   gear:
   - id: cordage-wraps
     displayName: Cordage Wraps

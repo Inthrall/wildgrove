@@ -150,9 +150,12 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            // Roosts comfort (design §4): stationed familiars level faster per
+            // bought level. Once per tick — it can't change mid-loop.
+            var comfort = Buildings.ComfortXpMultiplier(state, data);
             foreach (var familiar in state.roster)
             {
-                Familiars.AddPostXp(state, data, familiar, famXp.xpPerSecond, deltaSeconds);
+                Familiars.AddPostXp(state, data, familiar, famXp.xpPerSecond, deltaSeconds, comfort);
             }
         }
 

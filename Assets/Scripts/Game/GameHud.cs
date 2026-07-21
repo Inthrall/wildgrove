@@ -1503,12 +1503,32 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>What one bought level of a building line grants — the row's "say what it gives" clause.</summary>
+        private static string PerLevelGivesLabel(BuildingData building)
+        {
+            var perLevel = building.perLevel;
+            if (perLevel == null)
+            {
+                return null;
+            }
+
+            var pct = "+" + Mathf.RoundToInt((float)(perLevel.value * 100.0)) + "%";
+            switch (perLevel.type)
+            {
+                case "stationSpeedBonus": return "each level: " + pct + " craft speed at this station";
+                case "basketCapacityBonus": return "each level: " + pct + " basket capacity";
+                case "comfort": return "each level: " + pct + " familiar XP while posted";
+                default: return null;
+            }
+        }
+
         private void BuildBuildingsCard()
         {
             var card = Card("BUILDING LINES");
             foreach (var building in _loop.Data.buildings)
             {
                 var captured = building;
+                var gives = PerLevelGivesLabel(captured);
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
@@ -1526,6 +1546,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.displayName + "  <color=" + Ink2Hex + ">level " + _loop.BuildingLevel(captured) + "</color>"
+                                 + (gives != null ? "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + gives + "</color></size>" : string.Empty)
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">next: " + BundleHaveLabel(_loop.NextBuildingBundle(captured)) + "</color></size>";
                     var ok = _loop.CanAffordBuilding(captured);
                     build.interactable = ok;

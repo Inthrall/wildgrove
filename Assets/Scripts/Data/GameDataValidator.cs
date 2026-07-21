@@ -359,7 +359,7 @@ namespace Wildgrove.Data
 
         private static readonly HashSet<string> KnownBuildingPerLevelTypes = new HashSet<string>
         {
-            "stationSpeedBonus", "basketCapacityBonus", "familiarCaps"
+            "stationSpeedBonus", "basketCapacityBonus", "comfort"
         };
 
         private static void ValidateBuildings(GameData data, HashSet<string> resourceIds, List<string> issues)
@@ -404,7 +404,7 @@ namespace Wildgrove.Data
                     issues.Add($"Building '{building.Id}' stationSpeedBonus targets unknown station '{building.PerLevel.Station}'");
                 }
 
-                if (building.PerLevel.Type != "familiarCaps" && building.PerLevel.Value <= 0)
+                if (building.PerLevel.Value <= 0)
                 {
                     issues.Add($"Building '{building.Id}' perLevel value must be positive");
                 }
