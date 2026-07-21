@@ -18,19 +18,26 @@ namespace Wildgrove.Game.World
         private const float ArcY = -0.72f;
         private const float ArcHalfWidth = 0.45f;
 
+        private static readonly Color LabelColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
+
         public DigSiteState Site { get; private set; }
 
         private SpriteRenderer _heap;
         private SpriteRenderer[] _diggerDots;
+        private TextMesh _label;
         private Color _colour;
 
-        public static DigSiteWorldView Create(Transform parent, DigSiteState site, Color colour)
+        public static DigSiteWorldView Create(Transform parent, DigSiteState site, Color colour, Font labelFont)
         {
             var go = new GameObject("DigSite_" + site.zoneId);
             go.transform.SetParent(parent, false);
             var view = go.AddComponent<DigSiteWorldView>();
             view.Site = site;
             view._colour = colour;
+
+            // Named like the node discs — "the watch" matches the heap's
+            // journal plate, so the odd shape out isn't a mystery.
+            view._label = PlaceholderArt.CreateLabel(go.transform, "the watch", labelFont, LabelColour);
 
             var heapGo = new GameObject("Heap", typeof(SpriteRenderer));
             heapGo.transform.SetParent(go.transform, false);
@@ -61,6 +68,12 @@ namespace Wildgrove.Game.World
         {
             transform.position = worldPosition;
             transform.localScale = Vector3.one * worldDiameter;
+        }
+
+        /// <summary>Re-run the label's mesh after a dynamic font atlas rebuild.</summary>
+        public void RefreshLabel()
+        {
+            PlaceholderArt.RefreshLabel(_label);
         }
 
         public void Refresh(int diggerCount)

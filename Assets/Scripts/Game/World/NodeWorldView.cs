@@ -31,6 +31,7 @@ namespace Wildgrove.Game.World
         private static readonly Color HaloColour = new Color(1f, 0.78f, 0.25f, 0.5f);
         private static readonly Color BondedColour = new Color(1f, 0.72f, 0.2f, 1f);
         private static readonly Color WardenColour = new Color(0.95f, 0.92f, 0.83f, 1f);
+        private static readonly Color LabelColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
         public NodeState Node { get; private set; }
 
@@ -40,16 +41,21 @@ namespace Wildgrove.Game.World
         private SpriteRenderer _bondedMarker;
         private SpriteRenderer _wardenMarker;
         private SpriteRenderer[] _flockDots;
+        private TextMesh _label;
         private Color _colour;
         private float _diameter = 1f;
 
-        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Color ringColour)
+        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Color ringColour, Font labelFont)
         {
             var go = new GameObject("Node_" + node.resourceId);
             go.transform.SetParent(parent, false);
             var view = go.AddComponent<NodeWorldView>();
             view.Node = node;
             view._colour = colour;
+
+            // The resource name under the disc — the strip's shapes and the
+            // FIG. plates below name the same thing, so a glance connects them.
+            view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour);
 
             view._ring = CreateSprite(go.transform, "Ring", PlaceholderArt.Disc, ringColour, 0);
             view._ring.transform.localScale = Vector3.one * RingScale;
@@ -90,6 +96,12 @@ namespace Wildgrove.Game.World
         {
             transform.position = worldPosition;
             _diameter = worldDiameter;
+        }
+
+        /// <summary>Re-run the label's mesh after a dynamic font atlas rebuild.</summary>
+        public void RefreshLabel()
+        {
+            PlaceholderArt.RefreshLabel(_label);
         }
 
         public void Refresh(bool selected, float time, int workingCount, bool hasBonded, bool wardenPosted)

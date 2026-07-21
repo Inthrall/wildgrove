@@ -31,10 +31,42 @@ namespace Wildgrove.Game.World
         private Camera _camera;
         private GameState _builtFor;
         private Transform _container;
+        private Font _labelFont;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
         private readonly List<DigSiteWorldView> _digViews = new List<DigSiteWorldView>();
         private Vector2[] _centres = new Vector2[0];
         private float _radiusPx;
+
+        private void OnEnable()
+        {
+            Font.textureRebuilt += OnFontTextureRebuilt;
+        }
+
+        private void OnDisable()
+        {
+            Font.textureRebuilt -= OnFontTextureRebuilt;
+        }
+
+        // The labels share the HUD's dynamic fonts; an atlas rebuild (a new
+        // glyph/size requested anywhere) leaves stale TextMesh geometry unless
+        // each label re-generates.
+        private void OnFontTextureRebuilt(Font font)
+        {
+            if (font != _labelFont)
+            {
+                return;
+            }
+
+            foreach (var view in _views)
+            {
+                view.RefreshLabel();
+            }
+
+            foreach (var digView in _digViews)
+            {
+                digView.RefreshLabel();
+            }
+        }
 
         /// <summary>
         /// The node whose sprite is under the screen point, or null for a miss.
@@ -118,16 +150,23 @@ namespace Wildgrove.Game.World
             _container = new GameObject("WorldNodes").transform;
             _container.SetParent(transform, false);
 
+            if (_labelFont == null)
+            {
+                // The HUD's chrome face; the built-in face when running bare.
+                var font = Resources.Load<Font>("Fonts/IMFellEnglishSC");
+                _labelFont = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            }
+
             foreach (var node in _loop.State.nodes)
             {
                 _views.Add(NodeWorldView.Create(
-                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour));
+                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour, _labelFont));
             }
 
             foreach (var site in _loop.State.digSites)
             {
                 _digViews.Add(DigSiteWorldView.Create(
-                    _container, site, PlaceholderArt.DigSiteColour(site.zoneId)));
+                    _container, site, PlaceholderArt.DigSiteColour(site.zoneId), _labelFont));
             }
 
             _builtFor = _loop.State;

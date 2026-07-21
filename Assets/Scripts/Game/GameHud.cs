@@ -75,7 +75,20 @@ namespace Wildgrove.Game
         private RectTransform _worldGap;
         private RectTransform _body;
         private Transform _modalLayer;
+        private Canvas _canvas;
+        private RectTransform _root;
+        private ScrollRect _scroll;
+        private LayoutElement _worldGapElement;
+        private RectTransform _feedbackLayer;
+        private RectTransform _kithCard;
+        private RectTransform _firstVerseCard;
+        private string _pendingScroll;
+        private string _builtTab;
+        private Rect _appliedSafeArea;
+        private float _appliedCanvasHeight;
         private readonly Dictionary<string, Button> _tabButtons = new Dictionary<string, Button>();
+        private readonly Dictionary<string, Text> _tabLabels = new Dictionary<string, Text>();
+        private readonly Dictionary<string, GameObject> _tabOuterRules = new Dictionary<string, GameObject>();
         private static readonly Vector3[] Corners = new Vector3[4];
 
         private readonly List<Action> _liveUpdaters = new List<Action>();
@@ -122,6 +135,7 @@ namespace Wildgrove.Game
                 return;
             }
 
+            FitLayoutToScreen();
             ReportWorldStrip();
             HandleTend();
             PumpSheets();
@@ -179,10 +193,24 @@ namespace Wildgrove.Game
 
             _tab = tab;
             _dirty = true;
-            foreach (var pair in _tabButtons)
+            foreach (var id in Tabs)
             {
-                pair.Value.GetComponent<Image>().color = pair.Key == _tab ? PagePaper : DeepPaper;
+                StyleTab(id, id == _tab);
             }
+        }
+
+        /// <summary>
+        /// The open tab wears the page: paper background, full-ink bold label,
+        /// and the cards' outer rule — a lighter tint alone doesn't read at a
+        /// glance against three near-identical paper buttons.
+        /// </summary>
+        private void StyleTab(string id, bool active)
+        {
+            _tabButtons[id].GetComponent<Image>().color = active ? PagePaper : DeepPaper;
+            var label = _tabLabels[id];
+            label.color = active ? Ink : Ink2;
+            label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+            _tabOuterRules[id].SetActive(active);
         }
 
         // ─────────────────────────── Chrome ──────────────────────────────────
@@ -193,6 +221,7 @@ namespace Wildgrove.Game
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas = canvas;
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080, 1920);
@@ -200,12 +229,13 @@ namespace Wildgrove.Game
 
             var root = MakeRect("Root", canvasGo.transform);
             Stretch(root);
+            _root = root;
             var rootLayout = root.gameObject.AddComponent<VerticalLayoutGroup>();
             rootLayout.childControlWidth = true;
             rootLayout.childControlHeight = true;
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
-            rootLayout.padding = new RectOffset(16, 16, 10, 0);
+            rootLayout.padding = new RectOffset(16, 16, 10, 6);
             rootLayout.spacing = 6;
 
             // Header — eyebrow over the title, centred like the mock's page head.
@@ -248,7 +278,7 @@ namespace Wildgrove.Game
             var trackerElement = trackerGo.AddComponent<LayoutElement>();
             trackerElement.flexibleHeight = 0;
             var trackerButton = trackerGo.AddComponent<Button>();
-            trackerButton.onClick.AddListener(() => OpenTab(TabTrail));
+            trackerButton.onClick.AddListener(() => ScrollToOnTrail("verse"));
             AddBorder(trackerGo, Ink2);
             _trackerText = MakeText(trackerGo.transform, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);
             FlexibleWidth(_trackerText.gameObject, 1f);
@@ -257,11 +287,13 @@ namespace Wildgrove.Game
             _foldButton.GetComponentInChildren<Text>().color = Ochre;
             _foldButton.gameObject.SetActive(false);
 
-            // World gap — the WorldView strip draws here; flexible so it takes
-            // the slack above the scrolling page.
+            // World gap — the WorldView strip draws here. Capped rather than
+            // flexible: on tall screens the slack goes to the page (more cards
+            // visible), not to empty paper around the node strip. The height
+            // is set from the canvas size in FitLayoutToScreen.
             var gap = MakeRect("WorldGap", root);
             _worldGap = gap;
-            Flexible(gap.gameObject, 1f);
+            _worldGapElement = gap.gameObject.AddComponent<LayoutElement>();
 
             // The open journal page — a scroll view the tab pages build into.
             _body = BuildScroll(root);
@@ -287,14 +319,23 @@ namespace Wildgrove.Game
             var spine = new GameObject("Spine", typeof(Image));
             spine.transform.SetParent(canvasGo.transform, false);
             var spineImage = spine.GetComponent<Image>();
-            spineImage.sprite = DashSprite();
+            spineImage.sprite = SpineSprite();
             spineImage.type = Image.Type.Tiled;
             spineImage.raycastTarget = false;
             var spineRect = (RectTransform)spine.transform;
             spineRect.anchorMin = new Vector2(0f, 0f);
             spineRect.anchorMax = new Vector2(0f, 1f);
-            spineRect.offsetMin = new Vector2(7f, 8f);
-            spineRect.offsetMax = new Vector2(11f, -8f);
+            // Centred in the page's left gutter, clear of curved screen
+            // corners; the rect width matches the sprite tile exactly so the
+            // stitch column never gets a clipped second column.
+            spineRect.offsetMin = new Vector2(8f, 16f);
+            spineRect.offsetMax = new Vector2(14f, -16f);
+
+            // Transient action feedback (the "+ planted" flashes) draws above
+            // the page but under any open sheet. No Graphic — taps fall through.
+            var feedbackGo = MakeRect("Feedback", canvasGo.transform);
+            Stretch(feedbackGo);
+            _feedbackLayer = feedbackGo;
 
             // Modal layer, above everything, initially empty.
             var modalGo = MakeRect("Modals", canvasGo.transform);
@@ -302,6 +343,33 @@ namespace Wildgrove.Game
             _modalLayer = modalGo;
 
             Canvas.ForceUpdateCanvases();
+            FitLayoutToScreen();
+        }
+
+        /// <summary>
+        /// Fit the chrome to the device: keep the page out of the display
+        /// cutout and gesture areas (the tabs bar used to sit flush with the
+        /// screen edge, inside Android's home-swipe zone), and cap the world
+        /// strip's share of the screen. Re-applied whenever the safe area or
+        /// canvas size changes.
+        /// </summary>
+        private void FitLayoutToScreen()
+        {
+            var safe = Screen.safeArea;
+            var canvasHeight = ((RectTransform)_canvas.transform).rect.height;
+            if (safe == _appliedSafeArea && Mathf.Approximately(canvasHeight, _appliedCanvasHeight))
+            {
+                return;
+            }
+
+            _appliedSafeArea = safe;
+            _appliedCanvasHeight = canvasHeight;
+
+            var scale = _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;
+            _root.offsetMin = new Vector2(safe.xMin / scale, safe.yMin / scale);
+            _root.offsetMax = new Vector2((safe.xMax - Screen.width) / scale, (safe.yMax - Screen.height) / scale);
+
+            _worldGapElement.preferredHeight = canvasHeight * 0.26f;
         }
 
         private void BuildTabsBar(RectTransform root)
@@ -326,18 +394,24 @@ namespace Wildgrove.Game
         {
             var go = new GameObject("Tab_" + id, typeof(Image), typeof(Button));
             go.transform.SetParent(bar, false);
-            go.GetComponent<Image>().color = id == _tab ? PagePaper : DeepPaper;
             AddBorder(go, Ink2);
+            var outer = AddBorder(go, RulePaper, 4f);
             var button = go.GetComponent<Button>();
             button.onClick.AddListener(() => OpenTab(id));
             var text = MakeText(go.transform, label, 22, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             Stretch((RectTransform)text.transform);
             _tabButtons[id] = button;
+            _tabLabels[id] = text;
+            _tabOuterRules[id] = outer;
+            StyleTab(id, id == _tab);
         }
 
         private RectTransform BuildScroll(RectTransform parent)
         {
-            var scrollGo = new GameObject("Body", typeof(Image), typeof(ScrollRect), typeof(RectMask2D));
+            // No RectMask2D here — the viewport masks the page, and the
+            // scrollbar hangs OUTSIDE this rect (in the right page gutter),
+            // where a mask on the body would clip it away.
+            var scrollGo = new GameObject("Body", typeof(Image), typeof(ScrollRect));
             scrollGo.transform.SetParent(parent, false);
             scrollGo.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.02f);
             Flexible(scrollGo, 2f);
@@ -347,6 +421,7 @@ namespace Wildgrove.Game
             scroll.vertical = true;
             scroll.scrollSensitivity = 24f;
             scroll.movementType = ScrollRect.MovementType.Clamped;
+            _scroll = scroll;
 
             var viewport = MakeRect("Viewport", scrollGo.transform);
             Stretch(viewport);
@@ -372,6 +447,34 @@ namespace Wildgrove.Game
             var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             scroll.content = content;
+
+            // The scroll stitch — a slim ink scrollbar riding the right page
+            // gutter, mirroring the spine. It lives outside the viewport so
+            // the page keeps its full width, and auto-hides when the page fits.
+            var barGo = new GameObject("Scrollbar", typeof(Image), typeof(Scrollbar));
+            barGo.transform.SetParent(scrollGo.transform, false);
+            var track = barGo.GetComponent<Image>();
+            track.color = new Color(RulePaper.r, RulePaper.g, RulePaper.b, 0.45f);
+            var barRect = (RectTransform)barGo.transform;
+            barRect.anchorMin = new Vector2(1f, 0f);
+            barRect.anchorMax = Vector2.one;
+            barRect.offsetMin = new Vector2(5f, 2f);
+            barRect.offsetMax = new Vector2(11f, -2f);
+
+            var handleGo = new GameObject("Handle", typeof(Image));
+            handleGo.transform.SetParent(barGo.transform, false);
+            var handle = handleGo.GetComponent<Image>();
+            handle.color = new Color(Ink2.r, Ink2.g, Ink2.b, 0.55f);
+            var handleRect = (RectTransform)handleGo.transform;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+
+            var scrollbar = barGo.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.handleRect = handleRect;
+            scrollbar.targetGraphic = handle;
+            scroll.verticalScrollbar = scrollbar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
 
             return content;
         }
@@ -416,8 +519,10 @@ namespace Wildgrove.Game
                     title = "The Journal's Back Pages";
                     break;
                 default:
+                    // The title carries the zone — repeating its id in the
+                    // eyebrow said the same thing twice in two type styles.
                     var zone = LatestZone();
-                    eyebrow = "THE TRAIL" + (zone != null ? " · " + zone.id.ToUpperInvariant() : string.Empty);
+                    eyebrow = "THE TRAIL";
                     title = zone != null ? zone.displayName : "The Trail";
                     break;
             }
@@ -438,14 +543,22 @@ namespace Wildgrove.Game
             foreach (var resource in _loop.Data.resources)
             {
                 var stock = state.GetResource(resource.id);
-                if (stock > BigDouble.Zero || Compendium.IsResourceDiscovered(state, resource.id))
+                // Only what the camp actually holds — "nuts 0" is noise, and
+                // fewer entries keeps the line from wrapping mid-pair.
+                if (stock > BigDouble.Zero)
                 {
                     parts.Add(resource.id + " <b>" + NumberFormat.Short(stock) + "</b>");
                 }
             }
 
             parts.Add("<color=" + OchreHex + ">RENOWN <b>" + NumberFormat.Short(state.renown) + "</b></color>");
-            parts.Add("<color=" + MossDeepHex + ">verdure <b>" + Mathf.FloorToInt((float)state.verdurePoints) + "</b></color>");
+            // Verdure appears once the fold economy is real — and styled as
+            // RENOWN's peer, not lowercase flavour.
+            if (state.verdurePoints > 0.0)
+            {
+                parts.Add("<color=" + MossDeepHex + ">VERDURE <b>" + Mathf.FloorToInt((float)state.verdurePoints) + "</b></color>");
+            }
+
             if (state.amber > 0.0)
             {
                 parts.Add("<color=" + OchreHex + ">amber <b>" + Mathf.FloorToInt((float)state.amber) + "</b></color>");
@@ -482,8 +595,10 @@ namespace Wildgrove.Game
 
                 var done = Rite.CompletedSlotCount(_loop.State, verse);
                 var need = _loop.Data.rites.chooseCount;
+                // The trailing guillemet marks the banner as a link — it jumps
+                // to the verse card, which lives far down the Trail page.
                 _trackerText.text = "Verse of " + ZoneName(verse.zone) + " — <b>"
-                                    + Mathf.Min(done, need) + " of " + need + "</b> answered";
+                                    + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
                 return;
             }
 
@@ -603,6 +718,15 @@ namespace Wildgrove.Game
 
         private void RebuildBody()
         {
+            // A structure change mid-read shouldn't snap the reader back to
+            // the top of the page — keep the scroll unless the tab changed.
+            var keepPosition = _builtTab == _tab && _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
+            _builtTab = _tab;
+            var landmark = _pendingScroll;
+            _pendingScroll = null;
+            _kithCard = null;
+            _firstVerseCard = null;
+
             _liveUpdaters.Clear();
             _frameUpdaters.Clear();
             _tendFlashes.Clear();
@@ -626,6 +750,112 @@ namespace Wildgrove.Game
                     BuildTrailPage();
                     break;
             }
+
+            StartCoroutine(SettleScroll(keepPosition, landmark));
+        }
+
+        /// <summary>
+        /// Open the Trail tab and bring a landmark card ("kith" or "verse")
+        /// into view — the tracker and the fallow lines deep-link into a page
+        /// that is otherwise a long scroll.
+        /// </summary>
+        private void ScrollToOnTrail(string landmark)
+        {
+            _pendingScroll = landmark;
+            OpenTab(TabTrail);
+            if (!_dirty)
+            {
+                // Already on the Trail with no rebuild coming — jump now.
+                StartCoroutine(SettleScroll(_scroll.verticalNormalizedPosition, _pendingScroll));
+                _pendingScroll = null;
+            }
+        }
+
+        private RectTransform LandmarkCard(string landmark)
+        {
+            switch (landmark)
+            {
+                case "kith":
+                    return _kithCard;
+                case "verse":
+                    return _firstVerseCard;
+                default:
+                    return null;
+            }
+        }
+
+        private System.Collections.IEnumerator SettleScroll(float normalized, string landmark)
+        {
+            // Destroyed children leave the layout at end of frame — wait one
+            // so the fresh page has its real height before positioning it.
+            yield return null;
+            if (_scroll == null || _body == null)
+            {
+                yield break;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            var target = LandmarkCard(landmark);
+            if (target != null)
+            {
+                ScrollTo(target);
+            }
+            else
+            {
+                _scroll.verticalNormalizedPosition = Mathf.Clamp01(normalized);
+            }
+        }
+
+        private void ScrollTo(RectTransform target)
+        {
+            var range = _body.rect.height - _scroll.viewport.rect.height;
+            if (range <= 0f)
+            {
+                return;
+            }
+
+            // The content's pivot sits at its top, so a child's top edge in
+            // content-local space is its distance down the page.
+            var local = (Vector2)_body.InverseTransformPoint(target.position);
+            var distanceFromTop = -(local.y + target.rect.yMax);
+            _scroll.verticalNormalizedPosition = 1f - Mathf.Clamp01((distanceFromTop - 6f) / range);
+        }
+
+        /// <summary>
+        /// A transient outcome note that rises and fades where the action
+        /// happened — the margin note alone is usually off-screen from the
+        /// button that was pressed.
+        /// </summary>
+        private void Flash(Component near, string message, bool good)
+        {
+            if (near == null || _feedbackLayer == null)
+            {
+                return;
+            }
+
+            var flash = MakeText(_feedbackLayer, message, 22, TextAnchor.MiddleCenter, good ? MossDeep : Ochre, _hand);
+            flash.raycastTarget = false;
+            var rect = (RectTransform)flash.transform;
+            rect.sizeDelta = new Vector2(700f, 60f);
+            rect.position = near.transform.position;
+            StartCoroutine(RiseAndFade(flash, rect));
+        }
+
+        private System.Collections.IEnumerator RiseAndFade(Text flash, RectTransform rect)
+        {
+            var colour = flash.color;
+            // Start above the control so the note never covers its label.
+            var start = rect.anchoredPosition + new Vector2(0f, 34f);
+            const float life = 1.1f;
+            for (var age = 0f; age < life; age += Time.deltaTime)
+            {
+                var t = age / life;
+                flash.color = new Color(colour.r, colour.g, colour.b, 1f - t);
+                rect.anchoredPosition = start + new Vector2(0f, 26f * t);
+                yield return null;
+            }
+
+            Destroy(flash.gameObject);
         }
 
         // ─────────────────────────── TRAIL ────────────────────────────────────
@@ -633,6 +863,9 @@ namespace Wildgrove.Game
         private void BuildTrailPage()
         {
             var unlockedZones = ZonesInOrder();
+            // Newest zone first — the page header names it, so the page must
+            // open on it; older zones keep farming further down the scroll.
+            unlockedZones.Reverse();
             var figure = 1;
             foreach (var zone in unlockedZones)
             {
@@ -677,6 +910,17 @@ namespace Wildgrove.Game
             fig.gameObject.name = "Fig";
             var nameLine = MakeText(card, string.Empty, 26, TextAnchor.MiddleLeft, Ink, _serif);
             var postedLine = MakeText(card, string.Empty, 21, TextAnchor.MiddleLeft, Ink2, _hand);
+            // The fallow state is the plate's call to action — tapping it
+            // jumps to the kith card, where posting actually happens.
+            var postedButton = postedLine.gameObject.AddComponent<Button>();
+            postedButton.transition = Selectable.Transition.None;
+            postedButton.onClick.AddListener(() =>
+            {
+                if (PostedNames(captured).Count == 0)
+                {
+                    ScrollToOnTrail("kith");
+                }
+            });
             var statsLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
 
             // The tend flash — the mock's "+ yield" that rises and fades; sits
@@ -709,7 +953,7 @@ namespace Wildgrove.Game
 
             // The basket bar — fill width driven by the live updater.
             var barGo = MakePanel("Basket", card, PagePaper);
-            FixedHeight(barGo, 10);
+            FixedHeight(barGo, 14);
             var fillGo = new GameObject("Fill", typeof(Image));
             fillGo.transform.SetParent(barGo.transform, false);
             var fill = fillGo.GetComponent<Image>();
@@ -730,15 +974,18 @@ namespace Wildgrove.Game
             });
             tend.GetComponent<Image>().color = MossWash;
 
-            var replant = Button(actions, "Plant back", 230, () =>
+            Button replant = null;
+            replant = Button(actions, "Plant back", 230, () =>
             {
                 if (_loop.Replant(captured))
                 {
+                    Flash(replant, "planted back", true);
                     SetNote("planted " + captured.resourceId + " back into the ground. it earns tone, not numbers.");
                     _dirty = true;
                 }
                 else
                 {
+                    Flash(replant, "not enough " + captured.resourceId, false);
                     SetNote("not enough " + captured.resourceId + " to plant back. the land can wait.");
                 }
             });
@@ -758,16 +1005,32 @@ namespace Wildgrove.Game
                 nameLine.text = captured.resourceId + rich;
                 cardImage.color = captured == _selected ? MossWash : CardPaper;
 
-                postedLine.text = PostedLabel(captured);
-
-                var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
-                var stock = state.GetResource(captured.resourceId);
-                statsLine.text = NumberFormat.Rate(rate) + "/s  ·  " + NumberFormat.Short(stock) + " at camp";
+                var names = PostedNames(captured);
+                if (names.Count > 0)
+                {
+                    postedLine.font = _hand;
+                    postedLine.fontSize = Mathf.RoundToInt(21 * FontScale);
+                    postedLine.text = "posted: " + string.Join(", ", names);
+                }
+                else
+                {
+                    // Fallow is state, not flavour — body type, with the way
+                    // out inked where the player is already looking.
+                    postedLine.font = _font;
+                    postedLine.fontSize = Mathf.RoundToInt(17 * FontScale);
+                    postedLine.text = "fallow — <color=" + OchreHex + ">post someone  »</color>";
+                }
 
                 var cap = NodeBasketCapacity(captured);
                 var fraction = cap > BigDouble.Zero ? Mathf.Clamp01((float)(captured.basket / cap).ToDouble()) : 0f;
                 fillRect.anchorMax = new Vector2(fraction, 1f);
-                fill.color = fraction >= 0.999f ? OchreWash : MossWash;
+                var basketFull = fraction >= 0.999f;
+                fill.color = basketFull ? OchreWash : MossWash;
+
+                var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
+                var stock = state.GetResource(captured.resourceId);
+                statsLine.text = NumberFormat.Rate(rate) + "/s  ·  " + NumberFormat.Short(stock) + " at camp"
+                                 + (basketFull ? "  ·  <color=" + OchreHex + ">basket full — waits on a carrier</color>" : string.Empty);
 
                 SetButtonLabel(replant, "Plant back\n" + SizeOpen(15) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
                 var ok = _loop.CanReplant(captured);
@@ -776,7 +1039,7 @@ namespace Wildgrove.Game
             });
         }
 
-        private string PostedLabel(NodeState node)
+        private List<string> PostedNames(NodeState node)
         {
             var names = new List<string>();
             if (Warden.PostNodeId(_loop.State) == node.id)
@@ -789,7 +1052,7 @@ namespace Wildgrove.Game
                 names.Add(familiar.name);
             }
 
-            return names.Count > 0 ? "posted: " + string.Join(", ", names) : "fallow";
+            return names;
         }
 
         private BigDouble NodeBasketCapacity(NodeState node)
@@ -911,11 +1174,13 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var build = Button(actions, "Raise " + capturedPlanter.displayName
+            Button build = null;
+            build = Button(actions, "Raise " + capturedPlanter.displayName
                                         + "\n" + SizeOpen(14) + BundleLabel(capturedPlanter.materials) + "</size>", 250, () =>
             {
                 if (_loop.BuildPlanter(capturedPlanter, capturedTarget))
                 {
+                    Flash(build, "raised", true);
                     SetNote("raised a " + capturedPlanter.displayName.ToLowerInvariant() + ". the ground holds it now.");
                     _dirty = true;
                 }
@@ -945,11 +1210,16 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                BuildVerseCard(verse);
+                var card = BuildVerseCard(verse);
+                if (_firstVerseCard == null && !Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                {
+                    // The tracker's deep-link lands on the first verse still open.
+                    _firstVerseCard = card;
+                }
             }
         }
 
-        private void BuildVerseCard(RiteVerseData verse)
+        private RectTransform BuildVerseCard(RiteVerseData verse)
         {
             var capturedVerse = verse;
             var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
@@ -979,6 +1249,8 @@ namespace Wildgrove.Game
             {
                 BuildSlotRow(card, capturedVerse, i);
             }
+
+            return card;
         }
 
         private void BuildSlotRow(RectTransform card, RiteVerseData verse, int slotIndex)
@@ -997,10 +1269,12 @@ namespace Wildgrove.Game
                         var given = _loop.OfferResource(verse, slotIndex);
                         if (given > BigDouble.Zero)
                         {
+                            Flash(offer, "set down " + Mathf.FloorToInt((float)given.ToDouble()) + " " + slot.resource, true);
                             SetNote("set down " + Mathf.FloorToInt((float)given.ToDouble()) + " " + slot.resource + ". no answer. not yet.");
                         }
                         else
                         {
+                            Flash(offer, "the stores are empty", false);
                             SetNote("nothing in the stores to set down.");
                         }
                     });
@@ -1010,10 +1284,12 @@ namespace Wildgrove.Game
                     {
                         if (_loop.OfferSpecimen(verse, slotIndex))
                         {
+                            Flash(offer, "set down", true);
                             SetNote("set the perfect one down. it deserved better than a page, maybe.");
                         }
                         else
                         {
+                            Flash(offer, "no such find in hand", false);
                             SetNote("no such find in hand. the site is patient.");
                         }
                     });
@@ -1023,10 +1299,12 @@ namespace Wildgrove.Game
                     {
                         if (_loop.OfferSketch(verse, slotIndex))
                         {
+                            Flash(offer, "page torn out", true);
                             SetNote("tore the page out for them. that portion must be watched again.");
                         }
                         else
                         {
+                            Flash(offer, "no finished sketch", false);
                             SetNote("no finished sketch to give.");
                         }
                     });
@@ -1160,10 +1438,12 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var build = Button(row.transform, "Raise", 160, () =>
+                Button build = null;
+                build = Button(row.transform, "Raise", 160, () =>
                 {
                     if (_loop.BuyBuildingLevel(captured))
                     {
+                        Flash(build, "raised", true);
                         SetNote(captured.displayName.ToLowerInvariant() + " goes up. the camp sleeps closer to the work.");
                         _dirty = true;
                     }
@@ -1216,12 +1496,14 @@ namespace Wildgrove.Game
 
             var quote = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink);
             var tradeRow = Row(card);
-            var trade = Button(tradeRow.transform, "Trade all", 260, () =>
+            Button trade = null;
+            trade = Button(tradeRow.transform, "Trade all", 260, () =>
             {
                 var have = _loop.State.GetResource(_exchangeFrom);
                 var got = _loop.TradeAtExchange(_exchangeFrom, _exchangeTo, have);
                 if (got > BigDouble.Zero)
                 {
+                    Flash(trade, "+" + NumberFormat.Short(got) + " " + _exchangeTo, true);
                     SetNote("traded " + _exchangeFrom + " for " + _exchangeTo + ". a nod. gone before the count.");
                 }
 
@@ -1273,10 +1555,12 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var buy = Button(row.transform, "Take up", 170, () =>
+                Button buy = null;
+                buy = Button(row.transform, "Take up", 170, () =>
                 {
                     if (_loop.PurchaseUpgrade(captured))
                     {
+                        Flash(buy, "taken up", true);
                         SetNote(captured.displayName.ToLowerInvariant() + " — the work changes shape.");
                         _dirty = true;
                     }
@@ -1326,10 +1610,12 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                var craft = Button(row.transform, "Craft", 160, () =>
+                Button craft = null;
+                craft = Button(row.transform, "Craft", 160, () =>
                 {
                     if (_loop.CraftGear(captured))
                     {
+                        Flash(craft, "bound tight", true);
                         SetNote("bound the " + captured.displayName.ToLowerInvariant() + " tight. the work will mind it less.");
                         _dirty = true;
                     }
@@ -1364,6 +1650,8 @@ namespace Wildgrove.Game
         private void BuildKithCard()
         {
             var card = Card("THE KITH · roster & posts");
+            // The fallow lines on the node plates deep-link here.
+            _kithCard = card;
             var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
@@ -1380,7 +1668,7 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
-                var rename = Button(row.transform, "Name", 110, () => OpenNamingSheet(captured));
+                var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
                 var powerup = Button(row.transform, "A lesson", 170, () => OpenPowerupSheet(captured));
                 powerup.GetComponent<Image>().color = OchreWash;
 
@@ -1561,10 +1849,12 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var fix = Button(row.transform, "Fix", 140, () =>
+                Button fix = null;
+                fix = Button(row.transform, "Fix", 140, () =>
                 {
                     if (_loop.FixSpecimen(resourceId))
                     {
+                        Flash(fix, "fixed to the page", true);
                         SetNote("pressed it between these pages, where it will outlast the camp.");
                         _dirty = true;
                     }
@@ -1646,10 +1936,12 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var buy = Button(row.transform, "Learn", 160, () =>
+                Button buy = null;
+                buy = Button(row.transform, "Learn", 160, () =>
                 {
                     if (_loop.BuyAlmanacNode(captured))
                     {
+                        Flash(buy, "learned", true);
                         SetNote("the almanac takes a new line. it crosses every fold with you.");
                         _dirty = true;
                     }
@@ -2159,7 +2451,7 @@ namespace Wildgrove.Game
             layout.padding = new RectOffset(0, 0, 6, 6);
             layout.spacing = 8;
             var fitter = go.AddComponent<LayoutElement>();
-            fitter.minHeight = 68;
+            fitter.minHeight = 76;
             return go;
         }
 
@@ -2182,8 +2474,9 @@ namespace Wildgrove.Game
             // Intrinsic height so buttons don't collapse to zero in a vertical
             // layout that controls height without force-expanding it (the sheets);
             // in rows, force-expand already governs, so this is a harmless floor.
-            element.preferredHeight = 68;
-            element.minHeight = 68;
+            // 76 units ≈ a thumb-sized target on a 1080-wide phone.
+            element.preferredHeight = 76;
+            element.minHeight = 76;
             var button = go.GetComponent<Button>();
             button.onClick.AddListener(onClick);
             var label = MakeText(go.transform, text, 19, TextAnchor.MiddleCenter, Ink, _smallCaps);
@@ -2208,6 +2501,16 @@ namespace Wildgrove.Game
                 var color = on ? DeepPaper : RulePaper;
                 color.a = on ? 1f : 0.55f;
                 image.color = color;
+            }
+
+            // A dead button with crisp ink still reads as live — fade the
+            // label with the plate.
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                var labelColour = label.color;
+                labelColour.a = on ? 1f : 0.45f;
+                label.color = labelColour;
             }
         }
 
@@ -2289,6 +2592,7 @@ namespace Wildgrove.Game
         private static Sprite _borderSprite;
         private static Sprite _grainSprite;
         private static Sprite _dashSprite;
+        private static Sprite _spineSprite;
 
         /// <summary>A sliced border-only sprite — the journal's ruled ink outlines.</summary>
         private static Sprite BorderSprite()
@@ -2340,7 +2644,41 @@ namespace Wildgrove.Game
             return _grainSprite;
         }
 
-        /// <summary>A vertical dash pattern — the stitched spine down the page's left edge.</summary>
+        /// <summary>
+        /// The stitched spine's thread — a soft-edged vertical stitch, faded
+        /// at the ends and sides so the tiled column reads as sewn thread
+        /// rather than aliased blocks. Separate from <see cref="DashSprite"/>:
+        /// the trail row's rule samples that tile's bottom rows and would
+        /// change appearance if this softening were applied there.
+        /// </summary>
+        private static Sprite SpineSprite()
+        {
+            if (_spineSprite == null)
+            {
+                const int width = 6;
+                const int height = 28;
+                const int stitch = 14; // thread length; the rest of the tile is gap
+                var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                for (var y = 0; y < height; y++)
+                {
+                    for (var x = 0; x < width; x++)
+                    {
+                        var along = Mathf.Clamp01(Mathf.Min(y + 1, stitch - y) / 2f);
+                        var across = Mathf.Clamp01(Mathf.Min(x + 1, width - x) / 2f);
+                        var alpha = y < stitch ? 0.5f * along * across : 0f;
+                        texture.SetPixel(x, y, new Color(Ink2.r, Ink2.g, Ink2.b, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _spineSprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _spineSprite;
+        }
+
+        /// <summary>A vertical dash pattern — the trail row's dotted rule.</summary>
         private static Sprite DashSprite()
         {
             if (_dashSprite == null)
@@ -2365,7 +2703,7 @@ namespace Wildgrove.Game
         }
 
         /// <summary>Overlay a ruled outline on a panel. Positive inset draws it outside the bounds (the mock's offset outline).</summary>
-        private void AddBorder(GameObject host, Color color, float inset = 0f)
+        private GameObject AddBorder(GameObject host, Color color, float inset = 0f)
         {
             var go = new GameObject("Border", typeof(Image), typeof(LayoutElement));
             go.transform.SetParent(host.transform, false);
@@ -2380,6 +2718,7 @@ namespace Wildgrove.Game
             rect.anchorMax = Vector2.one;
             rect.offsetMin = new Vector2(-inset, -inset);
             rect.offsetMax = new Vector2(inset, inset);
+            return go;
         }
 
         private GameObject MakePanel(string name, RectTransform parent, Color color)

@@ -59,6 +59,48 @@ namespace Wildgrove.Game.World
         }
 
         /// <summary>
+        /// A small world-space caption under a placeholder sprite — it ties
+        /// the strip's anonymous shapes to the journal plates naming the same
+        /// resource, and doubles as the "this is a thing" tap affordance.
+        /// Sized in the parent's local units, so it scales with the sprite.
+        /// </summary>
+        public static TextMesh CreateLabel(Transform parent, string text, Font font, Color colour)
+        {
+            var go = new GameObject("Label");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(0f, -1.02f, 0f);
+            var label = go.AddComponent<TextMesh>();
+            label.text = text;
+            label.font = font;
+            label.fontSize = 64;
+            label.characterSize = 0.045f;
+            label.anchor = TextAnchor.UpperCenter;
+            label.alignment = TextAlignment.Center;
+            label.color = colour;
+            var renderer = go.GetComponent<MeshRenderer>();
+            renderer.material = font.material;
+            renderer.sortingOrder = 4;
+            return label;
+        }
+
+        /// <summary>
+        /// Re-run a label's mesh generation. Dynamic font atlases rebuild when
+        /// new glyphs arrive (the HUD shares these fonts at many sizes), and a
+        /// TextMesh caught out by a rebuild renders garbage until poked.
+        /// </summary>
+        public static void RefreshLabel(TextMesh label)
+        {
+            if (label == null)
+            {
+                return;
+            }
+
+            var text = label.text;
+            label.text = string.Empty;
+            label.text = text;
+        }
+
+        /// <summary>
         /// A stable, muted colour for a resource id — same id, same colour,
         /// every run — so the placeholder nodes are tellable apart without any
         /// authored palette data.
