@@ -131,24 +131,38 @@ namespace Wildgrove.EditorTools
             state.renown = new BigDouble(1250);
             state.amber = 12;
 
-            // A crew worth photographing: gatherers across the nodes, three on the trail.
-            var flockSizes = new[] { 5, 3, 6, 2, 4, 3, 5, 2, 3 };
+            // A kith worth photographing: the two seeds plus four staged
+            // companions — a full six-slot ladder. Recruit refuses past the
+            // slot cap and Restore clamps to slotsMax, so stage the roster
+            // directly and stay inside the ceiling: the showcase isn't a
+            // legal run, it's a photograph.
+            var stations = new[]
+            {
+                state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id,
+                state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id,
+                Familiar.TrailStation,
+                state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id,
+            };
+            for (var i = 0; i < stations.Length; i++)
+            {
+                var species = stations[i] == Familiar.TrailStation ? "pack-raven" : "meadow-vole";
+                state.roster.Add(new Familiar
+                {
+                    id = state.NextFamiliarId(),
+                    speciesId = species,
+                    name = Roster.SuggestName(state, data, species),
+                    stationId = stations[i],
+                    xp = 900 + i * 400,
+                    kinshipXp = i == 0 ? 4200 : 0,
+                });
+            }
+
             for (var i = 0; i < state.nodes.Count; i++)
             {
                 var node = state.nodes[i];
-                for (var f = 0; f < flockSizes[i % flockSizes.Length]; f++)
-                {
-                    Roster.Recruit(state, data, "meadow-vole", node.id);
-                }
-
                 node.masteryXp = 1800 + i * 700;
                 node.basket = new BigDouble(12 + i * 7);
                 state.AddResource(node.resourceId, new BigDouble(900 + i * 2100));
-            }
-
-            for (var t = 0; t < 3; t++)
-            {
-                Roster.Recruit(state, data, "pack-raven", Familiar.TrailStation);
             }
 
             state.AddResource("copper-ingot", new BigDouble(14));
@@ -158,13 +172,6 @@ namespace Wildgrove.EditorTools
             state.AddFine("nuts", new BigDouble(45));
             Folio.TryFix(state, data, "wildflowers");
 
-            foreach (var site in state.digSites)
-            {
-                for (var d = 0; d < 2; d++)
-                {
-                    Roster.Recruit(state, data, "meadow-vole", Familiar.DigStationPrefix + site.zoneId);
-                }
-            }
 
             state.insectSketches["stags-herald"] = 2;
             state.deedCounts["tend"] = 14;

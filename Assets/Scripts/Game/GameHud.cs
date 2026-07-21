@@ -108,7 +108,11 @@ namespace Wildgrove.Game
             _hand = LoadFont("Caveat", _font);
             EnsureEventSystem();
             BuildChrome();
-            SetNote("tap a node's plate to tend it · space / (A) tends the selected node");
+            // Keyboard/gamepad hint only where one can exist — on a phone the
+            // margin note is flavour, not a manual for keys it doesn't have.
+            SetNote(Application.isMobilePlatform
+                ? "tap a node's plate to tend it"
+                : "tap a node's plate to tend it · space / (A) tends the selected node");
         }
 
         private void Update()
@@ -240,7 +244,7 @@ namespace Wildgrove.Game
             trackerButton.onClick.AddListener(() => OpenTab(TabTrail));
             AddBorder(trackerGo, Ink2);
             _trackerText = MakeText(trackerGo.transform, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);
-            Flexible(_trackerText.gameObject, 1f);
+            FlexibleWidth(_trackerText.gameObject, 1f);
             _foldButton = Button(trackerGo.transform, "Fold the camp", 260, OpenMigrationSheet);
             _foldButton.GetComponent<Image>().color = OchreWash;
             _foldButton.GetComponentInChildren<Text>().color = Ochre;
@@ -351,6 +355,10 @@ namespace Wildgrove.Game
             content.anchorMin = new Vector2(0f, 1f);
             content.anchorMax = new Vector2(1f, 1f);
             content.pivot = new Vector2(0.5f, 1f);
+            // MakeRect's default sizeDelta is (100,100) — with stretched X
+            // anchors that leaves the page 100 units WIDER than the viewport
+            // (50 clipped off each edge). Zero it so content width == viewport.
+            content.sizeDelta = Vector2.zero;
             var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -963,7 +971,7 @@ namespace Wildgrove.Game
             var slot = verse.slots[slotIndex];
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
-            Flexible(label.gameObject, 1f);
+            FlexibleWidth(label.gameObject, 1f);
 
             Button offer = null;
             switch (slot.type)
@@ -1087,7 +1095,7 @@ namespace Wildgrove.Game
                 var captured = recipe;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var toggle = Button(row.transform, "Craft", 160, () =>
                 {
                     _loop.ToggleCraft(captured);
@@ -1119,7 +1127,7 @@ namespace Wildgrove.Game
                 var captured = building;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var build = Button(row.transform, "Raise", 160, () =>
                 {
                     if (_loop.BuyBuildingLevel(captured))
@@ -1232,7 +1240,7 @@ namespace Wildgrove.Game
                 var captured = upgrade;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var buy = Button(row.transform, "Take up", 170, () =>
                 {
                     if (_loop.PurchaseUpgrade(captured))
@@ -1278,7 +1286,7 @@ namespace Wildgrove.Game
                 var captured = gear;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
 
                 if (Gear.IsEquipped(_loop.State, captured))
                 {
@@ -1340,7 +1348,7 @@ namespace Wildgrove.Game
                 var captured = familiar;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var rename = Button(row.transform, "Name", 110, () => OpenNamingSheet(captured));
                 var powerup = Button(row.transform, "A lesson", 170, () => OpenPowerupSheet(captured));
                 powerup.GetComponent<Image>().color = OchreWash;
@@ -1515,7 +1523,7 @@ namespace Wildgrove.Game
                 var resourceId = pair.Key;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var fix = Button(row.transform, "Fix", 140, () =>
                 {
                     if (_loop.FixSpecimen(resourceId))
@@ -1600,7 +1608,7 @@ namespace Wildgrove.Game
                 var captured = node;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
-                Flexible(label.gameObject, 1f);
+                FlexibleWidth(label.gameObject, 1f);
                 var buy = Button(row.transform, "Learn", 160, () =>
                 {
                     if (_loop.BuyAlmanacNode(captured))
@@ -1834,15 +1842,19 @@ namespace Wildgrove.Game
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(800, 660);
+            // Fixed width, hugged height — a fixed height leaves a welcome-back
+            // note floating in a half-empty card.
+            rt.sizeDelta = new Vector2(800, 0);
             var layout = panel.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.padding = new RectOffset(30, 30, 30, 30);
+            layout.padding = new RectOffset(30, 30, 30, 36);
             layout.spacing = 16;
+            var fitter = panel.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             return panel.transform;
         }
 
@@ -2310,6 +2322,17 @@ namespace Wildgrove.Game
         {
             var element = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
             element.flexibleHeight = weight;
+        }
+
+        /// <summary>
+        /// Take the row's horizontal slack (the mock's flex:1 label). Distinct
+        /// from Flexible: a flexibleHeight on a row label bubbles up through
+        /// the layout groups and lets the whole panel soak up screen slack.
+        /// </summary>
+        private static void FlexibleWidth(GameObject go, float weight)
+        {
+            var element = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+            element.flexibleWidth = weight;
         }
     }
 }
