@@ -66,6 +66,12 @@ namespace Wildgrove.Data
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
 
+            var giftSpecies = data.Economy?.Gifts?.Species;
+            if (!string.IsNullOrEmpty(giftSpecies) && !data.Species.Any(s => s.Id == giftSpecies))
+            {
+                issues.Add($"Economy gifts.species references unknown species '{giftSpecies}'");
+            }
+
             return issues;
         }
 
@@ -1008,20 +1014,24 @@ namespace Wildgrove.Data
             RequireSection(economy.FamiliarXp, "familiarXp", issues);
             RequireSection(economy.Replant, "replant", issues);
 
-            if (economy.CostGrowth != null
-                && (economy.CostGrowth.GathererGift <= 1 || economy.CostGrowth.CarrierGift <= 1 || economy.CostGrowth.Building <= 1))
+            if (economy.CostGrowth != null && economy.CostGrowth.Building <= 1)
             {
                 issues.Add("Economy costGrowth factors must all be > 1");
             }
 
-            if (economy.Gifts != null && (economy.Gifts.GathererBaseGoods <= 0 || economy.Gifts.CarrierBaseGoods <= 0))
+            if (economy.Gifts != null && economy.Gifts.PileGoods <= 0)
             {
-                issues.Add("Economy gift base costs must be positive");
+                issues.Add("Economy gifts.pileGoods must be positive");
+            }
+
+            if (economy.Gifts != null && string.IsNullOrEmpty(economy.Gifts.Species))
+            {
+                issues.Add("Economy gifts.species is missing — the gift event needs a deterministic arrival");
             }
 
             if (economy.Warden != null && economy.Warden.GatherPerSecond <= 0)
             {
-                // Not merely a tuning value: gatherer gifts cost the node's own
+                // Not merely a tuning value: the gift pile costs the node's own
                 // resource, and a bare node's only source is the warden's hands.
                 issues.Add("Economy warden.gatherPerSecond must be positive or bare nodes can never afford their first gift");
             }

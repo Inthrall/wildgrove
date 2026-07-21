@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 24;
+        public const int CurrentVersion = 25;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -55,6 +55,7 @@ namespace Wildgrove.Sim.Saves
                     stationId = familiar.stationId,
                     bonded = familiar.bonded,
                     bondId = familiar.bondId,
+                    gifted = familiar.gifted,
                 });
             }
 
@@ -205,6 +206,7 @@ namespace Wildgrove.Sim.Saves
                         stationId = StationValid(state, saved.stationId) ? saved.stationId : null,
                         bonded = saved.bonded,
                         bondId = saved.bondId,
+                        gifted = saved.gifted,
                     });
                 }
             }
@@ -818,6 +820,12 @@ namespace Wildgrove.Sim.Saves
                         // can't map — it drops, and the plates start empty.
                         save.insectSketches = save.insectSketches ?? new List<SavedInsectSketches>();
                         save.version = 24;
+                        break;
+
+                    case 24:
+                        // v24 predates the gift event — no pile was ever left
+                        // (SavedFamiliar.gifted's missing-field default covers it).
+                        save.version = 25;
                         break;
 
                     default:

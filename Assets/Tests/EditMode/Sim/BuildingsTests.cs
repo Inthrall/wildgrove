@@ -24,7 +24,7 @@ namespace Wildgrove.Sim.Tests
             _data = ScriptableObject.CreateInstance<GameDataAsset>();
             _data.economy = new EconomyData
             {
-                costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09, carrierGift = 1.10, building = 1.25 },
+                costGrowth = new EconomyData.CostGrowthData { building = 1.25 },
             };
             _data.upgrades = new List<UpgradeData>
             {

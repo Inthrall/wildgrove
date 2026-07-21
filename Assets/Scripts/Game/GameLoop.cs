@@ -390,6 +390,41 @@ namespace Wildgrove.Game
             return true;
         }
 
+        /// <summary>True while the gift event is live (design §4: a verse sung, a slot open, the pile unanswered) — shows the node plates' pile line.</summary>
+        public bool GiftAvailable()
+        {
+            return Gifts.IsAvailable(State, Data);
+        }
+
+        /// <summary>Units of the node's own resource one pile costs — for the pile line's label.</summary>
+        public BigDouble GiftPileCost()
+        {
+            return Gifts.PileCost(Data.economy);
+        }
+
+        /// <summary>True when camp stock covers a pile at this node.</summary>
+        public bool CanLeaveGift(NodeState node)
+        {
+            return Gifts.CanLeavePile(State, Data, node);
+        }
+
+        /// <summary>
+        /// Leave a pile of the node's own resource (design §4: one pile, one
+        /// yes) — the arrival is stationed there and queues for the naming
+        /// sheet like any recruit. Returns the newcomer, or null when the camp
+        /// can't spare the pile.
+        /// </summary>
+        public Familiar LeaveGift(NodeState node)
+        {
+            var familiar = Gifts.LeavePile(State, Data, node);
+            if (familiar != null)
+            {
+                Telemetry.LogEvent("gift_left", ("node", node.id), ("species", familiar.speciesId));
+            }
+
+            return familiar;
+        }
+
         /// <summary>True once the Carving Bench has opened Bushcraft and its planter recipes (design §3) — gates the planter UI.</summary>
         public bool PlantersUnlocked()
         {

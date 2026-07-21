@@ -1,14 +1,12 @@
 {
   "$comment": "Global economy constants from design doc §8. All first-pass values — tune in Phase 3 against pacing targets.",
   "costGrowth": {
-    "gathererGift": 1.09,
-    "carrierGift": 1.10,
     "building": 1.25
   },
   "gifts": {
-    "gathererBaseGoods": 10,
-    "carrierBaseGoods": 8,
-    "$note": "cost(n) = base * growth^n where n = familiars of that role already befriended this run. Gatherer gifts are paid in the node's own resource (design §13 decision: you leave a pile of what the flock likes), gathererBaseGoods units from camp stock. Carrier gifts fill the camp Feeder: carrierBaseGoods units of EACH resource the flock currently works (every node with a gatherer), also from camp stock — breadth for the familiars that serve every trail. First-pass values, tune in Phase 3."
+    "pileGoods": 10,
+    "species": "meadow-vole",
+    "$note": "design §4: the gift event — unlocked by the first verse's completion, one pile, one yes. pileGoods units of the node's OWN resource (§13 decision: you leave a pile of what the flock likes), spent from camp stock at the node the player chooses; the arrival is deterministic (species) and takes that node as its post. No cost curve — nothing repeatedly buys a creature (the old gatherer/carrier gift curves retired with the kith reversal). pileGoods is a first guess; tune so the third familiar lands ~45-60 min (§2)."
   },
   "hauling": {
     "baseCarryCapacity": 15,

@@ -361,16 +361,15 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class CostGrowthData
         {
-            public double gathererGift;
-            public double carrierGift;
             public double building;
         }
 
+        /// <summary>The gift event (design §4): one pile of a node's own resource, one deterministic arrival.</summary>
         [Serializable]
         public sealed class GiftsData
         {
-            public BigDouble gathererBaseGoods;
-            public BigDouble carrierBaseGoods;
+            public BigDouble pileGoods;
+            public string species;
         }
 
         [Serializable]

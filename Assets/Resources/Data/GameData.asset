@@ -12,19 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: c75b2d30925ff42346ed5fb4010d49929e94c7e9d1bb5c2c89b075b0ff426086
+  sourceHash: eac5d9530dbb2d4ceef75ea1efc4a51f7e45ea09b40b03396dd1bfa93b0b75fe
   economy:
     costGrowth:
-      gathererGift: 1.09
-      carrierGift: 1.1
       building: 1.25
     gifts:
-      gathererBaseGoods:
+      pileGoods:
         mantissa: 1
         exponent: 1
-      carrierBaseGoods:
-        mantissa: 8
-        exponent: 0
+      species: meadow-vole
     hauling:
       baseCarryCapacity: 15
       tripSeconds: 10

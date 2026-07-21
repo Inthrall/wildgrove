@@ -276,14 +276,12 @@ namespace Wildgrove.Data
             {
                 costGrowth = new EconomyData.CostGrowthData
                 {
-                    gathererGift = e.CostGrowth.GathererGift,
-                    carrierGift = e.CostGrowth.CarrierGift,
                     building = e.CostGrowth.Building
                 },
                 gifts = new EconomyData.GiftsData
                 {
-                    gathererBaseGoods = e.Gifts.GathererBaseGoods,
-                    carrierBaseGoods = e.Gifts.CarrierBaseGoods
+                    pileGoods = e.Gifts.PileGoods,
+                    species = e.Gifts.Species
                 },
                 hauling = new EconomyData.HaulingData
                 {

@@ -941,6 +941,30 @@ namespace Wildgrove.Game
             postedButton.onClick.AddListener(() => OpenPostingSheet(captured.id));
             postedLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
             var postedDashes = AddDashedBorder(postedLine.gameObject);
+
+            // The gift event (design §4): while it's live, every node offers a
+            // dashed pile line — where the pile is left is where the newcomer
+            // works, and which resource it costs. One pile, one yes; the line
+            // vanishes for good once something says yes.
+            var giftLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
+            var giftButton = giftLine.gameObject.AddComponent<Button>();
+            giftButton.transition = Selectable.Transition.None;
+            giftButton.onClick.AddListener(() =>
+            {
+                var arrived = _loop.LeaveGift(captured);
+                if (arrived != null)
+                {
+                    SetNote("you left a pile of " + captured.resourceId + " and stepped back. something said yes.");
+                    _dirty = true;
+                }
+                else
+                {
+                    SetNote("not enough " + captured.resourceId + " for a proper pile. keep picking.");
+                }
+            });
+            giftLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(giftLine.gameObject);
+
             var statsLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
 
             // The tend flash — the mock's "+ yield" that rises and fades; sits
@@ -1018,6 +1042,19 @@ namespace Wildgrove.Game
                     postedLine.fontSize = Mathf.RoundToInt(17 * FontScale);
                     postedLine.text = "<color=" + OchreInkHex + ">+  post someone here</color>";
                     postedDashes.SetActive(true);
+                }
+
+                if (_loop.GiftAvailable())
+                {
+                    giftLine.gameObject.SetActive(true);
+                    var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + captured.resourceId;
+                    giftLine.text = _loop.CanLeaveGift(captured)
+                        ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>"
+                        : "leave a pile — " + pile + " (not enough yet)";
+                }
+                else
+                {
+                    giftLine.gameObject.SetActive(false);
                 }
 
                 var cap = NodeBasketCapacity(captured);

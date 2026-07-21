@@ -130,6 +130,9 @@ namespace Wildgrove.Sim.Saves
         public string stationId;
         public bool bonded;
         public string bondId;
+
+        /// <summary>v25+: the gift event's arrival (missing before = false — the pile was never left).</summary>
+        public bool gifted;
     }
 
     /// <summary>One kit slot's worn gear.</summary>

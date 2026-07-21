@@ -74,6 +74,28 @@ is now the kith):**
 - Roosts `perLevel: "familiarCaps"` marker string kept as the RoostLevel
   counter (comfort track, unbuilt); rename when Roosts comfort lands.
 
+**IMPLEMENTED 2026-07-22 (the gift event — verse 1 answers back):**
+- ✅ **One pile, one yes (design §4, decided 2026-07-18).** New `Gifts.cs`: once any
+  verse of the current rite is complete, every node plate offers a dashed "leave a
+  pile" line — `economy.gifts.pileGoods` (10) units of the node's OWN resource, spent
+  from camp stock; the arrival (`economy.gifts.species`, deterministic: the meadow
+  vole) is stationed at that node and queues for the arrival naming sheet like any
+  recruit. Availability derives from the roster (`Familiar.gifted`), so a clamped
+  save self-heals; save v24→v25 (additive field, no-op migration). Telemetry:
+  `gift_left`.
+- ✅ **The old gift cost curves retired with it.** `gifts.gathererBaseGoods`/
+  `carrierBaseGoods` and `costGrowth.gathererGift`/`carrierGift` dropped from
+  `economy.json` + Def/Types/Mapper/Validator (nothing repeatedly buys a creature);
+  validator now checks `gifts.pileGoods > 0` and that `gifts.species` exists.
+
+**Interpretations shipped with the gift event (tune/confirm):**
+- "Unlocked by verse 1" = ANY verse of the current rite complete (run 1's first
+  verse in practice; regenerated rites keep the gate meaningful on later runs —
+  though at MVP the kith persists, so the gift is usually already answered).
+- The pile line shows on every node while the event is live — where you leave it
+  chooses both the resource spent and the newcomer's post.
+- `pileGoods 10` is a first guess; tune so the third familiar lands ~45–60 min (§2).
+
 **Interpretations / placeholders shipped with it (tune/confirm):**
 - Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
   flat ×0.5 lane when anyone wanders (`Stationing.cs`).
@@ -84,7 +106,7 @@ is now the kith):**
   placeholders); building material bundles are placeholders.
 - Kith is fully persisted across Migration (no presence-lapse/benching yet); the slot
   ladder landed 2026-07-21 (six slots, four free — see below); the verse-1 gift-event
-  and Roosts "comfort" XP are NOT wired.
+  landed 2026-07-22 (see below); Roosts "comfort" XP is NOT wired.
 - Pristine "sell" dropped — Pristine is offer/donate only for now.
 
 **IMPLEMENTED 2026-07-21 (the deep chase → living insects; headless suite green):**
@@ -182,14 +204,11 @@ balance, tracked in the items below.
 - **Tending burst values are a first guess.** `burstYieldMult` / `burstDurationSec`
   in `design/data/economy.json` aren't in the design doc — tune once the loop is
   playable. (`$note` in the file.)
-- **Feeder base amount is a first guess.** `gifts.carrierBaseGoods = 8` — N of each
-  worked resource per carrier (design §13 Feeder). Watch the Phase 3 zone unlocks:
-  the bundle broadens as new nodes come into work, so a freshly-gifted node briefly
-  raises the carrier price in a resource the camp barely holds — probably desirable
-  tension, but confirm it in balance.
-  **v0.11:** superseded by the kith reversal (§4) — there is no carrier type and gifts
-  become one-shot *recruitment events* filling a free kith slot (unlocked by verse 1),
-  not a cost curve. Retire `gifts.carrierBaseGoods`/`carrierGift` with the gift event.
+- ~~**Feeder base amount is a first guess.**~~ **v0.11:** superseded by the kith
+  reversal (§4) — no carrier type; gifts became one-shot *recruitment events*.
+  ✅ RESOLVED 2026-07-22: the gift event landed and
+  `gifts.carrierBaseGoods`/`carrierGift` were retired with it (see the v0.11
+  section above).
 - **Warden gather rate is a first guess.** `warden.gatherPerSecond = 0.5` — the
   warden's passive trickle at their post (always on, burst-boosted), and the
   bare-node gift bootstrap. Replaced the old burst-only hand-gather so the

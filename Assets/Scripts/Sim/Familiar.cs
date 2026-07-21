@@ -52,6 +52,9 @@ namespace Wildgrove.Sim
         /// <summary>True for a bonded familiar (§4): it crosses the fold and is present from minute one. Bonding is the rare honour; the roster entry keeps its name and Kinship.</summary>
         public bool bonded;
 
+        /// <summary>True for the gift event's arrival (§4: one pile, one yes) — while it walks, no second pile tempts anyone.</summary>
+        public bool gifted;
+
         /// <summary>The bond id this familiar was materialised from (design §4), or null for a normal recruit — keeps <see cref="Roster.SyncBonded"/> idempotent.</summary>
         public string bondId;
 

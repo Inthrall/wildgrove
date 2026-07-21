@@ -26,8 +26,6 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 8, rateMultiplier = 1.0 },
-                costGrowth = new EconomyData.CostGrowthData { gathererGift = 1.09, carrierGift = 1.10 },
-                gifts = new EconomyData.GiftsData { gathererBaseGoods = 10, carrierBaseGoods = 8 },
                 // 3600/h → a certain drop every 1 s sub-step; tests that need
                 // the pity path dial this down to (effectively) zero instead.
                 observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 3600.0 },

@@ -25,15 +25,14 @@ namespace Wildgrove.Data
 
         public sealed class CostGrowthSection
         {
-            public double GathererGift { get; set; }
-            public double CarrierGift { get; set; }
             public double Building { get; set; }
         }
 
+        /// <summary>The gift event (design §4): one pile of a node's own resource, one deterministic arrival.</summary>
         public sealed class GiftsSection
         {
-            public long GathererBaseGoods { get; set; }
-            public long CarrierBaseGoods { get; set; }
+            public long PileGoods { get; set; }
+            public string Species { get; set; }
         }
 
         public sealed class HaulingSection
