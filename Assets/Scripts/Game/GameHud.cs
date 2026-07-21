@@ -47,6 +47,10 @@ namespace Wildgrove.Game
         private const string InkHex = "#3A3126";
         private const string Ink2Hex = "#6E6047";
         private const string OchreHex = "#A05A36";
+        // Ochre's small-text sibling: #A05A36 only manages ~4:1 contrast on
+        // card paper, which fails at hint sizes — warnings inline in body
+        // copy use this darker mix instead.
+        private const string OchreInkHex = "#7E421F";
         private const string MossDeepHex = "#55643F";
 
         private const string TabTrail = "trail";
@@ -71,6 +75,7 @@ namespace Wildgrove.Game
         private Text _ledger;
         private Text _note;
         private Text _trackerText;
+        private GameObject _trackerPanel;
         private Button _foldButton;
         private RectTransform _worldGap;
         private RectTransform _body;
@@ -262,6 +267,7 @@ namespace Wildgrove.Game
             // Pinned tracker — verse progress before the Rite consents, the
             // Fold forecast (with its button) after.
             var trackerGo = MakePanel("Tracker", root, CardPaper);
+            _trackerPanel = trackerGo;
             var trackerLayout = trackerGo.AddComponent<HorizontalLayoutGroup>();
             trackerLayout.childControlWidth = true;
             trackerLayout.childControlHeight = true;
@@ -575,34 +581,36 @@ namespace Wildgrove.Game
                 _trackerText.text = "<color=" + OchreHex + ">THE FOLD</color> · +<b>"
                                     + Mathf.FloorToInt((float)gain) + "</b> Verdure banked";
                 _foldButton.gameObject.SetActive(true);
+                _trackerPanel.SetActive(true);
                 return;
             }
 
             _foldButton.gameObject.SetActive(false);
             var rite = Rite.CurrentRite(_loop.State, _loop.Data);
-            if (rite == null || rite.verses == null)
+            if (rite != null && rite.verses != null)
             {
-                _trackerText.text = string.Empty;
-                return;
-            }
-
-            foreach (var verse in rite.verses)
-            {
-                if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse) || Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                foreach (var verse in rite.verses)
                 {
-                    continue;
-                }
+                    if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse) || Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                    {
+                        continue;
+                    }
 
-                var done = Rite.CompletedSlotCount(_loop.State, verse);
-                var need = _loop.Data.rites.chooseCount;
-                // The trailing guillemet marks the banner as a link — it jumps
-                // to the verse card, which lives far down the Trail page.
-                _trackerText.text = "Verse of " + ZoneName(verse.zone) + " — <b>"
-                                    + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
-                return;
+                    var done = Rite.CompletedSlotCount(_loop.State, verse);
+                    var need = _loop.Data.rites.chooseCount;
+                    // The trailing guillemet marks the banner as a link — it
+                    // jumps to the verse card, far down the Trail page.
+                    _trackerText.text = "Verse of " + ZoneName(verse.zone) + " — <b>"
+                                        + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
+                    _trackerPanel.SetActive(true);
+                    return;
+                }
             }
 
+            // Nothing pinned — hide the panel outright; an empty bordered
+            // strip reads as a rendering bug.
             _trackerText.text = string.Empty;
+            _trackerPanel.SetActive(false);
         }
 
         private void SetNote(string text)
@@ -1018,7 +1026,7 @@ namespace Wildgrove.Game
                     // out inked where the player is already looking.
                     postedLine.font = _font;
                     postedLine.fontSize = Mathf.RoundToInt(17 * FontScale);
-                    postedLine.text = "fallow — <color=" + OchreHex + ">post someone  »</color>";
+                    postedLine.text = "fallow — <color=" + OchreInkHex + ">post someone  »</color>";
                 }
 
                 var cap = NodeBasketCapacity(captured);
@@ -1030,7 +1038,7 @@ namespace Wildgrove.Game
                 var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
                 statsLine.text = NumberFormat.Rate(rate) + "/s  ·  " + NumberFormat.Short(stock) + " at camp"
-                                 + (basketFull ? "  ·  <color=" + OchreHex + ">basket full — waits on a carrier</color>" : string.Empty);
+                                 + (basketFull ? "  ·  <color=" + OchreInkHex + ">basket full — waits on a carrier</color>" : string.Empty);
 
                 SetButtonLabel(replant, "Plant back\n" + SizeOpen(15) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
                 var ok = _loop.CanReplant(captured);
@@ -1417,7 +1425,7 @@ namespace Wildgrove.Game
                     var need = string.Empty;
                     if (!_loop.IsRecipeLevelMet(captured))
                     {
-                        need += "  <color=" + OchreHex + ">needs " + captured.skill + " " + captured.skillLevel + "</color>";
+                        need += "  <color=" + OchreInkHex + "><b>needs " + captured.skill + " " + captured.skillLevel + "</b></color>";
                     }
 
                     if (!Crafting.StationLevelMet(_loop.State, _loop.Data, captured))
@@ -1427,7 +1435,7 @@ namespace Wildgrove.Game
                         var line = _loop.Data.BuildingsById.TryGetValue(captured.station, out var building)
                             ? building.displayName
                             : captured.station;
-                        need += "  <color=" + OchreHex + ">needs " + line + " level " + captured.stationLevel + "</color>";
+                        need += "  <color=" + OchreInkHex + "><b>needs " + line + " level " + captured.stationLevel + "</b></color>";
                     }
 
                     label.text = captured.output + progress + need
@@ -1609,9 +1617,23 @@ namespace Wildgrove.Game
 
             var card = Card("THE KIT");
             MakeText(card, "worn for the run, folded at Migration", 21, TextAnchor.MiddleCenter, Ink2, _hand);
+            // Skill unlocks are part of the structure signature, so a locked
+            // piece's hint can be settled once per rebuild.
+            var unlockedSkills = Upgrades.UnlockedSkills(_loop.State, _loop.Data);
             foreach (var gear in _loop.Data.gear)
             {
                 var captured = gear;
+                var skillHint = string.Empty;
+                if (!string.IsNullOrEmpty(captured.skill) && !unlockedSkills.Contains(captured.skill))
+                {
+                    // Materials alone can't explain this dead button — name
+                    // the missing skill AND the Ladder rung that grants it.
+                    var source = SkillSource(captured.skill);
+                    skillHint = "  <color=" + OchreInkHex + "><b>needs " + captured.skill
+                                + (source != null ? " — take up " + source.displayName : string.Empty)
+                                + "</b></color>";
+                }
+
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
@@ -1636,7 +1658,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials) + "</color>" + skillHint + "</size>";
                     var ok = Gear.CanCraft(_loop.State, _loop.Data, captured);
                     craft.interactable = ok;
                     SetButtonTint(craft, ok);
@@ -2256,6 +2278,23 @@ namespace Wildgrove.Game
                 : zoneId;
         }
 
+        /// <summary>The Ladder rung whose effects unlock <paramref name="skill"/>, or null when nothing grants it.</summary>
+        private UpgradeData SkillSource(string skill)
+        {
+            foreach (var upgrade in _loop.Data.upgrades)
+            {
+                foreach (var effect in upgrade.effects)
+                {
+                    if (effect.type == EffectType.UnlockSkill && effect.skill == skill)
+                    {
+                        return upgrade;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private static string Roman(int value)
         {
             string[] numerals = { "—", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
@@ -2399,7 +2438,7 @@ namespace Wildgrove.Game
             {
                 var have = _loop.State.GetResource(id);
                 var part = NumberFormat.Short(amount) + " " + id + " (have " + NumberFormat.Short(have) + ")";
-                parts.Add(have < amount ? "<color=" + OchreHex + ">" + part + "</color>" : part);
+                parts.Add(have < amount ? "<color=" + OchreInkHex + ">" + part + "</color>" : part);
             }
 
             return string.Join(", ", parts);
