@@ -133,13 +133,16 @@ namespace Wildgrove.Sim
         /// Deliver camp stock into a resource slot: consumes up to the slot's
         /// remaining need, credits Renown as it lands (trade value per unit,
         /// or the authored grant pro-rata for material slots), and returns the
-        /// units delivered. Zero when the verse isn't revealed, the slot is
-        /// complete or the wrong type, or the camp holds none.
+        /// units delivered. Zero when the verse isn't revealed or already
+        /// answered (any three finish it — the unchosen slots expire, §8, and
+        /// must never keep eating stock), the slot is complete or the wrong
+        /// type, or the camp holds none.
         /// </summary>
         public static BigDouble DeliverResource(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
             var slot = verse.slots[slotIndex];
-            if (slot.type != RiteSlotType.Resource || !IsVerseRevealed(state, data, verse))
+            if (slot.type != RiteSlotType.Resource || !IsVerseRevealed(state, data, verse)
+                || IsVerseComplete(state, data, verse))
             {
                 return BigDouble.Zero;
             }
@@ -182,7 +185,7 @@ namespace Wildgrove.Sim
         {
             var slot = verse.slots[slotIndex];
             if (slot.type != RiteSlotType.Specimen || !IsVerseRevealed(state, data, verse)
-                || IsSlotComplete(state, verse, slotIndex))
+                || IsSlotComplete(state, verse, slotIndex) || IsVerseComplete(state, data, verse))
             {
                 return null;
             }
@@ -216,7 +219,7 @@ namespace Wildgrove.Sim
         {
             var slot = verse.slots[slotIndex];
             if (slot.type != RiteSlotType.Sketch || !IsVerseRevealed(state, data, verse)
-                || IsSlotComplete(state, verse, slotIndex))
+                || IsSlotComplete(state, verse, slotIndex) || IsVerseComplete(state, data, verse))
             {
                 return null;
             }
@@ -250,6 +253,45 @@ namespace Wildgrove.Sim
             }
 
             return richest;
+        }
+
+        /// <summary>
+        /// True when offering into this slot right now could land something:
+        /// the verse is revealed and unanswered, the slot is open, and the
+        /// camp holds whatever the slot asks for — the HUD's button gate.
+        /// </summary>
+        public static bool CanDeliver(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
+        {
+            if (!IsVerseRevealed(state, data, verse) || IsVerseComplete(state, data, verse)
+                || IsSlotComplete(state, verse, slotIndex))
+            {
+                return false;
+            }
+
+            var slot = verse.slots[slotIndex];
+            switch (slot.type)
+            {
+                case RiteSlotType.Resource:
+                    return state.GetResource(slot.resource) > BigDouble.Zero;
+                case RiteSlotType.Specimen:
+                    return LargestHolding(slot.quality == "pristine" ? state.pristineResources : state.fineResources) != null;
+                case RiteSlotType.Sketch:
+                    if (data.insects != null)
+                    {
+                        foreach (var insect in data.insects)
+                        {
+                            if (Insects.SketchCount(state, insect.id) > 0 && !Insects.IsRecorded(state, insect))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                default:
+                    // Deeds are earned at the nodes, never pressed by a button.
+                    return false;
+            }
         }
 
         /// <summary>
@@ -289,6 +331,14 @@ namespace Wildgrove.Sim
                 {
                     var slot = verse.slots[i];
                     if (slot.type != RiteSlotType.Deed)
+                    {
+                        continue;
+                    }
+
+                    // An unanswered deed slot in an already-answered verse has
+                    // expired (§8) — its progress freezes and its grant is
+                    // forfeit, like every other unchosen slot.
+                    if (IsVerseComplete(state, data, verse) && !IsSlotComplete(state, verse, i))
                     {
                         continue;
                     }

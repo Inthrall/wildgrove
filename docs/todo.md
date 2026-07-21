@@ -234,8 +234,16 @@ balance, tracked in the items below.
     only — per-familiar Kinship gains aren't itemised.
   - The **waystone arrival modal is restored** (it had been dropped in the v0.11
     HUD rewrite); it queues behind arrival/bond/welcome sheets.
-  - Kith **post buttons are a fixed 5-column grid** of node/trail/watch/wander;
-    fine at MVP station counts, revisit when zones multiply.
+  - Kith **post buttons are a 4-column grid sized to the page** of
+    node/trail/watch/wander; fine at MVP station counts, revisit when zones
+    multiply. The kith card (roster + posts) lives on the **Trail page**
+    (Mo's call 2026-07-21: assignment belongs with the land) — the design's
+    "roster & slots on Warden" reading is folded into it; if Warden ever
+    needs a roster summary, split the card.
+  - **Craft / Raise / planter / gear / upgrade material lines show camp
+    stock** ("4 berries (have 35.8K)", shortfall inked ochre) and their
+    buttons disable without a full bundle in stock (crafts also gate on a
+    single batch of inputs; Stop is always allowed).
   - Store capture pages renamed to the four tabs (`StoreCaptureRunner`); legacy
     page names still map inside `GameHud.OpenTab`.
   (`Assets/Scripts/Game/GameHud.cs`)

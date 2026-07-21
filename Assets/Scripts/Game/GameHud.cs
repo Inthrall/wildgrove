@@ -409,7 +409,7 @@ namespace Wildgrove.Game
                     break;
                 case TabWarden:
                     eyebrow = "THE WARDEN";
-                    title = "Kit, Crafts & Kith";
+                    title = "Kit & Crafts";
                     break;
                 case TabRecord:
                     eyebrow = "THE RECORD";
@@ -657,6 +657,11 @@ namespace Wildgrove.Game
             {
                 BuildWatchPlate(site);
             }
+
+            // Stationing lives with the land it points at — the design's
+            // four-page journal gives the Trail page stationing; the Warden
+            // page keeps the kit/crafts identity.
+            BuildKithCard();
 
             BuildVerseCards();
             BuildWaystoneFooter();
@@ -917,6 +922,8 @@ namespace Wildgrove.Game
             });
             _liveUpdaters.Add(() =>
             {
+                SetButtonLabel(build, "Raise " + capturedPlanter.displayName
+                                     + "\n" + SizeOpen(14) + BundleHaveLabel(capturedPlanter.materials) + "</size>");
                 var ok = _loop.CanBuildPlanter(capturedPlanter, capturedTarget);
                 build.interactable = ok;
                 SetButtonTint(build, ok);
@@ -960,8 +967,12 @@ namespace Wildgrove.Game
             var progress = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
-                progress.text = "answered " + Rite.CompletedSlotCount(_loop.State, capturedVerse)
-                                + " of " + _loop.Data.rites.chooseCount;
+                // Clamp for saves that over-delivered before expiry was
+                // enforced — "5 of 3" reads broken, and any three IS answered.
+                var answered = Mathf.Min(Rite.CompletedSlotCount(_loop.State, capturedVerse), _loop.Data.rites.chooseCount);
+                progress.text = Rite.IsVerseComplete(_loop.State, _loop.Data, capturedVerse)
+                    ? "<color=" + MossDeepHex + ">answered — the verse is sung</color>"
+                    : "answered " + answered + " of " + _loop.Data.rites.chooseCount;
             });
 
             for (var i = 0; i < verse.slots.Count; i++)
@@ -1027,14 +1038,29 @@ namespace Wildgrove.Game
                 var delivered = Rite.SlotDelivered(_loop.State, verse, slotIndex);
                 var target = Rite.SlotTarget(slot);
                 var done = delivered >= target;
+                var expired = !done && Rite.IsVerseComplete(_loop.State, _loop.Data, verse);
                 var name = SlotName(slot);
-                label.text = done
-                    ? "<color=" + MossDeepHex + ">" + name + " — set down</color>"
-                    : name + "  <color=" + Ink2Hex + ">" + Mathf.FloorToInt((float)delivered) + " / " + Mathf.FloorToInt((float)target) + "</color>";
+                if (done)
+                {
+                    label.text = "<color=" + MossDeepHex + ">" + name + " — set down</color>";
+                }
+                else if (expired)
+                {
+                    // Any three answer the verse; the rest expire (§8) — the
+                    // spirits stopped listening to this one.
+                    label.text = "<color=" + Ink2Hex + "><i>" + name + " — unasked now</i></color>";
+                }
+                else
+                {
+                    label.text = name + "  <color=" + Ink2Hex + ">" + Mathf.FloorToInt((float)delivered) + " / " + Mathf.FloorToInt((float)target) + "</color>";
+                }
+
                 if (offer != null)
                 {
-                    offer.interactable = !done;
-                    SetButtonTint(offer, !done);
+                    offer.gameObject.SetActive(!done && !expired);
+                    var ok = _loop.CanOffer(verse, slotIndex);
+                    offer.interactable = ok;
+                    SetButtonTint(offer, ok);
                 }
             });
         }
@@ -1114,9 +1140,11 @@ namespace Wildgrove.Game
                         ? string.Empty
                         : "  <color=" + OchreHex + ">needs " + captured.skill + " " + captured.skillLevel + "</color>";
                     label.text = captured.output + progress + need
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleLabel(captured.inputs) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.inputs) + "</color></size>";
                     SetButtonLabel(toggle, crafting ? "Stop" : "Craft");
-                    var ok = crafting || _loop.IsRecipeWorkable(captured);
+                    // Stopping is always allowed; starting needs the gates AND
+                    // a batch of inputs in camp stock.
+                    var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));
                     toggle.interactable = ok;
                     SetButtonTint(toggle, ok);
                 });
@@ -1144,7 +1172,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     label.text = captured.displayName + "  <color=" + Ink2Hex + ">level " + _loop.BuildingLevel(captured) + "</color>"
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">next: " + BundleLabel(_loop.NextBuildingBundle(captured)) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">next: " + BundleHaveLabel(_loop.NextBuildingBundle(captured)) + "</color></size>";
                     var ok = _loop.CanAffordBuilding(captured);
                     build.interactable = ok;
                     SetButtonTint(build, ok);
@@ -1272,7 +1300,6 @@ namespace Wildgrove.Game
         {
             BuildKitCard();
             BuildCraftsCard();
-            BuildKithCard();
             BuildRunCard();
         }
 
@@ -1299,8 +1326,6 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
-                             + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleLabel(captured.materials) + "</color></size>";
                 var craft = Button(row.transform, "Craft", 160, () =>
                 {
                     if (_loop.CraftGear(captured))
@@ -1311,6 +1336,8 @@ namespace Wildgrove.Game
                 });
                 _liveUpdaters.Add(() =>
                 {
+                    label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials) + "</color></size>";
                     var ok = Gear.CanCraft(_loop.State, _loop.Data, captured);
                     craft.interactable = ok;
                     SetButtonTint(craft, ok);
@@ -2000,7 +2027,7 @@ namespace Wildgrove.Game
 
             if (upgrade.materials != null && upgrade.materials.Count > 0)
             {
-                parts.Add(BundleLabel(upgrade.materials));
+                parts.Add(BundleHaveLabel(upgrade.materials));
             }
 
             return parts.Count == 0 ? "ready" : string.Join(" · ", parts);
@@ -2036,6 +2063,50 @@ namespace Wildgrove.Game
             }
 
             return string.Join(", ", parts);
+        }
+
+        /// <summary>
+        /// A bundle line that also says what the camp holds of each item —
+        /// "4 berries (have 35.8K), 2 nuts (have 48)" — with any shortfall
+        /// inked in ochre so the blocking item is the one that stands out.
+        /// </summary>
+        private string BundleHaveLabel(IEnumerable<(string id, BigDouble amount)> bundle)
+        {
+            var parts = new List<string>();
+            foreach (var (id, amount) in bundle)
+            {
+                var have = _loop.State.GetResource(id);
+                var part = NumberFormat.Short(amount) + " " + id + " (have " + NumberFormat.Short(have) + ")";
+                parts.Add(have < amount ? "<color=" + OchreHex + ">" + part + "</color>" : part);
+            }
+
+            return string.Join(", ", parts);
+        }
+
+        private string BundleHaveLabel(List<ItemAmount> materials)
+        {
+            return BundleHaveLabel(Costs(materials));
+        }
+
+        private string BundleHaveLabel(List<Buildings.MaterialCost> bundle)
+        {
+            return BundleHaveLabel(Costs(bundle));
+        }
+
+        private static IEnumerable<(string id, BigDouble amount)> Costs(List<ItemAmount> materials)
+        {
+            foreach (var material in materials ?? new List<ItemAmount>())
+            {
+                yield return (material.id, new BigDouble(material.amount));
+            }
+        }
+
+        private static IEnumerable<(string id, BigDouble amount)> Costs(List<Buildings.MaterialCost> bundle)
+        {
+            foreach (var cost in bundle ?? new List<Buildings.MaterialCost>())
+            {
+                yield return (cost.id, cost.amount);
+            }
         }
 
         /// <summary>A journal card — the mock's bordered paper panel, with an optional small-caps head.</summary>

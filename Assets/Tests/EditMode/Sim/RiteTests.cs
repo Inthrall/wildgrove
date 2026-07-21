@@ -134,6 +134,69 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Deliver_VerseAlreadyAnswered_TheUnchosenSlotsAreExpired()
+        {
+            // Any chooseCount slots answer the verse; the rest expire (§8) —
+            // they must never keep eating stock or paying Renown.
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+
+            state.AddFine("berries", BigDouble.One);
+            state.insectSketches["stags-herald"] = 2;
+            var renownBefore = state.renown;
+
+            Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Null);
+            Assert.That(Rite.DeliverSketch(state, _data, _sunfieldVerse, 4), Is.Null);
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance),
+                "an expired slot takes nothing");
+            Assert.That(state.insectSketches["stags-herald"], Is.EqualTo(2));
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(renownBefore.ToDouble()).Within(Tolerance));
+        }
+
+        [Test]
+        public void RecordDeed_VerseAlreadyAnswered_TheExpiredDeedSlotNeverGrants()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+            var renownBefore = state.renown;
+
+            for (var i = 0; i < 3; i++)
+            {
+                Rite.RecordDeed(state, _data, "tend");
+            }
+
+            Assert.That(Rite.SlotDelivered(state, _sunfieldVerse, 2), Is.EqualTo(0.0).Within(Tolerance),
+                "an expired deed slot's progress is frozen");
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(renownBefore.ToDouble()).Within(Tolerance));
+        }
+
+        [Test]
+        public void CanDeliver_TracksStockAndVerseState()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.False, "nothing held — nothing to set down");
+
+            state.AddResource("berries", 10);
+            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.True);
+
+            state.AddResource("berries", 90);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+            state.AddResource("berries", 10);
+
+            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.False, "the answered verse asks nothing more");
+        }
+
+        [Test]
         public void DeliverResource_ConsumesStockAndCreditsTradeValue()
         {
             var state = GameStateFactory.NewGame(_data);

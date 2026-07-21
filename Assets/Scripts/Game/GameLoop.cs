@@ -610,6 +610,12 @@ namespace Wildgrove.Game
             return hours;
         }
 
+        /// <summary>True when offering into this slot could land something now — the verse is open and the camp holds what it asks (the HUD's button gate).</summary>
+        public bool CanOffer(RiteVerseData verse, int slotIndex)
+        {
+            return Rite.CanDeliver(State, Data, verse, slotIndex);
+        }
+
         /// <summary>Offer camp stock into a resource slot of the Rite (design §7). Returns the units delivered.</summary>
         public BigDouble OfferResource(RiteVerseData verse, int slotIndex)
         {
