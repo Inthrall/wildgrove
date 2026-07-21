@@ -172,24 +172,52 @@ MVP tails / balance, tracked in the items below.
 
 ## Phase 2 — Adaptive UI & input
 
-- **HUD is programmer-art, built in code.** `GameHud` constructs uGUI at runtime with
-  flat colours and `LayoutGroup`s; real responsive layout (phone-portrait column ↔
-  landscape dashboard) is the Phase 2 job. (`Assets/Scripts/Game/GameHud.cs`)
-- **Legacy `Text` + `LegacyRuntime.ttf` builtin font.** Chosen to avoid the
-  TextMeshPro essentials import for placeholder UI; swap to TMP with a real naturalist
-  typeface when the art direction lands. (`GameHud`)
+- **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
+  code.** `GameHud` now lays out the mock's structure — paper palette, eyebrow/title
+  head, resource ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs
+  (Trail · Camp · Warden · Record) — as runtime uGUI, with the reskin pass on top:
+  the four journal typefaces, generated ruled ink borders, paper-grain + stitched-spine
+  overlays, and the tend-flash / trail-carrier motion touches. Still no hand-drawn
+  line art (node plates and the compendium have no naturalist illustrations).
+  Interpretations shipped with it (tune/confirm):
+  - The **world strip stays above the page on every tab**; the mock has no strip
+    (its plates ARE the world). It goes when the real region scene lands.
+  - The **margin note** is a flavour line set by actions (tend/replant/trade/offer/
+    build), hardcoded strings in `GameHud` — not a data-driven dialogue channel.
+  - The **ledger** lists every discovered resource; it will need a cap or grouping
+    once later zones make it long.
+  - The Rite verse card now renders **all four slot types** (the old HUD skipped
+    specimen/sketch/deed); spotlight (✳) markers are not shown yet.
+  - Migration runs tracker **Fold button → confirm sheet → full-dark vignette**
+    (lines from `dialogue.migrationVignette`); the vignette shows the Verdure gain
+    only — per-familiar Kinship gains aren't itemised.
+  - The **waystone arrival modal is restored** (it had been dropped in the v0.11
+    HUD rewrite); it queues behind arrival/bond/welcome sheets.
+  - Crew **post buttons are a fixed 5-column grid** of node/trail/watch/wander;
+    fine at MVP station counts, revisit when zones multiply.
+  - Store capture pages renamed to the four tabs (`StoreCaptureRunner`); legacy
+    page names still map inside `GameHud.OpenTab`.
+  (`Assets/Scripts/Game/GameHud.cs`)
+- **Real typefaces via legacy `Text` (2026-07-21), not TMP.** The mock's four roles
+  ship as OFL TTFs in `Assets/Resources/Fonts/` (licenses in `docs/font-licenses/`):
+  IM Fell English (titles/verses/lore), IM Fell English SC (chrome/buttons — real
+  small caps), Caveat (margin notes/posted lines), Lora (body). Rendering is Unity's
+  dynamic-font path, so bold/italic are synthesized and exotic glyphs fall back to
+  OS fonts (the HUD avoids ✎/★/✓/→ for that reason). A TMP swap (SDF crispness,
+  proper style faces) is still open if the raster look isn't good enough on device.
+  Caveat + Lora are variable fonts — Unity renders their default instance. (`GameHud`)
 - **Node sprites are runtime-generated placeholder discs in a screen strip.**
   `PlaceholderArt` makes one tinted disc per resource and `WorldView` lays them out
   in the gap the HUD leaves open; the hand-drawn naturalist plates and a real region
   scene replace them (the camera/world seam and screen-point hit test stay).
   (`Assets/Scripts/Game/World/`)
-- **The lower panel scrolls rather than adapting.** The node/shop/crafting/camp
-  sections sit in a height-capped scroll view (45% of canvas height) with the
-  actions row and hint pinned below — so the column can't outgrow portrait, but
-  it's still a single list. Per-zone collapsing and the landscape dashboard are
-  the remaining Phase 2 job; on short landscape screens the scroll section
-  absorbs the squeeze and the world strip can collapse to nothing.
-  (`GameHud.BuildScrollSection`, `HeightClampedElement`)
+- **Portrait-only: the mock's wide (≥880px) two-column layout isn't built.** The
+  journal tabs solve the outgrowing-portrait problem (each page is its own scroll),
+  but landscape/desktop still gets the phone column; the mock pins the Trail page
+  beside the open page on wide screens. Safe-area insets (`env(safe-area-inset-*)`
+  in the mock) are also not applied. `HeightClampedElement`/`TrackedScrollRect`
+  are no longer used by the HUD (kept compiling — delete or reuse).
+  (`GameHud`)
 - **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
   GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
   Replace with a real bootstrap scene when there's content to lay out.
