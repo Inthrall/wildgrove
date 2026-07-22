@@ -64,7 +64,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.RecipesById["copper-ingot"].StationLevel, Is.EqualTo(1), "absent stationLevel defaults to 1");
             Assert.That(data.RecipesById["iron-ingot"].SkillLevel, Is.EqualTo(5), "iron smelting waits for forgecraft 5");
             Assert.That(data.RecipesById["copper-ingot"].SkillLevel, Is.EqualTo(1), "absent skillLevel defaults to 1");
-            Assert.That(data.Economy.Xp.GatherPerUnit, Is.EqualTo(1.0));
+            Assert.That(data.Economy.Xp.GatherPerUnit, Is.EqualTo(3.0));
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
@@ -433,7 +433,7 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"gatherPerUnit\": 1,",
+                "\"gatherPerUnit\": 3,",
                 "\"gatherPerUnit\": -1,");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));

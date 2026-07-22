@@ -39,17 +39,18 @@
     "$note": "curve and xpPerUnit are first guesses, not in the design doc — mastery XP per unit gathered at the node, rung r costs base·growth^r. yieldBonusPerLevel applies to both yield and the raw resource's sell value (§4 '+5% yield/value')."
   },
   "verdure": {
-    "renownDivisor": 5000,
+    "renownDivisor": 2800,
     "exponent": 0.5,
-    "yieldBonusPerPoint": 0.02
+    "yieldBonusPerPoint": 0.02,
+    "$note": "renownDivisor tuned via the balance model (docs/economy-model.xlsx, ECO-2 Renown) to bank ~10 Verdure at the first fold once Renown-at-fold rose with gatherPerUnit=3. Verdure = floor((lifetimeRenown / renownDivisor) ^ exponent). Model-derived; confirm in playtest."
   },
   "xp": {
     "base": 100,
     "growth": 1.10,
     "maxLevel": 99,
-    "gatherPerUnit": 1,
+    "gatherPerUnit": 3,
     "craftPerBatch": 25,
-    "$note": "gatherPerUnit/craftPerBatch are first guesses, not in the design doc — XP per unit gathered (gross, basket overflow included) and per completed batch. Tune with the §2 pacing targets."
+    "$note": "gatherPerUnit tuned to 3 via the balance model (docs/economy-model.xlsx) so gathering pulls roughly even with familiar time-XP as a Renown source (§9 'every good handled credits Renown') — at 1 it was only ~22% of Renown. Note this also credits warden gathering-skill XP, but recipe gates (max level 5) are already met in minutes at any value, so progression is unaffected. craftPerBatch is still a first guess. Confirm in playtest."
   },
   "offline": {
     "baseCapHours": 4,
@@ -90,9 +91,9 @@
     "growth": 1.12,
     "maxLevel": 99,
     "xpPerSecond": 1.0,
-    "kinshipDivisor": 1000,
+    "kinshipDivisor": 12000,
     "kinshipXpRatePerLevel": 0.02,
-    "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. All first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
+    "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. kinshipDivisor tuned to 12000 via the balance model (docs/economy-model.xlsx) — a familiar stationed a whole run banks ~2 Kinship at the first fold; at 1000 it banked ~7. The rest are first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
   },
   "replant": {
     "baseCost": 20,

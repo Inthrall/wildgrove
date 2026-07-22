@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 2b2597445ca2c7965de528e69b5aa98bcd96e795a83a7ac778687fae7bb5a8f9
+  sourceHash: 93df53491655bac5bc8a659da313ad7180a5bf687b33098291ee935c977734d4
   economy:
     costGrowth:
       building: 1.25
@@ -49,14 +49,14 @@ MonoBehaviour:
       maxLevel: 99
       xpPerUnit: 0.25
     verdure:
-      renownDivisor: 5000
+      renownDivisor: 2800
       exponent: 0.5
       yieldBonusPerPoint: 0.02
     xp:
       baseXp: 100
       growth: 1.1
       maxLevel: 99
-      gatherPerUnit: 1
+      gatherPerUnit: 3
       craftPerBatch: 25
     offline:
       baseCapHours: 4
@@ -81,7 +81,7 @@ MonoBehaviour:
       growth: 1.12
       maxLevel: 99
       xpPerSecond: 1
-      kinshipDivisor: 1000
+      kinshipDivisor: 12000
       kinshipXpRatePerLevel: 0.02
     replant:
       baseCost:
