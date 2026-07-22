@@ -4,9 +4,10 @@ using UnityEngine;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// Maps game ids (resource / zone / species / skill / gear / good / insect /
-    /// journal-furniture) to the hand-picked public-domain naturalist plates and
-    /// UI glyphs under <c>Assets/Resources/Art/</c>, loading each sprite lazily
+    /// Maps game ids (resource / zone / species / skill / gear / good / building /
+    /// insect / journal-furniture / manufactured line motif) to the hand-picked
+    /// public-domain naturalist plates and PSF ink drawings under
+    /// <c>Assets/Resources/Art/</c>, loading each sprite lazily
     /// via <see cref="Resources"/> and caching it. Every lookup returns
     /// <c>null</c> when there is no art for that id (or the file is missing), so
     /// callers keep their <see cref="World.PlaceholderArt"/> fallback — the art
@@ -56,13 +57,26 @@ namespace Wildgrove.Game
         private static readonly Dictionary<string, string> Good = new Dictionary<string, string>
         {
             { "berry-preserve", Plates + "Goods/goods-preserve" },
+            { "mushroom-skewer", Plates + "Goods/goods-skewer" },
             { "smoked-trout", Plates + "Goods/goods-smoked-trout" },
+            { "fish-oil", Plates + "Goods/goods-fish-oil" },
             { "planks", Plates + "Goods/goods-planks" },
             { "reed-baskets", Plates + "Goods/goods-basket" },
+            { "charcoal", Plates + "Goods/goods-charcoal" },
             { "copper-ingot", Plates + "Goods/goods-ingot" },
             { "bronze-ingot", Plates + "Goods/goods-ingot" },
             { "iron-ingot", Plates + "Goods/goods-ingot" },
             { "cordage", Plates + "Gear/gear-cordage" },
+        };
+
+        // building id (buildings.json) → camp-line plate
+        private static readonly Dictionary<string, string> Building = new Dictionary<string, string>
+        {
+            { "fire", Plates + "Buildings/building-fire" },
+            { "forge", Plates + "Buildings/building-forge" },
+            { "bench", Plates + "Buildings/building-bench" },
+            { "store", Plates + "Buildings/building-store" },
+            { "roosts", Plates + "Buildings/building-roosts" },
         };
 
         // zone id (zones.json) → keystone specimen plate
@@ -122,6 +136,16 @@ namespace Wildgrove.Game
             { "those-who-sow", Plates + "Insects/insect-those-who-sow" },
         };
 
+        // manufactured line-art motifs the HUD places by a plain name — the PSF
+        // ink drawings that aren't a single good/gear id: the trellis over every
+        // planter, the seedling on Plant back, the hatchet heading the Ladder.
+        private static readonly Dictionary<string, string> Line = new Dictionary<string, string>
+        {
+            { "planter", Plates + "Goods/goods-trellis" },
+            { "seedling", Plates + "Goods/goods-seedling" },
+            { "tools", Plates + "Goods/goods-tools" },
+        };
+
         // journal furniture — chrome, keyed by a plain name
         private static readonly Dictionary<string, string> Journal = new Dictionary<string, string>
         {
@@ -154,6 +178,12 @@ namespace Wildgrove.Game
 
         /// <summary>The deep-page plate for an insect, or null.</summary>
         public static Sprite ForInsect(string insectId) => Load(Lookup(Insect, insectId));
+
+        /// <summary>The camp-line plate for a building, or null.</summary>
+        public static Sprite ForBuilding(string buildingId) => Load(Lookup(Building, buildingId));
+
+        /// <summary>A manufactured line-art motif by plain name ("planter", "seedling", "tools"), or null.</summary>
+        public static Sprite ForLine(string name) => Load(Lookup(Line, name));
 
         /// <summary>A journal-furniture sprite by plain name ("paper", "waystone", …), or null.</summary>
         public static Sprite ForJournal(string name) => Load(Lookup(Journal, name));

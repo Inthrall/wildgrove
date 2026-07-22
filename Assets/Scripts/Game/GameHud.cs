@@ -930,6 +930,13 @@ namespace Wildgrove.Game
             var fig = MakeText(figRow.transform, "FIG. " + figure + ".", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
             fig.gameObject.name = "Fig";
             FlexibleWidth(fig.gameObject, 1f);
+            // A seedling marks Plant back — putting the specimen back in the ground.
+            var seedling = ArtLibrary.ForLine("seedling");
+            if (seedling != null)
+            {
+                IconImage(figRow.transform, seedling, 40f, Color.white);
+            }
+
             Button replant = null;
             replant = Button(figRow.transform, "Plant back", 230, () =>
             {
@@ -1028,6 +1035,14 @@ namespace Wildgrove.Game
             if (_loop.PlantersUnlocked())
             {
                 var actions = ActionRow(card);
+                // One trellis heads the planter buttons — the structures raised
+                // over the node — rather than repeating it on each.
+                var trellis = ArtLibrary.ForLine("planter");
+                if (trellis != null)
+                {
+                    IconImage(actions, trellis, 44f, Color.white);
+                }
+
                 foreach (var planter in _loop.NodePlanters())
                 {
                     AddPlanterAction(actions, planter, captured.id);
@@ -1654,6 +1669,12 @@ namespace Wildgrove.Game
                 var captured = building;
                 var gives = PerLevelGivesLabel(captured);
                 var row = Row(card);
+                var plate = ArtLibrary.ForBuilding(captured.id);
+                if (plate != null)
+                {
+                    IconImage(row.transform, plate, 64f, Color.white);
+                }
+
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
                 Button build = null;
@@ -1750,6 +1771,13 @@ namespace Wildgrove.Game
         private void BuildLadderCard()
         {
             var card = Card("THE LADDER");
+
+            // The hatchet heads the rungs — the work sharpens as you climb.
+            var tools = ArtLibrary.ForLine("tools");
+            if (tools != null)
+            {
+                PlateImage(card, tools, 150f);
+            }
 
             // The next few unpurchased rungs of the §9 ladder, in order.
             var next = new List<UpgradeData>();

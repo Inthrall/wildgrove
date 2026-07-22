@@ -34,6 +34,9 @@ All source works are public domain (original artworks out of copyright) or openl
 | Gear Tarp | gear-tarp.jpg | Tent (PSF).png — Pearson Scott Foresman | 2020-09-25 | https://commons.wikimedia.org/w/index.php?curid=94418153 | Public domain | No |
 | Gear Torch | gear-torch.png | Lantern (PSF).png — Pearson Scott Foresman | 2020-03-25 | https://commons.wikimedia.org/w/index.php?curid=88542467 | Public domain | No |
 | Goods Basket | goods-basket.png | Basket 493 (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/w/index.php?curid=3578663 | Public domain | No |
+| Goods Charcoal | goods-charcoal.png | Coal scuttle (PSF).jpg — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Coal_scuttle_(PSF).jpg | Public domain | No |
+| Goods Fish Oil | goods-fish-oil.png | Cruet (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Cruet_(PSF).png | Public domain | No |
+| Goods Skewer | goods-skewer.png | Spit Roasting (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Spit_Roasting_(PSF).png | Public domain | No |
 | Goods Ingot | goods-ingot.jpg | Ingot (PSF).png — Pearson Scott Foresman | 2019-05-19 | https://commons.wikimedia.org/w/index.php?curid=79074312 | Public domain | No |
 | Goods Planks | goods-planks.jpg | Canadian forest industries 1892-1893 (1893) (20334723510).jpg — Internet Archive Book Images | 1893 | https://commons.wikimedia.org/w/index.php?curid=44224853 | No restrictions | No |
 | Goods Preserve | goods-preserve.jpg | Flask (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/w/index.php?curid=12013947 | Public domain | No |
@@ -48,6 +51,11 @@ All source works are public domain (original artworks out of copyright) or openl
 | Amber-Shelled Snail (Bramble Hedgerows) | keystone-amber-snail.jpg | Natural history of the animal kingdom for the use of young people (Plate XXI) (5974404291).jpg — Kirby, W. F.; Schubert, Gotthilf Heinrich von; Society for Promoting Christian Knowledge (Great Britain). | 1889 | https://commons.wikimedia.org/w/index.php?curid=43103530 | Public domain | No |
 | Ancient Acorn (Old-Growth Wood) | keystone-ancient-acorn.jpg | Illustration Quercus robur0 clean.jpg — User:Kilom691 |  | https://commons.wikimedia.org/w/index.php?curid=2067379 | Public domain | No |
 | Aurora Bloom (Cloudreach Peaks) | keystone-aurora-bloom.jpg | The American Flora. Vol. 4, 1855 - pl. 13 Gentiana acaulis, Coreopsis auriculata (14783460165).jpg — AnonymousUnknown author [illustrator not stated, no signature] | 1855 | https://commons.wikimedia.org/w/index.php?curid=43302268 | Public domain | No |
+| Building Bench | building-bench.png | Workbench (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Workbench_(PSF).png | Public domain | No |
+| Building Fire | building-fire.png | Fireplace (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Fireplace_(PSF).png | Public domain | No |
+| Building Forge | building-forge.png | Forge (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Forge_(PSF).png | Public domain | No |
+| Building Roosts | building-roosts.png | Dovecote (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Dovecote_(PSF).png | Public domain | No |
+| Building Store | building-store.png | Barrel (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/wiki/File:Barrel_(PSF).png | Public domain | No |
 | Cloudfleece Ram (Highland Crags) | keystone-cloudfleece-ram.jpg | The breeds of live stock, and the principles of heredity (1887) (14801315903).jpg — Sanders, James Harvey, 1832-1899. [from old catalog] | 1887 | https://commons.wikimedia.org/w/index.php?curid=43048914 | No restrictions | No |
 | Echo Geode (The Hollows) | keystone-echo-geode.jpg | Plate IV- Quartz and Opal - DPLA - 8c000fd0258fff88cf23f36d42caefb4.jpg — Kurr, J. G. (Johann Gottlob), 1798-1870 | 1859date QS:P571,+1859-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=123791266 | Public domain | No |
 | Lantern Firefly (Mistfen Marsh) | keystone-lantern-firefly.jpg | Britishentomologyvolume2Plate698.jpg — John Curtis | 1840 | https://commons.wikimedia.org/w/index.php?curid=10777622 | Public domain | No |
