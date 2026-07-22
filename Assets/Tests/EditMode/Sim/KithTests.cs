@@ -6,10 +6,11 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the kith's slot ladder (design §4): six slots, four free from
-    /// minute one, slot 5 opened by The Old Friend Almanac node and slot 6 by
-    /// the Warden's Gallery spread. Slots cap recruitment and bond
-    /// materialisation; a bond with no room waits in the grass.
+    /// Pins the kith's slot ladder (design §4): one slot from minute one,
+    /// three earned as lifetime verses sung cross the milestones, two more
+    /// from the store. Slots cap who holds a post — the roster itself is the
+    /// collection (one familiar per species, ever) and companions past the
+    /// slots rest at camp.
     /// </summary>
     public class KithTests
     {
@@ -21,7 +22,12 @@ namespace Wildgrove.Sim.Tests
             _data = ScriptableObject.CreateInstance<GameDataAsset>();
             _data.economy = new EconomyData
             {
-                kith = new EconomyData.KithData { slotsBase = 4, slotsMax = 6 },
+                kith = new EconomyData.KithData
+                {
+                    slotsBase = 1,
+                    slotsMax = 6,
+                    verseMilestones = new List<int> { 2, 5, 10 },
+                },
             };
             _data.resources = new List<ResourceData>
             {
@@ -38,32 +44,6 @@ namespace Wildgrove.Sim.Tests
                     unlocks = new List<string> { "foraging" },
                 },
             };
-            _data.folioSpreads = new List<FolioSpreadData>
-            {
-                new FolioSpreadData
-                {
-                    id = "wardens-gallery",
-                    displayName = "The Warden's Gallery",
-                    entries = new List<string> { "berries", "nuts" },
-                    effects = new List<EffectData>
-                    {
-                        new EffectData { type = EffectType.KithSlot, value = 1 },
-                    },
-                },
-            };
-            _data.almanac = new List<AlmanacNodeData>
-            {
-                new AlmanacNodeData
-                {
-                    id = "old-friend",
-                    displayName = "The Old Friend",
-                    costVerdure = 12,
-                    effects = new List<EffectData>
-                    {
-                        new EffectData { type = EffectType.KithSlot, value = 1 },
-                    },
-                },
-            };
         }
 
         [TearDown]
@@ -73,35 +53,47 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Slots_FreshRun_HasTheFourFreeSlots()
+        public void Slots_FreshRun_HasTheSingleOpeningSlot()
         {
             var state = GameStateFactory.NewGame(_data);
 
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(1));
+            Assert.That(Kith.Count(state), Is.EqualTo(2), "the seed vole and raven both belong");
+            Assert.That(Kith.Walking(state), Is.EqualTo(1), "only the vole found a post");
+            Assert.That(Kith.HasRoom(state, _data), Is.False);
+        }
+
+        [Test]
+        public void Slots_VersesSung_OpenTheEarnedRungs()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            state.foldedVersesSung = 1;
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(1), "the first milestone asks for two verses");
+
+            state.foldedVersesSung = 2;
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(2));
+
+            state.foldedVersesSung = 5;
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(3));
+
+            state.foldedVersesSung = 10;
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(4));
-            Assert.That(Kith.Count(state), Is.EqualTo(2), "the seed vole and raven hold two of them");
-            Assert.That(Kith.HasRoom(state, _data), Is.True);
+
+            state.foldedVersesSung = 99;
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(4), "every milestone passed — the rest belong to the store");
         }
 
         [Test]
-        public void Slots_TheOldFriend_OpensSlotFive()
+        public void Slots_PurchasedSlots_StackOnTheEarnedLadder()
         {
             var state = GameStateFactory.NewGame(_data);
+            state.foldedVersesSung = 10;
 
-            state.almanacNodeIds.Add("old-friend");
-
+            state.purchasedKithSlots = 1;
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(5));
-        }
 
-        [Test]
-        public void Slots_TheCompletedGallery_OpensSlotSix()
-        {
-            var state = GameStateFactory.NewGame(_data);
-            state.almanacNodeIds.Add("old-friend");
-
-            state.fixedResources.Add("berries");
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(5), "a half-done spread opens nothing");
-
-            state.fixedResources.Add("nuts");
+            state.purchasedKithSlots = 2;
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(6));
         }
 
@@ -109,36 +101,27 @@ namespace Wildgrove.Sim.Tests
         public void Slots_NeverClimbAboveSlotsMax()
         {
             var state = GameStateFactory.NewGame(_data);
-            _data.almanac[0].effects[0].value = 9;
+            state.foldedVersesSung = 99;
+            state.purchasedKithSlots = 9;
 
-            state.almanacNodeIds.Add("old-friend");
-
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(6), "slotsMax is the ceiling however generous the content");
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(6), "slotsMax is the ceiling however generous the counters");
         }
 
         [Test]
-        public void Slots_TheCabinetMultiplier_NeverScalesTheGallerySlot()
+        public void NextVerseMilestone_WalksTheTable()
         {
-            _data.economy.kith.slotsMax = 10;
-            _data.folioSpreads[0].effects[0].value = 2;
-            _data.upgrades = new List<UpgradeData>
-            {
-                new UpgradeData
-                {
-                    id = "curators-cabinet",
-                    effects = new List<EffectData>
-                    {
-                        new EffectData { type = EffectType.FolioSpreadBonusMult, value = 1.5 },
-                    },
-                },
-            };
             var state = GameStateFactory.NewGame(_data);
-            state.purchasedUpgradeIds.Add("curators-cabinet");
 
-            state.fixedResources.Add("berries");
-            state.fixedResources.Add("nuts");
+            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(2));
 
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(6), "whole slots, never a scaled band (4 + 2, not 4 + 3)");
+            state.foldedVersesSung = 2;
+            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(5));
+
+            state.foldedVersesSung = 7;
+            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(10));
+
+            state.foldedVersesSung = 10;
+            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(0), "every earned slot is open");
         }
 
         [Test]
@@ -147,7 +130,8 @@ namespace Wildgrove.Sim.Tests
             var bare = ScriptableObject.CreateInstance<GameDataAsset>();
             try
             {
-                Assert.That(Kith.Slots(new GameState(), bare), Is.EqualTo(4));
+                var state = new GameState { foldedVersesSung = 2 };
+                Assert.That(Kith.Slots(state, bare), Is.EqualTo(2), "fallback = base 1 + the first authored milestone");
             }
             finally
             {
@@ -156,45 +140,123 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Recruit_WhenEverySlotIsHeld_ReturnsNullAndAddsNoOne()
+        public void Recruit_ASpeciesAlreadyWalking_ReturnsNullAndAddsNoOne()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, state.nodes[0].id, 2);
-            Assert.That(Kith.HasRoom(state, _data), Is.False);
 
-            var recruit = Roster.Recruit(state, _data, "meadow-vole", null);
+            var duplicate = Roster.Recruit(state, _data, "meadow-vole", null);
 
-            Assert.That(recruit, Is.Null);
-            Assert.That(state.roster.Count, Is.EqualTo(4), "recruitment waits for an open slot");
+            Assert.That(duplicate, Is.Null);
+            Assert.That(state.roster.Count, Is.EqualTo(2), "one familiar per species, ever");
         }
 
         [Test]
-        public void SyncBonded_WithNoRoomOpen_LeavesTheBondWaitingInTheGrass()
+        public void Recruit_WhenEverySlotIsHeld_JoinsTheCollectionResting()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Assert.That(Kith.HasRoom(state, _data), Is.False);
+
+            var recruit = Roster.Recruit(state, _data, "holt-otter", state.nodes[0].id);
+
+            Assert.That(recruit, Is.Not.Null, "the collection is never slot-capped");
+            Assert.That(recruit.IsResting, Is.True, "no slot open — the post request is quietly dropped");
+            Assert.That(state.roster.Count, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void Recruit_WithASlotOpen_TakesTheRequestedPost()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.foldedVersesSung = 2;
+
+            var recruit = Roster.Recruit(state, _data, "holt-otter", state.nodes[0].id);
+
+            Assert.That(recruit.stationId, Is.EqualTo(state.nodes[0].id));
+        }
+
+        [Test]
+        public void Station_ARestingFamiliarWithNoRoom_IsRefused()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var raven = Roster.OfSpecies(state, "pack-raven");
+            Assert.That(raven.IsResting, Is.True);
+
+            Assert.That(Roster.Station(state, _data, raven, Familiar.TrailStation), Is.False);
+            Assert.That(raven.IsResting, Is.True, "the refusal changes nothing");
+        }
+
+        [Test]
+        public void Station_AWalkingFamiliar_MovesFreelyAndRestsFreely()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var vole = Roster.OfSpecies(state, "meadow-vole");
+
+            Assert.That(Roster.Station(state, _data, vole, Familiar.TrailStation), Is.True,
+                "a held slot moves post to post without asking again");
+
+            Assert.That(Roster.Station(state, _data, vole, null), Is.True, "resting is always allowed");
+            Assert.That(Kith.Walking(state), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Station_AfterOneRests_TheOtherTakesTheSlot()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var vole = Roster.OfSpecies(state, "meadow-vole");
+            var raven = Roster.OfSpecies(state, "pack-raven");
+
+            Roster.Station(state, _data, vole, null);
+
+            Assert.That(Roster.Station(state, _data, raven, Familiar.TrailStation), Is.True,
+                "the swap is the point of the ladder");
+        }
+
+        [Test]
+        public void SyncBonded_ASpeciesAlreadyPresent_IsHonouredKeepingItsName()
         {
             _data.bonds = new List<BondData>
             {
                 new BondData
                 {
-                    id = "sootwing", displayName = "Sootwing", species = "pack-raven", role = "carrier",
-                    source = new BondSourceData { type = "folioSpread", id = "wardens-gallery" },
+                    id = "burr", displayName = "Burr", species = "meadow-vole", role = "gatherer",
+                    source = new BondSourceData { type = "almanacNode", id = "old-friend" },
                 },
             };
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, state.nodes[0].id, 2);
+            var vole = Roster.OfSpecies(state, "meadow-vole");
+            Roster.Rename(vole, "Pip");
 
-            // Earned — but the Gallery's own slot is what makes room, so strip
-            // its slot effect to model a bond earned against a full kith.
-            _data.folioSpreads[0].effects.Clear();
-            state.fixedResources.Add("berries");
-            state.fixedResources.Add("nuts");
-            Roster.SyncBonded(state, _data);
-            Assert.That(state.roster.Exists(f => f.bondId == "sootwing"), Is.False,
-                "no slot open — the companion waits in the grass");
-
-            // The Old Friend opens slot 5: the waiting bond steps in on the next sync.
             state.almanacNodeIds.Add("old-friend");
             Roster.SyncBonded(state, _data);
-            Assert.That(state.roster.Exists(f => f.bondId == "sootwing"), Is.True);
+
+            Assert.That(vole.bonded, Is.True);
+            Assert.That(vole.bondId, Is.EqualTo("burr"));
+            Assert.That(vole.name, Is.EqualTo("Pip"), "the bond honours the companion, it doesn't rename it");
+            Assert.That(state.roster.Count, Is.EqualTo(2), "no duplicate vole is minted");
+        }
+
+        [Test]
+        public void SyncBonded_ASpeciesNeverMet_ArrivesRestingEvenWithNoRoom()
+        {
+            _data.bonds = new List<BondData>
+            {
+                new BondData
+                {
+                    id = "hallow", displayName = "Hallow", species = "dray-stag", role = "carrier",
+                    source = new BondSourceData { type = "almanacNode", id = "old-friend" },
+                },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            Assert.That(Kith.HasRoom(state, _data), Is.False);
+
+            state.almanacNodeIds.Add("old-friend");
+            Roster.SyncBonded(state, _data);
+
+            var stag = Roster.OfSpecies(state, "dray-stag");
+            Assert.That(stag, Is.Not.Null, "the collection is never slot-capped");
+            Assert.That(stag.bonded, Is.True);
+            Assert.That(stag.name, Is.EqualTo("Hallow"));
+            Assert.That(stag.IsResting, Is.True);
         }
     }
 }

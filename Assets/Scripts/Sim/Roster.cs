@@ -5,21 +5,42 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Building and naming the kith (design §4): recruitment events mint named
-    /// familiars, the player renames them, and stationing sets their post.
-    /// Bonded familiars (source-earned) are materialised idempotently here so
-    /// they're present from minute one of every run.
+    /// familiars, the player renames them, and stationing sets their post. The
+    /// roster is the collection — at most one familiar of each species ever —
+    /// and slots cap who holds a post, not who belongs. Bonds honour the
+    /// companion of their species (or bring it, if it has never come).
     /// </summary>
     public static class Roster
     {
+        /// <summary>The familiar of a species, or null when that species has never joined.</summary>
+        public static Familiar OfSpecies(GameState state, string speciesId)
+        {
+            if (state?.roster == null || string.IsNullOrEmpty(speciesId))
+            {
+                return null;
+            }
+
+            foreach (var familiar in state.roster)
+            {
+                if (familiar.speciesId == speciesId)
+                {
+                    return familiar;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
-        /// Recruit a familiar of a species to a station (null = wandering), with a
-        /// suggested default name the player can accept or change. Returns the new
-        /// roster entry (for the arrival naming sheet), or null when every kith
-        /// slot is held (design §4 ladder — recruitment waits for an open slot).
+        /// Recruit a familiar of a species, with a suggested default name the
+        /// player can accept or change. Each species joins once, ever — a
+        /// duplicate recruit returns null and changes nothing. The arrival
+        /// takes <paramref name="stationId"/> when a slot is open for it,
+        /// otherwise it rests at camp (the collection is never slot-capped).
         /// </summary>
         public static Familiar Recruit(GameState state, GameDataAsset data, string speciesId, string stationId, string name = null)
         {
-            if (!Kith.HasRoom(state, data))
+            if (OfSpecies(state, speciesId) != null)
             {
                 return null;
             }
@@ -29,10 +50,16 @@ namespace Wildgrove.Sim
                 id = state.NextFamiliarId(),
                 speciesId = speciesId,
                 name = string.IsNullOrEmpty(name) ? SuggestName(state, data, speciesId) : name,
-                stationId = string.IsNullOrEmpty(stationId) ? null : stationId
+                stationId = null
             };
 
             state.roster.Add(familiar);
+
+            if (!string.IsNullOrEmpty(stationId) && Kith.HasRoom(state, data))
+            {
+                familiar.stationId = stationId;
+            }
+
             return familiar;
         }
 
@@ -78,50 +105,62 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Station a familiar at a post — a node id, <see cref="Familiar.TrailStation"/>,
-        /// a <see cref="Familiar.DigStationPrefix"/> site, or null to wander (design §2:
-        /// reassignment is always allowed and never costs goods). Bumps the modifier
-        /// snapshot so any cached read refreshes.
+        /// a <see cref="Familiar.DigStationPrefix"/> site, or null to rest at camp
+        /// (design §2: reassignment is always allowed and never costs goods).
+        /// Taking a post needs an open slot when the familiar was resting
+        /// (§4 ladder) — returns false and changes nothing without one. Bumps
+        /// the modifier snapshot so any cached read refreshes.
         /// </summary>
-        public static void Station(GameState state, GameDataAsset data, Familiar familiar, string stationId)
+        public static bool Station(GameState state, GameDataAsset data, Familiar familiar, string stationId)
         {
             if (familiar == null)
             {
-                return;
+                return false;
             }
 
-            familiar.stationId = string.IsNullOrEmpty(stationId) ? null : stationId;
+            var wants = string.IsNullOrEmpty(stationId) ? null : stationId;
+            if (wants != null && familiar.IsResting && !Kith.HasRoom(state, data))
+            {
+                return false;
+            }
+
+            familiar.stationId = wants;
             state.BumpModifiers();
+            return true;
         }
 
         /// <summary>
-        /// Materialise a roster entry for every earned bond not yet present
-        /// (idempotent by bondId) — a bonded familiar is present from minute one
-        /// of every run (design §4). Call at new game, on load, after Migration,
-        /// and after any action that can complete a bond's source or open a kith
-        /// slot: an earned bond with no slot open waits in the grass and steps
-        /// in on the next sync with room.
+        /// Honour every earned bond (idempotent by bondId): the companion of
+        /// the bond's species is marked bonded — keeping its player-given name
+        /// — and if that species has never joined, it arrives now, resting at
+        /// camp (the collection is never slot-capped). Call at new game, on
+        /// load, after Migration, and after any action that can complete a
+        /// bond's source.
         /// </summary>
         public static void SyncBonded(GameState state, GameDataAsset data)
         {
-            var present = new HashSet<string>();
+            var honoured = new HashSet<string>();
             foreach (var familiar in state.roster)
             {
                 if (!string.IsNullOrEmpty(familiar.bondId))
                 {
-                    present.Add(familiar.bondId);
+                    honoured.Add(familiar.bondId);
                 }
             }
 
             foreach (var bond in Bonds.Earned(state, data))
             {
-                if (present.Contains(bond.id))
+                if (honoured.Contains(bond.id))
                 {
                     continue;
                 }
 
-                if (!Kith.HasRoom(state, data))
+                var companion = OfSpecies(state, bond.species);
+                if (companion != null)
                 {
-                    return;
+                    companion.bonded = true;
+                    companion.bondId = bond.id;
+                    continue;
                 }
 
                 state.roster.Add(new Familiar

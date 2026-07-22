@@ -15,11 +15,20 @@ namespace Wildgrove.Game.Services
         public const string TimeSkip = "ca-app-pub-6903871125040514/3141391976";
     }
 
-    /// <summary>In-app purchase product IDs (Google Play Console SKUs).</summary>
+    /// <summary>In-app purchase product IDs (Google Play Console SKUs). All one-off non-consumables.</summary>
     public static class StoreProductIds
     {
         /// <summary>One-off, non-consumable: suppresses forced ads.</summary>
         public const string RemoveAds = "remove_ads";
+
+        /// <summary>The initial purchase offer (Play Level Up eligibility): opens a kith slot and grants a one-time Amber pile.</summary>
+        public const string StarterBundle = "starter_bundle";
+
+        /// <summary>Opens the last kith slot (the ladder's sixth).</summary>
+        public const string KithSlot = "kith_slot";
+
+        /// <summary>Every product the store initialises with — kept in one place so the catalogue and the entitlement sync can't drift.</summary>
+        public static readonly string[] All = { RemoveAds, StarterBundle, KithSlot };
     }
 
     /// <summary>

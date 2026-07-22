@@ -38,7 +38,7 @@ Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, 
 | Axis          | Lineage                              | Description                                                                                           |
 | ------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | **The Trail** | Spine · Idle Obelisk                 | Push deeper through eight zones. Each opens new resources, a new craft, a waystone, and — from Zone 3 — observation sites. |
-| **Familiars** | Kith · Idle Obelisk (the drones)     | Up to six active companions — four slots free, two earned (decided). Each levels at its post, chooses powerups, and is missed when it wanders. |
+| **Familiars** | Kith · Idle Obelisk (the drones)     | A growing collection (one familiar per species, each with a single fixed trait), up to six walking at once — one slot to start, three sung by verses, two bought (decided). |
 | **Crafts**    | Breadth · Melvor Idle                | Parallel gathering and survival-crafting skills with XP, mastery, tools, and gear — the economy's backbone (§9). |
 | **The Rite**  | Gate · Idle Obelisk (minus fighting) | A staged ritual of offerings — five slots a verse, any three. The finished Rite unlocks Migration.       |
 | **Migration** | Meta · Egg Inc                       | Prestige resets the region and banks Verdure — the land's memory — into the permanent Almanac.           |
@@ -71,7 +71,7 @@ gather at their posts        hauls home          │
      └───────── tools, gear, provisions, planter materials ◄─────────┘
 ```
 
-1. **Agents at posts.** The warden and each active familiar can be **stationed** at a post; an unassigned familiar **wanders** (stationing rules, below) — half-hearted help, never zero. Up to six in the kith (four slots free, two earned — §4), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
+1. **Agents at posts.** The warden and each slotted familiar can be **stationed** at a post; a familiar without a post **rests at camp** — no output (a slot is the right to hold a post, §4). Up to six slots by endgame (one to start — §4 ladder), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
 2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Pristine chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
 3. Harvest travels home by whoever holds the **trail post** — hauling is a post like any node, not a species (DECIDED 2026-07-18). The pack raven arrives at minute one and takes it first. Under-invest in the post and baskets overflow at the node: the visible bottleneck.
 4. The **fire and benches** turn raw finds into four kinds of output: **survival gear** (the kit — permanent-for-the-run buffs), **trade goods** (dense barter weight at the Exchange), **offerings** (consumed by the Rite, §8), and **planter materials** (given back to the nodes, §3).
@@ -127,38 +127,38 @@ Nodes are not fixed faucets; they can be **made richer**, and the making costs g
 
 Familiars are not a count; they are a **kith**. Each is an individual: a name, a Compendium plate, a level, a build, and — over many seasons — a memory of you.
 
-**Active slots** — the ladder (decided 2026-07-21: **six slots, four free**):
+**Active slots** — the ladder (decided 2026-07-23: **six slots — one to start, three sung, two bought**):
 
-There is no carrier type — carrying is a **post** (the trail), and any familiar can hold it. Slots are just slots. Four are free from minute one — slots cost nothing; *companions* still have to arrive to fill them — and the last two are earned:
+There is no carrier type — carrying is a **post** (the trail), and any familiar can hold it. A slot is *the right to hold a post*: companions past the slots stay in the kith but **rest at camp** — no post, no output, no run XP. Slots never cap the collection, only who's out working.
 
 | Slot        | When                        | How                                                                    |
 | ----------- | --------------------------- | ----------------------------------------------------------------------- |
-| 1–4         | Free from minute one        | The land's first gesture fills two — a vole and a raven arrive unasked; one gathers, one takes the trail post. The gift event (below) and the first bond fill the rest. |
-| 5           | Mid-game (early Migrations) | **The Old Friend** Almanac node — the land trusts you with another. The node grants the slot *and* its bond fills it: one purchase, one arrival, no empty promise. |
-| 6           | Endgame                     | **The Warden's Gallery** — the completed-spread moment (§6): one fixing from every zone opens the last slot. Every slot arrival is an *event*. |
+| 1           | Free from minute one        | The land's first gesture: a vole and a raven arrive unasked; one takes the single post, the other rests — the first stationing swap is the tutorial. |
+| 2–4         | Early / mid / late          | **Lifetime verses sung** cross the milestones (`economy.kith.verseMilestones`, first guess 2 / 5 / 10 — counted across Migrations; a verse sung is never unsung). |
+| 5           | Store                       | The **starter bundle** (the initial purchase offer, Play Level Up): a slot and a one-time pile of Amber. |
+| 6           | Store                       | The plain **kith slot** product — the ladder's last rung. |
 | Trail posts | 1 at MVP · 2nd via **Spare Wing** (§11) | A second haul lane — at these counts, enormous; hauling equipment (§10) is tuned assuming two posts eventually exist (§14). |
 
-The **gift event** (unlocked by verse 1's completion, decided 2026-07-18) fills a free slot in the first hour: leave a pile of goods at a node; something says yes. The first verse is answered by the warden's own hands. Gifts are *recruitment events* — one pile, one yes — keeping the <60s first-companion beat without a cost curve. Nothing repeatedly buys a creature; nothing ever has. Recruitment always waits for an open slot; an earned bond with no room waits in the grass and steps in the moment one opens.
+**Gift piles** (reworked 2026-07-23): every verse sung earns the warden **one pile, one yes** — counted for life, across Migrations. Leave a pile of a node's own resource and *that resource's specialist* answers, taking the node as its post: **where the pile is left is who comes.** A pile is refused where the specialist already walks (one familiar per species, ever) or when no slot is open for the arrival. The first verse is answered by the warden's own hands. Nothing repeatedly buys a creature; nothing ever has. Bonds honour the companion of their species — or bring it, resting, if it has never come.
 
 **Mini-wardens.** A familiar is stationed exactly as the warden is: one agent system (§2), and the trail is simply another post. Assign it to a node and it works there — a steady gather trickle, and a slow tending cadence if its build allows; assign it to the trail and it carries. Stationing scarce agents across abundant nodes is the Obelisk allocation decision.
 
-**XP & powerups** — the build system:
+**Traits** — one per species, fixed for life (reworked 2026-07-23; replaces the level-5 powerup picks):
 
-- A familiar earns **XP at its post**, from its own work — faster where specialized, a trickle offline.
-- Every 5 levels it offers a **choice of 2–3 powerups**, drawn from its species' **fixed, authored pool** (DECIDED 2026-07-18: pools are deterministic per species at MVP, never rolled — the Rite generator can rely on what any kith can become; rolled variety is a v1.1 lever) and filtered to unlocked content (no dead picks — a timber powerup is never offered before the Wood opens). Chosen once, **kept for the run** — no respec; a build is a commitment. (Species pools lean by nature: the raven's favours the trail, the vole's the ground.)
-- **Levels never scale output.** A familiar's level paces XP and Kinship only; throughput and yield come from tools and hauling equipment (the post's levers), powerups (the holder's), and richness. No double-scaling — and no grinding a hauler.
+- Each species carries a **single fixed trait** — what makes it the specialist of one post. A familiar *comes with* its ability; there is no per-familiar build, no respec because there is nothing to respec. Species is identity: unique plate art, one trait, and **at most one familiar of each species, ever**.
+- A familiar still earns **XP at its post**, from its own work. **Levels never scale output** — they pace XP and Kinship only; throughput and yield come from tools and hauling equipment (the post's levers), the species trait (the holder's), and richness.
+- Trait kinds the sim reads: `nodeYieldBonus` (with a resource — the specialist lanes), `trailThroughputBonus`, `digSpeedBonus` (the watch), `pristineBonus`.
 
-| Pool (examples)    | Effect                                     | Flavour                                  |
-| ------------------ | ------------------------------------------ | ---------------------------------------- |
-| Berry-wise         | +40% yield at berry nodes                  | knows which bramble the birds missed     |
-| Timber-sense       | +40% yield at deadfall                     | hears the dead branches before they fall |
-| Soft paws          | +1pt Pristine chance at its node           | takes nothing it bruises                 |
-| Deep pockets       | +25% throughput when it holds the trail post | cheeks like saddlebags                 |
-| Green claw         | its node's planters regrow 25% faster      | the land likes how it digs               |
-| Patient watcher     | +observation speed at observation sites                    | was going to dig anyway                  |
-| Early riser        | its node's offline earnings +20%           | up before the warden, always             |
+| Species (examples) | Trait                                        | Flavour                                  |
+| ------------------ | -------------------------------------------- | ---------------------------------------- |
+| meadow vole        | Berry-wise · +40% at berry nodes             | knows which bramble the birds missed     |
+| pine marten        | Deadfall-runner · +40% at deadfall timber    | hears the dead branches before they fall |
+| ermine             | Soft paws · +1pt Pristine at its node        | takes nothing it bruises                 |
+| pack raven         | Deep pockets · +25% on the trail post        | cheeks like saddlebags                   |
+| dray stag          | Broad-back · +40% on the trail post          | built for the long carry                 |
+| tawny owl          | Patient watcher · +40% watch speed           | was going to watch anyway                |
 
-**Roster > slots.** The **roster** is every familiar ever befriended — gift events, keystones, Museum sets, zone arrivals — each with its own plate. Only slotted familiars work. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play*.
+**Collection > slots.** The **roster** is every familiar ever befriended — the seeds, the gift piles, the bonds — each its own species with its own plate. Only slotted familiars work; the rest rest at camp. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play* — the berry specialist walks when berries are the plan.
 
 ### Familiar power across Migration — the two-track model (DECIDED 2026-07-18)
 
@@ -170,7 +170,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 
 **Bonding** is the separate, rarer honour (earned, never bought): a **bonded** familiar crosses the fold and is present from minute one — and its Kinship is why it is also *good* from minute one. Most of the roster slips back into the grass at Migration and is re-met in later regions — a quiet reunion beat, never a re-grind: roster and Kinship persist, only presence lapses. MVP: 1–2 bondable (final counts and rarity: Mo to settle, §14).
 
-**Deliberately not adopted:** Almanac-mediated familiar power ("familiars start at level 5" Verdure nodes). Familiar permanence is exclusively Kinship — the relationship is with the creature, not purchased from the tree. The Almanac's familiar-adjacent nodes are limited to slot access (kith slot 5, The Old Friend) and *The First Planting*.
+**Deliberately not adopted:** Almanac-mediated familiar power ("familiars start at level 5" Verdure nodes). Familiar permanence is exclusively Kinship — the relationship is with the creature, not purchased from the tree. The Almanac's familiar-adjacent nodes are limited to *The Old Friend* (the bond alone — slots come from verses and the store now) and *The First Planting*.
 
 **Roosts & Burrows:** the building line levels **familiar comfort** — +XP rate for all stationed familiars per level; late levels add roster capacity. Depth, not headcount.
 
@@ -244,7 +244,7 @@ There is no museum. There was never anywhere to put one. Everything the collecti
 
 Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **Pristine** (~0.5% base, upgradeable). Quality rolls happen per **haul batch**, not per unit — at idle rates a per-unit roll would shower Pristines and cheapen the windfall. A Pristine find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
 
-**The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — and the Warden's Gallery capstone grants kith slot 6's moment (§4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
+**The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — the Warden's Gallery is the capstone spread (its slot grant moved to the store ladder, §4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
 
 ### Insects — the deep chase (observe · sketch · release — DECIDED 2026-07-21)
 
@@ -334,7 +334,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 When the Rite completes and the region slows, the camp folds. Levels, builds, richness, planters, buildings, gear, kit, and zone progress reset. You keep **the journal entire** — Compendium, Folio spreads, insect plates — plus the roster and every **Kinship** level, Amber, and newly banked **Verdure**.
 
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
-- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, kith slot 5 (The Old Friend), *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
+- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, The Old Friend's bond, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
 - **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed) flavour each run and feed the Rite generator.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
@@ -439,7 +439,7 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 
 ### First 30 named upgrades (level gates + materials; all bundles placeholder)
 
-Familiar slots arrive by event (§4), never purchase; the **Hauling** track buys warden-built equipment the trail post works with — nothing ever buys a creature. Camp entries are debut levels of building lines (repeatable after, `bundle · 1.25^L`).
+Familiar slots arrive by verses sung — plus the two store rungs (§4); creatures themselves arrive only by event, and nothing ever buys one. The **Hauling** track buys warden-built equipment the trail post works with. Camp entries are debut levels of building lines (repeatable after, `bundle · 1.25^L`).
 
 | #  | Upgrade                      | Track      | Gate            | Materials (placeholder)             | Effect                                              |
 | --- | ---------------------------- | ---------- | --------------- | ------------------------------------ | ---------------------------------------------------- |
@@ -501,7 +501,7 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 
 **IAP:** **Warden's Sigil** — permanent ×2 yields and craft speed (~US$7); **permanent XP multipliers are never sold** — familiar growth, Kinship, and Renown pacing stay money-clean · remove ads · Amber packs · starter bundle · cosmetic camp, gear & familiar skins (skins never touch Kinship or builds).
 
-**Never sold: the Rite — and never sold: a creature, a Kinship level, or a build.** Amber accelerates production; it cannot fill a verse slot, recruit a familiar, or level one.
+**Never sold: the Rite — and never sold: a creature or a Kinship level.** Amber accelerates production; it cannot fill a verse slot, recruit a familiar, or level one. (The last two *slots* are sold — the right to field more, never the friends themselves.)
 
 **Play Games Rewards (Level Up requirement, not IAP):** Wayfarer's Cloak (cosmetic) + **Spare Wing** (+1 trail post) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
 
@@ -627,7 +627,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Kinship K_f:** tune so Kinship rewards seasons, not marathon single runs.
 - **Roster pacing:** lean 5–6 members by Migration 3 — enough that fielding is a choice, few enough that each plate is an event.
 - **Bonded companion numbers:** Mo to finalize. Working assumptions until then: 1–2 bondable at MVP; 1 earned per 2–3 Migrations early, slower after.
-- **Signature trait milestones (1.1):** which Kinship levels; one trait per familiar, ever — identity, not a second build slot.
+- **Signature traits shipped early (2026-07-23):** every species carries its single fixed trait from arrival — identity, not a build. The freed 1.1 lever is *trait deepening* (Kinship milestones sharpening the trait), if wanted.
 - **Generator guardrails:** slot spread, spotlight-vs-unlock order, quantity clamps, final-verse reachability under stationing, and powerup-pool coverage (simplified by deterministic pools) — spreadsheet proof across runs 2–10 before it ships.
 
 **Carried**

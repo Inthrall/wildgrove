@@ -5,8 +5,7 @@
   },
   "gifts": {
     "pileGoods": 10,
-    "species": "meadow-vole",
-    "$note": "design §4: the gift event — unlocked by the first verse's completion, one pile, one yes. pileGoods units of the node's OWN resource (§13 decision: you leave a pile of what the flock likes), spent from camp stock at the node the player chooses; the arrival is deterministic (species) and takes that node as its post. No cost curve — nothing repeatedly buys a creature (the old gatherer/carrier gift curves retired with the kith reversal). pileGoods is a first guess; tune so the third familiar lands ~45-60 min (§2)."
+    "$note": "design §4: gift piles — one pile earned per verse sung (lifetime, across Migrations), one yes each. pileGoods units of the node's OWN resource (§13: you leave a pile of what the flock likes), spent from camp stock at the node the player chooses; the arrival is that resource's specialist species (derived from species.json traits — no per-event species config) and takes the node as its post. A pile is refused where the specialist already walks or no specialist exists. pileGoods is a first guess."
   },
   "hauling": {
     "baseCarryCapacity": 15,
@@ -15,9 +14,11 @@
     "$note": "first-guess Phase-1 numbers, not in design doc — a carrier's throughput is baseCarryCapacity/tripSeconds (x carry-capacity upgrades); gathered goods wait in a per-node basket of basketCapacity and overflow is lost. Tune with the loop playtest."
   },
   "kith": {
-    "slotsBase": 4,
+    "slotsBase": 1,
     "slotsMax": 6,
-    "$note": "design §4 ladder: six kith slots, four free from minute one; the last two are earned as kithSlot effects (The Old Friend Almanac node, the Warden's Gallery spread). slotsMax is the hard ceiling however many kithSlot effects future content grants."
+    "verseMilestones": [2, 5, 10],
+    "generatorGatherPosts": 2,
+    "$note": "design §4 ladder: a slot is the right to hold a post; companions past the slots rest at camp. One slot from minute one; one more as lifetime verses sung (across Migrations) cross each verseMilestones entry (first guesses); the last two are store purchases (the starter bundle, then the plain slot product) — slotsBase + milestones + 2 purchasable must equal slotsMax. generatorGatherPosts is what the Rite generator assumes a plausible kith can hold at gather nodes at once (run-2+ rites; earned and purchased slots are never assumed beyond it)."
   },
   "crafting": {
     "baseCraftSeconds": 5,
@@ -69,6 +70,10 @@
     "perFind": 2,
     "timeSkipHours": 4,
     "timeSkipCostAmber": 15
+  },
+  "store": {
+    "starterBundleAmber": 30,
+    "$note": "real-money catalogue constants. The starter bundle (Play Level Up's initial purchase offer) grants a kith slot plus this one-time pile of Amber; the plain kith_slot product grants the sixth slot alone. Amber amount is a first guess (~2 time-skips)."
   },
   "observation": {
     "pityTimerHoursWatched": 4,

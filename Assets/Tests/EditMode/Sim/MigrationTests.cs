@@ -195,18 +195,16 @@ namespace Wildgrove.Sim.Tests
             var state = StateWithTheRiteSung();
             state.roster[0].xp = 5000.0;
             state.roster[0].stationId = state.nodes[0].id;
-            state.roster[0].powerupIds.Add("berry-wise");
             var count = state.roster.Count;
 
             var next = Migration.Migrate(state, _data);
 
             // The roster crosses the fold; each familiar returns to a clean run
-            // build — station cleared, powerups dropped — with run XP banked into
-            // permanent Kinship (design §4).
+            // build — station cleared — with run XP banked into permanent
+            // Kinship (design §4).
             Assert.That(next.roster.Count, Is.EqualTo(count), "the kith crosses whole");
             Assert.That(next.roster[0].kinshipXp, Is.GreaterThan(0.0), "run XP banks into Kinship");
-            Assert.That(next.roster[0].powerupIds, Is.Empty, "run build resets");
-            Assert.That(next.roster.TrueForAll(f => f.IsWandering), Is.True, "stations reset");
+            Assert.That(next.roster.TrueForAll(f => f.IsResting), Is.True, "stations reset");
         }
 
         [Test]
@@ -249,6 +247,24 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(next.seenWaystoneZoneIds, Is.EqualTo(new[] { GameStateFactory.StartingZoneId }),
                 "run 2 re-unlocks the zones without re-showing read stones");
+        }
+
+        [Test]
+        public void Migrate_BanksTheRunsVersesAndKeepsThePurchasedSlots()
+        {
+            var state = StateWithTheRiteSung();
+            state.foldedVersesSung = 3;
+            state.purchasedKithSlots = 1;
+            state.starterBundleAmberGranted = true;
+            var sungThisRun = Rite.CompletedVerseCount(state, _data);
+            Assert.That(sungThisRun, Is.GreaterThan(0), "the rite is sung — its verses must count");
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.foldedVersesSung, Is.EqualTo(3 + sungThisRun),
+                "the ladder's currency survives the fold");
+            Assert.That(next.purchasedKithSlots, Is.EqualTo(1), "a purchase is a purchase");
+            Assert.That(next.starterBundleAmberGranted, Is.True, "one bundle, one pile — across folds too");
         }
 
         [Test]

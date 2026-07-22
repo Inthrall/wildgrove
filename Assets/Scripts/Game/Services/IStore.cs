@@ -14,9 +14,10 @@ namespace Wildgrove.Game.Services
     /// <summary>
     /// The in-app purchase seam. Game code queries entitlements and starts
     /// purchases through this; the billing backend is swappable — <see cref="StubStore"/>
-    /// until the Unity IAP implementation exists, then the real store implements
-    /// it without touching the call sites. The catalogue is intentionally tiny:
-    /// the one-off non-consumable remove_ads (see <see cref="StoreProductIds"/>).
+    /// in the editor, the Unity IAP implementation on device — without touching
+    /// the call sites. The catalogue is intentionally tiny: the one-off
+    /// non-consumables in <see cref="StoreProductIds"/> (remove_ads, the
+    /// starter bundle, the plain kith slot).
     /// </summary>
     public interface IStore
     {
@@ -25,6 +26,9 @@ namespace Wildgrove.Game.Services
 
         /// <summary>Whether the one-off remove_ads product is owned (persisted by the store).</summary>
         bool RemoveAdsOwned { get; }
+
+        /// <summary>Whether a one-off product is owned (persisted by the store; false until the connection resolves).</summary>
+        bool IsOwned(string productId);
 
         /// <summary>Connect to the store and resolve owned products. Safe to call once at startup.</summary>
         void Initialise(Action onReady = null);

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 25;
+        public const int CurrentVersion = 26;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -35,6 +35,9 @@ namespace Wildgrove.Sim.Saves
                 fixedResources = new List<string>(state.fixedResources),
                 wardenPostNodeId = state.wardenPostNodeId,
                 amber = state.amber,
+                foldedVersesSung = state.foldedVersesSung,
+                purchasedKithSlots = state.purchasedKithSlots,
+                starterBundleAmberGranted = state.starterBundleAmberGranted,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
@@ -51,7 +54,6 @@ namespace Wildgrove.Sim.Saves
                     speciesId = familiar.speciesId,
                     xp = familiar.xp,
                     kinshipXp = familiar.kinshipXp,
-                    powerupIds = new List<string>(familiar.powerupIds),
                     stationId = familiar.stationId,
                     bonded = familiar.bonded,
                     bondId = familiar.bondId,
@@ -182,7 +184,7 @@ namespace Wildgrove.Sim.Saves
 
             // Replace the fresh-run seed kith with the saved roster of
             // individuals (design §4). A station pointing at a node the current
-            // data no longer builds is cleared to wandering, like the warden
+            // data no longer builds is cleared to resting, like the warden
             // post; an empty name (a v19→v20 migrated familiar) gets a
             // species-appropriate default.
             state.roster = new List<Familiar>();
@@ -202,7 +204,6 @@ namespace Wildgrove.Sim.Saves
                         speciesId = saved.speciesId,
                         xp = saved.xp,
                         kinshipXp = saved.kinshipXp,
-                        powerupIds = saved.powerupIds != null ? new List<string>(saved.powerupIds) : new List<string>(),
                         stationId = StationValid(state, saved.stationId) ? saved.stationId : null,
                         bonded = saved.bonded,
                         bondId = saved.bondId,
@@ -239,6 +240,9 @@ namespace Wildgrove.Sim.Saves
                 ? save.wardenPostNodeId
                 : null;
             state.amber = save.amber;
+            state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
+            state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
+            state.starterBundleAmberGranted = save.starterBundleAmberGranted;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
@@ -456,26 +460,60 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            // The kith ladder's ceiling caps the roster (design §4). Only a
-            // pathological save exceeds it — chiefly the v19→v20 count rebuild,
-            // which could mint one familiar per anonymous head on a long-lived
-            // save (enough to freeze the HUD). Clamp to slotsMax, not the
-            // currently-earned slot count, so a data retune never quietly drops
-            // a companion: bonded stay first, then the deepest Kinship — the
-            // rest slip back into the grass.
-            var slotsMax = Kith.SlotsMax(data);
-            if (state.roster.Count > slotsMax)
+            // The roster is a collection now — one familiar per species, ever
+            // (design §4). Pre-collection saves can carry duplicates (chiefly
+            // the v19→v20 count rebuild, which minted one familiar per
+            // anonymous head): keep each species' best — bonded first, then
+            // the deepest Kinship, then roster order — and let the rest slip
+            // back into the grass.
+            var bySpecies = new HashSet<string>();
+            var deduped = new List<Familiar>(state.roster.Count);
+            foreach (var familiar in state.roster
+                .OrderByDescending(f => f.bonded)
+                .ThenByDescending(f => f.kinshipXp))
             {
-                state.roster = state.roster
-                    .OrderByDescending(f => f.bonded)
-                    .ThenByDescending(f => f.kinshipXp)
-                    .Take(slotsMax)
-                    .ToList();
+                if (bySpecies.Add(familiar.speciesId ?? string.Empty))
+                {
+                    deduped.Add(familiar);
+                }
             }
 
-            // A bond whose source (a kept Museum set / Almanac node) is already
-            // satisfied must have its companion present — materialise any the
-            // saved roster lacks (idempotent by bondId).
+            if (deduped.Count < state.roster.Count)
+            {
+                state.roster = deduped;
+            }
+
+            // Slots cap who holds a post, not who belongs (§4 ladder). A save
+            // from a wider ladder (or a retuned milestone table) can have more
+            // familiars stationed than the slots it restores to — the extras
+            // rest at camp, bonded and deepest-Kinship keeping their posts.
+            var slots = Kith.Slots(state, data);
+            if (Kith.Walking(state) > slots)
+            {
+                var keep = slots;
+                foreach (var familiar in state.roster
+                    .OrderByDescending(f => f.bonded)
+                    .ThenByDescending(f => f.kinshipXp))
+                {
+                    if (familiar.IsResting)
+                    {
+                        continue;
+                    }
+
+                    if (keep > 0)
+                    {
+                        keep--;
+                    }
+                    else
+                    {
+                        familiar.stationId = null;
+                    }
+                }
+            }
+
+            // A bond whose source (a kept Folio spread / Almanac node) is
+            // already satisfied must have its companion honoured — bind or
+            // materialise any the saved roster lacks (idempotent by bondId).
             Roster.SyncBonded(state, data);
 
             // Last, so recorded insect plates' effects fold in with the upgrades'.
@@ -506,7 +544,7 @@ namespace Wildgrove.Sim.Saves
             return zones.Count;
         }
 
-        /// <summary>Whether a saved familiar's station id still resolves under the current data (else it's cleared to wandering, so the familiar isn't stranded as a silent no-op).</summary>
+        /// <summary>Whether a saved familiar's station id still resolves under the current data (else it's cleared to resting, so the familiar isn't stranded as a silent no-op).</summary>
         private static bool StationValid(GameState state, string stationId)
         {
             if (string.IsNullOrEmpty(stationId) || stationId == Familiar.TrailStation)
@@ -826,6 +864,16 @@ namespace Wildgrove.Sim.Saves
                         // v24 predates the gift event — no pile was ever left
                         // (SavedFamiliar.gifted's missing-field default covers it).
                         save.version = 25;
+                        break;
+
+                    case 25:
+                        // v25 predates the collection ladder: powerupIds drop
+                        // (traits are the species' fixed ability now, nothing
+                        // to carry), and the new counters' missing-field
+                        // defaults are correct — no folded verses counted, no
+                        // slots purchased. Restore dedupes duplicate species
+                        // and rests any familiars past the narrower ladder.
+                        save.version = 26;
                         break;
 
                     default:

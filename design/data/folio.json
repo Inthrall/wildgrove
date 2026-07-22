@@ -11,6 +11,6 @@
     { "id": "crag-flock",        "name": "The Crag Flock",    "entries": ["eggs", "wool", "lichen"],                 "effects": [{ "type": "carrierCapacityBonus", "value": 0.10 }] },
     { "id": "summit-posy",       "name": "Summit Posy",       "entries": ["sky-blossoms", "glacier-ice"],            "effects": [{ "type": "tendingBurstBonus", "value": 0.25 }] },
 
-    { "id": "wardens-gallery",   "name": "The Warden's Gallery", "entries": ["berries", "nuts", "timber", "fish", "peat", "deep-ores", "eggs", "sky-blossoms"], "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.10 }, { "type": "kithSlot", "value": 1 }] }
+    { "id": "wardens-gallery",   "name": "The Warden's Gallery", "entries": ["berries", "nuts", "timber", "fish", "peat", "deep-ores", "eggs", "sky-blossoms"], "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.10 }] }
   ]
 }

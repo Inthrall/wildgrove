@@ -32,6 +32,9 @@ namespace Wildgrove.Sim.Tests
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // Effectively unbounded, so yield-focused tests see goods at camp
                 // the same tick they're gathered; HaulTests pins the tight case.
+                // Two slots so the factory stations both seeds (vole + raven) —
+                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
             _data.zones = new List<ZoneData>
@@ -103,7 +106,8 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
 
-            // Slots 1 & 2 (design §4): a vole gathers, a raven takes the trail.
+            // The seed pair (design §4): a vole gathers, a raven takes the trail
+            // (this fixture opens two slots; the authored ladder starts at one).
             Assert.That(Stationing.OnTrail(state), Is.EqualTo(1));
             Assert.That(state.roster.Count, Is.EqualTo(2));
         }

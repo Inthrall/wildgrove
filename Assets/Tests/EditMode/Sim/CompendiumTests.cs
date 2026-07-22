@@ -67,6 +67,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Gathering_RecordsTheGross_EvenWhenTheBasketOverflows()
         {
+            _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
             _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 5 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.RemoveAll(f => f.IsOnTrail);
@@ -110,6 +111,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void PristineFinds_CountUnitByUnit()
         {
+            _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
             _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 60 };
             _data.economy.quality = new EconomyData.QualityData { pristineBaseChance = 1.0, fineChance = 0.0, fineValueMult = 1.5, pristineValueMult = 10 };
             var state = GameStateFactory.NewGame(_data);

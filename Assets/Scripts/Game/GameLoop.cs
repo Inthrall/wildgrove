@@ -325,16 +325,40 @@ namespace Wildgrove.Game
             return _pendingArrivals.Count > 0 ? _pendingArrivals.Dequeue() : null;
         }
 
-        /// <summary>Active kith slots on the ladder (design §4): four free, The Old Friend and the Warden's Gallery earn the rest.</summary>
+        /// <summary>Active kith slots on the ladder (design §4): one to start, verses sung earn three more, the store opens the last two.</summary>
         public int KithSlots()
         {
             return Kith.Slots(State, Data);
         }
 
-        /// <summary>Familiars currently walking with the warden — the held slots.</summary>
+        /// <summary>Companions in the collection — the whole roster, walking or resting.</summary>
         public int KithCount()
         {
             return Kith.Count(State);
+        }
+
+        /// <summary>Familiars currently holding a post — the held slots.</summary>
+        public int KithWalking()
+        {
+            return Kith.Walking(State);
+        }
+
+        /// <summary>The next verse-milestone still ahead of the ladder, or 0 when every earned slot is open.</summary>
+        public int NextKithVerseMilestone()
+        {
+            return Kith.NextVerseMilestone(State, Data);
+        }
+
+        /// <summary>Lifetime verses sung (design §4 ladder) — folded runs plus this one.</summary>
+        public int TotalVersesSung()
+        {
+            return Kith.TotalVersesSung(State, Data);
+        }
+
+        /// <summary>A familiar's species trait (design §4) — null when the species is unknown.</summary>
+        public TraitData FamiliarTrait(Familiar familiar)
+        {
+            return Traits.Of(Data, familiar);
         }
 
         /// <summary>Rename a familiar (design §4: name at arrival, rename any time). Returns false when the name is blank.</summary>
@@ -343,10 +367,14 @@ namespace Wildgrove.Game
             return Roster.Rename(familiar, name);
         }
 
-        /// <summary>Station a familiar at a post — a node id, "trail", a "dig:{zone}" site, or null to wander (design §2).</summary>
-        public void StationFamiliar(Familiar familiar, string stationId)
+        /// <summary>
+        /// Station a familiar at a post — a node id, "trail", a "dig:{zone}"
+        /// site, or null to rest at camp (design §2). Returns false when a
+        /// resting familiar wants a post and every slot is walked (§4 ladder).
+        /// </summary>
+        public bool StationFamiliar(Familiar familiar, string stationId)
         {
-            Roster.Station(State, Data, familiar, stationId);
+            return Roster.Station(State, Data, familiar, stationId);
         }
 
         /// <summary>Walk the warden to a node without tending it — the post moves, the picking starts on arrival (design §13).</summary>
@@ -371,30 +399,6 @@ namespace Wildgrove.Game
         public int FamiliarKinship(Familiar familiar)
         {
             return Kinship.Level(familiar);
-        }
-
-        /// <summary>True when a familiar has reached a level-5 milestone whose powerup it hasn't chosen — the pick prompt.</summary>
-        public bool HasPendingPowerup(Familiar familiar)
-        {
-            return Familiars.HasPendingPowerup(familiar, Data);
-        }
-
-        /// <summary>The powerups still offerable to a familiar (species pool minus chosen) — for the pick sheet.</summary>
-        public List<PowerupData> OfferablePowerups(Familiar familiar)
-        {
-            return Familiars.OfferablePowerups(familiar, Data);
-        }
-
-        /// <summary>Choose a powerup for a familiar with a pending pick. Returns false (no change) otherwise.</summary>
-        public bool ChoosePowerup(Familiar familiar, string powerupId)
-        {
-            if (!Familiars.ChoosePowerup(State, Data, familiar, powerupId))
-            {
-                return false;
-            }
-
-            Telemetry.LogEvent("powerup_chosen", ("familiar", familiar.id), ("powerup", powerupId));
-            return true;
         }
 
         // ─────────────────────────── The Exchange (design §9) ────────────────
@@ -457,7 +461,7 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>True while the gift event is live (design §4: a verse sung, a slot open, the pile unanswered) — shows the node plates' pile line.</summary>
+        /// <summary>True while a verse-earned pile waits unanswered (design §4) — shows the node plates' pile lines.</summary>
         public bool GiftAvailable()
         {
             return Gifts.IsAvailable(State, Data);
@@ -469,17 +473,23 @@ namespace Wildgrove.Game
             return Gifts.PileCost(Data.economy);
         }
 
-        /// <summary>True when camp stock covers a pile at this node.</summary>
+        /// <summary>The specialist a pile at this node would call (design §4), or null when no one new answers here.</summary>
+        public SpeciesData GiftSpeciesFor(NodeState node)
+        {
+            return Gifts.NodeCanCall(State, Data, node) ? Gifts.SpecialistFor(Data, node) : null;
+        }
+
+        /// <summary>True when camp stock covers a pile at this node, someone new would answer, and a slot is open.</summary>
         public bool CanLeaveGift(NodeState node)
         {
             return Gifts.CanLeavePile(State, Data, node);
         }
 
         /// <summary>
-        /// Leave a pile of the node's own resource (design §4: one pile, one
-        /// yes) — the arrival is stationed there and queues for the naming
-        /// sheet like any recruit. Returns the newcomer, or null when the camp
-        /// can't spare the pile.
+        /// Leave a pile of the node's own resource (design §4) — the
+        /// resource's specialist arrives, stationed there, and queues for the
+        /// naming sheet like any recruit. Returns the newcomer, or null when
+        /// the camp can't spare the pile (or no one new would answer).
         /// </summary>
         public Familiar LeaveGift(NodeState node)
         {
@@ -490,6 +500,43 @@ namespace Wildgrove.Game
             }
 
             return familiar;
+        }
+
+        // ─────────────────────── The store's kith slots (design §4) ──────────
+
+        /// <summary>
+        /// Fold the store's entitlements into the run (design §4 ladder): the
+        /// starter bundle and the plain slot each open a slot, the bundle pays
+        /// its one-time Amber. Call sites: startup (saved values bridge until
+        /// billing resolves) and every purchase result.
+        /// </summary>
+        public void SyncKithPurchases()
+        {
+            if (KithPurchases.Apply(State, Data,
+                    Store.IsOwned(StoreProductIds.StarterBundle),
+                    Store.IsOwned(StoreProductIds.KithSlot)))
+            {
+                SaveNow();
+            }
+        }
+
+        /// <summary>
+        /// Start a store purchase of a kith slot product and fold the
+        /// entitlement in on success. The HUD owns the button copy; the result
+        /// callback fires on the main thread like every IStore callback.
+        /// </summary>
+        public void PurchaseKithProduct(string productId, System.Action<StoreResult> onComplete)
+        {
+            Store.Purchase(productId, result =>
+            {
+                if (result == StoreResult.Purchased || result == StoreResult.AlreadyOwned)
+                {
+                    SyncKithPurchases();
+                    Telemetry.LogEvent("iap_purchased", ("product", productId));
+                }
+
+                onComplete?.Invoke(result);
+            });
         }
 
         /// <summary>True once the Carving Bench has opened Bushcraft and its planter recipes (design §3) — gates the planter UI.</summary>

@@ -20,20 +20,19 @@ namespace Wildgrove.Sim
     public static class RiteGenerator
     {
         /// <summary>
-        /// Gather posts a plausible kith can hold at once: the free rungs of
-        /// the slot ladder (economy.kith.slotsBase — earned slots are never
-        /// assumed) minus the one familiar usually on the trail (§2). A good
-        /// whose production needs raw inputs from more distinct gather nodes
-        /// than this can't be kept produced under plausible stationing, so the
-        /// generator never asks for it and the reachability proof (§8) doesn't
-        /// count it.
+        /// Gather posts a plausible kith can hold at once, from
+        /// economy.kith.generatorGatherPosts — authored conservatively for the
+        /// slots a run-2+ kith has actually earned (generated rites only exist
+        /// after a full rite is sung; purchased slots are never assumed). A
+        /// good whose production needs raw inputs from more distinct gather
+        /// nodes than this can't be kept produced under plausible stationing,
+        /// so the generator never asks for it and the reachability proof (§8)
+        /// doesn't count it.
         /// </summary>
         public static int KithGatherPosts(GameDataAsset data)
         {
-            var slotsBase = data?.economy?.kith != null && data.economy.kith.slotsBase > 0
-                ? data.economy.kith.slotsBase
-                : 4;
-            return Math.Max(1, slotsBase - 1);
+            var posts = data?.economy?.kith != null ? data.economy.kith.generatorGatherPosts : 0;
+            return Math.Max(1, posts > 0 ? posts : 2);
         }
 
         /// <summary>

@@ -174,9 +174,9 @@ namespace Wildgrove.Sim
         private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
         {
             // Hauling is a post (design §2): the familiars holding the trail
-            // carry, at their throughput powerups; an unheld trail is covered
-            // badly by wanderers (a half-lane). Bonded familiars are just
-            // roster members that persist, so they count here when stationed.
+            // carry, at their throughput traits; an unheld trail hauls nothing.
+            // Bonded familiars are just roster members that persist, so they
+            // count here when stationed.
             var carriers = Stationing.TrailCarriers(state, data);
             if (carriers <= 0.0)
             {
@@ -417,8 +417,8 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Data-aware overload: the stationed kith (design §2) does the
-        /// gathering — assigned familiars at full rate with their powerups, plus
-        /// the wanderers' half-help share (see <see cref="Stationing"/>).
+        /// gathering — assigned familiars at full rate, scaled by their traits
+        /// (see <see cref="Stationing"/>). Resting familiars work nothing.
         /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
         {

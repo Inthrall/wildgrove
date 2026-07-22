@@ -66,12 +66,6 @@ namespace Wildgrove.Data
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
 
-            var giftSpecies = data.Economy?.Gifts?.Species;
-            if (!string.IsNullOrEmpty(giftSpecies) && !data.Species.Any(s => s.Id == giftSpecies))
-            {
-                issues.Add($"Economy gifts.species references unknown species '{giftSpecies}'");
-            }
-
             return issues;
         }
 
@@ -615,16 +609,20 @@ namespace Wildgrove.Data
 
         private static readonly HashSet<string> KnownRoleLeans = new HashSet<string> { "gatherer", "carrier" };
 
-        // The powerup kinds the sim knows how to apply (Powerups.cs) — a typo'd
-        // kind would be recorded on a familiar's build but do nothing.
-        private static readonly HashSet<string> KnownPowerupKinds = new HashSet<string>
+        // The trait kinds the sim knows how to apply (Traits.cs) — a typo'd
+        // kind would sit on a species and do nothing.
+        private static readonly HashSet<string> KnownTraitKinds = new HashSet<string>
         {
-            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus", "offlineBonus"
+            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus"
         };
 
         private static void ValidateSpecies(GameData data, List<string> issues)
         {
             CheckIds(data.Species.Select(s => s.Id), "species", issues);
+
+            // Gift piles resolve a node's arrival by its resource's specialist —
+            // two species claiming the same resource would make that ambiguous.
+            var specialistResources = new HashSet<string>();
 
             foreach (var species in data.Species)
             {
@@ -638,33 +636,38 @@ namespace Wildgrove.Data
                     issues.Add($"Species '{species.Id}' has no suggested names — arrival naming needs at least one");
                 }
 
-                if (species.Powerups == null || species.Powerups.Count == 0)
+                var trait = species.Trait;
+                if (trait == null)
                 {
-                    issues.Add($"Species '{species.Id}' has no powerups");
+                    issues.Add($"Species '{species.Id}' has no trait — every species is the specialist of something");
                     continue;
                 }
 
-                var seenPowerups = new HashSet<string>();
-                foreach (var powerup in species.Powerups)
+                if (!KnownTraitKinds.Contains(trait.Kind))
                 {
-                    if (string.IsNullOrEmpty(powerup.Id) || !seenPowerups.Add(powerup.Id))
+                    issues.Add($"Species '{species.Id}' trait has unknown kind '{trait.Kind}'");
+                }
+
+                if (trait.Value <= 0.0)
+                {
+                    issues.Add($"Species '{species.Id}' trait must have a positive value");
+                }
+
+                if (!string.IsNullOrEmpty(trait.Resource))
+                {
+                    if (trait.Kind != "nodeYieldBonus")
                     {
-                        issues.Add($"Species '{species.Id}' has a missing or duplicate powerup id '{powerup.Id}'");
+                        issues.Add($"Species '{species.Id}' trait has a resource but kind '{trait.Kind}' never reads one");
                     }
 
-                    if (!KnownPowerupKinds.Contains(powerup.Kind))
+                    if (!data.ResourcesById.ContainsKey(trait.Resource))
                     {
-                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') has unknown kind '{powerup.Kind}'");
+                        issues.Add($"Species '{species.Id}' trait references unknown resource '{trait.Resource}'");
                     }
 
-                    if (powerup.Value <= 0.0)
+                    if (!specialistResources.Add(trait.Resource))
                     {
-                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') must have a positive value");
-                    }
-
-                    if (!string.IsNullOrEmpty(powerup.Resource) && !data.ResourcesById.ContainsKey(powerup.Resource))
-                    {
-                        issues.Add($"Powerup '{powerup.Id}' (species '{species.Id}') references unknown resource '{powerup.Resource}'");
+                        issues.Add($"Two species claim resource '{trait.Resource}' — gift piles need one specialist per resource");
                     }
                 }
             }
@@ -1024,10 +1027,6 @@ namespace Wildgrove.Data
                 issues.Add("Economy gifts.pileGoods must be positive");
             }
 
-            if (economy.Gifts != null && string.IsNullOrEmpty(economy.Gifts.Species))
-            {
-                issues.Add("Economy gifts.species is missing — the gift event needs a deterministic arrival");
-            }
 
             if (economy.Warden != null && economy.Warden.GatherPerSecond <= 0)
             {
@@ -1046,6 +1045,38 @@ namespace Wildgrove.Data
                 && (economy.Kith.SlotsBase <= 0 || economy.Kith.SlotsMax < economy.Kith.SlotsBase))
             {
                 issues.Add("Economy kith needs a positive slotsBase and slotsMax >= slotsBase");
+            }
+
+            if (economy.Kith != null)
+            {
+                var milestones = economy.Kith.VerseMilestones;
+                if (milestones == null || milestones.Count == 0)
+                {
+                    issues.Add("Economy kith.verseMilestones is empty — the earned slots need their verse counts");
+                }
+                else
+                {
+                    for (var i = 0; i < milestones.Count; i++)
+                    {
+                        if (milestones[i] <= 0 || (i > 0 && milestones[i] <= milestones[i - 1]))
+                        {
+                            issues.Add("Economy kith.verseMilestones must be positive and strictly ascending");
+                            break;
+                        }
+                    }
+
+                    // The ladder must land exactly on the ceiling: base + earned
+                    // milestones + the two store purchases (§4).
+                    if (economy.Kith.SlotsBase + milestones.Count + 2 != economy.Kith.SlotsMax)
+                    {
+                        issues.Add("Economy kith ladder is off: slotsBase + verseMilestones + 2 purchasable must equal slotsMax");
+                    }
+                }
+
+                if (economy.Kith.GeneratorGatherPosts <= 0)
+                {
+                    issues.Add("Economy kith.generatorGatherPosts must be positive — the Rite generator's reachability proof needs it");
+                }
             }
 
             if (economy.Crafting != null && economy.Crafting.BaseCraftSeconds <= 0)
@@ -1162,6 +1193,11 @@ namespace Wildgrove.Data
                 // (or a sink no one can afford) — configure it whole or not at all.
                 issues.Add("Economy amber values must all be positive");
             }
+
+            if (economy.Store != null && economy.Store.StarterBundleAmber <= 0)
+            {
+                issues.Add("Economy store.starterBundleAmber must be positive — the bundle promises a pile, not a pebble");
+            }
         }
 
         private static void RequireSection(object section, string name, List<string> issues)
@@ -1264,17 +1300,6 @@ namespace Wildgrove.Data
 
                 case EffectType.UnlockVerdureForecast:
                 case EffectType.OfflineNightFullRate:
-                    break;
-
-                case EffectType.KithSlot:
-                    // Whole slots only — the sim sums these as ints and the
-                    // spread multiplier deliberately never scales them.
-                    if (!effect.Value.HasValue || effect.Value.Value < 1
-                        || effect.Value.Value != System.Math.Floor(effect.Value.Value))
-                    {
-                        issues.Add($"{owner} kithSlot effect needs a whole value >= 1");
-                    }
-
                     break;
 
                 default:

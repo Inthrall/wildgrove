@@ -106,9 +106,7 @@ namespace Wildgrove.Sim
 
                 foreach (var effect in spread.effects)
                 {
-                    // Whole slots, not a bonus band — the Cabinet never scales
-                    // the Gallery's kith slot.
-                    if (mult == 1.0 || effect.type == EffectType.KithSlot)
+                    if (mult == 1.0)
                     {
                         yield return effect;
                     }

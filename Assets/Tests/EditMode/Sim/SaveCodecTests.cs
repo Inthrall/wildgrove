@@ -724,12 +724,13 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Restore_OversizedRoster_ClampsToTheLadderCeiling_BondedAndDeepestKinshipFirst()
+        public void Restore_DuplicateSpecies_KeepsOnePerSpecies_BondedAndDeepestKinshipFirst()
         {
+            // The roster is a collection now — one familiar per species, ever.
             // A long-lived save run through the v19→v20 rebuild could mint one
-            // familiar per anonymous head — far past the six-slot ladder, and
-            // enough UI rows to freeze the HUD. Restore keeps bonded companions
-            // first, then the deepest Kinship; the rest slip back into the grass.
+            // vole per anonymous head; Restore keeps each species' best (bonded
+            // first, then the deepest Kinship) and the rest slip back into the
+            // grass.
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
             for (var i = 1; i <= 20; i++)
@@ -748,9 +749,28 @@ namespace Wildgrove.Sim.Tests
 
             var restored = SaveCodec.Restore(save, _data);
 
-            Assert.That(restored.roster.Count, Is.EqualTo(6), "clamped to the ladder's slotsMax ceiling");
-            Assert.That(restored.roster[0].bondId, Is.EqualTo("sootwing"), "the bonded companion is never dropped");
-            Assert.That(restored.roster.Any(f => f.kinshipXp >= 500.0), Is.True, "the deepest Kinship is kept next");
+            Assert.That(restored.roster.Count, Is.EqualTo(1), "one vole, ever");
+            Assert.That(restored.roster[0].bondId, Is.EqualTo("sootwing"), "the bonded companion is the one kept");
+        }
+
+        [Test]
+        public void Restore_MoreStationedThanSlots_RestsTheExtras_BondedKeepingTheirPosts()
+        {
+            // Slots cap who holds a post, not who belongs. A save from a wider
+            // ladder restores with the extras resting at camp.
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.roster.Clear();
+            save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "meadow-vole", stationId = "sunfield-meadow:berries" });
+            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "pack-raven", stationId = "trail", bonded = true, bondId = "sootwing" });
+            save.nextFamiliarSeq = 3;
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(Kith.Slots(restored, _data), Is.EqualTo(1), "no verses sung, nothing purchased");
+            Assert.That(Kith.Walking(restored), Is.EqualTo(1), "the extras rest at camp");
+            var raven = restored.roster.Single(f => f.speciesId == "pack-raven");
+            Assert.That(raven.stationId, Is.EqualTo("trail"), "the bonded companion keeps its post");
+            Assert.That(restored.roster.Single(f => f.speciesId == "meadow-vole").IsResting, Is.True);
         }
 
         [Test]

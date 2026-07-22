@@ -3,36 +3,33 @@ using System.Collections.Generic;
 namespace Wildgrove.Data
 {
     /// <summary>
-    /// One powerup a species can offer (design doc §4): a fixed, authored pick
-    /// a familiar chooses at a level-5 milestone and keeps for the run. Pools
-    /// are deterministic per species at MVP — the Rite generator can rely on
-    /// what any kith can become.
+    /// A species' single fixed trait (design doc §4): what makes it the
+    /// specialist of one post. Interpreted by the sim: nodeYieldBonus (at a
+    /// node of <see cref="Resource"/>), trailThroughputBonus, pristineBonus,
+    /// digSpeedBonus.
     /// </summary>
-    public sealed class PowerupDef
+    public sealed class TraitDef
     {
-        public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
 
-        /// <summary>
-        /// What the powerup does — interpreted by the sim: nodeYieldBonus,
-        /// trailThroughputBonus, pristineBonus, digSpeedBonus, offlineBonus.
-        /// </summary>
+        /// <summary>What the trait does — interpreted by the sim.</summary>
         public string Kind { get; set; }
 
         public double Value { get; set; }
 
         /// <summary>
-        /// The resource the powerup is specialised to (e.g. berries) — null
+        /// The resource the trait is specialised to (e.g. berries) — null
         /// means it applies wherever the familiar is posted.
         /// </summary>
         public string Resource { get; set; }
     }
 
     /// <summary>
-    /// A familiar species (design doc §4): the small flock is made of
-    /// individuals, each with a name, a role lean, and a species powerup pool.
-    /// Stationing is never locked to the lean — any familiar can hold any post.
+    /// A familiar species (design doc §4): the kith is a collection of
+    /// individuals — at most one familiar of each species ever walks with the
+    /// warden, and each species carries a single fixed trait. Stationing is
+    /// never locked to the lean — any familiar can hold any post.
     /// </summary>
     public sealed class SpeciesDef
     {
@@ -43,6 +40,6 @@ namespace Wildgrove.Data
         public string RoleLean { get; set; }
 
         public List<string> SuggestedNames { get; set; } = new List<string>();
-        public List<PowerupDef> Powerups { get; set; } = new List<PowerupDef>();
+        public TraitDef Trait { get; set; }
     }
 }

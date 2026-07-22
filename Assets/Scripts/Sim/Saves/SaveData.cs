@@ -49,6 +49,15 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v17+: Amber (absent before the amber system — none held).</summary>
         public double amber;
 
+        /// <summary>v26+: verses sung in folded runs (absent before the slot ladder counted verses — 0; the current run's verses derive from verseProgress).</summary>
+        public int foldedVersesSung;
+
+        /// <summary>v26+: kith slots owned through the store (absent before the store slots — 0). Bridges sessions that start before billing resolves.</summary>
+        public int purchasedKithSlots;
+
+        /// <summary>v26+: whether the starter bundle's one-time Amber grant has been paid out.</summary>
+        public bool starterBundleAmberGranted;
+
         /// <summary>v18+: zones whose waystone has been read (absent before — every unlocked stone shows once).</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 
@@ -117,7 +126,7 @@ namespace Wildgrove.Sim.Saves
         public double xp;
     }
 
-    /// <summary>One kith familiar (design §4). Level derives from xp; Kinship, powerups, station, and bond marker persist.</summary>
+    /// <summary>One kith familiar (design §4). Level derives from xp; Kinship, station, and bond marker persist. (v26 dropped powerupIds — a familiar's abilities are its species' fixed trait.)</summary>
     [Serializable]
     public sealed class SavedFamiliar
     {
@@ -126,7 +135,6 @@ namespace Wildgrove.Sim.Saves
         public string speciesId;
         public double xp;
         public double kinshipXp;
-        public List<string> powerupIds = new List<string>();
         public string stationId;
         public bool bonded;
         public string bondId;

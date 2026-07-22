@@ -42,7 +42,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Fold a familiar across Migration: bank its run XP into permanent
-        /// Kinship, drop the run build (level/powerups/station reset), and set the
+        /// Kinship, drop the run build (level/station reset), and set the
         /// next run's starting XP from the new Kinship level.
         /// </summary>
         public static void Fold(Familiar familiar, GameDataAsset data)
@@ -55,7 +55,6 @@ namespace Wildgrove.Sim
             var xp = data.economy?.familiarXp;
             var divisor = xp != null && xp.kinshipDivisor > 0.0 ? xp.kinshipDivisor : FallbackDivisor;
             familiar.kinshipXp += GainFrom(familiar.xp, divisor);
-            familiar.powerupIds.Clear();
             familiar.stationId = null;
             familiar.xp = StartingXp(familiar, data);
         }

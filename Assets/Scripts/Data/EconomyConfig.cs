@@ -18,6 +18,7 @@ namespace Wildgrove.Data
         public QualitySection Quality { get; set; }
         public ObservationSection Observation { get; set; }
         public AmberSection Amber { get; set; }
+        public StoreSection Store { get; set; }
         public TendingSection Tending { get; set; }
         public WardenSection Warden { get; set; }
         public FamiliarXpSection FamiliarXp { get; set; }
@@ -28,11 +29,10 @@ namespace Wildgrove.Data
             public double Building { get; set; }
         }
 
-        /// <summary>The gift event (design §4): one pile of a node's own resource, one deterministic arrival.</summary>
+        /// <summary>Gift piles (design §4): one pile per verse sung; the arrival is the node resource's specialist.</summary>
         public sealed class GiftsSection
         {
             public long PileGoods { get; set; }
-            public string Species { get; set; }
         }
 
         public sealed class HaulingSection
@@ -46,6 +46,8 @@ namespace Wildgrove.Data
         {
             public int SlotsBase { get; set; }
             public int SlotsMax { get; set; }
+            public List<int> VerseMilestones { get; set; }
+            public int GeneratorGatherPosts { get; set; }
         }
 
         public sealed class CraftingSection
@@ -113,6 +115,12 @@ namespace Wildgrove.Data
             public double PerFind { get; set; }
             public double TimeSkipHours { get; set; }
             public double TimeSkipCostAmber { get; set; }
+        }
+
+        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant.</summary>
+        public sealed class StoreSection
+        {
+            public double StarterBundleAmber { get; set; }
         }
 
         public sealed class TendingSection

@@ -215,7 +215,7 @@ namespace Wildgrove.Data
         public string id;
         public string displayName;
 
-        /// <summary>Species id (into species.json) — drives the bonded familiar's powerup pool.</summary>
+        /// <summary>Species id (into species.json) — the companion the bond honours (the existing one, or a new arrival).</summary>
         public string species;
 
         /// <summary>Legacy role hint ("gatherer"/"carrier") — flavour only now that carrying is a post.</summary>
@@ -224,20 +224,19 @@ namespace Wildgrove.Data
         public BondSourceData source;
     }
 
-    /// <summary>One powerup in a species' authored pool (design §4). Kept for the run once chosen; interpreted by the sim by <see cref="kind"/>.</summary>
+    /// <summary>A species' single fixed trait (design §4) — what makes it the specialist of one post. Interpreted by the sim by <see cref="kind"/>.</summary>
     [Serializable]
-    public sealed class PowerupData
+    public sealed class TraitData
     {
-        public string id;
         public string displayName;
         public string description;
 
-        /// <summary>nodeYieldBonus / trailThroughputBonus / pristineBonus / digSpeedBonus / offlineBonus.</summary>
+        /// <summary>nodeYieldBonus / trailThroughputBonus / pristineBonus / digSpeedBonus.</summary>
         public string kind;
 
         public double value;
 
-        /// <summary>Resource this powerup is specialised to, or null when it applies wherever the familiar is posted.</summary>
+        /// <summary>Resource this trait is specialised to, or null when it applies wherever the familiar is posted.</summary>
         public string resource;
     }
 
@@ -250,7 +249,8 @@ namespace Wildgrove.Data
 
     /// <summary>
     /// A familiar species (design §4): a role lean, suggested names for the
-    /// player to accept or edit on arrival, and a fixed powerup pool.
+    /// player to accept or edit on arrival, and a single fixed trait. At most
+    /// one familiar of each species ever joins the kith.
     /// </summary>
     [Serializable]
     public sealed class SpeciesData
@@ -262,7 +262,7 @@ namespace Wildgrove.Data
         public string roleLean;
 
         public List<string> suggestedNames = new List<string>();
-        public List<PowerupData> powerups = new List<PowerupData>();
+        public TraitData trait;
     }
 
     /// <summary>
@@ -358,6 +358,9 @@ namespace Wildgrove.Data
         /// <summary>Unity can't serialize a null section — treat timeSkipCostAmber &lt;= 0 as "no amber system" (the Configured pattern).</summary>
         public AmberData amber;
 
+        /// <summary>Real-money catalogue constants (starter bundle Amber). starterBundleAmber &lt;= 0 = unconfigured (fixtures).</summary>
+        public StoreData store;
+
         [Serializable]
         public sealed class CostGrowthData
         {
@@ -369,7 +372,6 @@ namespace Wildgrove.Data
         public sealed class GiftsData
         {
             public BigDouble pileGoods;
-            public string species;
         }
 
         [Serializable]
@@ -385,6 +387,12 @@ namespace Wildgrove.Data
         {
             public int slotsBase;
             public int slotsMax;
+
+            /// <summary>Lifetime verses-sung counts at which the earned slots open (design §4 ladder).</summary>
+            public List<int> verseMilestones = new List<int>();
+
+            /// <summary>Gather posts the Rite generator assumes a plausible kith holds at once (run-2+ reachability).</summary>
+            public int generatorGatherPosts;
         }
 
         [Serializable]
@@ -453,6 +461,13 @@ namespace Wildgrove.Data
             public double perFind;
             public double timeSkipHours;
             public double timeSkipCostAmber;
+        }
+
+        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant.</summary>
+        [Serializable]
+        public sealed class StoreData
+        {
+            public double starterBundleAmber;
         }
 
         [Serializable]

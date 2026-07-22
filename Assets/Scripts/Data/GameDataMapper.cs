@@ -150,20 +150,19 @@ namespace Wildgrove.Data
                 displayName = s.Name,
                 roleLean = s.RoleLean,
                 suggestedNames = new List<string>(s.SuggestedNames),
-                powerups = s.Powerups.Select(MapPowerup).ToList()
+                trait = MapTrait(s.Trait)
             };
         }
 
-        private static PowerupData MapPowerup(PowerupDef p)
+        private static TraitData MapTrait(TraitDef t)
         {
-            return new PowerupData
+            return t == null ? null : new TraitData
             {
-                id = p.Id,
-                displayName = p.Name,
-                description = p.Description,
-                kind = p.Kind,
-                value = p.Value,
-                resource = p.Resource
+                displayName = t.Name,
+                description = t.Description,
+                kind = t.Kind,
+                value = t.Value,
+                resource = t.Resource
             };
         }
 
@@ -280,8 +279,7 @@ namespace Wildgrove.Data
                 },
                 gifts = new EconomyData.GiftsData
                 {
-                    pileGoods = e.Gifts.PileGoods,
-                    species = e.Gifts.Species
+                    pileGoods = e.Gifts.PileGoods
                 },
                 hauling = new EconomyData.HaulingData
                 {
@@ -292,7 +290,11 @@ namespace Wildgrove.Data
                 kith = new EconomyData.KithData
                 {
                     slotsBase = e.Kith.SlotsBase,
-                    slotsMax = e.Kith.SlotsMax
+                    slotsMax = e.Kith.SlotsMax,
+                    verseMilestones = e.Kith.VerseMilestones != null
+                        ? new List<int>(e.Kith.VerseMilestones)
+                        : new List<int>(),
+                    generatorGatherPosts = e.Kith.GeneratorGatherPosts
                 },
                 crafting = new EconomyData.CraftingData
                 {
@@ -350,6 +352,10 @@ namespace Wildgrove.Data
                     perFind = e.Amber.PerFind,
                     timeSkipHours = e.Amber.TimeSkipHours,
                     timeSkipCostAmber = e.Amber.TimeSkipCostAmber
+                },
+                store = e.Store == null ? null : new EconomyData.StoreData
+                {
+                    starterBundleAmber = e.Store.StarterBundleAmber
                 },
                 tending = new EconomyData.TendingData
                 {

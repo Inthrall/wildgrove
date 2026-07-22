@@ -32,6 +32,9 @@ namespace Wildgrove.Sim.Tests
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // One carrier moves 0.5 units/sec — half a lone gatherer's rate,
                 // so the bottleneck binds immediately.
+                // Two slots so the factory stations both seeds (vole + raven) —
+                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1.0, tripSeconds = 2.0, basketCapacity = 10.0 },
             };
             _data.zones = new List<ZoneData>

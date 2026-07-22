@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 93df53491655bac5bc8a659da313ad7180a5bf687b33098291ee935c977734d4
+  sourceHash: 94e99a60513030d54f9388c5a4a197cc92f28f9fd576525d4f840cd55785abb2
   economy:
     costGrowth:
       building: 1.25
@@ -20,14 +20,15 @@ MonoBehaviour:
       pileGoods:
         mantissa: 1
         exponent: 1
-      species: meadow-vole
     hauling:
       baseCarryCapacity: 15
       tripSeconds: 10
       basketCapacity: 60
     kith:
-      slotsBase: 4
+      slotsBase: 1
       slotsMax: 6
+      verseMilestones: 02000000050000000a000000
+      generatorGatherPosts: 2
     crafting:
       baseCraftSeconds: 5
     tools:
@@ -94,6 +95,8 @@ MonoBehaviour:
       perFind: 2
       timeSkipHours: 4
       timeSkipCostAmber: 15
+    store:
+      starterBundleAmber: 30
   resources:
   - id: berries
     sellValue: 1
@@ -1306,13 +1309,7 @@ MonoBehaviour:
     displayName: The Old Friend
     costVerdure: 12
     requires: 
-    effects:
-    - type: 19
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      value: 1
+    effects: []
   - id: long-watch-iii
     displayName: The Long Watch III
     costVerdure: 16
@@ -1458,12 +1455,6 @@ MonoBehaviour:
       resource: 
       recipe: 
       value: 0.1
-    - type: 19
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      value: 1
   bonds:
   - id: sootwing
     displayName: Sootwing
@@ -1492,37 +1483,12 @@ MonoBehaviour:
     - Pip
     - Thistle
     - Hazel
-    powerups:
-    - id: berry-wise
+    trait:
       displayName: Berry-wise
       description: +40% yield at berry nodes
       kind: nodeYieldBonus
       value: 0.4
       resource: berries
-    - id: soft-paws
-      displayName: Soft paws
-      description: +1pt Pristine chance at its node
-      kind: pristineBonus
-      value: 0.01
-      resource: 
-    - id: early-riser
-      displayName: Early riser
-      description: its post's offline earnings +20%
-      kind: offlineBonus
-      value: 0.2
-      resource: 
-    - id: keen-forager
-      displayName: Keen forager
-      description: +25% yield at its node
-      kind: nodeYieldBonus
-      value: 0.25
-      resource: 
-    - id: patient-digger
-      displayName: Patient digger
-      description: +40% dig speed at a dig site
-      kind: digSpeedBonus
-      value: 0.4
-      resource: 
   - id: pack-raven
     displayName: pack raven
     roleLean: carrier
@@ -1535,36 +1501,191 @@ MonoBehaviour:
     - Grackle
     - Cinder
     - Onyx
-    powerups:
-    - id: deep-pockets
+    trait:
       displayName: Deep pockets
       description: +25% throughput when it holds the trail post
       kind: trailThroughputBonus
       value: 0.25
       resource: 
-    - id: tireless-wings
-      displayName: Tireless wings
-      description: +15% throughput when it holds the trail post
-      kind: trailThroughputBonus
-      value: 0.15
-      resource: 
-    - id: sharp-eyed
-      displayName: Sharp-eyed
-      description: +25% yield at its node
+  - id: meadow-pipit
+    displayName: meadow pipit
+    roleLean: gatherer
+    suggestedNames:
+    - Trill
+    - Lark
+    - Chirm
+    - Fife
+    - Sol
+    trait:
+      displayName: Bloom-tender
+      description: +40% yield at wildflower stands
       kind: nodeYieldBonus
-      value: 0.25
-      resource: 
-    - id: timber-sense
-      displayName: Timber-sense
+      value: 0.4
+      resource: wildflowers
+  - id: harvest-mouse
+    displayName: harvest mouse
+    roleLean: gatherer
+    suggestedNames:
+    - Tansy
+    - Whisk
+    - Oat
+    - Bristle
+    - Tuft
+    trait:
+      displayName: Stalk-climber
+      description: +40% yield at fibre stands
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: fibres
+  - id: red-squirrel
+    displayName: red squirrel
+    roleLean: gatherer
+    suggestedNames:
+    - Cob
+    - Filbert
+    - Russet
+    - Brindle
+    - Scamper
+    trait:
+      displayName: Mast-hoarder
+      description: +40% yield at nut groves
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: nuts
+  - id: bramble-hare
+    displayName: bramble hare
+    roleLean: gatherer
+    suggestedNames:
+    - Loper
+    - Switch
+    - Fleet
+    - Bracken
+    - Clove
+    trait:
+      displayName: Hedge-wise
+      description: +40% yield at herb patches
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: herbs
+  - id: burrow-mole
+    displayName: burrow mole
+    roleLean: gatherer
+    suggestedNames:
+    - Spade
+    - Velvet
+    - Delver
+    - Grub
+    - Loam
+    trait:
+      displayName: Scree-nose
+      description: +40% yield at the copper scree
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: copper-scree
+  - id: pine-marten
+    displayName: pine marten
+    roleLean: gatherer
+    suggestedNames:
+    - Sprig
+    - Larch
+    - Resin
+    - Knot
+    - Tumble
+    trait:
+      displayName: Deadfall-runner
       description: +40% yield at deadfall timber
       kind: nodeYieldBonus
       value: 0.4
       resource: timber
-    - id: windrider
-      displayName: Windrider
-      description: its post's offline earnings +20%
-      kind: offlineBonus
-      value: 0.2
+  - id: holt-otter
+    displayName: holt otter
+    roleLean: gatherer
+    suggestedNames:
+    - Eddy
+    - Slick
+    - Brook
+    - Pool
+    - Weir
+    trait:
+      displayName: River-wise
+      description: +40% yield at fishing pools
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: fish
+  - id: moor-curlew
+    displayName: moor curlew
+    roleLean: gatherer
+    suggestedNames:
+    - Piper
+    - Mist
+    - Rush
+    - Heath
+    - Keen
+    trait:
+      displayName: Moor-caller
+      description: +40% yield at the peat cuttings
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: peat
+  - id: cavern-bat
+    displayName: cavern bat
+    roleLean: gatherer
+    suggestedNames:
+    - Flit
+    - Echo
+    - Vesper
+    - Dusk
+    - Sable
+    trait:
+      displayName: Deep-listener
+      description: +40% yield at the deep ores
+      kind: nodeYieldBonus
+      value: 0.4
+      resource: deep-ores
+  - id: dray-stag
+    displayName: dray stag
+    roleLean: carrier
+    suggestedNames:
+    - Tine
+    - Alder
+    - Moss
+    - Roan
+    - Hallow
+    trait:
+      displayName: Broad-back
+      description: +40% throughput when it holds the trail post
+      kind: trailThroughputBonus
+      value: 0.4
+      resource: 
+  - id: tawny-owl
+    displayName: tawny owl
+    roleLean: gatherer
+    suggestedNames:
+    - Blink
+    - Umber
+    - Quill
+    - Hush
+    - Grey
+    trait:
+      displayName: Patient watcher
+      description: +40% watch speed at an observation site
+      kind: digSpeedBonus
+      value: 0.4
+      resource: 
+  - id: ermine
+    displayName: ermine
+    roleLean: gatherer
+    suggestedNames:
+    - Sleet
+    - Winter
+    - Slip
+    - Frost
+    - Pearl
+    trait:
+      displayName: Soft paws
+      description: +1pt Pristine chance at its node
+      kind: pristineBonus
+      value: 0.01
       resource: 
   planters:
   - id: timber-frame

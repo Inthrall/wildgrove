@@ -8,9 +8,9 @@ namespace Wildgrove.Sim.Tests
     /// <summary>
     /// Pins bonded familiars (design §4): earned — never bought — from a
     /// completed Folio spread or an owned Almanac node, with earned state DERIVED
-    /// from the source (so a bond crosses Migration for free). Under the roster
-    /// model a bond materialises into the kith as an ordinary stationed
-    /// familiar (Roster.SyncBonded), idempotently.
+    /// from the source (so a bond crosses Migration for free). Under the
+    /// collection model a bond honours the existing companion of its species
+    /// (or brings it, if it has never come) via Roster.SyncBonded, idempotently.
     /// </summary>
     public class BondsTests
     {
@@ -106,19 +106,39 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void SyncBonded_MaterialisesEarnedBondsIntoTheRoster()
+        public void SyncBonded_HonoursTheExistingCompanionOfTheSpecies()
         {
             var state = GameStateFactory.NewGame(_data);
+            var seedRaven = Roster.OfSpecies(state, "pack-raven");
+            var count = state.roster.Count;
             state.fixedResources.Add("berries");
             state.fixedResources.Add("nuts");
 
             Roster.SyncBonded(state, _data);
 
-            var sootwing = state.roster.Find(f => f.bondId == "sootwing");
-            Assert.That(sootwing, Is.Not.Null);
-            Assert.That(sootwing.bonded, Is.True);
-            Assert.That(sootwing.speciesId, Is.EqualTo("pack-raven"));
-            Assert.That(sootwing.name, Is.EqualTo("Sootwing"));
+            Assert.That(state.roster.Count, Is.EqualTo(count), "one raven, ever — the bond honours it, not a twin");
+            Assert.That(seedRaven.bonded, Is.True);
+            Assert.That(seedRaven.bondId, Is.EqualTo("sootwing"));
+        }
+
+        [Test]
+        public void SyncBonded_ASpeciesNeverMet_ArrivesCarryingTheBondsName()
+        {
+            _data.bonds.Add(new BondData
+            {
+                id = "hallow", displayName = "Hallow", species = "dray-stag", role = "carrier",
+                source = new BondSourceData { type = "almanacNode", id = "old-friend" },
+            });
+            var state = GameStateFactory.NewGame(_data);
+            state.almanacNodeIds.Add("old-friend");
+
+            Roster.SyncBonded(state, _data);
+
+            var hallow = state.roster.Find(f => f.bondId == "hallow");
+            Assert.That(hallow, Is.Not.Null);
+            Assert.That(hallow.bonded, Is.True);
+            Assert.That(hallow.speciesId, Is.EqualTo("dray-stag"));
+            Assert.That(hallow.name, Is.EqualTo("Hallow"));
         }
 
         [Test]

@@ -25,9 +25,11 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The land's first gesture (design §4 slots 1 &amp; 2): a vole and a
-        /// raven arrive unasked — one gathers the first node, one takes the trail
-        /// post. The bootstrap, twice. Player names them on arrival.
+        /// The land's first gesture (design §4): a vole and a raven arrive
+        /// unasked. The vole takes the first node — the run's single opening
+        /// slot — and the raven rests at camp until a slot opens (or the
+        /// player swaps them: the first stationing choice is the tutorial).
+        /// Player names them on arrival.
         /// </summary>
         private static void SeedStartingKith(GameState state, GameDataAsset data)
         {

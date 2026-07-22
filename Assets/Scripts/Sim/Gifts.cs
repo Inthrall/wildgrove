@@ -4,21 +4,20 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// The gift event (design §4): once the run's first verse is answered —
-    /// by the warden's own hands — leave a pile of a node's own resource and
-    /// something says yes. One pile, one yes: a recruitment event, not a cost
-    /// curve, and the arrival takes the chosen node as its post. Availability
-    /// is derived from the roster (a gifted companion walking = the gift is
-    /// answered), so a clamped or retuned save self-heals. No-ops when
+    /// Gift piles (design §4): every verse sung — across every run — earns the
+    /// warden one pile, and one yes. Leave a pile of a node's own resource and
+    /// that resource's specialist answers, taking the node as its post. Which
+    /// species comes is chosen by where the pile is left; a pile is refused
+    /// where the specialist already walks (each species joins once, ever) or
+    /// where no specialist exists. Piles answered are counted from the roster
+    /// (the gifted flag), so a retuned save self-heals. No-ops when
     /// economy.gifts is absent (fixtures).
     /// </summary>
     public static class Gifts
     {
         public static bool Configured(EconomyData economy)
         {
-            return economy?.gifts != null
-                && economy.gifts.pileGoods > BigDouble.Zero
-                && !string.IsNullOrEmpty(economy.gifts.species);
+            return economy?.gifts != null && economy.gifts.pileGoods > BigDouble.Zero;
         }
 
         /// <summary>Units of the node's own resource one pile costs — flat, never a curve.</summary>
@@ -27,65 +26,87 @@ namespace Wildgrove.Sim
             return Configured(economy) ? economy.gifts.pileGoods : BigDouble.Zero;
         }
 
-        /// <summary>The land answers gifts only after the warden has answered it first (§4: verse 1 is sung by the warden's own hands).</summary>
-        public static bool IsUnlocked(GameState state, GameDataAsset data)
-        {
-            var rite = Rite.CurrentRite(state, data);
-            if (rite == null)
-            {
-                return false;
-            }
-
-            foreach (var verse in rite.verses)
-            {
-                if (Rite.IsVerseComplete(state, data, verse))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>True while the gift event's arrival walks with the kith — one pile, one yes.</summary>
-        public static bool HasGifted(GameState state)
+        /// <summary>Piles already answered — the arrivals walking with the kith.</summary>
+        public static int GiftedCount(GameState state)
         {
             if (state?.roster == null)
             {
-                return false;
+                return 0;
             }
 
+            var count = 0;
             foreach (var familiar in state.roster)
             {
                 if (familiar.gifted)
                 {
-                    return true;
+                    count++;
                 }
             }
 
-            return false;
+            return count;
         }
 
-        /// <summary>The gift event is live: configured, unanswered, a slot open, and a verse sung. The node plates' pile line shows on this.</summary>
+        /// <summary>Piles the verses have earned and no one has answered yet.</summary>
+        public static int PilesRemaining(GameState state, GameDataAsset data)
+        {
+            var remaining = Kith.TotalVersesSung(state, data) - GiftedCount(state);
+            return remaining > 0 ? remaining : 0;
+        }
+
+        /// <summary>A pile is on offer somewhere: configured, and a verse-earned pile is unanswered. The node plates' pile lines show on this.</summary>
         public static bool IsAvailable(GameState state, GameDataAsset data)
         {
-            return Configured(data?.economy)
-                && !HasGifted(state)
-                && Kith.HasRoom(state, data)
-                && IsUnlocked(state, data);
+            return Configured(data?.economy) && PilesRemaining(state, data) > 0;
         }
 
-        /// <summary>True when camp stock covers a pile at this node.</summary>
+        /// <summary>
+        /// The specialist a pile at <paramref name="node"/> would call: the
+        /// species whose trait names the node's resource — null when none does.
+        /// </summary>
+        public static SpeciesData SpecialistFor(GameDataAsset data, NodeState node)
+        {
+            if (node == null || data?.species == null)
+            {
+                return null;
+            }
+
+            foreach (var species in data.species)
+            {
+                if (species.trait != null
+                    && species.trait.kind == "nodeYieldBonus"
+                    && species.trait.resource == node.resourceId)
+                {
+                    return species;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// True when a pile at this node could ever be answered: a specialist
+        /// exists and hasn't already joined. (Affordability and slot room are
+        /// CanLeavePile's business — this is the "worth showing the line" test.)
+        /// </summary>
+        public static bool NodeCanCall(GameState state, GameDataAsset data, NodeState node)
+        {
+            var specialist = SpecialistFor(data, node);
+            return specialist != null && Roster.OfSpecies(state, specialist.id) == null;
+        }
+
+        /// <summary>True when camp stock covers a pile at this node, someone new would answer it, and a slot is open for them.</summary>
         public static bool CanLeavePile(GameState state, GameDataAsset data, NodeState node)
         {
             return node != null
                 && IsAvailable(state, data)
+                && NodeCanCall(state, data, node)
+                && Kith.HasRoom(state, data)
                 && state.GetResource(node.resourceId) >= PileCost(data.economy);
         }
 
         /// <summary>
         /// Leave the pile: spend the node's own resource from camp stock and
-        /// something says yes — the arrival is stationed at that node, to be
+        /// the resource's specialist says yes — stationed at that node, to be
         /// named on the arrival sheet like any recruit. Returns null (and
         /// changes nothing) when the gift can't happen.
         /// </summary>
@@ -96,7 +117,7 @@ namespace Wildgrove.Sim
                 return null;
             }
 
-            var familiar = Roster.Recruit(state, data, data.economy.gifts.species, node.id);
+            var familiar = Roster.Recruit(state, data, SpecialistFor(data, node).id, node.id);
             if (familiar == null)
             {
                 return null;

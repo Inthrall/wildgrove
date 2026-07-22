@@ -141,6 +141,31 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Verses sung this run — the current rite's completed verses. The
+        /// lifetime total (the kith ladder's currency, §4) adds
+        /// GameState.foldedVersesSung on top; see Kith.TotalVersesSung.
+        /// </summary>
+        public static int CompletedVerseCount(GameState state, GameDataAsset data)
+        {
+            var rite = CurrentRite(state, data);
+            if (rite == null)
+            {
+                return 0;
+            }
+
+            var complete = 0;
+            foreach (var verse in rite.verses)
+            {
+                if (IsVerseComplete(state, data, verse))
+                {
+                    complete++;
+                }
+            }
+
+            return complete;
+        }
+
+        /// <summary>
         /// The Rite completes — Migration eligibility — when every one of its
         /// verses is complete (the all-revealed-verses rule; the deepest
         /// verses force the trail to be walked to its end).

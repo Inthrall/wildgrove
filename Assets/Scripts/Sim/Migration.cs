@@ -57,10 +57,10 @@ namespace Wildgrove.Sim
 
             // The kith crosses the fold (design §4): the roster and every
             // Kinship level persist — run XP banks into Kinship (√), and each
-            // familiar returns to a clean run build (level, powerups, station
-            // reset). This replaces the fresh run's seed kith with the carried
-            // one. (Presence-lapse — benching non-bonded familiars to re-meet —
-            // is a v1.1 refinement; at MVP the whole roster stays present.)
+            // familiar returns to a clean run build (level and station reset).
+            // This replaces the fresh run's seed kith with the carried one.
+            // (Presence-lapse — benching non-bonded familiars to re-meet — is
+            // a v1.1 refinement; at MVP the whole roster stays present.)
             foreach (var familiar in state.roster)
             {
                 Kinship.Fold(familiar, data);
@@ -68,6 +68,13 @@ namespace Wildgrove.Sim
 
             next.roster = state.roster;
             next.nextFamiliarSeq = state.nextFamiliarSeq;
+
+            // The ladder's currency and the store's slots both survive the
+            // fold (§4): verses sung this run bank into the lifetime count,
+            // and a purchase is a purchase.
+            next.foldedVersesSung = state.foldedVersesSung + Rite.CompletedVerseCount(state, data);
+            next.purchasedKithSlots = state.purchasedKithSlots;
+            next.starterBundleAmberGranted = state.starterBundleAmberGranted;
 
             next.verdurePoints = VerdureAfterMigration(state, data);
             next.renown = state.renown;

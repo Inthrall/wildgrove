@@ -29,7 +29,7 @@ namespace Wildgrove.Sim.Tests
             return state;
         }
 
-        /// <summary>Un-station every familiar (all wander) — the "no one working" setup.</summary>
+        /// <summary>Un-station every familiar (all rest at camp) — the "no one working" setup.</summary>
         public static void ClearStations(GameState state)
         {
             foreach (var familiar in state.roster)

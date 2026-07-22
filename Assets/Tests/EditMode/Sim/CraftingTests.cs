@@ -29,6 +29,9 @@ namespace Wildgrove.Sim.Tests
                 crafting = new EconomyData.CraftingData { baseCraftSeconds = 5.0 },
                 // Effectively unbounded so gathered goods reach camp the same
                 // tick — the crafting timeline stays exact.
+                // Two slots so the factory stations both seeds (vole + raven) —
+                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
             _data.zones = new List<ZoneData>

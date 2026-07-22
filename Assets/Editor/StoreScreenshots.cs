@@ -132,26 +132,29 @@ namespace Wildgrove.EditorTools
             state.amber = 12;
 
             // A kith worth photographing: the two seeds plus four staged
-            // companions — a full six-slot ladder. Recruit refuses past the
-            // slot cap and Restore clamps to slotsMax, so stage the roster
-            // directly and stay inside the ceiling: the showcase isn't a
-            // legal run, it's a photograph.
-            var stations = new[]
+            // companions, each its own species (the collection model — one
+            // familiar per species, ever), on a fully-opened ladder. Restore
+            // rests anything past the earned slots, so open them all: ten
+            // verses sung plus both store slots. The showcase isn't a legal
+            // run, it's a photograph.
+            state.foldedVersesSung = 10;
+            state.purchasedKithSlots = 2;
+            var staged = new[]
             {
-                state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id,
-                state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id,
-                Familiar.TrailStation,
-                state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id,
+                ("harvest-mouse", state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id),
+                ("red-squirrel", state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id),
+                ("dray-stag", Familiar.TrailStation),
+                ("tawny-owl", state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id),
             };
-            for (var i = 0; i < stations.Length; i++)
+            for (var i = 0; i < staged.Length; i++)
             {
-                var species = stations[i] == Familiar.TrailStation ? "pack-raven" : "meadow-vole";
+                var (species, station) = staged[i];
                 state.roster.Add(new Familiar
                 {
                     id = state.NextFamiliarId(),
                     speciesId = species,
                     name = Roster.SuggestName(state, data, species),
-                    stationId = stations[i],
+                    stationId = station,
                     xp = 900 + i * 400,
                     kinshipXp = i == 0 ? 4200 : 0,
                 });

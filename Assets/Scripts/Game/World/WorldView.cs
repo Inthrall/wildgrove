@@ -125,7 +125,7 @@ namespace Wildgrove.Game.World
         {
             foreach (var familiar in _loop.State.roster)
             {
-                if (familiar.bonded && !familiar.IsWandering && familiar.stationId == nodeId)
+                if (familiar.bonded && !familiar.IsResting && familiar.stationId == nodeId)
                 {
                     return true;
                 }

@@ -181,7 +181,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void AddPostXp_ComfortReachesTheStationed_NeverTheWandering()
+        public void AddPostXp_ComfortReachesTheStationed_TheRestingEarnNothing()
         {
             _data.economy.familiarXp = new EconomyData.FamiliarXpData
             {
@@ -192,13 +192,13 @@ namespace Wildgrove.Sim.Tests
             state.buildingLevels["roosts"] = 2;
             var comfort = Buildings.ComfortXpMultiplier(state, _data);
             var posted = new Familiar { id = "fam-1", speciesId = "meadow-vole", stationId = "node-1" };
-            var wanderer = new Familiar { id = "fam-2", speciesId = "meadow-vole" };
+            var resting = new Familiar { id = "fam-2", speciesId = "meadow-vole" };
 
             Familiars.AddPostXp(state, _data, posted, 1.0, 10.0, comfort);
-            Familiars.AddPostXp(state, _data, wanderer, 1.0, 10.0, comfort);
+            Familiars.AddPostXp(state, _data, resting, 1.0, 10.0, comfort);
 
             Assert.That(posted.xp, Is.EqualTo(12.0).Within(Tolerance), "10s · 1/s · 1.2 comfort");
-            Assert.That(wanderer.xp, Is.EqualTo(5.0).Within(Tolerance), "wanderers sleep rough — ×0.5, no comfort");
+            Assert.That(resting.xp, Is.EqualTo(0.0).Within(Tolerance), "no post, no work, no lesson");
         }
     }
 }

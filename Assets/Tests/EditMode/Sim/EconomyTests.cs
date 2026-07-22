@@ -29,6 +29,9 @@ namespace Wildgrove.Sim.Tests
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // Effectively unbounded, so offline tests see goods at camp the
                 // same tick they're gathered; HaulTests pins the tight case.
+                // Two slots so the factory stations both seeds (vole + raven) —
+                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
             _data.resources = new List<ResourceData>

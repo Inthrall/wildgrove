@@ -49,13 +49,18 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy.CostGrowth.Building, Is.EqualTo(1.25));
             Assert.That(data.Economy.Gifts.PileGoods, Is.EqualTo(10L));
-            Assert.That(data.Economy.Gifts.Species, Is.EqualTo("meadow-vole"), "the gift event's arrival is deterministic (design §4)");
             Assert.That(data.Economy.Tools.Tiers.First(), Is.EqualTo("flint"));
             Assert.That(data.ResourcesById["berries"].SellValue, Is.GreaterThan(0));
             Assert.That(data.ResourcesById["copper-scree"].Skill, Is.EqualTo("mining"));
             Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
-            Assert.That(data.Economy.Kith.SlotsBase, Is.EqualTo(4), "design §4 ladder: four kith slots free");
+            Assert.That(data.Economy.Kith.SlotsBase, Is.EqualTo(1), "design §4 ladder: one slot from minute one");
             Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
+            Assert.That(data.Economy.Kith.VerseMilestones, Is.EqualTo(new[] { 2, 5, 10 }), "verses sung earn the middle rungs");
+            Assert.That(data.Economy.Kith.GeneratorGatherPosts, Is.EqualTo(2), "the run-2+ generator's stationing assumption");
+            Assert.That(data.Economy.Store.StarterBundleAmber, Is.GreaterThan(0), "the starter bundle's one-time Amber pile");
+            Assert.That(data.SpeciesById["meadow-vole"].Trait.Kind, Is.EqualTo("nodeYieldBonus"));
+            Assert.That(data.SpeciesById["meadow-vole"].Trait.Resource, Is.EqualTo("berries"), "the vole is the berry specialist");
+            Assert.That(data.SpeciesById["pack-raven"].Trait.Kind, Is.EqualTo("trailThroughputBonus"));
             Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
             Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("comfort"), "Roosts levels familiar comfort (design §4)");
@@ -88,10 +93,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
             Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("folioSpread"));
             Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
-            Assert.That(data.AlmanacById["old-friend"].Effects.Single().Type, Is.EqualTo(EffectType.KithSlot),
-                "the Old Friend opens kith slot 5 — and its bond fills it");
-            Assert.That(data.SpreadsById["wardens-gallery"].Effects.Any(e => e.Type == EffectType.KithSlot), Is.True,
-                "the Gallery capstone opens kith slot 6 (design §4 completed-spread moment)");
+            Assert.That(data.AlmanacById["old-friend"].Effects, Is.Empty,
+                "the Old Friend is the bond alone — slots come from verses and the store now");
             Assert.That(data.Rites.Generator.SpotlightDiscount, Is.EqualTo(0.6));
             Assert.That(data.Rites.Generator.OffSpotlightPremium, Is.EqualTo(1.5));
             Assert.That(data.UpgradesById["copper-sickle"].Materials["copper-ingot"], Is.EqualTo(5));

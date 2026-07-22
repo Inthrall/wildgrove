@@ -47,6 +47,15 @@ namespace Wildgrove.Sim
         /// <summary>Amber (design §10) — the premium currency; observation sites surface it free, and it survives Migration.</summary>
         public double amber;
 
+        /// <summary>Verses sung in runs already folded (design §4 ladder) — the current run's completed verses add on top; see Kith.TotalVersesSung.</summary>
+        public int foldedVersesSung;
+
+        /// <summary>Kith slots owned through the store (0–2: the starter bundle, the plain slot). Synced from entitlements at startup and after purchase; survives Migration.</summary>
+        public int purchasedKithSlots;
+
+        /// <summary>True once the starter bundle's one-time Amber grant has been paid out — the entitlement re-resolves on every device, the pile arrives once.</summary>
+        public bool starterBundleAmberGranted;
+
         /// <summary>
         /// Monotonic version of the effect sources (purchases, donations,
         /// insects, gear, Almanac, buildings) — bumping it invalidates the

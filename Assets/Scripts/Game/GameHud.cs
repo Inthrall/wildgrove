@@ -975,10 +975,10 @@ namespace Wildgrove.Game
             postedLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
             var postedDashes = AddDashedBorder(postedLine.gameObject);
 
-            // The gift event (design §4): while it's live, every node offers a
-            // dashed pile line — where the pile is left is where the newcomer
-            // works, and which resource it costs. One pile, one yes; the line
-            // vanishes for good once something says yes.
+            // Gift piles (design §4): while a verse-earned pile waits, a node
+            // whose specialist hasn't joined offers a dashed pile line — where
+            // the pile is left is who answers, and which resource it costs.
+            // The line vanishes for that node once its specialist walks.
             var giftLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
             var giftButton = giftLine.gameObject.AddComponent<Button>();
             giftButton.transition = Selectable.Transition.None;
@@ -989,6 +989,10 @@ namespace Wildgrove.Game
                 {
                     SetNote("you left a pile of " + captured.resourceId + " and stepped back. something said yes.");
                     _dirty = true;
+                }
+                else if (_loop.KithWalking() >= _loop.KithSlots())
+                {
+                    SetNote("something watches the pile, but every slot is walked. rest someone first.");
                 }
                 else
                 {
@@ -1085,13 +1089,14 @@ namespace Wildgrove.Game
                     postedDashes.SetActive(true);
                 }
 
-                if (_loop.GiftAvailable())
+                var caller = _loop.GiftAvailable() ? _loop.GiftSpeciesFor(captured) : null;
+                if (caller != null)
                 {
                     giftLine.gameObject.SetActive(true);
                     var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + captured.resourceId;
                     giftLine.text = _loop.CanLeaveGift(captured)
-                        ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>"
-                        : "leave a pile — " + pile + " (not enough yet)";
+                        ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + " · a " + caller.displayName + " watches</color>"
+                        : "leave a pile — " + pile + " · a " + caller.displayName + " watches (not yet)";
                 }
                 else
                 {
@@ -2010,11 +2015,10 @@ namespace Wildgrove.Game
             var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
-                var held = _loop.KithCount();
+                var walking = _loop.KithWalking();
                 var slots = _loop.KithSlots();
-                var max = _loop.Data.economy?.kith != null ? _loop.Data.economy.kith.slotsMax : slots;
-                slotsLine.text = "<i>" + held + " of " + slots + " slots walked"
-                                 + (slots < max ? " · the land holds the rest" : string.Empty) + "</i>";
+                slotsLine.text = "<i>" + walking + " of " + slots + " posts walked · "
+                                 + _loop.KithCount() + " companions</i>";
             });
 
             foreach (var familiar in _loop.State.roster)
@@ -2033,9 +2037,7 @@ namespace Wildgrove.Game
                 // Posting moved out to the land — each node plate, the trail
                 // row, and the watch plates carry their own "post someone"
                 // affordance. The roster keeps only the recall.
-                var wander = Button(row.transform, "Let wander", 190, () => Station(captured, null));
-                var powerup = Button(row.transform, "A lesson", 170, () => OpenPowerupSheet(captured));
-                powerup.GetComponent<Image>().color = OchreWash;
+                var rest = Button(row.transform, "Rest", 150, () => Station(captured, null));
 
                 _liveUpdaters.Add(() =>
                 {
@@ -2044,14 +2046,91 @@ namespace Wildgrove.Game
                     var kin = _loop.FamiliarKinship(captured) > 0
                         ? "  <color=" + OchreHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
                         : string.Empty;
+                    var trait = _loop.FamiliarTrait(captured);
+                    var traitLine = trait != null
+                        ? "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + trait.displayName.ToLowerInvariant()
+                          + " — " + trait.description + "</color></size>"
+                        : string.Empty;
                     var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
                     label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
                                  + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
-                                 + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>";
-                    powerup.gameObject.SetActive(_loop.HasPendingPowerup(captured));
-                    wander.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
+                                 + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>"
+                                 + traitLine;
+                    rest.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
                 });
             }
+
+            BuildKithLadderLines(card);
+        }
+
+        /// <summary>
+        /// The slot ladder's open questions, under the roster (design §4): the
+        /// next verse-earned slot, then the two the store keeps — the starter
+        /// bundle (slot + Amber) first, the plain slot behind it.
+        /// </summary>
+        private void BuildKithLadderLines(RectTransform card)
+        {
+            var verseLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                var next = _loop.NextKithVerseMilestone();
+                verseLine.gameObject.SetActive(next > 0);
+                if (next > 0)
+                {
+                    verseLine.text = "<i>a slot opens when " + next + " verses are sung — "
+                                     + _loop.TotalVersesSung() + " so far</i>";
+                }
+            });
+
+            var bundleLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
+            var bundleButton = bundleLine.gameObject.AddComponent<Button>();
+            bundleButton.transition = Selectable.Transition.None;
+            bundleButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.StarterBundle));
+            bundleLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(bundleLine.gameObject);
+
+            var slotLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
+            var slotButton = slotLine.gameObject.AddComponent<Button>();
+            slotButton.transition = Selectable.Transition.None;
+            slotButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.KithSlot));
+            slotLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(slotLine.gameObject);
+
+            _liveUpdaters.Add(() =>
+            {
+                var bundleOwned = _loop.Store.IsOwned(StoreProductIds.StarterBundle);
+                bundleLine.gameObject.SetActive(!bundleOwned);
+                if (!bundleOwned)
+                {
+                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>";
+                }
+
+                // The plain slot waits its turn behind the bundle.
+                var slotOwned = _loop.Store.IsOwned(StoreProductIds.KithSlot);
+                slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
+                if (bundleOwned && !slotOwned)
+                {
+                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>";
+                }
+            });
+        }
+
+        private void OnBuyKithProduct(string productId)
+        {
+            _loop.PurchaseKithProduct(productId, result =>
+            {
+                switch (result)
+                {
+                    case StoreResult.Purchased:
+                    case StoreResult.AlreadyOwned:
+                        SetNote("a slot opens. thank you for keeping the grove.");
+                        _dirty = true;
+                        break;
+                    case StoreResult.Failed:
+                        SetNote("that didn't go through — nothing was charged.");
+                        break;
+                }
+            });
         }
 
         /// <summary>
@@ -2086,7 +2165,7 @@ namespace Wildgrove.Game
             {
                 var captured = familiar;
                 var here = PostMatches(captured.stationId, stationId);
-                var detail = here ? "posted here — tap to let them wander" : "now: " + StationLabel(captured.stationId);
+                var detail = here ? "posted here — tap to send them to camp" : "now: " + StationLabel(captured.stationId);
                 var button = Button(sheet, captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                            + SpeciesName(captured.speciesId) + " · " + detail + "</color></size>", 560, () =>
                 {
@@ -2122,9 +2201,15 @@ namespace Wildgrove.Game
 
         private void Station(Familiar familiar, string stationId)
         {
-            _loop.StationFamiliar(familiar, stationId);
+            if (!_loop.StationFamiliar(familiar, stationId))
+            {
+                // The ladder said no — every slot already walks (design §4).
+                SetNote("every slot is walked. rest someone before " + familiar.name + " takes a post.");
+                return;
+            }
+
             SetNote(string.IsNullOrEmpty(stationId)
-                ? familiar.name + " wanders — half a hand everywhere, a whole hand nowhere."
+                ? familiar.name + " rests at camp, watching the fire."
                 : familiar.name + " walks to " + StationLabel(stationId) + ".");
         }
 
@@ -2563,27 +2648,6 @@ namespace Wildgrove.Game
             Button(sheet, "Cancel", 320, CloseSheet);
         }
 
-        private void OpenPowerupSheet(Familiar familiar)
-        {
-            var sheet = BeginSheet();
-            MakeText(sheet, familiar.name + " has learned something", 30, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, "choose what — a build is a commitment", 21, TextAnchor.UpperCenter, Ink2, _hand);
-
-            foreach (var powerup in _loop.OfferablePowerups(familiar))
-            {
-                var captured = powerup;
-                Button(sheet, captured.displayName + " — " + captured.description, 560, () =>
-                {
-                    _loop.ChoosePowerup(familiar, captured.id);
-                    SetNote(familiar.name + " chose: " + captured.displayName.ToLowerInvariant() + ".");
-                    _dirty = true;
-                    CloseSheet();
-                });
-            }
-
-            Button(sheet, "Later", 320, CloseSheet);
-        }
-
         /// <summary>
         /// The persistent camp-actions strip under the node/world gap: the
         /// rewarded time-skip and the one-off remove-ads purchase, reachable
@@ -2859,8 +2923,6 @@ namespace Wildgrove.Game
                     return "opens the watch in " + ZoneName(effect.zone);
                 case EffectType.UnlockVerdureForecast:
                     return "reveals the verdure forecast";
-                case EffectType.KithSlot:
-                    return "+" + PlainNumber(effect.value) + " kith " + (effect.value > 1 ? "slots" : "slot");
                 default:
                     return string.Empty;
             }
@@ -2900,7 +2962,7 @@ namespace Wildgrove.Game
         {
             if (string.IsNullOrEmpty(stationId))
             {
-                return "wandering";
+                return "resting at camp";
             }
 
             if (stationId == Familiar.TrailStation)

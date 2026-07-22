@@ -11,6 +11,55 @@ Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals. The
 per-item detail below points at the code/data; the phase lists further down are
 annotated **v0.11:** where a decision touches them.
 
+**DECIDED 2026-07-23 — the collection ladder (slots · traits · store).** Mo's calls:
+one slot to start, three earned early/mid/late ("rites, something like 2-5-10"),
+two purchasable (the first inside the initial purchase bundle for Play Level Up,
+bundle = slot + Amber); more familiars obtainable than slots; each familiar has a
+single fixed trait per species ("you only have one vole ever"), replacing powerups.
+Implementation + interpretations:
+- **Slots = the right to hold a post.** `Kith.Slots` = `slotsBase` (1) + verse
+  milestones passed (`economy.kith.verseMilestones` [2,5,10] — first guesses, tune)
+  + `GameState.purchasedKithSlots`, capped at `slotsMax` (6). The roster is the
+  collection — one familiar per species ever (`Roster.Recruit` refuses duplicates),
+  never slot-capped; unstationed familiars **rest at camp**: no output and **no run
+  XP** (interpretation — resting is fully idle; wandering ×0.5 retired because free
+  half-labour would gut the ladder's value).
+- **Ladder currency = lifetime verses sung** (`foldedVersesSung` banked at Migration
+  + current rite's completed verses, derived — self-healing, no event counter).
+- **Traits replace powerups** (`Traits.cs`; `species.json` one `trait` per species;
+  13 species authored — 9 node specialists, 2 trail, 1 watch, 1 pristine).
+  `offlineBonus` powerup kind dropped (was never consumed by the sim). Old Friend
+  and Warden's Gallery lose their `kithSlot` effects (EffectType removed); Old
+  Friend keeps Burr's bond. Species art: new species need plates (ArtLibrary
+  falls back gracefully until then).
+- **Gift piles rescoped: one pile per verse sung** (was one-shot). The pile at a
+  node calls *that resource's un-owned specialist* (derived from traits —
+  `gifts.species` config retired; validator enforces one specialist per resource).
+  Interpretation: non-node species (dray-stag, tawny-owl, ermine, cavern-bat)
+  currently have **no acquisition path** beyond bonds — future arrival content.
+- **Bonds honour the existing companion** of their species (keeps the player's
+  name) or bring it resting if never met — Sootwing/Burr no longer mint twins.
+- **Store:** `starter_bundle` (slot + `economy.store.starterBundleAmber` 30, one-time
+  grant flagged by `starterBundleAmberGranted`) and `kith_slot` products; both
+  NonConsumable, catalogue in `StoreProductIds.All`; `KithPurchases.Apply` folds
+  entitlements in (never downgrades — a billing hiccup can't shrink the ladder);
+  synced on purchase only (billing stays lazy per the startup-crash fix — a
+  reinstall shows purchased slots after the first store touch; no restore-purchases
+  affordance yet, matching remove_ads). **Play Console: create both products.**
+- **Save v26:** `powerupIds` dropped; `foldedVersesSung`/`purchasedKithSlots`/
+  `starterBundleAmberGranted` added; Restore dedupes duplicate species (bonded,
+  then deepest Kinship kept) and rests stationed familiars past the ladder.
+  ⚠️ Existing test saves restore to a 1-slot ladder — most of the roster wakes up
+  resting; wipe or re-station.
+- **Early-game pacing watch:** with 1 slot the seed raven rests, so nothing hauls —
+  a stationed gatherer's basket overflows (lost) until slot 2 (2 verses) unless the
+  player fields the raven instead; warden hand-gather (straight to camp) is the
+  bridge. Deliberate scarcity, but tune `verseMilestones[0]` down to 1 if the first
+  hour drags. Also: the first pile (verse 1) usually needs a rest-someone swap
+  before it can be answered (arrival needs a slot).
+- **RiteGenerator:** `KithGatherPosts` now reads `economy.kith.generatorGatherPosts`
+  (2, conservative run-2 slots) instead of `slotsBase − 1`.
+
 **DECIDED 2026-07-23 — verses are sequential.** Each verse is locked behind
 completion of the one before it (`Rite.IsVerseRevealed` now also requires every
 earlier verse sung; `Rite.IsVerseSealed` distinguishes "site not reached" from

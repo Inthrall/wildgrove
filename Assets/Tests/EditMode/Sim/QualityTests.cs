@@ -28,6 +28,9 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
+                // Two slots so the factory stations both seeds (vole + raven) —
+                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1.0, tripSeconds = 2.0, basketCapacity = 10.0 },
                 // Chances start at 0 — each test dials up the tier it pins.
                 quality = new EconomyData.QualityData

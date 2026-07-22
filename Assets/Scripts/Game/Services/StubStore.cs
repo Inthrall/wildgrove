@@ -1,19 +1,27 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Wildgrove.Game.Services
 {
     /// <summary>
-    /// Placeholder <see cref="IStore"/> until the Unity IAP implementation lands.
-    /// Tracks remove_ads ownership in memory only, so the purchase and entitlement
-    /// paths are exercisable without a store connection. Never charges anything;
+    /// Placeholder <see cref="IStore"/> for the editor and non-Android targets.
+    /// Tracks ownership in memory only, so the purchase and entitlement paths
+    /// are exercisable without a store connection. Never charges anything;
     /// ownership does not survive a restart (the real store persists it).
     /// </summary>
     public sealed class StubStore : IStore
     {
+        private readonly HashSet<string> _owned = new HashSet<string>();
+
         public bool IsInitialised { get; private set; }
 
-        public bool RemoveAdsOwned { get; private set; }
+        public bool RemoveAdsOwned => IsOwned(StoreProductIds.RemoveAds);
+
+        public bool IsOwned(string productId)
+        {
+            return _owned.Contains(productId);
+        }
 
         public void Initialise(Action onReady = null)
         {
@@ -25,12 +33,15 @@ namespace Wildgrove.Game.Services
         public void Purchase(string productId, Action<StoreResult> onComplete)
         {
             Debug.Log("[store] stub purchase " + productId);
-            if (productId == StoreProductIds.RemoveAds)
+            foreach (var known in StoreProductIds.All)
             {
-                var result = RemoveAdsOwned ? StoreResult.AlreadyOwned : StoreResult.Purchased;
-                RemoveAdsOwned = true;
-                onComplete?.Invoke(result);
-                return;
+                if (productId == known)
+                {
+                    var result = _owned.Contains(productId) ? StoreResult.AlreadyOwned : StoreResult.Purchased;
+                    _owned.Add(productId);
+                    onComplete?.Invoke(result);
+                    return;
+                }
             }
 
             onComplete?.Invoke(StoreResult.Failed);

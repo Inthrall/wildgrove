@@ -42,7 +42,7 @@ namespace Wildgrove.Sim
             var economy = data.economy;
             var chance = economy.quality.pristineBaseChance
                          + Upgrades.PristineChanceBonus(state, data)
-                         + Powerups.PristineBonusAt(state, data, node);
+                         + Traits.PristineBonusAt(state, data, node);
             if (node.pristineBonusRemaining > 0.0 && economy.tending != null)
             {
                 chance *= 1.0 + economy.tending.pristineChanceBonus;

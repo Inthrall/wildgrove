@@ -7,10 +7,11 @@ using Wildgrove.Sim.Saves;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the gift event (design §4): unlocked when the run's first verse is
-    /// answered, one pile of the node's own resource recruits one deterministic
-    /// arrival stationed at that node — one pile, one yes, never a cost curve.
-    /// Availability derives from the roster, so it survives the save round trip.
+    /// Pins the gift piles (design §4): every verse sung earns one pile, one
+    /// yes. The pile is left at a node and that resource's specialist answers,
+    /// stationed there — where the pile is left is who comes. A pile is
+    /// refused where the specialist already walks; piles answered derive from
+    /// the roster, so they survive the save round trip.
     /// </summary>
     public class GiftsTests
     {
@@ -22,8 +23,13 @@ namespace Wildgrove.Sim.Tests
             _data = ScriptableObject.CreateInstance<GameDataAsset>();
             _data.economy = new EconomyData
             {
-                kith = new EconomyData.KithData { slotsBase = 4, slotsMax = 6 },
-                gifts = new EconomyData.GiftsData { pileGoods = 10, species = "meadow-vole" },
+                kith = new EconomyData.KithData
+                {
+                    slotsBase = 1,
+                    slotsMax = 6,
+                    verseMilestones = new List<int> { 2, 5, 10 },
+                },
+                gifts = new EconomyData.GiftsData { pileGoods = 10 },
             };
             _data.resources = new List<ResourceData>
             {
@@ -46,11 +52,19 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "meadow-vole", displayName = "meadow vole", roleLean = "gatherer",
                     suggestedNames = new List<string> { "Bramble", "Clover" },
+                    trait = new TraitData { displayName = "Berry-wise", kind = "nodeYieldBonus", value = 0.4, resource = "berries" },
                 },
                 new SpeciesData
                 {
                     id = "pack-raven", displayName = "pack raven", roleLean = "carrier",
                     suggestedNames = new List<string> { "Sootwing" },
+                    trait = new TraitData { displayName = "Deep pockets", kind = "trailThroughputBonus", value = 0.25 },
+                },
+                new SpeciesData
+                {
+                    id = "red-squirrel", displayName = "red squirrel", roleLean = "gatherer",
+                    suggestedNames = new List<string> { "Cob" },
+                    trait = new TraitData { displayName = "Mast-hoarder", kind = "nodeYieldBonus", value = 0.4, resource = "nuts" },
                 },
             };
             _data.rites = new RitesBundle
@@ -85,7 +99,7 @@ namespace Wildgrove.Sim.Tests
             Object.DestroyImmediate(_data);
         }
 
-        /// <summary>Answer the first verse directly — the unlock cares that a verse is sung, not how.</summary>
+        /// <summary>Answer the first verse directly — the pile count cares that a verse is sung, not how.</summary>
         private static void AnswerFirstVerse(GameState state)
         {
             state.verseProgress.Add(new VerseProgressState
@@ -95,14 +109,21 @@ namespace Wildgrove.Sim.Tests
             });
         }
 
+        /// <summary>The nut node, with stock for a pile and a slot opened by resting the seed vole.</summary>
+        private NodeState ReadyNutNode(GameState state)
+        {
+            state.resources["nuts"] = 25;
+            Roster.Station(state, _data, Roster.OfSpecies(state, "meadow-vole"), null);
+            return state.nodes[1];
+        }
+
         [Test]
         public void IsAvailable_BeforeAVerseIsAnswered_IsFalse()
         {
             var state = GameStateFactory.NewGame(_data);
             state.resources["berries"] = 25;
 
-            Assert.That(Gifts.IsAvailable(state, _data), Is.False,
-                "the land answers gifts only after the warden has answered it first");
+            Assert.That(Gifts.IsAvailable(state, _data), Is.False, "no verse sung — no pile earned");
         }
 
         [Test]
@@ -111,6 +132,7 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
 
+            Assert.That(Gifts.PilesRemaining(state, _data), Is.EqualTo(1));
             Assert.That(Gifts.IsAvailable(state, _data), Is.True);
         }
 
@@ -125,29 +147,43 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void IsAvailable_WithNoSlotOpen_WaitsForRoom()
+        public void NodeCanCall_PointsAtTheUnmetSpecialist()
         {
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
-            TestKith.Station(state, state.nodes[0].id, 2);
 
-            Assert.That(Kith.HasRoom(state, _data), Is.False);
-            Assert.That(Gifts.IsAvailable(state, _data), Is.False, "recruitment waits for an open slot");
+            Assert.That(Gifts.NodeCanCall(state, _data, state.nodes[0]), Is.False,
+                "the berry specialist already walks — no one new answers a berry pile");
+            Assert.That(Gifts.NodeCanCall(state, _data, state.nodes[1]), Is.True);
+            Assert.That(Gifts.SpecialistFor(_data, state.nodes[1]).id, Is.EqualTo("red-squirrel"));
         }
 
         [Test]
-        public void LeavePile_SpendsTheNodesOwnResourceAndStationsTheArrival()
+        public void CanLeavePile_WithNoSlotOpen_WaitsForRoom()
         {
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
-            var node = state.nodes[1];
-            Assert.That(node.resourceId, Is.EqualTo("nuts"), "the pile is left where the player chooses, not the first node");
             state.resources["nuts"] = 25;
+            Assert.That(Kith.HasRoom(state, _data), Is.False);
+
+            Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.False,
+                "the arrival takes the node as its post — it needs a slot");
+
+            Roster.Station(state, _data, Roster.OfSpecies(state, "meadow-vole"), null);
+            Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.True);
+        }
+
+        [Test]
+        public void LeavePile_SpendsTheNodesOwnResourceAndStationsTheSpecialist()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            AnswerFirstVerse(state);
+            var node = ReadyNutNode(state);
 
             var arrived = Gifts.LeavePile(state, _data, node);
 
             Assert.That(arrived, Is.Not.Null);
-            Assert.That(arrived.speciesId, Is.EqualTo("meadow-vole"));
+            Assert.That(arrived.speciesId, Is.EqualTo("red-squirrel"), "the pile calls the node resource's specialist");
             Assert.That(arrived.gifted, Is.True);
             Assert.That(arrived.stationId, Is.EqualTo(node.id), "the newcomer works where the pile was left");
             Assert.That(arrived.name, Is.Not.Empty, "named on arrival like any recruit");
@@ -160,29 +196,33 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
-            var node = state.nodes[0];
-            state.resources["berries"] = 9;
+            var node = ReadyNutNode(state);
+            state.resources["nuts"] = 9;
 
             var arrived = Gifts.LeavePile(state, _data, node);
 
             Assert.That(arrived, Is.Null);
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(9.0));
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(9.0));
             Assert.That(state.roster.Count, Is.EqualTo(2));
         }
 
         [Test]
-        public void LeavePile_OnePileOneYes_ASecondPileTemptsNoOne()
+        public void LeavePile_OnePilePerVerse_ASecondNeedsAnotherSung()
         {
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
-            state.resources["berries"] = 100;
+            var node = ReadyNutNode(state);
 
-            Assert.That(Gifts.LeavePile(state, _data, state.nodes[0]), Is.Not.Null);
+            Assert.That(Gifts.LeavePile(state, _data, node), Is.Not.Null);
 
-            Assert.That(Gifts.HasGifted(state), Is.True);
-            Assert.That(Gifts.IsAvailable(state, _data), Is.False);
-            Assert.That(Gifts.LeavePile(state, _data, state.nodes[0]), Is.Null);
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(90.0), "the refused pile spends nothing");
+            Assert.That(Gifts.GiftedCount(state), Is.EqualTo(1));
+            Assert.That(Gifts.PilesRemaining(state, _data), Is.EqualTo(0));
+            Assert.That(Gifts.IsAvailable(state, _data), Is.False, "the verse's pile is answered");
+
+            // Another verse sung (banked from a folded run here) earns another pile.
+            state.foldedVersesSung = 1;
+            Assert.That(Gifts.PilesRemaining(state, _data), Is.EqualTo(1));
+            Assert.That(Gifts.IsAvailable(state, _data), Is.True);
         }
 
         [Test]
@@ -190,13 +230,12 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             AnswerFirstVerse(state);
-            state.resources["berries"] = 25;
-            var arrived = Gifts.LeavePile(state, _data, state.nodes[0]);
-            Assert.That(arrived, Is.Not.Null);
+            var node = ReadyNutNode(state);
+            Assert.That(Gifts.LeavePile(state, _data, node), Is.Not.Null);
 
             var restored = SaveCodec.Restore(SaveCodec.Capture(state, 0L), _data);
 
-            Assert.That(Gifts.HasGifted(restored), Is.True, "one pile, one yes — across app restarts too");
+            Assert.That(Gifts.GiftedCount(restored), Is.EqualTo(1), "one pile, one yes — across app restarts too");
             Assert.That(Gifts.IsAvailable(restored, _data), Is.False);
         }
     }
