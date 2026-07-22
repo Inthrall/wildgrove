@@ -37,8 +37,15 @@ namespace Wildgrove.EditorTools
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
+            // Default Android texture compression to ASTC. Textures were shipping
+            // uncompressed (RGBA32) — the cause of the ~230 MB build — so make the
+            // project-wide default a real compressed format; universal on the
+            // Vulkan/GLES3 devices we target. Per-texture overrides still win.
+            PlayerSettings.Android.textureCompressionFormats = new[] { TextureCompressionFormat.ASTC };
+            EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
+
             AssetDatabase.SaveAssets();
-            Debug.Log("ProjectSetup.Configure complete: Vulkan-first Android, IL2CPP ARM64-only, com.inthrall.wildgrove");
+            Debug.Log("ProjectSetup.Configure complete: Vulkan-first Android, IL2CPP ARM64-only, ASTC textures, com.inthrall.wildgrove");
         }
     }
 }
