@@ -8,6 +8,7 @@
         "UnityEngine.UI",
         "Unity.InputSystem",
         "Unity.Purchasing",
+        "Unity.Services.Core",
         "Google.Play.Games"
     ],
     "includePlatforms": [],
