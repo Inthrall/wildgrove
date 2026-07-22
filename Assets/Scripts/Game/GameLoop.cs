@@ -141,13 +141,19 @@ namespace Wildgrove.Game
             Telemetry = new FirebaseTelemetry(new UnityLogTelemetry());
 #endif
 
-            // The monetization/services seams. Stubs on every platform for now;
-            // the SDK-backed impls (AdMob, Unity IAP, Play Games) slot in behind
-            // these interfaces without touching the call sites — the same swap
-            // the Telemetry sink makes above.
+            // The monetization/services seams. The SDK-backed impls slot in
+            // behind these interfaces per platform — the same swap the Telemetry
+            // sink makes above. Unity IAP is wired on device now; AdMob and Play
+            // Games keep the stub until their plugins land.
+#if UNITY_EDITOR
             Ads = new StubAds();
             Store = new StubStore();
             GameServices = new StubGameServices();
+#else
+            Ads = new StubAds();
+            Store = new UnityIapStore();
+            GameServices = new StubGameServices();
+#endif
             Ads.Initialise();
             Store.Initialise();
             GameServices.SignIn();

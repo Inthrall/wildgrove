@@ -6,7 +6,8 @@
         "Wildgrove.Data",
         "BreakInfinity",
         "UnityEngine.UI",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.Purchasing"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
