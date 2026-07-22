@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Force androidx.work to a modern version. AdMob's play-services-ads pulls
+     work-runtime 2.7.0 transitively, and 2.7.0's WorkManager auto-init crashes
+     at process start building its Room WorkDatabase on Android 12+/14+ (mutable
+     PendingIntent + RECEIVER_EXPORTED enforcement) — fatal before Unity loads on
+     a targetSdk 36 build. 2.10.0 handles the modern-Android behaviour changes.
+     Resolved by EDM4U; Gradle takes the highest version, so this wins over 2.7.0. -->
+<dependencies>
+  <androidPackages>
+    <androidPackage spec="androidx.work:work-runtime:2.10.0" />
+  </androidPackages>
+</dependencies>
