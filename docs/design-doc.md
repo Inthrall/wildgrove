@@ -323,7 +323,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 
 ### The Rite — the region's exit gate
 
-- **Verses**, one revealed per zone at its verse site (four at MVP) — visible and chippable from session one. Workable in parallel, any order; Migration requires every revealed verse complete.
+- **Verses**, one per zone at its verse site (four at MVP) — the first visible and chippable from session one. **Sung strictly in order**: a verse reveals only when its zone is reached *and* the verse before it is complete. A site reached ahead of its turn shows a sealed cairn naming the verse that still bars it. Migration requires every verse complete.
 - **Choose 3 of 5.** Five offering slots — raw finds, crafted goods, occasionally a Fine or Pristine specimen, occasionally a deed (Tend N times) — any three finish the verse. One or two **spotlight crafts** are the cheapest path, rotating run to run. Unchosen slots expire, no partial credit.
 - **Offerings** are delivered incrementally, consumed on delivery, and **credit Renown at full trade value** (§9): you give up liquidity, never prestige progress. Deed, specimen, and field-sketch slots carry fixed Renown grants — the sketch's is the largest, as the steepest thing a warden can give (§6). Gifts and replanting earn no Renown — feeding the spirits is remembered; feeding the voles is lunch.
 - **Authored once, generated after.** Run 1 hand-authored (`rites.json`) as the tutorial; from run 2 a generator builds each Rite from migration count × region modifier × unlocked content — validator-guaranteed ≥3 reachable slots per verse, where *reachable* means satisfiable under plausible stationing with the current kith size (§2), not merely unlocked.

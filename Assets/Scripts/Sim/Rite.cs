@@ -6,8 +6,9 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The Rite runtime (design §7): each unlocked zone reveals its verse —
-    /// five offering slots, any chooseCount of which complete it — and the
-    /// Rite completes when every verse is sung, granting Migration
+    /// five offering slots, any chooseCount of which complete it — verses
+    /// are sung strictly in order (each sealed until the one before it is
+    /// answered), and the Rite completes when every verse is sung, granting Migration
     /// eligibility (Migration itself is the prestige build). Offerings are
     /// delivered incrementally, consumed from camp stock (or the quality
     /// pools, or recorded sketches), and credit Renown as they land: plain
@@ -60,10 +61,44 @@ namespace Wildgrove.Sim
             return state.generatedRite;
         }
 
-        /// <summary>A verse is revealed when the run has opened its zone (the warden has stood at the verse site).</summary>
+        /// <summary>
+        /// A verse is revealed when the run has opened its zone (the warden
+        /// has stood at the verse site) AND every verse before it is sung —
+        /// the Rite is walked in order, each verse locked behind the last.
+        /// </summary>
         public static bool IsVerseRevealed(GameState state, GameDataAsset data, RiteVerseData verse)
         {
-            return Upgrades.UnlockedZoneIds(state, data).Contains(verse.zone);
+            return Upgrades.UnlockedZoneIds(state, data).Contains(verse.zone)
+                && !IsVerseSealed(state, data, verse);
+        }
+
+        /// <summary>
+        /// Sealed = an earlier verse of the current rite is still unsung, so
+        /// this one hasn't had its turn — regardless of whether its site has
+        /// been reached. Verses not in the current rite are never sealed.
+        /// </summary>
+        public static bool IsVerseSealed(GameState state, GameDataAsset data, RiteVerseData verse)
+        {
+            var rite = CurrentRite(state, data);
+            if (rite == null)
+            {
+                return false;
+            }
+
+            foreach (var earlier in rite.verses)
+            {
+                if (ReferenceEquals(earlier, verse) || earlier.id == verse.id)
+                {
+                    return false;
+                }
+
+                if (!IsVerseComplete(state, data, earlier))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>The slot's completion target: units for resource slots, count for the rest.</summary>
@@ -172,6 +207,7 @@ namespace Wildgrove.Sim
                 state.renown += giving * Economy.TradeValuePerUnit(state, data, slot.resource);
             }
 
+            SyncIfVerseJustSung(state, data, verse);
             return giving;
         }
 
@@ -205,6 +241,7 @@ namespace Wildgrove.Sim
                 state.renown += slot.renownGrant / (double)slot.count;
             }
 
+            SyncIfVerseJustSung(state, data, verse);
             return resourceId;
         }
 
@@ -252,6 +289,7 @@ namespace Wildgrove.Sim
                 state.renown += slot.renownGrant / (double)slot.count;
             }
 
+            SyncIfVerseJustSung(state, data, verse);
             return richest;
         }
 
@@ -357,6 +395,19 @@ namespace Wildgrove.Sim
                         state.renown += slot.renownGrant;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Completing a verse unseals the next one — mirror lifetime deeds
+        /// into its slots now, the same sync a zone unlock or restore does,
+        /// so deeds done while it was sealed count the moment it opens.
+        /// </summary>
+        private static void SyncIfVerseJustSung(GameState state, GameDataAsset data, RiteVerseData verse)
+        {
+            if (IsVerseComplete(state, data, verse))
+            {
+                SyncDeedSlots(state, data);
             }
         }
 

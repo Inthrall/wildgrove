@@ -11,6 +11,17 @@ Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals. The
 per-item detail below points at the code/data; the phase lists further down are
 annotated **v0.11:** where a decision touches them.
 
+**DECIDED 2026-07-23 — verses are sequential.** Each verse is locked behind
+completion of the one before it (`Rite.IsVerseRevealed` now also requires every
+earlier verse sung; `Rite.IsVerseSealed` distinguishes "site not reached" from
+"not its turn"). Interpretations: (1) the gate is on *reveal*, not just delivery —
+a sealed verse shows one quiet cairn card naming the verse barring it, and only
+the first sealed verse gets a card; (2) "previous one" = every earlier verse in
+rite order (an out-of-order legacy save can't skip ahead past an unsung verse;
+its later-verse progress is preserved and resurfaces when the verse unseals);
+(3) completing a verse re-syncs deed slots immediately so deeds done while
+sealed count the moment the next verse opens.
+
 **IMPLEMENTED 2026-07-21 (kith + money→XP + Exchange + naming; 370/370 EditMode green):**
 - ✅ **Coin is gone — money becomes XP.** `GameState.coin` removed; Renown = lifetime
   XP (warden skills + familiars) + offering credits; upgrades reprice to skill-gate

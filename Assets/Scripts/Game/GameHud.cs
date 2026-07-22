@@ -1367,12 +1367,24 @@ namespace Wildgrove.Game
 
             // Open verses keep their full cards; verses already sung collapse
             // into one summary so the Trail page doesn't grow without bound — a
-            // finished verse is a memory, not a worklist.
+            // finished verse is a memory, not a worklist. A verse whose site
+            // the trail has reached before its turn (verses are sung in
+            // order) gets one quiet sealed card; anything past it stays
+            // unwritten.
             List<RiteVerseData> sung = null;
+            var sealedShown = false;
+            var unlockedZones = Upgrades.UnlockedZoneIds(_loop.State, _loop.Data);
             foreach (var verse in rite.verses)
             {
                 if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse))
                 {
+                    if (!sealedShown && unlockedZones.Contains(verse.zone)
+                        && Rite.IsVerseSealed(_loop.State, _loop.Data, verse))
+                    {
+                        BuildSealedVerseCard(rite, verse);
+                        sealedShown = true;
+                    }
+
                     continue;
                 }
 
@@ -1410,6 +1422,34 @@ namespace Wildgrove.Game
                 MakeText(card, ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
                                + ">" + site + " — sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
             }
+        }
+
+        /// <summary>
+        /// The card for a verse whose site is reached but whose turn hasn't
+        /// come — it names the verse still barring it and asks nothing.
+        /// </summary>
+        private void BuildSealedVerseCard(RiteData rite, RiteVerseData verse)
+        {
+            string barring = null;
+            foreach (var earlier in rite.verses)
+            {
+                if (earlier.id == verse.id)
+                {
+                    break;
+                }
+
+                if (!Rite.IsVerseComplete(_loop.State, _loop.Data, earlier))
+                {
+                    barring = ZoneName(earlier.zone);
+                    break;
+                }
+            }
+
+            var card = Card("VERSE OF " + ZoneName(verse.zone).ToUpperInvariant());
+            MakeText(card, barring == null
+                    ? "<i>the cairn keeps its silence — its turn has not come</i>"
+                    : "<i>the cairn keeps its silence — the verse of " + barring + " is still unsung</i>",
+                19, TextAnchor.MiddleCenter, Ink2, _serif);
         }
 
         private RectTransform BuildVerseCard(RiteVerseData verse)

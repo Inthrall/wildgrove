@@ -121,7 +121,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void IsVerseRevealed_FollowsTheZoneUnlock()
+        public void IsVerseRevealed_NeedsTheZoneAndEveryEarlierVerseSung()
         {
             var state = GameStateFactory.NewGame(_data);
 
@@ -130,7 +130,56 @@ namespace Wildgrove.Sim.Tests
 
             state.purchasedUpgradeIds.Add("map-bramble");
 
+            Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.False,
+                "the site is reached, but the sunfield verse is still unsung");
+            Assert.That(Rite.IsVerseSealed(state, _data, _brambleVerse), Is.True);
+
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+
             Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.True);
+            Assert.That(Rite.IsVerseSealed(state, _data, _brambleVerse), Is.False);
+        }
+
+        [Test]
+        public void DeliverResource_SealedVerse_Refuses()
+        {
+            // Verses are answered in order — reaching the bramble site
+            // doesn't open its verse while the sunfield verse is unsung.
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+            GameStateFactory.SyncUnlockedZones(state, _data);
+            state.AddResource("nuts", 50);
+
+            var given = Rite.DeliverResource(state, _data, _brambleVerse, 0);
+
+            Assert.That(given.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(50.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void CompletingAVerse_UnsealsTheNext_AndSyncsItsDeeds()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+            GameStateFactory.SyncUnlockedZones(state, _data);
+
+            var node = state.nodes[0];
+            for (var i = 0; i < 5; i++)
+            {
+                Simulation.Tend(state, _data, node);
+            }
+
+            // Tending completed sunfield's deed slot; berries answer the verse.
+            state.AddResource("berries", 100);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+            Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.True);
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(5.0).Within(Tolerance),
+                "deeds done while the verse was sealed count the moment it unseals");
         }
 
         [Test]
