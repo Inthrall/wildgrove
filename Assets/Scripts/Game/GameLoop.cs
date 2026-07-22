@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BreakInfinity;
 using UnityEngine;
 using Wildgrove.Data;
+using Wildgrove.Game.Services;
 using Wildgrove.Game.Telemetry;
 using Wildgrove.Sim;
 using Wildgrove.Sim.Saves;
@@ -42,6 +43,15 @@ namespace Wildgrove.Game
 
         /// <summary>The analytics/crash-reporting sink (Debug.Log in editor, Firebase on device).</summary>
         public ITelemetry Telemetry { get; private set; }
+
+        /// <summary>Rewarded-ads seam (stub until the AdMob implementation lands).</summary>
+        public IAds Ads { get; private set; }
+
+        /// <summary>In-app purchase seam (stub until the Unity IAP implementation lands).</summary>
+        public IStore Store { get; private set; }
+
+        /// <summary>Play Games seam — sign-in, achievements, cloud save (stub until the implementation lands).</summary>
+        public IGameServices GameServices { get; private set; }
 
         private double _autosaveCountdown = AutosaveIntervalSeconds;
         private float _sessionStartRealtime;
@@ -130,6 +140,17 @@ namespace Wildgrove.Game
 #else
             Telemetry = new FirebaseTelemetry(new UnityLogTelemetry());
 #endif
+
+            // The monetization/services seams. Stubs on every platform for now;
+            // the SDK-backed impls (AdMob, Unity IAP, Play Games) slot in behind
+            // these interfaces without touching the call sites — the same swap
+            // the Telemetry sink makes above.
+            Ads = new StubAds();
+            Store = new StubStore();
+            GameServices = new StubGameServices();
+            Ads.Initialise();
+            Store.Initialise();
+            GameServices.SignIn();
 
             if (SaveFile.TryLoad(out var save))
             {
