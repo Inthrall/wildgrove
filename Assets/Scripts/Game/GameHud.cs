@@ -1243,32 +1243,92 @@ namespace Wildgrove.Game
         {
             var capturedPlanter = planter;
             var capturedTarget = targetId;
+            // The same structure wears the name of the work it serves — a trellis
+            // over berries, mineshaft beams over ore, set nets over a fishing run.
+            var name = PlanterDisplayName(capturedPlanter, capturedTarget);
             if (_loop.PlanterBuilt(capturedPlanter, capturedTarget))
             {
-                var built = MakeText(actions, capturedPlanter.displayName + " — raised", 16, TextAnchor.MiddleLeft, MossDeep);
+                var built = MakeText(actions, name + " — raised", 16, TextAnchor.MiddleLeft, MossDeep);
                 built.gameObject.name = "PlanterBuilt";
                 return;
             }
 
             Button build = null;
-            build = Button(actions, "Raise " + capturedPlanter.displayName
+            build = Button(actions, "Raise " + name
                                         + "\n" + SizeOpen(14) + BundleLabel(capturedPlanter.materials) + "</size>", 250, () =>
             {
                 if (_loop.BuildPlanter(capturedPlanter, capturedTarget))
                 {
                     Flash(build, "raised", true);
-                    SetNote("raised a " + capturedPlanter.displayName.ToLowerInvariant() + ". the ground holds it now.");
+                    SetNote("raised a " + name.ToLowerInvariant() + ". the ground holds it now.");
                     _dirty = true;
                 }
             });
             _liveUpdaters.Add(() =>
             {
-                SetButtonLabel(build, "Raise " + capturedPlanter.displayName
+                SetButtonLabel(build, "Raise " + name
                                      + "\n" + SizeOpen(14) + BundleHaveLabel(capturedPlanter.materials) + "</size>");
                 var ok = _loop.CanBuildPlanter(capturedPlanter, capturedTarget);
                 build.interactable = ok;
                 SetButtonTint(build, ok);
             });
+        }
+
+        /// <summary>
+        /// A planter's name in the language of the node it serves. Foraging nodes
+        /// keep the garden names (frame, trellis); mining, delving, logging,
+        /// fishing, husbandry and watching get names that fit the work. Dig sites
+        /// and anything unmapped fall back to the planter's own displayName.
+        /// </summary>
+        private string PlanterDisplayName(PlanterData planter, string targetId)
+        {
+            var skill = NodeSkill(targetId);
+            if (string.IsNullOrEmpty(skill))
+            {
+                return planter.displayName;
+            }
+
+            switch (planter.kind)
+            {
+                case "basketCapacityMult":
+                    switch (skill)
+                    {
+                        case "mining": return "Mineshaft Beams";
+                        case "delving": return "Pit Props";
+                        case "logging": return "Log Cradle";
+                        case "fishing": return "Fish Baskets";
+                        case "husbandry": return "Feed Racks";
+                        case "entomology": return "Netting Frames";
+                        default: return planter.displayName;
+                    }
+                case "nodeYieldMult":
+                    switch (skill)
+                    {
+                        case "mining": return "Ore Rig";
+                        case "delving": return "Deep Hoist";
+                        case "logging": return "Felling Rig";
+                        case "fishing": return "Set Nets";
+                        case "husbandry": return "Fenced Pens";
+                        case "entomology": return "Light Traps";
+                        default: return planter.displayName;
+                    }
+                default:
+                    return planter.displayName;
+            }
+        }
+
+        /// <summary>The gathering skill of the node with this id, or null when the target is a dig site.</summary>
+        private string NodeSkill(string targetId)
+        {
+            foreach (var node in _loop.State.nodes)
+            {
+                if (node.id == targetId)
+                {
+                    return _loop.Data.ResourcesById.TryGetValue(node.resourceId, out var res) ? res.skill : null;
+                }
+            }
+
+            return null;
         }
 
         private void BuildVerseCards()
@@ -1279,6 +1339,10 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // Open verses keep their full cards; verses already sung collapse
+            // into one summary so the Trail page doesn't grow without bound — a
+            // finished verse is a memory, not a worklist.
+            List<RiteVerseData> sung = null;
             foreach (var verse in rite.verses)
             {
                 if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse))
@@ -1286,12 +1350,39 @@ namespace Wildgrove.Game
                     continue;
                 }
 
+                if (Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                {
+                    (sung ?? (sung = new List<RiteVerseData>())).Add(verse);
+                    continue;
+                }
+
                 var card = BuildVerseCard(verse);
-                if (_firstVerseCard == null && !Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                if (_firstVerseCard == null)
                 {
                     // The tracker's deep-link lands on the first verse still open.
                     _firstVerseCard = card;
                 }
+            }
+
+            if (sung != null)
+            {
+                BuildSungVersesCard(sung);
+            }
+        }
+
+        /// <summary>
+        /// The collapsed record of verses already answered — one line each, so a
+        /// long-lived rite doesn't bury the open verses under finished ones.
+        /// </summary>
+        private void BuildSungVersesCard(List<RiteVerseData> verses)
+        {
+            var card = Card("SUNG VERSES");
+            foreach (var verse in verses)
+            {
+                var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
+                var site = zone != null && !string.IsNullOrEmpty(zone.verseSite) ? zone.verseSite : ZoneName(verse.zone);
+                MakeText(card, ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
+                               + ">" + site + " — sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
             }
         }
 
@@ -1876,7 +1967,7 @@ namespace Wildgrove.Game
                         : string.Empty;
                     var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
                     label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
-                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + _loop.FamiliarLevel(captured)
+                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
                                  + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>";
                     powerup.gameObject.SetActive(_loop.HasPendingPowerup(captured));
                     wander.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
@@ -2031,7 +2122,7 @@ namespace Wildgrove.Game
                     var done = Folio.IsSpreadComplete(_loop.State, captured);
                     var progress = done
                         ? "<color=" + MossDeepHex + ">complete — it outlives every Migration</color>"
-                        : Folio.FixedEntryCount(_loop.State, captured) + " of " + captured.entries.Count + " fixed";
+                        : Folio.FixedEntryCount(_loop.State, captured) + " of " + captured.entries.Count + " pressed";
                     line.text = captured.displayName + "  " + SizeOpen(15) + progress + "</size>";
                 });
             }
@@ -2050,11 +2141,11 @@ namespace Wildgrove.Game
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
                 Button fix = null;
-                fix = Button(row.transform, "Fix", 140, () =>
+                fix = Button(row.transform, "Press", 140, () =>
                 {
                     if (_loop.FixSpecimen(resourceId))
                     {
-                        Flash(fix, "fixed to the page", true);
+                        Flash(fix, "pressed to the page", true);
                         SetNote("pressed it between these pages, where it will outlast the camp.");
                         _dirty = true;
                     }
@@ -2076,7 +2167,7 @@ namespace Wildgrove.Game
                     // A dead Fix button explains nothing — say why the page
                     // won't take it, and only offer the button when it might.
                     var hint = isFixed
-                        ? "  ·  <color=" + MossDeepHex + ">fixed — the page keeps it</color>"
+                        ? "  ·  <color=" + MossDeepHex + ">pressed — the page keeps it</color>"
                         : !wanted ? "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>" : string.Empty;
                     label.text = "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                  + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + hint + "</size>";
@@ -2089,7 +2180,7 @@ namespace Wildgrove.Game
 
             if (anyPristine)
             {
-                MakeText(card, "<i>fixing consumes the find — the page keeps it instead of you.</i>", 16, TextAnchor.MiddleCenter, Ink2, _serif);
+                MakeText(card, "<i>pressing consumes the find — the page keeps it instead of you.</i>", 16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
         }
 
@@ -2124,10 +2215,13 @@ namespace Wildgrove.Game
                 var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
                 _liveUpdaters.Add(() =>
                 {
+                    // A page not yet earned keeps its secret — no name, no haunt,
+                    // just the sense of something. Only sketching resolves it,
+                    // and even then the name waits for the full record.
                     var sketches = Insects.SketchCount(_loop.State, captured.id);
                     line.text = sketches > 0
-                        ? captured.displayName + " — " + sketches + " of " + captured.sketches + " portions sketched"
-                        : "<i>unrecorded — something haunts " + string.Join(", ", captured.habitats) + "</i>";
+                        ? "<i>a shape half-caught — " + sketches + " of " + captured.sketches + " sketched</i>"
+                        : "<i>— something not yet caught —</i>";
                 });
             }
 
@@ -2476,8 +2570,24 @@ namespace Wildgrove.Game
 
         private static string Roman(int value)
         {
-            string[] numerals = { "—", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" };
-            return value >= 0 && value < numerals.Length ? numerals[value] : value.ToString();
+            if (value <= 0)
+            {
+                return "—";
+            }
+
+            int[] values = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
+            string[] symbols = { "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I" };
+            var sb = new System.Text.StringBuilder();
+            for (var i = 0; i < values.Length && value > 0; i++)
+            {
+                while (value >= values[i])
+                {
+                    sb.Append(symbols[i]);
+                    value -= values[i];
+                }
+            }
+
+            return sb.ToString();
         }
 
         private List<string> TradeableResources()
