@@ -159,7 +159,9 @@ namespace Wildgrove.Game
             GameServices = new StubGameServices();
 #endif
             Ads.Initialise();
-            Store.Initialise();
+            // Store is initialised lazily on the first purchase, not here: Unity
+            // IAP's billing connection must not run at startup — on some devices
+            // it launches ProxyBillingActivity before Unity loads, crashing the app.
             GameServices.SignIn();
 
             if (SaveFile.TryLoad(out var save))

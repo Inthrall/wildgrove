@@ -59,7 +59,10 @@ namespace Wildgrove.Game.Services
         {
             if (_controller == null)
             {
-                onComplete?.Invoke(StoreResult.Failed);
+                // Lazy connect: billing stays off the startup path until the
+                // player actually initiates a purchase. If the connection fails,
+                // OnInitializeFailed logs it and the retry simply never fires.
+                Initialise(() => Purchase(productId, onComplete));
                 return;
             }
 
