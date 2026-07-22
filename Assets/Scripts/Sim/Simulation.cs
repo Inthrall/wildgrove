@@ -356,6 +356,26 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Credit a haul a second time as camp stock — the reward for the
+        /// OfflineBoost rewarded ad ("double it"). The bonus lands as
+        /// base-quality resources in camp; the original catch-up already paid
+        /// out in place, so this doubles the effective welcome-back gain.
+        /// </summary>
+        public static void GrantHaul(GameState state, Dictionary<string, BigDouble> gains)
+        {
+            if (state == null || gains == null)
+            {
+                return;
+            }
+
+            foreach (var pair in gains)
+            {
+                state.resources.TryGetValue(pair.Key, out var held);
+                state.resources[pair.Key] = held + pair.Value;
+            }
+        }
+
+        /// <summary>
         /// Camp stock plus basket contents, per resource — quality pools
         /// included, so a Fine or Pristine batch landed offline still counts
         /// as a welcome-back gain of its resource.

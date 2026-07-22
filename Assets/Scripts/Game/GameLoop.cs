@@ -215,6 +215,36 @@ namespace Wildgrove.Game
                 ("length_sec", System.Math.Round(Time.realtimeSinceStartup - _sessionStartRealtime)));
         }
 
+        /// <summary>
+        /// Grant the OfflineBoost rewarded-ad reward: credit the welcome-back
+        /// haul a second time. Called from the welcome sheet's "Double it" button
+        /// once the rewarded ad reports the reward earned.
+        /// </summary>
+        public void GrantOfflineBonus(OfflineSummary summary)
+        {
+            if (summary == null)
+            {
+                return;
+            }
+
+            Simulation.GrantHaul(State, summary.gains);
+        }
+
+        /// <summary>
+        /// Grant the TimeSkip rewarded-ad reward: advance the run by
+        /// <paramref name="hours"/> of gathering, exactly as an offline catch-up
+        /// of that length would (subject to the same offline rate and cap).
+        /// </summary>
+        public void CreditTimeSkip(double hours)
+        {
+            if (State == null || hours <= 0.0)
+            {
+                return;
+            }
+
+            Simulation.AdvanceOffline(State, Data, hours * 3600.0);
+        }
+
         /// <summary>Persist the run now (also runs on the autosave interval, on pause, and on quit).</summary>
         public void SaveNow()
         {
@@ -224,7 +254,11 @@ namespace Wildgrove.Game
             }
 
             _lastSavedUnixMs = NowUnixMs();
-            SaveFile.Write(SaveCodec.Capture(State, _lastSavedUnixMs));
+            var save = SaveCodec.Capture(State, _lastSavedUnixMs);
+            SaveFile.Write(save);
+            // Mirror to cloud (no-op until the Play Games Snapshots impl lands;
+            // the load-side restore/merge arrives with it).
+            GameServices.SaveCloud(SaveCodec.ToJson(save));
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>

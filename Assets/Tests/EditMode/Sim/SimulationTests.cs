@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using BreakInfinity;
 using NUnit.Framework;
 using UnityEngine;
 using Wildgrove.Data;
@@ -126,6 +127,36 @@ namespace Wildgrove.Sim.Tests
 
             // wildflowers node has no familiar seeded.
             Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void GrantHaul_AddsEachGainToCampStock()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.resources["berries"] = new BigDouble(3.0);
+            var gains = new Dictionary<string, BigDouble>
+            {
+                { "berries", new BigDouble(10.0) },
+                { "fibres", new BigDouble(5.0) },
+            };
+
+            Simulation.GrantHaul(state, gains);
+
+            // The OfflineBoost reward stacks on the haul already credited (3 + 10)
+            // and seeds a new resource line for a gain not yet in camp.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(13.0).Within(Tolerance));
+            Assert.That(state.GetResource("fibres").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void GrantHaul_NullGains_LeavesStateUnchanged()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.resources["berries"] = new BigDouble(7.0);
+
+            Simulation.GrantHaul(state, null);
+
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(7.0).Within(Tolerance));
         }
 
         [Test]

@@ -8,6 +8,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Wildgrove.Data;
 using Wildgrove.Game.Input;
+using Wildgrove.Game.Services;
 using Wildgrove.Game.World;
 using Wildgrove.Sim;
 
@@ -77,6 +78,12 @@ namespace Wildgrove.Game
         private Text _trackerText;
         private GameObject _trackerPanel;
         private Button _foldButton;
+
+        // Persistent camp-action buttons (pinned under the node strip). The
+        // time-skip ad credits this many hours of gathering.
+        private const double TimeSkipHours = 2.0;
+        private Button _timeSkipButton;
+        private Button _removeAdsButton;
         private RectTransform _worldGap;
         private RectTransform _body;
         private Transform _modalLayer;
@@ -299,6 +306,10 @@ namespace Wildgrove.Game
             var gap = MakeRect("WorldGap", root);
             _worldGap = gap;
             _worldGapElement = gap.gameObject.AddComponent<LayoutElement>();
+
+            // Persistent camp actions, pinned under the node strip so they stay
+            // reachable from every journal page.
+            BuildCampActions(root);
 
             // The open journal page — a scroll view the tab pages build into.
             _body = BuildScroll(root);
@@ -2389,6 +2400,9 @@ namespace Wildgrove.Game
 
         private void OpenBondSheet(BondData bond)
         {
+            // First bond earned unlocks "First kith" (idempotent — later bonds no-op).
+            _loop.GameServices.UnlockAchievement(AchievementIds.FirstKith);
+
             var sheet = BeginSheet();
             MakeText(sheet, "A bond is made", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, bond.displayName + " will cross every fold with you.", 22, TextAnchor.UpperCenter, Ink2, _serif);
@@ -2411,6 +2425,25 @@ namespace Wildgrove.Game
                 }
 
                 MakeText(sheet, "+" + NumberFormat.Short(pair.Value) + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
+            }
+
+            // Opt-in rewarded ad: watch to double the haul just credited.
+            if (summary.gains.Count > 0 && _loop.Ads.IsRewardedReady)
+            {
+                var doubleIt = Button(sheet, "Double it — watch a short ad", 360, () =>
+                {
+                    _loop.Ads.ShowRewarded(RewardedPlacement.OfflineBoost,
+                        () =>
+                        {
+                            _loop.GrantOfflineBonus(summary);
+                            _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "offline_boost"));
+                            SetNote("The land gives twice — your haul is doubled.");
+                            _dirty = true;
+                        },
+                        CloseSheet);
+                });
+                doubleIt.GetComponent<Image>().color = OchreWash;
+                doubleIt.GetComponentInChildren<Text>().color = Ochre;
             }
 
             Button(sheet, "Continue", 320, CloseSheet);
@@ -2509,6 +2542,72 @@ namespace Wildgrove.Game
             }
 
             Button(sheet, "Later", 320, CloseSheet);
+        }
+
+        /// <summary>
+        /// The persistent camp-actions strip under the node/world gap: the
+        /// rewarded time-skip and the one-off remove-ads purchase, reachable
+        /// from every journal page.
+        /// </summary>
+        private void BuildCampActions(Transform root)
+        {
+            var bar = MakePanel("CampActions", (RectTransform)root, CardPaper);
+            var layout = bar.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.padding = new RectOffset(12, 12, 8, 8);
+            layout.spacing = 10;
+            var element = bar.AddComponent<LayoutElement>();
+            element.flexibleHeight = 0;
+            AddBorder(bar, Ink2);
+
+            _timeSkipButton = Button(bar.transform, "Hasten a while — watch a short ad", 380, OnTimeSkip);
+            _timeSkipButton.GetComponent<Image>().color = OchreWash;
+            _timeSkipButton.GetComponentInChildren<Text>().color = Ochre;
+
+            _removeAdsButton = Button(bar.transform, "Remove ads", 200, OnRemoveAds);
+            if (_loop.Store.RemoveAdsOwned)
+            {
+                _removeAdsButton.gameObject.SetActive(false);
+            }
+        }
+
+        private void OnTimeSkip()
+        {
+            _loop.Ads.ShowRewarded(RewardedPlacement.TimeSkip,
+                () =>
+                {
+                    _loop.CreditTimeSkip(TimeSkipHours);
+                    _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
+                    SetNote(NumberFormat.Duration(TimeSkipHours * 3600.0)
+                            + " pass in a breath — the kith kept to the work.");
+                    _dirty = true;
+                });
+        }
+
+        private void OnRemoveAds()
+        {
+            _loop.Store.Purchase(StoreProductIds.RemoveAds, result =>
+            {
+                switch (result)
+                {
+                    case StoreResult.Purchased:
+                    case StoreResult.AlreadyOwned:
+                        if (_removeAdsButton != null)
+                        {
+                            _removeAdsButton.gameObject.SetActive(false);
+                        }
+
+                        SetNote("The ads step aside. Thank you for keeping the grove.");
+                        break;
+                    case StoreResult.Failed:
+                        SetNote("That didn't go through — nothing was charged.");
+                        break;
+                }
+            });
         }
 
         private Transform BeginSheet()
