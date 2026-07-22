@@ -1,3 +1,4 @@
+#if UNITY_ANDROID
 using System;
 using System.Text;
 using GooglePlayGames;
@@ -9,8 +10,9 @@ namespace Wildgrove.Game.Services
     /// <summary>
     /// The real <see cref="IGameServices"/>, backed by Play Games Services v2:
     /// authentication, achievement unlocks, and cloud save via Snapshots.
-    /// Selected on device by GameLoop; the editor keeps
-    /// <see cref="StubGameServices"/> (GPGS runs a dummy client there anyway).
+    /// Android-only — GPGS's <c>PlayGamesPlatform</c> is itself compiled under
+    /// <c>UNITY_ANDROID</c>, so this file is guarded to match (the editor and any
+    /// non-Android target use <see cref="StubGameServices"/>, selected in GameLoop).
     /// </summary>
     public sealed class PlayGamesServices : IGameServices
     {
@@ -94,3 +96,4 @@ namespace Wildgrove.Game.Services
         }
     }
 }
+#endif

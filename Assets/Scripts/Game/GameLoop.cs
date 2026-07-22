@@ -149,10 +149,14 @@ namespace Wildgrove.Game
             Ads = new StubAds();
             Store = new StubStore();
             GameServices = new StubGameServices();
-#else
+#elif UNITY_ANDROID
             Ads = new AdMobAds();
             Store = new UnityIapStore();
             GameServices = new PlayGamesServices();
+#else
+            Ads = new StubAds();
+            Store = new StubStore();
+            GameServices = new StubGameServices();
 #endif
             Ads.Initialise();
             Store.Initialise();
