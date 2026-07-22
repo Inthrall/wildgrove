@@ -7,15 +7,21 @@ namespace Wildgrove.Sim.Tests
     /// </summary>
     internal static class TestKith
     {
-        /// <summary>Add <paramref name="count"/> familiars stationed at <paramref name="stationId"/> (a node id, "trail", or "dig:{zone}").</summary>
+        /// <summary>
+        /// Add <paramref name="count"/> familiars stationed at <paramref name="stationId"/>
+        /// (a node id, "trail", or "dig:{zone}"). Each gets its own made-up species —
+        /// the collection rule is one familiar per species, and a save round trip
+        /// dedupes duplicates, so staged crowds must not share one.
+        /// </summary>
         public static void Station(GameState state, string stationId, int count)
         {
             for (var i = 0; i < count; i++)
             {
+                var id = state.NextFamiliarId();
                 state.roster.Add(new Familiar
                 {
-                    id = state.NextFamiliarId(),
-                    speciesId = "meadow-vole",
+                    id = id,
+                    speciesId = "test-species-" + id,
                     stationId = stationId,
                 });
             }

@@ -28,6 +28,9 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
+                // A wide-open ladder: these tests stage stationed crowds to prove
+                // the round trip, not the slot clamp (which sets its own ladder).
+                kith = new EconomyData.KithData { slotsBase = 6, slotsMax = 6 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -757,7 +760,14 @@ namespace Wildgrove.Sim.Tests
         public void Restore_MoreStationedThanSlots_RestsTheExtras_BondedKeepingTheirPosts()
         {
             // Slots cap who holds a post, not who belongs. A save from a wider
-            // ladder restores with the extras resting at camp.
+            // ladder restores with the extras resting at camp — restore against
+            // the authored one-slot ladder, not the fixture's wide-open one.
+            _data.economy.kith = new EconomyData.KithData
+            {
+                slotsBase = 1,
+                slotsMax = 6,
+                verseMilestones = new List<int> { 2, 5, 10 },
+            };
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
             save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "meadow-vole", stationId = "sunfield-meadow:berries" });
