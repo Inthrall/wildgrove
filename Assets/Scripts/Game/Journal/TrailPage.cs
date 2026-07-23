@@ -3,7 +3,6 @@ using BreakInfinity;
 using UnityEngine;
 using UnityEngine.UI;
 using Wildgrove.Data;
-using Wildgrove.Game.Services;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalFormat;
@@ -12,23 +11,21 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Trail page — the zones' node plates, the trail-home carrier row,
-    /// the watch planter cards, the Rite's verse cards and waystone footer,
-    /// and the kith roster card. Posting lives on the world strip's badges
-    /// now (one body per post), so the plates here carry only the land's own
-    /// business: yields, baskets, replanting, piles, planters.
+    /// The Trail page — a recruit bar when a companion will answer a pile, the
+    /// zones' compact node plates, the watch planter cards, and the Rite's
+    /// verse cards and waystone footer. Posting lives on the world strip's
+    /// badges and the trail-home line in the band above (one body per post),
+    /// so the plates here carry only the land's own business: yields, baskets,
+    /// replanting, planters. The kith roster now lives on the Warden page.
     /// </summary>
     internal sealed class TrailPage : JournalSection
     {
         internal TrailPage(GameHud hud) : base(hud) { }
 
-        // Naming/stationing sheets live in JournalSheets; forwarded so the
-        // builder bodies below read as they did on GameHud.
-        private void OpenNamingSheet(Familiar familiar) => _hud.Sheets.OpenNamingSheet(familiar);
-        private void Station(Familiar familiar, string stationId) => _hud.Sheets.Station(familiar, stationId);
-
         internal void BuildTrailPage()
         {
+            BuildRecruitBar();
+
             var unlockedZones = ZonesInOrder();
             // Newest zone first — the page header names it, so the page must
             // open on it; older zones keep farming further down the scroll.
@@ -58,20 +55,80 @@ namespace Wildgrove.Game
                 }
             }
 
-            BuildTrailRow();
-
             foreach (var site in _loop.State.digSites)
             {
                 BuildWatchPlate(site);
             }
 
-            // Stationing lives with the land it points at — the design's
-            // four-page journal gives the Trail page stationing; the Warden
-            // page keeps the kit/crafts identity.
-            BuildKithCard();
-
             BuildVerseCards();
             BuildWaystoneFooter();
+        }
+
+        /// <summary>
+        /// The recruit bar — a bordered call-out at the top of the Trail page
+        /// that only shows while a verse-earned pile waits (design §4). One
+        /// dashed line per node that can still call someone new: tap it to leave
+        /// a pile of that node's own resource, and its specialist walks. This
+        /// replaces the easy-to-miss pile line that used to sit on each plate.
+        /// </summary>
+        private void BuildRecruitBar()
+        {
+            var card = Card("A COMPANION MAY ANSWER");
+            var intro = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            var lines = new List<(NodeState node, Text text, GameObject go)>();
+            foreach (var node in _loop.State.nodes)
+            {
+                var captured = node;
+                var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
+                var button = line.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                button.onClick.AddListener(() =>
+                {
+                    var arrived = _loop.LeaveGift(captured);
+                    if (arrived != null)
+                    {
+                        SetNote("you left a pile of " + captured.resourceId + " and stepped back. something said yes.");
+                        _dirty = true;
+                    }
+                    else if (_loop.KithWalking() >= _loop.KithSlots())
+                    {
+                        SetNote("something watches the pile, but every slot is walked. rest someone first.");
+                    }
+                    else
+                    {
+                        SetNote("not enough " + captured.resourceId + " for a proper pile. keep picking.");
+                    }
+                });
+                line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+                AddDashedBorder(line.gameObject);
+                lines.Add((captured, line, line.gameObject));
+            }
+
+            _liveUpdaters.Add(() =>
+            {
+                var available = _loop.GiftAvailable();
+                var anyShown = false;
+                foreach (var entry in lines)
+                {
+                    var caller = available ? _loop.GiftSpeciesFor(entry.node) : null;
+                    var show = caller != null;
+                    entry.go.SetActive(show);
+                    if (!show)
+                    {
+                        continue;
+                    }
+
+                    anyShown = true;
+                    var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + entry.node.resourceId;
+                    entry.text.text = _loop.CanLeaveGift(entry.node)
+                        ? "<color=" + OchreInkHex + ">+  leave a pile at the " + entry.node.resourceId + " — " + pile + " · a " + caller.displayName + " watches</color>"
+                        : "leave a pile at the " + entry.node.resourceId + " — " + pile + " · a " + caller.displayName + " watches (not yet)";
+                }
+
+                intro.text = "<i>set a pile down where you'd like the help — the specialist there will come.</i>";
+                card.gameObject.SetActive(anyShown);
+            });
         }
 
         private void BuildNodePlate(NodeState node, int figure)
@@ -80,29 +137,21 @@ namespace Wildgrove.Game
             var card = Card(null);
             var cardImage = card.GetComponent<Image>();
 
-            // The resource's plate heads the card — the journal's FIG. figure,
-            // the same specimen the world strip pins above the node.
+            // A compact gathering row: the specimen's small mark, its name and
+            // live yield on one line, Plant back at the right. The full specimen
+            // plate lives on the world strip above — no need to repeat it large.
+            var row = Row(card);
             var face = ArtLibrary.ForResource(captured.resourceId);
             if (face != null)
             {
-                PlateImage(card, face, 300f);
+                IconImage(row.transform, face, 60f, Color.white);
             }
 
-            // Tending lives on the world plate above, so the card's top row
-            // keeps just the figure label with Plant back at the right.
-            var figRow = Row(card);
-            var fig = MakeText(figRow.transform, "FIG. " + figure + ".", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
-            fig.gameObject.name = "Fig";
-            FlexibleWidth(fig.gameObject, 1f);
-            // A seedling marks Plant back — putting the specimen back in the ground.
-            var seedling = ArtLibrary.ForLine("seedling");
-            if (seedling != null)
-            {
-                IconImage(figRow.transform, seedling, 40f, Color.white);
-            }
+            var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft, Ink, _serif);
+            FlexibleWidth(label.gameObject, 1f);
 
             Button replant = null;
-            replant = Button(figRow.transform, "Plant back", 230, () =>
+            replant = Button(row.transform, "Plant back", 190, () =>
             {
                 if (_loop.Replant(captured))
                 {
@@ -117,40 +166,9 @@ namespace Wildgrove.Game
                 }
             });
 
-            var nameLine = MakeText(card, string.Empty, 26, TextAnchor.MiddleLeft, Ink, _serif);
-
-            // Gift piles (design §4): while a verse-earned pile waits, a node
-            // whose specialist hasn't joined offers a dashed pile line — where
-            // the pile is left is who answers, and which resource it costs.
-            // The line vanishes for that node once its specialist walks.
-            var giftLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-            var giftButton = giftLine.gameObject.AddComponent<Button>();
-            giftButton.transition = Selectable.Transition.None;
-            giftButton.onClick.AddListener(() =>
-            {
-                var arrived = _loop.LeaveGift(captured);
-                if (arrived != null)
-                {
-                    SetNote("you left a pile of " + captured.resourceId + " and stepped back. something said yes.");
-                    _dirty = true;
-                }
-                else if (_loop.KithWalking() >= _loop.KithSlots())
-                {
-                    SetNote("something watches the pile, but every slot is walked. rest someone first.");
-                }
-                else
-                {
-                    SetNote("not enough " + captured.resourceId + " for a proper pile. keep picking.");
-                }
-            });
-            giftLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            AddDashedBorder(giftLine.gameObject);
-
-            var statsLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-
-            // The tend flash — the mock's "+ yield" that rises and fades; sits
-            // outside the layout at the plate's top edge, left of Plant back.
-            var flash = MakeText(card, "+ yield", 24, TextAnchor.MiddleRight, MossDeep, _hand);
+            // The tend flash — the "+ yield" that rises and fades; sits outside
+            // the layout at the plate's top edge.
+            var flash = MakeText(card, "+ yield", 22, TextAnchor.MiddleRight, MossDeep, _hand);
             flash.gameObject.name = "TendFlash";
             flash.raycastTarget = false;
             flash.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
@@ -158,8 +176,8 @@ namespace Wildgrove.Game
             flashRect.anchorMin = new Vector2(1f, 1f);
             flashRect.anchorMax = new Vector2(1f, 1f);
             flashRect.pivot = new Vector2(1f, 1f);
-            flashRect.sizeDelta = new Vector2(260f, 52f);
-            flashRect.anchoredPosition = new Vector2(-254f, -6f);
+            flashRect.sizeDelta = new Vector2(240f, 46f);
+            flashRect.anchoredPosition = new Vector2(-210f, -4f);
             flash.color = new Color(MossDeep.r, MossDeep.g, MossDeep.b, 0f);
             _tendFlashes[captured.id] = flash;
             _frameUpdaters.Add(() =>
@@ -173,12 +191,12 @@ namespace Wildgrove.Game
                 _flashAges[captured.id] = age;
                 var t = Mathf.Clamp01(age);
                 flash.color = new Color(MossDeep.r, MossDeep.g, MossDeep.b, 1f - t);
-                flashRect.anchoredPosition = new Vector2(-254f, -6f + 20f * t);
+                flashRect.anchoredPosition = new Vector2(-210f, -4f + 20f * t);
             });
 
-            // The basket bar — fill width driven by the live updater.
+            // The basket bar — a thin fill driven by the live updater.
             var barGo = MakePanel("Basket", card, PagePaper);
-            FixedHeight(barGo, 14);
+            FixedHeight(barGo, 10);
             var fillGo = new GameObject("Fill", typeof(Image));
             fillGo.transform.SetParent(barGo.transform, false);
             var fill = fillGo.GetComponent<Image>();
@@ -199,7 +217,7 @@ namespace Wildgrove.Game
                 var trellis = ArtLibrary.ForLine("planter");
                 if (trellis != null)
                 {
-                    IconImage(actions, trellis, 44f, Color.white);
+                    IconImage(actions, trellis, 40f, Color.white);
                 }
 
                 foreach (var planter in _loop.NodePlanters())
@@ -211,23 +229,8 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(() =>
             {
                 var state = _loop.State;
-                var rich = captured.richnessLevel > 0 ? "  ·  richness " + Roman(captured.richnessLevel) : string.Empty;
-                nameLine.text = captured.resourceId + rich;
+                var rich = captured.richnessLevel > 0 ? " · richness " + Roman(captured.richnessLevel) : string.Empty;
                 cardImage.color = captured == _selected ? MossWash : CardPaper;
-
-                var caller = _loop.GiftAvailable() ? _loop.GiftSpeciesFor(captured) : null;
-                if (caller != null)
-                {
-                    giftLine.gameObject.SetActive(true);
-                    var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + captured.resourceId;
-                    giftLine.text = _loop.CanLeaveGift(captured)
-                        ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + " · a " + caller.displayName + " watches</color>"
-                        : "leave a pile — " + pile + " · a " + caller.displayName + " watches (not yet)";
-                }
-                else
-                {
-                    giftLine.gameObject.SetActive(false);
-                }
 
                 var cap = NodeBasketCapacity(captured);
                 var fraction = cap > BigDouble.Zero ? Mathf.Clamp01((float)(captured.basket / cap).ToDouble()) : 0f;
@@ -237,84 +240,16 @@ namespace Wildgrove.Game
 
                 var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
-                statsLine.text = NumberFormat.Rate(rate) + "/s  ·  " + NumberFormat.Short(stock) + " at camp"
-                                 + (basketFull ? "  ·  <color=" + OchreInkHex + ">basket full — waits on a carrier</color>" : string.Empty);
+                label.text = captured.resourceId + rich
+                             + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "
+                             + NumberFormat.Short(stock) + " at camp</color>"
+                             + (basketFull ? " <color=" + OchreInkHex + ">· basket full — waits on a carrier</color>" : string.Empty)
+                             + "</size>";
 
-                SetButtonLabel(replant, "Plant back\n" + SizeOpen(15) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
+                SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
                 var ok = _loop.CanReplant(captured);
                 replant.interactable = ok;
                 SetButtonTint(replant, ok);
-            });
-        }
-
-        private void BuildTrailRow()
-        {
-            // The mock's trail line: a dotted rule with the carrier walking it,
-            // "the trail home" on one side, who's hauling on the other.
-            var rowGo = MakeRect("TrailRow", _body).gameObject;
-            var layout = rowGo.AddComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.padding = new RectOffset(8, 8, 2, 2);
-            layout.spacing = 10;
-
-            MakeText(rowGo.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
-
-            var lineGo = MakeRect("Line", (RectTransform)rowGo.transform).gameObject;
-            var lineElement = lineGo.AddComponent<LayoutElement>();
-            lineElement.flexibleWidth = 1f;
-            lineElement.minHeight = 22f;
-
-            var rule = new GameObject("Rule", typeof(Image));
-            rule.transform.SetParent(lineGo.transform, false);
-            var ruleImage = rule.GetComponent<Image>();
-            ruleImage.sprite = JournalSprites.DashSprite();
-            ruleImage.type = Image.Type.Tiled;
-            ruleImage.raycastTarget = false;
-            var ruleRect = (RectTransform)rule.transform;
-            ruleRect.anchorMin = new Vector2(0f, 0.5f);
-            ruleRect.anchorMax = new Vector2(1f, 0.5f);
-            ruleRect.offsetMin = new Vector2(0f, -1f);
-            ruleRect.offsetMax = new Vector2(0f, 1f);
-
-            var dot = new GameObject("Carrier", typeof(Image));
-            dot.transform.SetParent(lineGo.transform, false);
-            var dotImage = dot.GetComponent<Image>();
-            dotImage.color = MossDeep;
-            dotImage.raycastTarget = false;
-            var dotRect = (RectTransform)dot.transform;
-            dotRect.sizeDelta = new Vector2(14f, 14f);
-
-            // Plain status — the carrier is posted from the strip's trail
-            // badge now, so this line only reports the walk.
-            var status = MakeText(rowGo.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
-
-            _frameUpdaters.Add(() =>
-            {
-                var state = _loop.State;
-                var carriers = Stationing.TrailCarriers(state, _loop.Data);
-                var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
-                var show = carriers > 0.0 && tripSeconds > 0.0;
-                dot.SetActive(show);
-                if (show)
-                {
-                    var interval = tripSeconds / carriers;
-                    var fraction = Mathf.Clamp01((float)(state.haulTripProgress / interval));
-                    dotRect.anchorMin = new Vector2(fraction, 0.5f);
-                    dotRect.anchorMax = new Vector2(fraction, 0.5f);
-                    dotRect.anchoredPosition = Vector2.zero;
-                }
-            });
-
-            _liveUpdaters.Add(() =>
-            {
-                var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
-                status.text = carrier != null
-                    ? carrier.name + " carrying"
-                    : "<color=" + OchreInkHex + ">no carrier walks</color>";
             });
         }
 
@@ -631,143 +566,6 @@ namespace Wildgrove.Game
             var footer = MakeText(_body, "<i>“" + text + "”</i>\n" + SizeOpen(14) + "WAYSTONE · " + zone.displayName.ToUpperInvariant() + "</size>",
                 18, TextAnchor.MiddleCenter, Ink2, _serif);
             footer.gameObject.name = "Waystone";
-        }
-
-        private void BuildKithCard()
-        {
-            var card = Card("THE KITH · roster & posts");
-            var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
-            _liveUpdaters.Add(() =>
-            {
-                var walking = _loop.KithWalking();
-                var slots = _loop.KithSlots();
-                slotsLine.text = "<i>" + walking + " of " + slots + " posts walked · "
-                                 + _loop.KithCount() + " companions</i>";
-            });
-
-            // The first minutes are the warden alone — steer the empty roster
-            // at the Ladder's first recruit rung (a pile of a hundred berries).
-            var lonelyLine = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2, _hand);
-            _liveUpdaters.Add(() =>
-            {
-                var alone = _loop.KithCount() == 0;
-                lonelyLine.gameObject.SetActive(alone);
-                if (alone)
-                {
-                    lonelyLine.text = "the work is lonely. a pile of berries might tempt company — see the Ladder, at camp.";
-                }
-            });
-
-            foreach (var familiar in _loop.State.roster)
-            {
-                var captured = familiar;
-                var row = Row(card);
-                var portrait = ArtLibrary.ForSpecies(captured.speciesId);
-                if (portrait != null)
-                {
-                    IconImage(row.transform, portrait, 64f, Color.white);
-                }
-
-                var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
-                FlexibleWidth(label.gameObject, 1f);
-                var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
-                // Posting moved out to the land — each node plate, the trail
-                // row, and the watch plates carry their own "post someone"
-                // affordance. The roster keeps only the recall.
-                var rest = Button(row.transform, "Rest", 150, () => Station(captured, null));
-
-                _liveUpdaters.Add(() =>
-                {
-                    var species = SpeciesName(captured.speciesId);
-                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + OchreHex + ">BONDED</color></size>" : string.Empty;
-                    var kin = _loop.FamiliarKinship(captured) > 0
-                        ? "  <color=" + OchreHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
-                        : string.Empty;
-                    var trait = _loop.FamiliarTrait(captured);
-                    var traitLine = trait != null
-                        ? "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + trait.displayName.ToLowerInvariant()
-                          + " — " + trait.description + "</color></size>"
-                        : string.Empty;
-                    var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
-                    label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
-                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
-                                 + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>"
-                                 + traitLine;
-                    rest.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
-                });
-            }
-
-            BuildKithLadderLines(card);
-        }
-
-        /// <summary>
-        /// The slot ladder's open questions, under the roster (design §4): the
-        /// next verse-earned slot, then the two the store keeps — the starter
-        /// bundle (slot + Amber) first, the plain slot behind it.
-        /// </summary>
-        private void BuildKithLadderLines(RectTransform card)
-        {
-            var verseLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
-            _liveUpdaters.Add(() =>
-            {
-                var next = _loop.NextKithVerseMilestone();
-                verseLine.gameObject.SetActive(next > 0);
-                if (next > 0)
-                {
-                    verseLine.text = "<i>a slot opens when " + next + " verses are sung — "
-                                     + _loop.TotalVersesSung() + " so far</i>";
-                }
-            });
-
-            var bundleLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-            var bundleButton = bundleLine.gameObject.AddComponent<Button>();
-            bundleButton.transition = Selectable.Transition.None;
-            bundleButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.StarterBundle));
-            bundleLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            AddDashedBorder(bundleLine.gameObject);
-
-            var slotLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-            var slotButton = slotLine.gameObject.AddComponent<Button>();
-            slotButton.transition = Selectable.Transition.None;
-            slotButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.KithSlot));
-            slotLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            AddDashedBorder(slotLine.gameObject);
-
-            _liveUpdaters.Add(() =>
-            {
-                var bundleOwned = _loop.Store.IsOwned(StoreProductIds.StarterBundle);
-                bundleLine.gameObject.SetActive(!bundleOwned);
-                if (!bundleOwned)
-                {
-                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>";
-                }
-
-                // The plain slot waits its turn behind the bundle.
-                var slotOwned = _loop.Store.IsOwned(StoreProductIds.KithSlot);
-                slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
-                if (bundleOwned && !slotOwned)
-                {
-                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>";
-                }
-            });
-        }
-
-        private void OnBuyKithProduct(string productId)
-        {
-            _loop.PurchaseKithProduct(productId, result =>
-            {
-                switch (result)
-                {
-                    case StoreResult.Purchased:
-                    case StoreResult.AlreadyOwned:
-                        SetNote("a slot opens. thank you for keeping the grove.");
-                        _dirty = true;
-                        break;
-                    case StoreResult.Failed:
-                        SetNote("that didn't go through — nothing was charged.");
-                        break;
-                }
-            });
         }
     }
 }

@@ -6,7 +6,8 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node
-    /// plus a <see cref="StationWorldView"/> for the trail and wander posts,
+    /// plus a <see cref="StationWorldView"/> for the wander post (the trail post
+    /// moved to the HUD's trail-home line in the band above the strip),
     /// and lays them out in the screen gap the HUD leaves open (the HUD reports
     /// that gap via <see cref="StripScreenRect"/> each frame). The strip IS the
     /// assignment board (design §2: one body per post): every post wears a
@@ -35,7 +36,6 @@ namespace Wildgrove.Game.World
         private Transform _container;
         private Font _labelFont;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
-        private StationWorldView _trailView;
         private StationWorldView _wanderView;
         private Vector2[] _centres = new Vector2[0];
         private float _radiusPx;
@@ -66,7 +66,6 @@ namespace Wildgrove.Game.World
                 view.RefreshLabel();
             }
 
-            _trailView?.RefreshLabel();
             _wanderView?.RefreshLabel();
         }
 
@@ -112,7 +111,7 @@ namespace Wildgrove.Game.World
                 return _views[index].Node.id;
             }
 
-            return index == _views.Count ? Familiar.TrailStation : Familiar.WanderStation;
+            return Familiar.WanderStation;
         }
 
         private void LateUpdate()
@@ -149,9 +148,6 @@ namespace Wildgrove.Game.World
                 view.Refresh(view.Node == SelectedNode, Time.time,
                     view.Node.id == postNodeId, occupant, IconFor(occupant));
             }
-
-            var carrier = Stationing.OccupantOf(state, Familiar.TrailStation);
-            _trailView.Refresh(carrier, IconFor(carrier));
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
             _wanderView.Refresh(wanderer, IconFor(wanderer));
@@ -191,12 +187,8 @@ namespace Wildgrove.Game.World
                     ArtLibrary.ForResource(node.resourceId)));
             }
 
-            // The two standing posts close the strip: the trail (hauling home)
-            // and the wander post (roaming every node and watch site).
-            _trailView = StationWorldView.Create(
-                _container, Familiar.TrailStation, "the trail",
-                PlaceholderArt.DigSiteColour(Familiar.TrailStation), _labelFont,
-                ArtLibrary.ForJournal("caravan"));
+            // The wander post closes the strip (roaming every node and watch
+            // site). The trail post moved to the HUD's trail-home line.
             _wanderView = StationWorldView.Create(
                 _container, Familiar.WanderStation, "wandering",
                 PlaceholderArt.DigSiteColour(Familiar.WanderStation), _labelFont,
@@ -207,10 +199,10 @@ namespace Wildgrove.Game.World
 
         private void Layout()
         {
-            // Nodes first, the trail and wander posts after — one shared strip,
-            // so the hit test's "first N centres are nodes" convention holds.
-            // The buffer is reused frame to frame — this runs per LateUpdate.
-            var total = _views.Count + 2;
+            // Nodes first, the wander post after — one shared strip, so the hit
+            // test's "first N centres are nodes" convention holds. The buffer is
+            // reused frame to frame — this runs per LateUpdate.
+            var total = _views.Count + 1;
             if (_centres.Length != total)
             {
                 _centres = new Vector2[total];
@@ -226,8 +218,7 @@ namespace Wildgrove.Game.World
                 _views[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
             }
 
-            _trailView.SetPlacement(ScreenToWorld(_centres[_views.Count]), _diameterPx * worldPerPixel);
-            _wanderView.SetPlacement(ScreenToWorld(_centres[_views.Count + 1]), _diameterPx * worldPerPixel);
+            _wanderView.SetPlacement(ScreenToWorld(_centres[_views.Count]), _diameterPx * worldPerPixel);
         }
 
         private Vector3 ScreenToWorld(Vector2 screenPoint)

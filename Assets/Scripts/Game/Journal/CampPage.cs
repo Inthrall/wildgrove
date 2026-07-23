@@ -13,8 +13,8 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The Camp page — the fire &amp; bench (crafting), the building lines, the
-    /// caravan exchange, and the Ladder's next rungs. What the camp makes of
-    /// what the trail brings home.
+    /// Ladder's next rungs, and the caravan exchange beneath them. What the camp
+    /// makes of what the trail brings home.
     /// </summary>
     internal sealed class CampPage : JournalSection
     {
@@ -31,8 +31,8 @@ namespace Wildgrove.Game
         {
             BuildCraftingCard();
             BuildBuildingsCard();
-            BuildExchangeCard();
             BuildLadderCard();
+            BuildExchangeCard();
         }
 
         private void BuildCraftingCard()

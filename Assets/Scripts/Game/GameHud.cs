@@ -68,6 +68,12 @@ namespace Wildgrove.Game
         private GameObject _trackerPanel;
         private Button _foldButton;
 
+        // The trail-home line, now pinned in the top world-strip band rather
+        // than buried in the Trail page: a dotted rule with the carrier walking
+        // it, and the whole box taps through to post a carrier.
+        private RectTransform _trailCarrierDot;
+        private Text _trailStatus;
+
         private RectTransform _worldGap;
         private RectTransform _body;
         private Transform _modalLayer;
@@ -157,6 +163,7 @@ namespace Wildgrove.Game
 
             FitLayoutToScreen();
             ReportWorldStrip();
+            AnimateTrailCarrier();
             HandleTend();
             _sheets.PumpSheets();
 
@@ -316,6 +323,11 @@ namespace Wildgrove.Game
             _worldGap = gap;
             _worldGapElement = gap.gameObject.AddComponent<LayoutElement>();
 
+            // The trail-home line sits at the foot of the world-strip band — the
+            // one trail affordance up here: it shows the carrier walking home and
+            // taps through to post (or recall) a carrier.
+            BuildTrailHomeLine(root);
+
             // Persistent camp actions, pinned under the node strip so they stay
             // reachable from every journal page.
             _sheets.BuildCampActions(root);
@@ -370,6 +382,60 @@ namespace Wildgrove.Game
 
             Canvas.ForceUpdateCanvases();
             FitLayoutToScreen();
+        }
+
+        /// <summary>
+        /// The trail-home line, pinned in the world-strip band: "the trail home"
+        /// on the left, a dotted rule with the carrier walking it, and the
+        /// carrier's status on the right. The whole box is the assign gesture —
+        /// tap it to open the trail posting sheet (design: one body per post).
+        /// </summary>
+        private void BuildTrailHomeLine(RectTransform root)
+        {
+            var bar = MakePanel("TrailHome", root, CardPaper);
+            var layout = bar.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.padding = new RectOffset(12, 12, 4, 4);
+            layout.spacing = 10;
+            var element = bar.AddComponent<LayoutElement>();
+            element.flexibleHeight = 0;
+            element.minHeight = 40f;
+            AddBorder(bar, Ink2);
+            var button = bar.AddComponent<Button>();
+            button.onClick.AddListener(() => _sheets.OpenPostingSheet(Familiar.TrailStation));
+
+            MakeText(bar.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
+
+            var lineGo = MakeRect("Line", (RectTransform)bar.transform).gameObject;
+            var lineElement = lineGo.AddComponent<LayoutElement>();
+            lineElement.flexibleWidth = 1f;
+            lineElement.minHeight = 22f;
+
+            var rule = new GameObject("Rule", typeof(Image));
+            rule.transform.SetParent(lineGo.transform, false);
+            var ruleImage = rule.GetComponent<Image>();
+            ruleImage.sprite = DashSprite();
+            ruleImage.type = Image.Type.Tiled;
+            ruleImage.raycastTarget = false;
+            var ruleRect = (RectTransform)rule.transform;
+            ruleRect.anchorMin = new Vector2(0f, 0.5f);
+            ruleRect.anchorMax = new Vector2(1f, 0.5f);
+            ruleRect.offsetMin = new Vector2(0f, -1f);
+            ruleRect.offsetMax = new Vector2(0f, 1f);
+
+            var dot = new GameObject("Carrier", typeof(Image));
+            dot.transform.SetParent(lineGo.transform, false);
+            var dotImage = dot.GetComponent<Image>();
+            dotImage.color = MossDeep;
+            dotImage.raycastTarget = false;
+            _trailCarrierDot = (RectTransform)dot.transform;
+            _trailCarrierDot.sizeDelta = new Vector2(14f, 14f);
+
+            _trailStatus = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
         }
 
         /// <summary>
@@ -523,6 +589,44 @@ namespace Wildgrove.Game
             RefreshHeader();
             RefreshLedger();
             RefreshTracker();
+            RefreshTrailHome();
+        }
+
+        /// <summary>The carrier dot walking the trail-home rule — driven per frame like the old body row's frame updater.</summary>
+        private void AnimateTrailCarrier()
+        {
+            if (_trailCarrierDot == null)
+            {
+                return;
+            }
+
+            var state = _loop.State;
+            var carriers = Stationing.TrailCarriers(state, _loop.Data);
+            var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
+            var show = carriers > 0.0 && tripSeconds > 0.0;
+            _trailCarrierDot.gameObject.SetActive(show);
+            if (show)
+            {
+                var interval = tripSeconds / carriers;
+                var fraction = Mathf.Clamp01((float)(state.haulTripProgress / interval));
+                _trailCarrierDot.anchorMin = new Vector2(fraction, 0.5f);
+                _trailCarrierDot.anchorMax = new Vector2(fraction, 0.5f);
+                _trailCarrierDot.anchoredPosition = Vector2.zero;
+            }
+        }
+
+        /// <summary>The trail-home status text — who's hauling, or the prompt to post one.</summary>
+        private void RefreshTrailHome()
+        {
+            if (_trailStatus == null)
+            {
+                return;
+            }
+
+            var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
+            _trailStatus.text = carrier != null
+                ? carrier.name + " carrying"
+                : "<color=" + OchreInkHex + ">tap to post a carrier</color>";
         }
 
         private void RefreshHeader()

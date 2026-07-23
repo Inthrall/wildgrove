@@ -3,25 +3,33 @@ using BreakInfinity;
 using UnityEngine;
 using UnityEngine.UI;
 using Wildgrove.Data;
+using Wildgrove.Game.Services;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
+using static Wildgrove.Game.JournalFormat;
 using static Wildgrove.Game.JournalWidgets;
 
 namespace Wildgrove.Game
 {
     /// <summary>
     /// The Warden page — the worn kit, the unlocked crafts and their progress,
-    /// and this run's summary. The warden's own identity, kept apart from the
-    /// land (Trail) and the camp.
+    /// the kith roster &amp; slots, and this run's summary. The warden's own
+    /// identity, kept apart from the land (Trail) and the camp.
     /// </summary>
     internal sealed class WardenPage : JournalSection
     {
         internal WardenPage(GameHud hud) : base(hud) { }
 
+        // Naming/stationing sheets live in JournalSheets; forwarded so the kith
+        // roster bodies below read as they did when they lived on GameHud.
+        private void OpenNamingSheet(Familiar familiar) => _hud.Sheets.OpenNamingSheet(familiar);
+        private void Station(Familiar familiar, string stationId) => _hud.Sheets.Station(familiar, stationId);
+
         internal void BuildWardenPage()
         {
             BuildKitCard();
             BuildCraftsCard();
+            BuildKithCard();
             BuildRunCard();
         }
 
@@ -133,6 +141,143 @@ namespace Wildgrove.Game
                                 + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + progress + "% to next</color></size>";
                 });
             }
+        }
+
+        private void BuildKithCard()
+        {
+            var card = Card("THE KITH · roster & posts");
+            var slotsLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                var walking = _loop.KithWalking();
+                var slots = _loop.KithSlots();
+                slotsLine.text = "<i>" + walking + " of " + slots + " posts walked · "
+                                 + _loop.KithCount() + " companions</i>";
+            });
+
+            // The first minutes are the warden alone — steer the empty roster
+            // at the Ladder's first recruit rung (a pile of a hundred berries).
+            var lonelyLine = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2, _hand);
+            _liveUpdaters.Add(() =>
+            {
+                var alone = _loop.KithCount() == 0;
+                lonelyLine.gameObject.SetActive(alone);
+                if (alone)
+                {
+                    lonelyLine.text = "the work is lonely. a pile of berries might tempt company — see the Ladder, at camp.";
+                }
+            });
+
+            foreach (var familiar in _loop.State.roster)
+            {
+                var captured = familiar;
+                var row = Row(card);
+                var portrait = ArtLibrary.ForSpecies(captured.speciesId);
+                if (portrait != null)
+                {
+                    IconImage(row.transform, portrait, 64f, Color.white);
+                }
+
+                var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
+                FlexibleWidth(label.gameObject, 1f);
+                var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
+                // Posting moved out to the land — each node plate, the trail
+                // line, and the watch plates carry their own "post someone"
+                // affordance. The roster keeps only the recall.
+                var rest = Button(row.transform, "Rest", 150, () => Station(captured, null));
+
+                _liveUpdaters.Add(() =>
+                {
+                    var species = SpeciesName(captured.speciesId);
+                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + OchreHex + ">BONDED</color></size>" : string.Empty;
+                    var kin = _loop.FamiliarKinship(captured) > 0
+                        ? "  <color=" + OchreHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
+                        : string.Empty;
+                    var trait = _loop.FamiliarTrait(captured);
+                    var traitLine = trait != null
+                        ? "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + trait.displayName.ToLowerInvariant()
+                          + " — " + trait.description + "</color></size>"
+                        : string.Empty;
+                    var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
+                    label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
+                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
+                                 + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>"
+                                 + traitLine;
+                    rest.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
+                });
+            }
+
+            BuildKithLadderLines(card);
+        }
+
+        /// <summary>
+        /// The slot ladder's open questions, under the roster (design §4): the
+        /// next verse-earned slot, then the two the store keeps — the starter
+        /// bundle (slot + Amber) first, the plain slot behind it.
+        /// </summary>
+        private void BuildKithLadderLines(RectTransform card)
+        {
+            var verseLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                var next = _loop.NextKithVerseMilestone();
+                verseLine.gameObject.SetActive(next > 0);
+                if (next > 0)
+                {
+                    verseLine.text = "<i>a slot opens when " + next + " verses are sung — "
+                                     + _loop.TotalVersesSung() + " so far</i>";
+                }
+            });
+
+            var bundleLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
+            var bundleButton = bundleLine.gameObject.AddComponent<Button>();
+            bundleButton.transition = Selectable.Transition.None;
+            bundleButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.StarterBundle));
+            bundleLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(bundleLine.gameObject);
+
+            var slotLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
+            var slotButton = slotLine.gameObject.AddComponent<Button>();
+            slotButton.transition = Selectable.Transition.None;
+            slotButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.KithSlot));
+            slotLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(slotLine.gameObject);
+
+            _liveUpdaters.Add(() =>
+            {
+                var bundleOwned = _loop.Store.IsOwned(StoreProductIds.StarterBundle);
+                bundleLine.gameObject.SetActive(!bundleOwned);
+                if (!bundleOwned)
+                {
+                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>";
+                }
+
+                // The plain slot waits its turn behind the bundle.
+                var slotOwned = _loop.Store.IsOwned(StoreProductIds.KithSlot);
+                slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
+                if (bundleOwned && !slotOwned)
+                {
+                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>";
+                }
+            });
+        }
+
+        private void OnBuyKithProduct(string productId)
+        {
+            _loop.PurchaseKithProduct(productId, result =>
+            {
+                switch (result)
+                {
+                    case StoreResult.Purchased:
+                    case StoreResult.AlreadyOwned:
+                        SetNote("a slot opens. thank you for keeping the grove.");
+                        _dirty = true;
+                        break;
+                    case StoreResult.Failed:
+                        SetNote("that didn't go through — nothing was charged.");
+                        break;
+                }
+            });
         }
 
         private void BuildRunCard()
