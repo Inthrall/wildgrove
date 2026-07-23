@@ -4,4 +4,6 @@
   <projectSetting name="com.google.firebaseAnalyticsEnabled" value="False" />
   <projectSetting name="GooglePlayServices.PatchMainTemplateGradle" value="True" />
   <projectSetting name="GooglePlayServices.PatchSettingsTemplateGradle" value="True" />
+  <projectSetting name="GooglePlayServices.PromptBeforeAutoResolution" value="False" />
+  <projectSetting name="GooglePlayServices.UseJetifier" value="True" />
 </projectSettings>
