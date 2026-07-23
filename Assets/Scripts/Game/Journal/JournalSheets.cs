@@ -227,7 +227,11 @@ namespace Wildgrove.Game
         /// The posting sheet — the strip's badges are the post affordance
         /// (one body per post, design §2), so the sheet asks only "who".
         /// Picking someone new swaps them in; whoever held the post steps
-        /// back to camp. Tapping the current holder sends them home.
+        /// back to camp. Tapping the current holder sends them home. When the
+        /// post is empty and the kith is fully committed, a notice explains the
+        /// only ways forward (rob another post, or grow the kith), companions
+        /// working elsewhere say what their move would cost, and any who can't
+        /// take a post until a slot opens are shown but disabled.
         /// </summary>
         internal void OpenPostingSheet(string stationId)
         {
@@ -235,12 +239,19 @@ namespace Wildgrove.Game
             MakeText(sheet, "Who walks here?", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, StationLabel(stationId).ToUpperInvariant(), 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
+            var state = _loop.State;
+            MakeText(sheet, "posts walked " + _loop.KithWalking() + " of " + _loop.KithSlots(),
+                14, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            var occupantHere = Stationing.OccupantOf(state, stationId);
+            var hasRoom = Kith.HasRoom(state, _loop.Data);
+
             // The warden can only stand at a node — no warden entry on the
             // trail or wander sheets.
             var node = FindNode(stationId);
             if (node != null)
             {
-                var wardenHere = Warden.PostNodeId(_loop.State) == node.id;
+                var wardenHere = Warden.PostNodeId(state) == node.id;
                 var detail = wardenHere
                     ? "posted here — tap to send them back to camp"
                     : WardenWhereabouts();
@@ -266,11 +277,75 @@ namespace Wildgrove.Game
                 }
             }
 
-            foreach (var familiar in _loop.State.roster)
+            // The friction the old sheet hid: to fill an EMPTY post with the
+            // kith fully committed, you either rob another post or grow the
+            // kith. Name it up front so the flat roster list isn't a puzzle.
+            if (occupantHere == null)
+            {
+                var anyResting = false;
+                foreach (var f in state.roster)
+                {
+                    if (f.IsResting)
+                    {
+                        anyResting = true;
+                        break;
+                    }
+                }
+
+                string notice = null;
+                if (!anyResting && state.roster.Count > 0)
+                {
+                    notice = "every companion already walks a post — send one here and its own post falls idle. Open a slot on the Ladder, or leave a pile at a plate, to grow the kith.";
+                }
+                else if (anyResting && !hasRoom)
+                {
+                    notice = "a companion waits at camp, but every slot is walked. Open a slot on the Ladder to give them a post — or move a walker here.";
+                }
+
+                if (notice != null)
+                {
+                    var line = MakeText(sheet, "<i>" + notice + "</i>", 16, TextAnchor.UpperCenter, Ink2);
+                    var element = line.gameObject.AddComponent<LayoutElement>();
+                    element.minWidth = 740;
+                    element.preferredWidth = 740;
+                }
+            }
+
+            // Ordered so the choice reads top-down: the current holder, then
+            // free companions, then those a move would pull off another post,
+            // then any who can't take this empty post until a slot opens.
+            var ordered = new List<Familiar>(state.roster);
+            ordered.Sort((a, b) => PostRank(a, stationId, occupantHere, hasRoom)
+                .CompareTo(PostRank(b, stationId, occupantHere, hasRoom)));
+
+            foreach (var familiar in ordered)
             {
                 var captured = familiar;
                 var here = PostMatches(captured.stationId, stationId);
-                var detail = here ? "posted here — tap to send them to camp" : "now: " + StationLabel(captured.stationId);
+                var resting = captured.IsResting;
+                // A resting companion can only take an empty post when a slot is
+                // free; swapping in for an occupant, or moving off another post,
+                // always works (the vacated slot covers it).
+                var blocked = resting && occupantHere == null && !hasRoom;
+
+                string detail;
+                if (here)
+                {
+                    detail = "posted here — tap to send to camp";
+                }
+                else if (blocked)
+                {
+                    detail = "rests at camp · needs an open slot";
+                }
+                else if (resting)
+                {
+                    detail = "rests at camp — tap to post here";
+                }
+                else
+                {
+                    detail = "at " + StationLabel(captured.stationId) + " — tap to move here (leaves it idle)";
+                }
+
                 var button = Button(sheet, captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                            + SpeciesName(captured.speciesId) + " · " + detail + "</color></size>", 560, () =>
                 {
@@ -281,9 +356,32 @@ namespace Wildgrove.Game
                 {
                     button.GetComponent<Image>().color = MossWash;
                 }
+                else if (blocked)
+                {
+                    // Disabled with the reason spelled out above — tapping it
+                    // would only fail with "every slot is walked".
+                    button.interactable = false;
+                    SetButtonTint(button, false);
+                }
             }
 
             Button(sheet, "Never mind", 320, CloseSheet);
+        }
+
+        /// <summary>Display order for the posting sheet: holder, free, movable, then slot-blocked.</summary>
+        private static int PostRank(Familiar familiar, string stationId, Familiar occupantHere, bool hasRoom)
+        {
+            if (PostMatches(familiar.stationId, stationId))
+            {
+                return 0;
+            }
+
+            if (familiar.IsResting)
+            {
+                return occupantHere == null && !hasRoom ? 3 : 1;
+            }
+
+            return 2;
         }
 
         /// <summary>Where the warden stands now, for the sheet's detail line.</summary>
