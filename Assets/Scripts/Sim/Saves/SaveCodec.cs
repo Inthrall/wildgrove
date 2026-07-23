@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 26;
+        public const int CurrentVersion = 27;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -232,10 +232,9 @@ namespace Wildgrove.Sim.Saves
                 ? new List<string>(save.fixedResources)
                 : new List<string>();
             // A post at a node the current data no longer builds (zone or
-            // resource retuned) would strand the warden — and the bonded
-            // gatherers who share the post — matching no node at all. Dangling
-            // post ids self-correct on restore like nodes do: cleared, so the
-            // first-node fallback takes over.
+            // resource retuned) would strand the warden, matching no node at
+            // all. Dangling post ids self-correct on restore like nodes do:
+            // cleared, so the warden stands at camp until re-posted.
             state.wardenPostNodeId = NodeExists(state, save.wardenPostNodeId)
                 ? save.wardenPostNodeId
                 : null;
@@ -483,6 +482,27 @@ namespace Wildgrove.Sim.Saves
                 state.roster = deduped;
             }
 
+            // One body per post (§2): a pre-v27 save can carry several
+            // familiars on one station — bonded first, then deepest Kinship
+            // keeps the post; the rest go home to camp.
+            var taken = new HashSet<string>();
+            foreach (var familiar in state.roster
+                .OrderByDescending(f => f.bonded)
+                .ThenByDescending(f => f.kinshipXp))
+            {
+                if (!familiar.IsResting && !taken.Add(familiar.stationId))
+                {
+                    familiar.stationId = null;
+                }
+            }
+
+            // ...and the warden steps back to camp rather than crowd a node a
+            // familiar holds (the familiar's post was the explicit choice).
+            if (Stationing.OccupantOf(state, state.wardenPostNodeId) != null)
+            {
+                state.wardenPostNodeId = null;
+            }
+
             // Slots cap who holds a post, not who belongs (§4 ladder). A save
             // from a wider ladder (or a retuned milestone table) can have more
             // familiars stationed than the slots it restores to — the extras
@@ -525,6 +545,31 @@ namespace Wildgrove.Sim.Saves
             return state;
         }
 
+        /// <summary>
+        /// The v26→v27 watch retirement: the watch is no longer a post, so the
+        /// first dig-stationed familiar becomes the wanderer (it was already
+        /// out watching the sites) and any others rest at camp.
+        /// </summary>
+        private static void RetireDigStations(SaveData save)
+        {
+            if (save.roster == null)
+            {
+                return;
+            }
+
+            var wanderTaken = false;
+            foreach (var familiar in save.roster)
+            {
+                if (familiar?.stationId == null || !familiar.stationId.StartsWith(Familiar.DigStationPrefix))
+                {
+                    continue;
+                }
+
+                familiar.stationId = wanderTaken ? null : Familiar.WanderStation;
+                wanderTaken = true;
+            }
+        }
+
         /// <summary>Distinct zones among a save's nodes (ids are "zone:resource") — the v1 carrier back-grant.</summary>
         private static int CountZones(SaveData save)
         {
@@ -544,26 +589,20 @@ namespace Wildgrove.Sim.Saves
             return zones.Count;
         }
 
-        /// <summary>Whether a saved familiar's station id still resolves under the current data (else it's cleared to resting, so the familiar isn't stranded as a silent no-op).</summary>
+        /// <summary>
+        /// Whether a saved familiar's station id still resolves under the
+        /// current data (else it's cleared to resting, so the familiar isn't
+        /// stranded as a silent no-op). Legacy "dig:" stations fail here by
+        /// design — the watch stopped being a post at v27, and TryMigrate
+        /// already rehomed the watchers.
+        /// </summary>
         private static bool StationValid(GameState state, string stationId)
         {
-            if (string.IsNullOrEmpty(stationId) || stationId == Familiar.TrailStation)
+            if (string.IsNullOrEmpty(stationId)
+                || stationId == Familiar.TrailStation
+                || stationId == Familiar.WanderStation)
             {
                 return true;
-            }
-
-            if (stationId.StartsWith(Familiar.DigStationPrefix))
-            {
-                var zoneId = stationId.Substring(Familiar.DigStationPrefix.Length);
-                foreach (var site in state.digSites)
-                {
-                    if (site.zoneId == zoneId)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
             }
 
             return NodeExists(state, stationId);
@@ -874,6 +913,23 @@ namespace Wildgrove.Sim.Saves
                         // slots purchased. Restore dedupes duplicate species
                         // and rests any familiars past the narrower ladder.
                         save.version = 26;
+                        break;
+
+                    case 26:
+                        // v26 predates one-body-per-post: the watch stopped
+                        // being a post (the first watcher takes the new wander
+                        // post, the rest go home), and the warden's post is
+                        // explicit now — an old save's null meant "the first
+                        // node", so write that in before null comes to mean
+                        // "at camp". Restore enforces one body per post.
+                        RetireDigStations(save);
+                        if (string.IsNullOrEmpty(save.wardenPostNodeId)
+                            && save.nodes != null && save.nodes.Count > 0)
+                        {
+                            save.wardenPostNodeId = save.nodes[0].id;
+                        }
+
+                        save.version = 27;
                         break;
 
                     default:

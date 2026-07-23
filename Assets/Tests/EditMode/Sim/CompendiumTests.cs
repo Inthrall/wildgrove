@@ -70,8 +70,6 @@ namespace Wildgrove.Sim.Tests
             _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
             _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 5 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.IsOnTrail);
-            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
             TestKith.Station(state, state.nodes[0].id, 10);
 
             Simulation.Advance(state, _data, 10.0);
@@ -86,7 +84,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.Clear(); // isolate the warden's own hands
+            Warden.Post(state, state.nodes[0]); // tending no longer moves the post
 
             Simulation.Tend(state, _data, state.nodes[0]);
             Simulation.Advance(state, _data, 5.0);
@@ -115,7 +113,7 @@ namespace Wildgrove.Sim.Tests
             _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 60 };
             _data.economy.quality = new EconomyData.QualityData { pristineBaseChance = 1.0, fineChance = 0.0, fineValueMult = 1.5, pristineValueMult = 10 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id); // the raven still hauls the manual basket
+            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier hauls the manual basket
             state.nodes[0].basket = new BigDouble(30);
 
             Simulation.Advance(state, _data, 10.0);
@@ -129,6 +127,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.exchange = new ExchangeData { spread = 0.15 };
             var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
             Simulation.Advance(state, _data, 10.0);
             var recorded = Compendium.LifetimeGathered(state, "berries");
             Assert.That(recorded > BigDouble.Zero, Is.True);

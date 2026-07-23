@@ -6,19 +6,21 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node
-    /// (plus a <see cref="DigSiteWorldView"/> per unlocked dig site) and lays
-    /// them out in the screen gap the HUD leaves open (the HUD reports that gap
-    /// via <see cref="StripScreenRect"/> each frame). Also answers the
-    /// positional-tend question — which node, if any, is under a tap. Placeholder
-    /// tier: shapes in a strip now; a real region scene replaces the layout when
-    /// the art lands, but the camera/world seam and hit-testing stay.
+    /// plus a <see cref="StationWorldView"/> for the trail and wander posts,
+    /// and lays them out in the screen gap the HUD leaves open (the HUD reports
+    /// that gap via <see cref="StripScreenRect"/> each frame). The strip IS the
+    /// assignment board (design §2: one body per post): every post wears a
+    /// badge of its holder, and this class answers both tap questions — which
+    /// node a tap tends, and which post's badge a tap assigns. Placeholder
+    /// tier: shapes in a strip now; a real region scene replaces the layout
+    /// when the art lands, but the camera/world seam and hit-testing stay.
     /// </summary>
     [RequireComponent(typeof(GameLoop))]
     public sealed class WorldView : MonoBehaviour
     {
         private const float HitSlop = 1.15f;
         // Soft white — the gold accents belong to the Pristine window halo and
-        // the bonded-companion marker, so selection reads as its own thing.
+        // the bonded pip on a badge, so selection reads as its own thing.
         private static readonly Color RingColour = new Color(0.94f, 0.97f, 0.92f, 0.95f);
 
         /// <summary>The HUD's free gap, in screen pixels — where the node strip lives.</summary>
@@ -33,9 +35,11 @@ namespace Wildgrove.Game.World
         private Transform _container;
         private Font _labelFont;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
-        private readonly List<DigSiteWorldView> _digViews = new List<DigSiteWorldView>();
+        private StationWorldView _trailView;
+        private StationWorldView _wanderView;
         private Vector2[] _centres = new Vector2[0];
         private float _radiusPx;
+        private float _diameterPx;
 
         private void OnEnable()
         {
@@ -62,21 +66,53 @@ namespace Wildgrove.Game.World
                 view.RefreshLabel();
             }
 
-            foreach (var digView in _digViews)
-            {
-                digView.RefreshLabel();
-            }
+            _trailView?.RefreshLabel();
+            _wanderView?.RefreshLabel();
         }
 
         /// <summary>
-        /// The node whose sprite is under the screen point, or null for a miss.
-        /// Dig-site sprites share the strip but aren't tendable — a tap on one
-        /// resolves as a miss.
+        /// The node whose plate is under the screen point, or null for a miss —
+        /// the tend hit. The trail/wander posts share the strip but aren't
+        /// tendable, and a badge tap resolves through
+        /// <see cref="StationAtScreenPoint"/> instead.
         /// </summary>
         public NodeState NodeAtScreenPoint(Vector2 screenPoint)
         {
             var index = WorldStrip.HitIndex(_centres, _radiusPx, screenPoint);
             return index >= 0 && index < _views.Count ? _views[index].Node : null;
+        }
+
+        /// <summary>
+        /// The station whose assignment affordance is under the screen point,
+        /// or null: any post's badge, or the trail/wander plates themselves
+        /// (no tend there — the whole sprite is the assign gesture). Callers
+        /// check this BEFORE the tend hit so badges win the overlap band.
+        /// </summary>
+        public string StationAtScreenPoint(Vector2 screenPoint)
+        {
+            var badge = WorldStrip.BadgeHitIndex(_centres, _diameterPx, screenPoint);
+            if (badge >= 0)
+            {
+                return StationIdAt(badge);
+            }
+
+            var plate = WorldStrip.HitIndex(_centres, _radiusPx, screenPoint);
+            return plate >= _views.Count ? StationIdAt(plate) : null;
+        }
+
+        private string StationIdAt(int index)
+        {
+            if (index < 0 || index >= _centres.Length)
+            {
+                return null;
+            }
+
+            if (index < _views.Count)
+            {
+                return _views[index].Node.id;
+            }
+
+            return index == _views.Count ? Familiar.TrailStation : Familiar.WanderStation;
         }
 
         private void LateUpdate()
@@ -92,10 +128,8 @@ namespace Wildgrove.Game.World
             }
 
             // Rebuild on a new run/state object, and when the strip's population
-            // grows mid-run (a trail map unlocked a zone or opened a dig site).
-            if (_builtFor != _loop.State
-                || _views.Count != _loop.State.nodes.Count
-                || _digViews.Count != _loop.State.digSites.Count)
+            // grows mid-run (a trail map unlocked a zone's nodes).
+            if (_builtFor != _loop.State || _views.Count != _loop.State.nodes.Count)
             {
                 Rebuild();
             }
@@ -107,31 +141,25 @@ namespace Wildgrove.Game.World
 
             Layout();
 
-            var postNodeId = Warden.PostNodeId(_loop.State);
+            var state = _loop.State;
+            var postNodeId = Warden.PostNodeId(state);
             foreach (var view in _views)
             {
-                var working = Stationing.CountAssignedTo(_loop.State, view.Node.id);
-                var hasBonded = HasBondedAt(view.Node.id);
-                view.Refresh(view.Node == SelectedNode, Time.time, working, hasBonded, view.Node.id == postNodeId);
+                var occupant = Stationing.OccupantOf(state, view.Node.id);
+                view.Refresh(view.Node == SelectedNode, Time.time,
+                    view.Node.id == postNodeId, occupant, IconFor(occupant));
             }
 
-            foreach (var digView in _digViews)
-            {
-                digView.Refresh(Stationing.AtDigSite(_loop.State, digView.Site.zoneId));
-            }
+            var carrier = Stationing.OccupantOf(state, Familiar.TrailStation);
+            _trailView.Refresh(carrier, IconFor(carrier));
+
+            var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
+            _wanderView.Refresh(wanderer, IconFor(wanderer));
         }
 
-        private bool HasBondedAt(string nodeId)
+        private static Sprite IconFor(Familiar familiar)
         {
-            foreach (var familiar in _loop.State.roster)
-            {
-                if (familiar.bonded && !familiar.IsResting && familiar.stationId == nodeId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return familiar != null ? ArtLibrary.ForSpecies(familiar.speciesId) : null;
         }
 
         private void Rebuild()
@@ -146,7 +174,6 @@ namespace Wildgrove.Game.World
             }
 
             _views.Clear();
-            _digViews.Clear();
             _container = new GameObject("WorldNodes").transform;
             _container.SetParent(transform, false);
 
@@ -164,41 +191,43 @@ namespace Wildgrove.Game.World
                     ArtLibrary.ForResource(node.resourceId)));
             }
 
-            foreach (var site in _loop.State.digSites)
-            {
-                _digViews.Add(DigSiteWorldView.Create(
-                    _container, site, PlaceholderArt.DigSiteColour(site.zoneId), _labelFont));
-            }
+            // The two standing posts close the strip: the trail (hauling home)
+            // and the wander post (roaming every node and watch site).
+            _trailView = StationWorldView.Create(
+                _container, Familiar.TrailStation, "the trail",
+                PlaceholderArt.DigSiteColour(Familiar.TrailStation), _labelFont,
+                ArtLibrary.ForJournal("caravan"));
+            _wanderView = StationWorldView.Create(
+                _container, Familiar.WanderStation, "wandering",
+                PlaceholderArt.DigSiteColour(Familiar.WanderStation), _labelFont,
+                ArtLibrary.ForSkill("observation"));
 
             _builtFor = _loop.State;
         }
 
         private void Layout()
         {
-            // Nodes first, dig sites after — one shared strip, so the hit test's
-            // "first N centres are nodes" convention holds. The buffer is
-            // reused frame to frame — this runs per LateUpdate.
-            var total = _views.Count + _digViews.Count;
+            // Nodes first, the trail and wander posts after — one shared strip,
+            // so the hit test's "first N centres are nodes" convention holds.
+            // The buffer is reused frame to frame — this runs per LateUpdate.
+            var total = _views.Count + 2;
             if (_centres.Length != total)
             {
                 _centres = new Vector2[total];
             }
 
             WorldStrip.LayoutCentresInto(StripScreenRect, total, _centres);
-            var diameterPx = WorldStrip.Diameter(StripScreenRect, total);
-            _radiusPx = diameterPx * 0.5f * HitSlop;
+            _diameterPx = WorldStrip.Diameter(StripScreenRect, total);
+            _radiusPx = _diameterPx * 0.5f * HitSlop;
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             for (var i = 0; i < _views.Count; i++)
             {
-                _views[i].SetPlacement(ScreenToWorld(_centres[i]), diameterPx * worldPerPixel);
+                _views[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
             }
 
-            for (var i = 0; i < _digViews.Count; i++)
-            {
-                _digViews[i].SetPlacement(
-                    ScreenToWorld(_centres[_views.Count + i]), diameterPx * worldPerPixel);
-            }
+            _trailView.SetPlacement(ScreenToWorld(_centres[_views.Count]), _diameterPx * worldPerPixel);
+            _wanderView.SetPlacement(ScreenToWorld(_centres[_views.Count + 1]), _diameterPx * worldPerPixel);
         }
 
         private Vector3 ScreenToWorld(Vector2 screenPoint)

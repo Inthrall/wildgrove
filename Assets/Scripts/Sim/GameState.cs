@@ -37,10 +37,9 @@ namespace Wildgrove.Sim
         public List<string> fixedResources = new List<string>();
 
         /// <summary>
-        /// The warden's post: the node they last tended (the warden works
-        /// where their attention is, and bonded gatherers work at their side).
-        /// Null until the first tend of a run — the post defaults to the
-        /// first node.
+        /// The warden's post: the node they are assigned to from the strip,
+        /// like any familiar (one body per post, design §2). Null while the
+        /// warden stands at camp, gathering nothing.
         /// </summary>
         public string wardenPostNodeId;
 
@@ -283,17 +282,18 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One zone's observation site (design §6: familiars set to Observation
-    /// watch what lives there and record it, adding field sketches). Sketches
-    /// land in GameState.insectSketches; the site itself only tracks who's
-    /// watching and how long since the last sketch.
+    /// One zone's observation site (design §6: the wanderer passes it as it
+    /// roams, watching what lives there and recording it as field sketches).
+    /// Sketches land in GameState.insectSketches; the site itself only tracks
+    /// how long since the last sketch. Not a post — the watching comes from
+    /// the wander station (see <see cref="Stationing.WanderAgents"/>).
     /// </summary>
     [Serializable]
     public sealed class DigSiteState
     {
         public string zoneId;
 
-        /// <summary>Hours watched since the last sketch — the pity timer (economy.observation.pityTimerHoursWatched guarantees a sketch). Watchers are roster familiars stationed here (see <see cref="Stationing"/>).</summary>
+        /// <summary>Hours watched since the last sketch — the pity timer (economy.observation.pityTimerHoursWatched guarantees a sketch).</summary>
         public double pityHours;
     }
 

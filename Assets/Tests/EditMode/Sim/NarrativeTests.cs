@@ -86,12 +86,10 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(Narrative.NextUnreadWaystone(state, _data)?.id, Is.EqualTo(GameStateFactory.StartingZoneId),
-                "the first arrival is the game's first launch");
-
-            Narrative.MarkWaystoneRead(state, GameStateFactory.StartingZoneId);
+            // The starting stone is pre-marked at run birth — a brand-new
+            // player is never met by a lore sheet before they've done anything.
             Assert.That(Narrative.NextUnreadWaystone(state, _data), Is.Null,
-                "bramble's stone waits behind its trail map");
+                "bramble's stone waits behind its trail map; the starting stone never interrupts");
 
             state.purchasedUpgradeIds.Add("map-bramble");
             Assert.That(Narrative.NextUnreadWaystone(state, _data)?.id, Is.EqualTo("bramble"));

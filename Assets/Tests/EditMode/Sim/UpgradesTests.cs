@@ -136,6 +136,7 @@ namespace Wildgrove.Sim.Tests
             Upgrade("flint-sickle").gateSkill = "foraging";
             Upgrade("flint-sickle").gateLevel = 3;
             var state = GameStateFactory.NewGame(_data); // foraging level 1
+            TestKith.Station(state, state.nodes[0].id, 1);
 
             var bought = Upgrades.TryPurchase(state, _data, Upgrade("flint-sickle"));
 

@@ -85,8 +85,12 @@ namespace Wildgrove.Sim
             next.amber = state.amber;
 
             // Lore stays read: run 2 re-unlocks the zones without re-showing
-            // every stone the warden has already stood before.
-            next.seenWaystoneZoneIds.AddRange(state.seenWaystoneZoneIds);
+            // every stone the warden has already stood before. (NewGame marks
+            // the starting stone itself, so add without duplicating.)
+            foreach (var zoneId in state.seenWaystoneZoneIds)
+            {
+                Narrative.MarkWaystoneRead(next, zoneId);
+            }
 
             // The Almanac is the permanent tree — bought once, kept forever.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);

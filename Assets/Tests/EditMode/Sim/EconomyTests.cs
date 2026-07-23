@@ -148,7 +148,8 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void AdvanceOffline_WithinCap_CreditsFullElapsed()
         {
-            var state = GameStateFactory.NewGame(_data); // a gatherer on the berries node
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state); // a gatherer on the berries node, a carrier home
 
             var credited = Simulation.AdvanceOffline(state, _data, 100.0);
 
@@ -160,6 +161,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOffline_BeyondCap_CreditsCapOnly()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             // Away 10 h, cap 4 h → only 14400 s credited.
             var credited = Simulation.AdvanceOffline(state, _data, 10 * 3600.0);
@@ -173,6 +175,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.offline.rateMultiplier = 0.5;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             var credited = Simulation.AdvanceOffline(state, _data, 100.0);
 

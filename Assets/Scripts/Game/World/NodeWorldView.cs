@@ -7,10 +7,10 @@ namespace Wildgrove.Game.World
     /// One gathering node's world-space sprite: a resource-coloured disc, an
     /// accent ring behind it while the node is selected, a gentle scale pulse
     /// while a Tending burst is live, a golden halo while the post-tend
-    /// Pristine window runs, a small dot per working familiar arced beneath
-    /// it (so a glance shows where the flock is), and a diamond marker when a
-    /// bonded companion works here. Dimmed while nothing works it. Placement
-    /// and per-frame refresh are driven by <see cref="WorldView"/>.
+    /// Pristine window runs, and the assignment badge beneath it — the tiny
+    /// icon of whoever holds the post (one body per node), which is also the
+    /// tap target for posting. Dimmed while nothing works it. Placement and
+    /// per-frame refresh are driven by <see cref="WorldView"/>.
     /// </summary>
     public sealed class NodeWorldView : MonoBehaviour
     {
@@ -26,16 +26,7 @@ namespace Wildgrove.Game.World
         // selection ring still frames it.
         private const float PlateFit = 1.05f;
 
-        // Beyond this the dots stop being countable anyway; the HUD row
-        // carries the exact number.
-        private const int MaxFlockDots = 8;
-        private const float FlockDotScale = 0.14f;
-        private const float FlockArcY = -0.72f;
-        private const float FlockArcHalfWidth = 0.45f;
-
         private static readonly Color HaloColour = new Color(1f, 0.78f, 0.25f, 0.5f);
-        private static readonly Color BondedColour = new Color(1f, 0.72f, 0.2f, 1f);
-        private static readonly Color WardenColour = new Color(0.95f, 0.92f, 0.83f, 1f);
         private static readonly Color LabelColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
         public NodeState Node { get; private set; }
@@ -44,9 +35,7 @@ namespace Wildgrove.Game.World
         private SpriteRenderer _plate;
         private SpriteRenderer _ring;
         private SpriteRenderer _halo;
-        private SpriteRenderer _bondedMarker;
-        private SpriteRenderer _wardenMarker;
-        private SpriteRenderer[] _flockDots;
+        private AssignBadge _badge;
         private TextMesh _label;
         private Color _colour;
         private float _diameter = 1f;
@@ -82,34 +71,14 @@ namespace Wildgrove.Game.World
                 view._plate.transform.localScale = Vector3.one * (longest > 0f ? PlateFit / longest : 1f);
 
                 // The plate is the node's face now — hide the coloured disc so it
-                // doesn't peek around the specimen. Its colour still tints the
-                // flock dots below, so the resource stays glanceable.
+                // doesn't peek around the specimen. Its colour still names the
+                // resource elsewhere, so the id stays glanceable.
                 view._disc.enabled = false;
             }
 
-            // The flock: one small dot per working familiar, arced under the
-            // disc — a darker shade of the resource so it reads as "at" the node.
-            var dotColour = Color.Lerp(colour, Color.black, 0.4f);
-            view._flockDots = new SpriteRenderer[MaxFlockDots];
-            for (var i = 0; i < MaxFlockDots; i++)
-            {
-                var dot = CreateSprite(go.transform, "Flock_" + i, PlaceholderArt.Disc, dotColour, 3);
-                dot.transform.localScale = Vector3.one * FlockDotScale;
-                dot.enabled = false;
-                view._flockDots[i] = dot;
-            }
-
-            view._bondedMarker = CreateSprite(go.transform, "Bonded", PlaceholderArt.Diamond, BondedColour, 3);
-            view._bondedMarker.transform.localScale = Vector3.one * 0.32f;
-            view._bondedMarker.transform.localPosition = new Vector3(0.42f, 0.42f, 0f);
-            view._bondedMarker.enabled = false;
-
-            // The warden's post — a parchment-cream triangle (a little tent)
-            // above the node they stand at.
-            view._wardenMarker = CreateSprite(go.transform, "Warden", PlaceholderArt.Triangle, WardenColour, 3);
-            view._wardenMarker.transform.localScale = Vector3.one * 0.34f;
-            view._wardenMarker.transform.localPosition = new Vector3(-0.42f, 0.46f, 0f);
-            view._wardenMarker.enabled = false;
+            // Who works here — the post's badge, which is also the tap target
+            // for assigning (one body per node, design §2).
+            view._badge = new AssignBadge(go.transform, labelFont);
 
             return view;
         }
@@ -124,12 +93,11 @@ namespace Wildgrove.Game.World
         public void RefreshLabel()
         {
             PlaceholderArt.RefreshLabel(_label);
+            _badge.RefreshMark();
         }
 
-        public void Refresh(bool selected, float time, int workingCount, bool hasBonded, bool wardenPosted)
+        public void Refresh(bool selected, float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon)
         {
-            _wardenMarker.enabled = wardenPosted;
-
             var pulse = Node.tendBurstRemaining > 0.0
                 ? 1f + PulseAmount * Mathf.Sin(time * PulseSpeed)
                 : 1f;
@@ -148,9 +116,9 @@ namespace Wildgrove.Game.World
                 _halo.color = halo;
             }
 
-            // The warden counts as somebody working it — a bare node at the
-            // post shouldn't read as idle.
-            var working = workingCount > 0 || wardenPosted;
+            // One body per post: somebody standing here — warden or familiar —
+            // is what "working" means now.
+            var working = wardenPosted || occupant != null;
             var colour = _colour;
             colour.a = working ? 1f : IdleAlpha;
             _disc.color = colour;
@@ -162,22 +130,7 @@ namespace Wildgrove.Game.World
                 _plate.color = new Color(1f, 1f, 1f, working ? 1f : IdleAlpha);
             }
 
-            // One dot per familiar stationed here (design §2) — a glance shows
-            // where the kith stands.
-            var dots = Mathf.Min(workingCount, MaxFlockDots);
-            for (var i = 0; i < _flockDots.Length; i++)
-            {
-                _flockDots[i].enabled = i < dots;
-                if (i < dots)
-                {
-                    // Spread the visible dots evenly across the arc.
-                    var t = dots == 1 ? 0.5f : i / (float)(dots - 1);
-                    _flockDots[i].transform.localPosition = new Vector3(
-                        Mathf.Lerp(-FlockArcHalfWidth, FlockArcHalfWidth, t), FlockArcY, 0f);
-                }
-            }
-
-            _bondedMarker.enabled = hasBonded;
+            _badge.Refresh(wardenPosted, occupant, occupantIcon);
         }
 
         private static SpriteRenderer CreateSprite(Transform parent, string name, Sprite sprite, Color colour, int sortingOrder)

@@ -6,10 +6,10 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Builds run state from content data: the fresh-run starting zone, and the
-    /// nodes of any zone a trail-map upgrade unlocks later. Every zone opens
-    /// the same way — a gathering node per zone resource, one gatherer seeded
-    /// on the first node and one carrier joining the camp pool ("every region
-    /// opens with one gatherer and one carrier already helping", design §2).
+    /// nodes of any zone a trail-map upgrade unlocks later. A fresh run opens
+    /// with the warden alone, posted on the first node — the kith arrives
+    /// through play (the Ladder's recruit rungs, gift piles, bonds), not at
+    /// birth, so the first minutes are the warden's own hands.
     /// </summary>
     public static class GameStateFactory
     {
@@ -19,23 +19,33 @@ namespace Wildgrove.Sim
         {
             var state = new GameState { rngState = Rng.NewSeed() };
             AddZone(state, data, data.ZonesById[StartingZoneId]);
-            SeedStartingKith(state, data);
             Roster.SyncBonded(state, data);
+            SeedWardenPost(state);
+
+            // The starting zone's waystone stays quiet — a brand-new player
+            // shouldn't meet a lore sheet before they've picked a berry. The
+            // inscription remains readable in the Compendium, and later
+            // zones' stones still show once on arrival.
+            Narrative.MarkWaystoneRead(state, StartingZoneId);
             return state;
         }
 
         /// <summary>
-        /// The land's first gesture (design §4): a vole and a raven arrive
-        /// unasked. The vole takes the first node — the run's single opening
-        /// slot — and the raven rests at camp until a slot opens (or the
-        /// player swaps them: the first stationing choice is the tutorial).
-        /// Player names them on arrival.
+        /// The warden opens the run already standing somewhere (being
+        /// somewhere is the kickstart, design §13) — the first node a
+        /// bonded companion doesn't hold. On a true first run that is the
+        /// first node; after a fold the carried kith rests, so it still is.
         /// </summary>
-        private static void SeedStartingKith(GameState state, GameDataAsset data)
+        private static void SeedWardenPost(GameState state)
         {
-            var firstNode = state.nodes.Count > 0 ? state.nodes[0].id : null;
-            Roster.Recruit(state, data, "meadow-vole", firstNode);
-            Roster.Recruit(state, data, "pack-raven", Familiar.TrailStation);
+            foreach (var node in state.nodes)
+            {
+                if (Stationing.OccupantOf(state, node.id) == null)
+                {
+                    state.wardenPostNodeId = node.id;
+                    return;
+                }
+            }
         }
 
         /// <summary>

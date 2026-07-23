@@ -60,7 +60,6 @@ namespace Wildgrove.Game
         protected string UpgradeRequirement(UpgradeData upgrade) => _hud.Labels.UpgradeRequirement(upgrade);
         protected string BundleHaveLabel(List<ItemAmount> materials) => _hud.Labels.BundleHaveLabel(materials);
         protected string BundleHaveLabel(List<Buildings.MaterialCost> bundle) => _hud.Labels.BundleHaveLabel(bundle);
-        protected List<string> PostedNames(NodeState node) => _hud.Labels.PostedNames(node);
         protected BigDouble NodeBasketCapacity(NodeState node) => _hud.Labels.NodeBasketCapacity(node);
         protected string PlanterDisplayName(PlanterData planter, string targetId) => _hud.Labels.PlanterDisplayName(planter, targetId);
         protected string NodeSkill(string targetId) => _hud.Labels.NodeSkill(targetId);

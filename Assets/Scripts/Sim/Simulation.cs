@@ -137,8 +137,8 @@ namespace Wildgrove.Sim
             Observation.Advance(state, data, deltaSeconds);
 
             // Every familiar earns run XP at its post (design §4) — a trickle
-            // that also feeds Renown (§9). Wanderers earn half (handled in
-            // AddPostXp). Runs each sub-step so offline catch-up credits it too.
+            // that also feeds Renown (§9). Runs each sub-step so offline
+            // catch-up credits it too.
             AccrueFamiliarXp(state, data, deltaSeconds);
         }
 
@@ -281,8 +281,10 @@ namespace Wildgrove.Sim
         /// <summary>
         /// <see cref="Tend(NodeState, EconomyData)"/> plus the deed record —
         /// tending is a warden act, and the Rite's deed slots count it
-        /// (design §7). The driver calls this; the state-less overload stays
-        /// for burst-maths tests.
+        /// (design §7). It no longer moves the warden's post — standing
+        /// somewhere is an explicit assignment now (one body per post, §2).
+        /// The driver calls this; the state-less overload stays for
+        /// burst-maths tests.
         /// </summary>
         public static void Tend(GameState state, GameDataAsset data, NodeState node)
         {
@@ -292,7 +294,6 @@ namespace Wildgrove.Sim
             }
 
             Tend(node, data.economy);
-            state.wardenPostNodeId = node.id;
             Rite.RecordDeed(state, data, "tend");
         }
 

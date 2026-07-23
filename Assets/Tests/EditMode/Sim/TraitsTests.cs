@@ -8,7 +8,7 @@ namespace Wildgrove.Sim.Tests
     /// <summary>
     /// Pins species traits (design §4): each species carries one fixed trait,
     /// applied where its familiar is stationed — the berry specialist at berry
-    /// nodes, the hauler on the trail, the watcher at a site, soft paws for
+    /// nodes, the hauler on the trail, the wanderer watching the sites, soft paws for
     /// Pristine points. Resting familiars contribute nothing; absent species
     /// data no-ops (fixtures).
     /// </summary>
@@ -89,7 +89,7 @@ namespace Wildgrove.Sim.Tests
                 Is.EqualTo(1.25).Within(Tolerance));
             Assert.That(Traits.TrailThroughputFactor(At("meadow-vole", Familiar.TrailStation), _data),
                 Is.EqualTo(1.0).Within(Tolerance), "any familiar can hold the trail, plainly");
-            Assert.That(Traits.DigSpeedFactor(At("tawny-owl", "dig:zone"), _data),
+            Assert.That(Traits.DigSpeedFactor(At("tawny-owl", Familiar.WanderStation), _data),
                 Is.EqualTo(1.4).Within(Tolerance));
         }
 

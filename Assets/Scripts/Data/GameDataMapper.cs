@@ -213,6 +213,7 @@ namespace Wildgrove.Data
                 zone = e.Zone,
                 resource = e.Resource,
                 recipe = e.Recipe,
+                species = e.Species,
                 value = e.Value ?? 0
             };
         }

@@ -51,15 +51,17 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Buy <paramref name="upgrade"/> if it isn't owned and the run clears
-        /// every gate — skill level, tool tier, and material cost — then recompute
-        /// the node multipliers its effects feed. Returns false (no change)
-        /// otherwise, so the caller can leave the button disabled.
+        /// Buy <paramref name="upgrade"/> if it isn't owned, has something
+        /// left to give, and the run clears every gate — skill level, tool
+        /// tier, and material cost — then recompute the node multipliers its
+        /// effects feed. Returns false (no change) otherwise, so the caller
+        /// can leave the button disabled.
         /// </summary>
         public static bool TryPurchase(GameState state, GameDataAsset data, UpgradeData upgrade)
         {
             if (state == null || data == null || upgrade == null
-                || state.HasUpgrade(upgrade.id) || !CanAfford(state, upgrade)
+                || state.HasUpgrade(upgrade.id) || IsSpentRecruit(state, upgrade)
+                || !CanAfford(state, upgrade)
                 || !MeetsToolRequirement(state, data, upgrade)
                 || !MeetsSkillGate(state, data, upgrade))
             {
@@ -73,6 +75,17 @@ namespace Wildgrove.Sim
 
             state.purchasedUpgradeIds.Add(upgrade.id);
 
+            // A recruitSpecies effect answers now: the familiar joins resting
+            // at camp, queueing for the naming sheet like any arrival (each
+            // species joins once, ever — Recruit no-ops on a duplicate).
+            foreach (var effect in upgrade.effects)
+            {
+                if (effect.type == EffectType.RecruitSpecies && !string.IsNullOrEmpty(effect.species))
+                {
+                    Roster.Recruit(state, data, effect.species, null);
+                }
+            }
+
             // A trail map's unlockZone effect takes hold immediately: the new
             // zone's nodes appear (with the design §2 regional seed) before the
             // multipliers are rebuilt so they're covered too. The newly
@@ -80,6 +93,37 @@ namespace Wildgrove.Sim
             GameStateFactory.SyncUnlockedZones(state, data);
             RecomputeYieldMultipliers(state, data);
             Rite.SyncDeedSlots(state, data);
+            return true;
+        }
+
+        /// <summary>
+        /// True when everything this upgrade grants is a recruitSpecies whose
+        /// species already walks with the warden — the rung has nothing left
+        /// to give. Happens after a fold: the kith carries across but the
+        /// ladder resets, and the recruit rungs must not reappear asking
+        /// goods for no one. The Ladder UI hides these and TryPurchase
+        /// refuses them.
+        /// </summary>
+        public static bool IsSpentRecruit(GameState state, UpgradeData upgrade)
+        {
+            if (upgrade?.effects == null || upgrade.effects.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var effect in upgrade.effects)
+            {
+                if (effect.type != EffectType.RecruitSpecies)
+                {
+                    return false;
+                }
+
+                if (Roster.OfSpecies(state, effect.species) == null)
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 

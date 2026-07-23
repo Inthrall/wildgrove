@@ -157,6 +157,8 @@ namespace Wildgrove.Game
                     return "teaches " + effect.recipe;
                 case EffectType.UnlockDigSite:
                     return "opens the watch in " + ZoneName(effect.zone);
+                case EffectType.RecruitSpecies:
+                    return "a " + SpeciesName(effect.species) + " joins the kith";
                 case EffectType.UnlockVerdureForecast:
                     return "reveals the verdure forecast";
                 default:
@@ -196,9 +198,9 @@ namespace Wildgrove.Game
                 return "the trail";
             }
 
-            if (stationId.StartsWith(Familiar.DigStationPrefix))
+            if (stationId == Familiar.WanderStation)
             {
-                return "watch: " + ZoneName(stationId.Substring(Familiar.DigStationPrefix.Length));
+                return "wandering";
             }
 
             foreach (var node in _loop.State.nodes)
@@ -267,22 +269,6 @@ namespace Wildgrove.Game
         internal string BundleHaveLabel(List<Buildings.MaterialCost> bundle)
         {
             return BundleHaveLabel(Costs(bundle));
-        }
-
-        internal List<string> PostedNames(NodeState node)
-        {
-            var names = new List<string>();
-            if (Warden.PostNodeId(_loop.State) == node.id)
-            {
-                names.Add("the warden");
-            }
-
-            foreach (var familiar in Stationing.AssignedTo(_loop.State, node.id))
-            {
-                names.Add(familiar.name);
-            }
-
-            return names;
         }
 
         internal BigDouble NodeBasketCapacity(NodeState node)

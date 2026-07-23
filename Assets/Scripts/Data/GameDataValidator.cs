@@ -1302,6 +1302,14 @@ namespace Wildgrove.Data
                 case EffectType.OfflineNightFullRate:
                     break;
 
+                case EffectType.RecruitSpecies:
+                    if (effect.Species == null || !data.SpeciesById.ContainsKey(effect.Species))
+                    {
+                        issues.Add($"{owner} recruits unknown species '{effect.Species}'");
+                    }
+
+                    break;
+
                 default:
                     // A new EffectType was added to the enum but not given a rule here.
                     issues.Add($"{owner} has effect type '{effect.Type}' with no validation rule");

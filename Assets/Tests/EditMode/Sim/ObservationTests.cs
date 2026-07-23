@@ -6,8 +6,9 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins design §6 observation: trail maps open observation sites, stationed
-    /// watchers record field sketches (rate rolls + the pity guarantee, both
+    /// Pins design §6 observation: trail maps open observation sites, the
+    /// wanderer passes them all as it roams (the watch is not a post of its
+    /// own) and records field sketches (rate rolls + the pity guarantee, both
     /// from the run's saved rng), sketches complete an insect plate whose
     /// permanent effects go live at once, and a fully-recorded site falls quiet.
     /// </summary>
@@ -96,15 +97,15 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(state.digSites, Has.Count.EqualTo(1));
             Assert.That(state.digSites[0].zoneId, Is.EqualTo("old-growth-wood"));
-            // Sites open empty — a digger is stationed there, never seeded.
-            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));
+            // Sites open unwatched — the wanderer is sent, never seeded.
+            Assert.That(Stationing.Wandering(state), Is.EqualTo(0));
         }
 
         [Test]
         public void Advance_WatcherAtACertainRate_SurfacesASketch()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -129,7 +130,7 @@ namespace Wildgrove.Sim.Tests
             // Effectively-zero rate: only the pity guarantee can drop.
             _data.economy.observation.baseSketchesPerHour = 1e-12;
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
 
             Simulation.Advance(state, _data, 4.5 * 3600.0);
 
@@ -143,7 +144,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CompletingAPlate_GrantsItsEffectsImmediately()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
             state.insectSketches["stags-herald"] = 2;
 
             Simulation.Advance(state, _data, 1.0);
@@ -161,7 +162,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_FullyRecordedSite_FallsQuietWithoutBurningRng()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
             state.insectSketches["stags-herald"] = 3; // already assembled
             var seedBefore = state.rngState;
 
@@ -183,7 +184,7 @@ namespace Wildgrove.Sim.Tests
                 sketches = 5, habitats = new List<string> { "old-growth-wood" }, rarity = 0.35,
             });
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
             state.insectSketches["stags-herald"] = 3; // assembled — out of the pick
 
             Simulation.Advance(state, _data, 1.0);
@@ -220,15 +221,17 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void StationedWatchers_CountTowardTheSite()
+        public void TheWanderer_IsTheWatcher_AtEverySite()
         {
             var state = NewGameWithDigSite();
-            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(0));
+            Assert.That(Stationing.WanderAgents(state, _data), Is.EqualTo(0.0).Within(Tolerance));
 
-            // Diggers are stationed (design §2) — no cost, no cap, just where the kith stands.
-            TestKith.Station(state, Familiar.DigStationPrefix + "old-growth-wood", 2);
+            // The wander post supplies the watching (design §2) — one roaming
+            // familiar covers every unlocked site.
+            TestKith.Station(state, Familiar.WanderStation, 1);
 
-            Assert.That(Stationing.AtDigSite(state, "old-growth-wood"), Is.EqualTo(2));
+            Assert.That(Stationing.Wandering(state), Is.EqualTo(1));
+            Assert.That(Stationing.WanderAgents(state, _data), Is.EqualTo(1.0).Within(Tolerance));
         }
     }
 }

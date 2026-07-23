@@ -73,6 +73,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.quality.fineChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 2.0);
 
@@ -87,6 +88,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.quality.pristineBaseChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 2.0);
 
@@ -101,6 +103,7 @@ namespace Wildgrove.Sim.Tests
             // Both chances 0 (the fixture default) — the system is off, the
             // way every pre-quality fixture in the suite runs.
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             var seedBefore = state.rngState;
 
             Simulation.Advance(state, _data, 2.0);
@@ -184,6 +187,7 @@ namespace Wildgrove.Sim.Tests
             _data.economy.quality.fineChance = 1.0;
             _data.economy.hauling.baseCarryCapacity = 1e9;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 

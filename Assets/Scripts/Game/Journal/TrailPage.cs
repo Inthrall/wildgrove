@@ -12,17 +12,18 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Trail page — the zones' node plates, the trail-home carrier row, the
-    /// watch plates, the Rite's verse cards and waystone footer, and the kith
-    /// roster & posts card. The land the warden works, top to bottom.
+    /// The Trail page — the zones' node plates, the trail-home carrier row,
+    /// the watch planter cards, the Rite's verse cards and waystone footer,
+    /// and the kith roster card. Posting lives on the world strip's badges
+    /// now (one body per post), so the plates here carry only the land's own
+    /// business: yields, baskets, replanting, piles, planters.
     /// </summary>
     internal sealed class TrailPage : JournalSection
     {
         internal TrailPage(GameHud hud) : base(hud) { }
 
-        // Posting/naming sheets live in JournalSheets; forwarded so the builder
-        // bodies below read as they did on GameHud.
-        private void OpenPostingSheet(string stationId) => _hud.Sheets.OpenPostingSheet(stationId);
+        // Naming/stationing sheets live in JournalSheets; forwarded so the
+        // builder bodies below read as they did on GameHud.
         private void OpenNamingSheet(Familiar familiar) => _hud.Sheets.OpenNamingSheet(familiar);
         private void Station(Familiar familiar, string stationId) => _hud.Sheets.Station(familiar, stationId);
 
@@ -117,15 +118,6 @@ namespace Wildgrove.Game
             });
 
             var nameLine = MakeText(card, string.Empty, 26, TextAnchor.MiddleLeft, Ink, _serif);
-            var postedLine = MakeText(card, string.Empty, 21, TextAnchor.MiddleLeft, Ink2, _hand);
-            // Posting happens where the land is — tapping the line opens the
-            // who-walks-here sheet for this node; fallow draws it as an empty
-            // post (dashed outline) waiting to be filled in.
-            var postedButton = postedLine.gameObject.AddComponent<Button>();
-            postedButton.transition = Selectable.Transition.None;
-            postedButton.onClick.AddListener(() => OpenPostingSheet(captured.id));
-            postedLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            var postedDashes = AddDashedBorder(postedLine.gameObject);
 
             // Gift piles (design §4): while a verse-earned pile waits, a node
             // whose specialist hasn't joined offers a dashed pile line — where
@@ -223,24 +215,6 @@ namespace Wildgrove.Game
                 nameLine.text = captured.resourceId + rich;
                 cardImage.color = captured == _selected ? MossWash : CardPaper;
 
-                var names = PostedNames(captured);
-                if (names.Count > 0)
-                {
-                    postedLine.font = _hand;
-                    postedLine.fontSize = Mathf.RoundToInt(21 * FontScale);
-                    postedLine.text = "posted: " + string.Join(", ", names);
-                    postedDashes.SetActive(false);
-                }
-                else
-                {
-                    // Fallow is state, not flavour — body type, with the way
-                    // out inked where the player is already looking.
-                    postedLine.font = _font;
-                    postedLine.fontSize = Mathf.RoundToInt(17 * FontScale);
-                    postedLine.text = "<color=" + OchreInkHex + ">+  post someone here</color>";
-                    postedDashes.SetActive(true);
-                }
-
                 var caller = _loop.GiftAvailable() ? _loop.GiftSpeciesFor(captured) : null;
                 if (caller != null)
                 {
@@ -314,11 +288,9 @@ namespace Wildgrove.Game
             var dotRect = (RectTransform)dot.transform;
             dotRect.sizeDelta = new Vector2(14f, 14f);
 
+            // Plain status — the carrier is posted from the strip's trail
+            // badge now, so this line only reports the walk.
             var status = MakeText(rowGo.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
-            var statusButton = status.gameObject.AddComponent<Button>();
-            statusButton.transition = Selectable.Transition.None;
-            statusButton.onClick.AddListener(() => OpenPostingSheet(Familiar.TrailStation));
-            var statusDashes = AddDashedBorder(status.gameObject);
 
             _frameUpdaters.Add(() =>
             {
@@ -339,58 +311,40 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                var names = new List<string>();
-                foreach (var familiar in Stationing.AssignedTo(_loop.State, Familiar.TrailStation))
-                {
-                    names.Add(familiar.name);
-                }
-
-                if (names.Count > 0)
-                {
-                    status.text = string.Join(", ", names) + " carrying";
-                    statusDashes.SetActive(false);
-                }
-                else
-                {
-                    status.text = "<color=" + OchreInkHex + ">+ send a carrier</color>";
-                    statusDashes.SetActive(true);
-                }
+                var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
+                status.text = carrier != null
+                    ? carrier.name + " carrying"
+                    : "<color=" + OchreInkHex + ">no carrier walks</color>";
             });
         }
 
+        /// <summary>
+        /// The watch is not a post any more — the wanderer passes each site
+        /// as it roams. The card survives only as the home of the site's
+        /// planters, with a one-line note on whether anyone wanders.
+        /// </summary>
         private void BuildWatchPlate(DigSiteState site)
         {
+            if (!_loop.PlantersUnlocked() || _loop.DigSitePlanters().Count == 0)
+            {
+                return;
+            }
+
             var captured = site;
             var card = Card("THE WATCH · " + ZoneName(site.zoneId).ToUpperInvariant());
             var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
-            var lineButton = line.gameObject.AddComponent<Button>();
-            lineButton.transition = Selectable.Transition.None;
-            lineButton.onClick.AddListener(() => OpenPostingSheet(Familiar.DigStationPrefix + captured.zoneId));
-            line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            var lineDashes = AddDashedBorder(line.gameObject);
 
-            if (_loop.PlantersUnlocked() && _loop.DigSitePlanters().Count > 0)
+            var actions = ActionRow(card);
+            foreach (var planter in _loop.DigSitePlanters())
             {
-                var actions = ActionRow(card);
-                foreach (var planter in _loop.DigSitePlanters())
-                {
-                    AddPlanterAction(actions, planter, captured.zoneId);
-                }
+                AddPlanterAction(actions, planter, captured.zoneId);
             }
 
             _liveUpdaters.Add(() =>
             {
-                var watchers = Stationing.AtDigSite(_loop.State, captured.zoneId);
-                if (watchers > 0)
-                {
-                    line.text = watchers + " watching where the small lives cross";
-                    lineDashes.SetActive(false);
-                }
-                else
-                {
-                    line.text = "<color=" + OchreInkHex + ">+ station a watcher</color>";
-                    lineDashes.SetActive(true);
-                }
+                line.text = Stationing.Wandering(_loop.State) > 0
+                    ? "the wanderer passes through, watching where the small lives cross"
+                    : "<color=" + OchreInkHex + ">no one wanders — the small lives go unrecorded</color>";
             });
         }
 
@@ -689,6 +643,19 @@ namespace Wildgrove.Game
                 var slots = _loop.KithSlots();
                 slotsLine.text = "<i>" + walking + " of " + slots + " posts walked · "
                                  + _loop.KithCount() + " companions</i>";
+            });
+
+            // The first minutes are the warden alone — steer the empty roster
+            // at the Ladder's first recruit rung (a pile of a hundred berries).
+            var lonelyLine = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2, _hand);
+            _liveUpdaters.Add(() =>
+            {
+                var alone = _loop.KithCount() == 0;
+                lonelyLine.gameObject.SetActive(alone);
+                if (alone)
+                {
+                    lonelyLine.text = "the work is lonely. a pile of berries might tempt company — see the Ladder, at camp.";
+                }
             });
 
             foreach (var familiar in _loop.State.roster)

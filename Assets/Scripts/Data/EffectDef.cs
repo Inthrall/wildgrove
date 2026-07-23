@@ -22,7 +22,10 @@ namespace Wildgrove.Data
         UnlockDigSite,
 
         /// <summary>Reveals the live Verdure forecast (the Almanac Desk). Migration itself is gated by the Rite, not an upgrade.</summary>
-        UnlockVerdureForecast
+        UnlockVerdureForecast,
+
+        /// <summary>A familiar of <see cref="EffectDef.Species"/> joins the kith when the upgrade is taken (resting at camp, named on arrival). No-op if that species already walks — each joins once, ever.</summary>
+        RecruitSpecies
     }
 
     /// <summary>
@@ -36,6 +39,7 @@ namespace Wildgrove.Data
         public string Zone { get; set; }
         public string Resource { get; set; }
         public string Recipe { get; set; }
+        public string Species { get; set; }
         public double? Value { get; set; }
     }
 }

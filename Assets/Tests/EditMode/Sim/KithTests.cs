@@ -58,9 +58,9 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
 
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(1));
-            Assert.That(Kith.Count(state), Is.EqualTo(2), "the seed vole and raven both belong");
-            Assert.That(Kith.Walking(state), Is.EqualTo(1), "only the vole found a post");
-            Assert.That(Kith.HasRoom(state, _data), Is.False);
+            Assert.That(Kith.Count(state), Is.EqualTo(0), "no one at birth — the kith arrives through play");
+            Assert.That(Kith.Walking(state), Is.EqualTo(0));
+            Assert.That(Kith.HasRoom(state, _data), Is.True, "the opening slot waits for the first friend");
         }
 
         [Test]
@@ -143,42 +143,57 @@ namespace Wildgrove.Sim.Tests
         public void Recruit_ASpeciesAlreadyWalking_ReturnsNullAndAddsNoOne()
         {
             var state = GameStateFactory.NewGame(_data);
+            Roster.Recruit(state, _data, "meadow-vole", null);
 
             var duplicate = Roster.Recruit(state, _data, "meadow-vole", null);
 
             Assert.That(duplicate, Is.Null);
-            Assert.That(state.roster.Count, Is.EqualTo(2), "one familiar per species, ever");
+            Assert.That(state.roster.Count, Is.EqualTo(1), "one familiar per species, ever");
         }
 
         [Test]
         public void Recruit_WhenEverySlotIsHeld_JoinsTheCollectionResting()
         {
             var state = GameStateFactory.NewGame(_data);
-            Assert.That(Kith.HasRoom(state, _data), Is.False);
+            Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
+            Assert.That(Kith.HasRoom(state, _data), Is.False, "the vole holds the only slot");
 
-            var recruit = Roster.Recruit(state, _data, "holt-otter", state.nodes[0].id);
+            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.TrailStation);
 
             Assert.That(recruit, Is.Not.Null, "the collection is never slot-capped");
             Assert.That(recruit.IsResting, Is.True, "no slot open — the post request is quietly dropped");
-            Assert.That(state.roster.Count, Is.EqualTo(3));
+            Assert.That(state.roster.Count, Is.EqualTo(2));
         }
 
         [Test]
-        public void Recruit_WithASlotOpen_TakesTheRequestedPost()
+        public void Recruit_WithASlotOpenAndThePostFree_TakesIt()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.TrailStation);
+
+            Assert.That(recruit.stationId, Is.EqualTo(Familiar.TrailStation));
+        }
+
+        [Test]
+        public void Recruit_AHeldPost_JoinsRestingInstead()
         {
             var state = GameStateFactory.NewGame(_data);
             state.foldedVersesSung = 2;
 
+            // The warden holds the first node — an arrival never bumps anyone.
             var recruit = Roster.Recruit(state, _data, "holt-otter", state.nodes[0].id);
 
-            Assert.That(recruit.stationId, Is.EqualTo(state.nodes[0].id));
+            Assert.That(recruit.IsResting, Is.True);
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[0].id));
         }
 
         [Test]
         public void Station_ARestingFamiliarWithNoRoom_IsRefused()
         {
             var state = GameStateFactory.NewGame(_data);
-            var raven = Roster.OfSpecies(state, "pack-raven");
+            Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
+            var raven = Roster.Recruit(state, _data, "pack-raven", null);
             Assert.That(raven.IsResting, Is.True);
 
             Assert.That(Roster.Station(state, _data, raven, Familiar.TrailStation), Is.False);
@@ -189,7 +204,7 @@ namespace Wildgrove.Sim.Tests
         public void Station_AWalkingFamiliar_MovesFreelyAndRestsFreely()
         {
             var state = GameStateFactory.NewGame(_data);
-            var vole = Roster.OfSpecies(state, "meadow-vole");
+            var vole = Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
 
             Assert.That(Roster.Station(state, _data, vole, Familiar.TrailStation), Is.True,
                 "a held slot moves post to post without asking again");
@@ -202,13 +217,85 @@ namespace Wildgrove.Sim.Tests
         public void Station_AfterOneRests_TheOtherTakesTheSlot()
         {
             var state = GameStateFactory.NewGame(_data);
-            var vole = Roster.OfSpecies(state, "meadow-vole");
-            var raven = Roster.OfSpecies(state, "pack-raven");
+            var vole = Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
+            var raven = Roster.Recruit(state, _data, "pack-raven", null);
 
             Roster.Station(state, _data, vole, null);
 
             Assert.That(Roster.Station(state, _data, raven, Familiar.TrailStation), Is.True,
                 "the swap is the point of the ladder");
+        }
+
+        [Test]
+        public void Station_AHeldPost_SwapsTheHolderOutWithoutNeedingRoom()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var vole = Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
+            var raven = Roster.Recruit(state, _data, "pack-raven", null);
+            Assert.That(Kith.HasRoom(state, _data), Is.False, "one slot, and the vole holds it");
+
+            Assert.That(Roster.Station(state, _data, raven, state.nodes[1].id), Is.True,
+                "swapping in frees the holder's slot in the same move");
+
+            Assert.That(raven.stationId, Is.EqualTo(state.nodes[1].id));
+            Assert.That(vole.IsResting, Is.True, "one body per post — the vole steps back");
+            Assert.That(Kith.Walking(state), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Station_TheWardensNode_SendsTheWardenToCamp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var vole = Roster.Recruit(state, _data, "meadow-vole", null);
+            var wardenNode = Warden.PostNodeId(state);
+            Assert.That(wardenNode, Is.EqualTo(state.nodes[0].id), "the warden opens on the first node");
+
+            Assert.That(Roster.Station(state, _data, vole, wardenNode), Is.True);
+
+            Assert.That(vole.stationId, Is.EqualTo(wardenNode));
+            Assert.That(Warden.PostNodeId(state), Is.Null, "one body per post — the warden walks back to camp");
+        }
+
+        [Test]
+        public void TryPurchase_ARecruitRung_CallsTheFamiliarResting()
+        {
+            var rung = new UpgradeData
+            {
+                order = 1, id = "first-friend",
+                materials = { new ItemAmount { id = "berries", amount = 100 } },
+                effects = { new EffectData { type = EffectType.RecruitSpecies, species = "meadow-vole" } },
+            };
+            _data.upgrades = new List<UpgradeData> { rung };
+            var state = GameStateFactory.NewGame(_data);
+            state.resources["berries"] = 120;
+
+            Assert.That(Upgrades.TryPurchase(state, _data, rung), Is.True);
+
+            var vole = Roster.OfSpecies(state, "meadow-vole");
+            Assert.That(vole, Is.Not.Null, "the pile is answered");
+            Assert.That(vole.IsResting, Is.True, "the arrival waits to be posted from the strip");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(20.0));
+        }
+
+        [Test]
+        public void TryPurchase_ARecruitRungAlreadyAnswered_IsSpentAndRefused()
+        {
+            var rung = new UpgradeData
+            {
+                order = 1, id = "first-friend",
+                materials = { new ItemAmount { id = "berries", amount = 100 } },
+                effects = { new EffectData { type = EffectType.RecruitSpecies, species = "meadow-vole" } },
+            };
+            _data.upgrades = new List<UpgradeData> { rung };
+            var state = GameStateFactory.NewGame(_data);
+            // The kith crossed a fold: the vole already walks, the ladder reset.
+            Roster.Recruit(state, _data, "meadow-vole", null);
+            state.resources["berries"] = 120;
+
+            Assert.That(Upgrades.IsSpentRecruit(state, rung), Is.True);
+            Assert.That(Upgrades.TryPurchase(state, _data, rung), Is.False,
+                "a rung with nothing left to give must not take the goods");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(120.0));
         }
 
         [Test]
@@ -223,7 +310,7 @@ namespace Wildgrove.Sim.Tests
                 },
             };
             var state = GameStateFactory.NewGame(_data);
-            var vole = Roster.OfSpecies(state, "meadow-vole");
+            var vole = Roster.Recruit(state, _data, "meadow-vole", null);
             Roster.Rename(vole, "Pip");
 
             state.almanacNodeIds.Add("old-friend");
@@ -232,7 +319,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(vole.bonded, Is.True);
             Assert.That(vole.bondId, Is.EqualTo("burr"));
             Assert.That(vole.name, Is.EqualTo("Pip"), "the bond honours the companion, it doesn't rename it");
-            Assert.That(state.roster.Count, Is.EqualTo(2), "no duplicate vole is minted");
+            Assert.That(state.roster.Count, Is.EqualTo(1), "no duplicate vole is minted");
         }
 
         [Test]
@@ -247,6 +334,7 @@ namespace Wildgrove.Sim.Tests
                 },
             };
             var state = GameStateFactory.NewGame(_data);
+            Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
             Assert.That(Kith.HasRoom(state, _data), Is.False);
 
             state.almanacNodeIds.Add("old-friend");

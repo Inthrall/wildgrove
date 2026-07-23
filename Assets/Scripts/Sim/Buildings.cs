@@ -150,7 +150,7 @@ namespace Wildgrove.Sim
         /// Familiar-comfort XP multiplier from the Roosts line (design §4:
         /// "the building line levels familiar comfort — +XP rate for all
         /// stationed familiars per level"): 1 + perLevel value per bought
-        /// level. Wanderers sleep rough — comfort never reaches them.
+        /// level. Resting familiars earn nothing, so nothing to comfort.
         /// </summary>
         public static double ComfortXpMultiplier(GameState state, GameDataAsset data)
         {

@@ -4,10 +4,11 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// The observation tick (design §6): familiars set to a zone's observation
-    /// site watch what lives there and record it, adding a field sketch at
-    /// watchers · baseSketchesPerHour · digSpeedMult · the site's summed
-    /// unrecorded rarity; a pity timer guarantees a sketch once
+    /// The observation tick (design §6): the wanderer passes every zone's
+    /// observation site as it roams (the watch is no longer a post of its
+    /// own), watching what lives there and recording it — adding a field
+    /// sketch at watchers · baseSketchesPerHour · digSpeedMult · the site's
+    /// summed unrecorded rarity; a pity timer guarantees a sketch once
     /// pityTimerHoursWatched hours pass without one. Which insect the sketch
     /// belongs to is a rarity-weighted pick among the site's unrecorded plates
     /// — a recorded plate stops appearing, and a site with nothing left to
@@ -25,18 +26,19 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            // The wander post supplies the watching (design §2) — one roaming
+            // familiar covers every unlocked site, its dig-speed trait folded
+            // in via Stationing.WanderAgents. No wanderer, no sketches (and no
+            // rng drawn, so sequences match the idle-site behaviour).
+            var watchers = Stationing.WanderAgents(state, data);
+            if (watchers <= 0.0)
+            {
+                return;
+            }
+
             var digMult = Upgrades.DigSpeedMultiplier(state, data);
             foreach (var site in state.digSites)
             {
-                // Watchers are the roster familiars stationed at this site
-                // (design §2); their per-familiar dig-speed powerups fold into
-                // the count via Stationing.DigAgentsAt.
-                var watchers = Stationing.DigAgentsAt(state, data, site.zoneId);
-                if (watchers <= 0.0)
-                {
-                    continue;
-                }
-
                 // Reed-screen planters (design §3) steady this site's sketching.
                 var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
 

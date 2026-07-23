@@ -43,7 +43,7 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v15–v18 wire name for the warden's post — read only by the v18→v19 migration.</summary>
         public string bondedPostNodeId;
 
-        /// <summary>v19+: the warden's post (null = the first node; the bonded gatherers work at the warden's side).</summary>
+        /// <summary>v19+: the warden's post. v19–v26 null meant "the first node" (the v26→v27 migration writes that in); v27+ null means the warden stands at camp.</summary>
         public string wardenPostNodeId;
 
         /// <summary>v17+: Amber (absent before the amber system — none held).</summary>

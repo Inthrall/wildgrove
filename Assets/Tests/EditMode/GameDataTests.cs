@@ -27,8 +27,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(29),
-                "design doc §9 defines 30 named upgrades; Mistfen's trail map is held back until the zone's v1.1 companions (skills, dig site, waystone) ship with it");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(31),
+                "design doc §9 defines 30 named upgrades; Mistfen's trail map is held back until the zone's v1.1 companions (skills, dig site, waystone) ship with it, and the kith track adds the two recruit rungs");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);

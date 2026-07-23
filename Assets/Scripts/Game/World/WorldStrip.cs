@@ -13,8 +13,45 @@ namespace Wildgrove.Game.World
     public static class WorldStrip
     {
         // Beyond this many sprites a single row turns into confetti — wrap to
-        // two. (Three zones ≈ 10 nodes; four zones plus dig sites ≈ 15.)
+        // two. (Three zones ≈ 10 nodes; four zones plus the trail and wander
+        // posts ≈ 15.)
         public const int MaxPerRow = 8;
+
+        /// <summary>The assignment badge's centre, in diameters below a post sprite's centre.</summary>
+        public const float BadgeOffsetFactor = -0.72f;
+
+        /// <summary>The badge's drawn radius, in diameters (its hit circle is a little forgiving — see <see cref="BadgeHitIndex"/>).</summary>
+        public const float BadgeRadiusFactor = 0.22f;
+
+        // Fingers are blunter than the badge is drawn — the hit circle gets
+        // slop, like the plates' HitSlop, without colliding into the plate
+        // circle above.
+        private const float BadgeHitSlop = 1.5f;
+
+        /// <summary>
+        /// Index of the post whose assignment badge is under
+        /// <paramref name="point"/>, or -1 for a miss. Badges hang
+        /// <see cref="BadgeOffsetFactor"/> below each centre; callers check
+        /// this BEFORE the plate hit so the badge wins the overlap band.
+        /// </summary>
+        public static int BadgeHitIndex(Vector2[] centres, float diameter, Vector2 point)
+        {
+            var offset = new Vector2(0f, BadgeOffsetFactor * diameter);
+            var radius = BadgeRadiusFactor * diameter * BadgeHitSlop;
+            var best = -1;
+            var bestSqr = radius * radius;
+            for (var i = 0; i < centres.Length; i++)
+            {
+                var sqr = (centres[i] + offset - point).sqrMagnitude;
+                if (sqr <= bestSqr)
+                {
+                    best = i;
+                    bestSqr = sqr;
+                }
+            }
+
+            return best;
+        }
 
         /// <summary>Rows the strip lays out in — one until crowded, then two.</summary>
         public static int Rows(int count)

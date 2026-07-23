@@ -31,9 +31,8 @@ namespace Wildgrove.Sim.Tests
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // One carrier moves 0.5 units/sec — half a lone gatherer's rate,
-                // so the bottleneck binds immediately.
-                // Two slots so the factory stations both seeds (vole + raven) —
-                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                // so the bottleneck binds immediately. (Crowds are staged via
+                // TestKith — a fresh run opens with the warden alone.)
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1.0, tripSeconds = 2.0, basketCapacity = 10.0 },
             };
@@ -66,6 +65,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CarriersSlowerThanGathering_SplitsBetweenCampAndBasket()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 4.0);
 
@@ -80,6 +80,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.hauling.basketCapacity = 2.0;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -94,7 +95,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_NoCarriers_NothingReachesCamp()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.IsOnTrail);
+            TestKith.Station(state, state.nodes[0].id, 1);
 
             Simulation.Advance(state, _data, 5.0);
 
@@ -106,6 +107,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_HaulMultUpgrade_RaisesThroughput()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             state.purchasedUpgradeIds.Add("waxed-satchel");
 
             Simulation.Advance(state, _data, 4.0);
@@ -120,6 +122,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CarriersAlternateBetweenEquallyBusyNodes()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             TestKith.Station(state, state.nodes[1].id, 1); // both nodes gathering at 1/s
 
             Simulation.Advance(state, _data, 4.0);
@@ -136,6 +139,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_NothingReachesCampBetweenDeliveries()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 3.0);
 
@@ -149,7 +153,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_ADeliveryIsOneResource()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
+            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier and two waiting baskets
             state.nodes[0].basket = new BigDouble(5.0);
             state.nodes[1].basket = new BigDouble(2.0);
 
@@ -166,8 +170,12 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Advance_MoreCarriers_ShortenTheDeliveryCadence()
         {
+            // Two on the trail is unreachable through play now (one body per
+            // post) — but the cadence maths also carries trait-boosted lanes,
+            // so the aggregate stays pinned with a staged pair.
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, Familiar.TrailStation, 1); // second carrier: a delivery every 1 s
+            TestKith.StageGathererAndCarrier(state);
+            TestKith.Station(state, Familiar.TrailStation, 1); // second lane: a delivery every 1 s
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -178,7 +186,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_IdleCarriers_DoNotBankTripProgress()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id); // nothing gathering anywhere
+            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier, nothing gathering anywhere
 
             Simulation.Advance(state, _data, 10.0);
             state.nodes[0].basket = new BigDouble(5.0);
@@ -197,7 +205,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_PartialLoad_DeliversWhatIsWaiting()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
+            TestKith.Station(state, Familiar.TrailStation, 1);
             state.nodes[0].basket = new BigDouble(0.4);
 
             Simulation.Advance(state, _data, 2.0);
@@ -213,6 +221,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.hauling.basketCapacity = 2.0;
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.AdvanceOffline(state, _data, 100.0);
 

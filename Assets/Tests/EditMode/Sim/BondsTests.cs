@@ -109,7 +109,7 @@ namespace Wildgrove.Sim.Tests
         public void SyncBonded_HonoursTheExistingCompanionOfTheSpecies()
         {
             var state = GameStateFactory.NewGame(_data);
-            var seedRaven = Roster.OfSpecies(state, "pack-raven");
+            var seedRaven = Roster.Recruit(state, _data, "pack-raven", null);
             var count = state.roster.Count;
             state.fixedResources.Add("berries");
             state.fixedResources.Add("nuts");

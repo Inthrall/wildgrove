@@ -144,8 +144,8 @@ namespace Wildgrove.Game
             // Keyboard/gamepad hint only where one can exist — on a phone the
             // margin note is flavour, not a manual for keys it doesn't have.
             SetNote(Application.isMobilePlatform
-                ? "tap a node's plate to tend it"
-                : "tap a node's plate to tend it · space / (A) tends the selected node");
+                ? "tap a plate to tend it · tap the badge below to post someone"
+                : "tap a plate to tend it · tap the badge below to post someone · space / (A) tends the selected node");
         }
 
         private void Update()
@@ -666,6 +666,16 @@ namespace Wildgrove.Game
             {
                 if (screenPosition.HasValue)
                 {
+                    // The badge under a post (and the trail/wander plates) is
+                    // the assign gesture — checked before the tend hit so the
+                    // badge wins the band where the two circles brush.
+                    var station = _world != null ? _world.StationAtScreenPoint(screenPosition.Value) : null;
+                    if (station != null)
+                    {
+                        _sheets.OpenPostingSheet(station);
+                        return;
+                    }
+
                     var node = _world != null ? _world.NodeAtScreenPoint(screenPosition.Value) : null;
                     if (node != null)
                     {
@@ -689,7 +699,7 @@ namespace Wildgrove.Game
         {
             _loop.Tend(node);
             _flashAges[node.id] = 0f;
-            SetNote("turned the soil at the " + node.resourceId + ". the warden works here now.");
+            SetNote("turned the soil at the " + node.resourceId + ".");
         }
 
         // ─────────────────────────── Body ────────────────────────────────────

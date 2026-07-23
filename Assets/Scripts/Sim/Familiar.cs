@@ -19,7 +19,15 @@ namespace Wildgrove.Sim
         /// <summary>The trail-post station id — hauling is a post, not a species (§2).</summary>
         public const string TrailStation = "trail";
 
-        /// <summary>Prefix for a dig-site station id: "dig:{zoneId}".</summary>
+        /// <summary>
+        /// The wander-post station id: its holder roams the run's nodes,
+        /// gathering a little of everything and watching the small lives at
+        /// every observation site along the way (the watch is no longer a
+        /// post of its own).
+        /// </summary>
+        public const string WanderStation = "wander";
+
+        /// <summary>Legacy prefix for a pre-v27 dig-site station id ("dig:{zoneId}") — read only by save migration; the watch stopped being a post.</summary>
         public const string DigStationPrefix = "dig:";
 
         /// <summary>Stable per-run roster id (e.g. "fam-1"), minted by <see cref="GameState.NextFamiliarId"/>.</summary>
@@ -39,9 +47,10 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Where this familiar is stationed: a node id, <see cref="TrailStation"/>,
-        /// a <see cref="DigStationPrefix"/> site, or null/empty when it rests at
-        /// camp. A stationed familiar holds one of the kith's slots (§4 ladder);
-        /// a resting one works nothing and earns nothing, waiting to be called.
+        /// <see cref="WanderStation"/>, or null/empty when it rests at camp.
+        /// Every post holds at most ONE body — warden or familiar (§2). A
+        /// stationed familiar holds one of the kith's slots (§4 ladder); a
+        /// resting one works nothing and earns nothing, waiting to be called.
         /// </summary>
         public string stationId;
 
@@ -59,5 +68,8 @@ namespace Wildgrove.Sim
 
         /// <summary>True when stationed at the trail post (holding a haul lane, gathering nothing).</summary>
         public bool IsOnTrail => stationId == TrailStation;
+
+        /// <summary>True when stationed at the wander post (roaming every node and watch site).</summary>
+        public bool IsWandering => stationId == WanderStation;
     }
 }

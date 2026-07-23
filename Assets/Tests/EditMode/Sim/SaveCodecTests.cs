@@ -89,7 +89,7 @@ namespace Wildgrove.Sim.Tests
             state.nodes[1].richnessLevel = 4;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
-            TestKith.Station(state, state.nodes[1].id, 3);
+            TestKith.Station(state, state.nodes[1].id, 1);
 
             var restored = RoundTrip(state);
 
@@ -99,9 +99,11 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.nodes[1].richnessLevel, Is.EqualTo(4));
             Assert.That(restored.nodes[1].basket.ToDouble(), Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.nodes[2].tendBurstRemaining, Is.EqualTo(1.5).Within(Tolerance));
-            // The kith round-trips: 3 stationed at node 1, plus the seed vole at node 0.
-            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[1].id), Is.EqualTo(3));
-            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[0].id), Is.EqualTo(1));
+            // The kith round-trips: the gatherer keeps its post (one body per
+            // post — the warden's seed node stays the warden's).
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[1].id), Is.EqualTo(1));
+            Assert.That(Stationing.CountAssignedTo(restored, restored.nodes[0].id), Is.EqualTo(0));
+            Assert.That(restored.wardenPostNodeId, Is.EqualTo(restored.nodes[0].id));
         }
 
         [Test]
@@ -168,7 +170,7 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.UpgradesById["map-bramble"]);
             var nuts = state.nodes.Single(n => n.resourceId == "nuts");
-            TestKith.Station(state, nuts.id, 4);
+            TestKith.Station(state, nuts.id, 1);
 
             var restored = RoundTrip(state);
 
@@ -176,7 +178,7 @@ namespace Wildgrove.Sim.Tests
             // there round-trips through the roster.
             Assert.That(restored.nodes.Count, Is.EqualTo(5));
             Assert.That(Stationing.CountAssignedTo(restored, restored.nodes.Single(n => n.resourceId == "nuts").id),
-                Is.EqualTo(4));
+                Is.EqualTo(1));
         }
 
         [Test]
@@ -297,7 +299,7 @@ namespace Wildgrove.Sim.Tests
             };
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
-            TestKith.Station(state, Familiar.DigStationPrefix + "bramble-hedgerows", 2);
+            TestKith.Station(state, Familiar.WanderStation, 1);
             state.digSites[0].pityHours = 1.5;
             state.insectSketches["stags-herald"] = 3; // assembled
 
@@ -305,7 +307,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(restored.digSites, Has.Count.EqualTo(1));
             Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
-            Assert.That(Stationing.AtDigSite(restored, "bramble-hedgerows"), Is.EqualTo(2));
+            Assert.That(Stationing.Wandering(restored), Is.EqualTo(1));
             Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
             Assert.That(Insects.SketchCount(restored, "stags-herald"), Is.EqualTo(3));
             // The completed insect's +10% all yields folds into the restored
@@ -438,7 +440,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Restore_DanglingWardenPost_ClearsToTheFirstNodeFallback()
+        public void Restore_DanglingWardenPost_ClearsToCamp()
         {
             var state = GameStateFactory.NewGame(_data);
             // A content update renamed/removed the posted node — the saved id
@@ -447,10 +449,77 @@ namespace Wildgrove.Sim.Tests
 
             var restored = RoundTrip(state);
 
-            // Cleared, not kept: a dangling post would strand the warden (and
-            // every bonded gatherer sharing it) matching no node at all.
+            // Cleared, not kept: a dangling post would strand the warden
+            // matching no node at all — they stand at camp until re-posted.
             Assert.That(restored.wardenPostNodeId, Is.Null);
-            Assert.That(Warden.IsPosted(restored, restored.nodes[0]), Is.True);
+            Assert.That(Warden.IsPosted(restored, restored.nodes[0]), Is.False);
+        }
+
+        [Test]
+        public void TryMigrate_V26Save_RetiresTheWatch_TheFirstWatcherWanders()
+        {
+            // v26 stationed watchers at "dig:{zone}" posts; the watch stopped
+            // being a post — the first watcher takes the wander post (it was
+            // already out watching), the rest go home to camp.
+            var save = new SaveData
+            {
+                version = 26,
+                roster = new List<SavedFamiliar>
+                {
+                    new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "dig:bramble-hedgerows" },
+                    new SavedFamiliar { id = "fam-2", speciesId = "b", stationId = "dig:old-growth-wood" },
+                    new SavedFamiliar { id = "fam-3", speciesId = "c", stationId = "trail" },
+                },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.roster[0].stationId, Is.EqualTo(Familiar.WanderStation));
+            Assert.That(save.roster[1].stationId, Is.Null, "one body per post — the second watcher rests");
+            Assert.That(save.roster[2].stationId, Is.EqualTo("trail"), "the carrier is untouched");
+        }
+
+        [Test]
+        public void TryMigrate_V26Save_BareWardenPost_BecomesTheFirstNode()
+        {
+            // Pre-v27, a null post MEANT "the first node"; v27 makes null mean
+            // "at camp" — the migration writes the old meaning in explicitly.
+            var save = new SaveData
+            {
+                version = 26,
+                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-meadow:berries" } },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.wardenPostNodeId, Is.EqualTo("sunfield-meadow:berries"));
+        }
+
+        [Test]
+        public void Restore_TwoOnOnePost_KeepsTheDeeperKinship_AndRestsTheOther()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "sunfield-meadow:wildflowers", kinshipXp = 10.0 });
+            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "b", stationId = "sunfield-meadow:wildflowers", kinshipXp = 500.0 });
+            save.nextFamiliarSeq = 3;
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.roster.Single(f => f.id == "fam-2").stationId, Is.EqualTo("sunfield-meadow:wildflowers"));
+            Assert.That(restored.roster.Single(f => f.id == "fam-1").IsResting, Is.True,
+                "one body per post — the shallower bond steps back");
+        }
+
+        [Test]
+        public void Restore_AFamiliarOnTheWardensNode_SendsTheWardenToCamp()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.wardenPostNodeId = "sunfield-meadow:berries";
+            save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "sunfield-meadow:berries" });
+            save.nextFamiliarSeq = 2;
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.wardenPostNodeId, Is.Null,
+                "the familiar's post was the explicit choice — the warden yields");
         }
 
         [Test]
@@ -471,10 +540,13 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void RoundTrip_RestoresReadWaystones()
         {
+            // The starting stone is pre-read at run birth; a later zone's
+            // read stone must round-trip alongside it.
             var state = GameStateFactory.NewGame(_data);
-            state.seenWaystoneZoneIds.Add(GameStateFactory.StartingZoneId);
+            state.seenWaystoneZoneIds.Add("bramble-hedgerows");
 
-            Assert.That(RoundTrip(state).seenWaystoneZoneIds, Is.EqualTo(new[] { GameStateFactory.StartingZoneId }));
+            Assert.That(RoundTrip(state).seenWaystoneZoneIds,
+                Is.EqualTo(new[] { GameStateFactory.StartingZoneId, "bramble-hedgerows" }));
         }
 
         [Test]

@@ -193,8 +193,8 @@ namespace Wildgrove.Sim.Tests
         public void Migrate_CarriesTheKithFolded()
         {
             var state = StateWithTheRiteSung();
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
             state.roster[0].xp = 5000.0;
-            state.roster[0].stationId = state.nodes[0].id;
             var count = state.roster.Count;
 
             var next = Migration.Migrate(state, _data);
@@ -234,7 +234,8 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(next.roster.Exists(f => f.bonded && f.bondId == "sootwing"), Is.True,
                 "the bond is derived from the donations the fold carries — Sootwing crosses too");
-            Assert.That(next.wardenPostNodeId, Is.Null, "the post resets with the camp");
+            Assert.That(next.wardenPostNodeId, Is.EqualTo(next.nodes[0].id),
+                "the fold reseeds the fresh run's opening post");
         }
 
         [Test]

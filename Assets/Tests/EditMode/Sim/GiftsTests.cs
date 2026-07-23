@@ -109,11 +109,10 @@ namespace Wildgrove.Sim.Tests
             });
         }
 
-        /// <summary>The nut node, with stock for a pile and a slot opened by resting the seed vole.</summary>
+        /// <summary>The nut node, with stock for a pile — free (the warden opens on the berry node) with the opening slot unheld.</summary>
         private NodeState ReadyNutNode(GameState state)
         {
             state.resources["nuts"] = 25;
-            Roster.Station(state, _data, Roster.OfSpecies(state, "meadow-vole"), null);
             return state.nodes[1];
         }
 
@@ -150,6 +149,7 @@ namespace Wildgrove.Sim.Tests
         public void NodeCanCall_PointsAtTheUnmetSpecialist()
         {
             var state = GameStateFactory.NewGame(_data);
+            Roster.Recruit(state, _data, "meadow-vole", null);
             AnswerFirstVerse(state);
 
             Assert.That(Gifts.NodeCanCall(state, _data, state.nodes[0]), Is.False,
@@ -162,6 +162,7 @@ namespace Wildgrove.Sim.Tests
         public void CanLeavePile_WithNoSlotOpen_WaitsForRoom()
         {
             var state = GameStateFactory.NewGame(_data);
+            var vole = Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
             AnswerFirstVerse(state);
             state.resources["nuts"] = 25;
             Assert.That(Kith.HasRoom(state, _data), Is.False);
@@ -169,7 +170,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.False,
                 "the arrival takes the node as its post — it needs a slot");
 
-            Roster.Station(state, _data, Roster.OfSpecies(state, "meadow-vole"), null);
+            Roster.Station(state, _data, vole, null);
             Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.True);
         }
 
@@ -188,7 +189,26 @@ namespace Wildgrove.Sim.Tests
             Assert.That(arrived.stationId, Is.EqualTo(node.id), "the newcomer works where the pile was left");
             Assert.That(arrived.name, Is.Not.Empty, "named on arrival like any recruit");
             Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(15.0), "the pile is spent from camp stock");
-            Assert.That(state.roster.Count, Is.EqualTo(3));
+            Assert.That(state.roster.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void LeavePile_AtAHeldNode_TheArrivalRestsAtCamp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            AnswerFirstVerse(state);
+            state.resources["nuts"] = 25;
+            Warden.Post(state, state.nodes[1]);
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[1].id), "the warden stands at the nut node");
+
+            var arrived = Gifts.LeavePile(state, _data, state.nodes[1]);
+
+            // The pile still calls the specialist — but one body per post, and
+            // an arrival never bumps anyone: it joins the collection resting.
+            Assert.That(arrived, Is.Not.Null);
+            Assert.That(arrived.gifted, Is.True);
+            Assert.That(arrived.IsResting, Is.True);
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[1].id), "the warden keeps the post");
         }
 
         [Test]
@@ -203,7 +223,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(arrived, Is.Null);
             Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(9.0));
-            Assert.That(state.roster.Count, Is.EqualTo(2));
+            Assert.That(state.roster, Is.Empty);
         }
 
         [Test]

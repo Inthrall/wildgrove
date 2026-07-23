@@ -35,8 +35,10 @@ namespace Wildgrove.Sim
         /// Recruit a familiar of a species, with a suggested default name the
         /// player can accept or change. Each species joins once, ever — a
         /// duplicate recruit returns null and changes nothing. The arrival
-        /// takes <paramref name="stationId"/> when a slot is open for it,
-        /// otherwise it rests at camp (the collection is never slot-capped).
+        /// takes <paramref name="stationId"/> when a slot is open for it and
+        /// the post stands empty (one body per post, §2 — an arrival never
+        /// bumps anyone), otherwise it rests at camp (the collection is never
+        /// slot-capped).
         /// </summary>
         public static Familiar Recruit(GameState state, GameDataAsset data, string speciesId, string stationId, string name = null)
         {
@@ -55,7 +57,9 @@ namespace Wildgrove.Sim
 
             state.roster.Add(familiar);
 
-            if (!string.IsNullOrEmpty(stationId) && Kith.HasRoom(state, data))
+            if (!string.IsNullOrEmpty(stationId) && Kith.HasRoom(state, data)
+                && Stationing.OccupantOf(state, stationId) == null
+                && stationId != Warden.PostNodeId(state))
             {
                 familiar.stationId = stationId;
             }
@@ -105,11 +109,14 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Station a familiar at a post — a node id, <see cref="Familiar.TrailStation"/>,
-        /// a <see cref="Familiar.DigStationPrefix"/> site, or null to rest at camp
+        /// <see cref="Familiar.WanderStation"/>, or null to rest at camp
         /// (design §2: reassignment is always allowed and never costs goods).
-        /// Taking a post needs an open slot when the familiar was resting
-        /// (§4 ladder) — returns false and changes nothing without one. Bumps
-        /// the modifier snapshot so any cached read refreshes.
+        /// One body per post: whoever holds the post steps back — a familiar
+        /// rests at camp (its slot frees for the newcomer), the warden walks
+        /// back to camp. Taking an EMPTY post needs an open slot when the
+        /// familiar was resting (§4 ladder) — returns false and changes
+        /// nothing without one. Bumps the modifier snapshot so any cached
+        /// read refreshes.
         /// </summary>
         public static bool Station(GameState state, GameDataAsset data, Familiar familiar, string stationId)
         {
@@ -119,9 +126,34 @@ namespace Wildgrove.Sim
             }
 
             var wants = string.IsNullOrEmpty(stationId) ? null : stationId;
-            if (wants != null && familiar.IsResting && !Kith.HasRoom(state, data))
+            if (wants == null)
+            {
+                familiar.stationId = null;
+                state.BumpModifiers();
+                return true;
+            }
+
+            var occupant = Stationing.OccupantOf(state, wants);
+            if (occupant == familiar)
+            {
+                return true;
+            }
+
+            // Swapping in for the occupant frees their slot in the same move;
+            // only an empty post asks the ladder for room.
+            if (occupant == null && familiar.IsResting && !Kith.HasRoom(state, data))
             {
                 return false;
+            }
+
+            if (occupant != null)
+            {
+                occupant.stationId = null;
+            }
+
+            if (wants == Warden.PostNodeId(state))
+            {
+                state.wardenPostNodeId = null;
             }
 
             familiar.stationId = wants;

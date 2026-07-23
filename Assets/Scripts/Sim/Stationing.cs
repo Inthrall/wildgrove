@@ -5,10 +5,11 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Where the kith stands (design §2) — the moment-to-moment allocation.
-    /// Stationed familiars work their post at full rate, scaled by their
-    /// species trait; a familiar without a post rests at camp and works
-    /// nothing (a slot is the right to hold a post, §4 — resting help for
-    /// free would make the ladder worthless). The warden never rests.
+    /// Every post holds at most one body (warden or familiar); a stationed
+    /// familiar works its post at full rate, scaled by its species trait,
+    /// while a familiar without a post rests at camp and works nothing (a
+    /// slot is the right to hold a post, §4 — resting help for free would
+    /// make the ladder worthless).
     /// </summary>
     public static class Stationing
     {
@@ -21,6 +22,25 @@ namespace Wildgrove.Sim
                     yield return familiar;
                 }
             }
+        }
+
+        /// <summary>The familiar holding a post, or null when it stands empty (one body per post, §2).</summary>
+        public static Familiar OccupantOf(GameState state, string stationId)
+        {
+            if (string.IsNullOrEmpty(stationId))
+            {
+                return null;
+            }
+
+            foreach (var familiar in state.roster)
+            {
+                if (!familiar.IsResting && familiar.stationId == stationId)
+                {
+                    return familiar;
+                }
+            }
+
+            return null;
         }
 
         public static int CountAssignedTo(GameState state, string stationId)
@@ -57,23 +77,36 @@ namespace Wildgrove.Sim
             return CountAssignedTo(state, Familiar.TrailStation);
         }
 
-        public static int AtDigSite(GameState state, string zoneId)
+        /// <summary>Familiars holding the wander post (0 or 1 — one body per post).</summary>
+        public static int Wandering(GameState state)
         {
-            return CountAssignedTo(state, Familiar.DigStationPrefix + zoneId);
+            return CountAssignedTo(state, Familiar.WanderStation);
         }
 
         /// <summary>
-        /// Effective gatherers contributing to a node this tick: each assigned
-        /// familiar counts as one, scaled by its trait when it matches.
+        /// Effective gatherers contributing to a node this tick: the familiar
+        /// assigned to it counts as one, scaled by its trait when it matches —
+        /// plus the wanderer's share, an even split of one gatherer across
+        /// every node (roaming, averaged out).
         /// </summary>
         public static double GatherAgentsAt(GameState state, GameDataAsset data, NodeState node)
         {
             var sum = 0.0;
+            var nodeCount = state.nodes.Count;
             foreach (var familiar in state.roster)
             {
-                if (!familiar.IsResting && familiar.stationId == node.id)
+                if (familiar.IsResting)
+                {
+                    continue;
+                }
+
+                if (familiar.stationId == node.id)
                 {
                     sum += Traits.NodeYieldFactor(familiar, node, data);
+                }
+                else if (familiar.IsWandering && nodeCount > 0)
+                {
+                    sum += Traits.NodeYieldFactor(familiar, node, data) / nodeCount;
                 }
             }
 
@@ -81,8 +114,8 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Effective carrier lanes on the trail: the familiars holding the trail
-        /// post, scaled by their throughput traits. An unheld trail hauls
+        /// Effective carrier lanes on the trail: the familiar holding the trail
+        /// post, scaled by its throughput trait. An unheld trail hauls
         /// nothing — the lane is a post like any other.
         /// </summary>
         public static double TrailCarriers(GameState state, GameDataAsset data)
@@ -99,14 +132,17 @@ namespace Wildgrove.Sim
             return held;
         }
 
-        /// <summary>Effective watchers at a zone's site, scaled by watch-speed traits; resting familiars don't watch.</summary>
-        public static double DigAgentsAt(GameState state, GameDataAsset data, string zoneId)
+        /// <summary>
+        /// Effective watchers the wander post supplies to every observation
+        /// site (the watch is no longer a post of its own — the wanderer
+        /// passes each site as it roams), scaled by watch-speed traits.
+        /// </summary>
+        public static double WanderAgents(GameState state, GameDataAsset data)
         {
             var sum = 0.0;
-            var station = Familiar.DigStationPrefix + zoneId;
             foreach (var familiar in state.roster)
             {
-                if (!familiar.IsResting && familiar.stationId == station)
+                if (!familiar.IsResting && familiar.IsWandering)
                 {
                     sum += Traits.DigSpeedFactor(familiar, data);
                 }

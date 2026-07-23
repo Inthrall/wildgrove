@@ -138,6 +138,7 @@ namespace Wildgrove.Sim.Tests
         public void TendingBurstBonus_StrengthensTheBurst()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
             state.AddResource("fibres", 40);
             Gear.TryCraft(state, _data, _data.gear[0]);
             Simulation.Tend(state.nodes[0], _data.economy);

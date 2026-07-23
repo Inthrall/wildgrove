@@ -62,18 +62,18 @@ namespace Wildgrove.Sim.Tests
             Object.DestroyImmediate(_data);
         }
 
-        private GameState StateWithADigger()
+        private GameState StateWithAWanderer()
         {
             var state = GameStateFactory.NewGame(_data);
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
-            TestKith.Station(state, Familiar.DigStationPrefix + GameStateFactory.StartingZoneId, 1);
+            TestKith.Station(state, Familiar.WanderStation, 1);
             return state;
         }
 
         [Test]
         public void Digging_SurfacesAmber()
         {
-            var state = StateWithADigger();
+            var state = StateWithAWanderer();
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -83,7 +83,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void FullyDugGround_KeepsSurfacingAmber()
         {
-            var state = StateWithADigger();
+            var state = StateWithAWanderer();
             state.insectSketches["stags-herald"] = 3; // nothing left to find
 
             Simulation.Advance(state, _data, 1.0);
@@ -96,7 +96,7 @@ namespace Wildgrove.Sim.Tests
         public void UnconfiguredAmber_BurnsNoRng()
         {
             _data.economy.amber = null;
-            var state = StateWithADigger();
+            var state = StateWithAWanderer();
             state.insectSketches["stags-herald"] = 3; // the sketch channel is quiet too
             var rngBefore = state.rngState;
             state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
@@ -111,6 +111,7 @@ namespace Wildgrove.Sim.Tests
         public void TimeSkip_CreditsFullLiveRateProduction()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
             state.amber = 15.0;
 
             var hours = Amber.TryTimeSkip(state, _data);

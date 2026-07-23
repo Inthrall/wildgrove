@@ -212,11 +212,13 @@ namespace Wildgrove.Game
                 PlateImage(card, tools, 150f);
             }
 
-            // The next few unpurchased rungs of the §9 ladder, in order.
+            // The next few unpurchased rungs of the §9 ladder, in order. A
+            // recruit rung whose familiar already walks (the kith crossed a
+            // fold) has nothing left to give — it doesn't reappear.
             var next = new List<UpgradeData>();
             foreach (var upgrade in _loop.Data.upgrades.OrderBy(u => u.order))
             {
-                if (_loop.IsUpgradePurchased(upgrade))
+                if (_loop.IsUpgradePurchased(upgrade) || Upgrades.IsSpentRecruit(_loop.State, upgrade))
                 {
                     continue;
                 }

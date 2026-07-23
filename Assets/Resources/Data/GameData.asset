@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 94e99a60513030d54f9388c5a4a197cc92f28f9fd576525d4f840cd55785abb2
+  sourceHash: a558ca679773e7641e56d47851fe72a247574a157ab9d2640d600df3329c6326
   economy:
     costGrowth:
       building: 1.25
@@ -289,6 +289,42 @@ MonoBehaviour:
     scope: v1.2
   upgrades:
   - order: 1
+    id: first-friend
+    displayName: A Pile of Berries
+    track: kith
+    toolTier: 
+    gateSkill: 
+    gateLevel: 0
+    materials:
+    - id: berries
+      amount: 100
+    effects:
+    - type: 19
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: meadow-vole
+      value: 0
+  - order: 2
+    id: wingbeats
+    displayName: Wingbeats Over the Trail
+    track: kith
+    toolTier: 
+    gateSkill: 
+    gateLevel: 0
+    materials:
+    - id: berries
+      amount: 250
+    effects:
+    - type: 19
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: pack-raven
+      value: 0
+  - order: 3
     id: flint-sickle
     displayName: Flint Sickle
     track: tools
@@ -302,8 +338,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 2
+  - order: 4
     id: waxed-satchel
     displayName: Waxed Satchel
     track: hauling
@@ -317,8 +354,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.5
-  - order: 3
+  - order: 5
     id: drying-rack
     displayName: Drying Rack
     track: camp
@@ -336,8 +374,9 @@ MonoBehaviour:
       zone: 
       resource: berries
       recipe: 
+      species: 
       value: 0.25
-  - order: 4
+  - order: 6
     id: map-bramble
     displayName: 'Trail Map: Bramble Hedgerows'
     track: trail
@@ -351,14 +390,16 @@ MonoBehaviour:
       zone: bramble-hedgerows
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 15
       skill: mining
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
-  - order: 5
+  - order: 7
     id: rawhide-gloves
     displayName: Rawhide Gloves
     track: tools
@@ -372,8 +413,9 @@ MonoBehaviour:
       zone: bramble-hedgerows
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 6
+  - order: 8
     id: handcart
     displayName: Handcart
     track: hauling
@@ -391,8 +433,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 7
+  - order: 9
     id: camp-fire-ring
     displayName: Camp Fire Ring
     track: camp
@@ -410,26 +453,30 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 15
       skill: forgecraft
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 16
       skill: 
       zone: 
       resource: 
       recipe: berry-preserve
+      species: 
       value: 0
     - type: 16
       skill: 
       zone: 
       resource: 
       recipe: copper-ingot
+      species: 
       value: 0
-  - order: 8
+  - order: 10
     id: copper-sickle
     displayName: Copper Sickle
     track: tools
@@ -445,8 +492,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 9
+  - order: 11
     id: root-cellar
     displayName: Root Cellar
     track: camp
@@ -464,8 +512,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 6
-  - order: 10
+  - order: 12
     id: preserving-jars
     displayName: Preserving Jars
     track: firecraft
@@ -479,8 +528,9 @@ MonoBehaviour:
       zone: 
       resource: berry-preserve
       recipe: 
+      species: 
       value: 0.5
-  - order: 11
+  - order: 13
     id: map-oldgrowth
     displayName: 'Trail Map: Old-Growth Wood'
     track: trail
@@ -494,26 +544,30 @@ MonoBehaviour:
       zone: old-growth-wood
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 15
       skill: logging
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 15
       skill: entomology
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 17
       skill: 
       zone: old-growth-wood
       resource: 
       recipe: 
+      species: 
       value: 0
-  - order: 12
+  - order: 14
     id: bronze-hatchet
     displayName: Bronze Hatchet
     track: tools
@@ -529,8 +583,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 13
+  - order: 15
     id: stag-harness
     displayName: Stag Harness
     track: hauling
@@ -544,8 +599,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 14
+  - order: 16
     id: carving-bench
     displayName: Carving Bench
     track: camp
@@ -563,20 +619,23 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 16
       skill: 
       zone: 
       resource: 
       recipe: planks
+      species: 
       value: 0
     - type: 16
       skill: 
       zone: 
       resource: 
       recipe: cordage
+      species: 
       value: 0
-  - order: 15
+  - order: 17
     id: whetstone
     displayName: Whetstone
     track: tools
@@ -590,8 +649,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.25
-  - order: 16
+  - order: 18
     id: foragers-skewers
     displayName: Forager's Skewers
     track: firecraft
@@ -605,8 +665,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: mushroom-skewer
+      species: 
       value: 0
-  - order: 17
+  - order: 19
     id: field-press
     displayName: Field Press
     track: compendium
@@ -624,8 +685,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.01
-  - order: 18
+  - order: 20
     id: bellows-forge
     displayName: Bellows Forge
     track: camp
@@ -639,14 +701,16 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
     - type: 16
       skill: 
       zone: 
       resource: 
       recipe: iron-ingot
+      species: 
       value: 0
-  - order: 19
+  - order: 21
     id: wagon
     displayName: Wagon
     track: hauling
@@ -660,8 +724,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 20
+  - order: 22
     id: smokehouse
     displayName: Smokehouse
     track: camp
@@ -679,8 +744,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 8
-  - order: 21
+  - order: 23
     id: map-silverrun
     displayName: 'Trail Map: Silverrun River'
     track: trail
@@ -694,20 +760,23 @@ MonoBehaviour:
       zone: silverrun-river
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 15
       skill: fishing
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
     - type: 17
       skill: 
       zone: silverrun-river
       resource: 
       recipe: 
+      species: 
       value: 0
-  - order: 22
+  - order: 24
     id: iron-toolset
     displayName: Iron Toolset
     track: tools
@@ -723,20 +792,23 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
     - type: 0
       skill: logging
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
     - type: 0
       skill: mining
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 23
+  - order: 25
     id: brush-screens
     displayName: Brush Screens
     track: entomology
@@ -750,8 +822,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 24
+  - order: 26
     id: smoking-racks
     displayName: Smoking Racks + Willow Rod
     track: firecraft
@@ -765,14 +838,16 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: smoked-trout
+      species: 
       value: 0
     - type: 0
       skill: fishing
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 25
+  - order: 27
     id: reed-weaving
     displayName: Reed Weaving
     track: bushcraft
@@ -786,8 +861,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: reed-baskets
+      species: 
       value: 0
-  - order: 26
+  - order: 28
     id: curators-cabinet
     displayName: Curator's Cabinet
     track: compendium
@@ -805,8 +881,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.5
-  - order: 27
+  - order: 29
     id: steel-toolset
     displayName: Steel Toolset
     track: tools
@@ -824,8 +901,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 28
+  - order: 30
     id: raven-panniers
     displayName: Raven Panniers
     track: hauling
@@ -839,8 +917,9 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
-  - order: 29
+  - order: 31
     id: almanac-desk
     displayName: Almanac Desk
     track: camp
@@ -858,6 +937,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
   recipes:
   - id: berry-preserve
@@ -1082,6 +1162,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.5
   - id: birch-frame-pack
     displayName: Birch Frame Pack
@@ -1098,6 +1179,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.25
   - id: pitch-torch
     displayName: Pitch Torch
@@ -1114,6 +1196,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0
   - id: oilskin-tarp
     displayName: Oilskin Tarp
@@ -1130,6 +1213,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 2
   - id: clay-lined-creel
     displayName: Clay-Lined Creel
@@ -1146,6 +1230,7 @@ MonoBehaviour:
       zone: 
       resource: fish
       recipe: 
+      species: 
       value: 0
   insects:
   - id: stags-herald
@@ -1160,6 +1245,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.1
   - id: silver-skimmer
     displayName: The Silver Skimmer
@@ -1173,12 +1259,14 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.15
     - type: 6
       skill: 
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.01
   - id: those-who-sow
     displayName: Those Who Sow
@@ -1193,6 +1281,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.2
   almanac:
   - id: old-songs-i
@@ -1205,6 +1294,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.1
   - id: long-watch-i
     displayName: The Long Watch I
@@ -1216,6 +1306,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 6
   - id: verdant-eye-i
     displayName: Verdant Eye I
@@ -1227,6 +1318,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.005
   - id: sure-paths-i
     displayName: Sure Paths I
@@ -1238,6 +1330,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.25
   - id: patient-hands
     displayName: Patient Hands
@@ -1249,6 +1342,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.25
   - id: deep-sight-i
     displayName: Deep Sight I
@@ -1260,6 +1354,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.5
   - id: old-songs-ii
     displayName: Old Songs II
@@ -1271,6 +1366,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.15
   - id: long-watch-ii
     displayName: The Long Watch II
@@ -1282,6 +1378,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 8
   - id: sure-paths-ii
     displayName: Sure Paths II
@@ -1293,6 +1390,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.5
   - id: verdant-eye-ii
     displayName: Verdant Eye II
@@ -1304,6 +1402,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.01
   - id: old-friend
     displayName: The Old Friend
@@ -1320,6 +1419,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 12
   - id: old-songs-iii
     displayName: Old Songs III
@@ -1331,6 +1431,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.25
   folioSpreads:
   - id: meadow-blooms
@@ -1345,6 +1446,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.1
   - id: hedgerow-harvest
     displayName: Hedgerow Harvest
@@ -1358,6 +1460,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.005
   - id: old-growth-bounty
     displayName: Old-Growth Bounty
@@ -1371,6 +1474,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1
   - id: river-catch
     displayName: River Catch
@@ -1385,6 +1489,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.15
   - id: marsh-lights
     displayName: Marsh Lights
@@ -1398,6 +1503,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.1
   - id: hollow-relics
     displayName: Relics of the Hollows
@@ -1411,6 +1517,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 1.25
   - id: crag-flock
     displayName: The Crag Flock
@@ -1424,6 +1531,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.1
   - id: summit-posy
     displayName: Summit Posy
@@ -1436,6 +1544,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.25
   - id: wardens-gallery
     displayName: The Warden's Gallery
@@ -1454,6 +1563,7 @@ MonoBehaviour:
       zone: 
       resource: 
       recipe: 
+      species: 
       value: 0.1
   bonds:
   - id: sootwing

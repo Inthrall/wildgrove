@@ -32,8 +32,8 @@ namespace Wildgrove.Sim.Tests
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
                 // Effectively unbounded, so yield-focused tests see goods at camp
                 // the same tick they're gathered; HaulTests pins the tight case.
-                // Two slots so the factory stations both seeds (vole + raven) —
-                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                // A wide ladder — these fixtures exercise the gather→haul
+                // pipeline, not the slots (staged crowds bypass them anyway).
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
             };
@@ -59,6 +59,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -72,12 +73,11 @@ namespace Wildgrove.Sim.Tests
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 2.0 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.Clear(); // isolate the warden — no kith gathering or wandering
 
             Simulation.Advance(state, _data, 5.0);
 
-            // The warden's hands are an action too: 2/s at their default post
-            // (the first node) for 5 s, no tend required.
+            // The warden's hands are an action too: 2/s at their seeded post
+            // (the first node no familiar held) for 5 s, no tend required.
             Assert.That(Skills.Xp(state, "foraging"), Is.EqualTo(10.0).Within(Tolerance));
         }
 
@@ -93,29 +93,20 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NewGame_SeedsOneGathererOnFirstNodeOnly()
+        public void NewGame_OpensWithTheWardenAlone()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(Stationing.CountAssignedTo(state, state.nodes[0].id), Is.EqualTo(1));
-            Assert.That(state.nodes.Skip(1).All(n => Stationing.CountAssignedTo(state, n.id) == 0), Is.True);
-        }
-
-        [Test]
-        public void NewGame_SeedsOneOnTheTrail()
-        {
-            var state = GameStateFactory.NewGame(_data);
-
-            // The seed pair (design §4): a vole gathers, a raven takes the trail
-            // (this fixture opens two slots; the authored ladder starts at one).
-            Assert.That(Stationing.OnTrail(state), Is.EqualTo(1));
-            Assert.That(state.roster.Count, Is.EqualTo(2));
+            // The kith arrives through play (the recruit rungs), not at birth.
+            Assert.That(state.roster, Is.Empty);
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[0].id));
         }
 
         [Test]
         public void Advance_OneFamiliarNoBonuses_AccruesOnePerSecond()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -126,10 +117,11 @@ namespace Wildgrove.Sim.Tests
         public void Advance_ZeroFamiliarNode_AccruesNothing()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 10.0);
 
-            // wildflowers node has no familiar seeded.
+            // the wildflowers node has no familiar on it.
             Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
@@ -178,6 +170,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_Accumulates_AcrossTicks()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 3.0);
             Simulation.Advance(state, _data, 2.0);
@@ -199,6 +192,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_WithActiveBurst_MultipliesYieldForBurstSeconds()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 2.0);
@@ -212,6 +206,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_BurstExpiresMidTick_SplitsBurstedAndNormalYield()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 8.0);
@@ -277,42 +272,103 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_WardenGather_AddsToFamiliarYieldWithoutCarriers()
+        public void Advance_WardenGather_BypassesTheBasketTheFamiliarFills()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.IsOnTrail); // no carrier: basket can't drain
-            Simulation.Tend(state.nodes[0], _data.economy); // berries: 1 gatherer, the default post
+            TestKith.Station(state, state.nodes[0].id, 1); // a gatherer, no carrier: basket can't drain
+            Warden.Post(state, state.nodes[1]);
+            Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The familiar's bursted yield (2s · 3×) waits in the basket with no
-            // carriers, but the warden's bursted 0.5 · 2 · 3 reaches camp regardless.
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
+            // The gatherer's bursted yield (2s · 3×) waits in the basket with
+            // no carriers, but the warden — at their own post next door —
+            // pockets 0.5 · 2 wildflowers straight to camp regardless.
             Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
-        public void Tend_StateAware_MovesTheWardenPost()
+        public void NewGame_SeedsTheWarden_OnTheFirstNode()
         {
             var state = GameStateFactory.NewGame(_data);
-            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[0].id), "defaults to the first node");
+
+            // No kith at birth — the warden opens the run on the first node.
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[0].id));
+        }
+
+        [Test]
+        public void Tend_StateAware_DoesNotMoveTheWardenPost()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var posted = Warden.PostNodeId(state);
 
             Simulation.Tend(state, _data, state.nodes[2]);
 
-            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[2].id));
+            // Standing somewhere is an explicit assignment now — tending is
+            // just the burst and the deed.
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(posted));
+            Assert.That(state.nodes[2].tendBurstRemaining, Is.GreaterThan(0.0));
+        }
+
+        [Test]
+        public void WardenPost_ANodeAFamiliarHolds_BumpsTheFamiliarToCamp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[1].id, 1);
+            var holder = Stationing.OccupantOf(state, state.nodes[1].id);
+
+            Warden.Post(state, state.nodes[1]);
+
+            // One body per post: the warden takes the node, the holder goes home.
+            Assert.That(Warden.PostNodeId(state), Is.EqualTo(state.nodes[1].id));
+            Assert.That(holder.IsResting, Is.True);
+        }
+
+        [Test]
+        public void Warden_Rest_StandsAtCampAndGathersNothing()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+
+            Warden.Rest(state);
+            Simulation.Advance(state, _data, 4.0);
+
+            Assert.That(Warden.PostNodeId(state), Is.Null);
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_AWanderer_GathersAShareOfEveryNode()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.ClearStations(state);
+            TestKith.Station(state, Familiar.WanderStation, 1);
+
+            Simulation.Advance(state, _data, 9.0);
+
+            // One wanderer roams three nodes — a third of a gatherer at each,
+            // hauled home by nothing (this fixture's carriers are removed with
+            // the stations), so the shares sit in the baskets.
+            foreach (var node in state.nodes)
+            {
+                Assert.That(node.basket.ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
+            }
         }
 
         [Test]
         public void AdvanceOfflineWithSummary_ReportsCreditAndGains()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 100.0);
 
             Assert.That(summary.realSeconds, Is.EqualTo(100.0).Within(Tolerance));
             Assert.That(summary.creditedSeconds, Is.EqualTo(100.0).Within(Tolerance));
-            // Only the seeded berries node gathers, so it's the sole gain.
+            // Only the staged berries node gathers, so it's the sole gain.
             Assert.That(summary.gains.Keys, Is.EquivalentTo(new[] { "berries" }));
             Assert.That(summary.gains["berries"].ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
@@ -321,6 +377,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_CappedAbsence_ReportsBothTimes()
         {
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
             var fiveHours = 5.0 * 3600.0;
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, fiveHours);
@@ -335,7 +392,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_CountsGoodsStillInBaskets()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.roster.RemoveAll(f => f.IsOnTrail); // no carrier: goods stay in the basket
+            TestKith.Station(state, state.nodes[0].id, 1); // a gatherer, no carrier: goods stay in the basket
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 
@@ -383,6 +440,7 @@ namespace Wildgrove.Sim.Tests
                 yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.5,
             };
             var state = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(state);
 
             Simulation.Advance(state, _data, 10.0);
 

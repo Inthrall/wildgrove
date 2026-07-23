@@ -6,8 +6,9 @@ namespace Wildgrove.Sim
     /// Applies a species' single fixed trait (design §4) where its familiar is
     /// stationed. Kinds: nodeYieldBonus (a node of the trait's resource),
     /// trailThroughputBonus (holding the trail), pristineBonus (points at its
-    /// node), digSpeedBonus (at a watch site). Resting familiars contribute
-    /// nothing, and everything no-ops when species data is absent (fixtures).
+    /// node), digSpeedBonus (watching the sites while wandering). Resting
+    /// familiars contribute nothing, and everything no-ops when species data
+    /// is absent (fixtures).
     /// </summary>
     public static class Traits
     {

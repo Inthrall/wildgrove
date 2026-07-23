@@ -224,8 +224,10 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The posting sheet — every post affordance lives on the plate it
-        /// fills (node, trail, watch), so the sheet asks only "who".
+        /// The posting sheet — the strip's badges are the post affordance
+        /// (one body per post, design §2), so the sheet asks only "who".
+        /// Picking someone new swaps them in; whoever held the post steps
+        /// back to camp. Tapping the current holder sends them home.
         /// </summary>
         internal void OpenPostingSheet(string stationId)
         {
@@ -234,21 +236,34 @@ namespace Wildgrove.Game
             MakeText(sheet, StationLabel(stationId).ToUpperInvariant(), 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
             // The warden can only stand at a node — no warden entry on the
-            // trail or watch sheets.
+            // trail or wander sheets.
             var node = FindNode(stationId);
             if (node != null)
             {
                 var wardenHere = Warden.PostNodeId(_loop.State) == node.id;
-                var warden = Button(sheet, "the warden" + (wardenHere
-                    ? "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">already here</color></size>"
-                    : string.Empty), 560, () =>
+                var detail = wardenHere
+                    ? "posted here — tap to send them back to camp"
+                    : WardenWhereabouts();
+                var warden = Button(sheet, "the warden  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
+                                           + detail + "</color></size>", 560, () =>
                 {
-                    _loop.PostWarden(node);
-                    SetNote("the warden walks to " + StationLabel(node.id) + ".");
+                    if (wardenHere)
+                    {
+                        _loop.RestWarden();
+                        SetNote("the warden steps back to camp.");
+                    }
+                    else
+                    {
+                        _loop.PostWarden(node);
+                        SetNote("the warden walks to " + StationLabel(node.id) + ".");
+                    }
+
                     CloseSheet();
                 });
-                warden.interactable = !wardenHere;
-                SetButtonTint(warden, !wardenHere);
+                if (wardenHere)
+                {
+                    warden.GetComponent<Image>().color = MossWash;
+                }
             }
 
             foreach (var familiar in _loop.State.roster)
@@ -269,6 +284,13 @@ namespace Wildgrove.Game
             }
 
             Button(sheet, "Never mind", 320, CloseSheet);
+        }
+
+        /// <summary>Where the warden stands now, for the sheet's detail line.</summary>
+        private string WardenWhereabouts()
+        {
+            var postId = Warden.PostNodeId(_loop.State);
+            return postId == null ? "now: at camp" : "now: " + StationLabel(postId);
         }
 
         private NodeState FindNode(string stationId)

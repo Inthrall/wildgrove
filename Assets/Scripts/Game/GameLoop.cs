@@ -377,10 +377,16 @@ namespace Wildgrove.Game
             return Roster.Station(State, Data, familiar, stationId);
         }
 
-        /// <summary>Walk the warden to a node without tending it — the post moves, the picking starts on arrival (design §13).</summary>
+        /// <summary>Walk the warden to a node — one body per post, so a familiar holding it steps back to camp (design §2).</summary>
         public void PostWarden(NodeState node)
         {
-            State.wardenPostNodeId = node.id;
+            Warden.Post(State, node);
+        }
+
+        /// <summary>Send the warden back to camp — no post, no picking.</summary>
+        public void RestWarden()
+        {
+            Warden.Rest(State);
         }
 
         /// <summary>A familiar's current run level (design §4).</summary>

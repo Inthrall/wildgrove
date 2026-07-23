@@ -24,6 +24,7 @@ namespace Wildgrove.Data
         public string zone;
         public string resource;
         public string recipe;
+        public string species;
         public double value;
     }
 
@@ -500,7 +501,7 @@ namespace Wildgrove.Data
             public double growth;
             public int maxLevel;
 
-            /// <summary>Base run XP a stationed familiar earns per second at its post (wanderers ×0.5).</summary>
+            /// <summary>Base run XP a stationed familiar earns per second at its post.</summary>
             public double xpPerSecond;
 
             /// <summary>K_f in kinshipGain = floor(√(runXP / kinshipDivisor)) at Migration (design §8).</summary>
