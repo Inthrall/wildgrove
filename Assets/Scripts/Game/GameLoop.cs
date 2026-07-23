@@ -58,10 +58,11 @@ namespace Wildgrove.Game
         private bool _sessionOpen;
         private long _lastSavedUnixMs;
 
-        // When the currently-running save was taken (the local slot's timestamp,
-        // 0 for a fresh run). The cloud reconciliation compares against this to
-        // decide whether a cloud save is newer and worth adopting.
-        private long _loadedSaveUnixMs;
+        // The accumulated play time of the currently-running save (0 for a fresh
+        // run). Cloud reconciliation adopts a cloud save only when it has MORE
+        // play time than this — a monotonic, device-clock-independent "which run
+        // is further along" test, so wall-clock skew can't decide the winner.
+        private long _loadedPlayedMs;
 
         // Familiars the player has been introduced to (in-memory — a loaded kith
         // has already been met). A newly arrived, non-bonded familiar queues for
@@ -84,6 +85,10 @@ namespace Wildgrove.Game
             {
                 Initialise();
             }
+
+            // Accumulate real foreground time (unscaled, so a paused timescale or
+            // a sim time-skip never inflates it) as the monotonic cloud-save metric.
+            State.playedMs += (long)(Time.unscaledDeltaTime * 1000f);
 
             Simulation.Advance(State, Data, Time.deltaTime);
             FlushAmberFindTelemetry();
@@ -178,7 +183,6 @@ namespace Wildgrove.Game
             if (SaveFile.TryLoad(out var save))
             {
                 State = SaveCodec.Restore(save, Data);
-                _loadedSaveUnixMs = save.savedAtUnixMs;
                 // A loaded kith has already been met and named — don't re-prompt.
                 MarkArrivalsSeen();
                 CreditAbsence((NowUnixMs() - save.savedAtUnixMs) / 1000.0);
@@ -188,9 +192,12 @@ namespace Wildgrove.Game
                 // A fresh run's seed kith (a vole and a raven, design §4) arrives
                 // to be named — RefreshArrivals queues them on the first tick.
                 State = GameStateFactory.NewGame(Data);
-                _loadedSaveUnixMs = 0L;
             }
 
+            // The reconcile baseline: how far the run we just loaded has been
+            // played (0 for a fresh run, so any cloud save is adopted — reinstall
+            // recovery).
+            _loadedPlayedMs = State.playedMs;
             _lastSavedUnixMs = NowUnixMs();
             _autosaveCountdown = AutosaveIntervalSeconds;
 
@@ -211,13 +218,14 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Pull the Play Games cloud save and adopt it when it beats what we
-        /// loaded locally. "Beats" is newest-wins by save timestamp: a more
-        /// recent save from another device — or the only save left after a
-        /// reinstall, where the local slot was empty (timestamp 0) — replaces the
-        /// running state and credits the absence since it was taken. A local save
-        /// at least as fresh is kept, and the next autosave pushes it back up. The
-        /// cross-device Snapshots conflict itself is resolved earlier, by
-        /// UseLongestPlaytime in <see cref="Services.PlayGamesServices"/>.
+        /// loaded locally. "Beats" is most-played-wins by accumulated play time: a
+        /// further-along run from another device — or the only save left after a
+        /// reinstall, where the local run had no play time (0) — replaces the
+        /// running state and credits the absence since it was taken. A local run
+        /// at least as far along is kept, and the next autosave pushes it back up.
+        /// Play time (not wall-clock) is the criterion so a wrong device clock
+        /// can't win; the cross-device Snapshots conflict is resolved on the same
+        /// basis earlier, by UseLongestPlaytime in <see cref="Services.PlayGamesServices"/>.
         /// </summary>
         private void ReconcileCloudSave()
         {
@@ -243,14 +251,14 @@ namespace Wildgrove.Game
 
                 // A null/corrupt or future-build cloud save is left untouched (and
                 // not overwritten — the local save only uploads on top once it is
-                // genuinely newer), mirroring SaveFile's set-aside policy.
-                if (cloud == null || !SaveCodec.TryMigrate(cloud) || cloud.savedAtUnixMs <= _loadedSaveUnixMs)
+                // genuinely further along), mirroring SaveFile's set-aside policy.
+                if (cloud == null || !SaveCodec.TryMigrate(cloud) || cloud.playedMs <= _loadedPlayedMs)
                 {
                     return;
                 }
 
                 State = SaveCodec.Restore(cloud, Data);
-                _loadedSaveUnixMs = cloud.savedAtUnixMs;
+                _loadedPlayedMs = State.playedMs;
                 // A cloud kith has already been met and named, like a local load.
                 MarkArrivalsSeen();
                 // The local load's summary credited the state we've just discarded;
@@ -260,7 +268,7 @@ namespace Wildgrove.Game
                 // Converge the device and cloud on the adopted save now rather than
                 // waiting for the autosave interval to write it back down locally.
                 SaveNow();
-                Telemetry.LogEvent("cloud_save_adopted", ("saved_at_ms", cloud.savedAtUnixMs));
+                Telemetry.LogEvent("cloud_save_adopted", ("saved_at_ms", cloud.savedAtUnixMs), ("played_ms", cloud.playedMs));
             });
         }
 
@@ -381,16 +389,16 @@ namespace Wildgrove.Game
 
             _lastSavedUnixMs = NowUnixMs();
             // Advance the reconcile baseline too: cloud adoption compares against
-            // the newest local save we hold, not the one we launched with. Without
-            // this a cloud save taken after launch but before now would wrongly
-            // beat freshly-autosaved progress and overwrite it.
-            _loadedSaveUnixMs = _lastSavedUnixMs;
+            // the play time of the newest local save we hold, not the run we
+            // launched with. Without this a cloud save from a stale device could
+            // wrongly beat freshly-autosaved progress and overwrite it.
+            _loadedPlayedMs = State.playedMs;
             var save = SaveCodec.Capture(State, _lastSavedUnixMs);
             SaveFile.Write(save);
             // Mirror to cloud; ReconcileCloudSave pulls it back on the next signed-in
-            // launch, adopting it when it is newer than the local slot. The
-            // timestamp doubles as the snapshot's played-time for conflict resolution.
-            GameServices.SaveCloud(SaveCodec.ToJson(save), _lastSavedUnixMs);
+            // launch, adopting it when it is further along than the local slot. Play
+            // time is also the snapshot's played-time for the Snapshots conflict tiebreak.
+            GameServices.SaveCloud(SaveCodec.ToJson(save), State.playedMs);
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>

@@ -93,6 +93,7 @@ namespace Wildgrove.Sim.Tests
             state.weeklyCacheClaimedUnixMs = 1_700_000_000_000L;
             state.adDripClaimedUnixMs = 1_700_000_001_000L;
             state.timeSkipClaimedUnixMs = 1_700_000_002_000L;
+            state.playedMs = 5_400_000L;
             TestKith.Station(state, state.nodes[1].id, 1);
 
             var restored = RoundTrip(state);
@@ -101,6 +102,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.weeklyCacheClaimedUnixMs, Is.EqualTo(1_700_000_000_000L), "the weekly-cache claim time survives a save");
             Assert.That(restored.adDripClaimedUnixMs, Is.EqualTo(1_700_000_001_000L), "the drip cooldown survives a save (no relaunch bypass)");
             Assert.That(restored.timeSkipClaimedUnixMs, Is.EqualTo(1_700_000_002_000L), "the time-skip cooldown survives a save");
+            Assert.That(restored.playedMs, Is.EqualTo(5_400_000L), "accumulated play time survives a save");
             Assert.That(restored.verdurePoints, Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
             Assert.That(restored.nodes[1].masteryXp, Is.EqualTo(107.5).Within(Tolerance));

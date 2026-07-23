@@ -27,12 +27,13 @@ namespace Wildgrove.Game.Services
         void LoadCloud(Action<string> onLoaded);
 
         /// <summary>
-        /// Write the cloud save blob (no-op when signed out). <paramref name="savedAtUnixMs"/>
-        /// is the save's timestamp, recorded as the snapshot's played-time so the
-        /// Snapshots layer's UseLongestPlaytime conflict resolution picks the most
-        /// recent save — matching GameLoop's own newest-wins reconcile — instead
-        /// of comparing zeros and resolving arbitrarily.
+        /// Write the cloud save blob (no-op when signed out). <paramref name="playedMs"/>
+        /// is the run's accumulated play time, recorded as the snapshot's
+        /// played-time so the Snapshots layer's UseLongestPlaytime conflict
+        /// resolution picks the further-along save — matching GameLoop's own
+        /// most-played-wins reconcile — on a device-clock-independent basis
+        /// instead of comparing zeros.
         /// </summary>
-        void SaveCloud(string data, long savedAtUnixMs, Action onComplete = null);
+        void SaveCloud(string data, long playedMs, Action onComplete = null);
     }
 }

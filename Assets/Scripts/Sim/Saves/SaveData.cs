@@ -67,6 +67,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v29+: UTC unix ms of the last rewarded time-skip (absent before time-skip throttling — 0, ready now).</summary>
         public long timeSkipClaimedUnixMs;
 
+        /// <summary>v30+: accumulated foreground play time in ms (absent before — 0). Monotonic; the basis cloud saves are compared on.</summary>
+        public long playedMs;
+
         /// <summary>v18+: zones whose waystone has been read (absent before — every unlocked stone shows once).</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 

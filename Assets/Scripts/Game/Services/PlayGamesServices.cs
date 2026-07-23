@@ -64,7 +64,7 @@ namespace Wildgrove.Game.Services
             });
         }
 
-        public void SaveCloud(string data, long savedAtUnixMs, Action onComplete = null)
+        public void SaveCloud(string data, long playedMs, Action onComplete = null)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(data))
             {
@@ -81,12 +81,12 @@ namespace Wildgrove.Game.Services
                 }
 
                 var bytes = Encoding.UTF8.GetBytes(data);
-                // Record the save timestamp as played-time so OpenSnapshot's
-                // UseLongestPlaytime resolves a cross-device conflict to the most
-                // recent save (a monotonic, ever-increasing value) rather than
-                // comparing zero to zero and picking arbitrarily.
+                // Record accumulated play time as played-time so OpenSnapshot's
+                // UseLongestPlaytime resolves a cross-device conflict to the
+                // further-along save — a monotonic value independent of the device
+                // clock — rather than comparing zero to zero and picking arbitrarily.
                 var update = new SavedGameMetadataUpdate.Builder()
-                    .WithUpdatedPlayedTime(TimeSpan.FromMilliseconds(savedAtUnixMs))
+                    .WithUpdatedPlayedTime(TimeSpan.FromMilliseconds(playedMs))
                     .Build();
                 PlayGamesPlatform.Instance.SavedGame.CommitUpdate(game, update, bytes, (_, __) => onComplete?.Invoke());
             });

@@ -65,6 +65,15 @@ namespace Wildgrove.Sim
         public long timeSkipClaimedUnixMs;
 
         /// <summary>
+        /// Accumulated foreground play time in ms — a monotonic, clock-independent
+        /// measure of how far a run has been carried. GameLoop adds each real
+        /// frame delta; it survives Migration and is the basis cloud saves are
+        /// compared on (most-played wins), so device wall-clock skew can't decide
+        /// which save is adopted.
+        /// </summary>
+        public long playedMs;
+
+        /// <summary>
         /// Monotonic version of the effect sources (purchases, donations,
         /// insects, gear, Almanac, buildings) — bumping it invalidates the
         /// cached <see cref="modifierSnapshot"/>. Never saved.

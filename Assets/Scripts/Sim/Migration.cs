@@ -84,6 +84,10 @@ namespace Wildgrove.Sim
             next.adDripClaimedUnixMs = state.adDripClaimedUnixMs;
             next.timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs;
 
+            // Play time is lifetime, not per-run — it only ever grows, so a fold
+            // carries it (a migrated save is further along, not reset to zero).
+            next.playedMs = state.playedMs;
+
             next.verdurePoints = VerdureAfterMigration(state, data);
             next.renown = state.renown;
             next.migrationCount = state.migrationCount + 1;

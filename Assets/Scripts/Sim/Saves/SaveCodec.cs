@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 29;
+        public const int CurrentVersion = 30;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -41,6 +41,7 @@ namespace Wildgrove.Sim.Saves
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
+                playedMs = state.playedMs,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
@@ -252,6 +253,7 @@ namespace Wildgrove.Sim.Saves
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
+            state.playedMs = save.playedMs > 0 ? save.playedMs : 0L;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
@@ -980,6 +982,13 @@ namespace Wildgrove.Sim.Saves
                         // drip/time-skip timestamp (0) reads as "never claimed,
                         // ready now", exactly as intended for an old save.
                         save.version = 29;
+                        break;
+
+                    case 29:
+                        // v29 predates accumulated play time — a missing value (0)
+                        // just means this save starts the tally from zero, which
+                        // a live run overtakes on its first frames.
+                        save.version = 30;
                         break;
 
                     default:
