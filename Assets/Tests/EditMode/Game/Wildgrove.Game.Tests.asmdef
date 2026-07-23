@@ -3,6 +3,8 @@
     "rootNamespace": "Wildgrove.Game.Tests",
     "references": [
         "Wildgrove.Game",
+        "Wildgrove.Sim",
+        "Wildgrove.Data",
         "BreakInfinity",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

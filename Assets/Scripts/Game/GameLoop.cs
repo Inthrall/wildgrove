@@ -209,6 +209,7 @@ namespace Wildgrove.Game
             {
                 if (signedIn)
                 {
+                    ReassertAchievements();
                     ReconcileCloudSave();
                 }
             });
@@ -1140,6 +1141,18 @@ namespace Wildgrove.Game
             var bond = PendingBondCelebration;
             PendingBondCelebration = null;
             return bond;
+        }
+
+        /// <summary>
+        /// Re-assert achievements the current state already satisfies, run when
+        /// sign-in completes — closing the sign-in race where a milestone reached
+        /// while signed out never gets its one-shot celebration again. The mapping
+        /// lives in <see cref="Achievements.Reassert"/> so it can be tested with a
+        /// fake service, without this MonoBehaviour's Awake/Initialise lifecycle.
+        /// </summary>
+        private void ReassertAchievements()
+        {
+            Achievements.Reassert(GameServices, State, Data);
         }
 
         /// <summary>
