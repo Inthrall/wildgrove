@@ -27,6 +27,17 @@
 -keep class com.google.android.gms.games.** { *; }
 -keep class com.google.games.** { *; }
 
+# --- Google Play Billing (Unity IAP) ------------------------------------------
+# Unity IAP implements the billing callbacks at runtime via AndroidJavaProxy
+# (JNI FindClass) — e.g. GooglePurchasesUpdatedListener wraps the interface
+# "com.android.billingclient.api.PurchasesUpdatedListener". R8 sees no Java-side
+# implementor of those api.* interfaces and strips them -> ClassNotFoundException
+# on IAP init. The billing AAR's own consumer rules keep the vending AIDL but NOT
+# the api callback interfaces, so keep the whole client package here.
+-keep class com.android.billingclient.** { *; }
+-keep interface com.android.billingclient.** { *; }
+-dontwarn com.android.billingclient.**
+
 # --- Google Play Services / Firebase reflection -------------------------------
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.**
