@@ -352,11 +352,15 @@ namespace Wildgrove.Data
                     digFindsPerHour = e.Amber.DigFindsPerHour,
                     perFind = e.Amber.PerFind,
                     timeSkipHours = e.Amber.TimeSkipHours,
-                    timeSkipCostAmber = e.Amber.TimeSkipCostAmber
+                    timeSkipCostAmber = e.Amber.TimeSkipCostAmber,
+                    adDripAmber = e.Amber.AdDripAmber,
+                    weeklyCacheAmber = e.Amber.WeeklyCacheAmber
                 },
                 store = e.Store == null ? null : new EconomyData.StoreData
                 {
-                    starterBundleAmber = e.Store.StarterBundleAmber
+                    starterBundleAmber = e.Store.StarterBundleAmber,
+                    amberPackSmall = e.Store.AmberPackSmall,
+                    amberPackLarge = e.Store.AmberPackLarge
                 },
                 tending = new EconomyData.TendingData
                 {

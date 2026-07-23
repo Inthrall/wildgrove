@@ -53,6 +53,10 @@ namespace Wildgrove.Sim
                        < watchers * amber.digFindsPerHour * siteDigMult * (deltaSeconds / 3600.0))
                 {
                     state.amber += amber.perFind;
+                    // Banked for GameLoop to report once per advance — the sim
+                    // holds no telemetry sink, and an offline catch-up would
+                    // otherwise fire thousands of per-substep events.
+                    state.amberFoundUnlogged += amber.perFind;
                 }
 
                 // Reused scratch: this runs per site per 1 s substep — a full

@@ -91,7 +91,13 @@ namespace Wildgrove.Game.Services
             var definitions = new List<ProductDefinition>();
             foreach (var productId in StoreProductIds.All)
             {
-                definitions.Add(new ProductDefinition(productId, ProductType.NonConsumable));
+                // Amber packs are consumable (re-purchasable); ConfirmPurchase
+                // consumes them on Google Play by their fetched product type,
+                // while the one-off entitlements are acknowledged and kept.
+                var type = StoreProductIds.IsConsumable(productId)
+                    ? ProductType.Consumable
+                    : ProductType.NonConsumable;
+                definitions.Add(new ProductDefinition(productId, type));
             }
 
             _controller.FetchProducts(definitions);
@@ -128,7 +134,13 @@ namespace Wildgrove.Game.Services
             {
                 foreach (var productId in ProductIdsOf(order.CartOrdered))
                 {
-                    _owned.Add(productId);
+                    // Consumables are never owned — they were consumed on
+                    // confirmation, so a lingering confirmed order isn't standing
+                    // entitlement.
+                    if (!StoreProductIds.IsConsumable(productId))
+                    {
+                        _owned.Add(productId);
+                    }
                 }
             }
 
@@ -172,7 +184,9 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            if (_owned.Contains(productId))
+            // Consumables re-buy every time; only the one-off entitlements
+            // short-circuit as already owned.
+            if (!StoreProductIds.IsConsumable(productId) && _owned.Contains(productId))
             {
                 onComplete?.Invoke(StoreResult.AlreadyOwned);
                 return;
@@ -197,11 +211,14 @@ namespace Wildgrove.Game.Services
         {
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                _owned.Add(productId);
+                if (!StoreProductIds.IsConsumable(productId))
+                {
+                    _owned.Add(productId);
+                }
             }
 
-            // Acknowledge the purchase; the caller's callback fires once the store
-            // confirms the acknowledgement in OnPurchaseConfirmed.
+            // Acknowledge (or, for a consumable, consume) the purchase; the
+            // caller's callback fires once the store confirms in OnPurchaseConfirmed.
             _controller.ConfirmPurchase(order);
         }
 
@@ -209,7 +226,11 @@ namespace Wildgrove.Game.Services
         {
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                _owned.Add(productId);
+                if (!StoreProductIds.IsConsumable(productId))
+                {
+                    _owned.Add(productId);
+                }
+
                 Resolve(productId, StoreResult.Purchased);
             }
         }

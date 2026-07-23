@@ -13,6 +13,10 @@ namespace Wildgrove.Game.Services
 
         /// <summary>Rewarded unit for the time-skip reward.</summary>
         public const string TimeSkip = "ca-app-pub-6903871125040514/3141391976";
+
+        // Reuses the time-skip unit until a dedicated Amber-drip rewarded unit is
+        // created in AdMob; dev builds serve Google's test unit regardless.
+        public const string AmberDrip = "ca-app-pub-6903871125040514/3141391976";
     }
 
     /// <summary>In-app purchase product IDs (Google Play Console SKUs). All one-off non-consumables.</summary>
@@ -27,8 +31,31 @@ namespace Wildgrove.Game.Services
         /// <summary>Opens the last kith slot (the ladder's sixth).</summary>
         public const string KithSlot = "kith_slot";
 
+        /// <summary>Consumable buy-amber pack — the smaller pile (design §10). Re-purchasable, never owned.</summary>
+        public const string AmberPackSmall = "amber_pack_small";
+
+        /// <summary>Consumable buy-amber pack — the larger pile (design §10). Re-purchasable, never owned.</summary>
+        public const string AmberPackLarge = "amber_pack_large";
+
+        /// <summary>The consumable amber packs — bought for their effect and immediately consumed, so ownership is never tracked (unlike the one-off entitlements).</summary>
+        public static readonly string[] Consumables = { AmberPackSmall, AmberPackLarge };
+
         /// <summary>Every product the store initialises with — kept in one place so the catalogue and the entitlement sync can't drift.</summary>
-        public static readonly string[] All = { RemoveAds, StarterBundle, KithSlot };
+        public static readonly string[] All = { RemoveAds, StarterBundle, KithSlot, AmberPackSmall, AmberPackLarge };
+
+        /// <summary>Whether a product is a consumable (re-purchasable) rather than a one-off entitlement.</summary>
+        public static bool IsConsumable(string productId)
+        {
+            foreach (var id in Consumables)
+            {
+                if (id == productId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>

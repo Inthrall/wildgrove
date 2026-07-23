@@ -15,6 +15,9 @@ namespace Wildgrove.Game.Services
 
         /// <summary>Watch to double the pending welcome-back offline haul.</summary>
         OfflineBoost,
+
+        /// <summary>Watch for a small Amber drip (design §10).</summary>
+        AmberDrip,
     }
 
     /// <summary>

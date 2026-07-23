@@ -4,6 +4,7 @@ using BreakInfinity;
 using UnityEngine;
 using UnityEngine.UI;
 using Wildgrove.Data;
+using Wildgrove.Game.Services;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalFormat;
@@ -33,6 +34,157 @@ namespace Wildgrove.Game
             BuildBuildingsCard();
             BuildLadderCard();
             BuildExchangeCard();
+            BuildAmberCard();
+        }
+
+        /// <summary>
+        /// The Amber lines (design §10/§11): spend it on a full-rate time-skip,
+        /// earn it from a rewarded ad or the weekly Play Games cache, or buy a
+        /// pack. The whole card stays hidden while the amber economy is inert.
+        /// </summary>
+        private void BuildAmberCard()
+        {
+            var economy = _loop.Data.economy;
+            if (economy?.amber == null)
+            {
+                return;
+            }
+
+            var card = Card("THE AMBER");
+
+            if (Amber.Configured(economy))
+            {
+                BuildTimeSkipRow(card, economy);
+            }
+
+            if (economy.amber.weeklyCacheAmber > 0.0)
+            {
+                BuildWeeklyCacheRow(card, economy);
+            }
+
+            if (economy.amber.adDripAmber > 0.0)
+            {
+                BuildAmberDripRow(card, economy);
+            }
+
+            if (economy.store != null)
+            {
+                BuildAmberPackRow(card, StoreProductIds.AmberPackSmall, economy.store.amberPackSmall);
+                BuildAmberPackRow(card, StoreProductIds.AmberPackLarge, economy.store.amberPackLarge);
+            }
+        }
+
+        private void BuildTimeSkipRow(RectTransform card, EconomyData economy)
+        {
+            var hours = economy.amber.timeSkipHours;
+            var cost = economy.amber.timeSkipCostAmber;
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            label.text = "hasten " + NumberFormat.Duration(hours * 3600.0) + " at full pace"
+                         + SizeOpen(15) + "<color=" + OchreHex + ">  " + Mathf.FloorToInt((float)cost) + " amber</color></size>";
+            Button skip = null;
+            skip = Button(row.transform, "Hasten", 170, () =>
+            {
+                if (_loop.TimeSkip() > 0.0)
+                {
+                    Flash(skip, "the work leaps ahead", true);
+                    SetNote("amber spent — " + NumberFormat.Duration(hours * 3600.0) + " of gathering, in a breath.");
+                    _dirty = true;
+                }
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var ok = _loop.CanTimeSkip();
+                skip.interactable = ok;
+                SetButtonTint(skip, ok);
+            });
+        }
+
+        private void BuildWeeklyCacheRow(RectTransform card, EconomyData economy)
+        {
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            label.text = "the weekly amber cache"
+                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.weeklyCacheAmber) + " amber</color></size>";
+            Button claim = null;
+            claim = Button(row.transform, "Claim", 170, () =>
+            {
+                var amount = _loop.ClaimWeeklyCache();
+                if (amount > 0.0)
+                {
+                    Flash(claim, "+" + Mathf.FloorToInt((float)amount) + " amber", true);
+                    SetNote("the week's cache — a little resin, freely given.");
+                    _dirty = true;
+                }
+            });
+
+            // Hidden until signed in and the week has elapsed; the whole row
+            // reappears when the cache re-arms.
+            _liveUpdaters.Add(() => row.SetActive(_loop.CanClaimWeeklyCache()));
+        }
+
+        private void BuildAmberDripRow(RectTransform card, EconomyData economy)
+        {
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            label.text = "a little amber — watch a short ad"
+                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.adDripAmber) + " amber</color></size>";
+            Button watch = null;
+            watch = Button(row.transform, "Watch", 170, () =>
+            {
+                _loop.Ads.ShowRewarded(RewardedPlacement.AmberDrip, () =>
+                {
+                    var amount = _loop.GrantAmberDrip();
+                    if (amount > 0.0)
+                    {
+                        Flash(watch, "+" + Mathf.FloorToInt((float)amount) + " amber", true);
+                        SetNote("a little amber, for your patience.");
+                        _dirty = true;
+                    }
+                });
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var ready = _loop.Ads.IsRewardedReady;
+                watch.interactable = ready;
+                SetButtonTint(watch, ready);
+            });
+        }
+
+        private void BuildAmberPackRow(RectTransform card, string productId, double amount)
+        {
+            if (amount <= 0.0)
+            {
+                return;
+            }
+
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            label.text = "an amber pack"
+                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)amount) + " amber</color></size>";
+            Button buy = null;
+            buy = Button(row.transform, "Buy", 170, () =>
+            {
+                _loop.PurchaseAmberPack(productId, result =>
+                {
+                    if (result == StoreResult.Purchased)
+                    {
+                        Flash(buy, "+" + Mathf.FloorToInt((float)amount) + " amber", true);
+                        SetNote("the caravan trades in resin — amber for the coffer.");
+                        _dirty = true;
+                    }
+                    else if (result == StoreResult.Failed)
+                    {
+                        SetNote("that didn't go through — nothing was charged.");
+                    }
+                });
+            });
         }
 
         private void BuildCraftingCard()

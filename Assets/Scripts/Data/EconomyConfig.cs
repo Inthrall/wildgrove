@@ -108,19 +108,23 @@ namespace Wildgrove.Data
             public double BaseSketchesPerHour { get; set; }
         }
 
-        /// <summary>Amber (design §10): the free dig-find earn rate and the time-skip sink. Optional — absent means the system is inert.</summary>
+        /// <summary>Amber (design §10): the free dig-find earn rate, the time-skip sink, the rewarded-ad drip, and the weekly cache. Optional — absent means the system is inert.</summary>
         public sealed class AmberSection
         {
             public double DigFindsPerHour { get; set; }
             public double PerFind { get; set; }
             public double TimeSkipHours { get; set; }
             public double TimeSkipCostAmber { get; set; }
+            public double AdDripAmber { get; set; }
+            public double WeeklyCacheAmber { get; set; }
         }
 
-        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant.</summary>
+        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>
         public sealed class StoreSection
         {
             public double StarterBundleAmber { get; set; }
+            public double AmberPackSmall { get; set; }
+            public double AmberPackLarge { get; set; }
         }
 
         public sealed class TendingSection

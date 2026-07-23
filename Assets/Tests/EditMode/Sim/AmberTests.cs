@@ -30,7 +30,8 @@ namespace Wildgrove.Sim.Tests
                 observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 0.25 },
                 // digFindsPerHour high enough that one 1-second sub-step is a
                 // certain find — the chance test would flake otherwise.
-                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15 },
+                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20 },
+                store = new EconomyData.StoreData { starterBundleAmber = 30, amberPackSmall = 50, amberPackLarge = 150 },
             };
             _data.resources = new List<ResourceData>
             {
@@ -142,6 +143,99 @@ namespace Wildgrove.Sim.Tests
             state.amber = 100.0;
 
             Assert.That(Amber.TryTimeSkip(state, _data), Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void GrantDrip_CreditsTheConfiguredPile()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            var granted = Amber.GrantDrip(state, _data);
+
+            Assert.That(granted, Is.EqualTo(3.0).Within(Tolerance));
+            Assert.That(state.amber, Is.EqualTo(3.0).Within(Tolerance), "the rewarded-ad drip lands in the coffer");
+        }
+
+        [Test]
+        public void GrantDrip_RefusedWhenUnconfigured()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Amber.GrantDrip(state, _data), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void WeeklyCache_FirstClaimGrantsAndStamps()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+
+            Assert.That(Amber.CanClaimWeeklyCache(state, _data, now), Is.True, "never claimed — ready now");
+            var granted = Amber.ClaimWeeklyCache(state, _data, now);
+
+            Assert.That(granted, Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(state.amber, Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(now), "the claim time is stamped");
+        }
+
+        [Test]
+        public void WeeklyCache_RefusedBeforeAWeekElapses()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+            Amber.ClaimWeeklyCache(state, _data, now);
+
+            var sixDays = now + (6L * 24L * 60L * 60L * 1000L);
+            Assert.That(Amber.CanClaimWeeklyCache(state, _data, sixDays), Is.False, "still cooling down");
+            Assert.That(Amber.ClaimWeeklyCache(state, _data, sixDays), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(20.0).Within(Tolerance), "no second pile before the week is out");
+        }
+
+        [Test]
+        public void WeeklyCache_ReArmsAfterAWeek()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+            Amber.ClaimWeeklyCache(state, _data, now);
+
+            var aWeekOn = now + Amber.WeeklyCacheCooldownMs;
+            Assert.That(Amber.CanClaimWeeklyCache(state, _data, aWeekOn), Is.True, "the cache re-arms a week later");
+            Assert.That(Amber.ClaimWeeklyCache(state, _data, aWeekOn), Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance), "two weeks, two caches");
+        }
+
+        [Test]
+        public void GrantPack_CreditsAmount()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            var granted = Amber.GrantPack(state, 50.0);
+
+            Assert.That(granted, Is.EqualTo(50.0).Within(Tolerance));
+            Assert.That(state.amber, Is.EqualTo(50.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void GrantPack_NonPositiveIsNoOp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 5.0;
+
+            Assert.That(Amber.GrantPack(state, 0.0), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(5.0).Within(Tolerance), "an unconfigured pack mints nothing");
+        }
+
+        [Test]
+        public void Digging_BanksAmberForTelemetry()
+        {
+            var state = StateWithAWanderer();
+
+            Simulation.Advance(state, _data, 1.0);
+
+            Assert.That(state.amberFoundUnlogged, Is.EqualTo(2.0).Within(Tolerance),
+                "the find is banked for GameLoop to report, alongside crediting the balance");
         }
     }
 }

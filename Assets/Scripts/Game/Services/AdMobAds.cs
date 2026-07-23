@@ -17,11 +17,13 @@ namespace Wildgrove.Game.Services
 
         private RewardedAd _offlineBoost;
         private RewardedAd _timeSkip;
+        private RewardedAd _amberDrip;
         private bool _initialised;
 
         public bool IsRewardedReady =>
             (_offlineBoost != null && _offlineBoost.CanShowAd())
-            || (_timeSkip != null && _timeSkip.CanShowAd());
+            || (_timeSkip != null && _timeSkip.CanShowAd())
+            || (_amberDrip != null && _amberDrip.CanShowAd());
 
         public void Initialise()
         {
@@ -38,12 +40,13 @@ namespace Wildgrove.Game.Services
             {
                 Load(RewardedPlacement.OfflineBoost);
                 Load(RewardedPlacement.TimeSkip);
+                Load(RewardedPlacement.AmberDrip);
             });
         }
 
         public void ShowRewarded(RewardedPlacement placement, Action onReward, Action onClosed = null)
         {
-            var ad = placement == RewardedPlacement.TimeSkip ? _timeSkip : _offlineBoost;
+            var ad = AdFor(placement);
             if (ad == null || !ad.CanShowAd())
             {
                 // Nothing loaded yet — don't reward; kick a fresh load for next time.
@@ -70,20 +73,50 @@ namespace Wildgrove.Game.Services
                     return;
                 }
 
-                if (placement == RewardedPlacement.TimeSkip)
-                {
-                    _timeSkip = ad;
-                }
-                else
-                {
-                    _offlineBoost = ad;
-                }
+                Store(placement, ad);
             });
+        }
+
+        private RewardedAd AdFor(RewardedPlacement placement)
+        {
+            switch (placement)
+            {
+                case RewardedPlacement.TimeSkip:
+                    return _timeSkip;
+                case RewardedPlacement.AmberDrip:
+                    return _amberDrip;
+                default:
+                    return _offlineBoost;
+            }
+        }
+
+        private void Store(RewardedPlacement placement, RewardedAd ad)
+        {
+            switch (placement)
+            {
+                case RewardedPlacement.TimeSkip:
+                    _timeSkip = ad;
+                    break;
+                case RewardedPlacement.AmberDrip:
+                    _amberDrip = ad;
+                    break;
+                default:
+                    _offlineBoost = ad;
+                    break;
+            }
         }
 
         private static string UnitFor(RewardedPlacement placement)
         {
-            return placement == RewardedPlacement.TimeSkip ? AdUnitIds.TimeSkip : AdUnitIds.OfflineBoost;
+            switch (placement)
+            {
+                case RewardedPlacement.TimeSkip:
+                    return AdUnitIds.TimeSkip;
+                case RewardedPlacement.AmberDrip:
+                    return AdUnitIds.AmberDrip;
+                default:
+                    return AdUnitIds.OfflineBoost;
+            }
         }
     }
 }

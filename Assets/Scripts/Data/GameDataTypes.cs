@@ -462,13 +462,17 @@ namespace Wildgrove.Data
             public double perFind;
             public double timeSkipHours;
             public double timeSkipCostAmber;
+            public double adDripAmber;
+            public double weeklyCacheAmber;
         }
 
-        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant.</summary>
+        /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>
         [Serializable]
         public sealed class StoreData
         {
             public double starterBundleAmber;
+            public double amberPackSmall;
+            public double amberPackLarge;
         }
 
         [Serializable]

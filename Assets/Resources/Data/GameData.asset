@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: a558ca679773e7641e56d47851fe72a247574a157ab9d2640d600df3329c6326
+  sourceHash: 468f55a50306564337533a59386d608ce6e4c072c221d80de313018c0e860f7c
   economy:
     costGrowth:
       building: 1.25
@@ -95,8 +95,12 @@ MonoBehaviour:
       perFind: 2
       timeSkipHours: 4
       timeSkipCostAmber: 15
+      adDripAmber: 3
+      weeklyCacheAmber: 20
     store:
       starterBundleAmber: 30
+      amberPackSmall: 50
+      amberPackLarge: 150
   resources:
   - id: berries
     sellValue: 1

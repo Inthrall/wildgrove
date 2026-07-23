@@ -1187,16 +1187,19 @@ namespace Wildgrove.Data
 
             if (economy.Amber != null
                 && (economy.Amber.DigFindsPerHour <= 0 || economy.Amber.PerFind <= 0
-                    || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0))
+                    || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0
+                    || economy.Amber.AdDripAmber <= 0 || economy.Amber.WeeklyCacheAmber <= 0))
             {
                 // A present-but-zeroed section would ship an earn with no sink
                 // (or a sink no one can afford) — configure it whole or not at all.
                 issues.Add("Economy amber values must all be positive");
             }
 
-            if (economy.Store != null && economy.Store.StarterBundleAmber <= 0)
+            if (economy.Store != null
+                && (economy.Store.StarterBundleAmber <= 0
+                    || economy.Store.AmberPackSmall <= 0 || economy.Store.AmberPackLarge <= 0))
             {
-                issues.Add("Economy store.starterBundleAmber must be positive — the bundle promises a pile, not a pebble");
+                issues.Add("Economy store amber values must all be positive — the bundle and packs promise piles, not pebbles");
             }
         }
 

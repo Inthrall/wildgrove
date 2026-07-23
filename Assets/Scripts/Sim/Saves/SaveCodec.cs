@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 27;
+        public const int CurrentVersion = 28;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -38,6 +38,7 @@ namespace Wildgrove.Sim.Saves
                 foldedVersesSung = state.foldedVersesSung,
                 purchasedKithSlots = state.purchasedKithSlots,
                 starterBundleAmberGranted = state.starterBundleAmberGranted,
+                weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
@@ -242,6 +243,7 @@ namespace Wildgrove.Sim.Saves
             state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
             state.starterBundleAmberGranted = save.starterBundleAmberGranted;
+            state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
@@ -930,6 +932,13 @@ namespace Wildgrove.Sim.Saves
                         }
 
                         save.version = 27;
+                        break;
+
+                    case 27:
+                        // v27 predates the weekly Amber cache — the cache re-arms
+                        // a week after the last claim, so a missing timestamp (0)
+                        // correctly reads as "never claimed, ready now".
+                        save.version = 28;
                         break;
 
                     default:

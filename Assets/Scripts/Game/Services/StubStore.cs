@@ -37,6 +37,14 @@ namespace Wildgrove.Game.Services
             {
                 if (productId == known)
                 {
+                    // Consumables (amber packs) are bought for their effect and
+                    // never owned — always a fresh Purchased so they re-buy.
+                    if (StoreProductIds.IsConsumable(productId))
+                    {
+                        onComplete?.Invoke(StoreResult.Purchased);
+                        return;
+                    }
+
                     var result = _owned.Contains(productId) ? StoreResult.AlreadyOwned : StoreResult.Purchased;
                     _owned.Add(productId);
                     onComplete?.Invoke(result);

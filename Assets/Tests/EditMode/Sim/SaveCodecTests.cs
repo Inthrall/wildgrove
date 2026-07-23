@@ -89,10 +89,14 @@ namespace Wildgrove.Sim.Tests
             state.nodes[1].richnessLevel = 4;
             state.nodes[1].basket = new BigDouble(7.5);
             state.nodes[2].tendBurstRemaining = 1.5;
+            state.amber = 33.0;
+            state.weeklyCacheClaimedUnixMs = 1_700_000_000_000L;
             TestKith.Station(state, state.nodes[1].id, 1);
 
             var restored = RoundTrip(state);
 
+            Assert.That(restored.amber, Is.EqualTo(33.0).Within(Tolerance));
+            Assert.That(restored.weeklyCacheClaimedUnixMs, Is.EqualTo(1_700_000_000_000L), "the weekly-cache claim time survives a save");
             Assert.That(restored.verdurePoints, Is.EqualTo(7.5).Within(Tolerance));
             Assert.That(restored.GetResource("berries").ToDouble(), Is.EqualTo(42.25).Within(Tolerance));
             Assert.That(restored.nodes[1].masteryXp, Is.EqualTo(107.5).Within(Tolerance));

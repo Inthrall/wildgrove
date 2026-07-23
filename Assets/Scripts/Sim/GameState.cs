@@ -55,6 +55,9 @@ namespace Wildgrove.Sim
         /// <summary>True once the starter bundle's one-time Amber grant has been paid out — the entitlement re-resolves on every device, the pile arrives once.</summary>
         public bool starterBundleAmberGranted;
 
+        /// <summary>UTC unix ms of the last weekly Amber cache claim (design §11) — 0 = never claimed; the cache re-arms a week after this.</summary>
+        public long weeklyCacheClaimedUnixMs;
+
         /// <summary>
         /// Monotonic version of the effect sources (purchases, donations,
         /// insects, gear, Almanac, buildings) — bumping it invalidates the
@@ -72,6 +75,9 @@ namespace Wildgrove.Sim
 
         /// <summary>Reusable scratch for the observation tick's eligible-insect walk — see Observation.Advance. Never saved.</summary>
         public List<Wildgrove.Data.InsectData> insectScratch;
+
+        /// <summary>Amber surfaced by observation sites but not yet reported to telemetry — GameLoop flushes it after each advance so an offline catch-up logs one aggregate find. Never saved.</summary>
+        public double amberFoundUnlogged;
 
         /// <summary>Invalidate the cached modifier snapshot after an effect-source mutation.</summary>
         public void BumpModifiers()

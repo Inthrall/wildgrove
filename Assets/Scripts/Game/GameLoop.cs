@@ -86,6 +86,7 @@ namespace Wildgrove.Game
             }
 
             Simulation.Advance(State, Data, Time.deltaTime);
+            FlushAmberFindTelemetry();
             RefreshArrivals();
 
             _autosaveCountdown -= Time.deltaTime;
@@ -843,6 +844,93 @@ namespace Wildgrove.Game
             }
 
             return hours;
+        }
+
+        /// <summary>
+        /// Credit the rewarded-ad Amber drip (design §10). The caller shows the
+        /// ad and calls this only on the reward; returns the amount granted.
+        /// </summary>
+        public double GrantAmberDrip()
+        {
+            var amount = Amber.GrantDrip(State, Data);
+            if (amount > 0.0)
+            {
+                Telemetry.LogEvent("amber_drip", ("amount", amount));
+                SaveNow();
+            }
+
+            return amount;
+        }
+
+        /// <summary>Whether the weekly Amber cache is signed in, configured, and off cooldown — the button's shown/enabled state.</summary>
+        public bool CanClaimWeeklyCache()
+        {
+            return GameServices.IsSignedIn && Amber.CanClaimWeeklyCache(State, Data, NowUnixMs());
+        }
+
+        /// <summary>Claim the weekly Amber cache (design §11). Returns the amount granted (0 = refused).</summary>
+        public double ClaimWeeklyCache()
+        {
+            var amount = Amber.ClaimWeeklyCache(State, Data, NowUnixMs());
+            if (amount > 0.0)
+            {
+                Telemetry.LogEvent("weekly_amber_cache", ("amount", amount));
+                SaveNow();
+            }
+
+            return amount;
+        }
+
+        /// <summary>
+        /// Buy a consumable Amber pack (design §10) and credit its pile on success.
+        /// The result callback fires on the main thread like every IStore callback.
+        /// </summary>
+        public void PurchaseAmberPack(string productId, System.Action<StoreResult> onComplete)
+        {
+            Store.Purchase(productId, result =>
+            {
+                if (result == StoreResult.Purchased)
+                {
+                    var amount = Amber.GrantPack(State, AmberPackAmount(productId));
+                    Telemetry.LogEvent("amber_pack", ("product", productId), ("amount", amount));
+                    SaveNow();
+                }
+
+                onComplete?.Invoke(result);
+            });
+        }
+
+        /// <summary>The Amber pile a pack product grants, from the store catalogue (0 for an unknown id).</summary>
+        public double AmberPackAmount(string productId)
+        {
+            var store = Data.economy?.store;
+            if (store == null)
+            {
+                return 0.0;
+            }
+
+            if (productId == StoreProductIds.AmberPackSmall)
+            {
+                return store.amberPackSmall;
+            }
+
+            if (productId == StoreProductIds.AmberPackLarge)
+            {
+                return store.amberPackLarge;
+            }
+
+            return 0.0;
+        }
+
+        private void FlushAmberFindTelemetry()
+        {
+            if (State == null || State.amberFoundUnlogged <= 0.0)
+            {
+                return;
+            }
+
+            Telemetry.LogEvent("amber_found", ("amount", State.amberFoundUnlogged));
+            State.amberFoundUnlogged = 0.0;
         }
 
         /// <summary>True when offering into this slot could land something now — the verse is open and the camp holds what it asks (the HUD's button gate).</summary>
