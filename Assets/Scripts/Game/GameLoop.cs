@@ -332,6 +332,35 @@ namespace Wildgrove.Game
             Simulation.AdvanceOffline(State, Data, hours * 3600.0);
         }
 
+        /// <summary>
+        /// Whether a rewarded reward can be taken right now — a loaded ad, or the
+        /// Remove Ads entitlement (which grants without one). Every "watch an ad"
+        /// button gates its shown/enabled state on this so the reward stays
+        /// reachable once ads are removed.
+        /// </summary>
+        public bool RewardedReady => Store.RemoveAdsOwned || Ads.IsRewardedReady;
+
+        /// <summary>The tail a reward button's label carries — dropped once Remove Ads is owned, since no ad plays.</summary>
+        public string RewardedActionSuffix => Store.RemoveAdsOwned ? string.Empty : " — watch a short ad";
+
+        /// <summary>
+        /// Take a rewarded reward for <paramref name="placement"/>. Normally shows
+        /// the ad; once Remove Ads is owned the reward is granted immediately with
+        /// no ad — the whole point of the purchase. Every rewarded placement routes
+        /// through here so "no more ads" stays true for all of them.
+        /// </summary>
+        public void WatchRewarded(RewardedPlacement placement, System.Action onReward, System.Action onClosed = null)
+        {
+            if (Store.RemoveAdsOwned)
+            {
+                onReward?.Invoke();
+                onClosed?.Invoke();
+                return;
+            }
+
+            Ads.ShowRewarded(placement, onReward, onClosed);
+        }
+
         /// <summary>Persist the run now (also runs on the autosave interval, on pause, and on quit).</summary>
         public void SaveNow()
         {

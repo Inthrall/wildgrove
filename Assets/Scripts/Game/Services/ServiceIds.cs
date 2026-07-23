@@ -22,7 +22,7 @@ namespace Wildgrove.Game.Services
     /// <summary>In-app purchase product IDs (Google Play Console SKUs). All one-off non-consumables.</summary>
     public static class StoreProductIds
     {
-        /// <summary>One-off, non-consumable: suppresses forced ads.</summary>
+        /// <summary>One-off, non-consumable: the rewarded-ad rewards grant without an ad (there are no forced ads). See GameLoop.WatchRewarded.</summary>
         public const string RemoveAds = "remove_ads";
 
         /// <summary>The initial purchase offer (Play Level Up eligibility): opens a kith slot and grants a one-time Amber pile.</summary>

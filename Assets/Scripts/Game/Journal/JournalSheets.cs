@@ -127,12 +127,13 @@ namespace Wildgrove.Game
                 MakeText(sheet, "+" + NumberFormat.Short(pair.Value) + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
             }
 
-            // Opt-in rewarded ad: watch to double the haul just credited.
-            if (summary.gains.Count > 0 && _loop.Ads.IsRewardedReady)
+            // Opt-in rewarded ad: watch to double the haul just credited (or,
+            // with Remove Ads owned, doubled outright with no ad).
+            if (summary.gains.Count > 0 && _loop.RewardedReady)
             {
-                var doubleIt = Button(sheet, "Double it — watch a short ad", 360, () =>
+                var doubleIt = Button(sheet, "Double it" + _loop.RewardedActionSuffix, 360, () =>
                 {
-                    _loop.Ads.ShowRewarded(RewardedPlacement.OfflineBoost,
+                    _loop.WatchRewarded(RewardedPlacement.OfflineBoost,
                         () =>
                         {
                             _loop.GrantOfflineBonus(summary);
@@ -443,7 +444,7 @@ namespace Wildgrove.Game
             element.flexibleHeight = 0;
             AddBorder(bar, Ink2);
 
-            _timeSkipButton = Button(bar.transform, "Hasten a while — watch a short ad", 380, OnTimeSkip);
+            _timeSkipButton = Button(bar.transform, "Hasten a while" + _loop.RewardedActionSuffix, 380, OnTimeSkip);
             _timeSkipButton.GetComponent<Image>().color = OchreWash;
             _timeSkipButton.GetComponentInChildren<Text>().color = Ochre;
 
@@ -456,7 +457,7 @@ namespace Wildgrove.Game
 
         private void OnTimeSkip()
         {
-            _loop.Ads.ShowRewarded(RewardedPlacement.TimeSkip,
+            _loop.WatchRewarded(RewardedPlacement.TimeSkip,
                 () =>
                 {
                     _loop.CreditTimeSkip(TimeSkipHours);

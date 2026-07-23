@@ -131,12 +131,12 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            label.text = "a little amber — watch a short ad"
+            label.text = "a little amber" + _loop.RewardedActionSuffix
                          + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.adDripAmber) + " amber</color></size>";
             Button watch = null;
             watch = Button(row.transform, "Watch", 170, () =>
             {
-                _loop.Ads.ShowRewarded(RewardedPlacement.AmberDrip, () =>
+                _loop.WatchRewarded(RewardedPlacement.AmberDrip, () =>
                 {
                     var amount = _loop.GrantAmberDrip();
                     if (amount > 0.0)
@@ -150,7 +150,7 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                var ready = _loop.Ads.IsRewardedReady;
+                var ready = _loop.RewardedReady;
                 watch.interactable = ready;
                 SetButtonTint(watch, ready);
             });

@@ -26,7 +26,8 @@ namespace Wildgrove.Game.Services
     /// until the AdMob (Google Mobile Ads) implementation exists, then the real
     /// SDK implements it without touching the call sites. Only rewarded ads live
     /// here (the sole ad format the design uses); the one-off remove_ads purchase
-    /// suppresses forced ads and is owned by <see cref="IStore"/>.
+    /// (owned by <see cref="IStore"/>) makes these rewards grant without an ad —
+    /// GameLoop.WatchRewarded applies that, so the seam itself stays ad-only.
     /// </summary>
     public interface IAds
     {
