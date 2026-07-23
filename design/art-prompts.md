@@ -79,6 +79,46 @@ numbered figure frame on a botanical plate.**
   gameplay screenshot will be composited there). No text beyond the empty
   caption box, no objects.
 
+## Store product icons
+
+The three one-time purchases (`remove_ads`, `starter_bundle`, `kith_slot`)
+shown in the in-game store rows. Prepend the shared style block to each.
+
+- **Deliver (all three):** 512×512 PNG, **transparent background**, a single
+  centred subject with generous margin. They render small (~56 px on the card),
+  so keep one bold, legible silhouette — no fine detail that dissolves at that
+  size, no text, no ring, no ground plane.
+- **A note on colour:** these three may introduce one warm accent — **amber /
+  honey (#B07B36)** for the resin — over the usual moss-and-sage washes, since
+  amber is the currency they trade in. Everything else stays in the field-guide
+  palette.
+- **Wiring:** drop the PNGs under `Assets/Resources/Art/Store/` and map each
+  product id in `ArtLibrary` (a `Product` map), then show them with
+  `IconImage(...)` on the store rows — additive, so a missing plate just falls
+  back to the text row.
+
+### 7. remove_ads — "the ads step aside"
+- **Prompt:** A single small songbird (a lark or linnet) caught mid-lift, wings
+  raised, rising off a bare twig — the quiet returning to the grove. Inked and
+  washed in moss green and sage exactly as the reference; the twig minimal, the
+  bird the whole subject. Nothing crossed-out or modern; the idea is calm
+  restored, not a prohibition symbol.
+
+### 8. starter_bundle — a slot and a pile of amber
+- **Prompt:** A small field-guide still life: a cloth travelling bundle knotted
+  with cord (the pack you set out with), a warm translucent amber nugget with a
+  tiny insect sealed inside resting against it, and a single downy feather laid
+  alongside — the three read together as "a companion's place and a pile of
+  amber to start with." Amber rendered in warm honey #B07B36; cloth and feather
+  in the muted washes. Composed as a tidy little group, generous margin.
+
+### 9. kith_slot — room for one more
+- **Prompt:** A single animal track — one clean paw print pressed into soft
+  earth — sitting inside a faint hand-inked dotted oval, like an empty labelled
+  space on a plate waiting to be filled. The print in black-brown ink with a
+  soft sage wash, the dotted "slot" outline in thin sepia #8A7350. The quiet
+  idea: a place kept for a friend not yet arrived.
+
 ## Working notes
 
 - **Consistency:** generate #1 first; pass it as an image/style reference
