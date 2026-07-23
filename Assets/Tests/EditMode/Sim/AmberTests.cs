@@ -146,14 +146,37 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void GrantDrip_CreditsTheConfiguredPile()
+        public void GrantDrip_CreditsTheConfiguredPileAndStamps()
         {
             var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
 
-            var granted = Amber.GrantDrip(state, _data);
+            Assert.That(Amber.CanGrantDrip(state, _data, now), Is.True, "never claimed — ready now");
+            var granted = Amber.GrantDrip(state, _data, now);
 
             Assert.That(granted, Is.EqualTo(3.0).Within(Tolerance));
             Assert.That(state.amber, Is.EqualTo(3.0).Within(Tolerance), "the rewarded-ad drip lands in the coffer");
+            Assert.That(state.adDripClaimedUnixMs, Is.EqualTo(now), "the claim time is stamped so the cooldown holds");
+        }
+
+        [Test]
+        public void GrantDrip_RefusedWithinTheCooldown()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+            Amber.GrantDrip(state, _data, now);
+
+            // A second claim a moment later — the only throttle once Remove Ads
+            // drops the ad — must be refused and mint nothing.
+            var again = now + Amber.AdDripCooldownMs - 1L;
+            Assert.That(Amber.CanGrantDrip(state, _data, again), Is.False);
+            Assert.That(Amber.GrantDrip(state, _data, again), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(3.0).Within(Tolerance), "no second pile within the cooldown");
+
+            // Once the cooldown elapses it re-arms.
+            var later = now + Amber.AdDripCooldownMs;
+            Assert.That(Amber.CanGrantDrip(state, _data, later), Is.True);
+            Assert.That(Amber.GrantDrip(state, _data, later), Is.EqualTo(3.0).Within(Tolerance));
         }
 
         [Test]
@@ -162,8 +185,21 @@ namespace Wildgrove.Sim.Tests
             _data.economy.amber = null;
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(Amber.GrantDrip(state, _data), Is.EqualTo(0.0));
+            Assert.That(Amber.GrantDrip(state, _data, 1_000_000_000_000L), Is.EqualTo(0.0));
             Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void RewardedTimeSkip_CooldownGatesRepeatClaims()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+
+            Assert.That(Amber.CanRewardedTimeSkip(state, now), Is.True, "never taken — ready now");
+            Amber.StampRewardedTimeSkip(state, now);
+
+            Assert.That(Amber.CanRewardedTimeSkip(state, now + Amber.TimeSkipCooldownMs - 1L), Is.False);
+            Assert.That(Amber.CanRewardedTimeSkip(state, now + Amber.TimeSkipCooldownMs), Is.True);
         }
 
         [Test]

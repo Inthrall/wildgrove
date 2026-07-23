@@ -27,8 +27,10 @@ namespace Wildgrove.Sim.Saves
                 return;
             }
 
+            // G17 guarantees an exact double round-trip; "R" does not on all
+            // .NET/Mono runtimes, so a mantissa could drift by a ULP per save.
             writer.WriteValue(
-                mantissa.ToString("R", CultureInfo.InvariantCulture)
+                mantissa.ToString("G17", CultureInfo.InvariantCulture)
                 + "e" + value.Exponent.ToString(CultureInfo.InvariantCulture));
         }
 

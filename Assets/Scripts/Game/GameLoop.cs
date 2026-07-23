@@ -164,6 +164,12 @@ namespace Wildgrove.Game
             Store = new StubStore();
             GameServices = new StubGameServices();
 #endif
+            // Credit consumable purchases that resolved after their session ended
+            // (fetched back and consumed on this launch, so no live callback is
+            // waiting). The store's fetch is lazy — it runs no earlier than the
+            // first purchase, by which point State is loaded.
+            Store.ConsumablePurchased += OnConsumableRecovered;
+
             Ads.Initialise();
             // Store is initialised lazily on the first purchase, not here: Unity
             // IAP's billing connection must not run at startup — on some devices
@@ -321,15 +327,19 @@ namespace Wildgrove.Game
         /// Grant the TimeSkip rewarded-ad reward: advance the run by
         /// <paramref name="hours"/> of gathering, exactly as an offline catch-up
         /// of that length would (subject to the same offline rate and cap).
+        /// Refused (returns false) while the reward is still cooling down, so it
+        /// can't be tapped without limit once Remove Ads drops the ad.
         /// </summary>
-        public void CreditTimeSkip(double hours)
+        public bool CreditTimeSkip(double hours)
         {
-            if (State == null || hours <= 0.0)
+            if (State == null || hours <= 0.0 || !Amber.CanRewardedTimeSkip(State, NowUnixMs()))
             {
-                return;
+                return false;
             }
 
             Simulation.AdvanceOffline(State, Data, hours * 3600.0);
+            Amber.StampRewardedTimeSkip(State, NowUnixMs());
+            return true;
         }
 
         /// <summary>
@@ -338,7 +348,7 @@ namespace Wildgrove.Game
         /// button gates its shown/enabled state on this so the reward stays
         /// reachable once ads are removed.
         /// </summary>
-        public bool RewardedReady => Store.RemoveAdsOwned || Ads.IsRewardedReady;
+        public bool RewardedReady(RewardedPlacement placement) => Store.RemoveAdsOwned || Ads.IsRewardedReady(placement);
 
         /// <summary>The tail a reward button's label carries — dropped once Remove Ads is owned, since no ad plays.</summary>
         public string RewardedActionSuffix => Store.RemoveAdsOwned ? string.Empty : " — watch a short ad";
@@ -370,11 +380,17 @@ namespace Wildgrove.Game
             }
 
             _lastSavedUnixMs = NowUnixMs();
+            // Advance the reconcile baseline too: cloud adoption compares against
+            // the newest local save we hold, not the one we launched with. Without
+            // this a cloud save taken after launch but before now would wrongly
+            // beat freshly-autosaved progress and overwrite it.
+            _loadedSaveUnixMs = _lastSavedUnixMs;
             var save = SaveCodec.Capture(State, _lastSavedUnixMs);
             SaveFile.Write(save);
             // Mirror to cloud; ReconcileCloudSave pulls it back on the next signed-in
-            // launch, adopting it when it is newer than the local slot.
-            GameServices.SaveCloud(SaveCodec.ToJson(save));
+            // launch, adopting it when it is newer than the local slot. The
+            // timestamp doubles as the snapshot's played-time for conflict resolution.
+            GameServices.SaveCloud(SaveCodec.ToJson(save), _lastSavedUnixMs);
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
@@ -881,7 +897,7 @@ namespace Wildgrove.Game
         /// </summary>
         public double GrantAmberDrip()
         {
-            var amount = Amber.GrantDrip(State, Data);
+            var amount = Amber.GrantDrip(State, Data, NowUnixMs());
             if (amount > 0.0)
             {
                 Telemetry.LogEvent("amber_drip", ("amount", amount));
@@ -890,6 +906,12 @@ namespace Wildgrove.Game
 
             return amount;
         }
+
+        /// <summary>Whether the rewarded Amber drip can be taken right now (configured, off cooldown) — a "Watch" button gates its enabled state on this and RewardedReady.</summary>
+        public bool CanWatchAmberDrip => Amber.CanGrantDrip(State, Data, NowUnixMs());
+
+        /// <summary>Whether the rewarded time-skip can be taken right now (off cooldown) — "Hasten a while" gates on this and RewardedReady.</summary>
+        public bool CanTimeSkipReward => Amber.CanRewardedTimeSkip(State, NowUnixMs());
 
         /// <summary>Whether the weekly Amber cache is signed in, configured, and off cooldown — the button's shown/enabled state.</summary>
         public bool CanClaimWeeklyCache()
@@ -927,6 +949,26 @@ namespace Wildgrove.Game
 
                 onComplete?.Invoke(result);
             });
+        }
+
+        /// <summary>
+        /// Credit a consumable pack that the store confirmed without a live
+        /// callback — an interrupted purchase, consumed on this launch. The Play
+        /// token is already spent, so this is the only place its pile is granted.
+        /// </summary>
+        private void OnConsumableRecovered(string productId)
+        {
+            if (State == null)
+            {
+                return;
+            }
+
+            var amount = Amber.GrantPack(State, AmberPackAmount(productId));
+            if (amount > 0.0)
+            {
+                Telemetry.LogEvent("amber_pack_recovered", ("product", productId), ("amount", amount));
+                SaveNow();
+            }
         }
 
         /// <summary>The Amber pile a pack product grants, from the store catalogue (0 for an unknown id).</summary>

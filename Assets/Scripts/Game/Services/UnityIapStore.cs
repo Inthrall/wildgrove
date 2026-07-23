@@ -25,6 +25,8 @@ namespace Wildgrove.Game.Services
         private Action _onReady;
         private bool _ready;
 
+        public event Action<string> ConsumablePurchased;
+
         public bool IsInitialised => _ready;
 
         public bool RemoveAdsOwned => IsOwned(StoreProductIds.RemoveAds);
@@ -192,6 +194,16 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
+            if (_pending.ContainsKey(productId))
+            {
+                // A purchase for this product is already in flight — a double tap,
+                // or several lazy-init retries queued before the connection came
+                // up. Launching a second Play flow makes Google reject it as
+                // "you already own this item" (non-consumable) or risk a double
+                // charge (consumable). The in-flight callback delivers the result.
+                return;
+            }
+
             if (!_products.TryGetValue(productId, out var product) || !product.availableToPurchase)
             {
                 onComplete?.Invoke(StoreResult.Failed);
@@ -231,7 +243,19 @@ namespace Wildgrove.Game.Services
                     _owned.Add(productId);
                 }
 
-                Resolve(productId, StoreResult.Purchased);
+                if (_pending.ContainsKey(productId))
+                {
+                    // The live purchase flow: its callback grants the pile.
+                    Resolve(productId, StoreResult.Purchased);
+                }
+                else if (StoreProductIds.IsConsumable(productId))
+                {
+                    // A consumable confirmed with no waiting callback = a purchase
+                    // whose session ended before it resolved (fetched back as
+                    // pending on launch and consumed just now). The token is gone;
+                    // credit the pile through the recovery hook so it isn't lost.
+                    ConsumablePurchased?.Invoke(productId);
+                }
             }
         }
 

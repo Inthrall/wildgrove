@@ -129,7 +129,7 @@ namespace Wildgrove.Game
 
             // Opt-in rewarded ad: watch to double the haul just credited (or,
             // with Remove Ads owned, doubled outright with no ad).
-            if (summary.gains.Count > 0 && _loop.RewardedReady)
+            if (summary.gains.Count > 0 && _loop.RewardedReady(RewardedPlacement.OfflineBoost))
             {
                 var doubleIt = Button(sheet, "Double it" + _loop.RewardedActionSuffix, 360, () =>
                 {
@@ -444,7 +444,7 @@ namespace Wildgrove.Game
             element.flexibleHeight = 0;
             AddBorder(bar, Ink2);
 
-            _timeSkipButton = Button(bar.transform, "Hasten a while" + _loop.RewardedActionSuffix, 380, OnTimeSkip);
+            _timeSkipButton = Button(bar.transform, TimeSkipLabel(), 380, OnTimeSkip);
             _timeSkipButton.GetComponent<Image>().color = OchreWash;
             _timeSkipButton.GetComponentInChildren<Text>().color = Ochre;
 
@@ -455,12 +455,30 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>"Pass the time, +2 hours" (+ the "watch a short ad" tail until Remove Ads is owned) — says what the reward gives.</summary>
+        private string TimeSkipLabel()
+        {
+            var unit = System.Math.Abs(TimeSkipHours - 1.0) < 0.0001 ? "hour" : "hours";
+            return "Pass the time, +" + TimeSkipHours.ToString("0.##") + " " + unit + _loop.RewardedActionSuffix;
+        }
+
         private void OnTimeSkip()
         {
+            if (!_loop.CanTimeSkipReward)
+            {
+                // Still cooling down — refuse before showing an ad or granting.
+                SetNote("the land has given its hours for now. let a while pass.");
+                return;
+            }
+
             _loop.WatchRewarded(RewardedPlacement.TimeSkip,
                 () =>
                 {
-                    _loop.CreditTimeSkip(TimeSkipHours);
+                    if (!_loop.CreditTimeSkip(TimeSkipHours))
+                    {
+                        return;
+                    }
+
                     _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
                     SetNote(NumberFormat.Duration(TimeSkipHours * 3600.0)
                             + " pass in a breath — the kith kept to the work.");
@@ -470,6 +488,14 @@ namespace Wildgrove.Game
 
         private void OnRemoveAds()
         {
+            if (_removeAdsButton != null)
+            {
+                // Don't let a second tap launch a second Play flow while the first
+                // is open — Google rejects the re-buy with "you already own this
+                // item". Re-enabled only if the purchase doesn't go through.
+                _removeAdsButton.interactable = false;
+            }
+
             _loop.Store.Purchase(StoreProductIds.RemoveAds, result =>
             {
                 switch (result)
@@ -484,6 +510,11 @@ namespace Wildgrove.Game
                         SetNote("The ads step aside. Thank you for keeping the grove.");
                         break;
                     case StoreResult.Failed:
+                        if (_removeAdsButton != null)
+                        {
+                            _removeAdsButton.interactable = true;
+                        }
+
                         SetNote("That didn't go through — nothing was charged.");
                         break;
                 }

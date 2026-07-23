@@ -14,6 +14,12 @@ namespace Wildgrove.Game.Services
     {
         private readonly HashSet<string> _owned = new HashSet<string>();
 
+        // The stub has no persistence, so a purchase never survives to be
+        // recovered on a later launch — the event exists only to satisfy IStore.
+#pragma warning disable 67
+        public event Action<string> ConsumablePurchased;
+#pragma warning restore 67
+
         public bool IsInitialised { get; private set; }
 
         public bool RemoveAdsOwned => IsOwned(StoreProductIds.RemoveAds);

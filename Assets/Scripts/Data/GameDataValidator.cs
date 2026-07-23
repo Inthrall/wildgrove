@@ -571,6 +571,7 @@ namespace Wildgrove.Data
             CheckIds(data.Bonds.Select(b => b.Id), "bond", issues);
 
             var seenSources = new HashSet<string>();
+            var seenSpecies = new HashSet<string>();
             foreach (var bond in data.Bonds)
             {
                 if (!KnownBondRoles.Contains(bond.Role))
@@ -581,6 +582,13 @@ namespace Wildgrove.Data
                 if (string.IsNullOrEmpty(bond.Species) || !data.SpeciesById.ContainsKey(bond.Species))
                 {
                     issues.Add($"Bond '{bond.Id}' references unknown species '{bond.Species}'");
+                }
+                else if (!seenSpecies.Add(bond.Species))
+                {
+                    // At most one familiar per species (design §4). Two bonds on
+                    // the same species clobber each other's bondId on the shared
+                    // roster entry, which can re-materialise a duplicate.
+                    issues.Add($"Bond '{bond.Id}' targets species '{bond.Species}' already claimed by another bond — one bond per species");
                 }
 
                 if (bond.Source == null || !KnownBondSourceTypes.Contains(bond.Source.Type))
@@ -1121,6 +1129,13 @@ namespace Wildgrove.Data
                 issues.Add("Economy familiarXp.xpPerSecond must not be negative");
             }
 
+            if (economy.FamiliarXp != null && economy.FamiliarXp.KinshipDivisor <= 0)
+            {
+                // A non-positive divisor makes Kinship.Fold silently ignore the
+                // authored tuning and fall back to a hardcoded constant.
+                issues.Add("Economy familiarXp.kinshipDivisor must be positive");
+            }
+
             if (economy.Replant != null
                 && (economy.Replant.BaseCost <= 0 || economy.Replant.Growth <= 1 || economy.Replant.RichnessPerLevel <= 0))
             {
@@ -1139,6 +1154,20 @@ namespace Wildgrove.Data
             if (economy.Mastery != null && economy.Mastery.YieldBonusPerLevel < 0)
             {
                 issues.Add("Economy mastery.yieldBonusPerLevel must not be negative");
+            }
+
+            if (economy.Verdure != null && (economy.Verdure.RenownDivisor <= 0 || economy.Verdure.Exponent <= 0))
+            {
+                // renownDivisor ≤ 0 makes Migration.VerdureAfterMigration bank
+                // zero Verdure every fold — the permanent-progression currency
+                // dies. exponent 0 makes Pow(x, 0) = 1, so every fold banks
+                // exactly one point regardless of lifetime Renown.
+                issues.Add("Economy verdure.renownDivisor and verdure.exponent must both be positive");
+            }
+
+            if (economy.Verdure != null && economy.Verdure.YieldBonusPerPoint < 0)
+            {
+                issues.Add("Economy verdure.yieldBonusPerPoint must not be negative");
             }
 
             if (economy.Offline != null && economy.Offline.BaseCapHours <= 0)
@@ -1175,6 +1204,19 @@ namespace Wildgrove.Data
             if (economy.Tending != null && economy.Tending.PristineChanceBonus < 0)
             {
                 issues.Add("Economy tending.pristineChanceBonus must not be negative");
+            }
+
+            if (economy.Tending != null && economy.Tending.BurstYieldMult <= 0)
+            {
+                // The sim multiplies a node's yield by this during the tend-burst
+                // window — omitted/zero makes a freshly tended node yield nothing
+                // for the burst, worse than leaving it alone.
+                issues.Add("Economy tending.burstYieldMult must be positive");
+            }
+
+            if (economy.Tending != null && (economy.Tending.BurstDurationSec < 0 || economy.Tending.PristineBonusDurationSec < 0))
+            {
+                issues.Add("Economy tending burst/pristine durations must not be negative");
             }
 
             if (economy.Observation != null

@@ -280,6 +280,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesAmberEarnCooldowns()
+        {
+            var state = StateWithTheRiteSung();
+            state.weeklyCacheClaimedUnixMs = 1_700_000_000_000L;
+            state.adDripClaimedUnixMs = 1_700_000_001_000L;
+            state.timeSkipClaimedUnixMs = 1_700_000_002_000L;
+
+            var next = Migration.Migrate(state, _data);
+
+            // A fold must not re-arm the premium-currency cooldowns — otherwise a
+            // player could claim, migrate, and claim again immediately.
+            Assert.That(next.weeklyCacheClaimedUnixMs, Is.EqualTo(1_700_000_000_000L), "the weekly cache does not re-arm on a fold");
+            Assert.That(next.adDripClaimedUnixMs, Is.EqualTo(1_700_000_001_000L), "the drip cooldown crosses the fold");
+            Assert.That(next.timeSkipClaimedUnixMs, Is.EqualTo(1_700_000_002_000L), "the time-skip cooldown crosses the fold");
+        }
+
+        [Test]
         public void Migrate_TheCompendiumCrossesWhole()
         {
             var state = StateWithTheRiteSung();

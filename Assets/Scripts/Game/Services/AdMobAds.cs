@@ -20,10 +20,11 @@ namespace Wildgrove.Game.Services
         private RewardedAd _amberDrip;
         private bool _initialised;
 
-        public bool IsRewardedReady =>
-            (_offlineBoost != null && _offlineBoost.CanShowAd())
-            || (_timeSkip != null && _timeSkip.CanShowAd())
-            || (_amberDrip != null && _amberDrip.CanShowAd());
+        public bool IsRewardedReady(RewardedPlacement placement)
+        {
+            var ad = AdFor(placement);
+            return ad != null && ad.CanShowAd();
+        }
 
         public void Initialise()
         {
@@ -55,11 +56,26 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            ad.OnAdFullScreenContentClosed += () =>
+            // Close and present-failure are mutually exclusive in the SDK, but
+            // guard anyway so onClosed (which re-enables the button and preloads)
+            // fires exactly once however the ad ends.
+            var finished = false;
+            void Finish()
             {
+                if (finished)
+                {
+                    return;
+                }
+
+                finished = true;
                 onClosed?.Invoke();
                 Load(placement); // preload the next one
-            };
+            }
+
+            ad.OnAdFullScreenContentClosed += Finish;
+            // Without this, a presentation failure after Show() would strand the
+            // reward flow — no reward, and the button never re-enables.
+            ad.OnAdFullScreenContentFailed += _ => Finish();
             ad.Show(_ => onReward?.Invoke());
         }
 

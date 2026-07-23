@@ -58,6 +58,12 @@ namespace Wildgrove.Sim
         /// <summary>UTC unix ms of the last weekly Amber cache claim (design §11) — 0 = never claimed; the cache re-arms a week after this.</summary>
         public long weeklyCacheClaimedUnixMs;
 
+        /// <summary>UTC unix ms of the last rewarded Amber-drip claim — 0 = never; the drip re-arms after Amber.AdDripCooldownMs. Persisted so the cooldown can't be reset by relaunching, and (once Remove Ads drops the ad) so it still throttles the ad-free grant.</summary>
+        public long adDripClaimedUnixMs;
+
+        /// <summary>UTC unix ms of the last rewarded time-skip — 0 = never; re-arms after Amber.TimeSkipCooldownMs. Persisted for the same reason as the drip.</summary>
+        public long timeSkipClaimedUnixMs;
+
         /// <summary>
         /// Monotonic version of the effect sources (purchases, donations,
         /// insects, gear, Almanac, buildings) — bumping it invalidates the

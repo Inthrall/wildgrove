@@ -21,6 +21,16 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public interface IStore
     {
+        /// <summary>
+        /// Raised when a consumable purchase is confirmed with no live purchase
+        /// callback waiting for it — i.e. a purchase whose session ended before it
+        /// resolved, fetched back and consumed on the next launch. The store has
+        /// already consumed the Play token, so the handler MUST credit the pile or
+        /// it is lost with the money. Fires on the main thread. The one-off
+        /// entitlements don't need this — their ownership is read from the store.
+        /// </summary>
+        event Action<string> ConsumablePurchased;
+
         /// <summary>True once the billing connection is established and entitlements are known.</summary>
         bool IsInitialised { get; }
 

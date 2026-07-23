@@ -26,7 +26,13 @@ namespace Wildgrove.Game.Services
         /// <summary>Read the cloud save blob (null when none exists or signed out).</summary>
         void LoadCloud(Action<string> onLoaded);
 
-        /// <summary>Write the cloud save blob (no-op when signed out).</summary>
-        void SaveCloud(string data, Action onComplete = null);
+        /// <summary>
+        /// Write the cloud save blob (no-op when signed out). <paramref name="savedAtUnixMs"/>
+        /// is the save's timestamp, recorded as the snapshot's played-time so the
+        /// Snapshots layer's UseLongestPlaytime conflict resolution picks the most
+        /// recent save — matching GameLoop's own newest-wins reconcile — instead
+        /// of comparing zeros and resolving arbitrarily.
+        /// </summary>
+        void SaveCloud(string data, long savedAtUnixMs, Action onComplete = null);
     }
 }

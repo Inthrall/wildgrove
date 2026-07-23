@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 28;
+        public const int CurrentVersion = 29;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -39,6 +39,8 @@ namespace Wildgrove.Sim.Saves
                 purchasedKithSlots = state.purchasedKithSlots,
                 starterBundleAmberGranted = state.starterBundleAmberGranted,
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
+                adDripClaimedUnixMs = state.adDripClaimedUnixMs,
+                timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
@@ -213,7 +215,11 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            state.nextFamiliarSeq = save.nextFamiliarSeq > 0 ? save.nextFamiliarSeq : state.roster.Count + 1;
+            // A v20+ save always carries a seq ahead of every id; only fall back
+            // for a malformed one. roster.Count + 1 could collide with an
+            // existing "fam-N" if the roster has a gap, so derive the next seq
+            // from the highest id actually present.
+            state.nextFamiliarSeq = save.nextFamiliarSeq > 0 ? save.nextFamiliarSeq : NextSeqAfter(state.roster);
 
             foreach (var familiar in state.roster)
             {
@@ -244,6 +250,8 @@ namespace Wildgrove.Sim.Saves
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
             state.starterBundleAmberGranted = save.starterBundleAmberGranted;
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
+            state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
+            state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
@@ -611,6 +619,32 @@ namespace Wildgrove.Sim.Saves
         }
 
         /// <summary>
+        /// The next roster-id sequence guaranteed not to collide with any id
+        /// already in the roster: one past the highest "fam-N" present, or 1 on
+        /// an empty/unparseable roster. Used only as a fallback when a save's
+        /// stored seq is missing or malformed.
+        /// </summary>
+        private static int NextSeqAfter(List<Familiar> roster)
+        {
+            var highest = 0;
+            if (roster != null)
+            {
+                foreach (var familiar in roster)
+                {
+                    if (familiar?.id != null
+                        && familiar.id.StartsWith("fam-")
+                        && int.TryParse(familiar.id.Substring(4), out var seq)
+                        && seq > highest)
+                    {
+                        highest = seq;
+                    }
+                }
+            }
+
+            return highest + 1;
+        }
+
+        /// <summary>
         /// The v19→v20 kith rebuild: turn the anonymous per-node gatherer,
         /// per-site digger, and camp carrier counts into individual roster
         /// familiars (voles gather and dig, ravens hold the trail — the seed
@@ -939,6 +973,13 @@ namespace Wildgrove.Sim.Saves
                         // a week after the last claim, so a missing timestamp (0)
                         // correctly reads as "never claimed, ready now".
                         save.version = 28;
+                        break;
+
+                    case 28:
+                        // v28 predates the rewarded-reward cooldowns — a missing
+                        // drip/time-skip timestamp (0) reads as "never claimed,
+                        // ready now", exactly as intended for an old save.
+                        save.version = 29;
                         break;
 
                     default:

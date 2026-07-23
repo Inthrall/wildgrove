@@ -76,6 +76,14 @@ namespace Wildgrove.Sim
             next.purchasedKithSlots = state.purchasedKithSlots;
             next.starterBundleAmberGranted = state.starterBundleAmberGranted;
 
+            // Amber earn/claim cooldowns are cross-run: they gate premium
+            // currency, so a fold must not re-arm them (migrating is the one
+            // repeatable act a player controls). The weekly cache especially —
+            // without this a player could claim, fold, and claim again at once.
+            next.weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs;
+            next.adDripClaimedUnixMs = state.adDripClaimedUnixMs;
+            next.timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs;
+
             next.verdurePoints = VerdureAfterMigration(state, data);
             next.renown = state.renown;
             next.migrationCount = state.migrationCount + 1;

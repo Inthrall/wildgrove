@@ -16,6 +16,17 @@ namespace Wildgrove.Sim
         /// <summary>Milliseconds in the weekly-cache cooldown (design §11: one claim per week).</summary>
         public const long WeeklyCacheCooldownMs = 7L * 24L * 60L * 60L * 1000L;
 
+        /// <summary>
+        /// Cooldown between rewarded Amber-drip claims. The ad-watch used to be
+        /// the only throttle; once Remove Ads grants the reward with no ad, this
+        /// is what keeps the drip from being tapped without limit. Tuning value —
+        /// safe to adjust.
+        /// </summary>
+        public const long AdDripCooldownMs = 4L * 60L * 60L * 1000L;
+
+        /// <summary>Cooldown between rewarded time-skips — same role as <see cref="AdDripCooldownMs"/> for the "Hasten a while" reward. Tuning value.</summary>
+        public const long TimeSkipCooldownMs = 4L * 60L * 60L * 1000L;
+
         /// <summary>Unity can't serialize a null section — a zeroed sink also reads as "no amber system".</summary>
         public static bool Configured(EconomyData economy)
         {
@@ -46,21 +57,49 @@ namespace Wildgrove.Sim
             return amber.timeSkipHours;
         }
 
-        /// <summary>
-        /// Credit the rewarded-ad Amber drip (design §10). The caller shows the
-        /// ad and only calls this on the reward; returns the amount granted, or
-        /// 0 when the drip is unconfigured.
-        /// </summary>
-        public static double GrantDrip(GameState state, GameDataAsset data)
+        /// <summary>Whether the rewarded Amber drip is configured and off cooldown — gates the "Watch" button on both the ad and the ad-free (Remove Ads) paths.</summary>
+        public static bool CanGrantDrip(GameState state, GameDataAsset data, long nowUnixMs)
         {
             var amber = data?.economy?.amber;
             if (amber == null || amber.adDripAmber <= 0.0)
             {
+                return false;
+            }
+
+            return state.adDripClaimedUnixMs <= 0L
+                || nowUnixMs - state.adDripClaimedUnixMs >= AdDripCooldownMs;
+        }
+
+        /// <summary>
+        /// Credit the rewarded-ad Amber drip (design §10). The caller shows the
+        /// ad and only calls this on the reward; returns the amount granted, or
+        /// 0 when unconfigured or still cooling down. Stamps the claim time so
+        /// the cooldown holds even when Remove Ads grants without an ad.
+        /// </summary>
+        public static double GrantDrip(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            if (!CanGrantDrip(state, data, nowUnixMs))
+            {
                 return 0.0;
             }
 
+            var amber = data.economy.amber;
             state.amber += amber.adDripAmber;
+            state.adDripClaimedUnixMs = nowUnixMs;
             return amber.adDripAmber;
+        }
+
+        /// <summary>Whether the rewarded time-skip is off cooldown — gates "Hasten a while" on both the ad and the ad-free paths. (The amber-paid <see cref="TryTimeSkip"/> is throttled by its own cost, not this.)</summary>
+        public static bool CanRewardedTimeSkip(GameState state, long nowUnixMs)
+        {
+            return state.timeSkipClaimedUnixMs <= 0L
+                || nowUnixMs - state.timeSkipClaimedUnixMs >= TimeSkipCooldownMs;
+        }
+
+        /// <summary>Stamp a rewarded time-skip's claim time, re-arming the cooldown. Called by the sim caller after it credits the skip.</summary>
+        public static void StampRewardedTimeSkip(GameState state, long nowUnixMs)
+        {
+            state.timeSkipClaimedUnixMs = nowUnixMs;
         }
 
         /// <summary>Whether the weekly Amber cache is configured and its week has elapsed since the last claim.</summary>

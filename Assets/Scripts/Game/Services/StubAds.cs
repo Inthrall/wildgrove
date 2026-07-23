@@ -12,7 +12,7 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public sealed class StubAds : IAds
     {
-        public bool IsRewardedReady => true;
+        public bool IsRewardedReady(RewardedPlacement placement) => true;
 
         public void Initialise()
         {

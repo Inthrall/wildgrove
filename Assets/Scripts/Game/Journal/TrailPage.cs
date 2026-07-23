@@ -122,9 +122,21 @@ namespace Wildgrove.Game
                 intro.text = "<i>a " + species.displayName + " is drawn to the " + target.resourceId
                              + " — leave a pile and it stays.</i>";
                 var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + target.resourceId;
-                line.text = _loop.CanLeaveGift(target)
-                    ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>"
-                    : "leave a pile — " + pile + " (not enough yet)";
+                if (_loop.CanLeaveGift(target))
+                {
+                    line.text = "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>";
+                }
+                else if (_loop.KithWalking() >= _loop.KithSlots())
+                {
+                    // The pile is affordable but there is nowhere to put the
+                    // arrival — say so, rather than blaming the stock the player
+                    // can see they have.
+                    line.text = "leave a pile — " + pile + " (every slot is walked — rest someone first)";
+                }
+                else
+                {
+                    line.text = "leave a pile — " + pile + " (not enough yet)";
+                }
             });
         }
 

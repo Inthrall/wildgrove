@@ -165,7 +165,6 @@ namespace Wildgrove.Game
             ReportWorldStrip();
             AnimateTrailCarrier();
             HandleTend();
-            _sheets.PumpSheets();
 
             for (var i = 0; i < _frameUpdaters.Count; i++)
             {
@@ -176,6 +175,10 @@ namespace Wildgrove.Game
             if (_refreshCountdown <= 0f)
             {
                 _refreshCountdown = RefreshInterval;
+                // On the cadence, not per-frame: PumpSheets scans all zones for
+                // the next unread waystone — a quarter-second delay to raise a
+                // sheet is imperceptible and keeps that scan off the hot path.
+                _sheets.PumpSheets();
                 RefreshChrome(); // cadence, not per-frame — avoids string allocs every frame
                 var signature = StructureSignature();
                 if (_dirty || signature != _structureSignature)

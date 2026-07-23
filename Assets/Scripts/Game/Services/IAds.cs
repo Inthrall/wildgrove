@@ -31,8 +31,8 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public interface IAds
     {
-        /// <summary>True once a rewarded ad has loaded and can be shown right now.</summary>
-        bool IsRewardedReady { get; }
+        /// <summary>True once a rewarded ad for this specific placement has loaded and can be shown right now. Per-placement: a button must ask about its own placement, not whether any ad is ready.</summary>
+        bool IsRewardedReady(RewardedPlacement placement);
 
         /// <summary>Load the SDK and preload the first rewarded ad. Safe to call once at startup.</summary>
         void Initialise();

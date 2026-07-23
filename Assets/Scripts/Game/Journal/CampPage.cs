@@ -150,7 +150,7 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                var ready = _loop.RewardedReady;
+                var ready = _loop.RewardedReady(RewardedPlacement.AmberDrip) && _loop.CanWatchAmberDrip;
                 watch.interactable = ready;
                 SetButtonTint(watch, ready);
             });

@@ -31,7 +31,7 @@ namespace Wildgrove.Game.Services
             onLoaded?.Invoke(null);
         }
 
-        public void SaveCloud(string data, Action onComplete = null)
+        public void SaveCloud(string data, long savedAtUnixMs, Action onComplete = null)
         {
             Debug.Log("[play-games] stub cloud save");
             onComplete?.Invoke();

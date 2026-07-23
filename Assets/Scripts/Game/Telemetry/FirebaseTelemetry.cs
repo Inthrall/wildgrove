@@ -23,6 +23,10 @@ namespace Wildgrove.Game.Telemetry
         private const int MaxBuffered = 128;
 
         private readonly ITelemetry _fallback;
+        // A logged non-fatal can arrive on a worker thread (a faulted Task) while
+        // the main-thread flush is draining — guard every buffer touch so the
+        // queues aren't mutated concurrently.
+        private readonly object _gate = new object();
         private readonly Queue<(string name, (string key, object value)[] parameters)> _buffer =
             new Queue<(string, (string, object)[])>();
         private readonly Queue<Exception> _exceptionBuffer = new Queue<Exception>();
@@ -55,15 +59,28 @@ namespace Wildgrove.Game.Telemetry
                 // non-fatals — the stability metric must see them.
                 Crashlytics.ReportUncaughtExceptionsAsFatal = true;
                 _ready = true;
-                while (_buffer.Count > 0)
+
+                // Snapshot and clear under the lock, then send outside it so a
+                // worker-thread LogException can't race the drain and Firebase
+                // calls don't hold the lock.
+                (string name, (string key, object value)[] parameters)[] events;
+                Exception[] exceptions;
+                lock (_gate)
                 {
-                    var buffered = _buffer.Dequeue();
+                    events = _buffer.ToArray();
+                    _buffer.Clear();
+                    exceptions = _exceptionBuffer.ToArray();
+                    _exceptionBuffer.Clear();
+                }
+
+                foreach (var buffered in events)
+                {
                     Send(buffered.name, buffered.parameters);
                 }
 
-                while (_exceptionBuffer.Count > 0)
+                foreach (var exception in exceptions)
                 {
-                    Crashlytics.LogException(_exceptionBuffer.Dequeue());
+                    Crashlytics.LogException(exception);
                 }
             });
         }
@@ -71,8 +88,12 @@ namespace Wildgrove.Game.Telemetry
         private void MarkFailed(string reason)
         {
             _failed = true;
-            _buffer.Clear();
-            _exceptionBuffer.Clear();
+            lock (_gate)
+            {
+                _buffer.Clear();
+                _exceptionBuffer.Clear();
+            }
+
             UnityEngine.Debug.LogWarning("[telemetry] Firebase unavailable: " + reason);
         }
 
@@ -84,9 +105,15 @@ namespace Wildgrove.Game.Telemetry
             {
                 Send(name, parameters);
             }
-            else if (!_failed && _buffer.Count < MaxBuffered)
+            else if (!_failed)
             {
-                _buffer.Enqueue((name, parameters));
+                lock (_gate)
+                {
+                    if (_buffer.Count < MaxBuffered)
+                    {
+                        _buffer.Enqueue((name, parameters));
+                    }
+                }
             }
         }
 
@@ -97,11 +124,17 @@ namespace Wildgrove.Game.Telemetry
             {
                 Crashlytics.LogException(exception);
             }
-            else if (!_failed && _exceptionBuffer.Count < MaxBuffered)
+            else if (!_failed)
             {
-                // Startup non-fatals (the first ~1-2s before init resolves)
-                // matter most — hold them for the flush like events.
-                _exceptionBuffer.Enqueue(exception);
+                lock (_gate)
+                {
+                    if (_exceptionBuffer.Count < MaxBuffered)
+                    {
+                        // Startup non-fatals (the first ~1-2s before init resolves)
+                        // matter most — hold them for the flush like events.
+                        _exceptionBuffer.Enqueue(exception);
+                    }
+                }
             }
         }
 

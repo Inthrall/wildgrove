@@ -272,6 +272,7 @@ namespace Wildgrove.Data
 
         private static EconomyData MapEconomy(EconomyConfig e)
         {
+            RequireEconomySections(e);
             return new EconomyData
             {
                 costGrowth = new EconomyData.CostGrowthData
@@ -389,6 +390,45 @@ namespace Wildgrove.Data
                     richnessPerLevel = e.Replant.RichnessPerLevel
                 }
             };
+        }
+
+        /// <summary>
+        /// Fail with a readable message naming the missing economy section(s)
+        /// rather than a bare NullReferenceException, for the case where mapping
+        /// runs on config that never passed <see cref="GameDataValidator"/>
+        /// (which requires all of these). Amber/Store/FamiliarXp/Replant are
+        /// optional and null-guarded at the map site, so they aren't listed here.
+        /// </summary>
+        private static void RequireEconomySections(EconomyConfig e)
+        {
+            if (e == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Economy config is missing — run GameDataValidator before mapping.");
+            }
+
+            var missing = new List<string>();
+            if (e.CostGrowth == null) { missing.Add("costGrowth"); }
+            if (e.Gifts == null) { missing.Add("gifts"); }
+            if (e.Hauling == null) { missing.Add("hauling"); }
+            if (e.Kith == null) { missing.Add("kith"); }
+            if (e.Crafting == null) { missing.Add("crafting"); }
+            if (e.Tools == null) { missing.Add("tools"); }
+            if (e.Mastery == null) { missing.Add("mastery"); }
+            if (e.Verdure == null) { missing.Add("verdure"); }
+            if (e.Xp == null) { missing.Add("xp"); }
+            if (e.Offline == null) { missing.Add("offline"); }
+            if (e.Quality == null) { missing.Add("quality"); }
+            if (e.Observation == null) { missing.Add("observation"); }
+            if (e.Tending == null) { missing.Add("tending"); }
+            if (e.Warden == null) { missing.Add("warden"); }
+
+            if (missing.Count > 0)
+            {
+                throw new System.InvalidOperationException(
+                    "Economy config is missing required section(s): " + string.Join(", ", missing)
+                    + " — run GameDataValidator before mapping.");
+            }
         }
     }
 }
