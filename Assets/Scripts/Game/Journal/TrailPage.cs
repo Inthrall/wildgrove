@@ -35,15 +35,16 @@ namespace Wildgrove.Game
             {
                 if (unlockedZones.Count > 1)
                 {
-                    var heading = MakeText(_body, zone.displayName.ToUpperInvariant(), 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
+                    var heading = MakeText(_body, zone.displayName.ToUpperInvariant(), 12, TextAnchor.MiddleCenter, Ink2, _smallCaps);
                     heading.gameObject.name = "ZoneHeading";
                 }
 
-                // The zone's keystone specimen heads its section (design §3).
+                // The zone's keystone specimen heads its section (design §3) —
+                // a modest mark, not a full plate; the strip carries the art.
                 var keystone = ArtLibrary.ForZone(zone.id);
                 if (keystone != null)
                 {
-                    PlateImage(_body, keystone, 240f).name = "Keystone";
+                    PlateImage(_body, keystone, 120f).name = "Keystone";
                 }
 
                 foreach (var node in _loop.State.nodes)
@@ -66,69 +67,88 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The recruit bar — a bordered call-out at the top of the Trail page
-        /// that only shows while a verse-earned pile waits (design §4). One
-        /// dashed line per node that can still call someone new: tap it to leave
-        /// a pile of that node's own resource, and its specialist walks. This
-        /// replaces the easy-to-miss pile line that used to sit on each plate.
+        /// that only shows while a verse-earned pile waits (design §4). The next
+        /// companion is set, not a choice: the first node still missing its
+        /// specialist names who is coming, and one line leaves the pile of that
+        /// node's resource to bring them in.
         /// </summary>
         private void BuildRecruitBar()
         {
-            var card = Card("A COMPANION MAY ANSWER");
+            var card = Card("A COMPANION WILL ANSWER");
             var intro = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2, _serif);
 
-            var lines = new List<(NodeState node, Text text, GameObject go)>();
-            foreach (var node in _loop.State.nodes)
+            // The set target, kept in a captured holder the live updater refreshes
+            // and the tap reads — as recruits join, it advances to the next node.
+            NodeState target = null;
+            var line = MakeText(card, string.Empty, 19, TextAnchor.MiddleLeft, Ink2);
+            var button = line.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.onClick.AddListener(() =>
             {
-                var captured = node;
-                var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
-                var button = line.gameObject.AddComponent<Button>();
-                button.transition = Selectable.Transition.None;
-                button.onClick.AddListener(() =>
+                if (target == null)
                 {
-                    var arrived = _loop.LeaveGift(captured);
-                    if (arrived != null)
-                    {
-                        SetNote("you left a pile of " + captured.resourceId + " and stepped back. something said yes.");
-                        _dirty = true;
-                    }
-                    else if (_loop.KithWalking() >= _loop.KithSlots())
-                    {
-                        SetNote("something watches the pile, but every slot is walked. rest someone first.");
-                    }
-                    else
-                    {
-                        SetNote("not enough " + captured.resourceId + " for a proper pile. keep picking.");
-                    }
-                });
-                line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-                AddDashedBorder(line.gameObject);
-                lines.Add((captured, line, line.gameObject));
-            }
+                    return;
+                }
+
+                var arrived = _loop.LeaveGift(target);
+                if (arrived != null)
+                {
+                    SetNote("you left a pile of " + target.resourceId + " and stepped back. something said yes.");
+                    _dirty = true;
+                }
+                else if (_loop.KithWalking() >= _loop.KithSlots())
+                {
+                    SetNote("something watches the pile, but every slot is walked. rest someone first.");
+                }
+                else
+                {
+                    SetNote("not enough " + target.resourceId + " for a proper pile. keep picking.");
+                }
+            });
+            line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
+            AddDashedBorder(line.gameObject);
 
             _liveUpdaters.Add(() =>
             {
-                var available = _loop.GiftAvailable();
-                var anyShown = false;
-                foreach (var entry in lines)
+                target = NextGiftNode();
+                var species = target != null ? _loop.GiftSpeciesFor(target) : null;
+                var show = species != null;
+                card.gameObject.SetActive(show);
+                if (!show)
                 {
-                    var caller = available ? _loop.GiftSpeciesFor(entry.node) : null;
-                    var show = caller != null;
-                    entry.go.SetActive(show);
-                    if (!show)
-                    {
-                        continue;
-                    }
-
-                    anyShown = true;
-                    var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + entry.node.resourceId;
-                    entry.text.text = _loop.CanLeaveGift(entry.node)
-                        ? "<color=" + OchreInkHex + ">+  leave a pile at the " + entry.node.resourceId + " — " + pile + " · a " + caller.displayName + " watches</color>"
-                        : "leave a pile at the " + entry.node.resourceId + " — " + pile + " · a " + caller.displayName + " watches (not yet)";
+                    return;
                 }
 
-                intro.text = "<i>set a pile down where you'd like the help — the specialist there will come.</i>";
-                card.gameObject.SetActive(anyShown);
+                intro.text = "<i>a " + species.displayName + " is drawn to the " + target.resourceId
+                             + " — leave a pile and it stays.</i>";
+                var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + target.resourceId;
+                line.text = _loop.CanLeaveGift(target)
+                    ? "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>"
+                    : "leave a pile — " + pile + " (not enough yet)";
             });
+        }
+
+        /// <summary>
+        /// The set node whose specialist is next to be called: the first node
+        /// (in the land's own order) still missing its specialist while a pile
+        /// waits, or null when no pile is on offer or every specialist walks.
+        /// </summary>
+        private NodeState NextGiftNode()
+        {
+            if (!_loop.GiftAvailable())
+            {
+                return null;
+            }
+
+            foreach (var node in _loop.State.nodes)
+            {
+                if (_loop.GiftSpeciesFor(node) != null)
+                {
+                    return node;
+                }
+            }
+
+            return null;
         }
 
         private void BuildNodePlate(NodeState node, int figure)
