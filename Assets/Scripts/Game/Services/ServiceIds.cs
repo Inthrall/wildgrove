@@ -74,10 +74,7 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public static class LeaderboardIds
     {
-        // TODO Mo: paste the encoded ID for the "Renown" leaderboard from
-        // games-ids.xml once it's created and published in Play Console. Until
-        // then submission and the View button are inert (both no-op on empty).
         /// <summary>"Renown" — leaderboard_renown. Score is log-scaled Renown (see Leaderboards.SubmitAll).</summary>
-        public const string Renown = "";
+        public const string Renown = "CggIp4me7kEQAhAD";
     }
 }
