@@ -314,6 +314,26 @@ balance, tracked in the items below.
 
 ## Phase 2 — Adaptive UI & input
 
+- **Windfall bubbles replaced tap-to-tend (2026-07-24).** A worked node drifts a
+  bubble up the strip (`economy.bubbles`: spawn interval / lifetime / max live /
+  rewardSeconds — all first guesses); catching it pays rewardSeconds of that
+  node's current output straight to camp AND tends the node (burst + Pristine
+  window + Rite tend deed — so the tend deed slots and the Cordage Wraps gear
+  stay reachable, `Sim/Bubbles.cs`). Tapping a node plate now opens the posting
+  sheet (the node IS the assign gesture); the vacant "+" badge is gone (occupied
+  badges still show who holds the post). A "N / M POSTED" slots-in-use counter
+  is pinned to the page's top-right corner. Interpretations shipped (tune/confirm):
+  - Bubbles **spawn only in live play** (world layer, `Time.time`) — nothing
+    persists, no offline accrual, and time paused under a sheet still ages them.
+  - Spawn is **round-robin over eligible (worked) nodes**; a camp with no one
+    posted anywhere drifts nothing.
+  - Space / pad-(A) **catches the longest-adrift bubble** (it no longer tends
+    the selected node); node selection now only drives the ring highlight.
+  - The bubble reward is computed **at catch time** — a node gone fallow while
+    its bubble drifted pops empty (a quiet margin note, no grant).
+  - design-doc §5/§8 still describe tap-to-tend; re-voice those lines when the
+    mechanic settles.
+
 - **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
   code.** `GameHud` now lays out the mock's structure — paper palette, eyebrow/title
   head, resource ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs

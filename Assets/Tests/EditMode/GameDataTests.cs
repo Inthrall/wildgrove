@@ -266,6 +266,19 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void Validate_ZeroedBubblesValue_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"spawnIntervalSec\": 25",
+                "\"spawnIntervalSec\": 0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("bubbles values must all be positive")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_NonPositiveCraftSeconds_IsReported()
         {
             var sources = LoadSources();

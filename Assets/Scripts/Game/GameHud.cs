@@ -62,6 +62,7 @@ namespace Wildgrove.Game
 
         private Text _eyebrow;
         private Text _title;
+        private Text _slotCounter;
         private Text _ledger;
         private Text _note;
         private Text _trackerText;
@@ -150,8 +151,8 @@ namespace Wildgrove.Game
             // Keyboard/gamepad hint only where one can exist — on a phone the
             // margin note is flavour, not a manual for keys it doesn't have.
             SetNote(Application.isMobilePlatform
-                ? "tap a plate to tend it · tap the badge below to post someone"
-                : "tap a plate to tend it · tap the badge below to post someone · space / (A) tends the selected node");
+                ? "tap a plate to post someone · catch the bubbles drifting up for a windfall"
+                : "tap a plate to post someone · catch the bubbles drifting up for a windfall · space / (A) catches one");
         }
 
         private void Update()
@@ -164,7 +165,7 @@ namespace Wildgrove.Game
             FitLayoutToScreen();
             ReportWorldStrip();
             AnimateTrailCarrier();
-            HandleTend();
+            HandleWorldTap();
 
             for (var i = 0; i < _frameUpdaters.Count; i++)
             {
@@ -304,6 +305,19 @@ namespace Wildgrove.Game
             headerLayout.spacing = 0;
             _eyebrow = MakeText(headerGo.transform, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             _title = MakeText(headerGo.transform, string.Empty, 36, TextAnchor.MiddleCenter, Ink, _serif);
+
+            // Slots-in-use counter, pinned to the page's top-right corner —
+            // how many of the kith hold a post right now, at a glance.
+            // Outside the layout flow so the centred header stays centred.
+            _slotCounter = MakeText(root, string.Empty, 19, TextAnchor.MiddleRight, Ink2, _smallCaps);
+            _slotCounter.gameObject.name = "SlotCounter";
+            _slotCounter.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var counterRect = (RectTransform)_slotCounter.transform;
+            counterRect.anchorMin = Vector2.one;
+            counterRect.anchorMax = Vector2.one;
+            counterRect.pivot = Vector2.one;
+            counterRect.sizeDelta = new Vector2(320f, 34f);
+            counterRect.anchoredPosition = new Vector2(-16f, -10f);
 
             // Ledger — the running stores line, hairline-ruled like the mock.
             MakeHairline(root);
@@ -677,6 +691,7 @@ namespace Wildgrove.Game
 
             _eyebrow.text = eyebrow;
             _title.text = title;
+            _slotCounter.text = _loop.KithWalking() + " / " + _loop.KithSlots() + " POSTED";
         }
 
         private void RefreshLedger()
@@ -772,7 +787,7 @@ namespace Wildgrove.Game
             _world.StripScreenRect = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         }
 
-        private void HandleTend()
+        private void HandleWorldTap()
         {
             if (_sheet != null)
             {
@@ -783,9 +798,17 @@ namespace Wildgrove.Game
             {
                 if (screenPosition.HasValue)
                 {
-                    // The badge under a post (and the trail/wander plates) is
-                    // the assign gesture — checked before the tend hit so the
-                    // badge wins the band where the two circles brush.
+                    // A drifting bubble floats over everything — the catch
+                    // wins before any plate or badge underneath it.
+                    var caught = _world != null ? _world.PopBubbleAt(screenPosition.Value) : null;
+                    if (caught != null)
+                    {
+                        CollectBubble(caught);
+                        return;
+                    }
+
+                    // The trail/wander plates (and any leftover badge strip
+                    // under a post) resolve to their station...
                     var station = _world != null ? _world.StationAtScreenPoint(screenPosition.Value) : null;
                     if (station != null)
                     {
@@ -793,11 +816,14 @@ namespace Wildgrove.Game
                         return;
                     }
 
+                    // ...and a node plate IS the assign gesture now — tap a
+                    // node to choose who works it (tap-to-tend became the
+                    // bubbles above).
                     var node = _world != null ? _world.NodeAtScreenPoint(screenPosition.Value) : null;
                     if (node != null)
                     {
                         _selected = node;
-                        DoTend(node);
+                        _sheets.OpenPostingSheet(node.id);
                     }
                     else if (screenPosition.Value.y > Screen.height * 0.45f)
                     {
@@ -805,18 +831,35 @@ namespace Wildgrove.Game
                         _selected = null;
                     }
                 }
-                else if (_selected != null)
+                else
                 {
-                    DoTend(_selected);
+                    // Space / pad-A: catch the longest-adrift bubble.
+                    var caught = _world != null ? _world.PopOldestBubble() : null;
+                    if (caught != null)
+                    {
+                        CollectBubble(caught);
+                    }
                 }
             }
         }
 
-        private void DoTend(NodeState node)
+        private void CollectBubble(NodeState node)
         {
-            _loop.Tend(node);
+            var gained = _loop.PopBubble(node);
+            if (gained <= BigDouble.Zero)
+            {
+                // The node went fallow while the bubble drifted — it pops empty.
+                SetNote("the bubble bursts over the " + node.resourceId + " — nothing inside.");
+                return;
+            }
+
+            if (_tendFlashes.TryGetValue(node.id, out var flash))
+            {
+                flash.text = "+ " + NumberFormat.Short(gained) + " " + node.resourceId;
+            }
+
             _flashAges[node.id] = 0f;
-            SetNote("turned the soil at the " + node.resourceId + ".");
+            SetNote("caught a windfall — " + NumberFormat.Short(gained) + " " + node.resourceId + ", straight to camp.");
         }
 
         // ─────────────────────────── Body ────────────────────────────────────

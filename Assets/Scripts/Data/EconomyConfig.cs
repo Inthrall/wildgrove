@@ -20,6 +20,7 @@ namespace Wildgrove.Data
         public AmberSection Amber { get; set; }
         public StoreSection Store { get; set; }
         public TendingSection Tending { get; set; }
+        public BubblesSection Bubbles { get; set; }
         public WardenSection Warden { get; set; }
         public FamiliarXpSection FamiliarXp { get; set; }
         public ReplantSection Replant { get; set; }
@@ -139,6 +140,15 @@ namespace Wildgrove.Data
         public sealed class WardenSection
         {
             public double GatherPerSecond { get; set; }
+        }
+
+        /// <summary>Windfall bubbles (the tap-to-tend replacement). Optional — absent means the system is inert.</summary>
+        public sealed class BubblesSection
+        {
+            public double SpawnIntervalSec { get; set; }
+            public double LifetimeSec { get; set; }
+            public int MaxLive { get; set; }
+            public double RewardSeconds { get; set; }
         }
 
         public sealed class FamiliarXpSection

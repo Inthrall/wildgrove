@@ -363,6 +363,9 @@ namespace Wildgrove.Data
         public ObservationData observation;
         public TendingData tending;
         public WardenData warden;
+
+        /// <summary>Windfall bubbles (the tap-to-tend replacement). spawnIntervalSec &lt;= 0 = unconfigured (the Configured pattern — Unity can't serialize a null section).</summary>
+        public BubblesData bubbles;
         public FamiliarXpData familiarXp;
         public ReplantData replant;
 
@@ -507,6 +510,16 @@ namespace Wildgrove.Data
         {
             /// <summary>The warden's own gather rate at their post, straight to camp — the bare-node replant bootstrap.</summary>
             public double gatherPerSecond;
+        }
+
+        /// <summary>Windfall bubbles: a worked node drifts one up every spawnIntervalSec; catching it grants rewardSeconds of that node's output and tends the node.</summary>
+        [Serializable]
+        public sealed class BubblesData
+        {
+            public double spawnIntervalSec;
+            public double lifetimeSec;
+            public int maxLive;
+            public double rewardSeconds;
         }
 
         [Serializable]

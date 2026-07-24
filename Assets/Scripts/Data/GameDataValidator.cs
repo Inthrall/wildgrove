@@ -1238,6 +1238,15 @@ namespace Wildgrove.Data
                 issues.Add("Economy tending burst/pristine durations must not be negative");
             }
 
+            if (economy.Bubbles != null
+                && (economy.Bubbles.SpawnIntervalSec <= 0 || economy.Bubbles.LifetimeSec <= 0
+                    || economy.Bubbles.MaxLive <= 0 || economy.Bubbles.RewardSeconds <= 0))
+            {
+                // A present-but-zeroed section either never spawns a bubble or
+                // spawns ones worth nothing — configure it whole or not at all.
+                issues.Add("Economy bubbles values must all be positive");
+            }
+
             if (economy.Observation != null
                 && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0))
             {

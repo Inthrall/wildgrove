@@ -72,6 +72,7 @@ namespace Wildgrove.Game.World
         {
             if (wardenPosted)
             {
+                _back.enabled = true;
                 _back.color = OccupiedBack;
                 ShowIcon(PlaceholderArt.Triangle, WardenColour, 0.36f);
                 SetMark(string.Empty);
@@ -81,6 +82,7 @@ namespace Wildgrove.Game.World
 
             if (occupant != null)
             {
+                _back.enabled = true;
                 _bondedPip.enabled = occupant.bonded;
                 if (occupantIcon != null)
                 {
@@ -100,10 +102,13 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            _back.color = VacantBack;
+            // A vacant post shows nothing — tapping the plate itself is the
+            // assign gesture now, so the old "+" invitation would just repeat
+            // what the idle-dimmed plate already says.
+            _back.enabled = false;
             _icon.enabled = false;
             _bondedPip.enabled = false;
-            SetMark("+");
+            SetMark(string.Empty);
         }
 
         private void ShowIcon(Sprite sprite, Color colour, float fit)

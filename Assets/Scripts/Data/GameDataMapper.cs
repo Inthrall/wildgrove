@@ -387,6 +387,13 @@ namespace Wildgrove.Data
                 {
                     gatherPerSecond = e.Warden.GatherPerSecond
                 },
+                bubbles = e.Bubbles == null ? null : new EconomyData.BubblesData
+                {
+                    spawnIntervalSec = e.Bubbles.SpawnIntervalSec,
+                    lifetimeSec = e.Bubbles.LifetimeSec,
+                    maxLive = e.Bubbles.MaxLive,
+                    rewardSeconds = e.Bubbles.RewardSeconds
+                },
                 familiarXp = e.FamiliarXp == null ? null : new EconomyData.FamiliarXpData
                 {
                     baseXp = e.FamiliarXp.Base,

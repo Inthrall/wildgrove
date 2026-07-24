@@ -627,10 +627,23 @@ namespace Wildgrove.Game
 
         // ─────────────────────────── Tending & crafting ──────────────────────
 
-        /// <summary>Tend a node — a burst of extra yield for a short while (the tap-to-tend action; also moves the warden's post and counts as a Rite deed).</summary>
-        public void Tend(NodeState node)
+        /// <summary>
+        /// Catch a windfall bubble at its node — the active-play reward that
+        /// replaced tap-to-tend: a burst of the node's goods lands as camp
+        /// stock and the node is tended (burst + Pristine window + Rite deed).
+        /// Returns the amount granted (zero = nothing was due, e.g. the node
+        /// went fallow while the bubble drifted).
+        /// </summary>
+        public BigDouble PopBubble(NodeState node)
         {
-            Simulation.Tend(State, Data, node);
+            var gained = Bubbles.Pop(State, Data, node);
+            if (gained > BigDouble.Zero)
+            {
+                Telemetry.LogEvent("bubble_popped",
+                    ("node", node.id), ("resource", node.resourceId), ("gained", gained.ToDouble()));
+            }
+
+            return gained;
         }
 
         /// <summary>The node's next replant cost, in units of its own resource (design §3) — for the button label.</summary>

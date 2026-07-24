@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Wildgrove.Data;
 using Wildgrove.Sim;
 
 namespace Wildgrove.Game.World
@@ -20,6 +21,10 @@ namespace Wildgrove.Game.World
     public sealed class WorldView : MonoBehaviour
     {
         private const float HitSlop = 1.15f;
+
+        // Bubbles are smaller than the plates (~45% of a node) — a blunter
+        // finger circle keeps the catch satisfying rather than fiddly.
+        private const float BubbleHitSlop = 1.6f;
         // Soft white — the gold accents belong to the Pristine window halo and
         // the bonded pip on a badge, so selection reads as its own thing.
         private static readonly Color RingColour = new Color(0.94f, 0.97f, 0.92f, 0.95f);
@@ -36,10 +41,13 @@ namespace Wildgrove.Game.World
         private Transform _container;
         private Font _labelFont;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
+        private readonly List<BubbleWorldView> _bubbles = new List<BubbleWorldView>();
         private StationWorldView _wanderView;
         private Vector2[] _centres = new Vector2[0];
         private float _radiusPx;
         private float _diameterPx;
+        private float _nextBubbleAt;
+        private int _bubbleCursor;
 
         private void OnEnable()
         {
@@ -151,6 +159,139 @@ namespace Wildgrove.Game.World
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
             _wanderView.Refresh(Warden.IsWandering(state), wanderer, IconFor(wanderer));
+
+            UpdateBubbles(state);
+        }
+
+        // ─────────────────────── Windfall bubbles ────────────────────────
+        // A worked node drifts a bubble up the strip now and then; catching
+        // it pays a burst of that node's goods (Sim.Bubbles). All ephemeral —
+        // spawn timing, float path and expiry live here, nothing persists.
+
+        /// <summary>
+        /// The bubble under the screen point, removed and returned as its
+        /// node (what the catch pays out in), or null for a miss. Checked
+        /// before every other strip hit — a bubble floats over the plates.
+        /// </summary>
+        public NodeState PopBubbleAt(Vector2 screenPoint)
+        {
+            for (var i = 0; i < _bubbles.Count; i++)
+            {
+                var bubble = _bubbles[i];
+                var radius = bubble.ScreenRadius * BubbleHitSlop;
+                if ((bubble.ScreenPosition - screenPoint).sqrMagnitude <= radius * radius)
+                {
+                    return TakeBubble(i);
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>The longest-adrift bubble, removed and returned as its node — the keyboard/gamepad catch. Null when none float.</summary>
+        public NodeState PopOldestBubble()
+        {
+            return _bubbles.Count > 0 ? TakeBubble(0) : null;
+        }
+
+        private NodeState TakeBubble(int index)
+        {
+            var bubble = _bubbles[index];
+            _bubbles.RemoveAt(index);
+            Destroy(bubble.gameObject);
+            return bubble.Node;
+        }
+
+        private void UpdateBubbles(GameState state)
+        {
+            var config = _loop.Data?.economy?.bubbles;
+            if (config == null || !Bubbles.Configured(_loop.Data))
+            {
+                return;
+            }
+
+            var now = Time.time;
+
+            // Expired bubbles drift off the top and go.
+            for (var i = _bubbles.Count - 1; i >= 0; i--)
+            {
+                if (now - _bubbles[i].SpawnTime >= config.lifetimeSec)
+                {
+                    Destroy(_bubbles[i].gameObject);
+                    _bubbles.RemoveAt(i);
+                }
+            }
+
+            MaybeSpawnBubble(state, config, now);
+
+            var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
+            var bubbleDiameterPx = _diameterPx * 0.45f;
+            foreach (var bubble in _bubbles)
+            {
+                var age = now - bubble.SpawnTime;
+                var progress = Mathf.Clamp01(age / (float)config.lifetimeSec);
+                var home = NodeCentre(bubble.Node);
+
+                // Rise from the node toward the strip's top edge, with a
+                // gentle per-bubble wobble; fade out over the last stretch.
+                var y = Mathf.Lerp(home.y, StripScreenRect.yMax - bubbleDiameterPx * 0.5f, progress);
+                var x = home.x + Mathf.Sin(age * 1.5f + bubble.Seed) * bubbleDiameterPx * 0.6f;
+                var screen = new Vector2(x, y);
+                var fade = progress > 0.8f ? Mathf.InverseLerp(1f, 0.8f, progress) : 1f;
+
+                bubble.SetPlacement(ScreenToWorld(screen), bubbleDiameterPx * worldPerPixel,
+                    screen, bubbleDiameterPx * 0.5f, fade);
+            }
+        }
+
+        private void MaybeSpawnBubble(GameState state, EconomyData.BubblesData config, float now)
+        {
+            if (_nextBubbleAt <= 0f)
+            {
+                // First look at a fresh strip — let the player settle in for
+                // half an interval before the first windfall drifts up.
+                _nextBubbleAt = now + (float)config.spawnIntervalSec * 0.5f;
+                return;
+            }
+
+            if (now < _nextBubbleAt || _bubbles.Count >= config.maxLive)
+            {
+                return;
+            }
+
+            // Round-robin over the nodes so every worked post gets its turn.
+            for (var step = 0; step < _views.Count; step++)
+            {
+                var index = (_bubbleCursor + step) % _views.Count;
+                var node = _views[index].Node;
+                if (!Bubbles.IsEligible(state, _loop.Data, node))
+                {
+                    continue;
+                }
+
+                _bubbleCursor = index + 1;
+                _bubbles.Add(BubbleWorldView.Create(_container, node,
+                    PlaceholderArt.ResourceColour(node.resourceId), now, index * 2.1f));
+                _nextBubbleAt = now + (float)config.spawnIntervalSec;
+                return;
+            }
+
+            // Nothing worked anywhere — look again shortly rather than
+            // banking a full interval against an empty camp.
+            _nextBubbleAt = now + 2f;
+        }
+
+        private Vector2 NodeCentre(NodeState node)
+        {
+            for (var i = 0; i < _views.Count && i < _centres.Length; i++)
+            {
+                if (_views[i].Node == node)
+                {
+                    return _centres[i];
+                }
+            }
+
+            return StripScreenRect.center;
         }
 
         private static Sprite IconFor(Familiar familiar)
@@ -170,6 +311,8 @@ namespace Wildgrove.Game.World
             }
 
             _views.Clear();
+            // Any bubbles adrift were children of the torn-down container.
+            _bubbles.Clear();
             _container = new GameObject("WorldNodes").transform;
             _container.SetParent(transform, false);
 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 7ea021cc8a4cd974499bac26bae4700e6dbbfd04e69287e5b8ee938d4749363f
+  sourceHash: ff8d1b088978cc929b4ab6bb2dc7aeba32045fb7b373d9f69effae3243807bd5
   economy:
     costGrowth:
       building: 1.25
@@ -77,6 +77,11 @@ MonoBehaviour:
       pristineChanceBonus: 1
     warden:
       gatherPerSecond: 0.5
+    bubbles:
+      spawnIntervalSec: 25
+      lifetimeSec: 18
+      maxLive: 3
+      rewardSeconds: 60
     familiarXp:
       baseXp: 60
       growth: 1.12
@@ -97,6 +102,7 @@ MonoBehaviour:
       timeSkipCostAmber: 15
       adDripAmber: 3
       weeklyCacheAmber: 20
+      renameCostAmber: 5
     store:
       starterBundleAmber: 30
       amberPackSmall: 50
