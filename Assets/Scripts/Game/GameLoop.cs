@@ -521,10 +521,34 @@ namespace Wildgrove.Game
             return Traits.Of(Data, familiar);
         }
 
-        /// <summary>Rename a familiar (design §4: name at arrival, rename any time). Returns false when the name is blank.</summary>
+        /// <summary>The Amber a rename asks (design §4), or 0 when the amber system is inert — drives the rename button's price label.</summary>
+        public double RenameCost()
+        {
+            return Amber.RenameCost(Data);
+        }
+
+        /// <summary>Whether a rename is affordable right now — the "Save" button's enabled state.</summary>
+        public bool CanRenameFamiliar()
+        {
+            return Amber.CanRename(State, Data);
+        }
+
+        /// <summary>
+        /// Rename a familiar for its Amber price (design §4) — the same price
+        /// whether it's the arrival naming or a later change. Returns false when
+        /// the name is blank, unchanged, or unaffordable; the cost is spent only
+        /// when the name actually changes (keeping the suggested name is free).
+        /// </summary>
         public bool RenameFamiliar(Familiar familiar, string name)
         {
-            return Roster.Rename(familiar, name);
+            var cost = Amber.RenameCost(Data);
+            var renamed = Amber.TryRename(State, Data, familiar, name);
+            if (renamed)
+            {
+                Telemetry.LogEvent("familiar_renamed", ("amber_cost", cost));
+            }
+
+            return renamed;
         }
 
         /// <summary>

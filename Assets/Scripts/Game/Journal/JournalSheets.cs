@@ -83,13 +83,24 @@ namespace Wildgrove.Game
             MakeText(sheet, "A new friend", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, "a " + SpeciesName(familiar.speciesId) + " arrives", 22, TextAnchor.UpperCenter, Ink2, _hand);
 
+            var cost = Mathf.FloorToInt((float)_loop.RenameCost());
+            if (cost > 0)
+            {
+                MakeText(sheet, "keep this name, or choose one for " + SizeOpen(19) + "<color=" + OchreHex + ">"
+                                + cost + " amber</color></size>", 16, TextAnchor.UpperCenter, Ink2, _hand);
+            }
+
             var field = MakeInputField(sheet, familiar.name);
             Button(sheet, "Walk together", 320, () =>
             {
                 var typed = field.text;
-                if (!string.IsNullOrWhiteSpace(typed))
+                // Keeping the suggested name is free; choosing a different one
+                // asks the rename price (design §4). Short of amber, the
+                // suggestion holds — the arrival never stalls on the coffer.
+                if (!string.IsNullOrWhiteSpace(typed) && typed.Trim() != familiar.name
+                    && !_loop.RenameFamiliar(familiar, typed))
                 {
-                    _loop.RenameFamiliar(familiar, typed);
+                    SetNote("not enough amber for a chosen name — the suggestion holds.");
                 }
 
                 _loop.TakePendingArrival();
@@ -214,13 +225,47 @@ namespace Wildgrove.Game
         {
             var sheet = BeginSheet();
             MakeText(sheet, "Rename", 32, TextAnchor.UpperCenter, Ink, _serif);
-            var field = MakeInputField(sheet, familiar.name);
-            Button(sheet, "Save", 320, () =>
+
+            var cost = Mathf.FloorToInt((float)_loop.RenameCost());
+            if (cost > 0)
             {
-                _loop.RenameFamiliar(familiar, field.text);
-                _dirty = true;
+                MakeText(sheet, "a new name asks " + SizeOpen(19) + "<color=" + OchreHex + ">"
+                                + cost + " amber</color></size>", 18, TextAnchor.UpperCenter, Ink2, _hand);
+            }
+
+            var field = MakeInputField(sheet, familiar.name);
+
+            var save = Button(sheet, cost > 0 ? "Save · " + cost + " amber" : "Save", 320, () =>
+            {
+                var typed = field.text;
+                if (string.IsNullOrWhiteSpace(typed) || typed.Trim() == familiar.name)
+                {
+                    // Nothing changed — no charge, just close.
+                    CloseSheet();
+                    return;
+                }
+
+                // Amber is premium and hard-won — refuse rather than part-charge.
+                if (!_loop.CanRenameFamiliar())
+                {
+                    SetNote("not enough amber for a new name — resin is dear.");
+                    return;
+                }
+
+                if (_loop.RenameFamiliar(familiar, typed))
+                {
+                    SetNote(cost > 0 ? "a name, paid in resin — set in the journal." : "a new name, set in the journal.");
+                    _dirty = true;
+                }
+
                 CloseSheet();
             });
+            if (cost > 0)
+            {
+                save.GetComponent<Image>().color = OchreWash;
+                save.GetComponentInChildren<Text>().color = Ochre;
+            }
+
             Button(sheet, "Cancel", 320, CloseSheet);
         }
 

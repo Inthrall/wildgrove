@@ -180,7 +180,7 @@ namespace Wildgrove.Game
 
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
-                var rename = Button(row.transform, "Name", 150, () => OpenNamingSheet(captured));
+                var rename = Button(row.transform, "Rename", 150, () => OpenNamingSheet(captured));
                 // Posting moved out to the land — each node plate, the trail
                 // line, and the watch plates carry their own "post someone"
                 // affordance. The roster keeps only the recall.

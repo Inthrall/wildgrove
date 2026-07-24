@@ -367,7 +367,8 @@ namespace Wildgrove.Data
                     timeSkipHours = e.Amber.TimeSkipHours,
                     timeSkipCostAmber = e.Amber.TimeSkipCostAmber,
                     adDripAmber = e.Amber.AdDripAmber,
-                    weeklyCacheAmber = e.Amber.WeeklyCacheAmber
+                    weeklyCacheAmber = e.Amber.WeeklyCacheAmber,
+                    renameCostAmber = e.Amber.RenameCostAmber
                 },
                 store = e.Store == null ? null : new EconomyData.StoreData
                 {

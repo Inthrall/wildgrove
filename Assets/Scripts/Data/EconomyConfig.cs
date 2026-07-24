@@ -117,6 +117,7 @@ namespace Wildgrove.Data
             public double TimeSkipCostAmber { get; set; }
             public double AdDripAmber { get; set; }
             public double WeeklyCacheAmber { get; set; }
+            public double RenameCostAmber { get; set; }
         }
 
         /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>

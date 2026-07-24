@@ -57,6 +57,52 @@ namespace Wildgrove.Sim
             return amber.timeSkipHours;
         }
 
+        /// <summary>
+        /// The Amber a familiar's rename asks (design §4: rename any time), or 0
+        /// when the amber system is inert — a rename is free then, never blocked.
+        /// </summary>
+        public static double RenameCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.renameCostAmber > 0.0 ? amber.renameCostAmber : 0.0;
+        }
+
+        /// <summary>Whether a rename is affordable right now — free (cost 0), or the warden holds enough Amber for the price.</summary>
+        public static bool CanRename(GameState state, GameDataAsset data)
+        {
+            return state != null && state.amber >= RenameCost(data);
+        }
+
+        /// <summary>
+        /// Rename a familiar for its Amber price (design §4) — the arrival
+        /// naming pays the same price. The cost is spent only when the name
+        /// actually changes: a blank or unchanged name (e.g. keeping the
+        /// suggested arrival name) is a free no-op, and it's never spent when
+        /// the warden is short. Returns whether the name changed.
+        /// </summary>
+        public static bool TryRename(GameState state, GameDataAsset data, Familiar familiar, string name)
+        {
+            if (state == null || familiar == null || string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            // Re-typing the same name spends nothing — the price is for a change.
+            if (name.Trim() == familiar.name)
+            {
+                return false;
+            }
+
+            if (!CanRename(state, data))
+            {
+                return false;
+            }
+
+            Roster.Rename(familiar, name);
+            state.amber -= RenameCost(data);
+            return true;
+        }
+
         /// <summary>Whether the rewarded Amber drip is configured and off cooldown — gates the "Watch" button on both the ad and the ad-free (Remove Ads) paths.</summary>
         public static bool CanGrantDrip(GameState state, GameDataAsset data, long nowUnixMs)
         {

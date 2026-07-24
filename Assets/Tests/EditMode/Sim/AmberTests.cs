@@ -30,7 +30,7 @@ namespace Wildgrove.Sim.Tests
                 observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 0.25 },
                 // digFindsPerHour high enough that one 1-second sub-step is a
                 // certain find — the chance test would flake otherwise.
-                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20 },
+                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20, renameCostAmber = 5 },
                 store = new EconomyData.StoreData { starterBundleAmber = 30, amberPackSmall = 50, amberPackLarge = 150 },
             };
             _data.resources = new List<ResourceData>
@@ -143,6 +143,61 @@ namespace Wildgrove.Sim.Tests
             state.amber = 100.0;
 
             Assert.That(Amber.TryTimeSkip(state, _data), Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void Rename_ChargesTheAmberPriceWhenTheNameChanges()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var familiar = Roster.Recruit(state, _data, "test-vole", null, "Pip");
+            state.amber = 12.0;
+
+            Assert.That(Amber.CanRename(state, _data), Is.True);
+            var renamed = Amber.TryRename(state, _data, familiar, "Bramble");
+
+            Assert.That(renamed, Is.True);
+            Assert.That(familiar.name, Is.EqualTo("Bramble"));
+            Assert.That(state.amber, Is.EqualTo(7.0).Within(Tolerance), "the 5-amber price is spent");
+        }
+
+        [Test]
+        public void Rename_RefusedAndSpendsNothingWhenShort()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var familiar = Roster.Recruit(state, _data, "test-vole", null, "Pip");
+            state.amber = 4.0; // one short of the 5-amber price
+
+            Assert.That(Amber.CanRename(state, _data), Is.False);
+            Assert.That(Amber.TryRename(state, _data, familiar, "Bramble"), Is.False);
+            Assert.That(familiar.name, Is.EqualTo("Pip"), "the name holds");
+            Assert.That(state.amber, Is.EqualTo(4.0).Within(Tolerance), "nothing spent on a refusal");
+        }
+
+        [Test]
+        public void Rename_UnchangedOrBlankNameSpendsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var familiar = Roster.Recruit(state, _data, "test-vole", null, "Pip");
+            state.amber = 12.0;
+
+            Assert.That(Amber.TryRename(state, _data, familiar, "Pip"), Is.False, "no change, no charge");
+            Assert.That(Amber.TryRename(state, _data, familiar, "  "), Is.False, "blank is a free no-op");
+            Assert.That(state.amber, Is.EqualTo(12.0).Within(Tolerance), "nothing spent on a no-op");
+        }
+
+        [Test]
+        public void Rename_IsFreeWhenAmberIsInert()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+            var familiar = Roster.Recruit(state, _data, "test-vole", null, "Pip");
+            state.amber = 0.0;
+
+            Assert.That(Amber.RenameCost(_data), Is.EqualTo(0.0));
+            Assert.That(Amber.TryRename(state, _data, familiar, "Bramble"), Is.True,
+                "no amber economy — a rename is free, never blocked");
+            Assert.That(familiar.name, Is.EqualTo("Bramble"));
+            Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
