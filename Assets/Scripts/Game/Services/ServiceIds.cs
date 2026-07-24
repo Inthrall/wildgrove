@@ -67,4 +67,17 @@ namespace Wildgrove.Game.Services
         /// <summary>"First kith" — achievement_first_kith.</summary>
         public const string FirstKith = "CggIp4me7kEQAhAC";
     }
+
+    /// <summary>
+    /// Play Games Services leaderboard IDs, from the console-generated
+    /// games-ids.xml (the encoded IDs, not the resource names).
+    /// </summary>
+    public static class LeaderboardIds
+    {
+        // TODO Mo: paste the encoded ID for the "Renown" leaderboard from
+        // games-ids.xml once it's created and published in Play Console. Until
+        // then submission and the View button are inert (both no-op on empty).
+        /// <summary>"Renown" — leaderboard_renown. Score is log-scaled Renown (see Leaderboards.SubmitAll).</summary>
+        public const string Renown = "";
+    }
 }

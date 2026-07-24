@@ -210,6 +210,7 @@ namespace Wildgrove.Game
                 if (signedIn)
                 {
                     ReassertAchievements();
+                    SubmitLeaderboards();
                     ReconcileCloudSave();
                 }
             });
@@ -400,6 +401,9 @@ namespace Wildgrove.Game
             // launch, adopting it when it is further along than the local slot. Play
             // time is also the snapshot's played-time for the Snapshots conflict tiebreak.
             GameServices.SaveCloud(SaveCodec.ToJson(save), State.playedMs);
+            // Post the run's standing on the same cadence as the save (autosave,
+            // pause, quit). Idempotent — Play Games keeps only the player's best.
+            SubmitLeaderboards();
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
@@ -922,6 +926,9 @@ namespace Wildgrove.Game
         /// <summary>Whether the rewarded time-skip can be taken right now (off cooldown) — "Hasten a while" gates on this and RewardedReady.</summary>
         public bool CanTimeSkipReward => Amber.CanRewardedTimeSkip(State, NowUnixMs());
 
+        /// <summary>Seconds until the rewarded time-skip re-arms, or 0 when it's ready now — the camp strip counts down from this.</summary>
+        public double TimeSkipRewardCooldownRemaining => Amber.RewardedTimeSkipCooldownRemainingMs(State, NowUnixMs()) / 1000.0;
+
         /// <summary>Whether the weekly Amber cache is signed in, configured, and off cooldown — the button's shown/enabled state.</summary>
         public bool CanClaimWeeklyCache()
         {
@@ -1153,6 +1160,16 @@ namespace Wildgrove.Game
         private void ReassertAchievements()
         {
             Achievements.Reassert(GameServices, State, Data);
+        }
+
+        /// <summary>
+        /// Post the current best to the leaderboards, run on sign-in and each save.
+        /// The mapping lives in <see cref="Leaderboards.SubmitAll"/> so it can be
+        /// tested with a fake service, without this MonoBehaviour's lifecycle.
+        /// </summary>
+        private void SubmitLeaderboards()
+        {
+            Leaderboards.SubmitAll(GameServices, State, Data);
         }
 
         /// <summary>

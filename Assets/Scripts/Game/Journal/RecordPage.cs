@@ -23,6 +23,25 @@ namespace Wildgrove.Game
             BuildFolioCard();
             BuildDeepPagesCard();
             BuildAlmanacCard();
+            BuildStandingCard();
+        }
+
+        private void BuildStandingCard()
+        {
+            var card = Card("THE STANDING");
+            var reading = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                reading.text = "Renown  " + NumberFormat.Short(_loop.State.renown);
+            });
+
+            var row = Row(card);
+            var label = MakeText(row.transform, "how you stand among the folk", 17, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            Button(row.transform, "View", 160, () =>
+            {
+                _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+            });
         }
 
         private void BuildCompendiumCard()

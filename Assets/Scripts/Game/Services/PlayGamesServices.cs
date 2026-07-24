@@ -39,6 +39,26 @@ namespace Wildgrove.Game.Services
             PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0, _ => { });
         }
 
+        public void SubmitScore(string leaderboardId, long score)
+        {
+            if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
+            {
+                return;
+            }
+
+            PlayGamesPlatform.Instance.ReportScore(score, leaderboardId, _ => { });
+        }
+
+        public void ShowLeaderboard(string leaderboardId)
+        {
+            if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
+            {
+                return;
+            }
+
+            PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId);
+        }
+
         public void LoadCloud(Action<string> onLoaded)
         {
             if (!IsSignedIn)

@@ -23,6 +23,16 @@ namespace Wildgrove.Game.Services
         /// <summary>Unlock an achievement by its encoded ID (see <see cref="AchievementIds"/>). No-op if already unlocked.</summary>
         void UnlockAchievement(string achievementId);
 
+        /// <summary>
+        /// Submit a score to a leaderboard by its encoded ID (see <see cref="LeaderboardIds"/>).
+        /// No-op when signed out. Play Games keeps only the player's best, so
+        /// re-submitting an equal-or-lower score is harmless.
+        /// </summary>
+        void SubmitScore(string leaderboardId, long score);
+
+        /// <summary>Open the native Play Games leaderboard overlay for the given ID. No-op when signed out.</summary>
+        void ShowLeaderboard(string leaderboardId);
+
         /// <summary>Read the cloud save blob (null when none exists or signed out).</summary>
         void LoadCloud(Action<string> onLoaded);
 

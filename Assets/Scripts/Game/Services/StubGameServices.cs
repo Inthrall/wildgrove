@@ -25,6 +25,16 @@ namespace Wildgrove.Game.Services
             Debug.Log("[play-games] stub unlock achievement " + achievementId);
         }
 
+        public void SubmitScore(string leaderboardId, long score)
+        {
+            Debug.Log("[play-games] stub submit score " + score + " to " + leaderboardId);
+        }
+
+        public void ShowLeaderboard(string leaderboardId)
+        {
+            Debug.Log("[play-games] stub show leaderboard " + leaderboardId);
+        }
+
         public void LoadCloud(Action<string> onLoaded)
         {
             Debug.Log("[play-games] stub cloud load (none)");

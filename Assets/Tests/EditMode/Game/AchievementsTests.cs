@@ -117,6 +117,14 @@ namespace Wildgrove.Game.Tests
                 Unlocked.Add(achievementId);
             }
 
+            public void SubmitScore(string leaderboardId, long score)
+            {
+            }
+
+            public void ShowLeaderboard(string leaderboardId)
+            {
+            }
+
             public void LoadCloud(Action<string> onLoaded)
             {
                 onLoaded?.Invoke(null);
