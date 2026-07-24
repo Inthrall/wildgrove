@@ -348,7 +348,7 @@ namespace Wildgrove.Game
             // world strip's node sprites in the gap.
 
             // Paper grain over the whole page (the mock's noise overlay sits
-            // above content too, at low opacity), and the stitched spine.
+            // above content too, at low opacity).
             var grain = new GameObject("Grain", typeof(Image));
             grain.transform.SetParent(canvasGo.transform, false);
             var grainImage = grain.GetComponent<Image>();
@@ -356,21 +356,6 @@ namespace Wildgrove.Game
             grainImage.type = Image.Type.Tiled;
             grainImage.raycastTarget = false;
             Stretch((RectTransform)grain.transform);
-
-            var spine = new GameObject("Spine", typeof(Image));
-            spine.transform.SetParent(canvasGo.transform, false);
-            var spineImage = spine.GetComponent<Image>();
-            spineImage.sprite = SpineSprite();
-            spineImage.type = Image.Type.Tiled;
-            spineImage.raycastTarget = false;
-            var spineRect = (RectTransform)spine.transform;
-            spineRect.anchorMin = new Vector2(0f, 0f);
-            spineRect.anchorMax = new Vector2(0f, 1f);
-            // Centred in the page's left gutter, clear of curved screen
-            // corners; the rect width matches the sprite tile exactly so the
-            // stitch column never gets a clipped second column.
-            spineRect.offsetMin = new Vector2(8f, 16f);
-            spineRect.offsetMax = new Vector2(14f, -16f);
 
             // Transient action feedback (the "+ planted" flashes) draws above
             // the page but under any open sheet. No Graphic — taps fall through.
@@ -593,6 +578,7 @@ namespace Wildgrove.Game
             RefreshLedger();
             RefreshTracker();
             RefreshTrailHome();
+            _sheets.RefreshCampActions();
         }
 
         /// <summary>The carrier dot walking the trail-home rule — driven per frame like the old body row's frame updater.</summary>

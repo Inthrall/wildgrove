@@ -93,12 +93,10 @@ namespace Wildgrove.Game
                 var arrived = _loop.LeaveGift(target);
                 if (arrived != null)
                 {
-                    SetNote("you left a pile of " + target.resourceId + " and stepped back. something said yes.");
+                    SetNote(arrived.IsResting
+                        ? "you left a pile of " + target.resourceId + " and stepped back. something said yes — it rests at camp until you give it a post."
+                        : "you left a pile of " + target.resourceId + " and stepped back. something said yes.");
                     _dirty = true;
-                }
-                else if (_loop.KithWalking() >= _loop.KithSlots())
-                {
-                    SetNote("something watches the pile, but every slot is walked. rest someone first.");
                 }
                 else
                 {
@@ -125,13 +123,6 @@ namespace Wildgrove.Game
                 if (_loop.CanLeaveGift(target))
                 {
                     line.text = "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>";
-                }
-                else if (_loop.KithWalking() >= _loop.KithSlots())
-                {
-                    // The pile is affordable but there is nowhere to put the
-                    // arrival — say so, rather than blaming the stock the player
-                    // can see they have.
-                    line.text = "leave a pile — " + pile + " (every slot is walked — rest someone first)";
                 }
                 else
                 {
@@ -367,14 +358,18 @@ namespace Wildgrove.Game
             List<RiteVerseData> sung = null;
             var sealedShown = false;
             var unlockedZones = Upgrades.UnlockedZoneIds(_loop.State, _loop.Data);
-            foreach (var verse in rite.verses)
+            for (var i = 0; i < rite.verses.Count; i++)
             {
+                var verse = rite.verses[i];
+                // Verses are sung in order; their number is their place in the
+                // rite, shown as a numeral so a verse can be spoken of by name.
+                var number = i + 1;
                 if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse))
                 {
                     if (!sealedShown && unlockedZones.Contains(verse.zone)
                         && Rite.IsVerseSealed(_loop.State, _loop.Data, verse))
                     {
-                        BuildSealedVerseCard(rite, verse);
+                        BuildSealedVerseCard(rite, verse, number);
                         sealedShown = true;
                     }
 
@@ -387,7 +382,7 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                var card = BuildVerseCard(verse);
+                var card = BuildVerseCard(verse, number);
                 if (_firstVerseCard == null)
                 {
                     // The tracker's deep-link lands on the first verse still open.
@@ -397,7 +392,7 @@ namespace Wildgrove.Game
 
             if (sung != null)
             {
-                BuildSungVersesCard(sung);
+                BuildSungVersesCard(rite, sung);
             }
         }
 
@@ -405,14 +400,14 @@ namespace Wildgrove.Game
         /// The collapsed record of verses already answered — one line each, so a
         /// long-lived rite doesn't bury the open verses under finished ones.
         /// </summary>
-        private void BuildSungVersesCard(List<RiteVerseData> verses)
+        private void BuildSungVersesCard(RiteData rite, List<RiteVerseData> verses)
         {
             var card = Card("SUNG VERSES");
             foreach (var verse in verses)
             {
                 var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
                 var site = zone != null && !string.IsNullOrEmpty(zone.verseSite) ? zone.verseSite : ZoneName(verse.zone);
-                MakeText(card, ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
+                MakeText(card, Roman(rite.verses.IndexOf(verse) + 1) + " · " + ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
                                + ">" + site + " — sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
             }
         }
@@ -421,7 +416,7 @@ namespace Wildgrove.Game
         /// The card for a verse whose site is reached but whose turn hasn't
         /// come — it names the verse still barring it and asks nothing.
         /// </summary>
-        private void BuildSealedVerseCard(RiteData rite, RiteVerseData verse)
+        private void BuildSealedVerseCard(RiteData rite, RiteVerseData verse, int number)
         {
             string barring = null;
             foreach (var earlier in rite.verses)
@@ -438,19 +433,19 @@ namespace Wildgrove.Game
                 }
             }
 
-            var card = Card("VERSE OF " + ZoneName(verse.zone).ToUpperInvariant());
+            var card = Card("VERSE " + Roman(number) + " · " + ZoneName(verse.zone).ToUpperInvariant());
             MakeText(card, barring == null
                     ? "<i>the cairn keeps its silence — its turn has not come</i>"
                     : "<i>the cairn keeps its silence — the verse of " + barring + " is still unsung</i>",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
         }
 
-        private RectTransform BuildVerseCard(RiteVerseData verse)
+        private RectTransform BuildVerseCard(RiteVerseData verse, int number)
         {
             var capturedVerse = verse;
             var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
             var site = zone != null && !string.IsNullOrEmpty(zone.verseSite) ? zone.verseSite : ZoneName(verse.zone);
-            var card = Card("VERSE OF " + ZoneName(verse.zone).ToUpperInvariant());
+            var card = Card("VERSE " + Roman(number) + " · " + ZoneName(verse.zone).ToUpperInvariant());
 
             var siteLine = MakeText(card, site, 23, TextAnchor.MiddleCenter, Ink, _serif);
             siteLine.gameObject.name = "Site";

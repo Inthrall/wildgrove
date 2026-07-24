@@ -102,6 +102,18 @@ namespace Wildgrove.Sim
             state.timeSkipClaimedUnixMs = nowUnixMs;
         }
 
+        /// <summary>Milliseconds until the rewarded time-skip re-arms, or 0 when it's ready now — drives the camp strip's countdown.</summary>
+        public static long RewardedTimeSkipCooldownRemainingMs(GameState state, long nowUnixMs)
+        {
+            if (state.timeSkipClaimedUnixMs <= 0L)
+            {
+                return 0L;
+            }
+
+            var remaining = TimeSkipCooldownMs - (nowUnixMs - state.timeSkipClaimedUnixMs);
+            return remaining > 0L ? remaining : 0L;
+        }
+
         /// <summary>Whether the weekly Amber cache is configured and its week has elapsed since the last claim.</summary>
         public static bool CanClaimWeeklyCache(GameState state, GameDataAsset data, long nowUnixMs)
         {

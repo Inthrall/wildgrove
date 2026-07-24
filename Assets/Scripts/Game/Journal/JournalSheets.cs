@@ -453,6 +453,55 @@ namespace Wildgrove.Game
             {
                 _removeAdsButton.gameObject.SetActive(false);
             }
+
+            RefreshCampActions();
+        }
+
+        /// <summary>
+        /// Keep the persistent camp-strip buttons current. The strip is built
+        /// once in the chrome — outside the page's live-updater pool — so the
+        /// HUD pumps this on its refresh cadence. The time-skip greys out and
+        /// counts down while its reward cooldown holds, rather than accepting a
+        /// tap only to refuse it with a note.
+        /// </summary>
+        internal void RefreshCampActions()
+        {
+            if (_timeSkipButton == null || _loop == null || _loop.State == null)
+            {
+                return;
+            }
+
+            var ready = _loop.CanTimeSkipReward;
+            _timeSkipButton.interactable = ready;
+            SetButtonTint(_timeSkipButton, ready);
+            SetButtonLabel(_timeSkipButton, ready
+                ? TimeSkipLabel()
+                : "Pass the time — ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining));
+        }
+
+        /// <summary>
+        /// A modal yes/no confirmation — a title, a body line, and a paired
+        /// "never mind" / go-ahead choice styled like the Fold sheet's Migrate.
+        /// The confirmed action runs after the sheet closes, so it may open a
+        /// sheet of its own.
+        /// </summary>
+        internal void OpenConfirmSheet(string title, string body, string confirmLabel, System.Action onConfirm)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, title, 32, TextAnchor.UpperCenter, Ink, _serif);
+            if (!string.IsNullOrEmpty(body))
+            {
+                MakeText(sheet, body, 20, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
+
+            Button(sheet, "Never mind", 320, CloseSheet);
+            var confirm = Button(sheet, confirmLabel, 320, () =>
+            {
+                CloseSheet();
+                onConfirm?.Invoke();
+            });
+            confirm.GetComponent<Image>().color = OchreWash;
+            confirm.GetComponentInChildren<Text>().color = Ochre;
         }
 
         /// <summary>"Pass the time, +2 hours" (+ the "watch a short ad" tail until Remove Ads is owned) — says what the reward gives.</summary>

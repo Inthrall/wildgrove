@@ -94,21 +94,27 @@ namespace Wildgrove.Sim
             return specialist != null && Roster.OfSpecies(state, specialist.id) == null;
         }
 
-        /// <summary>True when camp stock covers a pile at this node, someone new would answer it, and a slot is open for them.</summary>
+        /// <summary>
+        /// True when camp stock covers a pile at this node and someone new would
+        /// answer it. Slot room is deliberately NOT a gate: the arrival joins the
+        /// collection (never slot-capped) and simply rests until posted from the
+        /// node UI — leaving a pile never asks the player to rest a companion first.
+        /// </summary>
         public static bool CanLeavePile(GameState state, GameDataAsset data, NodeState node)
         {
             return node != null
                 && IsAvailable(state, data)
                 && NodeCanCall(state, data, node)
-                && Kith.HasRoom(state, data)
                 && state.GetResource(node.resourceId) >= PileCost(data.economy);
         }
 
         /// <summary>
         /// Leave the pile: spend the node's own resource from camp stock and
-        /// the resource's specialist says yes — stationed at that node, to be
-        /// named on the arrival sheet like any recruit. Returns null (and
-        /// changes nothing) when the gift can't happen.
+        /// the resource's specialist says yes. It takes that node as its post
+        /// when a slot is open and the post stands empty; otherwise it joins
+        /// the kith resting, to be stationed later. Named on the arrival sheet
+        /// like any recruit. Returns null (and changes nothing) when the gift
+        /// can't happen.
         /// </summary>
         public static Familiar LeavePile(GameState state, GameDataAsset data, NodeState node)
         {

@@ -5,8 +5,8 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The journal's generated art — procedurally built, cached sprites for the
-    /// ruled borders, paper grain, stitched spine, and dashed rules. Kept out of
-    /// the widget factory so the pixel-poking stays in one place.
+    /// ruled borders, paper grain, and dashed rules. Kept out of the widget
+    /// factory so the pixel-poking stays in one place.
     /// </summary>
     internal static class JournalSprites
     {
@@ -14,7 +14,6 @@ namespace Wildgrove.Game
         private static Sprite _grainSprite;
         private static Sprite _dashSprite;
         private static Sprite _dashAcrossSprite;
-        private static Sprite _spineSprite;
 
         /// <summary>A sliced border-only sprite — the journal's ruled ink outlines.</summary>
         internal static Sprite BorderSprite()
@@ -64,40 +63,6 @@ namespace Wildgrove.Game
             }
 
             return _grainSprite;
-        }
-
-        /// <summary>
-        /// The stitched spine's thread — a soft-edged vertical stitch, faded
-        /// at the ends and sides so the tiled column reads as sewn thread
-        /// rather than aliased blocks. Separate from <see cref="DashSprite"/>:
-        /// the trail row's rule samples that tile's bottom rows and would
-        /// change appearance if this softening were applied there.
-        /// </summary>
-        internal static Sprite SpineSprite()
-        {
-            if (_spineSprite == null)
-            {
-                const int width = 6;
-                const int height = 28;
-                const int stitch = 14; // thread length; the rest of the tile is gap
-                var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-                for (var y = 0; y < height; y++)
-                {
-                    for (var x = 0; x < width; x++)
-                    {
-                        var along = Mathf.Clamp01(Mathf.Min(y + 1, stitch - y) / 2f);
-                        var across = Mathf.Clamp01(Mathf.Min(x + 1, width - x) / 2f);
-                        var alpha = y < stitch ? 0.5f * along * across : 0f;
-                        texture.SetPixel(x, y, new Color(Ink2.r, Ink2.g, Ink2.b, alpha));
-                    }
-                }
-
-                texture.Apply();
-                texture.filterMode = FilterMode.Bilinear;
-                _spineSprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
-            }
-
-            return _spineSprite;
         }
 
         /// <summary>A vertical dash pattern — the trail row's dotted rule.</summary>

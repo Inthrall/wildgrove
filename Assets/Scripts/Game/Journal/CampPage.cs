@@ -83,15 +83,28 @@ namespace Wildgrove.Game
             FlexibleWidth(label.gameObject, 1f);
             label.text = "hasten " + NumberFormat.Duration(hours * 3600.0) + " at full pace"
                          + SizeOpen(15) + "<color=" + OchreHex + ">  " + Mathf.FloorToInt((float)cost) + " amber</color></size>";
+            var amber = Mathf.FloorToInt((float)cost);
             Button skip = null;
             skip = Button(row.transform, "Hasten", 170, () =>
             {
-                if (_loop.TimeSkip() > 0.0)
+                if (!_loop.CanTimeSkip())
                 {
-                    Flash(skip, "the work leaps ahead", true);
-                    SetNote("amber spent — " + NumberFormat.Duration(hours * 3600.0) + " of gathering, in a breath.");
-                    _dirty = true;
+                    return;
                 }
+
+                // Amber is premium and hard-won — never spend it on a stray tap.
+                _hud.Sheets.OpenConfirmSheet(
+                    "Spend " + amber + " amber",
+                    "Hasten " + NumberFormat.Duration(hours * 3600.0) + " of gathering at full pace?",
+                    "Spend " + amber + " amber",
+                    () =>
+                    {
+                        if (_loop.TimeSkip() > 0.0)
+                        {
+                            SetNote("amber spent — " + NumberFormat.Duration(hours * 3600.0) + " of gathering, in a breath.");
+                            _dirty = true;
+                        }
+                    });
             });
 
             _liveUpdaters.Add(() =>

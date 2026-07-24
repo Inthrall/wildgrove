@@ -159,19 +159,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CanLeavePile_WithNoSlotOpen_WaitsForRoom()
+        public void CanLeavePile_WithNoSlotOpen_StillAllowsAnArrivalThatRests()
         {
             var state = GameStateFactory.NewGame(_data);
-            var vole = Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
             AnswerFirstVerse(state);
             state.resources["nuts"] = 25;
-            Assert.That(Kith.HasRoom(state, _data), Is.False);
+            Assert.That(Kith.HasRoom(state, _data), Is.False, "the one slot is walked");
 
-            Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.False,
-                "the arrival takes the node as its post — it needs a slot");
+            Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.True,
+                "a pile no longer waits on a slot — the arrival joins the kith resting");
 
-            Roster.Station(state, _data, vole, null);
-            Assert.That(Gifts.CanLeavePile(state, _data, state.nodes[1]), Is.True);
+            var arrived = Gifts.LeavePile(state, _data, state.nodes[1]);
+            Assert.That(arrived, Is.Not.Null);
+            Assert.That(arrived.IsResting, Is.True,
+                "no slot open, so it starts unassigned — posted from the node UI later");
         }
 
         [Test]
