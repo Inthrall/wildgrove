@@ -179,6 +179,7 @@ namespace Wildgrove.Game
                 // the next unread waystone — a quarter-second delay to raise a
                 // sheet is imperceptible and keeps that scan off the hot path.
                 _sheets.PumpSheets();
+                MaybeShowStartupDiagnostics(); // TEMP diagnostics popup
                 RefreshChrome(); // cadence, not per-frame — avoids string allocs every frame
                 var signature = StructureSignature();
                 if (_dirty || signature != _structureSignature)
@@ -193,6 +194,29 @@ namespace Wildgrove.Game
                     _liveUpdaters[i]();
                 }
             }
+        }
+
+        // TEMP diagnostics: one-shot Play Games status popup (sign-in +
+        // achievement outcome). Remove with the Diag sink.
+        private bool _diagShown;
+        private float _diagDelay = 1.5f;
+
+        private void MaybeShowStartupDiagnostics()
+        {
+            if (_diagShown || !Diag.Ready)
+            {
+                return;
+            }
+
+            // Let the async achievement report land before snapshotting the lines.
+            _diagDelay -= RefreshInterval;
+            if (_diagDelay > 0f || _sheet != null)
+            {
+                return;
+            }
+
+            _diagShown = true;
+            _sheets.OpenInfoSheet("Play Games status", Diag.Lines);
         }
 
         /// <summary>

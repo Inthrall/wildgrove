@@ -17,12 +17,14 @@ namespace Wildgrove.Game.Services
         public void SignIn(Action<bool> onComplete = null)
         {
             Debug.Log("[play-games] stub sign-in");
+            Diag.Log("Sign-in: stub SUCCESS"); // TEMP diagnostics
             onComplete?.Invoke(true);
         }
 
         public void UnlockAchievement(string achievementId)
         {
             Debug.Log("[play-games] stub unlock achievement " + achievementId);
+            Diag.Log("Achievement " + achievementId + ": stub reported OK"); // TEMP diagnostics
         }
 
         public void SubmitScore(string leaderboardId, long score)

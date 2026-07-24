@@ -132,6 +132,8 @@ namespace Wildgrove.Game
 
         private void Initialise()
         {
+            Diag.Reset(); // TEMP diagnostics: start each run with a clean buffer
+
             try
             {
                 Data = GameDataAsset.LoadFromResources();
@@ -176,9 +178,14 @@ namespace Wildgrove.Game
             Store.ConsumablePurchased += OnConsumableRecovered;
 
             Ads.Initialise();
-            // Store is initialised lazily on the first purchase, not here: Unity
-            // IAP's billing connection must not run at startup — on some devices
-            // it launches ProxyBillingActivity before Unity loads, crashing the app.
+            // The billing connection must not run *at* startup — on some devices it
+            // launches ProxyBillingActivity before Unity loads and crashes the app —
+            // so it stays off the synchronous launch path. But we still resolve owned
+            // entitlements a couple of seconds in (Unity fully up by then), so the
+            // Remove Ads button can hide when the player already owns it instead of
+            // only after a purchase attempt. A purchase before this fires still
+            // lazy-inits the store itself.
+            Invoke(nameof(ResolveEntitlements), StoreEntitlementResolveDelaySeconds);
 
             if (SaveFile.TryLoad(out var save))
             {
@@ -213,9 +220,29 @@ namespace Wildgrove.Game
                     SubmitLeaderboards();
                     ReconcileCloudSave();
                 }
+
+                // TEMP diagnostics: record what the achievement re-assert had to
+                // work with, then let the HUD surface the collected lines.
+                Diag.Log("Signed in: " + signedIn);
+                Diag.Log("Earned bonds: " + EarnedBondIds().Count);
+                Diag.Ready = true;
             });
 
             StartSession();
+        }
+
+        // TEMP: delay before resolving owned entitlements — enough to clear the
+        // launch frames so connecting billing can't race Unity's load.
+        private const float StoreEntitlementResolveDelaySeconds = 2f;
+
+        /// <summary>
+        /// Connect the store and read owned products, off the synchronous launch
+        /// path (see the Initialise note). Once it resolves, the camp-actions
+        /// refresh hides the Remove Ads button for players who already own it.
+        /// </summary>
+        private void ResolveEntitlements()
+        {
+            Store.Initialise();
         }
 
         /// <summary>

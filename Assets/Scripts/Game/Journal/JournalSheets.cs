@@ -459,11 +459,12 @@ namespace Wildgrove.Game
             _timeSkipButton.GetComponent<Image>().color = OchreWash;
             _timeSkipButton.GetComponentInChildren<Text>().color = Ochre;
 
+            // Hidden until the store resolves ownership (RefreshCampActions is the
+            // authority): shown only once billing is initialised and the player
+            // doesn't already own Remove Ads. Built inactive so an owner never sees
+            // it flash up before entitlements land.
             _removeAdsButton = Button(bar.transform, "Remove ads", 200, OnRemoveAds);
-            if (_loop.Store.RemoveAdsOwned)
-            {
-                _removeAdsButton.gameObject.SetActive(false);
-            }
+            _removeAdsButton.gameObject.SetActive(false);
 
             RefreshCampActions();
         }
@@ -488,6 +489,34 @@ namespace Wildgrove.Game
             SetButtonLabel(_timeSkipButton, ready
                 ? TimeSkipLabel()
                 : "Pass the time — ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining));
+
+            if (_removeAdsButton != null)
+            {
+                // Show only once billing has resolved entitlements and the player
+                // doesn't already own it. Owning Remove Ads — or a store that's
+                // still connecting or unavailable — keeps it hidden.
+                _removeAdsButton.gameObject.SetActive(_loop.Store.IsInitialised && !_loop.Store.RemoveAdsOwned);
+            }
+        }
+
+        /// <summary>
+        /// TEMP: a plain modal that lists diagnostic lines with a single dismiss
+        /// button — surfaces Play Games sign-in / achievement status on device
+        /// while we confirm the achievement wiring. Remove with the diagnostics.
+        /// </summary>
+        internal void OpenInfoSheet(string title, IReadOnlyList<string> lines)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, title, 32, TextAnchor.UpperCenter, Ink, _serif);
+            if (lines != null)
+            {
+                foreach (var line in lines)
+                {
+                    MakeText(sheet, line, 20, TextAnchor.MiddleCenter, Ink2, _serif);
+                }
+            }
+
+            Button(sheet, "OK", 320, CloseSheet);
         }
 
         /// <summary>

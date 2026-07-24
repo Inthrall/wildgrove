@@ -25,18 +25,29 @@ namespace Wildgrove.Game.Services
             PlayGamesPlatform.Instance.Authenticate(status =>
             {
                 IsSignedIn = status == SignInStatus.Success;
+                Diag.Log("Sign-in: " + status); // TEMP diagnostics
                 onComplete?.Invoke(IsSignedIn);
             });
         }
 
         public void UnlockAchievement(string achievementId)
         {
-            if (!IsSignedIn || string.IsNullOrEmpty(achievementId))
+            if (!IsSignedIn)
             {
+                Diag.Log("Achievement skipped — not signed in"); // TEMP diagnostics
                 return;
             }
 
-            PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0, _ => { });
+            if (string.IsNullOrEmpty(achievementId))
+            {
+                Diag.Log("Achievement skipped — empty id"); // TEMP diagnostics
+                return;
+            }
+
+            // TEMP diagnostics: surface the report outcome so we can tell an
+            // accepted unlock from one Play silently rejects (draft/non-tester).
+            PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0,
+                success => Diag.Log("Achievement " + achievementId + ": " + (success ? "reported OK" : "report FAILED")));
         }
 
         public void SubmitScore(string leaderboardId, long score)
