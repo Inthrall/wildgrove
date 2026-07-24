@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: 468f55a50306564337533a59386d608ce6e4c072c221d80de313018c0e860f7c
+  sourceHash: 7ea021cc8a4cd974499bac26bae4700e6dbbfd04e69287e5b8ee938d4749363f
   economy:
     costGrowth:
       building: 1.25
@@ -1586,7 +1586,7 @@ MonoBehaviour:
       id: old-friend
   species:
   - id: meadow-vole
-    displayName: meadow vole
+    displayName: Meadow vole
     roleLean: gatherer
     suggestedNames:
     - Bramble
@@ -1598,13 +1598,117 @@ MonoBehaviour:
     - Thistle
     - Hazel
     trait:
-      displayName: Berry-wise
-      description: +40% yield at berry nodes
+      displayName: Meadow-forager
+      description: +40% yield at berry and wildflower nodes
       kind: nodeYieldBonus
       value: 0.4
-      resource: berries
+      resources:
+      - berries
+      - wildflowers
+  - id: red-squirrel
+    displayName: Red squirrel
+    roleLean: gatherer
+    suggestedNames:
+    - Cob
+    - Filbert
+    - Russet
+    - Brindle
+    - Scamper
+    trait:
+      displayName: Mast-hoarder
+      description: +40% yield at nut and mushroom nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - nuts
+      - mushrooms
+  - id: sedge-linnet
+    displayName: Sedge linnet
+    roleLean: gatherer
+    suggestedNames:
+    - Trill
+    - Reedling
+    - Fife
+    - Sol
+    - Wren
+    trait:
+      displayName: Nest-weaver
+      description: +40% yield at fibre and reed nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - fibres
+      - reeds
+  - id: bramble-hare
+    displayName: Bramble hare
+    roleLean: gatherer
+    suggestedNames:
+    - Loper
+    - Switch
+    - Fleet
+    - Bracken
+    - Clove
+    trait:
+      displayName: Hedge-browser
+      description: +40% yield at herb and rare-herb nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - herbs
+      - rare-herbs
+  - id: warren-weasel
+    displayName: Warren weasel
+    roleLean: gatherer
+    suggestedNames:
+    - Slink
+    - Sable
+    - Nip
+    - Vein
+    - Ferro
+    trait:
+      displayName: Ore-tunneler
+      description: +40% yield at copper scree and tin seam nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - copper-scree
+      - tin-seam
+  - id: furrow-hedgehog
+    displayName: Furrow hedgehog
+    roleLean: gatherer
+    suggestedNames:
+    - Quill
+    - Snuffle
+    - Prickle
+    - Furze
+    - Tumble
+    trait:
+      displayName: Earth-rooter
+      description: +40% yield at clay and iron gravel nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - clay
+      - iron-gravel
+  - id: tawny-owl
+    displayName: Tawny owl
+    roleLean: gatherer
+    suggestedNames:
+    - Hoot
+    - Umber
+    - Hush
+    - Grey
+    - Willow
+    trait:
+      displayName: Grove-and-river hunter
+      description: +40% yield at timber and fishing nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - timber
+      - fish
   - id: pack-raven
-    displayName: pack raven
+    displayName: Pack raven
     roleLean: carrier
     suggestedNames:
     - Sootwing
@@ -1620,187 +1724,7 @@ MonoBehaviour:
       description: +25% throughput when it holds the trail post
       kind: trailThroughputBonus
       value: 0.25
-      resource: 
-  - id: meadow-pipit
-    displayName: meadow pipit
-    roleLean: gatherer
-    suggestedNames:
-    - Trill
-    - Lark
-    - Chirm
-    - Fife
-    - Sol
-    trait:
-      displayName: Bloom-tender
-      description: +40% yield at wildflower stands
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: wildflowers
-  - id: harvest-mouse
-    displayName: harvest mouse
-    roleLean: gatherer
-    suggestedNames:
-    - Tansy
-    - Whisk
-    - Oat
-    - Bristle
-    - Tuft
-    trait:
-      displayName: Stalk-climber
-      description: +40% yield at fibre stands
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: fibres
-  - id: red-squirrel
-    displayName: red squirrel
-    roleLean: gatherer
-    suggestedNames:
-    - Cob
-    - Filbert
-    - Russet
-    - Brindle
-    - Scamper
-    trait:
-      displayName: Mast-hoarder
-      description: +40% yield at nut groves
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: nuts
-  - id: bramble-hare
-    displayName: bramble hare
-    roleLean: gatherer
-    suggestedNames:
-    - Loper
-    - Switch
-    - Fleet
-    - Bracken
-    - Clove
-    trait:
-      displayName: Hedge-wise
-      description: +40% yield at herb patches
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: herbs
-  - id: burrow-mole
-    displayName: burrow mole
-    roleLean: gatherer
-    suggestedNames:
-    - Spade
-    - Velvet
-    - Delver
-    - Grub
-    - Loam
-    trait:
-      displayName: Scree-nose
-      description: +40% yield at the copper scree
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: copper-scree
-  - id: pine-marten
-    displayName: pine marten
-    roleLean: gatherer
-    suggestedNames:
-    - Sprig
-    - Larch
-    - Resin
-    - Knot
-    - Tumble
-    trait:
-      displayName: Deadfall-runner
-      description: +40% yield at deadfall timber
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: timber
-  - id: holt-otter
-    displayName: holt otter
-    roleLean: gatherer
-    suggestedNames:
-    - Eddy
-    - Slick
-    - Brook
-    - Pool
-    - Weir
-    trait:
-      displayName: River-wise
-      description: +40% yield at fishing pools
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: fish
-  - id: moor-curlew
-    displayName: moor curlew
-    roleLean: gatherer
-    suggestedNames:
-    - Piper
-    - Mist
-    - Rush
-    - Heath
-    - Keen
-    trait:
-      displayName: Moor-caller
-      description: +40% yield at the peat cuttings
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: peat
-  - id: cavern-bat
-    displayName: cavern bat
-    roleLean: gatherer
-    suggestedNames:
-    - Flit
-    - Echo
-    - Vesper
-    - Dusk
-    - Sable
-    trait:
-      displayName: Deep-listener
-      description: +40% yield at the deep ores
-      kind: nodeYieldBonus
-      value: 0.4
-      resource: deep-ores
-  - id: dray-stag
-    displayName: dray stag
-    roleLean: carrier
-    suggestedNames:
-    - Tine
-    - Alder
-    - Moss
-    - Roan
-    - Hallow
-    trait:
-      displayName: Broad-back
-      description: +40% throughput when it holds the trail post
-      kind: trailThroughputBonus
-      value: 0.4
-      resource: 
-  - id: tawny-owl
-    displayName: tawny owl
-    roleLean: gatherer
-    suggestedNames:
-    - Blink
-    - Umber
-    - Quill
-    - Hush
-    - Grey
-    trait:
-      displayName: Patient watcher
-      description: +40% watch speed at an observation site
-      kind: digSpeedBonus
-      value: 0.4
-      resource: 
-  - id: ermine
-    displayName: ermine
-    roleLean: gatherer
-    suggestedNames:
-    - Sleet
-    - Winter
-    - Slip
-    - Frost
-    - Pearl
-    trait:
-      displayName: Soft paws
-      description: +1pt Pristine chance at its node
-      kind: pristineBonus
-      value: 0.01
-      resource: 
+      resources: []
   planters:
   - id: timber-frame
     displayName: Timber Frame

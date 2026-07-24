@@ -341,6 +341,41 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_WardenWandering_GathersAShareOfEveryNodeStraightToCamp()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.9 };
+            var state = GameStateFactory.NewGame(_data);
+            state.roster.Clear(); // only the warden works
+            Warden.Wander(state);
+
+            Simulation.Advance(state, _data, 10.0);
+
+            // The warden roams three nodes: 0.9/s split evenly is 0.3/s each,
+            // pocketed straight to camp (no basket, like any warden pickings).
+            Assert.That(Warden.IsWandering(state), Is.True);
+            foreach (var node in state.nodes)
+            {
+                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
+                Assert.That(node.basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
+            }
+        }
+
+        [Test]
+        public void WardenWander_AFamiliarWanderingThere_StepsBackToCamp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, Familiar.WanderStation, 1);
+            var holder = Stationing.OccupantOf(state, Familiar.WanderStation);
+
+            Warden.Wander(state);
+
+            // One body per post: the warden takes the wander post, the familiar
+            // that held it goes home — the same rule a node follows.
+            Assert.That(Warden.IsWandering(state), Is.True);
+            Assert.That(holder.IsResting, Is.True);
+        }
+
+        [Test]
         public void Advance_AWanderer_GathersAShareOfEveryNode()
         {
             var state = GameStateFactory.NewGame(_data);

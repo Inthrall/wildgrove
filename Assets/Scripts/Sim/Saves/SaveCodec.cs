@@ -242,8 +242,10 @@ namespace Wildgrove.Sim.Saves
             // A post at a node the current data no longer builds (zone or
             // resource retuned) would strand the warden, matching no node at
             // all. Dangling post ids self-correct on restore like nodes do:
-            // cleared, so the warden stands at camp until re-posted.
-            state.wardenPostNodeId = NodeExists(state, save.wardenPostNodeId)
+            // cleared, so the warden stands at camp until re-posted. The wander
+            // post is always a valid warden post — it binds to no single node.
+            state.wardenPostNodeId = save.wardenPostNodeId == Familiar.WanderStation
+                                     || NodeExists(state, save.wardenPostNodeId)
                 ? save.wardenPostNodeId
                 : null;
             state.amber = save.amber;

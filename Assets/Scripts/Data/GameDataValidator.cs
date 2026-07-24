@@ -624,6 +624,18 @@ namespace Wildgrove.Data
             "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus"
         };
 
+        // The trait's authored resource pair, falling back to the legacy single
+        // Resource — mirrors GameDataMapper.ResolveTraitResources.
+        private static List<string> TraitResources(TraitDef trait)
+        {
+            if (trait.Resources != null && trait.Resources.Count > 0)
+            {
+                return trait.Resources;
+            }
+
+            return string.IsNullOrEmpty(trait.Resource) ? new List<string>() : new List<string> { trait.Resource };
+        }
+
         private static void ValidateSpecies(GameData data, List<string> issues)
         {
             CheckIds(data.Species.Select(s => s.Id), "species", issues);
@@ -661,21 +673,28 @@ namespace Wildgrove.Data
                     issues.Add($"Species '{species.Id}' trait must have a positive value");
                 }
 
-                if (!string.IsNullOrEmpty(trait.Resource))
+                var traitResources = TraitResources(trait);
+                if (traitResources.Count > 0)
                 {
                     if (trait.Kind != "nodeYieldBonus")
                     {
-                        issues.Add($"Species '{species.Id}' trait has a resource but kind '{trait.Kind}' never reads one");
+                        issues.Add($"Species '{species.Id}' trait has resources but kind '{trait.Kind}' never reads them");
                     }
 
-                    if (!data.ResourcesById.ContainsKey(trait.Resource))
+                    foreach (var resource in traitResources)
                     {
-                        issues.Add($"Species '{species.Id}' trait references unknown resource '{trait.Resource}'");
-                    }
+                        if (!data.ResourcesById.ContainsKey(resource))
+                        {
+                            issues.Add($"Species '{species.Id}' trait references unknown resource '{resource}'");
+                        }
 
-                    if (!specialistResources.Add(trait.Resource))
-                    {
-                        issues.Add($"Two species claim resource '{trait.Resource}' — gift piles need one specialist per resource");
+                        // Each node resolves its gift-pile arrival by resource,
+                        // so no two species may claim the same one — even though
+                        // a species now works a pair.
+                        if (!specialistResources.Add(resource))
+                        {
+                            issues.Add($"Two species claim resource '{resource}' — gift piles need one specialist per resource");
+                        }
                     }
                 }
             }

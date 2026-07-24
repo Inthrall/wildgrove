@@ -247,14 +247,20 @@ namespace Wildgrove.Game
             var occupantHere = Stationing.OccupantOf(state, stationId);
             var hasRoom = Kith.HasRoom(state, _loop.Data);
 
-            // The warden can only stand at a node — no warden entry on the
-            // trail or wander sheets.
+            // The warden stands at a node, or now takes the wander post and
+            // roams (design §2) — but never the trail: the warden tends, the
+            // kith carries.
             var node = FindNode(stationId);
-            if (node != null)
+            var isWanderPost = stationId == Familiar.WanderStation;
+            if (node != null || isWanderPost)
             {
-                var wardenHere = Warden.PostNodeId(state) == node.id;
+                var wardenHere = node != null
+                    ? Warden.PostNodeId(state) == node.id
+                    : Warden.IsWandering(state);
                 var detail = wardenHere
-                    ? "posted here — tap to send them back to camp"
+                    ? (isWanderPost
+                        ? "wandering — tap to send them back to camp"
+                        : "posted here — tap to send them back to camp")
                     : WardenWhereabouts();
                 var warden = Button(sheet, "the warden  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                            + detail + "</color></size>", 560, () =>
@@ -263,6 +269,11 @@ namespace Wildgrove.Game
                     {
                         _loop.RestWarden();
                         SetNote("the warden steps back to camp.");
+                    }
+                    else if (isWanderPost)
+                    {
+                        _loop.WanderWarden();
+                        SetNote("the warden sets off to wander the run.");
                     }
                     else
                     {

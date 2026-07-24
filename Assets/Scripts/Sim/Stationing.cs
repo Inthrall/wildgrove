@@ -148,6 +148,13 @@ namespace Wildgrove.Sim
                 }
             }
 
+            // The warden may now take the wander post too, watching each site it
+            // passes at the base rate (the warden carries no species trait).
+            if (Warden.IsWandering(state))
+            {
+                sum += 1.0;
+            }
+
             return sum;
         }
     }

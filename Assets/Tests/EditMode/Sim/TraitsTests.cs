@@ -28,7 +28,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "meadow-vole", displayName = "meadow vole", roleLean = "gatherer",
                     suggestedNames = new List<string> { "Bramble" },
-                    trait = new TraitData { displayName = "Berry-wise", kind = "nodeYieldBonus", value = 0.4, resource = "berries" },
+                    trait = new TraitData { displayName = "Meadow-forager", kind = "nodeYieldBonus", value = 0.4, resources = new List<string> { "berries", "wildflowers" } },
                 },
                 new SpeciesData
                 {
@@ -63,12 +63,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NodeYieldFactor_MatchingResource_AppliesTheTrait()
+        public void NodeYieldFactor_EitherResourceOfThePair_AppliesTheTrait()
         {
             var berries = new NodeState { id = "n1", resourceId = "berries" };
+            var wildflowers = new NodeState { id = "n2", resourceId = "wildflowers" };
 
             Assert.That(Traits.NodeYieldFactor(At("meadow-vole", "n1"), berries, _data),
-                Is.EqualTo(1.4).Within(Tolerance));
+                Is.EqualTo(1.4).Within(Tolerance), "the first node of the pair");
+            Assert.That(Traits.NodeYieldFactor(At("meadow-vole", "n2"), wildflowers, _data),
+                Is.EqualTo(1.4).Within(Tolerance), "and the second — one familiar works both");
         }
 
         [Test]

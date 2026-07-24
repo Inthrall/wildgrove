@@ -117,6 +117,19 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresAWanderingWarden()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Warden.Wander(state);
+
+            var restored = RoundTrip(state);
+
+            // The wander post is a valid warden post — the sentinel survives the
+            // save's node-existence scrub rather than dropping the warden to camp.
+            Assert.That(Warden.IsWandering(restored), Is.True);
+        }
+
+        [Test]
         public void RoundTrip_PreservesBigDoublesBeyondDoubleRange_Exactly()
         {
             var state = GameStateFactory.NewGame(_data);

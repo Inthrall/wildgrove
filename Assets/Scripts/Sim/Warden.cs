@@ -14,16 +14,22 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Warden
     {
-        /// <summary>The warden's node, or null while they stand at camp.</summary>
+        /// <summary>The warden's post — a node id, <see cref="Familiar.WanderStation"/>, or null while they stand at camp.</summary>
         public static string PostNodeId(GameState state)
         {
             return string.IsNullOrEmpty(state.wardenPostNodeId) ? null : state.wardenPostNodeId;
         }
 
-        /// <summary>Whether the warden stands at <paramref name="node"/>.</summary>
+        /// <summary>Whether the warden stands at <paramref name="node"/> (never true while wandering — the wander post is no single node).</summary>
         public static bool IsPosted(GameState state, NodeState node)
         {
             return node != null && node.id == PostNodeId(state);
+        }
+
+        /// <summary>Whether the warden roams the wander post (design §2: the warden may now take it, like any familiar).</summary>
+        public static bool IsWandering(GameState state)
+        {
+            return state.wardenPostNodeId == Familiar.WanderStation;
         }
 
         /// <summary>
@@ -47,6 +53,23 @@ namespace Wildgrove.Sim
             state.BumpModifiers();
         }
 
+        /// <summary>
+        /// Send the warden to the wander post — roaming every node and watch
+        /// site (design §2). One body per post: a familiar already wandering
+        /// steps back to camp (its slot frees), same as taking a node.
+        /// </summary>
+        public static void Wander(GameState state)
+        {
+            var occupant = Stationing.OccupantOf(state, Familiar.WanderStation);
+            if (occupant != null)
+            {
+                occupant.stationId = null;
+            }
+
+            state.wardenPostNodeId = Familiar.WanderStation;
+            state.BumpModifiers();
+        }
+
         /// <summary>Send the warden back to camp — no post, no picking.</summary>
         public static void Rest(GameState state)
         {
@@ -56,14 +79,30 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The warden's own gather rate at <paramref name="node"/> before any
-        /// burst boost — zero away from the post, at camp, or when
-        /// unconfigured (pre-warden fixtures stay inert).
+        /// burst boost — the full rate at their posted node, an even share of
+        /// that rate across every node while wandering (roaming, averaged out
+        /// like a wandering familiar), and zero at camp or when unconfigured
+        /// (pre-warden fixtures stay inert).
         /// </summary>
         public static double GatherPerSecond(GameState state, EconomyData economy, NodeState node)
         {
-            return economy?.warden != null && IsPosted(state, node)
-                ? economy.warden.gatherPerSecond
-                : 0.0;
+            if (economy?.warden == null)
+            {
+                return 0.0;
+            }
+
+            if (IsPosted(state, node))
+            {
+                return economy.warden.gatherPerSecond;
+            }
+
+            var nodeCount = state.nodes.Count;
+            if (IsWandering(state) && nodeCount > 0)
+            {
+                return economy.warden.gatherPerSecond / nodeCount;
+            }
+
+            return 0.0;
         }
     }
 }

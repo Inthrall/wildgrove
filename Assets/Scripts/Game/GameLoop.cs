@@ -516,6 +516,12 @@ namespace Wildgrove.Game
             Warden.Post(State, node);
         }
 
+        /// <summary>Send the warden to the wander post — roaming every node and watch site (design §2), evicting any familiar wandering there.</summary>
+        public void WanderWarden()
+        {
+            Warden.Wander(State);
+        }
+
         /// <summary>Send the warden back to camp — no post, no picking.</summary>
         public void RestWarden()
         {

@@ -83,7 +83,7 @@ gather at their posts        hauls home          │
 
 The single most load-bearing rule set in the game — written down so every system builds on the same one:
 
-- **Assigned or wandering (DECIDED 2026-07-18).** An assigned agent works its post deliberately. An **unassigned familiar wanders** — it drifts to work on its own, a random unlocked node, or the trail when baskets back up and no one holds the post — at **×0.5 rate and ×0.5 XP**, with no powerup effects. Help, never zero: deliberate assignment is optimization, not a chore. The warden never wanders — the warden's post is wherever they last tended.
+- **Assigned or wandering (DECIDED 2026-07-18).** An assigned agent works its post deliberately. An **unassigned familiar wanders** — it drifts to work on its own, a random unlocked node, or the trail when baskets back up and no one holds the post — at **×0.5 rate and ×0.5 XP**, with no powerup effects. Help, never zero: deliberate assignment is optimization, not a chore. The warden can be **assigned to the wander post** like any familiar — roaming every node and watch site — but never *drifts*: an unassigned warden simply stands at camp (or wherever they last tended), gathering nothing until posted again.
 - **Unattended nodes.** A node with no assigned agent keeps its richness, planters, and basket; only wanderers touch it, glancingly.
 - **Transit.** Reassignment is always allowed and never costs goods; the agent *walks* — seconds, scaled by trail distance, producing nothing en route and visible on the trail. The map is honest.
 - **The trail post.** Hauling is a stationing assignment: one trail post at MVP, a second via Spare Wing (§11). The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the kith carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
@@ -147,16 +147,19 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 
 - Each species carries a **single fixed trait** — what makes it the specialist of one post. A familiar *comes with* its ability; there is no per-familiar build, no respec because there is nothing to respec. Species is identity: unique plate art, one trait, and **at most one familiar of each species, ever**.
 - A familiar still earns **XP at its post**, from its own work. **Levels never scale output** — they pace XP and Kinship only; throughput and yield come from tools and hauling equipment (the post's levers), the species trait (the holder's), and richness.
-- Trait kinds the sim reads: `nodeYieldBonus` (with a resource — the specialist lanes), `trailThroughputBonus`, `digSpeedBonus` (the watch), `pristineBonus`.
+- Trait kinds the sim reads: `nodeYieldBonus` (with a **pair** of related resources — the specialist works either node), `trailThroughputBonus`, `digSpeedBonus` (the watch), `pristineBonus`.
+- **A node specialist works a related pair of nodes** (reworked 2026-07-24), so one familiar answers either node's gift pile and boosts both wherever it's posted or as it wanders. The starting kith is sized to the gatherable nodes — seven pair-specialists cover zones 1–4 (plus rare-herbs) — and each species' animal is chosen to match the powerup it gives. Names each start with a distinct letter.
 
-| Species (examples) | Trait                                        | Flavour                                  |
-| ------------------ | -------------------------------------------- | ---------------------------------------- |
-| meadow vole        | Berry-wise · +40% at berry nodes             | knows which bramble the birds missed     |
-| pine marten        | Deadfall-runner · +40% at deadfall timber    | hears the dead branches before they fall |
-| ermine             | Soft paws · +1pt Pristine at its node        | takes nothing it bruises                 |
-| pack raven         | Deep pockets · +25% on the trail post        | cheeks like saddlebags                   |
-| dray stag          | Broad-back · +40% on the trail post          | built for the long carry                 |
-| tawny owl          | Patient watcher · +40% watch speed           | was going to watch anyway                |
+| Species        | Trait                                           | Flavour                              |
+| -------------- | ----------------------------------------------- | ------------------------------------ |
+| meadow vole    | Meadow-forager · +40% at berry & wildflower nodes | knows which bramble the birds missed |
+| red squirrel   | Mast-hoarder · +40% at nut & mushroom nodes     | buries more than it ever digs up     |
+| sedge linnet   | Nest-weaver · +40% at fibre & reed nodes        | pulls the year's best grasses first  |
+| bramble hare   | Hedge-browser · +40% at herb & rare-herb nodes  | tastes the hedge for what's ripe     |
+| warren weasel  | Ore-tunneler · +40% at copper scree & tin seam  | follows the seam like a burrow       |
+| furrow hedgehog | Earth-rooter · +40% at clay & iron gravel nodes | roots the wet ground for what it holds |
+| tawny owl      | Grove-and-river hunter · +40% at timber & fish  | works the wood's edge and the shallows |
+| pack raven     | Deep pockets · +25% on the trail post           | cheeks like saddlebags (the carrier) |
 
 **Collection > slots.** The **roster** is every familiar ever befriended — the seeds, the gift piles, the bonds — each its own species with its own plate. Only slotted familiars work; the rest rest at camp. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play* — the berry specialist walks when berries are the plan.
 

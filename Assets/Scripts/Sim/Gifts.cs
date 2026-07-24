@@ -74,7 +74,7 @@ namespace Wildgrove.Sim
             {
                 if (species.trait != null
                     && species.trait.kind == "nodeYieldBonus"
-                    && species.trait.resource == node.resourceId)
+                    && species.trait.CoversResource(node.resourceId))
                 {
                     return species;
                 }

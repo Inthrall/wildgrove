@@ -92,11 +92,18 @@ namespace Wildgrove.Game
             { "cloudreach-peaks", Plates + "Zones/keystone-aurora-bloom" },
         };
 
-        // species id (species.json) → roster plate. Spares (hedgehog, songbird,
-        // hare, squirrel, weasel, owl) are shipped for species added later.
+        // species id (species.json) → roster plate. One plate per species; the
+        // animal is chosen to match the powerup it gives (§4). All eight plates
+        // are now wired to the starting kith.
         private static readonly Dictionary<string, string> Familiar = new Dictionary<string, string>
         {
             { "meadow-vole", Plates + "Familiars/familiar-vole" },
+            { "red-squirrel", Plates + "Familiars/familiar-squirrel" },
+            { "sedge-linnet", Plates + "Familiars/familiar-songbird" },
+            { "bramble-hare", Plates + "Familiars/familiar-hare" },
+            { "warren-weasel", Plates + "Familiars/familiar-weasel" },
+            { "furrow-hedgehog", Plates + "Familiars/familiar-hedgehog" },
+            { "tawny-owl", Plates + "Familiars/familiar-owl" },
             { "pack-raven", Plates + "Familiars/familiar-raven" },
         };
 

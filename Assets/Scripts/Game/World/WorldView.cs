@@ -150,7 +150,7 @@ namespace Wildgrove.Game.World
             }
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
-            _wanderView.Refresh(wanderer, IconFor(wanderer));
+            _wanderView.Refresh(Warden.IsWandering(state), wanderer, IconFor(wanderer));
         }
 
         private static Sprite IconFor(Familiar familiar)

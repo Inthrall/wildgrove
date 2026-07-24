@@ -52,7 +52,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "meadow-vole", displayName = "meadow vole", roleLean = "gatherer",
                     suggestedNames = new List<string> { "Bramble", "Clover" },
-                    trait = new TraitData { displayName = "Berry-wise", kind = "nodeYieldBonus", value = 0.4, resource = "berries" },
+                    trait = new TraitData { displayName = "Berry-wise", kind = "nodeYieldBonus", value = 0.4, resources = new List<string> { "berries" } },
                 },
                 new SpeciesData
                 {
@@ -64,7 +64,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "red-squirrel", displayName = "red squirrel", roleLean = "gatherer",
                     suggestedNames = new List<string> { "Cob" },
-                    trait = new TraitData { displayName = "Mast-hoarder", kind = "nodeYieldBonus", value = 0.4, resource = "nuts" },
+                    trait = new TraitData { displayName = "Mast-hoarder", kind = "nodeYieldBonus", value = 0.4, resources = new List<string> { "nuts" } },
                 },
             };
             _data.rites = new RitesBundle

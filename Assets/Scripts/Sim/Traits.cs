@@ -29,7 +29,7 @@ namespace Wildgrove.Sim
         {
             var trait = Of(data, familiar);
             if (trait != null && trait.kind == "nodeYieldBonus"
-                && (string.IsNullOrEmpty(trait.resource) || trait.resource == node.resourceId))
+                && (trait.resources == null || trait.resources.Count == 0 || trait.CoversResource(node.resourceId)))
             {
                 return 1.0 + trait.value;
             }

@@ -162,8 +162,20 @@ namespace Wildgrove.Data
                 description = t.Description,
                 kind = t.Kind,
                 value = t.Value,
-                resource = t.Resource
+                resources = ResolveTraitResources(t)
             };
+        }
+
+        // The authored pair (Resources), falling back to the legacy single
+        // Resource so older files still map. Empty for non-node traits.
+        private static List<string> ResolveTraitResources(TraitDef t)
+        {
+            if (t.Resources != null && t.Resources.Count > 0)
+            {
+                return new List<string>(t.Resources);
+            }
+
+            return string.IsNullOrEmpty(t.Resource) ? new List<string>() : new List<string> { t.Resource };
         }
 
         private static PlanterData MapPlanter(PlanterDef p)

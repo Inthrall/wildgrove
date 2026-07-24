@@ -59,7 +59,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Kith.GeneratorGatherPosts, Is.EqualTo(2), "the run-2+ generator's stationing assumption");
             Assert.That(data.Economy.Store.StarterBundleAmber, Is.GreaterThan(0), "the starter bundle's one-time Amber pile");
             Assert.That(data.SpeciesById["meadow-vole"].Trait.Kind, Is.EqualTo("nodeYieldBonus"));
-            Assert.That(data.SpeciesById["meadow-vole"].Trait.Resource, Is.EqualTo("berries"), "the vole is the berry specialist");
+            Assert.That(data.SpeciesById["meadow-vole"].Trait.Resources,
+                Is.EquivalentTo(new[] { "berries", "wildflowers" }), "the vole works a related pair of meadow nodes");
+            Assert.That(data.SpeciesById["warren-weasel"].Trait.Resources,
+                Is.EquivalentTo(new[] { "copper-scree", "tin-seam" }), "the weasel works the ore pair (copper + tin)");
             Assert.That(data.SpeciesById["pack-raven"].Trait.Kind, Is.EqualTo("trailThroughputBonus"));
             Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));

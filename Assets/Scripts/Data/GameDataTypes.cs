@@ -237,8 +237,18 @@ namespace Wildgrove.Data
 
         public double value;
 
-        /// <summary>Resource this trait is specialised to, or null when it applies wherever the familiar is posted.</summary>
-        public string resource;
+        /// <summary>
+        /// The related pair of resources a nodeYieldBonus trait covers (e.g.
+        /// copper-scree + tin-seam) — the familiar works either node. Empty for
+        /// trail/watch/pristine traits, which apply wherever the familiar is posted.
+        /// </summary>
+        public List<string> resources = new List<string>();
+
+        /// <summary>True when this trait's pair covers <paramref name="resourceId"/>.</summary>
+        public bool CoversResource(string resourceId)
+        {
+            return resources != null && resources.Contains(resourceId);
+        }
     }
 
     /// <summary>The Exchange's barter constants (design §9) — rates derive from the trade-value table.</summary>

@@ -65,9 +65,9 @@ namespace Wildgrove.Game.World
             _badge.RefreshMark();
         }
 
-        public void Refresh(Familiar occupant, Sprite occupantIcon)
+        public void Refresh(bool wardenPosted, Familiar occupant, Sprite occupantIcon)
         {
-            var working = occupant != null;
+            var working = wardenPosted || occupant != null;
             var colour = _colour;
             colour.a = working ? 1f : IdleAlpha;
             _disc.color = colour;
@@ -76,7 +76,7 @@ namespace Wildgrove.Game.World
                 _face.color = new Color(1f, 1f, 1f, working ? 1f : IdleAlpha);
             }
 
-            _badge.Refresh(false, occupant, occupantIcon);
+            _badge.Refresh(wardenPosted, occupant, occupantIcon);
         }
 
         private static SpriteRenderer CreateSprite(Transform parent, string name, Sprite sprite, Color colour, int sortingOrder)
