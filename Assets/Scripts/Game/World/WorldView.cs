@@ -23,9 +23,9 @@ namespace Wildgrove.Game.World
         private const float HitSlop = 1.15f;
 
         // A windfall carries the resource's plate, so it needs enough room to
-        // be recognised as that specimen — two thirds of a node plate, with a
-        // slightly blunter finger circle so the catch isn't fiddly.
-        private const float BubbleDiameterShare = 0.68f;
+        // be recognised as that specimen — WorldStrip.BubbleDiameter sizes it
+        // off the band; the finger circle is a little blunter still so the
+        // catch isn't fiddly.
         private const float BubbleHitSlop = 1.2f;
         // Soft white — the gold accents belong to the Pristine window halo and
         // the bonded pip on a badge, so selection reads as its own thing.
@@ -227,7 +227,7 @@ namespace Wildgrove.Game.World
             MaybeSpawnBubble(state, config, now);
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var bubbleDiameterPx = _diameterPx * BubbleDiameterShare;
+            var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, _views.Count + 1);
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;

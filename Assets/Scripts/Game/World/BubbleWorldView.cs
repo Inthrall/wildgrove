@@ -17,7 +17,7 @@ namespace Wildgrove.Game.World
         // The plate's longest side in local units before the parent's
         // per-diameter scale, leaving the mount showing as a halo around it
         // (the same fit NodeWorldView gives a node's face).
-        private const float PlateFit = 0.9f;
+        private const float PlateFit = 1f;
         private const float MountAlpha = 0.4f;
         private const float SkinAlpha = 0.8f;
         private const float SwayDegrees = 7f;

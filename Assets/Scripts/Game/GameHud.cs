@@ -282,19 +282,6 @@ namespace Wildgrove.Game
             _eyebrow = MakeText(headerGo.transform, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             _title = MakeText(headerGo.transform, string.Empty, 36, TextAnchor.MiddleCenter, Ink, _serif);
 
-            // Slots-in-use counter, pinned to the page's top-right corner —
-            // how many of the kith hold a post right now, at a glance.
-            // Outside the layout flow so the centred header stays centred.
-            _slotCounter = MakeText(root, string.Empty, 19, TextAnchor.MiddleRight, Ink2, _smallCaps);
-            _slotCounter.gameObject.name = "SlotCounter";
-            _slotCounter.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            var counterRect = (RectTransform)_slotCounter.transform;
-            counterRect.anchorMin = Vector2.one;
-            counterRect.anchorMax = Vector2.one;
-            counterRect.pivot = Vector2.one;
-            counterRect.sizeDelta = new Vector2(320f, 34f);
-            counterRect.anchoredPosition = new Vector2(-16f, -10f);
-
             // Ledger — the running stores line, hairline-ruled like the mock.
             MakeHairline(root);
             _ledger = MakeText(root, string.Empty, 19, TextAnchor.MiddleCenter, Ink);
@@ -339,6 +326,20 @@ namespace Wildgrove.Game
             var gap = MakeRect("WorldGap", root);
             _worldGap = gap;
             _worldGapElement = gap.gameObject.AddComponent<LayoutElement>();
+
+            // Slots-in-use counter, pinned inside the strip band's top-right
+            // corner — it counts the badges below it, so it belongs with them
+            // rather than up in the page head. Never a raycast target: the
+            // whole band is the posting/catching surface.
+            _slotCounter = MakeText(gap, string.Empty, 17, TextAnchor.MiddleRight, Ink2, _smallCaps);
+            _slotCounter.gameObject.name = "SlotCounter";
+            _slotCounter.raycastTarget = false;
+            var counterRect = (RectTransform)_slotCounter.transform;
+            counterRect.anchorMin = Vector2.one;
+            counterRect.anchorMax = Vector2.one;
+            counterRect.pivot = Vector2.one;
+            counterRect.sizeDelta = new Vector2(320f, 34f);
+            counterRect.anchoredPosition = new Vector2(-6f, -4f);
 
             // The trail-home line sits at the foot of the world-strip band — the
             // one trail affordance up here: it shows the carrier walking home and

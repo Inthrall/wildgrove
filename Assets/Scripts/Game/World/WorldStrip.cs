@@ -122,6 +122,25 @@ namespace Wildgrove.Game.World
             return Mathf.Max(0f, Mathf.Min(byHeight, byWidth));
         }
 
+        // A windfall is a moving finger target, so it is sized from the BAND
+        // rather than from the node plates: plates shrink every time a zone
+        // unlocks (more sprites share the row), and a catch must not get
+        // harder as the camp grows. Floored at a full node plate so a nearly
+        // empty strip still floats something substantial.
+        private const float BubbleBandShare = 0.42f;
+        private const float BubbleWidthShare = 0.2f;
+        private const float BubbleNodeShare = 1f;
+
+        /// <summary>
+        /// A windfall's diameter (same units as the strip): a fixed share of
+        /// the band, never narrower than one node plate.
+        /// </summary>
+        public static float BubbleDiameter(Rect strip, int count)
+        {
+            var byBand = Mathf.Min(strip.height * BubbleBandShare, strip.width * BubbleWidthShare);
+            return Mathf.Max(0f, Mathf.Max(Diameter(strip, count) * BubbleNodeShare, byBand));
+        }
+
         /// <summary>Index of the centre nearest <paramref name="point"/> within <paramref name="radius"/>, or -1 for a miss.</summary>
         public static int HitIndex(Vector2[] centres, float radius, Vector2 point)
         {

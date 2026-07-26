@@ -106,6 +106,35 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void BubbleDiameter_TakesItsSizeFromTheBand_NotTheNodePlates()
+        {
+            // Band-bound: 400 * 0.42 = 168 beats the width share (880 * 0.2 = 176)
+            // only after the min — so the band's height governs here.
+            Assert.That(WorldStrip.BubbleDiameter(Strip, 3), Is.EqualTo(168f).Within(Tolerance));
+
+            // The plates shrink as the strip crowds; the windfall must not.
+            Assert.That(WorldStrip.BubbleDiameter(Strip, 15),
+                Is.EqualTo(WorldStrip.BubbleDiameter(Strip, 3)).Within(Tolerance));
+        }
+
+        [Test]
+        public void BubbleDiameter_NeverNarrowerThanANodePlate()
+        {
+            // A tall, near-empty band: one plate is bigger than the band share,
+            // so the plate is the floor.
+            var tall = new Rect(0f, 0f, 400f, 1000f);
+
+            Assert.That(WorldStrip.BubbleDiameter(tall, 1),
+                Is.EqualTo(WorldStrip.Diameter(tall, 1)).Within(Tolerance));
+        }
+
+        [Test]
+        public void BubbleDiameter_DegenerateStrip_IsZeroNotNegative()
+        {
+            Assert.That(WorldStrip.BubbleDiameter(new Rect(0f, 0f, 0f, 0f), 3), Is.EqualTo(0f));
+        }
+
+        [Test]
         public void HitIndex_InsideRadius_ReturnsThatNode()
         {
             var centres = WorldStrip.LayoutCentres(Strip, 3);
