@@ -302,6 +302,21 @@ balance, tracked in the items below.
   frame ms) is gated behind `Debug.isDebugBuild` in `Bootstrap` — visible in the
   editor and development builds, stripped from release/store builds. Flip a
   development build on when tuning performance on-device.
+- **The Play Games diagnostics popup is TEMP, and now fails loudly.** `Diag` +
+  `GameHud.MaybeShowStartupDiagnostics` open a one-shot "Play Games status" sheet
+  at launch. It used to require sign-in to resolve first, so a Play Games callback
+  that never returned showed nothing at all — exactly the case being hunted
+  (2026-07-27: no sheet appeared on device). It now opens after a 10 s timeout
+  regardless and says the callback never came back, and the lines are stamped with
+  `Application.version` and which `IGameServices` was selected. Rip the whole sink
+  out once the "First kith" unlock is confirmed working.
+- **Android target SDK is pinned to API 36 (2026-07-27).** Was
+  `AndroidApiLevelAuto`, which follows whatever platform the installed Android
+  module ships — an editor or module update could move a release's target
+  silently. 36 is the newest platform this editor has (34/35/36) and what Auto
+  already resolved to in shipped AABs, so the pin is a no-op for the built
+  artifact. Raise it deliberately when Play's required level moves.
+  (`ProjectSettings.asset AndroidTargetSdkVersion`, `Assets/Editor/ProjectSetup.cs`)
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)
@@ -333,6 +348,14 @@ balance, tracked in the items below.
     its bubble drifted pops empty (a quiet margin note, no grant).
   - design-doc §5/§8 still describe tap-to-tend; re-voice those lines when the
     mechanic settles.
+  - **The windfall's face (2026-07-27, from Mo's device pass — the tinted disc
+    read as tiny and oddly coloured).** It now drifts as **the resource's own
+    naturalist plate** (`ArtLibrary.ForResource`) on a soft parchment mount,
+    turning slowly as it rises, at **68% of a node plate** (was 45% with a
+    hash-derived resource tint, which is where the strange colour came from).
+    A resource with no plate still falls back to the tinted disc + highlight.
+    `BubbleWorldView`'s class name and `economy.bubbles` still say "bubble" —
+    rename to windfall if the object sticks.
 
 - **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
   code.** `GameHud` now lays out the mock's structure — paper palette, eyebrow/title

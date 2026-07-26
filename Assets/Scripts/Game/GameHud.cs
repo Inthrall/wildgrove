@@ -199,21 +199,40 @@ namespace Wildgrove.Game
 
         // TEMP diagnostics: one-shot Play Games status popup (sign-in +
         // achievement outcome). Remove with the Diag sink.
+        private const float DiagSettleSeconds = 1.5f;
+        private const float DiagTimeoutSeconds = 10f;
         private bool _diagShown;
-        private float _diagDelay = 1.5f;
+        private float _diagElapsed;
 
         private void MaybeShowStartupDiagnostics()
         {
-            if (_diagShown || !Diag.Ready)
+            if (_diagShown)
             {
                 return;
             }
 
-            // Let the async achievement report land before snapshotting the lines.
-            _diagDelay -= RefreshInterval;
-            if (_diagDelay > 0f || _sheet != null)
+            _diagElapsed += RefreshInterval;
+
+            // Sign-in resolving is the normal cue, with a settle delay so the
+            // async achievement report lands in the lines first. The timeout
+            // exists because a popup that only appears on success can't report
+            // the failure we're hunting: if Play Games never calls back, the
+            // sheet must still open and say so.
+            var timedOut = _diagElapsed >= DiagTimeoutSeconds;
+            if (!timedOut && (!Diag.Ready || _diagElapsed < DiagSettleSeconds))
             {
                 return;
+            }
+
+            if (_sheet != null)
+            {
+                return;
+            }
+
+            if (!Diag.Ready)
+            {
+                Diag.Log("Sign-in: NO RESPONSE after " + Mathf.RoundToInt(DiagTimeoutSeconds)
+                    + "s — the Play Games callback never returned");
             }
 
             _diagShown = true;

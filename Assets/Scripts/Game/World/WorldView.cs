@@ -22,9 +22,11 @@ namespace Wildgrove.Game.World
     {
         private const float HitSlop = 1.15f;
 
-        // Bubbles are smaller than the plates (~45% of a node) — a blunter
-        // finger circle keeps the catch satisfying rather than fiddly.
-        private const float BubbleHitSlop = 1.6f;
+        // A windfall carries the resource's plate, so it needs enough room to
+        // be recognised as that specimen — two thirds of a node plate, with a
+        // slightly blunter finger circle so the catch isn't fiddly.
+        private const float BubbleDiameterShare = 0.68f;
+        private const float BubbleHitSlop = 1.2f;
         // Soft white — the gold accents belong to the Pristine window halo and
         // the bonded pip on a badge, so selection reads as its own thing.
         private static readonly Color RingColour = new Color(0.94f, 0.97f, 0.92f, 0.95f);
@@ -225,7 +227,7 @@ namespace Wildgrove.Game.World
             MaybeSpawnBubble(state, config, now);
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var bubbleDiameterPx = _diameterPx * 0.45f;
+            var bubbleDiameterPx = _diameterPx * BubbleDiameterShare;
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;
@@ -271,7 +273,8 @@ namespace Wildgrove.Game.World
 
                 _bubbleCursor = index + 1;
                 _bubbles.Add(BubbleWorldView.Create(_container, node,
-                    PlaceholderArt.ResourceColour(node.resourceId), now, index * 2.1f));
+                    PlaceholderArt.ResourceColour(node.resourceId),
+                    ArtLibrary.ForResource(node.resourceId), now, index * 2.1f));
                 _nextBubbleAt = now + (float)config.spawnIntervalSec;
                 return;
             }

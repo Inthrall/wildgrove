@@ -27,7 +27,14 @@ namespace Wildgrove.EditorTools
             });
 
             PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)26;
-            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+
+            // Pinned, not Auto: Auto follows whatever platform the installed
+            // Android module happens to ship, so an editor or module update can
+            // move the target out from under a release. 36 is the newest
+            // platform this editor has (34/35/36) and what Auto already resolved
+            // to in shipped builds — raise it deliberately when Play's required
+            // level moves.
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel36;
 
             // Play 64-bit requirement: Mono only emits ARMv7, so IL2CPP is
             // mandatory for any Play upload. ARM64 ONLY: the ARMv7 ABI

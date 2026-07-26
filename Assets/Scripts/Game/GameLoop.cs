@@ -132,7 +132,11 @@ namespace Wildgrove.Game
 
         private void Initialise()
         {
-            Diag.Reset(); // TEMP diagnostics: start each run with a clean buffer
+            // TEMP diagnostics: start each run with a clean buffer, stamped with
+            // the build so a Play-internal rollout lag can't disguise which one
+            // is under test.
+            Diag.Reset();
+            Diag.Log("Build " + Application.version);
 
             try
             {
@@ -212,6 +216,7 @@ namespace Wildgrove.Game
             // local run above starts the game responsively; the cloud pull is
             // async and adopts a newer save (or the only save, after a reinstall)
             // when it lands. Signed-in state gates achievements and cloud writes.
+            Diag.Log("Sign-in requested (" + GameServices.GetType().Name + ")"); // TEMP diagnostics
             GameServices.SignIn(signedIn =>
             {
                 if (signedIn)
