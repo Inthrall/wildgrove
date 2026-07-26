@@ -132,12 +132,6 @@ namespace Wildgrove.Game
 
         private void Initialise()
         {
-            // TEMP diagnostics: start each run with a clean buffer, stamped with
-            // the build so a Play-internal rollout lag can't disguise which one
-            // is under test.
-            Diag.Reset();
-            Diag.Log("Build " + Application.version);
-
             try
             {
                 Data = GameDataAsset.LoadFromResources();
@@ -216,7 +210,6 @@ namespace Wildgrove.Game
             // local run above starts the game responsively; the cloud pull is
             // async and adopts a newer save (or the only save, after a reinstall)
             // when it lands. Signed-in state gates achievements and cloud writes.
-            Diag.Log("Sign-in requested (" + GameServices.GetType().Name + ")"); // TEMP diagnostics
             GameServices.SignIn(signedIn =>
             {
                 if (signedIn)
@@ -225,12 +218,6 @@ namespace Wildgrove.Game
                     SubmitLeaderboards();
                     ReconcileCloudSave();
                 }
-
-                // TEMP diagnostics: record what the achievement re-assert had to
-                // work with, then let the HUD surface the collected lines.
-                Diag.Log("Signed in: " + signedIn);
-                Diag.Log("Earned bonds: " + EarnedBondIds().Count);
-                Diag.Ready = true;
             });
 
             StartSession();

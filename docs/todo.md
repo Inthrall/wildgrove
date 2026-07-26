@@ -326,6 +326,16 @@ balance, tracked in the items below.
   already resolved to in shipped AABs, so the pin is a no-op for the built
   artifact. Raise it deliberately when Play's required level moves.
   (`ProjectSettings.asset AndroidTargetSdkVersion`, `Assets/Editor/ProjectSetup.cs`)
+- **Play's "androidx.fragment 1.1.0 is outdated" warning is stale — no fix needed
+  (checked 2026-07-27).** 1.1.0 came in transitively via
+  `play-services-basement` back when nothing declared fragment explicitly. The
+  AdMob import (`GoogleMobileAdsDependencies.xml`, first released in **v43**)
+  declares `androidx.fragment:fragment:1.7.1`, and Gradle takes the highest — so
+  every release from v43 on satisfies Play's 1.2.1+ ask. Verified from the
+  uploaded artifacts, not inferred: `v42` bundles 1.1.0, `v62` bundles 1.7.1.
+  The warning persists only while a pre-v43 artifact is still active in a track.
+  To read a bundled transitive version: download the AAB and
+  `unzip -p <aab> base/root/META-INF/<group>_<artifact>.version`.
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)

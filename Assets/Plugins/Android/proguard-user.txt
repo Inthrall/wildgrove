@@ -5,6 +5,28 @@
 # out the classes the bundled Google/AndroidX SDKs instantiate REFLECTIVELY —
 # R8 can't see those references, so without a keep it strips their constructors
 # and the app dies at startup.
+#
+# THE RECURRING TRAP — read this before adding a native SDK.
+# A Unity plugin that implements a Java interface does it with AndroidJavaProxy,
+# passing the interface's fully-qualified NAME as a string and resolving it over
+# JNI at runtime. R8 sees no Java-side implementor, so it renames or strips the
+# interface, and the C# side then fails in one of two ways:
+#   - a hard ClassNotFoundException at the proxy's construction, or
+#   - worse, a listener that silently never attaches, so an async call hangs
+#     forever with no crash and nothing in logcat.
+# Three shipped bugs came from exactly this: WorkDatabase_Impl's ctor, billing's
+# PurchasesUpdatedListener, and the gms.tasks listeners below. Note that
+# -dontwarn does NOT keep — it only silences the build warning.
+#
+# TO RE-RUN THE SWEEP after adding or upgrading an Android plugin, list every
+# proxied interface it needs and check each one is kept below:
+#   grep -rl AndroidJavaProxy --include=*.cs Assets/ Library/PackageCache/
+#   grep -rhoE '"(com|android)[a-zA-Z0-9_.$]*\.[A-Z][a-zA-Z0-9_$.]*"' <those files>
+# An AAR may already ship its own consumer proguard.txt covering itself — check
+# with `unzip -p <plugin>.aar proguard.txt` before duplicating a rule here.
+#
+# Last full sweep: 2026-07-27 (GPGS 2.1.0, GMA 11.3.0, Unity IAP 5.4.1,
+# Firebase 13.13.0). Every reachable proxied interface is covered.
 
 # --- WorkManager / Room -------------------------------------------------------
 # androidx.startup's WorkManagerInitializer builds Room's generated
@@ -19,11 +41,18 @@
 -keep class * implements androidx.startup.Initializer { <init>(...); *; }
 
 # --- Google Mobile Ads (AdMob) ------------------------------------------------
+# The plugin's own bridge package (com.google.unity.ads.**, proxied from the
+# compiled GoogleMobileAds.Android.dll) is kept by googlemobileads-unity.aar's
+# consumer proguard.txt, so it needs no rule here — that's why ads served even
+# before this file existed.
 -keep class com.google.android.gms.ads.** { *; }
 -keep class com.google.android.ump.** { *; }
 -dontwarn com.google.android.gms.ads.**
 
 # --- Play Games Services ------------------------------------------------------
+# gpgs-plugin-support-2.1.0.aar ships NO consumer proguard.txt, so everything
+# GPGS proxies has to be kept from here — including com.google.games.bridge.*
+# (HelperFragment and the *CallbackProxy types), covered by the second rule.
 -keep class com.google.android.gms.games.** { *; }
 -keep class com.google.games.** { *; }
 
@@ -34,6 +63,12 @@
 # (Runtime/Scripts/Platforms/Android/AndroidTaskUtils.cs). R8 sees no Java-side
 # implementor, so it renames them, JNI can't find them, and no listener is ever
 # attached — sign-in then hangs with no callback and no crash.
+#
+# Why it took three builds to find: firebase-app-unity's consumer rules already
+# keep OnSuccessListener, OnFailureListener and OnCanceledListener — but NOT
+# OnCompleteListener, which is the one Authenticate's result path uses. Two of
+# the three were kept by accident, so the failure looked selective. Keep the
+# whole package rather than naming listeners one at a time.
 -keep class com.google.android.gms.tasks.** { *; }
 -keep interface com.google.android.gms.tasks.** { *; }
 -dontwarn com.google.android.gms.tasks.**
@@ -52,3 +87,21 @@
 # --- Google Play Services / Firebase reflection -------------------------------
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.**
+
+# --- Pre-emptive: proxied but not currently reachable -------------------------
+# Found by the sweep, kept ahead of need. Neither package is bundled today, so
+# both rules are no-ops — they cost nothing and remove a landmine if the code
+# path ever gets used or a plugin upgrade revives it.
+#
+# GPGS's AndroidNearbyConnectionClient proxies the Nearby callbacks. We never
+# call Nearby and play-services-nearby isn't in the resolved dependency set.
+-keep class com.google.android.gms.nearby.** { *; }
+-keep interface com.google.android.gms.nearby.** { *; }
+-dontwarn com.google.android.gms.nearby.**
+
+# Unity IAP's JavaBridge proxies com.unity.purchasing.common.IUnityCallback.
+# It's dead code in IAP 5 (nothing references JavaBridge, and no bundled AAR
+# ships the class — v5 talks to com.android.billingclient directly).
+-keep class com.unity.purchasing.** { *; }
+-keep interface com.unity.purchasing.** { *; }
+-dontwarn com.unity.purchasing.**

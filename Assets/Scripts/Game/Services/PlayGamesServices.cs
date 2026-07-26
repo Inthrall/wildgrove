@@ -1,6 +1,7 @@
 #if UNITY_ANDROID
 using System;
 using System.Text;
+using UnityEngine;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 using GooglePlayGames.BasicApi.SavedGame;
@@ -22,14 +23,14 @@ namespace Wildgrove.Game.Services
 
         public void SignIn(Action<bool> onComplete = null)
         {
-            PlayGamesPlatform.DebugLogEnabled = true; // TEMP diagnostics: GPGS's own trace into logcat
+            PlayGamesPlatform.DebugLogEnabled = Debug.isDebugBuild; // GPGS's own trace into logcat
 
             try
             {
                 PlayGamesPlatform.Instance.Authenticate(status =>
                 {
                     IsSignedIn = status == SignInStatus.Success;
-                    Diag.Log("Sign-in: " + status); // TEMP diagnostics
+                    Debug.Log("[play-games] sign-in: " + status);
                     onComplete?.Invoke(IsSignedIn);
                 });
             }
@@ -41,29 +42,24 @@ namespace Wildgrove.Game.Services
                 // the throw happens here, no listener is ever attached, and
                 // sign-in hangs forever with nothing logged — so say it out loud
                 // and resolve the callback as a failure rather than never.
-                Diag.Log("Sign-in THREW: " + e.GetType().Name + " — " + e.Message);
+                Debug.LogWarning("[play-games] sign-in threw: " + e.GetType().Name + " — " + e.Message);
                 onComplete?.Invoke(false);
             }
         }
 
         public void UnlockAchievement(string achievementId)
         {
-            if (!IsSignedIn)
+            if (!IsSignedIn || string.IsNullOrEmpty(achievementId))
             {
-                Diag.Log("Achievement skipped — not signed in"); // TEMP diagnostics
                 return;
             }
 
-            if (string.IsNullOrEmpty(achievementId))
-            {
-                Diag.Log("Achievement skipped — empty id"); // TEMP diagnostics
-                return;
-            }
-
-            // TEMP diagnostics: surface the report outcome so we can tell an
-            // accepted unlock from one Play silently rejects (draft/non-tester).
+            // Log the report outcome — it distinguishes an accepted unlock from
+            // one Play silently rejects (achievement still in draft, or the
+            // account isn't on the testers list).
             PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0,
-                success => Diag.Log("Achievement " + achievementId + ": " + (success ? "reported OK" : "report FAILED")));
+                success => Debug.Log("[play-games] achievement " + achievementId
+                    + (success ? ": reported OK" : ": report FAILED")));
         }
 
         public void SubmitScore(string leaderboardId, long score)
