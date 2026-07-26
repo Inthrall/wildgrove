@@ -22,12 +22,28 @@ namespace Wildgrove.Game.Services
 
         public void SignIn(Action<bool> onComplete = null)
         {
-            PlayGamesPlatform.Instance.Authenticate(status =>
+            PlayGamesPlatform.DebugLogEnabled = true; // TEMP diagnostics: GPGS's own trace into logcat
+
+            try
             {
-                IsSignedIn = status == SignInStatus.Success;
-                Diag.Log("Sign-in: " + status); // TEMP diagnostics
-                onComplete?.Invoke(IsSignedIn);
-            });
+                PlayGamesPlatform.Instance.Authenticate(status =>
+                {
+                    IsSignedIn = status == SignInStatus.Success;
+                    Diag.Log("Sign-in: " + status); // TEMP diagnostics
+                    onComplete?.Invoke(IsSignedIn);
+                });
+            }
+            catch (Exception e)
+            {
+                // Authenticate attaches its result listeners as AndroidJavaProxy
+                // implementations of com.google.android.gms.tasks.On*Listener,
+                // resolved by name over JNI. If that name isn't there under R8,
+                // the throw happens here, no listener is ever attached, and
+                // sign-in hangs forever with nothing logged — so say it out loud
+                // and resolve the callback as a failure rather than never.
+                Diag.Log("Sign-in THREW: " + e.GetType().Name + " — " + e.Message);
+                onComplete?.Invoke(false);
+            }
         }
 
         public void UnlockAchievement(string achievementId)

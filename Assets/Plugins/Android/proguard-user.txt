@@ -27,6 +27,17 @@
 -keep class com.google.android.gms.games.** { *; }
 -keep class com.google.games.** { *; }
 
+# --- Play Services Tasks (GPGS result listeners) ------------------------------
+# Same trap as the billing listeners below: GPGS attaches every async result via
+# AndroidJavaProxy over the interface NAMES
+# "com/google/android/gms/tasks/OnSuccessListener|OnFailureListener|OnCompleteListener"
+# (Runtime/Scripts/Platforms/Android/AndroidTaskUtils.cs). R8 sees no Java-side
+# implementor, so it renames them, JNI can't find them, and no listener is ever
+# attached — sign-in then hangs with no callback and no crash.
+-keep class com.google.android.gms.tasks.** { *; }
+-keep interface com.google.android.gms.tasks.** { *; }
+-dontwarn com.google.android.gms.tasks.**
+
 # --- Google Play Billing (Unity IAP) ------------------------------------------
 # Unity IAP implements the billing callbacks at runtime via AndroidJavaProxy
 # (JNI FindClass) — e.g. GooglePurchasesUpdatedListener wraps the interface

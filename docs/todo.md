@@ -310,6 +310,15 @@ balance, tracked in the items below.
   regardless and says the callback never came back, and the lines are stamped with
   `Application.version` and which `IGameServices` was selected. Rip the whole sink
   out once the "First kith" unlock is confirmed working.
+  **What it caught (v0.1.62, 2026-07-27):** `PlayGamesServices` selected, sign-in
+  requested, and the `Authenticate` callback never returned — so the achievement
+  never had a signed-in session to report into. Not the Testers list. Prime
+  suspect is R8: GPGS attaches its result listeners as `AndroidJavaProxy` over
+  the `com.google.android.gms.tasks.On*Listener` interface *names*, which had no
+  keep rule (same trap as the billing `PurchasesUpdatedListener` crash) — rules
+  added. `SignIn` now also catches and reports a JNI throw instead of hanging,
+  and GPGS's own debug log is on, so the next build distinguishes "the proxy
+  couldn't be built" from "the native task never completed".
 - **Android target SDK is pinned to API 36 (2026-07-27).** Was
   `AndroidApiLevelAuto`, which follows whatever platform the installed Android
   module ships — an editor or module update could move a release's target
