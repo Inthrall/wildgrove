@@ -20,6 +20,14 @@ namespace Wildgrove.Game.Services
         /// </summary>
         void SignIn(Action<bool> onComplete = null);
 
+        /// <summary>
+        /// Ask for sign-in on the player's own initiative, showing Play Games'
+        /// UI. Distinct from <see cref="SignIn"/>: that one runs at launch and
+        /// must stay silent, and once it has failed it keeps failing silently —
+        /// so a sign-in-gated button needs this to have anything to offer.
+        /// </summary>
+        void SignInInteractive(Action<bool> onComplete = null);
+
         /// <summary>Unlock an achievement by its encoded ID (see <see cref="AchievementIds"/>). No-op if already unlocked.</summary>
         void UnlockAchievement(string achievementId);
 

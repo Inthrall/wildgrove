@@ -30,17 +30,46 @@ namespace Wildgrove.Game
         {
             var card = Card("THE STANDING");
             var reading = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2);
+
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 17, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+
+            // The board lives behind Play Games, and ShowLeaderboard is a silent
+            // no-op while signed out — so the button offers the sign-in instead
+            // of swallowing the tap, and every tap ends in either the overlay or
+            // a note saying why not.
+            Button view = null;
+            view = Button(row.transform, "View", 160, () =>
+            {
+                if (_loop.GameServices.IsSignedIn)
+                {
+                    _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+                    return;
+                }
+
+                Flash(view, "asking Play Games", true);
+                _loop.GameServices.SignInInteractive(signedIn =>
+                {
+                    if (signedIn)
+                    {
+                        _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+                        return;
+                    }
+
+                    SetNote("Play Games didn't answer — the board stays shut for now.");
+                });
+            });
+
             _liveUpdaters.Add(() =>
             {
                 reading.text = "Renown  " + NumberFormat.Short(_loop.State.renown);
-            });
-
-            var row = Row(card);
-            var label = MakeText(row.transform, "how you stand among the folk", 17, TextAnchor.MiddleLeft, Ink);
-            FlexibleWidth(label.gameObject, 1f);
-            Button(row.transform, "View", 160, () =>
-            {
-                _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+                var signedIn = _loop.GameServices.IsSignedIn;
+                label.text = signedIn
+                    ? "how you stand among the folk"
+                    : "how you stand among the folk\n" + SizeOpen(15) + "<color=" + Ink2Hex
+                      + ">Play Games isn't signed in</color></size>";
+                SetButtonLabel(view, signedIn ? "View" : "Sign in");
             });
         }
 

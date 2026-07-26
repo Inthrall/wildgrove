@@ -47,6 +47,35 @@ namespace Wildgrove.Game.Services
             }
         }
 
+        public void SignInInteractive(Action<bool> onComplete = null)
+        {
+            if (IsSignedIn)
+            {
+                onComplete?.Invoke(true);
+                return;
+            }
+
+            try
+            {
+                // ManuallyAuthenticate, not Authenticate: after the launch-time
+                // silent attempt has failed, Authenticate just returns the same
+                // failure without ever showing Play Games' own UI.
+                PlayGamesPlatform.Instance.ManuallyAuthenticate(status =>
+                {
+                    IsSignedIn = status == SignInStatus.Success;
+                    Debug.Log("[play-games] manual sign-in: " + status);
+                    onComplete?.Invoke(IsSignedIn);
+                });
+            }
+            catch (Exception e)
+            {
+                // Same AndroidJavaProxy/R8 trap as SignIn — resolve as a
+                // failure rather than leaving the caller waiting forever.
+                Debug.LogWarning("[play-games] manual sign-in threw: " + e.GetType().Name + " — " + e.Message);
+                onComplete?.Invoke(false);
+            }
+        }
+
         public void UnlockAchievement(string achievementId)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(achievementId))

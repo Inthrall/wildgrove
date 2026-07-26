@@ -20,6 +20,12 @@ namespace Wildgrove.Game.Services
             onComplete?.Invoke(true);
         }
 
+        public void SignInInteractive(Action<bool> onComplete = null)
+        {
+            Debug.Log("[play-games] stub manual sign-in");
+            onComplete?.Invoke(true);
+        }
+
         public void UnlockAchievement(string achievementId)
         {
             Debug.Log("[play-games] stub unlock achievement " + achievementId);

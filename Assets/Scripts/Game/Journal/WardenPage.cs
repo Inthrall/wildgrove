@@ -20,10 +20,9 @@ namespace Wildgrove.Game
     {
         internal WardenPage(GameHud hud) : base(hud) { }
 
-        // Naming/stationing sheets live in JournalSheets; forwarded so the kith
-        // roster bodies below read as they did when they lived on GameHud.
+        // The naming sheet lives in JournalSheets; forwarded so the kith roster
+        // bodies below read as they did when they lived on GameHud.
         private void OpenNamingSheet(Familiar familiar) => _hud.Sheets.OpenNamingSheet(familiar);
-        private void Station(Familiar familiar, string stationId) => _hud.Sheets.Station(familiar, stationId);
 
         internal void BuildWardenPage()
         {
@@ -180,11 +179,12 @@ namespace Wildgrove.Game
 
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
-                var rename = Button(row.transform, "Rename", 150, () => OpenNamingSheet(captured));
-                // Posting moved out to the land — each node plate, the trail
-                // line, and the watch plates carry their own "post someone"
-                // affordance. The roster keeps only the recall.
-                var rest = Button(row.transform, "Rest", 150, () => Station(captured, null));
+                // Posting AND standing down both live out on the land now —
+                // each node plate, the trail line and the wander post open the
+                // posting sheet, which names the holder and offers to send
+                // them back to camp. The roster is a roster: who they are, not
+                // where they go.
+                Button(row.transform, "Rename", 150, () => OpenNamingSheet(captured));
 
                 _liveUpdaters.Add(() =>
                 {
@@ -203,7 +203,6 @@ namespace Wildgrove.Game
                                  + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
                                  + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>"
                                  + traitLine;
-                    rest.gameObject.SetActive(!string.IsNullOrEmpty(captured.stationId));
                 });
             }
 

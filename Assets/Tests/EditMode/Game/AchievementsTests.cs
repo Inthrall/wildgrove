@@ -112,6 +112,11 @@ namespace Wildgrove.Game.Tests
                 onComplete?.Invoke(true);
             }
 
+            public void SignInInteractive(Action<bool> onComplete = null)
+            {
+                onComplete?.Invoke(true);
+            }
+
             public void UnlockAchievement(string achievementId)
             {
                 Unlocked.Add(achievementId);
