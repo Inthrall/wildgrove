@@ -300,9 +300,13 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                line.text = Stationing.Wandering(_loop.State) > 0
+                // Ask the same question Observation asks — WanderAgents, not
+                // Stationing.Wandering: the warden may hold the wander post
+                // too, and counting only familiars told a warden who WAS
+                // wandering that nobody was.
+                line.text = Stationing.WanderAgents(_loop.State, _loop.Data) > 0.0
                     ? "the wanderer passes through, watching where the small lives cross"
-                    : "<color=" + OchreInkHex + ">no one wanders — the small lives go unrecorded</color>";
+                    : "<color=" + OchreInkHex + ">no one wanders — the small lives go unrecorded. post someone to the wander plate at the end of the strip.</color>";
             });
         }
 

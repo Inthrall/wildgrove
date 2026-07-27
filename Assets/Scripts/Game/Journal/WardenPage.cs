@@ -295,10 +295,19 @@ namespace Wildgrove.Game
                     }
                 }
 
+                // Name what drives the forecast: Verdure is a curve over
+                // lifetime Renown, and two folds banking 2 then 34 read as
+                // arbitrary unless the next threshold is on the page.
+                var next = new BigDouble(_loop.RenownForNextVerdure());
+                var toNext = next > state.renown
+                    ? "\n" + SizeOpen(15) + "the next Verdure asks " + NumberFormat.Short(next)
+                      + " lifetime renown — " + NumberFormat.Short(next - state.renown) + " more</size>"
+                    : string.Empty;
                 line.text = "camp " + (state.migrationCount + 1)
                             + " · renown " + NumberFormat.Short(state.renown)
                             + " · fold forecast +" + Mathf.FloorToInt((float)System.Math.Max(0.0, _loop.VerdureAfterMigration() - state.verdurePoints)) + " Verdure"
-                            + (pristine > 0 ? " · Pristine kinds in hand " + pristine : string.Empty);
+                            + (pristine > 0 ? " · Pristine kinds in hand " + pristine : string.Empty)
+                            + toNext;
             });
         }
     }

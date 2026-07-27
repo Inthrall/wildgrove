@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BreakInfinity;
 using UnityEngine;
 using UnityEngine.UI;
 using Wildgrove.Data;
@@ -171,6 +172,24 @@ namespace Wildgrove.Game
             MakeText(sheet, "<color=" + MossDeepHex + ">The journal crosses entire, with +"
                             + Mathf.FloorToInt((float)gain) + " Verdure.\nThe kith walks with you.</color>",
                 20, TextAnchor.MiddleCenter, Ink);
+
+            // Where Verdure comes from, in the one place the player is asking
+            // that question. Without it a fold that banks 2 and a fold that
+            // banks 34 look arbitrary — the curve is never stated anywhere.
+            var renown = _loop.State.renown;
+            var next = new BigDouble(_loop.RenownForNextVerdure());
+            var source = "<i>Verdure is drawn from LIFETIME Renown — " + NumberFormat.Short(renown)
+                         + " earned so far, and never spent. Renown comes from every level the kith and the"
+                         + " crafts earn, and from what the Rite is given.</i>";
+            if (next > BigDouble.Zero)
+            {
+                var remaining = next - renown;
+                source += "\n" + SizeOpen(17) + "<color=" + Ink2Hex + ">the next point asks " + NumberFormat.Short(next)
+                          + (remaining > BigDouble.Zero ? " — " + NumberFormat.Short(remaining) + " more" : " — already earned")
+                          + "</color></size>";
+            }
+
+            MakeText(sheet, source, 17, TextAnchor.MiddleCenter, Ink2, _serif);
             Button(sheet, "Stay a while", 320, CloseSheet);
             var migrate = Button(sheet, "Migrate", 320, () =>
             {

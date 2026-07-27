@@ -96,6 +96,32 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RenownForNextVerdure_NamesTheThresholdTheCurveWillCross()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.renown = new BigDouble(20000.0); // banks 2
+
+            // The third point sits at 3^2 * 5000 — the same 45000 the curve test pins.
+            Assert.That(Migration.RenownForNextVerdure(state, _data), Is.EqualTo(45000.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void RenownForVerdure_IsTheInverseOfTheCurve()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.renown = new BigDouble(Migration.RenownForVerdure(_data, 7.0));
+
+            Assert.That(Migration.VerdureAfterMigration(state, _data), Is.EqualTo(7.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void RenownForVerdure_WithNoFoldEconomy_IsZero()
+        {
+            Assert.That(Migration.RenownForVerdure(null, 3.0), Is.EqualTo(0.0));
+            Assert.That(Migration.RenownForVerdure(_data, 0.0), Is.EqualTo(0.0));
+        }
+
+        [Test]
         public void VerdureAfterMigration_NeverShrinksTheBankedTotal()
         {
             var state = GameStateFactory.NewGame(_data);

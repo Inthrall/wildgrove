@@ -40,6 +40,32 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// The lifetime Renown a given Verdure total asks for — the inverse of
+        /// <see cref="VerdureAfterMigration"/>. Zero when the fold economy is
+        /// inert. Lets the UI name the next point instead of leaving the
+        /// player to infer the curve from two folds that banked 2 and 34.
+        /// </summary>
+        public static double RenownForVerdure(GameDataAsset data, double verdure)
+        {
+            var config = data?.economy?.verdure;
+            if (config == null || config.renownDivisor <= 0.0 || config.exponent <= 0.0 || verdure <= 0.0)
+            {
+                return 0.0;
+            }
+
+            return System.Math.Pow(verdure, 1.0 / config.exponent) * config.renownDivisor;
+        }
+
+        /// <summary>
+        /// The lifetime Renown the NEXT whole Verdure point asks for, given
+        /// what this fold would already bank.
+        /// </summary>
+        public static double RenownForNextVerdure(GameState state, GameDataAsset data)
+        {
+            return RenownForVerdure(data, System.Math.Floor(VerdureAfterMigration(state, data)) + 1.0);
+        }
+
+        /// <summary>
         /// Fold the camp: returns the next run's fresh state carrying the
         /// permanents (Verdure banked from lifetime Renown, the Renown itself,
         /// every field sketch recorded, the rng thread, and the migration

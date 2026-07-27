@@ -1266,6 +1266,12 @@ namespace Wildgrove.Game
             return Migration.VerdureAfterMigration(State, Data);
         }
 
+        /// <summary>The lifetime Renown the next whole Verdure point asks for — so the fold can show its own curve.</summary>
+        public double RenownForNextVerdure()
+        {
+            return Migration.RenownForNextVerdure(State, Data);
+        }
+
         /// <summary>
         /// Fold the camp (design §7): swap in the next run's state, keeping the
         /// permanents (and the kith, with run XP banked into Kinship), and save

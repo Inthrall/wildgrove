@@ -247,7 +247,11 @@ namespace Wildgrove.Game
                         need += "  <color=" + OchreInkHex + "><b>needs " + line + " level " + captured.stationLevel + "</b></color>";
                     }
 
-                    label.text = captured.output + progress + need
+                    // The inputs already say what the camp holds of each; the
+                    // OUTPUT didn't, so the one number you want while deciding
+                    // whether to keep a batch running was the missing one.
+                    label.text = captured.output + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">(have "
+                                 + NumberFormat.Short(_loop.State.GetResource(captured.output)) + ")</color></size>" + progress + need
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.inputs) + "</color></size>";
                     SetButtonLabel(toggle, crafting ? "Stop" : "Craft");
                     // Stopping is always allowed; starting needs the gates AND
