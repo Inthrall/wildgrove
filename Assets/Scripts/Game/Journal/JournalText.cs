@@ -68,14 +68,24 @@ namespace Wildgrove.Game
             return null;
         }
 
+        /// <summary>
+        /// What the caravan will speak of: DISCOVERED goods only — a raw find
+        /// the camp has gathered, or a trade good it has crafted. The full
+        /// catalogue used to leak zone-4 names into a day-one cycle button
+        /// (and made the picker maximum length from minute one).
+        /// </summary>
         internal List<string> TradeableResources()
         {
+            var state = _loop.State;
             var list = new List<string>();
             if (_loop.Data.resources != null)
             {
                 foreach (var resource in _loop.Data.resources)
                 {
-                    list.Add(resource.id);
+                    if (Compendium.IsResourceDiscovered(state, resource.id))
+                    {
+                        list.Add(resource.id);
+                    }
                 }
             }
 
@@ -83,7 +93,8 @@ namespace Wildgrove.Game
             {
                 foreach (var recipe in _loop.Data.recipes)
                 {
-                    if (recipe.kind == "trade" && recipe.output != null && !list.Contains(recipe.output))
+                    if (recipe.kind == "trade" && recipe.output != null && !list.Contains(recipe.output)
+                        && Compendium.IsRecipeDiscovered(state, recipe.id))
                     {
                         list.Add(recipe.output);
                     }

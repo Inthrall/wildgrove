@@ -189,9 +189,11 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     var species = SpeciesName(captured.speciesId);
-                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + OchreHex + ">BONDED</color></size>" : string.Empty;
+                    // Moss, not ochre — accolades are honours, and ochre is
+                    // the ink of costs and halted work.
+                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + MossDeepHex + ">BONDED</color></size>" : string.Empty;
                     var kin = _loop.FamiliarKinship(captured) > 0
-                        ? "  <color=" + OchreHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
+                        ? "  <color=" + MossDeepHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
                         : string.Empty;
                     var trait = _loop.FamiliarTrait(captured);
                     var traitLine = trait != null
@@ -249,8 +251,9 @@ namespace Wildgrove.Game
                 if (!bundleOwned)
                 {
                     // Real money says its price on the line — the Play dialog
-                    // must never be where the player first learns it.
-                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>"
+                    // must never be where the player first learns it. Moss:
+                    // it's an invitation, not a warning.
+                    bundleLine.text = "<color=" + MossDeepHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>"
                                       + PriceTail(StoreProductIds.StarterBundle);
                 }
 
@@ -259,7 +262,7 @@ namespace Wildgrove.Game
                 slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
                 if (bundleOwned && !slotOwned)
                 {
-                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>" + PriceTail(StoreProductIds.KithSlot);
+                    slotLine.text = "<color=" + MossDeepHex + ">+  open the last slot</color>" + PriceTail(StoreProductIds.KithSlot);
                 }
             });
         }

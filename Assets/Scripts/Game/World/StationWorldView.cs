@@ -65,6 +65,16 @@ namespace Wildgrove.Game.World
             _badge.RefreshMark();
         }
 
+        /// <summary>Move the badge and toggle the caption for the strip's current row layout (see NodeWorldView.SetStripLayout).</summary>
+        public void SetStripLayout(float badgeOffsetY, bool showCaption)
+        {
+            _badge.SetOffset(badgeOffsetY);
+            if (_label != null && _label.gameObject.activeSelf != showCaption)
+            {
+                _label.gameObject.SetActive(showCaption);
+            }
+        }
+
         public void Refresh(bool wardenPosted, Familiar occupant, Sprite occupantIcon)
         {
             var working = wardenPosted || occupant != null;

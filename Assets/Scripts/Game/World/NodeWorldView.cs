@@ -4,17 +4,17 @@ using Wildgrove.Sim;
 namespace Wildgrove.Game.World
 {
     /// <summary>
-    /// One gathering node's world-space sprite: a resource-coloured disc, an
-    /// accent ring behind it while the node is selected, a gentle scale pulse
-    /// while a Tending burst is live, a golden halo while the post-tend
-    /// Pristine window runs, and the assignment badge beneath it — the tiny
-    /// icon of whoever holds the post (one body per node), which is also the
-    /// tap target for posting. Dimmed while nothing works it. Placement and
-    /// per-frame refresh are driven by <see cref="WorldView"/>.
+    /// One gathering node's world-space sprite: a resource-coloured disc, a
+    /// gentle scale pulse while a Tending burst is live, a golden halo while
+    /// the post-tend Pristine window runs, and the assignment badge beneath
+    /// it — the tiny icon of whoever holds the post (one body per node),
+    /// which is also the tap target for posting. Dimmed while nothing works
+    /// it. Placement and per-frame refresh are driven by <see cref="WorldView"/>.
+    /// (The selection ring is gone — selection stopped doing anything once
+    /// taps opened sheets directly, and its near-paper colour never read.)
     /// </summary>
     public sealed class NodeWorldView : MonoBehaviour
     {
-        private const float RingScale = 1.3f;
         private const float HaloScale = 1.16f;
         private const float PulseAmount = 0.08f;
         private const float PulseSpeed = 8f;
@@ -22,8 +22,8 @@ namespace Wildgrove.Game.World
         private const float IdleAlpha = 0.55f;
 
         // The node plate's longest side, in local units before the parent's
-        // per-diameter scale — a shade under the ring (RingScale 1.3) so the
-        // selection ring still frames it.
+        // per-diameter scale — a shade over the disc so the specimen fills
+        // its mount.
         private const float PlateFit = 1.05f;
 
         private static readonly Color HaloColour = new Color(1f, 0.78f, 0.25f, 0.5f);
@@ -33,14 +33,13 @@ namespace Wildgrove.Game.World
 
         private SpriteRenderer _disc;
         private SpriteRenderer _plate;
-        private SpriteRenderer _ring;
         private SpriteRenderer _halo;
         private AssignBadge _badge;
         private TextMesh _label;
         private Color _colour;
         private float _diameter = 1f;
 
-        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Color ringColour, Font labelFont, Sprite face)
+        public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Font labelFont, Sprite face)
         {
             var go = new GameObject("Node_" + node.resourceId);
             go.transform.SetParent(parent, false);
@@ -51,9 +50,6 @@ namespace Wildgrove.Game.World
             // The resource name under the disc — the strip's shapes and the
             // FIG. plates below name the same thing, so a glance connects them.
             view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour);
-
-            view._ring = CreateSprite(go.transform, "Ring", PlaceholderArt.Disc, ringColour, 0);
-            view._ring.transform.localScale = Vector3.one * RingScale;
 
             view._halo = CreateSprite(go.transform, "Halo", PlaceholderArt.Disc, HaloColour, 1);
             view._halo.transform.localScale = Vector3.one * HaloScale;
@@ -97,19 +93,31 @@ namespace Wildgrove.Game.World
         }
 
         /// <summary>
+        /// Move the badge and toggle the caption for the strip's current row
+        /// layout — in two rows a full badge drop and a hanging caption both
+        /// draw over the row beneath.
+        /// </summary>
+        public void SetStripLayout(float badgeOffsetY, bool showCaption)
+        {
+            _badge.SetOffset(badgeOffsetY);
+            if (_label != null && _label.gameObject.activeSelf != showCaption)
+            {
+                _label.gameObject.SetActive(showCaption);
+            }
+        }
+
+        /// <summary>
         /// Per-frame state refresh. <paramref name="dimIdle"/> false suspends
         /// the idle dimming — on a fresh camp with nothing posted anywhere,
         /// dimming EVERY plate read as "disabled" exactly when the first tap
         /// (posting) had to happen; dim only once dim can mean something.
         /// </summary>
-        public void Refresh(bool selected, float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
+        public void Refresh(float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
         {
             var pulse = Node.tendBurstRemaining > 0.0
                 ? 1f + PulseAmount * Mathf.Sin(time * PulseSpeed)
                 : 1f;
             transform.localScale = Vector3.one * (_diameter * pulse);
-
-            _ring.enabled = selected;
 
             // The Pristine window outlasts the yield burst — the halo breathes
             // slowly so it reads as "charged" rather than "working".

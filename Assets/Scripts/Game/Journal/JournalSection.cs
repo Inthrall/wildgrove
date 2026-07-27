@@ -27,7 +27,6 @@ namespace Wildgrove.Game
 
         // ─── Shared HUD state ───
         protected GameLoop _loop => _hud.Loop;
-        protected NodeState _selected => _hud.Selected;
         protected bool _dirty { get => _hud.Dirty; set => _hud.Dirty = value; }
         protected RectTransform _body => _hud.Body;
         protected List<Action> _liveUpdaters => _hud.LiveUpdaters;

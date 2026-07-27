@@ -210,6 +210,10 @@ namespace Wildgrove.Game
         /// Grey a button out, or restore it. <paramref name="keyAction"/> keeps a
         /// <see cref="KeyAction"/> button's moss wash on the way back — without it
         /// the first refresh repaints it as an ordinary plate.
+        /// The washed plate ALONE carries "inactive": fading the label too
+        /// compounded to ~2.25:1 and blanked the names of exactly the things a
+        /// player is saving toward. Pressed-state tinting (the factory's
+        /// targetGraphic) is what now separates live from dead at a glance.
         /// </summary>
         internal static void SetButtonTint(Button button, bool on, bool keyAction = false)
         {
@@ -221,13 +225,11 @@ namespace Wildgrove.Game
                 image.color = color;
             }
 
-            // A dead button with crisp ink still reads as live — fade the
-            // label with the plate.
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
                 var labelColour = label.color;
-                labelColour.a = on ? 1f : 0.45f;
+                labelColour.a = 1f;
                 label.color = labelColour;
             }
         }

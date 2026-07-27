@@ -125,6 +125,18 @@ namespace Wildgrove.Game
             Button claim = null;
             claim = Button(row.transform, "Claim", 170, () =>
             {
+                // Signed out, the button IS the sign-in — hiding the row hid
+                // the free weekly claim from exactly the players it should
+                // convert (the Standing card's pattern).
+                if (!_loop.GameServices.IsSignedIn)
+                {
+                    Flash(claim, "asking Play Games", true);
+                    _loop.GameServices.SignInInteractive(signedIn => SetNote(signedIn
+                        ? "signed in — the week's cache is yours to claim."
+                        : "Play Games didn't answer — the cache keeps for now."));
+                    return;
+                }
+
                 var amount = _loop.ClaimWeeklyCache();
                 if (amount > 0.0)
                 {
@@ -134,15 +146,19 @@ namespace Wildgrove.Game
                 }
             });
 
-            // Only a signed-in warden has a cache at all; a claimed one stays on
-            // the page counting down to the week's turn rather than vanishing.
+            // A claimed cache stays on the page counting down to the week's
+            // turn rather than vanishing.
             _liveUpdaters.Add(() =>
             {
-                row.SetActive(_loop.GameServices.IsSignedIn);
+                var signedIn = _loop.GameServices.IsSignedIn;
                 var ready = _loop.CanClaimWeeklyCache();
-                label.text = text + (ready ? string.Empty : WaitingTail(_loop.WeeklyCacheCooldownRemaining));
-                claim.interactable = ready;
-                SetButtonTint(claim, ready);
+                label.text = signedIn
+                    ? text + (ready ? string.Empty : WaitingTail(_loop.WeeklyCacheCooldownRemaining))
+                    : text + SizeOpen(15) + "<color=" + Ink2Hex + ">  Play Games isn't signed in</color></size>";
+                SetButtonLabel(claim, signedIn ? "Claim" : "Sign in");
+                var live = !signedIn || ready;
+                claim.interactable = live;
+                SetButtonTint(claim, live);
             });
         }
 
@@ -284,12 +300,42 @@ namespace Wildgrove.Game
                         need += "  <color=" + OchreInkHex + "><b>needs " + line + " level " + captured.stationLevel + "</b></color>";
                     }
 
+                    // With every input in stock, itemising them wrapped the
+                    // line and buried nothing useful; the itemised (have N)
+                    // treatment is saved for the shortfall, where it earns
+                    // its space by naming exactly what's blocking.
+                    string inputsLine;
+                    if (_loop.CanCraft(captured))
+                    {
+                        inputsLine = BundleLabel(captured.inputs) + " — in hand";
+                    }
+                    else
+                    {
+                        var shortOf = new List<string>();
+                        var metCount = 0;
+                        foreach (var input in captured.inputs)
+                        {
+                            var have = _loop.State.GetResource(input.id);
+                            if (have >= input.amount)
+                            {
+                                metCount++;
+                                continue;
+                            }
+
+                            shortOf.Add(input.amount + " " + input.id + " <color=" + OchreInkHex + ">(have "
+                                        + NumberFormat.Short(have) + ")</color>");
+                        }
+
+                        inputsLine = string.Join(", ", shortOf)
+                                     + (metCount > 0 ? "<color=" + Ink2Hex + ">, the rest in hand</color>" : string.Empty);
+                    }
+
                     // The inputs already say what the camp holds of each; the
                     // OUTPUT didn't, so the one number you want while deciding
                     // whether to keep a batch running was the missing one.
                     label.text = captured.output + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">(have "
                                  + NumberFormat.Short(_loop.State.GetResource(captured.output)) + ")</color></size>" + progress + need
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.inputs) + "</color></size>";
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + inputsLine + "</color></size>";
                     // "Stop" alone read as a state ("it is stopped"), not an
                     // action — the row's own status line is what reports state.
                     SetButtonLabel(toggle, crafting ? "Stop crafting" : "Craft");
@@ -308,6 +354,15 @@ namespace Wildgrove.Game
             foreach (var building in _loop.Data.buildings)
             {
                 var captured = building;
+                // The crafting card filters to what the run can see; this one
+                // used to firehose every line in the game data from minute
+                // one, naming resources the player hadn't met. A line waits
+                // until every good its next level asks for has been gathered.
+                if (!BundleDiscovered(_loop.NextBuildingBundle(captured)))
+                {
+                    continue;
+                }
+
                 var gives = PerLevelGivesLabel(captured);
                 var row = Row(card);
                 var plate = ArtLibrary.ForBuilding(captured.id);
@@ -341,6 +396,38 @@ namespace Wildgrove.Game
             }
         }
 
+        private bool BundleDiscovered(List<Buildings.MaterialCost> bundle)
+        {
+            foreach (var cost in bundle ?? new List<Buildings.MaterialCost>())
+            {
+                if (!GoodDiscovered(cost.id))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>A good is known by doing: gathered as a raw find, or crafted at least once.</summary>
+        private bool GoodDiscovered(string id)
+        {
+            if (Compendium.IsResourceDiscovered(_loop.State, id))
+            {
+                return true;
+            }
+
+            foreach (var recipe in _loop.Data.recipes)
+            {
+                if (recipe.output == id && Compendium.IsRecipeDiscovered(_loop.State, recipe.id))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void BuildExchangeCard()
         {
             var card = Card("THE EXCHANGE");
@@ -369,14 +456,28 @@ namespace Wildgrove.Game
             }
 
             var row = Row(card);
+            // The cyclers may never land the two sides on the same good — a
+            // self-trade quote reads as a broken caravan.
             var fromButton = Button(row.transform, "from", 250, () =>
             {
-                _exchangeFrom = Cycle(TradeableResources(), _exchangeFrom);
+                var options = TradeableResources();
+                _exchangeFrom = Cycle(options, _exchangeFrom);
+                if (_exchangeFrom == _exchangeTo && options.Count > 1)
+                {
+                    _exchangeTo = Cycle(options, _exchangeTo);
+                }
+
                 _dirty = true;
             });
             var toButton = Button(row.transform, "to", 250, () =>
             {
-                _exchangeTo = Cycle(TradeableResources(), _exchangeTo);
+                var options = TradeableResources();
+                _exchangeTo = Cycle(options, _exchangeTo);
+                if (_exchangeTo == _exchangeFrom && options.Count > 1)
+                {
+                    _exchangeTo = Cycle(options, _exchangeTo);
+                }
+
                 _dirty = true;
             });
 

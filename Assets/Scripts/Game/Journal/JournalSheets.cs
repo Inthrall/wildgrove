@@ -74,6 +74,11 @@ namespace Wildgrove.Game
             }
         }
 
+        // Pumped sheets appear unbidden, one after another, with their buttons
+        // in roughly the same place — a guard swallows the taps that were
+        // meant for the previous sheet.
+        private const float PumpedSheetGuardSeconds = 0.5f;
+
         internal void PumpSheets()
         {
             if (_sheet != null)
@@ -81,10 +86,22 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // Welcome-back FIRST — it's the context for everything after it;
+            // being asked to name a newcomer before being told what happened
+            // while away read backwards.
+            var summary = _loop.TakePendingOfflineSummary();
+            if (summary != null && summary.creditedSeconds >= GameLoop.WelcomeBackMinSeconds)
+            {
+                OpenWelcomeSheet(summary);
+                AddTapGuard(PumpedSheetGuardSeconds);
+                return;
+            }
+
             var arrival = _loop.PeekPendingArrival();
             if (arrival != null)
             {
                 OpenArrivalSheet(arrival);
+                AddTapGuard(PumpedSheetGuardSeconds);
                 return;
             }
 
@@ -92,13 +109,7 @@ namespace Wildgrove.Game
             if (bond != null)
             {
                 OpenBondSheet(bond);
-                return;
-            }
-
-            var summary = _loop.TakePendingOfflineSummary();
-            if (summary != null && summary.creditedSeconds >= GameLoop.WelcomeBackMinSeconds)
-            {
-                OpenWelcomeSheet(summary);
+                AddTapGuard(PumpedSheetGuardSeconds);
                 return;
             }
 
@@ -106,6 +117,36 @@ namespace Wildgrove.Game
             if (waystoneZone != null)
             {
                 OpenWaystoneSheet(waystoneZone);
+                AddTapGuard(PumpedSheetGuardSeconds);
+            }
+        }
+
+        /// <summary>
+        /// A transparent click-eater over the whole open sheet for its first
+        /// moments. It carries its own (listener-less) Button so uGUI's click
+        /// bubbling stops at it rather than walking up to the scrim's dismiss.
+        /// </summary>
+        private void AddTapGuard(float seconds)
+        {
+            if (_sheet == null)
+            {
+                return;
+            }
+
+            var guard = new GameObject("TapGuard", typeof(Image), typeof(Button));
+            guard.transform.SetParent(_sheet.transform, false);
+            Stretch((RectTransform)guard.transform);
+            guard.GetComponent<Image>().color = Color.clear;
+            guard.GetComponent<Button>().transition = Selectable.Transition.None;
+            _hud.StartCoroutine(DestroyAfter(guard, seconds));
+        }
+
+        private static System.Collections.IEnumerator DestroyAfter(GameObject go, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (go != null)
+            {
+                Object.Destroy(go);
             }
         }
 
@@ -130,6 +171,15 @@ namespace Wildgrove.Game
             {
                 _loop.MarkWaystoneRead(zone.id);
                 CloseSheet();
+                // Several stones unread (a cloud-save adoption) page straight
+                // through in one sitting instead of materialising one by one
+                // on the pump's cadence; the guard still paces each page.
+                var next = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
+                if (next != null)
+                {
+                    OpenWaystoneSheet(next);
+                    AddTapGuard(PumpedSheetGuardSeconds);
+                }
             });
         }
 
@@ -190,32 +240,59 @@ namespace Wildgrove.Game
             MakeText(sheet, "Away " + NumberFormat.Duration(summary.realSeconds)
                             + " · credited " + NumberFormat.Duration(summary.creditedSeconds), 20, TextAnchor.UpperCenter, Ink2);
 
-            var lines = 0;
+            // Kept so a doubled haul can rewrite its own lines — the proof of
+            // the reward belongs on the sheet the player is looking at.
+            var gainLines = new List<(Text line, string id, BigDouble amount)>();
             foreach (var pair in summary.gains)
             {
-                if (lines++ >= 6)
+                if (gainLines.Count >= 6)
                 {
                     break;
                 }
 
-                MakeText(sheet, "+" + NumberFormat.Short(pair.Value) + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
+                var line = MakeText(sheet, "+" + NumberFormat.Short(pair.Value) + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
+                gainLines.Add((line, pair.Key, pair.Value));
             }
 
             // Opt-in rewarded ad: watch to double the haul just credited (or,
-            // with Remove Ads owned, doubled outright with no ad).
+            // with Remove Ads owned, doubled outright with no ad). The sheet
+            // STAYS OPEN whatever the ad does — closing it threw the summary
+            // away as punishment for an abandoned ad, and swallowed the proof
+            // of a watched one.
             if (summary.gains.Count > 0 && _loop.RewardedReady(RewardedPlacement.OfflineBoost))
             {
-                var doubleIt = Button(sheet, "Double it" + _loop.RewardedActionSuffix, 360, () =>
+                Button doubleIt = null;
+                var originalLabel = "Double it" + _loop.RewardedActionSuffix;
+                doubleIt = Button(sheet, originalLabel, 360, () =>
                 {
+                    var doubled = false;
+                    doubleIt.interactable = false;
+                    SetButtonTint(doubleIt, false, true);
                     _loop.WatchRewarded(RewardedPlacement.OfflineBoost,
                         () =>
                         {
+                            doubled = true;
                             _loop.GrantOfflineBonus(summary);
                             _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "offline_boost"));
-                            SetNote("The land gives twice — your haul is doubled.");
+                            foreach (var gain in gainLines)
+                            {
+                                gain.line.text = "<color=" + MossDeepHex + ">+" + NumberFormat.Short(gain.amount * 2)
+                                                 + " " + gain.id + " — doubled</color>";
+                            }
+
+                            SetButtonLabel(doubleIt, "The land gives twice");
                             _dirty = true;
                         },
-                        CloseSheet);
+                        () =>
+                        {
+                            // Ad closed without the reward — re-arm the offer.
+                            if (!doubled)
+                            {
+                                doubleIt.interactable = true;
+                                SetButtonTint(doubleIt, true, true);
+                                SetButtonLabel(doubleIt, originalLabel);
+                            }
+                        });
                 });
                 KeyAction(doubleIt);
             }
@@ -276,9 +353,19 @@ namespace Wildgrove.Game
             Stretch((RectTransform)dim.transform);
             _sheet = dim;
             _sheetDismiss = CloseSheet;
+            // The tap that confirmed the fold can land again the next frame —
+            // arm the tap-anywhere dismissal only after the vignette has had
+            // a moment to be seen. Back (a deliberate act) stays immediate.
+            var armAt = Time.unscaledTime + 1f;
             var tap = dim.AddComponent<Button>();
             tap.transition = Selectable.Transition.None;
-            tap.onClick.AddListener(CloseSheet);
+            tap.onClick.AddListener(() =>
+            {
+                if (Time.unscaledTime >= armAt)
+                {
+                    CloseSheet();
+                }
+            });
 
             var layout = dim.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
@@ -302,8 +389,20 @@ namespace Wildgrove.Game
 
             MakeText(dim.transform, "+" + Mathf.FloorToInt((float)verdureGained) + " VERDURE", 20,
                 TextAnchor.MiddleCenter, new Color(0.624f, 0.682f, 0.494f, 1f), _smallCaps);
-            MakeText(dim.transform, "TAP TO WALK ON", 15, TextAnchor.MiddleCenter,
+            // The hint appears with the armed dismissal, not before it.
+            var walkOn = MakeText(dim.transform, "TAP TO WALK ON", 15, TextAnchor.MiddleCenter,
                 new Color(NightText.r, NightText.g, NightText.b, 0.45f), _smallCaps);
+            walkOn.gameObject.SetActive(false);
+            _hud.StartCoroutine(ShowAfter(walkOn.gameObject, 1f));
+        }
+
+        private static System.Collections.IEnumerator ShowAfter(GameObject go, float seconds)
+        {
+            yield return new WaitForSeconds(seconds);
+            if (go != null)
+            {
+                go.SetActive(true);
+            }
         }
 
         internal void OpenNamingSheet(Familiar familiar)
@@ -417,8 +516,10 @@ namespace Wildgrove.Game
 
             if (wardenCanStand && !wardenHere)
             {
+                // Moss verbs — these are the actions the sheet exists for;
+                // ochre made them read as warnings.
                 var wardenVerb = isWanderPost ? "Send the warden wandering" : "Walk the warden here";
-                Button(sheet, "<color=" + OchreInkHex + ">" + wardenVerb + "</color>  "
+                Button(sheet, "<color=" + MossDeepHex + ">" + wardenVerb + "</color>  "
                               + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>", 560, () =>
                 {
                     if (isWanderPost)
@@ -518,7 +619,7 @@ namespace Wildgrove.Game
                     detail = "at " + StationLabel(captured.stationId) + " — that post falls idle";
                 }
 
-                var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : OchreInkHex) + ">" + verb + "</color>  "
+                var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + verb + "</color>  "
                                            + captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                            + SpeciesName(captured.speciesId) + " · " + detail + "</color></size>", 560, () =>
                 {
@@ -598,7 +699,7 @@ namespace Wildgrove.Game
                 detail = "stands empty";
             }
 
-            var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : OchreInkHex) + ">Walk to " + StationLabel(stationId)
+            var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">Walk to " + StationLabel(stationId)
                                        + "</color>  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + detail + "</color></size>", 560, () =>
             {
                 Station(familiar, stationId);

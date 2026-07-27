@@ -20,6 +20,7 @@ namespace Wildgrove.Game.World
         private static readonly Color BondedColour = new Color(1f, 0.72f, 0.2f, 1f);
         private static readonly Color MarkColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
+        private readonly Transform _root;
         private readonly SpriteRenderer _back;
         private readonly SpriteRenderer _icon;
         private readonly SpriteRenderer _bondedPip;
@@ -33,6 +34,7 @@ namespace Wildgrove.Game.World
             var root = new GameObject("Badge");
             root.transform.SetParent(parent, false);
             root.transform.localPosition = new Vector3(0f, OffsetY, 0f);
+            _root = root.transform;
 
             _back = CreateSprite(root.transform, "Back", PlaceholderArt.Disc, VacantBack, 3);
             _back.transform.localScale = Vector3.one * (WorldStrip.BadgeRadiusFactor * 2f);
@@ -65,6 +67,15 @@ namespace Wildgrove.Game.World
         public void RefreshMark()
         {
             PlaceholderArt.RefreshLabel(_mark);
+        }
+
+        /// <summary>Move the badge's drop below its post — two-row layouts clamp it so it can't hang over the row beneath.</summary>
+        public void SetOffset(float y)
+        {
+            if (!Mathf.Approximately(_root.localPosition.y, y))
+            {
+                _root.localPosition = new Vector3(0f, y, 0f);
+            }
         }
 
         /// <summary>Draw the post's holder: the warden, a familiar (with its plate or initial), or the vacant "+".</summary>

@@ -27,15 +27,9 @@ namespace Wildgrove.Game.World
         // off the band; the finger circle is a little blunter still so the
         // catch isn't fiddly.
         private const float BubbleHitSlop = 1.2f;
-        // Soft white — the gold accents belong to the Pristine window halo and
-        // the bonded pip on a badge, so selection reads as its own thing.
-        private static readonly Color RingColour = new Color(0.94f, 0.97f, 0.92f, 0.95f);
 
         /// <summary>The HUD's free gap, in screen pixels — where the node strip lives.</summary>
         public Rect StripScreenRect { get; set; }
-
-        /// <summary>The HUD's selected node, mirrored here so its sprite wears the ring.</summary>
-        public NodeState SelectedNode { get; set; }
 
         /// <summary>
         /// True while a sheet covers the strip — windfalls stop aging and
@@ -182,8 +176,7 @@ namespace Wildgrove.Game.World
                 var wardenHere = view.Node.id == postNodeId;
                 // A vacant badge draws nothing, so it must hit nothing.
                 _badgeVisible[i] = wardenHere || occupant != null;
-                view.Refresh(view.Node == SelectedNode, Time.time,
-                    wardenHere, occupant, IconFor(occupant), anyPosted);
+                view.Refresh(Time.time, wardenHere, occupant, IconFor(occupant), anyPosted);
             }
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
@@ -393,6 +386,7 @@ namespace Wildgrove.Game.World
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, _views.Count + 1);
+            var twoRows = WorldStrip.Rows(_views.Count + 1) == 2;
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;
@@ -401,7 +395,15 @@ namespace Wildgrove.Game.World
 
                 // Rise from the node toward the strip's top edge, with a
                 // gentle per-bubble wobble; fade out over the last stretch.
-                var y = Mathf.Lerp(home.y, StripScreenRect.yMax - bubbleDiameterPx * 0.5f, progress);
+                // In two rows a bottom-row windfall stops at the midline —
+                // rising the full band would bulldoze across the top row.
+                var ceiling = StripScreenRect.yMax - bubbleDiameterPx * 0.5f;
+                if (twoRows && home.y < StripScreenRect.center.y)
+                {
+                    ceiling = StripScreenRect.center.y;
+                }
+
+                var y = Mathf.Lerp(home.y, ceiling, progress);
                 var x = home.x + Mathf.Sin(age * 1.5f + bubble.Seed) * bubbleDiameterPx * 0.6f;
                 var screen = new Vector2(x, y);
                 var fade = progress > 0.8f ? Mathf.InverseLerp(1f, 0.8f, progress) : 1f;
@@ -499,7 +501,7 @@ namespace Wildgrove.Game.World
             foreach (var node in _loop.State.nodes)
             {
                 _views.Add(NodeWorldView.Create(
-                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), RingColour, _labelFont,
+                    _container, node, PlaceholderArt.ResourceColour(node.resourceId), _labelFont,
                     ArtLibrary.ForResource(node.resourceId)));
             }
 
@@ -528,13 +530,23 @@ namespace Wildgrove.Game.World
             _diameterPx = WorldStrip.Diameter(StripScreenRect, total);
             _radiusPx = _diameterPx * 0.5f * HitSlop;
 
+            // Two-row layout: captions would hang over the row beneath, and
+            // the badge drop clamps to the row pitch (visuals must match the
+            // hit maths in WorldStrip.BadgeOffset).
+            var showCaptions = WorldStrip.Rows(total) == 1;
+            var badgeOffsetLocal = _diameterPx > 0f
+                ? WorldStrip.BadgeOffset(StripScreenRect, total, _diameterPx) / _diameterPx
+                : WorldStrip.BadgeOffsetFactor;
+
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             for (var i = 0; i < _views.Count; i++)
             {
                 _views[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
+                _views[i].SetStripLayout(badgeOffsetLocal, showCaptions);
             }
 
             _wanderView.SetPlacement(ScreenToWorld(_centres[_views.Count]), _diameterPx * worldPerPixel);
+            _wanderView.SetStripLayout(badgeOffsetLocal, showCaptions);
         }
 
         private Vector3 ScreenToWorld(Vector2 screenPoint)

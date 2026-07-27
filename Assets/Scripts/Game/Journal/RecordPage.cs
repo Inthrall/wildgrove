@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BreakInfinity;
 using UnityEngine;
 using UnityEngine.UI;
@@ -79,10 +80,31 @@ namespace Wildgrove.Game
             MakeText(card, Compendium.DiscoveredCount(_loop.State, _loop.Data) + " of "
                            + Compendium.TotalEntries(_loop.Data) + " recorded", 18, TextAnchor.MiddleCenter, Ink2);
 
+            // What's missing pulls harder than what's held — the Deep Pages
+            // already tease "— something not yet caught —", and skipping the
+            // undiscovered here hid the collection entirely. A mystery line
+            // per resource ON THE TRAIL (its node is reachable now); the rest
+            // fold into one count so far-zone entries neither leak nor spam.
+            var onTheTrail = new HashSet<string>();
+            foreach (var node in _loop.State.nodes)
+            {
+                onTheTrail.Add(node.resourceId);
+            }
+
+            var beyondTheTrail = 0;
             foreach (var resource in _loop.Data.resources)
             {
                 if (!Compendium.IsResourceDiscovered(_loop.State, resource.id))
                 {
+                    if (onTheTrail.Contains(resource.id))
+                    {
+                        MakeText(card, "<i>— something on the trail, not yet gathered —</i>", 18, TextAnchor.MiddleLeft, Ink2);
+                    }
+                    else
+                    {
+                        beyondTheTrail++;
+                    }
+
                     continue;
                 }
 
@@ -93,6 +115,11 @@ namespace Wildgrove.Game
                     line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id)) + "</color></size>";
                 });
+            }
+
+            if (beyondTheTrail > 0)
+            {
+                MakeText(card, "<i>…and " + beyondTheTrail + " more beyond the trail.</i>", 18, TextAnchor.MiddleLeft, Ink2);
             }
         }
 

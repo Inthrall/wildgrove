@@ -122,7 +122,8 @@ namespace Wildgrove.Game
                 var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + target.resourceId;
                 if (_loop.CanLeaveGift(target))
                 {
-                    line.text = "<color=" + OchreInkHex + ">+  leave a pile — " + pile + "</color>";
+                    // Moss — an invitation; ochre stays with costs and halts.
+                    line.text = "<color=" + MossDeepHex + ">+  leave a pile — " + pile + "</color>";
                 }
                 else
                 {
@@ -158,7 +159,6 @@ namespace Wildgrove.Game
         {
             var captured = node;
             var card = Card(null);
-            var cardImage = card.GetComponent<Image>();
 
             // A compact gathering row: the specimen's small mark, its name and
             // live yield on one line, Plant back at the right. The full specimen
@@ -255,12 +255,13 @@ namespace Wildgrove.Game
                 }
             }
 
+            // What one planting gives, in numbers — the margin note keeps its
+            // riddle, but a repeat purchase can't hide its own effect.
+            var richnessPct = Mathf.RoundToInt((float)((_loop.Data.economy?.replant?.richnessPerLevel ?? 0.0) * 100.0));
             _liveUpdaters.Add(() =>
             {
                 var state = _loop.State;
                 var rich = captured.richnessLevel > 0 ? " · richness " + Roman(captured.richnessLevel) : string.Empty;
-                cardImage.color = captured == _selected ? MossWash : CardPaper;
-
                 var cap = NodeBasketCapacity(captured);
                 var fraction = cap > BigDouble.Zero ? Mathf.Clamp01((float)(captured.basket / cap).ToDouble()) : 0f;
                 fillRect.anchorMax = new Vector2(fraction, 1f);
@@ -286,7 +287,8 @@ namespace Wildgrove.Game
                              + "</size>";
 
                 SetButtonLabel(post, occupant != null || wardenHere ? "Change post" : "Post here");
-                SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
+                SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId
+                                        + (richnessPct > 0 ? " → +" + richnessPct + "% yield" : string.Empty) + "</size>");
                 var ok = _loop.CanReplant(captured);
                 replant.interactable = ok;
                 SetButtonTint(replant, ok);

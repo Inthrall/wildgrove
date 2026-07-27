@@ -91,6 +91,7 @@ namespace Wildgrove.Game
         private readonly Dictionary<string, Button> _tabButtons = new Dictionary<string, Button>();
         private readonly Dictionary<string, Text> _tabLabels = new Dictionary<string, Text>();
         private readonly Dictionary<string, GameObject> _tabOuterRules = new Dictionary<string, GameObject>();
+        private readonly Dictionary<string, GameObject> _tabMerges = new Dictionary<string, GameObject>();
         private static readonly Vector3[] Corners = new Vector3[4];
 
         private readonly List<Action> _liveUpdaters = new List<Action>();
@@ -104,7 +105,6 @@ namespace Wildgrove.Game
         private bool _dirty;
 
         private string _tab = TabTrail;
-        private NodeState _selected;
 
         // One open sheet at a time; the dim layer blocks input beneath it.
         private GameObject _sheet;
@@ -126,7 +126,6 @@ namespace Wildgrove.Game
         // through these; see JournalSection.
 
         internal GameLoop Loop => _loop;
-        internal NodeState Selected => _selected;
         internal bool Dirty { get => _dirty; set => _dirty = value; }
         internal RectTransform Body => _body;
         internal Transform ModalLayer => _modalLayer;
@@ -283,8 +282,9 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The open tab wears the page: paper background, full-ink bold label,
-        /// and the cards' outer rule — a lighter tint alone doesn't read at a
-        /// glance against three near-identical paper buttons.
+        /// the cards' outer rule, and the merge strip — the mock's raised tab
+        /// physically fuses with the page, and that continuity cue reads
+        /// pre-attentively where a lighter tint alone never did.
         /// </summary>
         private void StyleTab(string id, bool active)
         {
@@ -293,6 +293,7 @@ namespace Wildgrove.Game
             label.color = active ? Ink : Ink2;
             label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
             _tabOuterRules[id].SetActive(active);
+            _tabMerges[id].SetActive(active);
         }
 
         // ─────────────────────────── Chrome ──────────────────────────────────
@@ -550,9 +551,28 @@ namespace Wildgrove.Game
             button.onClick.AddListener(() => OpenTab(id));
             var text = MakeText(go.transform, label, 22, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             Stretch((RectTransform)text.transform);
+
+            // The merge strip — page paper drawn over the active tab's top
+            // border and up across the gap to the page, so the raised tab
+            // reads as PART of the page, not just a lighter plate.
+            var merge = new GameObject("Merge", typeof(Image), typeof(LayoutElement));
+            merge.transform.SetParent(go.transform, false);
+            merge.GetComponent<LayoutElement>().ignoreLayout = true;
+            var mergeImage = merge.GetComponent<Image>();
+            mergeImage.color = PagePaper;
+            mergeImage.raycastTarget = false;
+            var mergeRect = (RectTransform)merge.transform;
+            mergeRect.anchorMin = new Vector2(0f, 1f);
+            mergeRect.anchorMax = Vector2.one;
+            // Down 4 to cover the tab's own top border, up 14 across the bar
+            // padding and root spacing; inset so the side rules still frame it.
+            mergeRect.offsetMin = new Vector2(3f, -4f);
+            mergeRect.offsetMax = new Vector2(-3f, 14f);
+
             _tabButtons[id] = button;
             _tabLabels[id] = text;
             _tabOuterRules[id] = outer;
+            _tabMerges[id] = merge;
             StyleTab(id, id == _tab);
         }
 
@@ -699,11 +719,13 @@ namespace Wildgrove.Game
             var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
             // With no roster the ochre invitation opens a sheet nobody can
             // answer — mute it until there is someone to post.
+            // Moss, not ochre — this is an invitation, and ochre is reserved
+            // for costs, shortfalls and halted work.
             _trailStatus.text = carrier != null
                 ? carrier.name + " carrying"
                 : _loop.State.roster.Count == 0
                     ? "no one to carry yet"
-                    : "<color=" + OchreInkHex + ">tap to post a carrier</color>";
+                    : "<color=" + MossDeepHex + ">tap to post a carrier</color>";
         }
 
         private void RefreshHeader()
@@ -746,6 +768,10 @@ namespace Wildgrove.Game
 
         private void RefreshLedger()
         {
+            // Legacy Text wraps at any plain space — a non-breaking one inside
+            // each label-value pair means the line only ever breaks BETWEEN
+            // entries, never between a name and its number.
+            const string pair = " ";
             var state = _loop.State;
             var parts = new List<string>();
             foreach (var resource in _loop.Data.resources)
@@ -755,18 +781,20 @@ namespace Wildgrove.Game
                 // fewer entries keeps the line from wrapping mid-pair.
                 if (stock > BigDouble.Zero)
                 {
-                    parts.Add(resource.id + " <b>" + NumberFormat.Short(stock) + "</b>");
+                    parts.Add(resource.id + pair + "<b>" + NumberFormat.Short(stock) + "</b>");
                 }
             }
 
             // OchreInk, not Ochre — the theme's own rule: plain ochre fails
             // contrast at ledger size, and Renown is read hundreds of times.
-            parts.Add("<color=" + OchreInkHex + ">RENOWN <b>" + NumberFormat.Short(state.renown) + "</b></color>");
+            parts.Add("<color=" + OchreInkHex + ">RENOWN" + pair + "<b>" + NumberFormat.Short(state.renown) + "</b></color>");
             // Verdure appears once the fold economy is real — and styled as
-            // RENOWN's peer, not lowercase flavour.
+            // RENOWN's peer, not lowercase flavour. Both meta numbers go
+            // through NumberFormat so they never read "1234" beside "1.23K".
             if (state.verdurePoints > 0.0)
             {
-                parts.Add("<color=" + MossDeepHex + ">VERDURE <b>" + Mathf.FloorToInt((float)state.verdurePoints) + "</b></color>");
+                parts.Add("<color=" + MossDeepHex + ">VERDURE" + pair + "<b>"
+                          + NumberFormat.Short(new BigDouble(System.Math.Floor(state.verdurePoints))) + "</b></color>");
             }
 
             if (state.amber > 0.0)
@@ -774,7 +802,8 @@ namespace Wildgrove.Game
                 // The paid currency wears its own resin ink and full caps —
                 // lowercase-ochre made it a visual twin of RENOWN, and that's
                 // a real-money misread waiting to happen.
-                parts.Add("<color=" + AmberInkHex + ">AMBER <b>" + Mathf.FloorToInt((float)state.amber) + "</b></color>");
+                parts.Add("<color=" + AmberInkHex + ">AMBER" + pair + "<b>"
+                          + NumberFormat.Short(new BigDouble(System.Math.Floor(state.amber))) + "</b></color>");
             }
 
             _ledger.text = string.Join(" · ", parts);
@@ -866,7 +895,6 @@ namespace Wildgrove.Game
                 return;
             }
 
-            _world.SelectedNode = _selected;
             // Windfalls freeze under a sheet — they're ephemeral presentation,
             // and burning their lifetime behind a modal punished opening one.
             _world.Frozen = _sheet != null;
@@ -908,21 +936,10 @@ namespace Wildgrove.Game
                     // a node plate IS the assign gesture now (tap-to-tend
                     // became the bubbles above), and the trail/wander plates
                     // resolve to their station.
-                    NodeState node = null;
-                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out node) : null;
+                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out _) : null;
                     if (station != null)
                     {
-                        if (node != null)
-                        {
-                            _selected = node;
-                        }
-
                         _sheets.OpenPostingSheet(station);
-                    }
-                    else if (screenPosition.Value.y > Screen.height * 0.45f)
-                    {
-                        // A tap in the world band that hit no node deselects.
-                        _selected = null;
                     }
                 }
                 else

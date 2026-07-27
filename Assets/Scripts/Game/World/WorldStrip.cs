@@ -17,8 +17,25 @@ namespace Wildgrove.Game.World
         // posts ≈ 15.)
         public const int MaxPerRow = 8;
 
-        /// <summary>The assignment badge's centre, in diameters below a post sprite's centre.</summary>
+        /// <summary>The assignment badge's centre, in diameters below a post sprite's centre (single-row; two rows clamp to the row pitch — see <see cref="BadgeOffset"/>).</summary>
         public const float BadgeOffsetFactor = -0.72f;
+
+        /// <summary>
+        /// The badge's vertical offset in strip units. In two-row layout the
+        /// full -0.72 diameters would hang a top-row badge over the bottom
+        /// row's plates, so the drop is clamped to a share of the row pitch.
+        /// </summary>
+        public static float BadgeOffset(Rect strip, int count, float diameter)
+        {
+            var drop = -BadgeOffsetFactor * diameter;
+            if (Rows(count) == 2)
+            {
+                var pitch = strip.height * (0.68f - 0.32f);
+                drop = Mathf.Min(drop, pitch * 0.4f);
+            }
+
+            return -drop;
+        }
 
         /// <summary>The badge's drawn radius, in diameters (its hit circle is a little forgiving — see <see cref="BadgeHitIndex"/>).</summary>
         public const float BadgeRadiusFactor = 0.22f;
@@ -82,7 +99,7 @@ namespace Wildgrove.Game.World
 
             if (strip.Contains(point))
             {
-                var offset = new Vector2(0f, BadgeOffsetFactor * diameter);
+                var offset = new Vector2(0f, BadgeOffset(strip, centres.Length, diameter));
                 var badgeRadius = BadgeRadiusFactor * diameter * BadgeHitSlop;
                 var badgeSqr = badgeRadius * badgeRadius;
                 for (var i = 0; i < centres.Length; i++)
