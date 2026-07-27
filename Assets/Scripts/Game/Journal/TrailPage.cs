@@ -6,17 +6,19 @@ using Wildgrove.Data;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalFormat;
+using static Wildgrove.Game.JournalSprites;
 using static Wildgrove.Game.JournalWidgets;
 
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Trail page — a recruit bar when a companion will answer a pile, the
-    /// zones' compact node plates, the watch planter cards, and the Rite's
-    /// verse cards and waystone footer. Posting lives on the world strip's
-    /// badges and the trail-home line in the band above (one body per post),
-    /// so the plates here carry only the land's own business: yields, baskets,
-    /// replanting, planters. The kith roster now lives on the Warden page.
+    /// The Trail page — the trail home, a recruit bar when a companion will
+    /// answer a pile, the zones' compact node plates, the watch planter cards,
+    /// and the Rite's verse cards and waystone footer. Posting lives on the
+    /// world strip's badges and on the trail-home line at the head of this page
+    /// (one body per post), so the plates here carry only the land's own
+    /// business: yields, baskets, replanting, planters. The kith roster now
+    /// lives on the Warden page.
     /// </summary>
     internal sealed class TrailPage : JournalSection
     {
@@ -24,6 +26,7 @@ namespace Wildgrove.Game
 
         internal void BuildTrailPage()
         {
+            BuildTrailHomeLine();
             BuildRecruitBar();
 
             var unlockedZones = ZonesInOrder();
@@ -63,6 +66,103 @@ namespace Wildgrove.Game
 
             BuildVerseCards();
             BuildWaystoneFooter();
+        }
+
+        /// <summary>
+        /// The trail home — "the trail home" on the left, a dotted rule with
+        /// the carrier walking it, and the carrier's status on the right. The
+        /// whole box is the assign gesture: tap it to open the trail posting
+        /// sheet (design: one body per post).
+        /// <para>
+        /// It was pinned in the chrome under the world strip, where it was read
+        /// on the Camp, Warden and Record pages that have no use for it and
+        /// cost the open page ~100 units on every one of them. The carrier
+        /// walking home is the Trail's own business, so it heads the Trail
+        /// page — one tap away from anywhere, like everything else on it.
+        /// </para>
+        /// </summary>
+        private void BuildTrailHomeLine()
+        {
+            var bar = MakePanel("TrailHome", _body, CardPaper);
+            var layout = bar.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.padding = new RectOffset(12, 12, 4, 4);
+            layout.spacing = 10;
+            var element = bar.AddComponent<LayoutElement>();
+            element.flexibleHeight = 0;
+            // The one affordance for posting a carrier was a ~16dp strip —
+            // 100 units brings it near the 48dp touch floor.
+            element.minHeight = 100f;
+            AddBorder(bar, Ink2);
+            var button = bar.AddComponent<Button>();
+            button.onClick.AddListener(() => _hud.Sheets.OpenPostingSheet(Familiar.TrailStation));
+
+            MakeText(bar.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
+
+            var lineGo = MakeRect("Line", (RectTransform)bar.transform).gameObject;
+            var lineElement = lineGo.AddComponent<LayoutElement>();
+            lineElement.flexibleWidth = 1f;
+            lineElement.minHeight = 22f;
+
+            var rule = new GameObject("Rule", typeof(Image));
+            rule.transform.SetParent(lineGo.transform, false);
+            var ruleImage = rule.GetComponent<Image>();
+            ruleImage.sprite = DashSprite();
+            ruleImage.type = Image.Type.Tiled;
+            ruleImage.raycastTarget = false;
+            var ruleRect = (RectTransform)rule.transform;
+            ruleRect.anchorMin = new Vector2(0f, 0.5f);
+            ruleRect.anchorMax = new Vector2(1f, 0.5f);
+            ruleRect.offsetMin = new Vector2(0f, -1f);
+            ruleRect.offsetMax = new Vector2(0f, 1f);
+
+            var dot = new GameObject("Carrier", typeof(Image));
+            dot.transform.SetParent(lineGo.transform, false);
+            var dotImage = dot.GetComponent<Image>();
+            dotImage.color = MossDeep;
+            dotImage.raycastTarget = false;
+            var carrierDot = (RectTransform)dot.transform;
+            carrierDot.sizeDelta = new Vector2(14f, 14f);
+
+            var status = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
+
+            // The dot walks per frame; who's carrying only changes on the
+            // cadence, like every other label on the page.
+            _frameUpdaters.Add(() =>
+            {
+                var carriers = Stationing.TrailCarriers(_loop.State, _loop.Data);
+                var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
+                var show = carriers > 0.0 && tripSeconds > 0.0;
+                carrierDot.gameObject.SetActive(show);
+                if (!show)
+                {
+                    return;
+                }
+
+                var interval = tripSeconds / carriers;
+                var fraction = Mathf.Clamp01((float)(_loop.State.haulTripProgress / interval));
+                carrierDot.anchorMin = new Vector2(fraction, 0.5f);
+                carrierDot.anchorMax = new Vector2(fraction, 0.5f);
+                carrierDot.anchoredPosition = Vector2.zero;
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
+                // With no roster the invitation opens a sheet nobody can
+                // answer — mute it until there is someone to post. Moss, not
+                // ochre: this is an invitation, and ochre is reserved for
+                // costs, shortfalls and halted work.
+                status.text = carrier != null
+                    ? carrier.name + " carrying"
+                    : _loop.State.roster.Count == 0
+                        ? "no one to carry yet"
+                        : "<color=" + MossDeepHex + ">tap to post a carrier</color>";
+            });
         }
 
         /// <summary>

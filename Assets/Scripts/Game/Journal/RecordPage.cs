@@ -64,7 +64,13 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                reading.text = "Renown  " + NumberFormat.Short(_loop.State.renown);
+                // The camp count came off the page header's eyebrow, which only
+                // restated the lit tab; the record of how many folds you've
+                // walked belongs with the rest of your standing.
+                var camp = _loop.State.migrationCount > 0
+                    ? "  ·  Camp " + (_loop.State.migrationCount + 1)
+                    : string.Empty;
+                reading.text = "Renown  " + NumberFormat.Short(_loop.State.renown) + camp;
                 var signedIn = _loop.GameServices.IsSignedIn;
                 label.text = signedIn
                     ? "how you stand among the folk"
@@ -112,7 +118,15 @@ namespace Wildgrove.Game
                 var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 _liveUpdaters.Add(() =>
                 {
-                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">lifetime "
+                    // What the camp holds now, then what it has ever gathered.
+                    // The held figure used to run in the chrome ledger, a line
+                    // that grew a wrap every zone; here each number sits beside
+                    // the entry it belongs to and costs the page nothing.
+                    var held = _loop.State.GetResource(captured.id);
+                    var stock = held > BigDouble.Zero
+                        ? "<b>" + NumberFormat.Short(held) + "</b> held  ·  "
+                        : string.Empty;
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + "lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id)) + "</color></size>";
                 });
             }

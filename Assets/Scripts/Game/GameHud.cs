@@ -19,14 +19,22 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The Warden's Journal — the code-built uGUI HUD, laid out after the
-    /// docs/wildgrove-journal.html mock: a paper page with an eyebrow/title
-    /// header, a resource ledger, a handwritten margin note, a pinned Rite /
-    /// Fold tracker, and four journal tabs along the bottom (Trail · Camp ·
+    /// docs/wildgrove-journal.html mock: a paper page with a title header, a
+    /// currency ledger, a handwritten margin note, a pinned Rite / Fold
+    /// tracker, and four journal tabs along the bottom (Trail · Camp ·
     /// Warden · Record) — set in the journal's own type (IM Fell / Caveat /
     /// Lora), ruled ink borders, paper grain, and the small motion touches
     /// (tend flash, the carrier on the trail line). All game logic stays in
     /// Wildgrove.Sim; this only reads state and calls <see cref="GameLoop"/>
     /// actions.
+    /// <para>
+    /// The chrome is kept deliberately thin: everything pinned here is paid
+    /// for out of the open page, which is the only row that can give. A bar
+    /// belongs up here only if it is read on every tab — the trail-home line
+    /// went back to the Trail page and the camp actions to the Camp page for
+    /// exactly that reason, and the ledger carries the three meta currencies
+    /// rather than the whole stores list (which grows all game).
+    /// </para>
     /// <para>
     /// This is the HUD coordinator: it owns the MonoBehaviour lifecycle, the
     /// persistent chrome (header/ledger/tracker/tabs), the scroll body and its
@@ -44,6 +52,12 @@ namespace Wildgrove.Game
     {
         private const float RefreshInterval = 0.25f;
 
+        // The world strip's share of the page, and the floor the open page is
+        // never squeezed below. See UpdateWorldGap.
+        private const float StripShareMax = 0.26f;
+        private const float StripShareMin = 0.14f;
+        private const float MinPageShare = 0.32f;
+
         private GameLoop _loop;
         private IGameInput _input;
         private Font _font;      // body — Lora
@@ -60,7 +74,6 @@ namespace Wildgrove.Game
         private RecordPage _record;
         private JournalSheets _sheets;
 
-        private Text _eyebrow;
         private Text _title;
         private Text _slotCounter;
         private Text _ledger;
@@ -68,12 +81,6 @@ namespace Wildgrove.Game
         private Text _trackerText;
         private GameObject _trackerPanel;
         private Button _foldButton;
-
-        // The trail-home line, now pinned in the top world-strip band rather
-        // than buried in the Trail page: a dotted rule with the carrier walking
-        // it, and the whole box taps through to post a carrier.
-        private RectTransform _trailCarrierDot;
-        private Text _trailStatus;
 
         private RectTransform _worldGap;
         private RectTransform _body;
@@ -197,7 +204,6 @@ namespace Wildgrove.Game
 
             FitLayoutToScreen();
             ReportWorldStrip();
-            AnimateTrailCarrier();
             HandleBack();
             HandleWorldTap();
 
@@ -321,9 +327,13 @@ namespace Wildgrove.Game
             rootLayout.padding = new RectOffset(16, 16, 10, 6);
             rootLayout.spacing = 6;
 
-            // Header — eyebrow over the title, centred like the mock's page head.
-            // The header band is transparent: the page paper shows through, but
-            // it must NOT swallow pointer raycasts (an Image would).
+            // Header — the page title, centred like the mock's page head. The
+            // mock's eyebrow above it ("THE RECORD") only ever restated the lit
+            // tab three rows below, in a second type style, for a line of
+            // height the page needed more; the camp number it also carried now
+            // reads on the Record page's Standing card. The header band is
+            // transparent: the page paper shows through, but it must NOT
+            // swallow pointer raycasts (an Image would).
             var headerGo = MakeRect("Header", root).gameObject;
             var headerLayout = headerGo.AddComponent<VerticalLayoutGroup>();
             headerLayout.childControlWidth = true;
@@ -331,14 +341,21 @@ namespace Wildgrove.Game
             headerLayout.childForceExpandWidth = true;
             headerLayout.childForceExpandHeight = false;
             headerLayout.spacing = 0;
-            _eyebrow = MakeText(headerGo.transform, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             // 27 authored ≈ the old 36 at the previous FontScale — the title
             // was already big enough; the scale bump is for the working text.
             _title = MakeText(headerGo.transform, string.Empty, 27, TextAnchor.MiddleCenter, Ink, _serif);
 
-            // Ledger — the running stores line, hairline-ruled like the mock.
+            // Ledger — the three meta currencies, hairline-ruled like the mock.
+            // It used to run every held resource, which is the one chrome row
+            // whose height GROWS with the save: two lines at Sunfield, four by
+            // the second camp, and every one of them taken off the page. The
+            // stores now read on the Record page beside their own entries, and
+            // a tap here goes there.
             MakeHairline(root);
             _ledger = MakeText(root, string.Empty, 19, TextAnchor.MiddleCenter, Ink);
+            var ledgerButton = _ledger.gameObject.AddComponent<Button>();
+            ledgerButton.targetGraphic = _ledger;
+            ledgerButton.onClick.AddListener(() => OpenTab(TabRecord));
             MakeHairline(root);
 
             // Margin note — the handwritten aside.
@@ -394,14 +411,13 @@ namespace Wildgrove.Game
             counterRect.sizeDelta = new Vector2(380f, 44f);
             counterRect.anchoredPosition = new Vector2(-6f, -4f);
 
-            // The trail-home line sits at the foot of the world-strip band — the
-            // one trail affordance up here: it shows the carrier walking home and
-            // taps through to post (or recall) a carrier.
-            BuildTrailHomeLine(root);
-
-            // Persistent camp actions, pinned under the node strip so they stay
-            // reachable from every journal page.
-            _sheets.BuildCampActions(root);
+            // The trail-home line and the camp actions used to be pinned here,
+            // between the strip and the page. Both are page chrome wearing a
+            // global badge — the carrier walking home is the Trail's business
+            // and the rewarded time-skip is the Camp's — and together they cost
+            // the page a fifth of its height on every tab. They now head their
+            // own pages; the strip above stays global, so catching and posting
+            // are still reachable from everywhere.
 
             // The open journal page — a scroll view the tab pages build into.
             _body = BuildScroll(root);
@@ -441,62 +457,6 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The trail-home line, pinned in the world-strip band: "the trail home"
-        /// on the left, a dotted rule with the carrier walking it, and the
-        /// carrier's status on the right. The whole box is the assign gesture —
-        /// tap it to open the trail posting sheet (design: one body per post).
-        /// </summary>
-        private void BuildTrailHomeLine(RectTransform root)
-        {
-            var bar = MakePanel("TrailHome", root, CardPaper);
-            var layout = bar.AddComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.padding = new RectOffset(12, 12, 4, 4);
-            layout.spacing = 10;
-            var element = bar.AddComponent<LayoutElement>();
-            element.flexibleHeight = 0;
-            // The one affordance for posting a carrier was a ~16dp strip —
-            // 100 units brings it near the 48dp touch floor.
-            element.minHeight = 100f;
-            AddBorder(bar, Ink2);
-            var button = bar.AddComponent<Button>();
-            button.onClick.AddListener(() => _sheets.OpenPostingSheet(Familiar.TrailStation));
-
-            MakeText(bar.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
-
-            var lineGo = MakeRect("Line", (RectTransform)bar.transform).gameObject;
-            var lineElement = lineGo.AddComponent<LayoutElement>();
-            lineElement.flexibleWidth = 1f;
-            lineElement.minHeight = 22f;
-
-            var rule = new GameObject("Rule", typeof(Image));
-            rule.transform.SetParent(lineGo.transform, false);
-            var ruleImage = rule.GetComponent<Image>();
-            ruleImage.sprite = DashSprite();
-            ruleImage.type = Image.Type.Tiled;
-            ruleImage.raycastTarget = false;
-            var ruleRect = (RectTransform)rule.transform;
-            ruleRect.anchorMin = new Vector2(0f, 0.5f);
-            ruleRect.anchorMax = new Vector2(1f, 0.5f);
-            ruleRect.offsetMin = new Vector2(0f, -1f);
-            ruleRect.offsetMax = new Vector2(0f, 1f);
-
-            var dot = new GameObject("Carrier", typeof(Image));
-            dot.transform.SetParent(lineGo.transform, false);
-            var dotImage = dot.GetComponent<Image>();
-            dotImage.color = MossDeep;
-            dotImage.raycastTarget = false;
-            _trailCarrierDot = (RectTransform)dot.transform;
-            _trailCarrierDot.sizeDelta = new Vector2(14f, 14f);
-
-            _trailStatus = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
-        }
-
-        /// <summary>
         /// Fit the chrome to the device: keep the page out of the display
         /// cutout and gesture areas (the tabs bar used to sit flush with the
         /// screen edge, inside Android's home-swipe zone), and cap the world
@@ -519,7 +479,69 @@ namespace Wildgrove.Game
             _root.offsetMin = new Vector2(safe.xMin / scale, safe.yMin / scale);
             _root.offsetMax = new Vector2((safe.xMax - Screen.width) / scale, (safe.yMax - Screen.height) / scale);
 
-            _worldGapElement.preferredHeight = canvasHeight * 0.26f;
+            Canvas.ForceUpdateCanvases();
+            UpdateWorldGap();
+        }
+
+        /// <summary>
+        /// Give the world strip whatever the chrome and the page don't need —
+        /// the strip is the layout's shock absorber, not the page.
+        /// <para>
+        /// The page is the only row with flexible height, so before this every
+        /// unit the chrome grew came straight out of it: the device-scale pass
+        /// (bigger type, 48dp touch floors) halved the open page on a tall
+        /// phone, and a fifth ledger line would take another bite. Now the
+        /// pinned rows are measured, the page is guaranteed its floor, and the
+        /// strip takes the remainder — clamped so it neither swells into empty
+        /// paper on a tall screen nor collapses below a readable band on a
+        /// short one.
+        /// </para>
+        /// </summary>
+        private void UpdateWorldGap()
+        {
+            if (_root == null || _worldGapElement == null)
+            {
+                return;
+            }
+
+            var available = _root.rect.height;
+            if (available <= 0f)
+            {
+                return;
+            }
+
+            var layout = _root.GetComponent<VerticalLayoutGroup>();
+            var chrome = (float)(layout.padding.top + layout.padding.bottom);
+            var rows = 0;
+            for (var i = 0; i < _root.childCount; i++)
+            {
+                var child = (RectTransform)_root.GetChild(i);
+                if (!child.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                rows++;
+                if (child == _worldGap || child == _body)
+                {
+                    continue;
+                }
+
+                chrome += LayoutUtility.GetPreferredHeight(child);
+            }
+
+            chrome += layout.spacing * Mathf.Max(0, rows - 1);
+
+            var target = Mathf.Clamp(
+                available - chrome - available * MinPageShare,
+                available * StripShareMin,
+                available * StripShareMax);
+            // Only on a real change — assigning every cadence dirties the whole
+            // layout for nothing.
+            if (Mathf.Abs(target - _worldGapElement.preferredHeight) > 1f)
+            {
+                _worldGapElement.preferredHeight = target;
+            }
         }
 
         private void BuildTabsBar(RectTransform root)
@@ -681,87 +703,29 @@ namespace Wildgrove.Game
             RefreshHeader();
             RefreshLedger();
             RefreshTracker();
-            RefreshTrailHome();
-            _sheets.RefreshCampActions();
-        }
-
-        /// <summary>The carrier dot walking the trail-home rule — driven per frame like the old body row's frame updater.</summary>
-        private void AnimateTrailCarrier()
-        {
-            if (_trailCarrierDot == null)
-            {
-                return;
-            }
-
-            var state = _loop.State;
-            var carriers = Stationing.TrailCarriers(state, _loop.Data);
-            var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
-            var show = carriers > 0.0 && tripSeconds > 0.0;
-            _trailCarrierDot.gameObject.SetActive(show);
-            if (show)
-            {
-                var interval = tripSeconds / carriers;
-                var fraction = Mathf.Clamp01((float)(state.haulTripProgress / interval));
-                _trailCarrierDot.anchorMin = new Vector2(fraction, 0.5f);
-                _trailCarrierDot.anchorMax = new Vector2(fraction, 0.5f);
-                _trailCarrierDot.anchoredPosition = Vector2.zero;
-            }
-        }
-
-        /// <summary>The trail-home status text — who's hauling, or the prompt to post one.</summary>
-        private void RefreshTrailHome()
-        {
-            if (_trailStatus == null)
-            {
-                return;
-            }
-
-            var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
-            // With no roster the ochre invitation opens a sheet nobody can
-            // answer — mute it until there is someone to post.
-            // Moss, not ochre — this is an invitation, and ochre is reserved
-            // for costs, shortfalls and halted work.
-            _trailStatus.text = carrier != null
-                ? carrier.name + " carrying"
-                : _loop.State.roster.Count == 0
-                    ? "no one to carry yet"
-                    : "<color=" + MossDeepHex + ">tap to post a carrier</color>";
+            UpdateWorldGap();
         }
 
         private void RefreshHeader()
         {
-            var state = _loop.State;
-            string eyebrow;
             string title;
             switch (_tab)
             {
                 case TabCamp:
-                    eyebrow = "THE CAMP";
                     title = "Fire, Bench & Caravan";
                     break;
                 case TabWarden:
-                    eyebrow = "THE WARDEN";
                     title = "Kit & Crafts";
                     break;
                 case TabRecord:
-                    eyebrow = "THE RECORD";
                     title = "The Journal's Back Pages";
                     break;
                 default:
-                    // The title carries the zone — repeating its id in the
-                    // eyebrow said the same thing twice in two type styles.
                     var zone = _labels.LatestZone();
-                    eyebrow = "THE TRAIL";
                     title = zone != null ? zone.displayName : "The Trail";
                     break;
             }
 
-            if (state.migrationCount > 0)
-            {
-                eyebrow += " · CAMP " + (state.migrationCount + 1);
-            }
-
-            _eyebrow.text = eyebrow;
             _title.text = title;
             _slotCounter.text = _loop.KithWalking() + " / " + _loop.KithSlots() + " POSTED";
         }
@@ -773,17 +737,12 @@ namespace Wildgrove.Game
             // entries, never between a name and its number.
             const string pair = " ";
             var state = _loop.State;
+            // The three meta currencies only. The held stores used to run here
+            // too — one entry per resource, so the line grew a wrap every zone
+            // and quietly ate the page it sits above. They read on the Record
+            // page now, each beside its own compendium entry, where "how much
+            // do I hold" is asked deliberately rather than glanced at.
             var parts = new List<string>();
-            foreach (var resource in _loop.Data.resources)
-            {
-                var stock = state.GetResource(resource.id);
-                // Only what the camp actually holds — "nuts 0" is noise, and
-                // fewer entries keeps the line from wrapping mid-pair.
-                if (stock > BigDouble.Zero)
-                {
-                    parts.Add(resource.id + pair + "<b>" + NumberFormat.Short(stock) + "</b>");
-                }
-            }
 
             // OchreInk, not Ochre — the theme's own rule: plain ochre fails
             // contrast at ledger size, and Renown is read hundreds of times.
@@ -806,7 +765,11 @@ namespace Wildgrove.Game
                           + NumberFormat.Short(new BigDouble(System.Math.Floor(state.amber))) + "</b></color>");
             }
 
-            _ledger.text = string.Join(" · ", parts);
+            // The tracker's guillemet marks a banner as a link; the ledger is
+            // one too now (it opens the Record page's stores), so it wears the
+            // same mark rather than being a tap nobody would guess at.
+            _ledger.text = string.Join(" · ", parts)
+                           + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">»</color></size>";
         }
 
         private void RefreshTracker()

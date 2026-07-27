@@ -11,15 +11,19 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The journal's modal sheets and the persistent camp-actions strip. Owns
-    /// the one-open-sheet lifecycle (<see cref="BeginSheet"/>/<see cref="CloseSheet"/>),
+    /// The journal's modal sheets and the camp-actions strip. Owns the
+    /// one-open-sheet lifecycle (<see cref="BeginSheet"/>/<see cref="CloseSheet"/>),
     /// the pending-sheet pump, the posting sheet, and the rewarded/purchase
-    /// buttons pinned under the world gap.
+    /// buttons at the head of the Camp page.
     /// </summary>
     internal sealed class JournalSheets : JournalSection
     {
         // The time-skip ad credits this many hours of gathering.
         private const double TimeSkipHours = 2.0;
+
+        // How much of the screen a sheet's lines may fill before they scroll
+        // instead of growing (the card's padding rides on top).
+        private const float SheetMaxCanvasShare = 0.72f;
         private Button _timeSkipButton;
         private Button _removeAdsButton;
         // The open sheet's safe way out — what Android Back and a tap on the
@@ -605,19 +609,13 @@ namespace Wildgrove.Game
                 // The verb IS the outcome — replacing the holder is a single
                 // tap, and says so, rather than being inferred from a list.
                 var verb = occupantHere != null ? "Replace " + occupantHere.name : "Post here";
-                string detail;
-                if (blocked)
-                {
-                    detail = "rests at camp · needs an open slot";
-                }
-                else if (resting)
-                {
-                    detail = "rests at camp";
-                }
-                else
-                {
-                    detail = "at " + StationLabel(captured.stationId) + " — that post falls idle";
-                }
+                // Why a blocked line is dead is said ONCE, in the notice above —
+                // repeating "needs an open slot" on every row it applies to
+                // made a wall of the same sentence and pushed the sheet off
+                // the screen. The greyed plate is the per-line signal.
+                var detail = resting
+                    ? "rests at camp"
+                    : "at " + StationLabel(captured.stationId) + " — that post falls idle";
 
                 var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + verb + "</color>  "
                                            + captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
@@ -652,6 +650,19 @@ namespace Wildgrove.Game
             MakeText(sheet, (SpeciesName(familiar.speciesId) + " · now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
                 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
+            // Said once, above the list: from rest, an EMPTY post needs a free
+            // slot, while stepping in for someone always works. It used to be
+            // repeated as a tail on every empty destination.
+            if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
+            {
+                var notice = MakeText(sheet,
+                    "<i>every slot is walked — the empty posts stay shut until you open one on the Ladder. Taking a post from someone else still works.</i>",
+                    16, TextAnchor.UpperCenter, Ink2);
+                var element = notice.gameObject.AddComponent<LayoutElement>();
+                element.minWidth = 740;
+                element.preferredWidth = 740;
+            }
+
             if (!familiar.IsResting)
             {
                 Button(sheet, "Send " + familiar.name + " back to camp", 560, () =>
@@ -683,21 +694,10 @@ namespace Wildgrove.Game
             var occupant = Stationing.OccupantOf(_loop.State, stationId);
             // Taking an empty post from rest needs an open slot; a swap or a
             // move always works (the vacated slot covers it) — the posting
-            // sheet's rule, asked from the other side.
+            // sheet's rule, asked from the other side. The reason is on the
+            // notice above; the line itself just greys out.
             var blocked = familiar.IsResting && occupant == null && !Kith.HasRoom(_loop.State, _loop.Data);
-            string detail;
-            if (blocked)
-            {
-                detail = "needs an open slot";
-            }
-            else if (occupant != null)
-            {
-                detail = "replaces " + occupant.name;
-            }
-            else
-            {
-                detail = "stands empty";
-            }
+            var detail = occupant != null ? "replaces " + occupant.name : "stands empty";
 
             var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">Walk to " + StationLabel(stationId)
                                        + "</color>  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + detail + "</color></size>", 560, () =>
@@ -763,9 +763,8 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The persistent camp-actions strip under the node/world gap: the
-        /// rewarded time-skip and the one-off remove-ads purchase, reachable
-        /// from every journal page.
+        /// The camp-actions strip at the head of the Camp page: the rewarded
+        /// time-skip and the one-off remove-ads purchase.
         /// </summary>
         internal void BuildCampActions(Transform root)
         {
@@ -796,11 +795,11 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Keep the persistent camp-strip buttons current. The strip is built
-        /// once in the chrome — outside the page's live-updater pool — so the
-        /// HUD pumps this on its refresh cadence. The time-skip greys out and
-        /// counts down while its reward cooldown holds, rather than accepting a
-        /// tap only to refuse it with a note.
+        /// Keep the camp-strip buttons current — the Camp page registers this
+        /// as one of its live updaters, and it no-ops on every other tab, where
+        /// the strip isn't built. The time-skip greys out and counts down while
+        /// its reward cooldown holds, rather than accepting a tap only to
+        /// refuse it with a note.
         /// </summary>
         internal void RefreshCampActions()
         {
@@ -951,6 +950,15 @@ namespace Wildgrove.Game
         /// <paramref name="scrimDismisses"/> false keeps the scrim inert for
         /// confirms, where a stray tap must never answer the question (Back
         /// still cancels — cancelling is always safe).
+        /// <para>
+        /// The panel hugs its content until it would outgrow the screen, then
+        /// pins and scrolls: the sheets whose length is a function of the save
+        /// (the posting sheet lists the whole roster, the station pick every
+        /// post) used to grow straight off the top and bottom of the display,
+        /// taking "Never mind" with them. The scroll layer lives INSIDE the
+        /// panel so the card, its rules and its padding stay put and only the
+        /// lines move.
+        /// </para>
         /// </summary>
         private Transform BeginSheet(System.Action dismiss = null, bool scrimDismisses = true)
         {
@@ -979,13 +987,87 @@ namespace Wildgrove.Game
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
+            // The scroll layer is the panel's only child and carries no width of
+            // its own — it takes the card's.
+            layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             layout.padding = new RectOffset(30, 30, 30, 36);
-            layout.spacing = 16;
+            layout.spacing = 0;
             var fitter = panel.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            return panel.transform;
+
+            var scrollGo = new GameObject("SheetScroll", typeof(RectTransform), typeof(ScrollRect), typeof(RectMask2D));
+            scrollGo.transform.SetParent(panel.transform, false);
+            var scroll = scrollGo.GetComponent<ScrollRect>();
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.scrollSensitivity = 24f;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.viewport = (RectTransform)scrollGo.transform;
+
+            var content = MakeRect("Content", (RectTransform)scrollGo.transform);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = Vector2.zero;
+            var contentLayout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            contentLayout.childAlignment = TextAnchor.UpperCenter;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+            contentLayout.childForceExpandWidth = false;
+            contentLayout.childForceExpandHeight = false;
+            contentLayout.spacing = 16;
+            var contentFitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            contentFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scroll.content = content;
+
+            // Hug the lines until they'd fill the screen, then pin — the panel's
+            // own padding rides on top of this, so the card lands near 80%.
+            var clamp = scrollGo.AddComponent<HeightClampedElement>();
+            clamp.content = content;
+            clamp.canvas = (RectTransform)_modalLayer;
+            clamp.maxCanvasShare = SheetMaxCanvasShare;
+
+            AddSheetStitch(panel, scroll);
+            return content;
+        }
+
+        /// <summary>
+        /// The sheet's scroll stitch — the page's slim ink scrollbar, riding the
+        /// panel's right padding. Outside the scroll's mask so it isn't clipped,
+        /// and auto-hidden while the sheet fits, so its presence is itself the
+        /// signal that there is more below.
+        /// </summary>
+        private static void AddSheetStitch(GameObject panel, ScrollRect scroll)
+        {
+            var barGo = new GameObject("Stitch", typeof(Image), typeof(Scrollbar), typeof(LayoutElement));
+            barGo.transform.SetParent(panel.transform, false);
+            barGo.GetComponent<LayoutElement>().ignoreLayout = true;
+            var track = barGo.GetComponent<Image>();
+            track.color = new Color(RulePaper.r, RulePaper.g, RulePaper.b, 0.45f);
+            var barRect = (RectTransform)barGo.transform;
+            barRect.anchorMin = new Vector2(1f, 0f);
+            barRect.anchorMax = new Vector2(1f, 1f);
+            barRect.pivot = new Vector2(1f, 0.5f);
+            // 6 wide, inset into the card's right padding, and short of the
+            // panel's top and bottom padding so it reads as a margin rule.
+            barRect.sizeDelta = new Vector2(6f, -60f);
+            barRect.anchoredPosition = new Vector2(-12f, -3f);
+
+            var handleGo = new GameObject("Handle", typeof(Image));
+            handleGo.transform.SetParent(barGo.transform, false);
+            var handle = handleGo.GetComponent<Image>();
+            handle.color = new Color(Ink2.r, Ink2.g, Ink2.b, 0.55f);
+            var handleRect = (RectTransform)handleGo.transform;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+
+            var scrollbar = barGo.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.handleRect = handleRect;
+            scrollbar.targetGraphic = handle;
+            scroll.verticalScrollbar = scrollbar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
         }
 
         private void CloseSheet()

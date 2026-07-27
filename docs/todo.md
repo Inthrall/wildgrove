@@ -377,8 +377,8 @@ balance, tracked in the items below.
     rename to windfall if the object sticks.
 
 - **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
-  code.** `GameHud` now lays out the mock's structure — paper palette, eyebrow/title
-  head, resource ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs
+  code.** `GameHud` now lays out the mock's structure — paper palette, title
+  head, currency ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs
   (Trail · Camp · Warden · Record) — as runtime uGUI, with the reskin pass on top:
   the four journal typefaces, generated ruled ink borders, paper-grain + stitched-spine
   overlays, and the tend-flash / trail-carrier motion touches. Still no hand-drawn
@@ -388,8 +388,17 @@ balance, tracked in the items below.
     (its plates ARE the world). It goes when the real region scene lands.
   - The **margin note** is a flavour line set by actions (tend/replant/trade/offer/
     build), hardcoded strings in `GameHud` — not a data-driven dialogue channel.
-  - The **ledger** lists every discovered resource; it will need a cap or grouping
-    once later zones make it long.
+  - The **ledger** carried every held resource and grew a wrap per zone; after the
+    device-scale pass that left the open page ~21% of the screen. Resolved
+    (2026-07-28): the ledger is the three meta currencies only (and taps through to
+    the Record page, which now shows "N held" beside each compendium entry), the
+    header's eyebrow is gone (it restated the lit tab; its camp count moved to the
+    Standing card), the trail-home line moved to the Trail page and the camp actions
+    to the Camp page. **Chrome budget rule going forward: a bar is only pinned if it
+    is read on every tab** — the page is the row that pays for it. `UpdateWorldGap`
+    now makes the strip the shock absorber (it takes what's left after the measured
+    chrome and a 32% page floor, clamped to 14–26% of the screen), so the next thing
+    that grows shrinks the strip's whitespace instead of the page.
   - The Rite verse card now renders **all four slot types** (the old HUD skipped
     specimen/sketch/deed); spotlight (✳) markers are not shown yet.
   - Migration runs tracker **Fold button → confirm sheet → full-dark vignette**

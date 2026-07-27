@@ -230,11 +230,16 @@ namespace Wildgrove.Game
         /// <summary>
         /// Connect the store and read owned products, off the synchronous launch
         /// path (see the Initialise note). Once it resolves, the camp-actions
-        /// refresh hides the Remove Ads button for players who already own it.
+        /// refresh hides the Remove Ads button for players who already own it,
+        /// and the kith slots those entitlements paid for are folded into the
+        /// run. Without that second half, ownership resolved outside a purchase
+        /// — a reinstall, a second device, or a cloud save older than the
+        /// purchase — hid the buy line (the store says owned) while the ladder
+        /// stayed where it was: paid for, and no slot to show for it.
         /// </summary>
         private void ResolveEntitlements()
         {
-            Store.Initialise();
+            Store.Initialise(SyncKithPurchases);
         }
 
         /// <summary>
@@ -286,6 +291,10 @@ namespace Wildgrove.Game
                 // drop it so the absence since the cloud save credits the adopted run.
                 PendingOfflineSummary = null;
                 CreditAbsence((NowUnixMs() - cloud.savedAtUnixMs) / 1000.0);
+                // The adopted save may predate a purchase this device already
+                // owns — re-fold the entitlements rather than let the cloud
+                // roll a paid slot back.
+                SyncKithPurchases();
                 // Converge the device and cloud on the adopted save now rather than
                 // waiting for the autosave interval to write it back down locally.
                 SaveNow();

@@ -13,9 +13,9 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Camp page — the fire &amp; bench (crafting), the building lines, the
-    /// Ladder's next rungs, and the caravan exchange beneath them. What the camp
-    /// makes of what the trail brings home.
+    /// The Camp page — the camp's own actions, the fire &amp; bench (crafting),
+    /// the building lines, the Ladder's next rungs, and the caravan exchange
+    /// beneath them. What the camp makes of what the trail brings home.
     /// </summary>
     internal sealed class CampPage : JournalSection
     {
@@ -30,6 +30,15 @@ namespace Wildgrove.Game
 
         internal void BuildCampPage()
         {
+            // The camp actions (the rewarded time-skip, and Remove Ads until
+            // it's owned) used to be a bar pinned in the chrome, read on all
+            // four tabs and paid for by the open page on all four. They're camp
+            // business, so they head the camp's page — and being in the body
+            // means they refresh off the page's own updater pool rather than
+            // the HUD's chrome pass.
+            _hud.Sheets.BuildCampActions(_body);
+            _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
+
             BuildCraftingCard();
             BuildBuildingsCard();
             BuildLadderCard();

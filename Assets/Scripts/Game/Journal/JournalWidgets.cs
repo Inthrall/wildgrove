@@ -210,10 +210,15 @@ namespace Wildgrove.Game
         /// Grey a button out, or restore it. <paramref name="keyAction"/> keeps a
         /// <see cref="KeyAction"/> button's moss wash on the way back — without it
         /// the first refresh repaints it as an ordinary plate.
-        /// The washed plate ALONE carries "inactive": fading the label too
-        /// compounded to ~2.25:1 and blanked the names of exactly the things a
-        /// player is saving toward. Pressed-state tinting (the factory's
-        /// targetGraphic) is what now separates live from dead at a glance.
+        /// <para>
+        /// Both the plate AND the label carry "inactive", but the label changes
+        /// INK rather than alpha: a washed plate alone was too quiet to read as
+        /// dead (Take up, Claim and Watch all sat there looking live while their
+        /// criteria went unmet), and alpha-fading the label was the other
+        /// failure — it compounded to ~2.25:1 and blanked the names of exactly
+        /// the things a player is saving toward. Ink2 is the journal's own
+        /// muted ink: plainly secondary, still legible.
+        /// </para>
         /// </summary>
         internal static void SetButtonTint(Button button, bool on, bool keyAction = false)
         {
@@ -228,9 +233,10 @@ namespace Wildgrove.Game
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                var labelColour = label.color;
-                labelColour.a = 1f;
-                label.color = labelColour;
+                // Labels built from rich text carry their own <color> spans and
+                // are unaffected by this — those call sites pick the dead ink
+                // themselves (the posting sheet's blocked rows do).
+                label.color = on ? (keyAction ? MossDeep : Ink) : Ink2;
             }
         }
 
