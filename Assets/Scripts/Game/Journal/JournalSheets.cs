@@ -284,12 +284,22 @@ namespace Wildgrove.Game
                                                  + " " + gain.id + " — doubled</color>";
                             }
 
-                            SetButtonLabel(doubleIt, "The land gives twice");
+                            // The offer is spent — so it stops being a button.
+                            // A dead plate reading "The land gives twice" still
+                            // looks like something to tap; the line takes the
+                            // button's place in the column as plain text.
+                            var slot = doubleIt.transform.GetSiblingIndex();
+                            var column = doubleIt.transform.parent;
+                            Object.Destroy(doubleIt.gameObject);
+                            var spent = MakeText(column, "<i>The land gives twice</i>", 20, TextAnchor.MiddleCenter, MossDeep, _serif);
+                            spent.transform.SetSiblingIndex(slot);
                             _dirty = true;
                         },
                         () =>
                         {
                             // Ad closed without the reward — re-arm the offer.
+                            // (On the rewarded path the button is gone, so the
+                            // flag guards a destroyed reference as well.)
                             if (!doubled)
                             {
                                 doubleIt.interactable = true;
@@ -649,6 +659,16 @@ namespace Wildgrove.Game
             MakeText(sheet, "Where shall " + familiar.name + " walk?", 30, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, (SpeciesName(familiar.speciesId) + " · now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
                 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            // What this one is good at, at the moment it decides where they
+            // walk — the roster row used to carry it on every line, which is
+            // where it was read least and cost most.
+            var trait = _loop.FamiliarTrait(familiar);
+            if (trait != null)
+            {
+                MakeText(sheet, "<i>" + trait.displayName.ToLowerInvariant() + " — " + trait.description + "</i>",
+                    17, TextAnchor.UpperCenter, MossDeep, _serif);
+            }
 
             // Said once, above the list: from rest, an EMPTY post needs a free
             // slot, while stepping in for someone always works. It used to be

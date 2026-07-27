@@ -211,13 +211,13 @@ namespace Wildgrove.Game
         /// <see cref="KeyAction"/> button's moss wash on the way back — without it
         /// the first refresh repaints it as an ordinary plate.
         /// <para>
-        /// Both the plate AND the label carry "inactive", but the label changes
-        /// INK rather than alpha: a washed plate alone was too quiet to read as
-        /// dead (Take up, Claim and Watch all sat there looking live while their
-        /// criteria went unmet), and alpha-fading the label was the other
-        /// failure — it compounded to ~2.25:1 and blanked the names of exactly
-        /// the things a player is saving toward. Ink2 is the journal's own
-        /// muted ink: plainly secondary, still legible.
+        /// Plate, border AND label all carry "inactive" — one channel alone was
+        /// never enough to read (Take up, Claim and Watch all sat there looking
+        /// live while their criteria went unmet). The label changes INK rather
+        /// than alpha: fading it was the other failure — it compounded to
+        /// ~2.25:1 and blanked the names of exactly the things a player is
+        /// saving toward. Ink2 on the dead plate is ~3.4:1 at button size
+        /// (large text), so it stays plainly readable while plainly secondary.
         /// </para>
         /// </summary>
         internal static void SetButtonTint(Button button, bool on, bool keyAction = false)
@@ -225,9 +225,24 @@ namespace Wildgrove.Game
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                var color = on ? (keyAction ? MossWash : DeepPaper) : RulePaper;
-                color.a = on ? 1f : 0.55f;
-                image.color = color;
+                // Opaque. The dead plate used to be RulePaper at 55%, which
+                // composites over card paper to within a hair of DeepPaper —
+                // the live plate. That is why nothing looked disabled: the two
+                // states were rendering the same colour.
+                image.color = on ? (keyAction ? MossWash : DeepPaper) : RulePaper;
+            }
+
+            // The ruled outline is what reads first at arm's length, so it
+            // carries the state too: ink while the tap is live, a faint rule
+            // when it isn't.
+            var border = button.transform.Find("Border");
+            if (border != null)
+            {
+                var borderImage = border.GetComponent<Image>();
+                if (borderImage != null)
+                {
+                    borderImage.color = on ? Ink2 : RulePaper;
+                }
             }
 
             var label = button.GetComponentInChildren<Text>();

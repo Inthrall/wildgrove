@@ -177,34 +177,35 @@ namespace Wildgrove.Game
                     IconImage(row.transform, portrait, 64f, Color.white);
                 }
 
-                var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
+                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
                 // The card is headed "roster & posts" — so the row must offer
                 // the post, not just report it. "Post" opens the where-sheet
                 // (rest, every node, the trail, the wander post); Rename keeps
-                // its own button behind it.
-                Button(row.transform, "Post", 130, () => _hud.Sheets.OpenStationPickSheet(captured));
-                Button(row.transform, "Rename", 150, () => OpenNamingSheet(captured));
+                // its own button behind it. 120 units is the touch floor, and
+                // every unit off these two goes to the name beside them.
+                Button(row.transform, "Post", 120, () => _hud.Sheets.OpenStationPickSheet(captured));
+                Button(row.transform, "Rename", 120, () => OpenNamingSheet(captured));
 
+                // Two lines, and the row's height is then the buttons' 120-unit
+                // touch floor rather than the text. The four lines this used to
+                // run — name/species/kinship, then level and post, then the
+                // trait and its full description — wrapped into five in a
+                // column ~344 units wide and made a page of one companion.
+                // Species reads off the plate beside it (and by name in both
+                // posting sheets); the trait moved to the Post sheet, where it
+                // is what the decision is actually about.
                 _liveUpdaters.Add(() =>
                 {
-                    var species = SpeciesName(captured.speciesId);
                     // Moss, not ochre — accolades are honours, and ochre is
                     // the ink of costs and halted work.
-                    var bonded = captured.bonded ? " " + SizeOpen(15) + "<color=" + MossDeepHex + ">BONDED</color></size>" : string.Empty;
+                    var bonded = captured.bonded ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">BONDED</color></size>" : string.Empty;
                     var kin = _loop.FamiliarKinship(captured) > 0
-                        ? "  <color=" + MossDeepHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color>"
+                        ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color></size>"
                         : string.Empty;
-                    var trait = _loop.FamiliarTrait(captured);
-                    var traitLine = trait != null
-                        ? "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + trait.displayName.ToLowerInvariant()
-                          + " — " + trait.description + "</color></size>"
-                        : string.Empty;
-                    var progress = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
-                    label.text = captured.name + bonded + "  " + SizeOpen(16) + "<color=" + Ink2Hex + ">" + species + "</color></size>" + kin
-                                 + "\n" + SizeOpen(16) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
-                                 + " · " + progress + "% · " + StationLabel(captured.stationId) + "</color></size>"
-                                 + traitLine;
+                    label.text = captured.name + bonded + kin
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
+                                 + " · " + StationLabel(captured.stationId) + "</color></size>";
                 });
             }
 
