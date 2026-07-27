@@ -752,8 +752,14 @@ namespace Wildgrove.Game
             // through NumberFormat so they never read "1234" beside "1.23K".
             if (state.verdurePoints > 0.0)
             {
+                // UNSPENT, not the banked lifetime total. Learning a line
+                // allocates rather than burns, so the total never moves — and a
+                // counter that reads the same after a purchase looks broken and
+                // overstates what the next line can draw on. The full total is
+                // still what the +2%/pt passive counts, and it reads on the
+                // Warden page as the fold forecast.
                 parts.Add("<color=" + MossDeepHex + ">VERDURE" + pair + "<b>"
-                          + NumberFormat.Short(new BigDouble(System.Math.Floor(state.verdurePoints))) + "</b></color>");
+                          + NumberFormat.Short(new BigDouble(System.Math.Floor(_loop.AvailableVerdure()))) + "</b></color>");
             }
 
             if (state.amber > 0.0)

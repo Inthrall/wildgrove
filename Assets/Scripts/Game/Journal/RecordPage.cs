@@ -283,18 +283,29 @@ namespace Wildgrove.Game
 
             foreach (var node in _loop.Data.almanac)
             {
+                // What a line does is fixed data — settle it once per rebuild.
+                // Nothing else on the row told the player, so the names alone
+                // asked for Verdure on trust.
+                var gives = AlmanacGives(node);
+                var givesLine = gives.Length > 0
+                    ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>"
+                    : string.Empty;
                 if (_loop.State.almanacNodeIds.Contains(node.id))
                 {
-                    MakeText(card, node.displayName + "  <color=" + MossDeepHex + ">learned</color>", 18, TextAnchor.MiddleLeft, Ink);
+                    MakeText(card, node.displayName + "  <color=" + MossDeepHex + ">learned</color>" + givesLine,
+                        18, TextAnchor.MiddleLeft, Ink);
                     continue;
                 }
 
                 var captured = node;
                 var row = Row(card);
-                var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+                var label = MakeText(row.transform, node.displayName + givesLine, 18, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
                 Button buy = null;
-                buy = Button(row.transform, "Learn", 160, () =>
+                // Cost on the plate, the way the sheets price a save: the row's
+                // own line is spent naming what the line gives, and the price of
+                // a tap belongs on the tap.
+                buy = Button(row.transform, "Learn · " + Mathf.CeilToInt((float)node.costVerdure) + " Verdure", 300, () =>
                 {
                     if (_loop.BuyAlmanacNode(captured))
                     {
@@ -306,13 +317,36 @@ namespace Wildgrove.Game
 
                 _liveUpdaters.Add(() =>
                 {
-                    label.text = captured.displayName + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
-                                 + Mathf.CeilToInt((float)captured.costVerdure) + " Verdure</color></size>";
                     var ok = _loop.AvailableVerdure() >= captured.costVerdure;
                     buy.interactable = ok;
                     SetButtonTint(buy, ok);
                 });
             }
+        }
+
+        /// <summary>
+        /// What learning a line actually gets you. Effects cover most of the
+        /// tree, but The Old Friend carries none at all — its whole payload is a
+        /// bond, which lives in bonds.json — so effects alone would ask 12
+        /// Verdure for a bare name.
+        /// </summary>
+        private string AlmanacGives(AlmanacNodeData node)
+        {
+            var parts = new List<string>();
+            var effects = EffectsLabel(node.effects);
+            if (effects.Length > 0)
+            {
+                parts.Add(effects);
+            }
+
+            var bond = Bonds.BondForSource(_loop.Data, "almanacNode", node.id);
+            if (bond != null)
+            {
+                parts.Add(bond.displayName + " the " + SpeciesName(bond.species)
+                          + " bonds — a companion who walks every fold with you");
+            }
+
+            return string.Join(" · ", parts);
         }
     }
 }
