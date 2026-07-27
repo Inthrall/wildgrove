@@ -3,7 +3,7 @@
 ## Prerequisites
 
 1. **Unity Hub** — `winget install Unity.UnityHub`
-2. **Unity 6 LTS (6000.0.x)** via Hub, with modules:
+2. **Unity 6.5 (6000.5.x — Supported stream, not LTS)** via Hub, with modules:
    - Android Build Support (**+ OpenJDK + Android SDK & NDK** — tick all three)
 3. **Git LFS** — `git lfs install` (once per machine) before adding binary art
 
@@ -11,7 +11,7 @@
 
 | Concern | Decision |
 |---|---|
-| Editor | Unity 6 LTS (pin exact version in `ProjectSettings/ProjectVersion.txt`) |
+| Editor | Unity 6.5, Supported stream (pin exact version in `ProjectSettings/ProjectVersion.txt`) |
 | Render pipeline | URP, 2D Renderer |
 | Graphics API | **Vulkan first** in Player Settings → Android → Graphics APIs (Level Up requirement) |
 | Big numbers | BreakInfinity.cs (`BigDouble`) for all currencies — vendored at `Assets/Plugins/BreakInfinity/`; content defs surface costs as `BigDouble` |

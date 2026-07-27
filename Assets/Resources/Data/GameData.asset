@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
   sourceHash: 877355ae724676148ded76b6a46fa5827cda43b38a670916edd352332a779abc
   economy:
     costGrowth:
