@@ -155,8 +155,7 @@ namespace Wildgrove.Game
                         },
                         CloseSheet);
                 });
-                doubleIt.GetComponent<Image>().color = OchreWash;
-                doubleIt.GetComponentInChildren<Text>().color = Ochre;
+                KeyAction(doubleIt);
             }
 
             Button(sheet, "Continue", 320, CloseSheet);
@@ -167,31 +166,34 @@ namespace Wildgrove.Game
             var gain = System.Math.Max(0.0, _loop.VerdureAfterMigration() - _loop.State.verdurePoints);
             var sheet = BeginSheet();
             MakeText(sheet, "Fold the camp", 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, "Everything stays behind: the stores, the kit, the richness,\nthe buildings — <i>they were never yours</i>.",
-                20, TextAnchor.MiddleCenter, Ink2, _serif);
-            MakeText(sheet, "<color=" + MossDeepHex + ">The journal crosses entire, with +"
-                            + Mathf.FloorToInt((float)gain) + " Verdure.\nThe kith walks with you.</color>",
-                20, TextAnchor.MiddleCenter, Ink);
 
-            // Where Verdure comes from, in the one place the player is asking
-            // that question. Without it a fold that banks 2 and a fold that
-            // banks 34 look arbitrary — the curve is never stated anywhere.
-            var renown = _loop.State.renown;
-            var next = new BigDouble(_loop.RenownForNextVerdure());
-            var source = "<i>Verdure is drawn from LIFETIME Renown — " + NumberFormat.Short(renown)
-                         + " earned so far, and never spent. Renown comes from every level the kith and the"
-                         + " crafts earn, and from what the Rite is given.</i>";
-            if (next > BigDouble.Zero)
-            {
-                var remaining = next - renown;
-                source += "\n" + SizeOpen(17) + "<color=" + Ink2Hex + ">the next point asks " + NumberFormat.Short(next)
-                          + (remaining > BigDouble.Zero ? " — " + NumberFormat.Short(remaining) + " more" : " — already earned")
-                          + "</color></size>";
-            }
+            // Say plainly what a fold IS before saying what it costs. "They were
+            // never yours" is the right voice but it isn't an explanation, and a
+            // player who has never met a prestige reset can't infer one.
+            MakeText(sheet, "<b>Start this camp over — on purpose.</b>\nYou begin again in the first meadow with nothing built,"
+                            + " and every run after this one runs richer.",
+                20, TextAnchor.MiddleCenter, Ink, _serif);
 
-            MakeText(sheet, source, 17, TextAnchor.MiddleCenter, Ink2, _serif);
+            var bonus = _loop.Data.economy?.verdure?.yieldBonusPerPoint ?? 0.0;
+            var after = Mathf.FloorToInt((float)_loop.VerdureAfterMigration());
+            var carried = "<color=" + MossDeepHex + "><b>You carry:</b> +" + Mathf.FloorToInt((float)gain)
+                          + " Verdure (" + after + " in all"
+                          + (bonus > 0.0 ? ", worth +" + Mathf.RoundToInt((float)(after * bonus * 100.0)) + "% to everything you gather, for good" : string.Empty)
+                          + "). The kith walk with you, and the journal keeps every plate, sketch and Almanac node.</color>";
+            MakeText(sheet, carried, 19, TextAnchor.MiddleCenter, Ink);
+
+            MakeText(sheet, "<b>You leave behind:</b> coin and stores, the camp buildings, tools and gear,"
+                            + " the trails you opened, and every skill level — <i>they were never yours</i>.",
+                19, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            // Where Verdure comes from. The "how close is the next point"
+            // question is answered by the fold banner's percentage, not here.
+            MakeText(sheet, "<i>Verdure is drawn from LIFETIME Renown — " + NumberFormat.Short(_loop.State.renown)
+                            + " earned so far, and never spent. Renown comes from every level the kith and the"
+                            + " crafts earn, and from what the Rite is given.</i>",
+                17, TextAnchor.MiddleCenter, Ink2, _serif);
             Button(sheet, "Stay a while", 320, CloseSheet);
-            var migrate = Button(sheet, "Migrate", 320, () =>
+            var migrate = Button(sheet, "Fold and begin again", 320, () =>
             {
                 CloseSheet();
                 if (_loop.Migrate())
@@ -200,8 +202,7 @@ namespace Wildgrove.Game
                     OpenVignette(gain);
                 }
             });
-            migrate.GetComponent<Image>().color = OchreWash;
-            migrate.GetComponentInChildren<Text>().color = Ochre;
+            KeyAction(migrate);
         }
 
         /// <summary>The full-dark Migration vignette — the mock's fixed overlay; tap anywhere to walk on.</summary>
@@ -279,11 +280,7 @@ namespace Wildgrove.Game
 
                 CloseSheet();
             });
-            if (cost > 0)
-            {
-                save.GetComponent<Image>().color = OchreWash;
-                save.GetComponentInChildren<Text>().color = Ochre;
-            }
+            KeyAction(save);
 
             Button(sheet, "Cancel", 320, CloseSheet);
         }
@@ -535,8 +532,7 @@ namespace Wildgrove.Game
             AddBorder(bar, Ink2);
 
             _timeSkipButton = Button(bar.transform, TimeSkipLabel(), 380, OnTimeSkip);
-            _timeSkipButton.GetComponent<Image>().color = OchreWash;
-            _timeSkipButton.GetComponentInChildren<Text>().color = Ochre;
+            KeyAction(_timeSkipButton);
 
             // Hidden until the store resolves ownership (RefreshCampActions is the
             // authority): shown only once billing is initialised and the player
@@ -564,7 +560,7 @@ namespace Wildgrove.Game
 
             var ready = _loop.CanTimeSkipReward;
             _timeSkipButton.interactable = ready;
-            SetButtonTint(_timeSkipButton, ready);
+            SetButtonTint(_timeSkipButton, ready, true);
             SetButtonLabel(_timeSkipButton, ready
                 ? TimeSkipLabel()
                 : "Pass the time — ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining));
@@ -599,8 +595,7 @@ namespace Wildgrove.Game
                 CloseSheet();
                 onConfirm?.Invoke();
             });
-            confirm.GetComponent<Image>().color = OchreWash;
-            confirm.GetComponentInChildren<Text>().color = Ochre;
+            KeyAction(confirm);
         }
 
         /// <summary>"Pass the time, +2 hours" (+ the "watch a short ad" tail until Remove Ads is owned) — says what the reward gives.</summary>

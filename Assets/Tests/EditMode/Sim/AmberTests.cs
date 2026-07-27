@@ -245,6 +245,51 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void AdDripCooldownRemaining_CountsDownAndReadsZeroWhenReady()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+
+            Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, now), Is.EqualTo(0L), "never claimed — nothing to wait for");
+
+            Amber.GrantDrip(state, _data, now);
+            var anHourOn = now + (60L * 60L * 1000L);
+            Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, anHourOn),
+                Is.EqualTo(Amber.AdDripCooldownMs - (60L * 60L * 1000L)), "an hour of the cooldown has run");
+            Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, now + Amber.AdDripCooldownMs), Is.EqualTo(0L), "ready again");
+            Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, now + Amber.AdDripCooldownMs + 5_000L), Is.EqualTo(0L),
+                "an overdue cooldown never counts backwards");
+        }
+
+        [Test]
+        public void WeeklyCacheCooldownRemaining_CountsDownAndReadsZeroWhenReady()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+
+            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now), Is.EqualTo(0L), "never claimed — ready now");
+
+            Amber.ClaimWeeklyCache(state, _data, now);
+            var oneDay = 24L * 60L * 60L * 1000L;
+            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now + oneDay),
+                Is.EqualTo(Amber.WeeklyCacheCooldownMs - oneDay), "six days left after one");
+            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now + Amber.WeeklyCacheCooldownMs), Is.EqualTo(0L),
+                "the week has turned");
+        }
+
+        [Test]
+        public void CooldownRemaining_IsZeroWhenAmberIsInert()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+            state.adDripClaimedUnixMs = 1L;
+            state.weeklyCacheClaimedUnixMs = 1L;
+
+            Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, 1_000_000_000_000L), Is.EqualTo(0L));
+            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, 1_000_000_000_000L), Is.EqualTo(0L));
+        }
+
+        [Test]
         public void RewardedTimeSkip_CooldownGatesRepeatClaims()
         {
             var state = GameStateFactory.NewGame(_data);

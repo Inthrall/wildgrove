@@ -106,6 +106,35 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void ProgressToNextVerdure_MeasuresTheClimbBetweenTwoPoints()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // The 2nd point sits at 20000 and the 3rd at 45000, so halfway
+            // between them is 32500 — the fold banner's "50% to the next".
+            state.renown = new BigDouble(20000.0);
+            Assert.That(Migration.ProgressToNextVerdure(state, _data), Is.EqualTo(0.0).Within(Tolerance),
+                "a point just banked starts the next climb at zero");
+
+            state.renown = new BigDouble(32500.0);
+            Assert.That(Migration.ProgressToNextVerdure(state, _data), Is.EqualTo(0.5).Within(Tolerance));
+
+            state.renown = new BigDouble(45000.0);
+            Assert.That(Migration.ProgressToNextVerdure(state, _data), Is.EqualTo(0.0).Within(Tolerance),
+                "crossing the threshold banks the point and restarts the climb");
+        }
+
+        [Test]
+        public void ProgressToNextVerdure_IsZeroWhenTheFoldEconomyIsInert()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.renown = new BigDouble(32500.0);
+            _data.economy.verdure = null;
+
+            Assert.That(Migration.ProgressToNextVerdure(state, _data), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
         public void RenownForVerdure_IsTheInverseOfTheCurve()
         {
             var state = GameStateFactory.NewGame(_data);

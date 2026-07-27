@@ -161,6 +161,27 @@ namespace Wildgrove.Game
             return button;
         }
 
+        /// <summary>
+        /// Style a button as the page's key action — the fold, the migrate, the
+        /// confirm. Moss, not ochre: the rust wash read as a warning colour on
+        /// exactly the taps the player is meant to take, and it's now reserved
+        /// for costs and halted work.
+        /// </summary>
+        internal static void KeyAction(Button button)
+        {
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = MossWash;
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.color = MossDeep;
+            }
+        }
+
         internal static void SetButtonLabel(Button button, string text)
         {
             var label = button.GetComponentInChildren<Text>();
@@ -170,12 +191,17 @@ namespace Wildgrove.Game
             }
         }
 
-        internal static void SetButtonTint(Button button, bool on)
+        /// <summary>
+        /// Grey a button out, or restore it. <paramref name="keyAction"/> keeps a
+        /// <see cref="KeyAction"/> button's moss wash on the way back — without it
+        /// the first refresh repaints it as an ordinary plate.
+        /// </summary>
+        internal static void SetButtonTint(Button button, bool on, bool keyAction = false)
         {
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                var color = on ? DeepPaper : RulePaper;
+                var color = on ? (keyAction ? MossWash : DeepPaper) : RulePaper;
                 color.a = on ? 1f : 0.55f;
                 image.color = color;
             }

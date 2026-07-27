@@ -96,5 +96,25 @@ namespace Wildgrove.Game
 
             return secs + "s";
         }
+
+        /// <summary>
+        /// A time-until for a cooldown: same two-unit shape as
+        /// <see cref="Duration"/> but with days as the largest unit — "6d 4h",
+        /// "3h 12m", "42s". Duration stops at hours on purpose (offline-cap
+        /// honesty), and a week-long cache reading "167h" is no use as a
+        /// countdown.
+        /// </summary>
+        public static string Countdown(double seconds)
+        {
+            var total = (long)System.Math.Floor(System.Math.Max(0.0, seconds));
+            var days = total / 86400;
+            if (days > 0)
+            {
+                var hours = total % 86400 / 3600;
+                return hours > 0 ? days + "d " + hours + "h" : days + "d";
+            }
+
+            return Duration(total);
+        }
     }
 }

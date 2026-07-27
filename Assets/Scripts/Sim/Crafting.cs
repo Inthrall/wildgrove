@@ -146,15 +146,37 @@ namespace Wildgrove.Sim
         /// <summary>True when camp stock covers one batch of the recipe's inputs.</summary>
         public static bool HasInputs(GameState state, RecipeData recipe)
         {
+            return MissingInput(state, recipe) == null;
+        }
+
+        /// <summary>
+        /// The first input camp stock can't cover a batch of, or null when it
+        /// can — so a halted station can name what it's waiting on instead of
+        /// just sitting there at 0%.
+        /// </summary>
+        public static string MissingInput(GameState state, RecipeData recipe)
+        {
             foreach (var input in recipe.inputs)
             {
                 if (state.GetResource(input.id) < input.amount)
                 {
-                    return false;
+                    return input.id;
                 }
             }
 
-            return true;
+            return null;
+        }
+
+        /// <summary>
+        /// True when a station holds this recipe but no batch is turning — the
+        /// bar is frozen. Stock short of the next batch is the usual cause; a
+        /// gate the run has slipped behind (a retune, a restored save) is the
+        /// other, and the row names those separately.
+        /// </summary>
+        public static bool IsStalled(GameState state, RecipeData recipe)
+        {
+            var station = ActiveStationFor(state, recipe);
+            return station != null && !station.inFlight;
         }
 
         /// <summary>

@@ -32,6 +32,11 @@ namespace Wildgrove.Game
         // copy use this darker mix instead.
         internal const string OchreInkHex = "#7E421F";
         internal const string MossDeepHex = "#55643F";
+        // The one alarm ink — a barn red that still belongs on parchment.
+        // TEXT ONLY: a red button reads as "danger, don't", which is wrong for
+        // every key action in this game (those wear moss — see KeyAction).
+        // Halted work wears this; nothing you tap does.
+        internal const string AlarmHex = "#8C2F22";
 
         internal const string TabTrail = "trail";
         internal const string TabCamp = "camp";

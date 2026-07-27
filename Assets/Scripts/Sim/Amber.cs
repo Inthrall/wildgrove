@@ -116,6 +116,19 @@ namespace Wildgrove.Sim
                 || nowUnixMs - state.adDripClaimedUnixMs >= AdDripCooldownMs;
         }
 
+        /// <summary>Milliseconds until the rewarded Amber drip re-arms, or 0 when it's ready now — drives the amber card's countdown.</summary>
+        public static long AdDripCooldownRemainingMs(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            var amber = data?.economy?.amber;
+            if (amber == null || amber.adDripAmber <= 0.0 || state.adDripClaimedUnixMs <= 0L)
+            {
+                return 0L;
+            }
+
+            var remaining = AdDripCooldownMs - (nowUnixMs - state.adDripClaimedUnixMs);
+            return remaining > 0L ? remaining : 0L;
+        }
+
         /// <summary>
         /// Credit the rewarded-ad Amber drip (design §10). The caller shows the
         /// ad and only calls this on the reward; returns the amount granted, or
@@ -171,6 +184,19 @@ namespace Wildgrove.Sim
 
             return state.weeklyCacheClaimedUnixMs <= 0L
                 || nowUnixMs - state.weeklyCacheClaimedUnixMs >= WeeklyCacheCooldownMs;
+        }
+
+        /// <summary>Milliseconds until the weekly Amber cache re-arms, or 0 when it's ready now — drives the amber card's countdown.</summary>
+        public static long WeeklyCacheCooldownRemainingMs(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            var amber = data?.economy?.amber;
+            if (amber == null || amber.weeklyCacheAmber <= 0.0 || state.weeklyCacheClaimedUnixMs <= 0L)
+            {
+                return 0L;
+            }
+
+            var remaining = WeeklyCacheCooldownMs - (nowUnixMs - state.weeklyCacheClaimedUnixMs);
+            return remaining > 0L ? remaining : 0L;
         }
 
         /// <summary>

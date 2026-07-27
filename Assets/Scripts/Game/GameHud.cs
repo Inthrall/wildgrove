@@ -315,8 +315,7 @@ namespace Wildgrove.Game
             _trackerText = MakeText(trackerGo.transform, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);
             FlexibleWidth(_trackerText.gameObject, 1f);
             _foldButton = Button(trackerGo.transform, "Fold the camp", 260, _sheets.OpenMigrationSheet);
-            _foldButton.GetComponent<Image>().color = OchreWash;
-            _foldButton.GetComponentInChildren<Text>().color = Ochre;
+            KeyAction(_foldButton);
             _foldButton.gameObject.SetActive(false);
 
             // World gap — the WorldView strip draws here. Capped rather than
@@ -707,8 +706,12 @@ namespace Wildgrove.Game
             if (_loop.CanMigrate())
             {
                 var gain = System.Math.Max(0.0, _loop.VerdureAfterMigration() - _loop.State.verdurePoints);
+                // The banner carries the curve now — a percentage is the one
+                // form of "how close am I" a player can read without knowing
+                // what a Renown threshold is.
                 _trackerText.text = "<color=" + OchreHex + ">THE FOLD</color> · +<b>"
-                                    + Mathf.FloorToInt((float)gain) + "</b> Verdure banked";
+                                    + Mathf.FloorToInt((float)gain) + "</b> Verdure banked · "
+                                    + Mathf.FloorToInt((float)_loop.ProgressToNextVerdure() * 100f) + "% to the next";
                 _foldButton.gameObject.SetActive(true);
                 _trackerPanel.SetActive(true);
                 return;

@@ -120,8 +120,8 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            label.text = "the weekly amber cache"
-                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.weeklyCacheAmber) + " amber</color></size>";
+            var text = "the weekly amber cache"
+                       + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.weeklyCacheAmber) + " amber</color></size>";
             Button claim = null;
             claim = Button(row.transform, "Claim", 170, () =>
             {
@@ -134,9 +134,16 @@ namespace Wildgrove.Game
                 }
             });
 
-            // Hidden until signed in and the week has elapsed; the whole row
-            // reappears when the cache re-arms.
-            _liveUpdaters.Add(() => row.SetActive(_loop.CanClaimWeeklyCache()));
+            // Only a signed-in warden has a cache at all; a claimed one stays on
+            // the page counting down to the week's turn rather than vanishing.
+            _liveUpdaters.Add(() =>
+            {
+                row.SetActive(_loop.GameServices.IsSignedIn);
+                var ready = _loop.CanClaimWeeklyCache();
+                label.text = text + (ready ? string.Empty : WaitingTail(_loop.WeeklyCacheCooldownRemaining));
+                claim.interactable = ready;
+                SetButtonTint(claim, ready);
+            });
         }
 
         private void BuildAmberDripRow(RectTransform card, EconomyData economy)
@@ -144,8 +151,9 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            label.text = "a little amber" + _loop.RewardedActionSuffix
-                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.adDripAmber) + " amber</color></size>";
+            var text = "a little amber" + _loop.RewardedActionSuffix
+                       + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.adDripAmber) + " amber</color></size>";
+            label.text = text;
             Button watch = null;
             watch = Button(row.transform, "Watch", 170, () =>
             {
@@ -161,12 +169,22 @@ namespace Wildgrove.Game
                 });
             });
 
+            // The drip's own cooldown is what the warden can wait out, so it's
+            // what the line counts down; an unloaded ad only greys the button.
             _liveUpdaters.Add(() =>
             {
-                var ready = _loop.RewardedReady(RewardedPlacement.AmberDrip) && _loop.CanWatchAmberDrip;
+                var offCooldown = _loop.CanWatchAmberDrip;
+                var ready = _loop.RewardedReady(RewardedPlacement.AmberDrip) && offCooldown;
+                label.text = text + (offCooldown ? string.Empty : WaitingTail(_loop.AmberDripCooldownRemaining));
                 watch.interactable = ready;
                 SetButtonTint(watch, ready);
             });
+        }
+
+        /// <summary>The muted "ready in 6d 4h" tail an amber line wears while its cooldown holds.</summary>
+        private static string WaitingTail(double seconds)
+        {
+            return SizeOpen(15) + "<color=" + Ink2Hex + ">  ready in " + NumberFormat.Countdown(seconds) + "</color></size>";
         }
 
         private void BuildAmberPackRow(RectTransform card, string productId, double amount)
@@ -221,7 +239,7 @@ namespace Wildgrove.Game
 
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var toggle = Button(row.transform, "Craft", 160, () =>
+                var toggle = Button(row.transform, "Craft", 210, () =>
                 {
                     _loop.ToggleCraft(captured);
                     _dirty = true;
@@ -230,7 +248,22 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     var crafting = _loop.IsCrafting(captured);
-                    var progress = crafting ? "  " + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f) + "%" : string.Empty;
+                    var halted = crafting && _loop.IsCraftHalted(captured);
+                    var progress = string.Empty;
+                    if (halted)
+                    {
+                        // A frozen bar at 0% looked identical to a slow one. Say
+                        // it plainly, and name the good that stopped it.
+                        var missing = _loop.MissingCraftInput(captured);
+                        progress = "  <color=" + AlarmHex + "><b>Crafting halted</b>"
+                                   + (missing != null ? " — out of " + missing : string.Empty) + "</color>";
+                    }
+                    else if (crafting)
+                    {
+                        progress = "  <color=" + MossDeepHex + ">crafting · "
+                                   + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f) + "%</color>";
+                    }
+
                     var need = string.Empty;
                     if (!_loop.IsRecipeLevelMet(captured))
                     {
@@ -253,7 +286,9 @@ namespace Wildgrove.Game
                     label.text = captured.output + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">(have "
                                  + NumberFormat.Short(_loop.State.GetResource(captured.output)) + ")</color></size>" + progress + need
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.inputs) + "</color></size>";
-                    SetButtonLabel(toggle, crafting ? "Stop" : "Craft");
+                    // "Stop" alone read as a state ("it is stopped"), not an
+                    // action — the row's own status line is what reports state.
+                    SetButtonLabel(toggle, crafting ? "Stop crafting" : "Craft");
                     // Stopping is always allowed; starting needs the gates AND
                     // a batch of inputs in camp stock.
                     var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));

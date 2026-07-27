@@ -155,6 +155,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void IsStalled_ReportsAHaltedStation_AndNamesTheMissingInput()
+        {
+            var state = new GameState();
+            var recipe = Recipe("berry-jam");
+
+            Assert.That(Crafting.IsStalled(state, recipe), Is.False, "an unassigned station isn't halted, it's idle");
+
+            state.AddResource("berries", new BigDouble(2.0));
+            Crafting.Assign(state, _data, recipe);
+            Crafting.Advance(state, _data, 10.0);
+
+            Assert.That(Crafting.IsStalled(state, recipe), Is.True, "assigned, but two berries won't start a batch of five");
+            Assert.That(Crafting.MissingInput(state, recipe), Is.EqualTo("berries"), "the halt names what it waits on");
+
+            state.AddResource("berries", new BigDouble(3.0));
+            Assert.That(Crafting.MissingInput(state, recipe), Is.Null, "stock now covers a batch");
+
+            Crafting.Advance(state, _data, 1.0);
+            Assert.That(Crafting.IsStalled(state, recipe), Is.False, "a batch is turning again");
+        }
+
+        [Test]
         public void Stop_MidFlight_RefundsTheBatchInputs()
         {
             var state = new GameState();

@@ -920,6 +920,18 @@ namespace Wildgrove.Game
             return Crafting.Progress(State, Data, recipe);
         }
 
+        /// <summary>True when this recipe's station is assigned but nothing is turning — the "Crafting halted" line.</summary>
+        public bool IsCraftHalted(RecipeData recipe)
+        {
+            return Crafting.IsStalled(State, recipe);
+        }
+
+        /// <summary>The input camp stock is short of, or null — names what a halted station waits on.</summary>
+        public string MissingCraftInput(RecipeData recipe)
+        {
+            return Crafting.MissingInput(State, recipe);
+        }
+
         /// <summary>Start the recipe on its station (displacing whatever it was working, in-flight inputs refunded), or stop it if it's already running.</summary>
         public void ToggleCraft(RecipeData recipe)
         {
@@ -985,6 +997,9 @@ namespace Wildgrove.Game
         /// <summary>Whether the rewarded Amber drip can be taken right now (configured, off cooldown) — a "Watch" button gates its enabled state on this and RewardedReady.</summary>
         public bool CanWatchAmberDrip => Amber.CanGrantDrip(State, Data, NowUnixMs());
 
+        /// <summary>Seconds until the rewarded Amber drip re-arms, or 0 when it's ready now — the amber card counts down from this.</summary>
+        public double AmberDripCooldownRemaining => Amber.AdDripCooldownRemainingMs(State, Data, NowUnixMs()) / 1000.0;
+
         /// <summary>Whether the rewarded time-skip can be taken right now (off cooldown) — "Hasten a while" gates on this and RewardedReady.</summary>
         public bool CanTimeSkipReward => Amber.CanRewardedTimeSkip(State, NowUnixMs());
 
@@ -996,6 +1011,9 @@ namespace Wildgrove.Game
         {
             return GameServices.IsSignedIn && Amber.CanClaimWeeklyCache(State, Data, NowUnixMs());
         }
+
+        /// <summary>Seconds until the weekly Amber cache re-arms, or 0 when it's ready now — the amber card counts down from this.</summary>
+        public double WeeklyCacheCooldownRemaining => Amber.WeeklyCacheCooldownRemainingMs(State, Data, NowUnixMs()) / 1000.0;
 
         /// <summary>Claim the weekly Amber cache (design §11). Returns the amount granted (0 = refused).</summary>
         public double ClaimWeeklyCache()
@@ -1270,6 +1288,12 @@ namespace Wildgrove.Game
         public double RenownForNextVerdure()
         {
             return Migration.RenownForNextVerdure(State, Data);
+        }
+
+        /// <summary>How far lifetime Renown has climbed towards the next Verdure point, 0..1 — the fold banner's percentage.</summary>
+        public double ProgressToNextVerdure()
+        {
+            return Migration.ProgressToNextVerdure(State, Data);
         }
 
         /// <summary>

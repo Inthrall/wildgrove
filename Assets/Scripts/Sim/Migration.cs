@@ -66,6 +66,34 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// How far the lifetime Renown has climbed from the point just banked
+        /// towards the next one, 0..1 — the fold banner's "62% to the next".
+        /// A percentage is what a player can read at a glance; the raw
+        /// thresholds mean nothing without the curve in your head. Zero when
+        /// the fold economy is inert or the banked total already runs ahead of
+        /// the curve (an old save whose Verdure can't shrink).
+        /// </summary>
+        public static double ProgressToNextVerdure(GameState state, GameDataAsset data)
+        {
+            var banked = System.Math.Floor(VerdureAfterMigration(state, data));
+            var next = RenownForVerdure(data, banked + 1.0);
+            if (next <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var from = RenownForVerdure(data, banked);
+            var span = next - from;
+            if (span <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var climbed = state.renown.ToDouble() - from;
+            return System.Math.Max(0.0, System.Math.Min(1.0, climbed / span));
+        }
+
+        /// <summary>
         /// Fold the camp: returns the next run's fresh state carrying the
         /// permanents (Verdure banked from lifetime Renown, the Renown itself,
         /// every field sketch recorded, the rng thread, and the migration

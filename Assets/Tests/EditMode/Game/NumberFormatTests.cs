@@ -120,5 +120,25 @@ namespace Wildgrove.Game.Tests
             Assert.That(NumberFormat.Duration(0.0), Is.EqualTo("0s"));
             Assert.That(NumberFormat.Duration(-5.0), Is.EqualTo("0s"));
         }
+
+        [Test]
+        public void Countdown_MultiDay_ShowsDaysAndHours()
+        {
+            Assert.That(NumberFormat.Countdown(6 * 86400.0 + 4 * 3600.0 + 90.0), Is.EqualTo("6d 4h"));
+        }
+
+        [Test]
+        public void Countdown_WholeDays_DropsZeroHours()
+        {
+            Assert.That(NumberFormat.Countdown(7 * 86400.0), Is.EqualTo("7d"));
+        }
+
+        [Test]
+        public void Countdown_UnderADay_ReadsLikeDuration()
+        {
+            Assert.That(NumberFormat.Countdown(3 * 3600.0 + 12 * 60.0), Is.EqualTo("3h 12m"));
+            Assert.That(NumberFormat.Countdown(42.0), Is.EqualTo("42s"));
+            Assert.That(NumberFormat.Countdown(-5.0), Is.EqualTo("0s"));
+        }
     }
 }
