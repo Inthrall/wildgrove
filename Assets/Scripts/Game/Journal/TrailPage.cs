@@ -26,6 +26,7 @@ namespace Wildgrove.Game
 
         internal void BuildTrailPage()
         {
+            BuildSeasonLine();
             BuildTrailHomeLine();
             BuildRecruitBar();
 
@@ -66,6 +67,23 @@ namespace Wildgrove.Game
 
             BuildVerseCards();
             BuildWaystoneFooter();
+        }
+
+        /// <summary>
+        /// The season's one line (design §8): a run 2+ living in a modified
+        /// region names it at the head of the Trail — the land's business
+        /// belongs on the land's page. Home ground (run 1) shows nothing.
+        /// </summary>
+        private void BuildSeasonLine()
+        {
+            var region = _loop.CurrentRegion();
+            if (region == null)
+            {
+                return;
+            }
+
+            MakeText(_body, "<i>the season: " + region.displayName + " — " + region.sign + "</i>",
+                17, TextAnchor.MiddleCenter, Ink2, _hand);
         }
 
         /// <summary>

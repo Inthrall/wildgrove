@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Wildgrove.Data;
 
 namespace Wildgrove.Sim
@@ -38,6 +39,79 @@ namespace Wildgrove.Sim
         public static double XpRateMultiplier(Familiar familiar, double ratePerLevel)
         {
             return 1.0 + ratePerLevel * Level(familiar);
+        }
+
+        /// <summary>
+        /// Signature milestones a Kinship level has passed (design §4): each
+        /// one deepens the species trait (<see cref="Traits.DeepeningFactor"/>)
+        /// and earns the plate an inscription line (§7). Zero when signatures
+        /// aren't configured.
+        /// </summary>
+        public static int MilestonesPassedAt(int kinshipLevel, GameDataAsset data)
+        {
+            var milestones = data?.economy?.familiarXp?.signatureMilestones;
+            if (milestones == null)
+            {
+                return 0;
+            }
+
+            var passed = 0;
+            foreach (var milestone in milestones)
+            {
+                if (milestone > 0 && kinshipLevel >= milestone)
+                {
+                    passed++;
+                }
+            }
+
+            return passed;
+        }
+
+        /// <summary>Signature milestones this familiar has passed.</summary>
+        public static int SignatureMilestonesPassed(Familiar familiar, GameDataAsset data)
+        {
+            return MilestonesPassedAt(Level(familiar), data);
+        }
+
+        /// <summary>
+        /// The Kinship level this familiar would hold after a fold right now —
+        /// current level plus this run's √ conversion. Lets the fold forecast
+        /// say which signatures are about to sharpen without folding.
+        /// </summary>
+        public static int LevelAfterFold(Familiar familiar, GameDataAsset data)
+        {
+            if (familiar == null)
+            {
+                return 0;
+            }
+
+            var xp = data?.economy?.familiarXp;
+            var divisor = xp != null && xp.kinshipDivisor > 0.0 ? xp.kinshipDivisor : FallbackDivisor;
+            return Level(familiar) + (int)GainFrom(familiar.xp, divisor);
+        }
+
+        /// <summary>
+        /// The plate inscription lines this familiar has earned (design §7):
+        /// its species' authored lines, one per milestone passed, in order.
+        /// Unauthored lines simply never show.
+        /// </summary>
+        public static List<string> InscriptionsEarned(Familiar familiar, GameDataAsset data)
+        {
+            var earned = new List<string>();
+            if (familiar == null || data?.SpeciesById == null
+                || !data.SpeciesById.TryGetValue(familiar.speciesId ?? string.Empty, out var species)
+                || species.inscriptions == null)
+            {
+                return earned;
+            }
+
+            var passed = SignatureMilestonesPassed(familiar, data);
+            for (var i = 0; i < passed && i < species.inscriptions.Count; i++)
+            {
+                earned.Add(species.inscriptions[i]);
+            }
+
+            return earned;
         }
 
         /// <summary>

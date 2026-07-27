@@ -109,6 +109,106 @@ namespace Wildgrove.Sim.Tests
                 "one stationed ermine counts; the resting one and the vole don't");
         }
 
+        /// <summary>Signature config (design §4): milestones at Kinship 2/4/7, each sharpening the trait by +25% of its base value.</summary>
+        private void ConfigureSignatures()
+        {
+            _data.economy = new EconomyData
+            {
+                familiarXp = new EconomyData.FamiliarXpData
+                {
+                    baseXp = 60, growth = 1.12, maxLevel = 99, xpPerSecond = 1.0,
+                    kinshipDivisor = 100.0, kinshipXpRatePerLevel = 0.02,
+                    signatureMilestones = new List<int> { 2, 4, 7 },
+                    signatureDeepening = 0.25,
+                },
+            };
+        }
+
+        private static Familiar WithKinship(string speciesId, string stationId, double kinship)
+        {
+            var familiar = At(speciesId, stationId);
+            familiar.kinshipXp = kinship;
+            return familiar;
+        }
+
+        [Test]
+        public void DeepeningFactor_Unconfigured_IsOne()
+        {
+            Assert.That(Traits.DeepeningFactor(_data, WithKinship("meadow-vole", "n1", 9)),
+                Is.EqualTo(1.0).Within(Tolerance), "no signature config, no sharpening");
+        }
+
+        [Test]
+        public void MilestonesPassedAt_CountsTheThresholdsCrossed()
+        {
+            ConfigureSignatures();
+
+            Assert.That(Kinship.MilestonesPassedAt(1, _data), Is.EqualTo(0));
+            Assert.That(Kinship.MilestonesPassedAt(2, _data), Is.EqualTo(1), "the milestone itself counts");
+            Assert.That(Kinship.MilestonesPassedAt(3, _data), Is.EqualTo(1));
+            Assert.That(Kinship.MilestonesPassedAt(4, _data), Is.EqualTo(2));
+            Assert.That(Kinship.MilestonesPassedAt(7, _data), Is.EqualTo(3));
+            Assert.That(Kinship.MilestonesPassedAt(40, _data), Is.EqualTo(3), "the ladder tops out");
+        }
+
+        [Test]
+        public void NodeYieldFactor_DeepensAtKinshipMilestones()
+        {
+            ConfigureSignatures();
+            var berries = new NodeState { id = "n1", resourceId = "berries" };
+
+            Assert.That(Traits.NodeYieldFactor(WithKinship("meadow-vole", "n1", 1), berries, _data),
+                Is.EqualTo(1.4).Within(Tolerance), "below the first milestone the trait is its plain self");
+            Assert.That(Traits.NodeYieldFactor(WithKinship("meadow-vole", "n1", 4), berries, _data),
+                Is.EqualTo(1.0 + 0.4 * 1.5).Within(Tolerance), "two milestones passed: +40% deepens to +60%");
+        }
+
+        [Test]
+        public void TrailAndPristine_DeepenTheSameWay()
+        {
+            ConfigureSignatures();
+
+            Assert.That(Traits.TrailThroughputFactor(WithKinship("pack-raven", Familiar.TrailStation, 7), _data),
+                Is.EqualTo(1.0 + 0.25 * 1.75).Within(Tolerance), "all three milestones on the trail");
+
+            var node = new NodeState { id = "n1", resourceId = "berries" };
+            var state = new GameState();
+            state.roster.Add(WithKinship("ermine", "n1", 2));
+
+            Assert.That(Traits.PristineBonusAt(state, _data, node),
+                Is.EqualTo(0.01 * 1.25).Within(Tolerance), "soft paws sharpen too");
+        }
+
+        [Test]
+        public void LevelAfterFold_AddsThisRunsConversion()
+        {
+            ConfigureSignatures();
+            var familiar = WithKinship("meadow-vole", "n1", 1);
+            familiar.xp = 400.0;
+
+            // floor(√(400 / 100)) = 2 banked on top of the level held.
+            Assert.That(Kinship.LevelAfterFold(familiar, _data), Is.EqualTo(3));
+            Assert.That(Kinship.MilestonesPassedAt(Kinship.LevelAfterFold(familiar, _data), _data),
+                Is.GreaterThan(Kinship.SignatureMilestonesPassed(familiar, _data)),
+                "the fold forecast can see the sharpening coming");
+        }
+
+        [Test]
+        public void InscriptionsEarned_OnePerMilestone_UnauthoredNeverShow()
+        {
+            ConfigureSignatures();
+            _data.species[0].inscriptions = new List<string> { "first line", "second line" };
+
+            Assert.That(Kinship.InscriptionsEarned(WithKinship("meadow-vole", "n1", 1), _data), Is.Empty);
+            Assert.That(Kinship.InscriptionsEarned(WithKinship("meadow-vole", "n1", 2), _data),
+                Is.EqualTo(new[] { "first line" }));
+            Assert.That(Kinship.InscriptionsEarned(WithKinship("meadow-vole", "n1", 7), _data),
+                Is.EqualTo(new[] { "first line", "second line" }),
+                "three milestones passed but only two lines authored — the third simply never shows");
+            Assert.That(Kinship.InscriptionsEarned(WithKinship("pack-raven", "n1", 7), _data), Is.Empty,
+                "a species with no authored lines stays silent");
+        }
+
         [Test]
         public void UnknownSpeciesOrBareData_NoOps()
         {

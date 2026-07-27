@@ -178,6 +178,14 @@ namespace Wildgrove.Sim
         /// <summary>One entry per crafting station the run has put to work (fire / bench / forge).</summary>
         public List<StationState> stations = new List<StationState>();
 
+        /// <summary>
+        /// Tincture buffs currently live (design §5, Apothecary) — each ticks
+        /// down in sim time and its effects join the active-effect union while
+        /// positive (see <see cref="Tinctures"/>). Reset at Migration with the
+        /// rest of the run's consumables.
+        /// </summary>
+        public List<ActiveTincture> activeTinctures = new List<ActiveTincture>();
+
         /// <summary>Bought levels per camp building line, keyed by building id (§9 milestone upgrades count separately).</summary>
         public Dictionary<string, int> buildingLevels = new Dictionary<string, int>();
 
@@ -308,6 +316,17 @@ namespace Wildgrove.Sim
 
         /// <summary>True once a completion-granted slot (deeds) has credited its renownGrant — keeps the grant one-shot.</summary>
         public bool granted;
+    }
+
+    /// <summary>One live tincture buff (design §5) — ticks down in sim time; see <see cref="Tinctures"/>.</summary>
+    [Serializable]
+    public sealed class ActiveTincture
+    {
+        /// <summary>Tincture id from tinctures.json (also the goods id its recipe brews).</summary>
+        public string tinctureId;
+
+        /// <summary>Sim seconds of buff left.</summary>
+        public double remainingSeconds;
     }
 
     /// <summary>

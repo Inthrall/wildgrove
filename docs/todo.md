@@ -281,6 +281,106 @@ balance, tracked in the items below.
   ≥chooseCount check (the guarantee lives in the generator + proof, which is where
   generated rites are checkable) — a cheap follow-up if wanted.
 
+## Mid/late-game content (started 2026-07-28)
+
+**IMPLEMENTED 2026-07-28 — region modifiers (design §8).** New `regions.json`
+(17th data file; lush / misted / ashen / windswept) + `Sim/Regions.cs`. Every
+run after the first wakes in a region drawn **deterministically from the
+migration count** (the generator's idiom — nothing persists, a reload can't
+reroll a season; run 1 is always home ground because the authored tutorial
+Rite assumes it). Region effects join `Upgrades.ActiveEffects` so they flow
+through the existing modifier plumbing — including a new **resource-targeted
+`yieldMult` grain** ("+fish", "−flowers"; `TargetsNode` + the validator now
+accept `resource` on yield effects). The Rite generator scales each generated
+goods demand by `Regions.DemandWeight` (§9's modifierWeight, previously ≡ 1).
+HUD: the fold sheet says "Ahead: a misted region", the Migration vignette
+speaks the arriving region's `sign`, and the Trail page heads with "the
+season: …". Interpretations shipped (tune/confirm):
+- The draw is a **uniform seeded pick per migration** — back-to-back repeats
+  are possible (~1-in-4 with four regions) and read as "another misted
+  season"; add a no-repeat rule only if playtests mind.
+- The demand weight applies to whatever goods id the region targets — in
+  practice raw finds; **crafted goods are unweighted** (their raw leaves are
+  what the season actually speeds).
+- A region below 1.0 (misted −flowers) makes the generator ask for *less* of
+  the lean find — deliberate: demand scales exactly as the gather rate does.
+- Effect values, and four regions, are first guesses. Deed/specimen/sketch
+  slots are never region-scaled (they price in taps and luck).
+
+**IMPLEMENTED 2026-07-28 — Kinship signature deepening + plate inscriptions
+(design §4/§7, the former "1.1 depth lever").** `familiarXp.signatureMilestones`
+[2, 4, 7] + `signatureDeepening` 0.25: each milestone a familiar's Kinship
+passes scales its species trait by +25% of its base value
+(`Traits.DeepeningFactor`, folded into all four trait kinds), and its plate
+earns the next authored **inscription line** (`species.json inscriptions`,
+`Kinship.InscriptionsEarned`) — §7's channel about individuals, shown in the
+warden's hand under the roster row. The fold sheet names familiars whose fold
+would cross a milestone ("Bramble's Meadow-forager deepens at this fold").
+Interpretations shipped (tune/confirm):
+- Milestones [2,4,7] against kinshipDivisor 12000 (~2 Kinship per well-worked
+  fold) put the first sharpening around fold 1–2 — first guesses, tune with
+  fold pacing.
+- Deepening is **multiplicative on the trait's value, additive per milestone**
+  (value × (1 + 0.25·passed)) — at all three milestones a +40% specialist
+  becomes +70%.
+- All 24 inscription lines (8 species × 3) are **draft wording to re-voice**
+  with the narrative pass; they spend ~190 words of the §7 1,200-word budget.
+- The validator refuses inscriptions beyond the milestone count (unreachable
+  words) and a deepening value with no milestones (a lever wired to nothing).
+
+**IMPLEMENTED 2026-07-28 — Zone 5, Mistfen Marsh, and fireflies stop being a
+crop (design §3/§5/§6).** Mo's call: add the next zone and switch fireflies
+out. A firefly in a basket contradicted the observe·sketch·release rework
+outright, so the marsh's third *find* is now **glow-moss** (foraging) and the
+lanterns became **The Lantern Bearers**, a 4-portion insect plate at the
+marsh's watch site. Landed with it:
+- `zones.json` mistfen: resources peat/rare-herbs/glow-moss, `verseSite` "the
+  lantern pool", unlocks apothecary (entomology already arrives with the
+  Old-Growth map, so listing it here was a lie the validator couldn't see).
+  `resources.json` prices glow-moss and drops fireflies; `folio.json`'s Marsh
+  Lights spread and `ArtLibrary` follow (glow-moss borrows the lichen plate
+  until the art pass).
+- `map-mistfen` (upgrade #32) now grants zone + `unlockSkill apothecary` +
+  `unlockDigSite` for a provisions bundle — it previously granted a zone with
+  no skills and no site, the long-standing data-layer review item.
+- **Apothecary + tinctures** = the new sim system: `tinctures.json` (18th data
+  file) + `Sim/Tinctures.cs`. Three fire recipes brew Warden's Tonic (+25%
+  gathering), Glow Salve (×1.5 observation) and Peat-Smoke Draught (×1.5
+  craft speed); drinking spends one bottle and runs the buff for 600 s of
+  **sim time**, so an offline catch-up ages it on the same clock. Effects join
+  `Upgrades.ActiveEffects`; expiry rebuilds the modifiers the same step.
+  **Save v31→v32** (`activeTinctures`; the v31 case starts it empty).
+- Verse 5 (`verse-mistfen`, spotlight apothecary), Mistfen waystone + verse
+  lines, and the Lantern Bearers plate lore — all in the §7 register, draft.
+- HUD: a TINCTURES card on the Warden page, hidden until Apothecary is
+  learned; rows show the bottle's line, stock, live time left, and a Drink
+  button. Telemetry `tincture_drunk`.
+- New species **osier otter** (peat + glow-moss pair specialist) with its
+  three inscriptions, so the marsh's gift piles have someone to call.
+
+Interpretations shipped (tune/confirm):
+- Every tincture is 600 s and each is independently live — **refresh, never
+  stack**; nothing stops all three running at once (deliberate: the cost is
+  three separate brews competing for the same fire).
+- Tinctures are `kind: "material"`, so they're never sold or traded — brewing
+  is the only way in, drinking the only way out. That also means the Rite's
+  wardens-tonic slot needs its explicit `renownGrant` (2000), like ingots.
+- Buff time is sim time, not wall time: a tonic drunk before closing the app
+  burns down during the offline catch-up rather than waiting.
+- Mistfen quantities, tincture durations/effects, and the map's provisions
+  bundle are all first guesses — the zone has had no balance pass.
+- Zone 5's nodes need the same three-plate art the other zones have;
+  glow-moss and the otter fall back gracefully until then.
+
+**NEXT SLICES (the mid/late plan, in order):**
+1. **The Hollows preview content** — deep amber (§6's deep-past window) and
+   the rarest plates, now that Mistfen has proved the v1.1 zone pattern
+   (zone + specialist + skill + brews + plate + verse in one pass).
+2. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
+   zone skips) that currently wait for their systems.
+3. **A balance pass over zones 4–5** — the marsh landed unbalanced by
+   design; it wants the spreadsheet treatment alongside the tincture numbers.
+
 ## Phase 1 — Core loop slice (current)
 
 - **Tending burst values are a first guess.** `burstYieldMult` / `burstDurationSec`
@@ -560,8 +660,9 @@ balance, tracked in the items below.
   validates the generator's tuning instead). Still open: showing
   `dialogue.verses` lines at the verse site (generated verses reuse the
   zone's site but have no authored lines — the narrative pass decides what
-  a run-3 verse *says*), and the design doc's region modifiers (single
-  region at MVP, modifierWeight ≡ 1). Generator interpretations flagged:
+  a run-3 verse *says*). ✅ Region modifiers landed 2026-07-28 (see the
+  Mid/late-game content section) — modifierWeight is live via
+  `Regions.DemandWeight`. Generator interpretations flagged:
   generator numbers (demandGrowth 2.5, spotlightDiscount 0.6,
   offSpotlightPremium 1.5) are first guesses against §8's "similar share of
   each run's lifetime output" — tune with real run-2 playtests; deed/
@@ -680,7 +781,10 @@ balance, tracked in the items below.
   system — `map-oldgrowth` now carries `unlockSkill: excavation` — but the
   field itself still isn't consumed; the validator only reads the starting
   zone's.
-- **`map-mistfen` grants a zone but no dig site / skills** — flagged for v1.1.
+- ~~**`map-mistfen` grants a zone but no dig site / skills**~~ ✅ RESOLVED
+  2026-07-28 with the Mistfen build: the map now carries `unlockSkill
+  apothecary` and `unlockDigSite mistfen-marsh` (see the Mid/late-game
+  content section).
 
 ## Number formatting
 

@@ -59,6 +59,18 @@
             { "type": "resource", "resource": "iron-ingot",   "amount": 6,   "renownGrant": 3000 },
             { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 1000 }
           ]
+        },
+        {
+          "id": "verse-mistfen",
+          "zone": "mistfen-marsh",
+          "spotlight": ["apothecary"],
+          "slots": [
+            { "type": "resource", "resource": "peat",          "amount": 600 },
+            { "type": "resource", "resource": "rare-herbs",    "amount": 250 },
+            { "type": "resource", "resource": "glow-moss",     "amount": 400 },
+            { "type": "resource", "resource": "wardens-tonic", "amount": 6,  "renownGrant": 2000 },
+            { "type": "specimen", "quality": "pristine",       "count": 1,   "renownGrant": 2500 }
+          ]
         }
       ]
     }

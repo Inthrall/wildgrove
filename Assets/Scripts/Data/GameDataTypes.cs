@@ -274,6 +274,50 @@ namespace Wildgrove.Data
 
         public List<string> suggestedNames = new List<string>();
         public TraitData trait;
+
+        /// <summary>
+        /// Plate inscription lines (design §7) — one earned per signature
+        /// milestone passed, in the warden's hand. Unauthored lines simply
+        /// never show, so authoring can land species by species.
+        /// </summary>
+        public List<string> inscriptions = new List<string>();
+    }
+
+    /// <summary>
+    /// A tincture (design §5, Apothecary): a buff consumable whose id matches
+    /// the recipe output that brews it. While drunk (Tinctures.cs), its
+    /// effects join the run's active-effect union for durationSec of sim time.
+    /// </summary>
+    [Serializable]
+    public sealed class TinctureData
+    {
+        public string id;
+        public string displayName;
+
+        /// <summary>The bottle's own line in the HUD.</summary>
+        public string description;
+
+        public double durationSec;
+        public List<EffectData> effects = new List<EffectData>();
+    }
+
+    /// <summary>
+    /// A region modifier (design §8): the flavour a run-2+ region arrives
+    /// with, drawn deterministically from the migration count (Regions.cs).
+    /// Its effects join the run's active-effect union for the whole run.
+    /// </summary>
+    [Serializable]
+    public sealed class RegionData
+    {
+        public string id;
+
+        /// <summary>Completes the fold forecast's "ahead: …" line — authored with its article ("a misted region").</summary>
+        public string displayName;
+
+        /// <summary>The land's one line about the season, spoken with the Migration vignette.</summary>
+        public string sign;
+
+        public List<EffectData> effects = new List<EffectData>();
     }
 
     /// <summary>
@@ -537,6 +581,16 @@ namespace Wildgrove.Data
 
             /// <summary>+XP rate per Kinship level (design §4).</summary>
             public double kinshipXpRatePerLevel;
+
+            /// <summary>
+            /// Kinship levels at which a familiar's signature deepens (design
+            /// §4, ascending) — each one sharpens its species trait and earns
+            /// its plate an inscription line (§7). Empty = signatures off.
+            /// </summary>
+            public List<int> signatureMilestones = new List<int>();
+
+            /// <summary>Trait sharpening per milestone passed: the trait's value scales by 1 + signatureDeepening · milestonesPassed.</summary>
+            public double signatureDeepening;
         }
 
         /// <summary>Replanting (design §3): raising a node's richness with its own resource.</summary>

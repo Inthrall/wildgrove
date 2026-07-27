@@ -48,5 +48,12 @@ namespace Wildgrove.Data
 
         public List<string> SuggestedNames { get; set; } = new List<string>();
         public TraitDef Trait { get; set; }
+
+        /// <summary>
+        /// Plate inscription lines (design §7) — one earned per signature
+        /// milestone passed (economy.familiarXp.signatureMilestones), in the
+        /// warden's hand. Unauthored lines simply never show.
+        /// </summary>
+        public List<string> Inscriptions { get; set; } = new List<string>();
     }
 }

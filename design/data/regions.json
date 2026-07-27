@@ -1,0 +1,41 @@
+{
+  "$comment": "Region modifiers (design §8): every run after the first wakes in a flavoured region, drawn deterministically from the migration count (Regions.ForMigration) — nothing persists and a reload can never reroll it. Run 1 is home ground, unmodified: the authored tutorial Rite assumes it. Effects use the shared effect vocabulary and stay live for the whole run: a resource-targeted yieldMult flavours one find (values below 1 are a lean season — still positive), digSpeedMult steadies the observation sites, haulMult quickens the trail. The Rite generator scales its goods demands by the region's yieldMult on each pick (§9 modifierWeight) — the land asks more of what the season gives freely, and less of what it withholds. 'name' completes the fold forecast's 'ahead: …' line; 'sign' is the land's one line about the season, spoken with the Migration vignette. Values are first guesses (todo.md).",
+  "regions": [
+    {
+      "id": "lush",
+      "name": "a lush region",
+      "sign": "Green past the waterline. Take less than is offered.",
+      "effects": [
+        { "type": "yieldMult", "resource": "herbs", "value": 1.5 },
+        { "type": "yieldMult", "resource": "rare-herbs", "value": 1.5 },
+        { "type": "yieldMult", "resource": "berries", "value": 1.25 }
+      ]
+    },
+    {
+      "id": "misted",
+      "name": "a misted region",
+      "sign": "The river speaks under the fog. The flowers keep their heads down.",
+      "effects": [
+        { "type": "yieldMult", "resource": "fish", "value": 1.5 },
+        { "type": "yieldMult", "resource": "reeds", "value": 1.25 },
+        { "type": "yieldMult", "resource": "wildflowers", "value": 0.75 }
+      ]
+    },
+    {
+      "id": "ashen",
+      "name": "an ashen region",
+      "sign": "Something burned here, long before you. What lives now holds still, and lets itself be seen.",
+      "effects": [
+        { "type": "digSpeedMult", "value": 1.5 }
+      ]
+    },
+    {
+      "id": "windswept",
+      "name": "a windswept region",
+      "sign": "The trail lies swept and the going is quick. Nothing about that is a kindness.",
+      "effects": [
+        { "type": "haulMult", "value": 1.25 }
+      ]
+    }
+  ]
+}

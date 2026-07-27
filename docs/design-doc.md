@@ -102,7 +102,7 @@ The single most load-bearing rule set in the game — written down so every syst
 | 2 | **Bramble Hedgerows** | Nuts, herbs, copper scree             | Firecraft, Mining                                      | Amber-Shelled Snail | MVP   |
 | 3 | **Old-Growth Wood**   | Deadfall timber, mushrooms, tin seams | Logging, Bushcraft, **first observation site**                 | Ancient Acorn       | MVP   |
 | 4 | **Silverrun River**   | Fish, reeds, clay, iron-rich gravel   | Fishing, riverbank observation site                            | Moonscale Trout     | MVP   |
-| 5 | **Mistfen Marsh**     | Peat, rare herbs, fireflies           | Entomology, Apothecary                                 | Lantern Firefly     | v1.1  |
+| 5 | **Mistfen Marsh**     | Peat, rare herbs, glow-moss           | Apothecary; marsh observation site                     | Lantern Firefly     | v1.1 (**built 2026-07-28**) |
 | 6 | **The Hollows**       | Deep ores, crystals, bone beds        | Delving; the rarest insects                     | Echo Geode          | v1.1  |
 | 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry                                              | Cloudfleece Ram     | v1.2  |
 | 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2  |
@@ -168,7 +168,7 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 Familiar power lives on two tracks, mirroring the game's own grammar (fast-resetting run power under a slow permanent track — the same shape as mastery, and as Verdure itself):
 
 - **Run track (resets for everyone):** levels and powerup picks are per-run. At Migration every familiar — bonded or not — returns to level 1 with a clean build. Run 2 asks a different question; the build stays a live decision forever.
-- **Kinship (never resets):** each roster familiar carries a permanent **Kinship level** — *the creature's memory of careful hands*, as Verdure is the land's. At Migration, a familiar's run XP converts to Kinship XP (conversion only — run XP already credited Renown as it was earned; **no second Renown grant**). The √ conversion decelerates in parallel with Verdure — both permanent tracks flatten together — and Kinship gains appear **in the same fold forecast panel** (§8), so the creature's memory never quietly argues against leaving. Kinship gives small permanent perks: **higher starting level** and **+XP rate**. At Kinship milestones a familiar locks in one **signature trait** — a permanent powerup that becomes its identity, inscribed on its plate (*"Bramble, meadow vole — soft paws"*). **MVP ships starting level + XP rate only; signature traits are the 1.1 depth lever.**
+- **Kinship (never resets):** each roster familiar carries a permanent **Kinship level** — *the creature's memory of careful hands*, as Verdure is the land's. At Migration, a familiar's run XP converts to Kinship XP (conversion only — run XP already credited Renown as it was earned; **no second Renown grant**). The √ conversion decelerates in parallel with Verdure — both permanent tracks flatten together — and Kinship gains appear **in the same fold forecast panel** (§8), so the creature's memory never quietly argues against leaving. Kinship gives small permanent perks: **higher starting level** and **+XP rate**. At Kinship milestones a familiar's **signature deepens** (**built 2026-07-28** as trait deepening — the species trait is already its identity, so milestones sharpen it rather than add a second system): at Kinship 2 / 4 / 7 (`familiarXp.signatureMilestones`) the trait's value scales by +25% per milestone (`signatureDeepening`), and the plate takes an authored **inscription line** in the warden's hand (§7's channel about individuals; `species.json inscriptions`). The fold forecast names a sharpening before it lands, so the creature's memory argues *for* the fold in its own voice.
 - *(Vocabulary: the permanent track is **Kinship**, never "bond level" — "bond" belongs to Migration-crossing, below.)*
 
 **Bonding** is the separate, rarer honour (earned, never bought): a **bonded** familiar crosses the fold and is present from minute one — and its Kinship is why it is also *good* from minute one. Most of the roster slips back into the grass at Migration and is re-met in later regions — a quiet reunion beat, never a re-grind: roster and Kinship persist, only presence lapses. MVP: 1–2 bondable (final counts and rarity: Mo to settle, §14).
@@ -195,7 +195,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Observation** | Collection       | Observation sites (Zones 3+)     | Field sketches (insect-plate portions), amber | MVP |
 | **Curation**   | Collection        | Pristine specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
-| **Apothecary** | Survival crafting | Herbs, peat, fungi               | Tinctures (buff consumables)          | v1.1  |
+| **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss    | **Tinctures** (buff consumables — built 2026-07-28) | v1.1 |
 | **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool                            | v1.2  |
 
 ### Skill structure (per craft)
@@ -265,6 +265,7 @@ The one system that used to take. It doesn't anymore: **nothing is kept.** From 
 | **The Stag's Herald**    | 3        | Old-Growth Wood        | +10% all yields            | A beetle armoured like something ten times its size. It remembers being feared. |
 | **The Silver Skimmer**   | 4        | Silverrun River        | +15% fishing, +1% Pristine | A damselfly older than the river's name. It has watched the water change and change. |
 | **Those Who Sow**        | 5        | Both sites, rare hours | +20% all yields            | The pollinators. They have tended this land far longer than you, and asked for nothing. |
+| **The Lantern Bearers**  | 4        | Mistfen Marsh          | +20% observation speed     | They light the drowned paths every night, for no one. Fireflies are **watched, never gathered** — the marsh's third *find* is glow-moss (corrected 2026-07-28; a firefly in a basket contradicted §6 outright). |
 | *The deep amber* (v1.1)  | —        | Hollows                | —                          | An insect no one living has seen, held in resin. The world it flew through has ended. |
 
 Target: ~6 plates at MVP, ~30 by 1.2 — each a multiplier *and* a chapter.
@@ -341,7 +342,7 @@ When the Rite completes and the region slows, the camp folds. Levels, builds, ri
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
 - **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, The Old Friend's bond, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
-- **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed) flavour each run and feed the Rite generator.
+- **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed · windswept: +trail) flavour each run and feed the Rite generator (**built 2026-07-28**, `regions.json`): the draw is deterministic from the migration count — nothing persists, a reload never rerolls a season — run 1 is always home ground (the authored tutorial Rite assumes it), the fold forecast names the region ahead, and the vignette speaks the arriving season's one-line sign.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
 
 ### When to migrate — DECIDED (2026-07-18): the fold forecast is the decision
@@ -632,7 +633,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Kinship K_f:** tune so Kinship rewards seasons, not marathon single runs.
 - **Roster pacing:** lean 5–6 members by Migration 3 — enough that fielding is a choice, few enough that each plate is an event.
 - **Bonded companion numbers:** Mo to finalize. Working assumptions until then: 1–2 bondable at MVP; 1 earned per 2–3 Migrations early, slower after.
-- **Signature traits shipped early (2026-07-23):** every species carries its single fixed trait from arrival — identity, not a build. The freed 1.1 lever is *trait deepening* (Kinship milestones sharpening the trait), if wanted.
+- **Signature traits shipped early (2026-07-23):** every species carries its single fixed trait from arrival — identity, not a build. ✅ The freed 1.1 lever — *trait deepening* at Kinship milestones — landed 2026-07-28 (§4), with the plate-inscription channel riding on it.
 - **Generator guardrails:** slot spread, spotlight-vs-unlock order, quantity clamps, final-verse reachability under stationing, and powerup-pool coverage (simplified by deterministic pools) — spreadsheet proof across runs 2–10 before it ships.
 
 **Carried**

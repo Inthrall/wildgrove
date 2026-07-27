@@ -126,6 +126,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
         public List<SavedStation> stations = new List<SavedStation>();
 
+        /// <summary>v32+: tincture buffs currently live (absent before the Apothecary existed).</summary>
+        public List<SavedTincture> activeTinctures = new List<SavedTincture>();
+
         /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
         public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
 
@@ -234,6 +237,13 @@ namespace Wildgrove.Sim.Saves
         public string recipeId;
         public bool inFlight;
         public double progressSeconds;
+    }
+
+    [Serializable]
+    public sealed class SavedTincture
+    {
+        public string tinctureId;
+        public double remainingSeconds;
     }
 
     [Serializable]

@@ -337,9 +337,38 @@ namespace Wildgrove.Game
                           + "). The kith walk with you, and the journal keeps every plate, sketch and Almanac node.</color>";
             MakeText(sheet, carried, 19, TextAnchor.MiddleCenter, Ink);
 
+            // Signatures about to sharpen (design §4): the creature's memory
+            // arguing FOR the fold, named before the cost line.
+            var sharpenings = _loop.FoldSharpenings();
+            if (sharpenings.Count > 0)
+            {
+                var names = new System.Text.StringBuilder();
+                foreach (var familiar in sharpenings)
+                {
+                    if (names.Length > 0)
+                    {
+                        names.Append(", ");
+                    }
+
+                    names.Append(familiar.name).Append("'s ")
+                        .Append(_loop.FamiliarTrait(familiar)?.displayName ?? "way");
+                }
+
+                MakeText(sheet, "<color=" + MossDeepHex + "><i>" + names + (sharpenings.Count > 1 ? " deepen" : " deepens")
+                                + " at this fold — the plate takes a new line.</i></color>",
+                    19, TextAnchor.MiddleCenter, Ink, _serif);
+            }
+
             MakeText(sheet, "<b>You leave behind:</b> coin and stores, the camp buildings, tools and gear,"
                             + " the trails you opened, and every skill level — <i>they were never yours</i>.",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            // The §8 forecast's region preview — the fold names where it leads.
+            var ahead = _loop.NextRegion();
+            if (ahead != null)
+            {
+                MakeText(sheet, "<i>Ahead: " + ahead.displayName + ".</i>", 19, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
 
             // Where Verdure comes from. The "how close is the next point"
             // question is answered by the fold banner's percentage, not here.
@@ -399,6 +428,15 @@ namespace Wildgrove.Game
             foreach (var line in lines)
             {
                 MakeText(dim.transform, "<i>" + line + "</i>", 30, TextAnchor.MiddleCenter, NightText, _serif);
+            }
+
+            // The land's one line about the season just arrived in (§8) —
+            // Migrate has already run, so the CURRENT region is the new one.
+            var region = _loop.CurrentRegion();
+            if (region != null && !string.IsNullOrEmpty(region.sign))
+            {
+                MakeText(dim.transform, "<i>" + region.sign + "</i>", 22, TextAnchor.MiddleCenter,
+                    new Color(NightText.r, NightText.g, NightText.b, 0.75f), _serif);
             }
 
             MakeText(dim.transform, "+" + Mathf.FloorToInt((float)verdureGained) + " VERDURE", 20,

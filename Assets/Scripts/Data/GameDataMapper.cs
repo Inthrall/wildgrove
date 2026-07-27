@@ -21,6 +21,8 @@ namespace Wildgrove.Data
             asset.bonds = data.Bonds.Select(MapBond).ToList();
             asset.species = data.Species.Select(MapSpecies).ToList();
             asset.planters = data.Planters.Select(MapPlanter).ToList();
+            asset.regions = data.Regions.Select(MapRegion).ToList();
+            asset.tinctures = data.Tinctures.Select(MapTincture).ToList();
             asset.exchange = data.Exchange == null ? null : new ExchangeData
             {
                 spread = data.Exchange.Spread
@@ -150,7 +152,31 @@ namespace Wildgrove.Data
                 displayName = s.Name,
                 roleLean = s.RoleLean,
                 suggestedNames = new List<string>(s.SuggestedNames),
-                trait = MapTrait(s.Trait)
+                trait = MapTrait(s.Trait),
+                inscriptions = new List<string>(s.Inscriptions)
+            };
+        }
+
+        private static RegionData MapRegion(RegionDef r)
+        {
+            return new RegionData
+            {
+                id = r.Id,
+                displayName = r.Name,
+                sign = r.Sign,
+                effects = r.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static TinctureData MapTincture(TinctureDef t)
+        {
+            return new TinctureData
+            {
+                id = t.Id,
+                displayName = t.Name,
+                description = t.Description,
+                durationSec = t.DurationSec,
+                effects = t.Effects.Select(MapEffect).ToList()
             };
         }
 
@@ -401,7 +427,11 @@ namespace Wildgrove.Data
                     maxLevel = e.FamiliarXp.MaxLevel,
                     xpPerSecond = e.FamiliarXp.XpPerSecond,
                     kinshipDivisor = e.FamiliarXp.KinshipDivisor,
-                    kinshipXpRatePerLevel = e.FamiliarXp.KinshipXpRatePerLevel
+                    kinshipXpRatePerLevel = e.FamiliarXp.KinshipXpRatePerLevel,
+                    signatureMilestones = e.FamiliarXp.SignatureMilestones != null
+                        ? new List<int>(e.FamiliarXp.SignatureMilestones)
+                        : new List<int>(),
+                    signatureDeepening = e.FamiliarXp.SignatureDeepening
                 },
                 replant = e.Replant == null ? null : new EconomyData.ReplantData
                 {

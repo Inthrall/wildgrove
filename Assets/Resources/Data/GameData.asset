@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 877355ae724676148ded76b6a46fa5827cda43b38a670916edd352332a779abc
+  sourceHash: 79fd004fff2e1cb46bd9d2c34ecb421ab3a6ddb1c9bcd8396c5f59dac80c4616
   economy:
     costGrowth:
       building: 1.25
@@ -89,6 +89,8 @@ MonoBehaviour:
       xpPerSecond: 1
       kinshipDivisor: 12000
       kinshipXpRatePerLevel: 0.02
+      signatureMilestones: 020000000400000007000000
+      signatureDeepening: 0.25
     replant:
       baseCost:
         mantissa: 2
@@ -153,9 +155,9 @@ MonoBehaviour:
   - id: rare-herbs
     sellValue: 30
     skill: foraging
-  - id: fireflies
+  - id: glow-moss
     sellValue: 25
-    skill: entomology
+    skill: foraging
   - id: deep-ores
     sellValue: 60
     skill: delving
@@ -247,13 +249,12 @@ MonoBehaviour:
     resources:
     - peat
     - rare-herbs
-    - fireflies
+    - glow-moss
     unlocks:
-    - entomology
     - apothecary
     keystone: lantern-firefly
     digSite: 1
-    verseSite: 
+    verseSite: the lantern pool
     requiredTool: iron
     scope: v1.1
   - id: the-hollows
@@ -949,6 +950,42 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 0
+  - order: 32
+    id: map-mistfen
+    displayName: 'Trail Map: Mistfen Marsh'
+    track: trail
+    toolTier: 
+    gateSkill: 
+    gateLevel: 0
+    materials:
+    - id: smoked-trout
+      amount: 20
+    - id: reed-baskets
+      amount: 6
+    - id: iron-ingot
+      amount: 4
+    effects:
+    - type: 14
+      skill: 
+      zone: mistfen-marsh
+      resource: 
+      recipe: 
+      species: 
+      value: 0
+    - type: 15
+      skill: apothecary
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0
+    - type: 17
+      skill: 
+      zone: mistfen-marsh
+      resource: 
+      recipe: 
+      species: 
+      value: 0
   recipes:
   - id: berry-preserve
     station: fire
@@ -1091,6 +1128,48 @@ MonoBehaviour:
     kind: material
     defaultKnown: 0
     stationLevel: 2
+    skillLevel: 5
+  - id: wardens-tonic
+    station: fire
+    skill: apothecary
+    inputs:
+    - id: herbs
+      amount: 40
+    - id: mushrooms
+      amount: 20
+    output: wardens-tonic
+    valueMult: 1
+    kind: material
+    defaultKnown: 1
+    stationLevel: 1
+    skillLevel: 1
+  - id: glow-salve
+    station: fire
+    skill: apothecary
+    inputs:
+    - id: glow-moss
+      amount: 30
+    - id: fish-oil
+      amount: 4
+    output: glow-salve
+    valueMult: 1
+    kind: material
+    defaultKnown: 1
+    stationLevel: 1
+    skillLevel: 3
+  - id: peat-smoke-draught
+    station: fire
+    skill: apothecary
+    inputs:
+    - id: peat
+      amount: 25
+    - id: rare-herbs
+      amount: 15
+    output: peat-smoke-draught
+    valueMult: 1
+    kind: material
+    defaultKnown: 1
+    stationLevel: 1
     skillLevel: 5
   buildings:
   - id: fire
@@ -1293,6 +1372,20 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 0.2
+  - id: lantern-bearers
+    displayName: The Lantern Bearers
+    sketches: 4
+    habitats:
+    - mistfen-marsh
+    rarity: 0.6
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 1.2
   almanac:
   - id: old-songs-i
     displayName: Old Songs I
@@ -1506,7 +1599,7 @@ MonoBehaviour:
     entries:
     - peat
     - rare-herbs
-    - fireflies
+    - glow-moss
     effects:
     - type: 4
       skill: 
@@ -1611,6 +1704,10 @@ MonoBehaviour:
       resources:
       - berries
       - wildflowers
+    inscriptions:
+    - Knows my step now. Doesn't look up.
+    - Found the last ripe cane in the rain, and left me half.
+    - Third season she has found me. I have stopped calling it luck.
   - id: red-squirrel
     displayName: Red squirrel
     roleLean: gatherer
@@ -1628,6 +1725,10 @@ MonoBehaviour:
       resources:
       - nuts
       - mushrooms
+    inscriptions:
+    - Buries more than he digs up. The wood is in his debt.
+    - Showed me a cache I never taught him. I think it was a gift.
+    - Old now, and still burying. No winter has caught him short.
   - id: sedge-linnet
     displayName: Sedge linnet
     roleLean: gatherer
@@ -1645,6 +1746,10 @@ MonoBehaviour:
       resources:
       - fibres
       - reeds
+    inscriptions:
+    - Pulls the year's best grasses first, and sings over the work.
+    - Wove a strand of my rope into her nest. I take that as a wage.
+    - The reeds bend before she lands now. They know her.
   - id: bramble-hare
     displayName: Bramble hare
     roleLean: gatherer
@@ -1662,6 +1767,10 @@ MonoBehaviour:
       resources:
       - herbs
       - rare-herbs
+    inscriptions:
+    - Tastes the hedge for what's ripe. Leaves my mistakes on the stem.
+    - Steered me round the thorn patch by sitting still in front of it.
+    - The hedge opens for her. I have seen it, and I won't argue.
   - id: warren-weasel
     displayName: Warren weasel
     roleLean: gatherer
@@ -1679,6 +1788,10 @@ MonoBehaviour:
       resources:
       - copper-scree
       - tin-seam
+    inscriptions:
+    - Follows the seam like a burrow. Comes up dusted green.
+    - Taps the stone twice where it's worth my while. Twice, always.
+    - The hill lets him through. I dig where he tells me now.
   - id: furrow-hedgehog
     displayName: Furrow hedgehog
     roleLean: gatherer
@@ -1696,6 +1809,10 @@ MonoBehaviour:
       resources:
       - clay
       - iron-gravel
+    inscriptions:
+    - Roots the wet ground, and huffs when it's good.
+    - Sleeps in the clay pit as if the ground had been warmed for him.
+    - The earth gives him what it hides from my spade.
   - id: tawny-owl
     displayName: Tawny owl
     roleLean: gatherer
@@ -1713,6 +1830,31 @@ MonoBehaviour:
       resources:
       - timber
       - fish
+    inscriptions:
+    - Works the wood's edge and the shallows, and judges my knots.
+    - Left a trout at my feet at dusk. No comment offered.
+    - The river and the wood have settled which one owns her. Neither.
+  - id: osier-otter
+    displayName: Osier otter
+    roleLean: gatherer
+    suggestedNames:
+    - Rill
+    - Wade
+    - Tarn
+    - Eddy
+    - Slick
+    trait:
+      displayName: Fen-swimmer
+      description: +40% yield at peat and glow-moss nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - peat
+      - glow-moss
+    inscriptions:
+    - Works the wet margins as if the water owed him.
+    - Brought the moss up glowing and dry. I no longer ask how.
+    - The fen holds its breath around him. He has never once noticed.
   - id: pack-raven
     displayName: Pack raven
     roleLean: carrier
@@ -1731,6 +1873,10 @@ MonoBehaviour:
       kind: trailThroughputBonus
       value: 0.25
       resources: []
+    inscriptions:
+    - Carries more than looks possible, and counts every piece.
+    - Took the long way round the storm and set down nothing.
+    - I have stopped checking the loads. Her idea, somehow.
   planters:
   - id: timber-frame
     displayName: Timber Frame
@@ -1756,6 +1902,117 @@ MonoBehaviour:
     materials:
     - id: reeds
       amount: 20
+  regions:
+  - id: lush
+    displayName: a lush region
+    sign: Green past the waterline. Take less than is offered.
+    effects:
+    - type: 0
+      skill: 
+      zone: 
+      resource: herbs
+      recipe: 
+      species: 
+      value: 1.5
+    - type: 0
+      skill: 
+      zone: 
+      resource: rare-herbs
+      recipe: 
+      species: 
+      value: 1.5
+    - type: 0
+      skill: 
+      zone: 
+      resource: berries
+      recipe: 
+      species: 
+      value: 1.25
+  - id: misted
+    displayName: a misted region
+    sign: The river speaks under the fog. The flowers keep their heads down.
+    effects:
+    - type: 0
+      skill: 
+      zone: 
+      resource: fish
+      recipe: 
+      species: 
+      value: 1.5
+    - type: 0
+      skill: 
+      zone: 
+      resource: reeds
+      recipe: 
+      species: 
+      value: 1.25
+    - type: 0
+      skill: 
+      zone: 
+      resource: wildflowers
+      recipe: 
+      species: 
+      value: 0.75
+  - id: ashen
+    displayName: an ashen region
+    sign: Something burned here, long before you. What lives now holds still, and
+      lets itself be seen.
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 1.5
+  - id: windswept
+    displayName: a windswept region
+    sign: The trail lies swept and the going is quick. Nothing about that is a kindness.
+    effects:
+    - type: 2
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 1.25
+  tinctures:
+  - id: wardens-tonic
+    displayName: Warden's Tonic
+    description: "steadies the hands \u2014 +25% gathering while it lasts"
+    durationSec: 600
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.25
+  - id: glow-salve
+    displayName: Glow Salve
+    description: "lights the watching \u2014 observation sites half again as quick"
+    durationSec: 600
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 1.5
+  - id: peat-smoke-draught
+    displayName: Peat-Smoke Draught
+    description: "slows the breath \u2014 every craft half again as quick"
+    durationSec: 600
+    effects:
+    - type: 4
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 1.5
   exchange:
     spread: 0.15
   rites:
@@ -1930,6 +2187,46 @@ MonoBehaviour:
           count: 1
           quality: pristine
           renownGrant: 1000
+      - id: verse-mistfen
+        zone: mistfen-marsh
+        spotlight:
+        - apothecary
+        slots:
+        - type: 0
+          resource: peat
+          amount: 600
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: rare-herbs
+          amount: 250
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: glow-moss
+          amount: 400
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: wardens-tonic
+          amount: 6
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 2000
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: pristine
+          renownGrant: 2500
   dialogue:
     waystones:
     - key: sunfield-meadow
@@ -1940,6 +2237,8 @@ MonoBehaviour:
       text: These roots drink deeper than you will ever dig. Let them.
     - key: silverrun-river
       text: The river keeps no ledger. Count what you take, for it will not.
+    - key: mistfen-marsh
+      text: The fen remembers every weight it has carried. Step lightly; it is counting.
     verses:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.
@@ -1952,6 +2251,9 @@ MonoBehaviour:
     - key: silverrun-river
       text: Of all you pulled from the water, the river asks the finest back. It
         knows you have it.
+    - key: mistfen-marsh
+      text: Brew what the still water grew, and pour a little back where the lights
+        gather.
     provisioner:
     - id: prov-01
       trigger: first-visit
@@ -1975,3 +2277,7 @@ MonoBehaviour:
       text: They carry the flowers from field to field without being asked, and have
         longer than we have. Whoever tends this place, it is not only us. I drew
         them, and let them go on.
+    - key: lantern-bearers
+      text: They light the drowned paths every night, for no one. I was never the
+        reason, and I may still be grateful. Four evenings of drawing, and not one
+        lantern paused for me.

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 31;
+        public const int CurrentVersion = 32;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -116,6 +116,15 @@ namespace Wildgrove.Sim.Saves
                     recipeId = station.recipeId,
                     inFlight = station.inFlight,
                     progressSeconds = station.progressSeconds,
+                });
+            }
+
+            foreach (var tincture in state.activeTinctures)
+            {
+                save.activeTinctures.Add(new SavedTincture
+                {
+                    tinctureId = tincture.tinctureId,
+                    remainingSeconds = tincture.remainingSeconds,
                 });
             }
 
@@ -344,6 +353,25 @@ namespace Wildgrove.Sim.Saves
                             recipeId = station.recipeId,
                             inFlight = station.inFlight,
                             progressSeconds = station.progressSeconds,
+                        });
+                    }
+                }
+            }
+
+            state.activeTinctures.Clear();
+            if (save.activeTinctures != null)
+            {
+                foreach (var tincture in save.activeTinctures)
+                {
+                    // A tincture id the current data doesn't know is kept —
+                    // its effects sit inert (Tinctures.ActiveEffects skips it),
+                    // same policy as unknown recipe/upgrade ids.
+                    if (tincture?.tinctureId != null && tincture.remainingSeconds > 0.0)
+                    {
+                        state.activeTinctures.Add(new ActiveTincture
+                        {
+                            tinctureId = tincture.tinctureId,
+                            remainingSeconds = tincture.remainingSeconds,
                         });
                     }
                 }
@@ -1038,6 +1066,13 @@ namespace Wildgrove.Sim.Saves
                         }
 
                         save.version = 31;
+                        break;
+
+                    case 31:
+                        // v31 predates the Apothecary — no tincture was ever
+                        // drunk, so the buff list simply starts empty.
+                        save.activeTinctures = save.activeTinctures ?? new List<SavedTincture>();
+                        save.version = 32;
                         break;
 
                     default:

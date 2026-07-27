@@ -1317,6 +1317,68 @@ namespace Wildgrove.Game
             return Migration.RenownForNextVerdure(State, Data);
         }
 
+        /// <summary>The region this run is living in (design §8) — null on home ground (run 1) or with no regions authored.</summary>
+        public RegionData CurrentRegion()
+        {
+            return Regions.Current(State, Data);
+        }
+
+        /// <summary>The region the next fold wakes in — the fold forecast's "ahead: …" line. Null when no regions are authored.</summary>
+        public RegionData NextRegion()
+        {
+            return Regions.Next(State, Data);
+        }
+
+        /// <summary>
+        /// Roster familiars whose Kinship gain at a fold right now would cross
+        /// a signature milestone (design §4) — the fold sheet names them, so
+        /// the creature's memory argues FOR leaving, in its own voice.
+        /// </summary>
+        public List<Familiar> FoldSharpenings()
+        {
+            var sharpening = new List<Familiar>();
+            foreach (var familiar in State.roster)
+            {
+                if (Kinship.MilestonesPassedAt(Kinship.LevelAfterFold(familiar, Data), Data)
+                    > Kinship.SignatureMilestonesPassed(familiar, Data))
+                {
+                    sharpening.Add(familiar);
+                }
+            }
+
+            return sharpening;
+        }
+
+        /// <summary>The plate inscription lines a familiar has earned (design §7) — one per signature milestone passed.</summary>
+        public List<string> FamiliarInscriptions(Familiar familiar)
+        {
+            return Kinship.InscriptionsEarned(familiar, Data);
+        }
+
+        /// <summary>A bottle of this tincture is in stock (design §5, Apothecary).</summary>
+        public bool CanDrinkTincture(TinctureData tincture)
+        {
+            return Tinctures.CanDrink(State, tincture);
+        }
+
+        /// <summary>Seconds this tincture's buff has left, 0 when not live.</summary>
+        public double TinctureRemainingSeconds(TinctureData tincture)
+        {
+            return tincture == null ? 0.0 : Tinctures.RemainingSeconds(State, tincture.id);
+        }
+
+        /// <summary>Drink one bottle: spends a unit of stock; a second bottle refreshes the clock, never stacks.</summary>
+        public bool DrinkTincture(TinctureData tincture)
+        {
+            if (!Tinctures.TryDrink(State, Data, tincture))
+            {
+                return false;
+            }
+
+            Telemetry.LogEvent("tincture_drunk", ("tincture", tincture.id));
+            return true;
+        }
+
         /// <summary>How far lifetime Renown has climbed towards the next Verdure point, 0..1 — the fold banner's percentage.</summary>
         public double ProgressToNextVerdure()
         {

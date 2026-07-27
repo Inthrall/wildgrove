@@ -11,6 +11,10 @@
     { "id": "charcoal",        "station": "fire",  "skill": "firecraft",  "inputs": { "timber": 2 },                        "output": "charcoal",        "valueMult": 1, "kind": "material", "defaultKnown": true },
     { "id": "copper-ingot",    "station": "fire",  "skill": "forgecraft", "inputs": { "copper-scree": 5 },                  "output": "copper-ingot",    "valueMult": 3, "kind": "material" },
     { "id": "bronze-ingot",    "station": "forge", "skill": "forgecraft", "inputs": { "copper-scree": 3, "tin-seam": 2 },   "output": "bronze-ingot",    "valueMult": 4, "kind": "material", "defaultKnown": true, "skillLevel": 3 },
-    { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material", "stationLevel": 2, "skillLevel": 5 }
+    { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material", "stationLevel": 2, "skillLevel": 5 },
+
+    { "id": "wardens-tonic",   "station": "fire",  "skill": "apothecary", "inputs": { "herbs": 40, "mushrooms": 20 },       "output": "wardens-tonic",   "valueMult": 1, "kind": "material", "defaultKnown": true },
+    { "id": "glow-salve",      "station": "fire",  "skill": "apothecary", "inputs": { "glow-moss": 30, "fish-oil": 4 },     "output": "glow-salve",      "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 3 },
+    { "id": "peat-smoke-draught", "station": "fire", "skill": "apothecary", "inputs": { "peat": 25, "rare-herbs": 15 },     "output": "peat-smoke-draught", "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 5 }
   ]
 }

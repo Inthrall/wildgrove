@@ -385,13 +385,28 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Purchased upgrade effects, completed insects', owned Almanac nodes',
-        /// and worn gear's — everything currently modifying the run. The RAW
-        /// walk (the Museum leg clones) — per-tick consumers read the
-        /// <see cref="Modifiers"/> snapshot instead.
+        /// worn gear's, and the run's region modifier (design §8) — everything
+        /// currently modifying the run. The RAW walk (the Museum leg clones) —
+        /// per-tick consumers read the <see cref="Modifiers"/> snapshot instead.
         /// </summary>
         internal static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
         {
+            // The region's flavour is fixed for the whole run (it derives from
+            // the migration count), so it can never invalidate a snapshot
+            // mid-run — a fold always builds a fresh state.
+            foreach (var effect in Regions.ActiveEffects(state, data))
+            {
+                yield return effect;
+            }
+
             foreach (var effect in Gear.EquippedEffects(state, data))
+            {
+                yield return effect;
+            }
+
+            // Live tincture buffs (design §5) — activation and expiry both
+            // rebuild the modifiers, so the union is never read stale.
+            foreach (var effect in Tinctures.ActiveEffects(state, data))
             {
                 yield return effect;
             }
@@ -445,6 +460,13 @@ namespace Wildgrove.Sim
 
         private static bool TargetsNode(EffectData effect, NodeState node)
         {
+            // The region modifiers' grain (design §8): a single resource —
+            // "+herbs", "−flowers" — finer than a skill or a zone.
+            if (!string.IsNullOrEmpty(effect.resource))
+            {
+                return effect.resource == node.resourceId;
+            }
+
             if (!string.IsNullOrEmpty(effect.zone))
             {
                 return effect.zone == node.zoneId;

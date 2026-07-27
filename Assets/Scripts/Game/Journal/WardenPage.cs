@@ -28,8 +28,52 @@ namespace Wildgrove.Game
         {
             BuildKitCard();
             BuildCraftsCard();
+            BuildBrewsCard();
             BuildKithCard();
             BuildRunCard();
+        }
+
+        /// <summary>
+        /// The tinctures card (design §5, Apothecary) — hidden until the craft
+        /// is learned (the Mistfen map teaches it), like the crafting section
+        /// before its first recipe. Brewing happens at the fire with the other
+        /// recipes; this card is the drinking.
+        /// </summary>
+        private void BuildBrewsCard()
+        {
+            if (_loop.Data.tinctures == null || _loop.Data.tinctures.Count == 0
+                || !Upgrades.UnlockedSkills(_loop.State, _loop.Data).Contains("apothecary"))
+            {
+                return;
+            }
+
+            var card = Card("TINCTURES · brewed at the fire");
+            MakeText(card, "one at a time each — a second bottle buys time, not depth",
+                15, TextAnchor.MiddleCenter, Ink2);
+
+            foreach (var tincture in _loop.Data.tinctures)
+            {
+                var captured = tincture;
+                var row = Row(card);
+                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink, _serif);
+                FlexibleWidth(label.gameObject, 1f);
+                var drink = Button(row.transform, "Drink", 120, () => _loop.DrinkTincture(captured));
+
+                _liveUpdaters.Add(() =>
+                {
+                    var remaining = _loop.TinctureRemainingSeconds(captured);
+                    var status = remaining > 0.0
+                        ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">LIVE · " + NumberFormat.Duration(remaining) + " left</color></size>"
+                        : string.Empty;
+                    label.text = captured.displayName + status
+                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + captured.description
+                                 + " · have " + NumberFormat.Short(_loop.State.GetResource(captured.id)) + "</color></size>";
+
+                    var ok = _loop.CanDrinkTincture(captured);
+                    drink.interactable = ok;
+                    SetButtonTint(drink, ok);
+                });
+            }
         }
 
         private void BuildKitCard()
@@ -304,6 +348,22 @@ namespace Wildgrove.Game
                     label.text = captured.name + bonded + kin
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
                                  + " · " + StationLabel(captured.stationId) + "</color></size>";
+                });
+
+                // The plate's newest margin line (design §7) — earned at
+                // Kinship signature milestones, in the warden's hand. Older
+                // lines stay on the plate's Record entry; the roster shows
+                // the freshest so the card doesn't grow a paragraph per
+                // companion.
+                var inscription = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2, _hand);
+                _liveUpdaters.Add(() =>
+                {
+                    var earned = _loop.FamiliarInscriptions(captured);
+                    inscription.gameObject.SetActive(earned.Count > 0);
+                    if (earned.Count > 0)
+                    {
+                        inscription.text = "\"" + earned[earned.Count - 1] + "\"";
+                    }
                 });
             }
 

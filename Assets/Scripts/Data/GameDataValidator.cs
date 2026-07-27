@@ -61,6 +61,8 @@ namespace Wildgrove.Data
             ValidateBonds(data, issues);
             ValidateSpecies(data, issues);
             ValidatePlanters(data, resourceIds, issues);
+            ValidateRegions(data, resourceIds, issues);
+            ValidateTinctures(data, resourceIds, issues);
             ValidateExchange(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
@@ -644,8 +646,25 @@ namespace Wildgrove.Data
             // two species claiming the same resource would make that ambiguous.
             var specialistResources = new HashSet<string>();
 
+            // Inscriptions unlock one per signature milestone — a line past the
+            // last milestone is authored words no one can ever read.
+            var signatureMilestones = data.Economy?.FamiliarXp?.SignatureMilestones?.Count ?? 0;
+
             foreach (var species in data.Species)
             {
+                if (species.Inscriptions != null)
+                {
+                    if (species.Inscriptions.Count > signatureMilestones)
+                    {
+                        issues.Add($"Species '{species.Id}' has {species.Inscriptions.Count} inscriptions but only {signatureMilestones} signature milestones exist — the extra lines are unreachable");
+                    }
+
+                    if (species.Inscriptions.Any(string.IsNullOrWhiteSpace))
+                    {
+                        issues.Add($"Species '{species.Id}' has a blank inscription line");
+                    }
+                }
+
                 if (!KnownRoleLeans.Contains(species.RoleLean))
                 {
                     issues.Add($"Species '{species.Id}' has unknown roleLean '{species.RoleLean}'");
@@ -757,6 +776,75 @@ namespace Wildgrove.Data
                     {
                         issues.Add($"Planter '{planter.Id}' material '{material.Key}' amount must be positive");
                     }
+                }
+            }
+        }
+
+        private static void ValidateRegions(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            CheckIds(data.Regions.Select(r => r.Id), "region", issues);
+
+            foreach (var region in data.Regions)
+            {
+                // The fold forecast prints "ahead: {name}" and the vignette
+                // speaks the sign — a nameless or silent region reads as a bug.
+                if (string.IsNullOrWhiteSpace(region.Name))
+                {
+                    issues.Add($"Region '{region.Id}' has no name — the fold forecast prints it");
+                }
+
+                if (string.IsNullOrWhiteSpace(region.Sign))
+                {
+                    issues.Add($"Region '{region.Id}' has no sign — the land says one line about every season");
+                }
+
+                // An effect-less region is indistinguishable from home ground —
+                // it would silently eat one slot of the migration draw.
+                if (region.Effects == null || region.Effects.Count == 0)
+                {
+                    issues.Add($"Region '{region.Id}' has no effects — a region with no flavour is home ground");
+                    continue;
+                }
+
+                foreach (var effect in region.Effects)
+                {
+                    ValidateEffect($"Region '{region.Id}'", effect, data, resourceIds, issues);
+                }
+            }
+        }
+
+        private static void ValidateTinctures(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            CheckIds(data.Tinctures.Select(t => t.Id), "tincture", issues);
+
+            foreach (var tincture in data.Tinctures)
+            {
+                // The brew IS the acquisition path — a tincture no recipe
+                // produces can never reach camp stock, so its buff is dead.
+                if (data.Recipes.All(r => r.Output != tincture.Id))
+                {
+                    issues.Add($"Tincture '{tincture.Id}' is not produced by any recipe — it could never be brewed");
+                }
+
+                if (string.IsNullOrWhiteSpace(tincture.Description))
+                {
+                    issues.Add($"Tincture '{tincture.Id}' has no description — the bottle says what it does");
+                }
+
+                if (tincture.DurationSec <= 0)
+                {
+                    issues.Add($"Tincture '{tincture.Id}' needs a positive durationSec");
+                }
+
+                if (tincture.Effects == null || tincture.Effects.Count == 0)
+                {
+                    issues.Add($"Tincture '{tincture.Id}' has no effects — an empty bottle");
+                    continue;
+                }
+
+                foreach (var effect in tincture.Effects)
+                {
+                    ValidateEffect($"Tincture '{tincture.Id}'", effect, data, resourceIds, issues);
                 }
             }
         }
@@ -1155,6 +1243,31 @@ namespace Wildgrove.Data
                 issues.Add("Economy familiarXp.kinshipDivisor must be positive");
             }
 
+            if (economy.FamiliarXp != null)
+            {
+                var milestones = economy.FamiliarXp.SignatureMilestones;
+                if (milestones != null && milestones.Count > 0)
+                {
+                    for (var i = 0; i < milestones.Count; i++)
+                    {
+                        if (milestones[i] <= 0 || (i > 0 && milestones[i] <= milestones[i - 1]))
+                        {
+                            issues.Add("Economy familiarXp.signatureMilestones must be positive and strictly ascending");
+                            break;
+                        }
+                    }
+
+                    if (economy.FamiliarXp.SignatureDeepening <= 0)
+                    {
+                        issues.Add("Economy familiarXp.signatureDeepening must be positive when signatureMilestones are authored — a milestone that sharpens nothing is a broken promise");
+                    }
+                }
+                else if (economy.FamiliarXp.SignatureDeepening > 0)
+                {
+                    issues.Add("Economy familiarXp.signatureDeepening is set but signatureMilestones is empty — the deepening can never fire");
+                }
+            }
+
             if (economy.Replant != null
                 && (economy.Replant.BaseCost <= 0 || economy.Replant.Growth <= 1 || economy.Replant.RichnessPerLevel <= 0))
             {
@@ -1297,11 +1410,13 @@ namespace Wildgrove.Data
                     RequirePositiveValue(owner, effect, issues);
                     // A target-less craftSpeedMult is global — the sim applies
                     // it to every skill's recipes (Patient Hands). Yield
-                    // effects still need a target: the sim would silently
-                    // apply a bare one to nothing.
-                    if (effect.Skill == null && effect.Zone == null && effect.Type != EffectType.CraftSpeedMult)
+                    // effects still need a target — a skill, a zone, or a
+                    // single resource (the region modifiers' grain): the sim
+                    // would silently apply a bare one to nothing.
+                    if (effect.Skill == null && effect.Zone == null && effect.Resource == null
+                        && effect.Type != EffectType.CraftSpeedMult)
                     {
-                        issues.Add($"{owner} {effect.Type} effect targets neither a skill nor a zone");
+                        issues.Add($"{owner} {effect.Type} effect targets neither a skill, a zone, nor a resource");
                     }
 
                     if (effect.Skill != null && !KnownSkills.Contains(effect.Skill) && !SkillWildcards.Contains(effect.Skill))
@@ -1312,6 +1427,11 @@ namespace Wildgrove.Data
                     if (effect.Zone != null && !data.ZonesById.ContainsKey(effect.Zone))
                     {
                         issues.Add($"{owner} references unknown zone '{effect.Zone}'");
+                    }
+
+                    if (effect.Resource != null && !resourceIds.Contains(effect.Resource))
+                    {
+                        issues.Add($"{owner} references unknown resource '{effect.Resource}'");
                     }
 
                     break;

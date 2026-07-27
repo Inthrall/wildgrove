@@ -110,7 +110,9 @@
     "xpPerSecond": 1.0,
     "kinshipDivisor": 12000,
     "kinshipXpRatePerLevel": 0.02,
-    "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. kinshipDivisor tuned to 12000 via the balance model (docs/economy-model.xlsx) — a familiar stationed a whole run banks ~2 Kinship at the first fold; at 1000 it banked ~7. The rest are first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
+    "signatureMilestones": [2, 4, 7],
+    "signatureDeepening": 0.25,
+    "$note": "design §4: familiar run XP + Kinship. famXPToLevel(L) = base·growth^L (60·1.12^L), a powerup choice every 5 levels. xpPerSecond = base run XP a stationed familiar earns per second at its post; a wanderer earns half (§2). At Migration run XP converts to Kinship: kinshipGain = floor(√(runXP / kinshipDivisor)); each Kinship level gives +kinshipXpRatePerLevel XP rate and a higher starting level. Levels never scale output. kinshipDivisor tuned to 12000 via the balance model (docs/economy-model.xlsx) — a familiar stationed a whole run banks ~2 Kinship at the first fold; at 1000 it banked ~7. signatureMilestones = the Kinship levels where a familiar's signature deepens (§4's milestone lever): its species trait sharpens by signatureDeepening per milestone (trait value × (1 + 0.25·passed)) and its plate takes an inscription line (§7, species.json). At ~2 Kinship per well-worked fold: first signature around fold 1–2, second around fold 3, third deep in the seasons — first guesses, tune with the fold pacing. The rest are first guesses; postMatch/comfort multipliers (§8) are a later refinement (todo.md)."
   },
   "replant": {
     "baseCost": 20,

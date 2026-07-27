@@ -24,31 +24,52 @@ namespace Wildgrove.Sim
             return species.trait;
         }
 
-        /// <summary>Yield factor a familiar assigned to <paramref name="node"/> contributes: 1, plus its trait when the resource matches.</summary>
+        /// <summary>
+        /// Signature deepening (design §4, the Kinship depth lever): the factor
+        /// a familiar's trait value scales by — 1 + signatureDeepening per
+        /// milestone its Kinship has passed. 1 when signatures aren't
+        /// configured, so every trait maths below is unchanged without them.
+        /// </summary>
+        public static double DeepeningFactor(GameDataAsset data, Familiar familiar)
+        {
+            var xp = data?.economy?.familiarXp;
+            if (xp == null || xp.signatureDeepening <= 0.0)
+            {
+                return 1.0;
+            }
+
+            return 1.0 + xp.signatureDeepening * Kinship.SignatureMilestonesPassed(familiar, data);
+        }
+
+        /// <summary>Yield factor a familiar assigned to <paramref name="node"/> contributes: 1, plus its (Kinship-deepened) trait when the resource matches.</summary>
         public static double NodeYieldFactor(Familiar familiar, NodeState node, GameDataAsset data)
         {
             var trait = Of(data, familiar);
             if (trait != null && trait.kind == "nodeYieldBonus"
                 && (trait.resources == null || trait.resources.Count == 0 || trait.CoversResource(node.resourceId)))
             {
-                return 1.0 + trait.value;
+                return 1.0 + trait.value * DeepeningFactor(data, familiar);
             }
 
             return 1.0;
         }
 
-        /// <summary>Trail-lane factor a familiar holding the trail post contributes: 1, plus a trailThroughputBonus trait.</summary>
+        /// <summary>Trail-lane factor a familiar holding the trail post contributes: 1, plus a (Kinship-deepened) trailThroughputBonus trait.</summary>
         public static double TrailThroughputFactor(Familiar familiar, GameDataAsset data)
         {
             var trait = Of(data, familiar);
-            return trait != null && trait.kind == "trailThroughputBonus" ? 1.0 + trait.value : 1.0;
+            return trait != null && trait.kind == "trailThroughputBonus"
+                ? 1.0 + trait.value * DeepeningFactor(data, familiar)
+                : 1.0;
         }
 
-        /// <summary>Watch-speed factor a familiar at an observation site contributes: 1, plus a digSpeedBonus trait.</summary>
+        /// <summary>Watch-speed factor a familiar at an observation site contributes: 1, plus a (Kinship-deepened) digSpeedBonus trait.</summary>
         public static double DigSpeedFactor(Familiar familiar, GameDataAsset data)
         {
             var trait = Of(data, familiar);
-            return trait != null && trait.kind == "digSpeedBonus" ? 1.0 + trait.value : 1.0;
+            return trait != null && trait.kind == "digSpeedBonus"
+                ? 1.0 + trait.value * DeepeningFactor(data, familiar)
+                : 1.0;
         }
 
         /// <summary>Summed Pristine-chance points from the soft-pawed familiars assigned to <paramref name="node"/>.</summary>
@@ -65,7 +86,7 @@ namespace Wildgrove.Sim
                 var trait = Of(data, familiar);
                 if (trait != null && trait.kind == "pristineBonus")
                 {
-                    bonus += trait.value;
+                    bonus += trait.value * DeepeningFactor(data, familiar);
                 }
             }
 

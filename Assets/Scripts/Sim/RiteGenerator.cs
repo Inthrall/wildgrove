@@ -112,17 +112,21 @@ namespace Wildgrove.Sim
             // independent of gameplay rng, identical on every regeneration.
             var seed = Rng.Sanitise((ulong)migration * 0x9E3779B97F4A7C15UL);
 
+            // The region the run wakes in scales what the land asks for —
+            // §9's modifierWeight: more of what the season gives freely.
+            var region = Regions.ForMigration(data, migration);
+
             var rite = new RiteData { id = $"rite-m{migration}", migration = migration };
             foreach (var verse in template.verses)
             {
-                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, ref seed));
+                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, region, ref seed));
             }
 
             return rite;
         }
 
         private static RiteVerseData GenerateVerse(GameDataAsset data, RiteVerseData template,
-            RiteGeneratorConfigData config, int migration, double scale, ref ulong seed)
+            RiteGeneratorConfigData config, int migration, double scale, RegionData region, ref ulong seed)
         {
             data.ZonesById.TryGetValue(template.zone, out var zone);
             var candidates = CandidateGoods(data, zone);
@@ -170,8 +174,11 @@ namespace Wildgrove.Sim
                     fromSpotlight = !fromSpotlight;
                 }
 
-                picks.Add(GoodsSlot(data, TakeRandom(source, ref seed),
-                    anchor * scale * (fromSpotlight ? config.spotlightDiscount : config.offSpotlightPremium)));
+                var goods = TakeRandom(source, ref seed);
+                picks.Add(GoodsSlot(data, goods,
+                    anchor * scale
+                    * (fromSpotlight ? config.spotlightDiscount : config.offSpotlightPremium)
+                    * Regions.DemandWeight(region, goods)));
             }
 
             // Rebuild in template order: goods slots take the picks, the

@@ -45,6 +45,11 @@ namespace Wildgrove.Sim
 
         private static void Step(GameState state, GameDataAsset data, double deltaSeconds)
         {
+            // Tincture buffs tick down first, so a buff that lapses this step
+            // stops paying before the gather below reads the multipliers —
+            // sub-stepping means offline catch-up honours the same clock.
+            Tinctures.Advance(state, data, deltaSeconds);
+
             var economy = data.economy;
             // Worn gear can strengthen the burst (the Cordage Wraps' +50%).
             var burstMult = economy?.tending != null

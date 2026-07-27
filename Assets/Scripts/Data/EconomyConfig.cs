@@ -159,6 +159,12 @@ namespace Wildgrove.Data
             public double XpPerSecond { get; set; }
             public double KinshipDivisor { get; set; }
             public double KinshipXpRatePerLevel { get; set; }
+
+            /// <summary>Kinship levels at which a familiar's signature deepens (design §4, ascending). Empty = signatures off.</summary>
+            public List<int> SignatureMilestones { get; set; }
+
+            /// <summary>Trait sharpening per milestone passed (trait value × (1 + deepening · passed)).</summary>
+            public double SignatureDeepening { get; set; }
         }
 
         public sealed class ReplantSection

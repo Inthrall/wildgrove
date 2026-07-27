@@ -31,6 +31,7 @@
     { "order": 28, "id": "curators-cabinet",    "name": "Curator's Cabinet",            "track": "compendium", "materials": { "planks": 60, "timber": 60 }, "effects": [{ "type": "folioSpreadBonusMult", "value": 1.5 }] },
     { "order": 29, "id": "steel-toolset",       "name": "Steel Toolset",                "track": "tools",      "toolTier": "steel",     "gateSkill": "forgecraft", "gateLevel": 30, "materials": { "iron-ingot": 10, "charcoal": 20 }, "effects": [{ "type": "yieldMult", "skill": "all-gathering", "value": 2 }] },
     { "order": 30, "id": "raven-panniers",      "name": "Raven Panniers",               "track": "hauling",    "gateSkill": "bushcraft", "gateLevel": 35, "effects": [{ "type": "haulMult", "value": 2 }] },
-    { "order": 31, "id": "almanac-desk",        "name": "Almanac Desk",                 "track": "camp",       "materials": { "planks": 80, "timber": 100 }, "effects": [{ "type": "unlockVerdureForecast" }] }
+    { "order": 31, "id": "almanac-desk",        "name": "Almanac Desk",                 "track": "camp",       "materials": { "planks": 80, "timber": 100 }, "effects": [{ "type": "unlockVerdureForecast" }] },
+    { "order": 32, "id": "map-mistfen",         "name": "Trail Map: Mistfen Marsh",     "track": "trail",      "materials": { "smoked-trout": 20, "reed-baskets": 6, "iron-ingot": 4 }, "effects": [{ "type": "unlockZone", "zone": "mistfen-marsh" }, { "type": "unlockSkill", "skill": "apothecary" }, { "type": "unlockDigSite", "zone": "mistfen-marsh" }] }
   ]
 }

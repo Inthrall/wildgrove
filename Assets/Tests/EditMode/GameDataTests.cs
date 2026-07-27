@@ -27,8 +27,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(31),
-                "design doc §9 defines 30 named upgrades; Mistfen's trail map is held back until the zone's v1.1 companions (skills, dig site, waystone) ship with it, and the kith track adds the two recruit rungs");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(32),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, and Mistfen's trail map landed with the zone's v1.1 companions (apothecary, observation site, waystone)");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -37,6 +37,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Bonds, Is.Not.Empty);
             Assert.That(data.Species, Is.Not.Empty, "design §4 defines the familiar species");
             Assert.That(data.Planters, Is.Not.Empty, "design §3 defines the planters");
+            Assert.That(data.Regions, Is.Not.Empty, "design §8 defines the region modifiers");
+            Assert.That(data.Tinctures, Is.Not.Empty, "design §5 defines the Apothecary's tinctures");
             Assert.That(data.Exchange, Is.Not.Null, "design §9 the Exchange spread");
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
             Assert.That(data.Dialogue.Verses, Is.Not.Empty);
@@ -108,6 +110,36 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Rites.ChooseCount, Is.EqualTo(3));
             Assert.That(data.Rites.Rites.Single().Verses.First().Slots.First().Type, Is.EqualTo(RiteSlotType.Resource));
             Assert.That(data.Rites.Rites.Single().Verses.First().Slots.Last().Type, Is.EqualTo(RiteSlotType.Specimen));
+            Assert.That(data.Regions.Single(r => r.Id == "misted").Effects
+                    .Any(e => e.Type == EffectType.YieldMult && e.Resource == "fish" && e.Value > 1.0),
+                Is.True, "a misted region favours the river (design §8)");
+            Assert.That(data.Regions.All(r => !string.IsNullOrWhiteSpace(r.Sign)), Is.True,
+                "every season gets its one line");
+            Assert.That(data.Economy.FamiliarXp.SignatureMilestones, Is.EqualTo(new[] { 2, 4, 7 }),
+                "Kinship signature milestones (design §4)");
+            Assert.That(data.Economy.FamiliarXp.SignatureDeepening, Is.EqualTo(0.25));
+            Assert.That(data.Species.All(s => s.Inscriptions.Count == 3), Is.True,
+                "every species' plate has its three margin lines authored (§7)");
+
+            // Mistfen Marsh (zone 5, v1.1) — fireflies are observed now, not
+            // gathered: the marsh's third find is glow-moss and the lanterns
+            // are an insect plate at its watch site (design §3/§6).
+            Assert.That(data.ZonesById["mistfen-marsh"].Resources,
+                Is.EquivalentTo(new[] { "peat", "rare-herbs", "glow-moss" }));
+            Assert.That(data.Resources.Any(r => r.Id == "fireflies"), Is.False,
+                "fireflies stopped being a gatherable when the deep chase became observe-sketch-release");
+            Assert.That(data.InsectsById["lantern-bearers"].Habitats, Is.EqualTo(new[] { "mistfen-marsh" }));
+            Assert.That(data.ZonesById["mistfen-marsh"].VerseSite, Is.EqualTo("the lantern pool"));
+            Assert.That(data.UpgradesById["map-mistfen"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "apothecary"),
+                Is.True, "the marsh map teaches the Apothecary");
+            Assert.That(data.UpgradesById["map-mistfen"].Effects.Any(e => e.Type == EffectType.UnlockDigSite && e.Zone == "mistfen-marsh"),
+                Is.True, "and opens its observation site");
+            Assert.That(data.SpeciesById["osier-otter"].Trait.Resources,
+                Is.EquivalentTo(new[] { "peat", "glow-moss" }), "the marsh's pair specialist");
+            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("mistfen-marsh"),
+                "the Rite grew a fifth verse with the zone");
+            Assert.That(data.Tinctures.All(t => t.DurationSec > 0 && t.Effects.Count > 0), Is.True);
+            Assert.That(data.Recipes.Any(r => r.Skill == "apothecary"), Is.True, "the brews are fire recipes");
         }
 
         [Test]
@@ -135,6 +167,50 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(LoadSources()));
 
             Assert.That(issues, Is.Empty, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RegionEffectWithUnknownResource_IsCaught()
+        {
+            var sources = LoadSources();
+            sources.RegionsJson = sources.RegionsJson.Replace(
+                "\"resource\": \"herbs\"",
+                "\"resource\": \"moon-cheese\"");
+            Assert.That(sources.RegionsJson, Does.Contain("moon-cheese"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("moon-cheese"));
+        }
+
+        [Test]
+        public void Validate_TinctureNoRecipeBrews_IsCaught()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"output\": \"wardens-tonic\"",
+                "\"output\": \"wardens-cordial\"");
+            Assert.That(sources.RecipesJson, Does.Contain("wardens-cordial"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("could never be brewed"));
+        }
+
+        [Test]
+        public void Validate_InscriptionPastTheLastMilestone_IsCaught()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"signatureMilestones\": [2, 4, 7],",
+                "\"signatureMilestones\": [2, 4],");
+            Assert.That(sources.EconomyJson, Does.Contain("[2, 4],"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            // Every species authors three lines — with only two milestones the
+            // third can never be read.
+            Assert.That(issues, Has.Some.Contains("unreachable"));
         }
 
         [Test]
@@ -504,10 +580,14 @@ namespace Wildgrove.Data.Tests
         public void Validate_RecipeOnNeverGrantedSkill_IsReported()
         {
             var sources = LoadSources();
-            // apothecary is a known skill, but nothing unlocks it at runtime.
+            // husbandry is a known skill, but nothing unlocks it at runtime —
+            // it arrives with Highland Crags (v1.2). (This was apothecary until
+            // the Mistfen map started granting it; pick a skill from a zone
+            // that hasn't been built yet, or the premise quietly evaporates.)
             sources.RecipesJson = sources.RecipesJson.Replace(
                 "\"skill\": \"firecraft\",  \"inputs\": { \"fish\": 2 }",
-                "\"skill\": \"apothecary\", \"inputs\": { \"fish\": 2 }");
+                "\"skill\": \"husbandry\", \"inputs\": { \"fish\": 2 }");
+            Assert.That(sources.RecipesJson, Does.Contain("husbandry"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -840,7 +920,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.5d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
-            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(4));
+            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(5), "one verse per zone through Mistfen");
             Assert.That(asset.dialogue.verses.Single(v => v.key == "sunfield-meadow").text, Is.Not.Empty);
         }
 

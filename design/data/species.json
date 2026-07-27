@@ -1,61 +1,77 @@
 {
-  "$comment": "Familiar species (design doc S4). The kith is a collection of individuals: at most ONE familiar of each species ever walks with the warden (each has unique plate art), and each species carries a single fixed trait. A node specialist now works a PAIR of related nodes (e.g. copper + tin), so one familiar answers either node's gift pile and boosts both wherever it is posted or when it wanders. Trait kinds the sim interprets: nodeYieldBonus (at a node whose resource is in trait.resources), trailThroughputBonus (holding the trail post), digSpeedBonus (at a watch site), pristineBonus (points at its node, any resource). Node specialists arrive by gift pile at either of their nodes (one pile per verse sung); the carrier arrives through the recruit rungs and bonds. The roster is sized to the gatherable nodes: seven pair-specialists cover zones 1-4 plus rare-herbs, and each species' animal matches the powerup it gives. Names each start with a distinct letter. Values are first guesses.",
+  "$comment": "Familiar species (design doc S4). The kith is a collection of individuals: at most ONE familiar of each species ever walks with the warden (each has unique plate art), and each species carries a single fixed trait. A node specialist now works a PAIR of related nodes (e.g. copper + tin), so one familiar answers either node's gift pile and boosts both wherever it is posted or when it wanders. Trait kinds the sim interprets: nodeYieldBonus (at a node whose resource is in trait.resources), trailThroughputBonus (holding the trail post), digSpeedBonus (at a watch site), pristineBonus (points at its node, any resource). Node specialists arrive by gift pile at either of their nodes (one pile per verse sung); the carrier arrives through the recruit rungs and bonds. The roster is sized to the gatherable nodes: seven pair-specialists cover zones 1-4 plus rare-herbs, and each species' animal matches the powerup it gives. Names each start with a distinct letter. inscriptions = the plate's margin lines (design S7, the channel about individuals): one is earned per signature milestone passed (economy.familiarXp.signatureMilestones), in order, in the warden's hand — draft wording, re-voice with the narrative pass. Values are first guesses.",
   "species": [
     {
       "id": "meadow-vole",
       "name": "Meadow vole",
       "roleLean": "gatherer",
       "suggestedNames": ["Bramble", "Burr", "Clover", "Nettle", "Sorrel", "Pip", "Thistle", "Hazel"],
-      "trait": { "name": "Meadow-forager", "description": "+40% yield at berry and wildflower nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["berries", "wildflowers"] }
+      "trait": { "name": "Meadow-forager", "description": "+40% yield at berry and wildflower nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["berries", "wildflowers"] },
+      "inscriptions": ["Knows my step now. Doesn't look up.", "Found the last ripe cane in the rain, and left me half.", "Third season she has found me. I have stopped calling it luck."]
     },
     {
       "id": "red-squirrel",
       "name": "Red squirrel",
       "roleLean": "gatherer",
       "suggestedNames": ["Cob", "Filbert", "Russet", "Brindle", "Scamper"],
-      "trait": { "name": "Mast-hoarder", "description": "+40% yield at nut and mushroom nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["nuts", "mushrooms"] }
+      "trait": { "name": "Mast-hoarder", "description": "+40% yield at nut and mushroom nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["nuts", "mushrooms"] },
+      "inscriptions": ["Buries more than he digs up. The wood is in his debt.", "Showed me a cache I never taught him. I think it was a gift.", "Old now, and still burying. No winter has caught him short."]
     },
     {
       "id": "sedge-linnet",
       "name": "Sedge linnet",
       "roleLean": "gatherer",
       "suggestedNames": ["Trill", "Reedling", "Fife", "Sol", "Wren"],
-      "trait": { "name": "Nest-weaver", "description": "+40% yield at fibre and reed nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["fibres", "reeds"] }
+      "trait": { "name": "Nest-weaver", "description": "+40% yield at fibre and reed nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["fibres", "reeds"] },
+      "inscriptions": ["Pulls the year's best grasses first, and sings over the work.", "Wove a strand of my rope into her nest. I take that as a wage.", "The reeds bend before she lands now. They know her."]
     },
     {
       "id": "bramble-hare",
       "name": "Bramble hare",
       "roleLean": "gatherer",
       "suggestedNames": ["Loper", "Switch", "Fleet", "Bracken", "Clove"],
-      "trait": { "name": "Hedge-browser", "description": "+40% yield at herb and rare-herb nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["herbs", "rare-herbs"] }
+      "trait": { "name": "Hedge-browser", "description": "+40% yield at herb and rare-herb nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["herbs", "rare-herbs"] },
+      "inscriptions": ["Tastes the hedge for what's ripe. Leaves my mistakes on the stem.", "Steered me round the thorn patch by sitting still in front of it.", "The hedge opens for her. I have seen it, and I won't argue."]
     },
     {
       "id": "warren-weasel",
       "name": "Warren weasel",
       "roleLean": "gatherer",
       "suggestedNames": ["Slink", "Sable", "Nip", "Vein", "Ferro"],
-      "trait": { "name": "Ore-tunneler", "description": "+40% yield at copper scree and tin seam nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["copper-scree", "tin-seam"] }
+      "trait": { "name": "Ore-tunneler", "description": "+40% yield at copper scree and tin seam nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["copper-scree", "tin-seam"] },
+      "inscriptions": ["Follows the seam like a burrow. Comes up dusted green.", "Taps the stone twice where it's worth my while. Twice, always.", "The hill lets him through. I dig where he tells me now."]
     },
     {
       "id": "furrow-hedgehog",
       "name": "Furrow hedgehog",
       "roleLean": "gatherer",
       "suggestedNames": ["Quill", "Snuffle", "Prickle", "Furze", "Tumble"],
-      "trait": { "name": "Earth-rooter", "description": "+40% yield at clay and iron gravel nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["clay", "iron-gravel"] }
+      "trait": { "name": "Earth-rooter", "description": "+40% yield at clay and iron gravel nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["clay", "iron-gravel"] },
+      "inscriptions": ["Roots the wet ground, and huffs when it's good.", "Sleeps in the clay pit as if the ground had been warmed for him.", "The earth gives him what it hides from my spade."]
     },
     {
       "id": "tawny-owl",
       "name": "Tawny owl",
       "roleLean": "gatherer",
       "suggestedNames": ["Hoot", "Umber", "Hush", "Grey", "Willow"],
-      "trait": { "name": "Grove-and-river hunter", "description": "+40% yield at timber and fishing nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["timber", "fish"] }
+      "trait": { "name": "Grove-and-river hunter", "description": "+40% yield at timber and fishing nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["timber", "fish"] },
+      "inscriptions": ["Works the wood's edge and the shallows, and judges my knots.", "Left a trout at my feet at dusk. No comment offered.", "The river and the wood have settled which one owns her. Neither."]
+    },
+    {
+      "id": "osier-otter",
+      "name": "Osier otter",
+      "roleLean": "gatherer",
+      "suggestedNames": ["Rill", "Wade", "Tarn", "Eddy", "Slick"],
+      "trait": { "name": "Fen-swimmer", "description": "+40% yield at peat and glow-moss nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["peat", "glow-moss"] },
+      "inscriptions": ["Works the wet margins as if the water owed him.", "Brought the moss up glowing and dry. I no longer ask how.", "The fen holds its breath around him. He has never once noticed."]
     },
     {
       "id": "pack-raven",
       "name": "Pack raven",
       "roleLean": "carrier",
       "suggestedNames": ["Sootwing", "Corvus", "Jet", "Rook", "Ash", "Grackle", "Cinder", "Onyx"],
-      "trait": { "name": "Deep pockets", "description": "+25% throughput when it holds the trail post", "kind": "trailThroughputBonus", "value": 0.25 }
+      "trait": { "name": "Deep pockets", "description": "+25% throughput when it holds the trail post", "kind": "trailThroughputBonus", "value": 0.25 },
+      "inscriptions": ["Carries more than looks possible, and counts every piece.", "Took the long way round the storm and set down nothing.", "I have stopped checking the loads. Her idea, somehow."]
     }
   ]
 }

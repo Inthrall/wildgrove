@@ -15,8 +15,8 @@ namespace Wildgrove.Game
     ///
     /// The id → file maps live here (not in filenames) because a few plates
     /// serve more than one id — one ingot plate covers copper/bronze/iron, the
-    /// firefly keystone doubles as the fireflies gatherable — and the file names
-    /// stay stable for the CREDITS ledger.
+    /// lichen plate stands in for glow-moss — and the file names stay stable
+    /// for the CREDITS ledger.
     /// </summary>
     public static class ArtLibrary
     {
@@ -41,7 +41,7 @@ namespace Wildgrove.Game
             { "iron-gravel", Plates + "Resources/res-iron-ore" },
             { "peat", Plates + "Resources/res-peat" },
             { "rare-herbs", Plates + "Resources/res-rare-herbs" },
-            { "fireflies", Plates + "Zones/keystone-lantern-firefly" },
+            { "glow-moss", Plates + "Resources/res-lichen" },
             { "deep-ores", Plates + "Resources/res-deep-ores" },
             { "crystals", Plates + "Resources/res-crystals" },
             { "bone-beds", Plates + "Resources/res-bone" },

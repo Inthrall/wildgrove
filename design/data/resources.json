@@ -20,7 +20,7 @@
 
     { "id": "peat",         "sellValue": 15,  "skill": "mining" },
     { "id": "rare-herbs",   "sellValue": 30,  "skill": "foraging" },
-    { "id": "fireflies",    "sellValue": 25,  "skill": "entomology" },
+    { "id": "glow-moss",    "sellValue": 25,  "skill": "foraging" },
 
     { "id": "deep-ores",    "sellValue": 60,  "skill": "delving" },
     { "id": "crystals",     "sellValue": 120, "skill": "delving" },
