@@ -532,13 +532,34 @@ Interpretations shipped (tune/confirm):
   in the gap the HUD leaves open; the hand-drawn naturalist plates and a real region
   scene replace them (the camera/world seam and screen-point hit test stay).
   (`Assets/Scripts/Game/World/`)
-- **Portrait-only: the mock's wide (≥880px) two-column layout isn't built.** The
-  journal tabs solve the outgrowing-portrait problem (each page is its own scroll),
-  but landscape/desktop still gets the phone column; the mock pins the Trail page
-  beside the open page on wide screens. Safe-area insets (`env(safe-area-inset-*)`
-  in the mock) are also not applied. `HeightClampedElement`/`TrackedScrollRect`
-  are no longer used by the HUD (kept compiling — delete or reuse).
-  (`GameHud`)
+- ~~**Portrait-only: the mock's wide (≥880px) two-column layout isn't built.**~~
+  ✅ RESOLVED 2026-07-28 — the book opens to a **spread** on a wide canvas: the
+  open page left, the **Trail pinned right**, and the Trail's tab hidden
+  (an open tab you cannot close reads as broken). Asking for the Trail while
+  wide — including the tracker's deep links — lands on the Camp, as the mock
+  does. `JournalLayout.IsWide` is the breakpoint, and it asks an *aspect*
+  question rather than the mock's CSS pixel one: under ScaleWithScreenSize a
+  4:3 tablet in portrait is physically broad but still a column, while a
+  landscape phone is barely wider in canvas units and clearly wants the
+  spread. Rule = width ≥ 1200 canvas units **and** w/h ≥ 1.2, pinned by
+  `JournalLayoutTests` against the shapes real devices produce.
+  Implementation note: every page builder writes through `GameHud.Body` (and
+  `JournalWidgets.Content`), so the spread just repoints both at one column
+  at a time — the pages have no idea they are a column. Interpretations
+  (tune/confirm): the two columns **share one vertical scroll** like the mock,
+  rather than scrolling independently; the right column carries a "THE TRAIL"
+  running head since it has no lit tab to name it; the world strip keeps its
+  existing 14–26% clamp in both layouts, so a short landscape screen squeezes
+  the strip rather than the page.
+  ~~Safe-area insets are also not applied.~~ Stale when written — the
+  device-scale pass had already landed them: `FitLayoutToScreen` offsets the
+  root by `Screen.safeArea` and re-applies on every safe-area or canvas
+  change (now including width, which the spread needs).
+  Still open here: `HeightClampedElement`/`TrackedScrollRect` are no longer
+  used by the HUD (kept compiling — delete or reuse), and **full keyboard /
+  controller navigation is the other half of the Phase 2 gate** — the input
+  abstraction exists but menu focus traversal does not.
+  (`GameHud`, `Assets/Scripts/Game/Journal/JournalLayout.cs`)
 - **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
   GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
   Replace with a real bootstrap scene when there's content to lay out.

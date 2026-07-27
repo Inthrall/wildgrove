@@ -562,7 +562,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 ### Phase 2 — Adaptive UI & input (2–3 wks)
 
 - The four-page journal: **Trail** (zones, stationing, replanting, verse sites; the map is the page's own navigation) · **Camp** (queues, buildings, Exchange) · **Warden** (kit, skills, roster & slots, stats; the Almanac appears here after the first Migration) · **Record** (Compendium, Folio, Deep Pages). The Rite has **no tab** — verses live at their sites, with the compact tracker pinned on every page. *(The map is never called "Almanac.")*
-- Responsive: portrait column ↔ landscape spread (Trail permanent right page; Camp/Warden/Record turn left); test 4:3, 16:10, 21:9, cutouts, foldable resize
+- Responsive: portrait column ↔ landscape spread (Trail permanent right page; Camp/Warden/Record turn left) — **built 2026-07-28** (`JournalLayout`; the breakpoint is an aspect question, not a pixel one, so a portrait tablet stays a column); cutouts and safe areas land with it. Still to verify on real 4:3, 16:10, 21:9 and foldable-resize hardware
 - Keyboard/mouse + controller: every interaction reachable without touch; focus states; gamepad manifest
 - Frame-budget pass on a mid-tier reference device
 

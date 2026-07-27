@@ -95,6 +95,27 @@ namespace Wildgrove.Game
         private string _builtTab;
         private Rect _appliedSafeArea;
         private float _appliedCanvasHeight;
+        private float _appliedCanvasWidth;
+
+        /// <summary>
+        /// True while the canvas is wide enough to carry a spread (see
+        /// <see cref="JournalLayout"/>): the open page on the left, the Trail
+        /// pinned on the right. Recomputed whenever the canvas changes shape,
+        /// so a foldable or a window resize turns the page mid-run.
+        /// </summary>
+        private bool _wide;
+
+        /// <summary>
+        /// Where page builders are currently writing. Null outside a rebuild;
+        /// set to one column at a time while a spread is being laid out, which
+        /// is why <see cref="Body"/> reads it first — every builder funnels
+        /// through Body (and JournalWidgets.Content, kept in step), so the
+        /// pages need no idea whether they are a column or the whole page.
+        /// </summary>
+        private RectTransform _pageColumn;
+
+        /// <summary>The spread's two page columns, alive only while wide.</summary>
+        private RectTransform _spread;
         private readonly Dictionary<string, Button> _tabButtons = new Dictionary<string, Button>();
         private readonly Dictionary<string, Text> _tabLabels = new Dictionary<string, Text>();
         private readonly Dictionary<string, GameObject> _tabOuterRules = new Dictionary<string, GameObject>();
@@ -134,7 +155,7 @@ namespace Wildgrove.Game
 
         internal GameLoop Loop => _loop;
         internal bool Dirty { get => _dirty; set => _dirty = value; }
-        internal RectTransform Body => _body;
+        internal RectTransform Body => _pageColumn != null ? _pageColumn : _body;
         internal Transform ModalLayer => _modalLayer;
         internal GameObject Sheet { get => _sheet; set => _sheet = value; }
         internal RectTransform FirstVerseCard { get => _firstVerseCard; set => _firstVerseCard = value; }
@@ -271,6 +292,15 @@ namespace Wildgrove.Game
                 case "collect":
                     tab = TabRecord;
                     break;
+            }
+
+            // On a spread the Trail is already open on the right page, so
+            // asking for it means "somewhere that isn't here" — the Camp, as
+            // the mock does. Deep links (ScrollToOnTrail) route through here
+            // too, and land on a Trail that never left the screen.
+            if (_wide && tab == TabTrail)
+            {
+                tab = TabCamp;
             }
 
             if (Array.IndexOf(Tabs, tab) < 0 || tab == _tab)
@@ -466,14 +496,20 @@ namespace Wildgrove.Game
         private void FitLayoutToScreen()
         {
             var safe = Screen.safeArea;
-            var canvasHeight = ((RectTransform)_canvas.transform).rect.height;
-            if (safe == _appliedSafeArea && Mathf.Approximately(canvasHeight, _appliedCanvasHeight))
+            var canvasRect = ((RectTransform)_canvas.transform).rect;
+            var canvasHeight = canvasRect.height;
+            var canvasWidth = canvasRect.width;
+            if (safe == _appliedSafeArea
+                && Mathf.Approximately(canvasHeight, _appliedCanvasHeight)
+                && Mathf.Approximately(canvasWidth, _appliedCanvasWidth))
             {
                 return;
             }
 
             _appliedSafeArea = safe;
             _appliedCanvasHeight = canvasHeight;
+            _appliedCanvasWidth = canvasWidth;
+            ApplyWideLayout(JournalLayout.IsWide(canvasWidth, canvasHeight));
 
             var scale = _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;
             _root.offsetMin = new Vector2(safe.xMin / scale, safe.yMin / scale);
@@ -481,6 +517,102 @@ namespace Wildgrove.Game
 
             Canvas.ForceUpdateCanvases();
             UpdateWorldGap();
+        }
+
+        /// <summary>
+        /// Turn the book to a spread, or back to a single column (design §13
+        /// Phase 2). The Trail loses its tab when wide because it is always on
+        /// screen — an open tab you cannot close reads as broken — and a run
+        /// sitting on the Trail is moved to the Camp so the left page still
+        /// says something the right one doesn't (the mock does the same).
+        /// </summary>
+        private void ApplyWideLayout(bool wide)
+        {
+            // Idempotent on purpose: the first fit runs before the tab bar
+            // exists (so the hide below is a no-op), and the one at the end of
+            // BuildUi has to be able to reassert it without counting as a
+            // change and forcing a second rebuild of a page just built.
+            var changed = wide != _wide;
+            _wide = wide;
+
+            if (_tabButtons.TryGetValue(TabTrail, out var trailTab))
+            {
+                trailTab.gameObject.SetActive(!wide);
+            }
+
+            if (wide && _tab == TabTrail)
+            {
+                // Straight to the field: OpenTab would bounce this back.
+                _tab = TabCamp;
+                if (_tabButtons.Count > 0)
+                {
+                    foreach (var id in Tabs)
+                    {
+                        StyleTab(id, id == _tab);
+                    }
+                }
+
+                changed = true;
+            }
+
+            if (changed)
+            {
+                // The page count changed under the reader — rebuild both columns.
+                _builtTab = null;
+                _dirty = true;
+            }
+        }
+
+        /// <summary>
+        /// Point the page builders at <paramref name="column"/>. Both funnels
+        /// move together: <see cref="Body"/> for the builders that take a
+        /// parent, JournalWidgets.Content for the card helpers that don't.
+        /// </summary>
+        private void SetPageColumn(RectTransform column)
+        {
+            _pageColumn = column;
+            JournalWidgets.Content = column != null ? column : _body;
+        }
+
+        /// <summary>
+        /// Build the spread's frame inside the scroll content: two equal
+        /// columns side by side, top-aligned, and return them. The columns are
+        /// ordinary vertical layouts, so a page cannot tell it is one.
+        /// </summary>
+        private void BuildSpreadColumns(out RectTransform left, out RectTransform right)
+        {
+            _spread = MakeRect("Spread", _body);
+            var row = _spread.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            row.childForceExpandWidth = true;
+            // Top-aligned: the two pages are independent flows, and a short
+            // Camp page must not stretch to the Trail's length.
+            row.childForceExpandHeight = false;
+            row.childAlignment = TextAnchor.UpperLeft;
+            row.spacing = JournalLayout.SpreadGap;
+
+            left = MakeColumn("PageLeft", _spread);
+            right = MakeColumn("PageRight", _spread);
+        }
+
+        private RectTransform MakeColumn(string name, RectTransform parent)
+        {
+            var column = MakeRect(name, parent);
+            var layout = column.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 10;
+            var fitter = column.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            // Equal halves; without a flexible width the columns collapse to
+            // their content and the spread drifts off-centre.
+            var element = column.gameObject.AddComponent<LayoutElement>();
+            element.flexibleWidth = 1f;
+            element.minWidth = 1f;
+            return column;
         }
 
         /// <summary>
@@ -1024,7 +1156,36 @@ namespace Wildgrove.Game
                 Destroy(_body.GetChild(i).gameObject);
             }
 
-            switch (_tab)
+            _spread = null;
+            if (_wide)
+            {
+                // A spread: the open page on the left, the Trail always facing
+                // it. The Trail keeps the land in view while the player works
+                // the Camp or the Record — which is the whole point of the
+                // wide layout, and why the Trail has no tab here.
+                BuildSpreadColumns(out var left, out var right);
+                SetPageColumn(left);
+                BuildPage(_tab);
+                SetPageColumn(right);
+                // The Trail has no lit tab to name it here, so the page names
+                // itself — the running head the mock puts over the facing page.
+                MakeText(right, "THE TRAIL", 13, TextAnchor.MiddleCenter, Ink2, _smallCaps);
+                _trail.BuildTrailPage();
+            }
+            else
+            {
+                SetPageColumn(_body);
+                BuildPage(_tab);
+            }
+
+            SetPageColumn(null);
+            StartCoroutine(SettleScroll(keepPosition, landmark));
+        }
+
+        /// <summary>Build one page into whichever column is currently open.</summary>
+        private void BuildPage(string tab)
+        {
+            switch (tab)
             {
                 case TabCamp:
                     _camp.BuildCampPage();
@@ -1039,8 +1200,6 @@ namespace Wildgrove.Game
                     _trail.BuildTrailPage();
                     break;
             }
-
-            StartCoroutine(SettleScroll(keepPosition, landmark));
         }
 
         /// <summary>
