@@ -255,6 +255,29 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// Light one button of a set as the chosen one — the tab strip's own
+        /// lit/unlit language (page paper and bold ink against deep paper and
+        /// secondary), so a segmented choice inside a card reads the same way
+        /// the open tab does. Distinct from <see cref="SetButtonTint"/>: every
+        /// button here stays tappable, one of them is simply the answer.
+        /// </summary>
+        internal static void SetButtonChosen(Button button, bool chosen)
+        {
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = chosen ? PagePaper : DeepPaper;
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.color = chosen ? Ink : Ink2;
+                label.fontStyle = chosen ? FontStyle.Bold : FontStyle.Normal;
+            }
+        }
+
         internal static InputField MakeInputField(Transform parent, string value)
         {
             var go = new GameObject("Field", typeof(Image), typeof(InputField), typeof(LayoutElement));

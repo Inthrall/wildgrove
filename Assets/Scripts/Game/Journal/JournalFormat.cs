@@ -35,15 +35,15 @@ namespace Wildgrove.Game
             return sb.ToString();
         }
 
-        internal static string Cycle(List<string> options, string current)
+        /// <summary>
+        /// A good's id as the journal says it aloud — "copper-scree" is a key,
+        /// "copper scree" is a name. Ids double as display text throughout
+        /// (there are no authored resource names), and the hyphens show worst
+        /// at the Exchange, where two of them sit either side of an arrow.
+        /// </summary>
+        internal static string GoodName(string id)
         {
-            if (options.Count == 0)
-            {
-                return current;
-            }
-
-            var index = options.IndexOf(current);
-            return options[(index + 1) % options.Count];
+            return string.IsNullOrEmpty(id) ? id : id.Replace('-', ' ');
         }
 
         internal static string PlainNumber(double value)

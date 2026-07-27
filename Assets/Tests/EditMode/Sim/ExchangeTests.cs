@@ -123,6 +123,41 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Portion_TakesTheFractionOfWhatIsHeld()
+        {
+            Assert.That(Exchange.Portion(new BigDouble(240.0), 0.25).ToDouble(), Is.EqualTo(60.0).Within(Tolerance));
+            Assert.That(Exchange.Portion(new BigDouble(5.0), 0.5).ToDouble(), Is.EqualTo(2.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void Portion_Whole_IsTheHoldingExactly()
+        {
+            // Passed through, not multiplied — a whole trade must leave zero
+            // rather than a crumb no button could ever spend.
+            var have = new BigDouble(1.0 / 3.0);
+            Assert.That(Exchange.Portion(have, 1.0).ToDouble(), Is.EqualTo(have.ToDouble()));
+        }
+
+        [Test]
+        public void Portion_NothingHeldOrNothingAsked_IsZero()
+        {
+            Assert.That(Exchange.Portion(BigDouble.Zero, 1.0).ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(Exchange.Portion(new BigDouble(240.0), 0.0).ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Portion_WholeTrade_EmptiesTheGood()
+        {
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(240.0));
+
+            Exchange.TryTrade(state, _data, "berries", "nuts",
+                Exchange.Portion(state.GetResource("berries"), 1.0));
+
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
         public void TryTrade_Unconfigured_IsRefused()
         {
             _data.exchange = null;

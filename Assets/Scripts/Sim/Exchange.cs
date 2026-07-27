@@ -58,6 +58,22 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// What a fraction-of-holdings amount ("half", "all") comes to. A whole
+        /// trade passes <paramref name="have"/> through untouched so the good
+        /// ends at zero rather than a floating-point crumb the UI would round
+        /// away and the player would never be able to spend.
+        /// </summary>
+        public static BigDouble Portion(BigDouble have, double fraction)
+        {
+            if (have <= BigDouble.Zero || fraction <= 0.0)
+            {
+                return BigDouble.Zero;
+            }
+
+            return fraction >= 1.0 ? have : have * new BigDouble(fraction);
+        }
+
+        /// <summary>
         /// Barter <paramref name="amount"/> of <paramref name="from"/> for
         /// <paramref name="to"/>. Returns the units received (0 and no change when
         /// stock is short or the pair isn't tradeable), so the caller can leave

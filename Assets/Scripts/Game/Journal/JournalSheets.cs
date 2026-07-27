@@ -732,6 +732,45 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// The caravan's list for one side of a deal — every good it will speak
+        /// of, named, with what the camp holds and (asked from the taking side)
+        /// what the chosen amount would fetch. One tap chooses. The other
+        /// side's good is left out: nothing trades for itself, and a cycler
+        /// that could land on one was the old card's way of saying so.
+        /// <paramref name="tail"/> composes the muted detail per good, so the
+        /// caravan's arithmetic stays on the page that owns the deal.
+        /// </summary>
+        internal void OpenGoodPickSheet(string title, List<string> goods, string exclude,
+            System.Func<string, string> tail, System.Action<string> onPick)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, title, 30, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "THE EXCHANGE", 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            foreach (var id in goods)
+            {
+                if (id == exclude)
+                {
+                    continue;
+                }
+
+                var captured = id;
+                var detail = tail != null ? tail(id) : string.Empty;
+                Button(sheet, "<color=" + MossDeepHex + ">" + JournalFormat.GoodName(id) + "</color>"
+                              + (string.IsNullOrEmpty(detail)
+                                  ? string.Empty
+                                  : "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + detail + "</color></size>"), 560,
+                    () =>
+                    {
+                        CloseSheet();
+                        onPick(captured);
+                    });
+            }
+
+            Button(sheet, "Never mind", 320, CloseSheet);
+        }
+
         /// <summary>Display order for the posting sheet's candidates: free, movable, then slot-blocked.</summary>
         private static int PostRank(Familiar familiar, Familiar occupantHere, bool hasRoom)
         {

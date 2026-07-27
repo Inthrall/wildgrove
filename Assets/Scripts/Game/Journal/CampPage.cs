@@ -26,6 +26,21 @@ namespace Wildgrove.Game
         private string _exchangeFrom;
         private string _exchangeTo;
 
+        // How much of the give-good a trade spends, as a fraction of what's
+        // held. Half by default: the whole stock is the one amount that can't
+        // be walked back, so it isn't what a stray tap reaches for — and it
+        // alone asks first.
+        private double _exchangeFraction = 0.5;
+
+        // The amounts the caravan deals in. Fractions rather than numbers so
+        // the choice still means something at 8 berries and at 8 million.
+        private static readonly (string Label, double Fraction)[] ExchangeAmounts =
+        {
+            ("a quarter", 0.25),
+            ("half", 0.5),
+            ("all", 1.0),
+        };
+
         internal CampPage(GameHud hud) : base(hud) { }
 
         internal void BuildCampPage()
@@ -437,6 +452,16 @@ namespace Wildgrove.Game
             return false;
         }
 
+        /// <summary>
+        /// The caravan (design §9): goods for goods. Two field rows say what
+        /// leaves and what comes back — each NAMES its good and what's held of
+        /// it, with the list behind a Change button, because a plate reading
+        /// "Give: berries" is a plate a player taps expecting to give (and a
+        /// one-way cycler through the whole catalogue has no way back). The
+        /// amount is a choice rather than the old lone "Trade all" — which was
+        /// both the only offer and the only irreversible one — and the trade
+        /// itself is labelled with the deal it's about to strike.
+        /// </summary>
         private void BuildExchangeCard()
         {
             var card = Card("THE EXCHANGE");
@@ -445,6 +470,12 @@ namespace Wildgrove.Game
             if (caravan != null)
             {
                 PlateImage(card, caravan, 200f);
+            }
+
+            if (!Exchange.Configured(_loop.Data))
+            {
+                MakeText(card, "the caravan has not come this way.", 18, TextAnchor.MiddleCenter, Ink2);
+                return;
             }
 
             var tradeable = TradeableResources();
@@ -461,62 +492,206 @@ namespace Wildgrove.Game
 
             if (string.IsNullOrEmpty(_exchangeTo) || !tradeable.Contains(_exchangeTo) || _exchangeTo == _exchangeFrom)
             {
-                _exchangeTo = tradeable[0] == _exchangeFrom && tradeable.Count > 1 ? tradeable[1] : tradeable[0];
+                _exchangeTo = tradeable[0] == _exchangeFrom ? tradeable[1] : tradeable[0];
             }
 
-            var row = Row(card);
-            // The cyclers may never land the two sides on the same good — a
-            // self-trade quote reads as a broken caravan.
-            var fromButton = Button(row.transform, "from", 250, () =>
+            // Every widget here reads the same two goods and one amount, so
+            // they refresh together — on the HUD's cadence, and again the
+            // instant a tap changes any of them. Waiting a quarter second to
+            // acknowledge a tap is what makes a picker feel broken.
+            System.Action refresh = null;
+            var giveField = BuildExchangeSide(card, "GIVE", true, () => refresh());
+            var takeField = BuildExchangeSide(card, "GET", false, () => refresh());
+            var rate = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
+
+            var amountRow = Row(card);
+            amountRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+            var chips = new List<(Button Plate, double Fraction)>();
+            foreach (var amount in ExchangeAmounts)
             {
-                var options = TradeableResources();
-                _exchangeFrom = Cycle(options, _exchangeFrom);
-                if (_exchangeFrom == _exchangeTo && options.Count > 1)
+                var fraction = amount.Fraction;
+                chips.Add((Button(amountRow.transform, amount.Label, 170, () =>
                 {
-                    _exchangeTo = Cycle(options, _exchangeTo);
-                }
+                    _exchangeFraction = fraction;
+                    refresh();
+                }), fraction));
+            }
 
-                _dirty = true;
-            });
-            var toButton = Button(row.transform, "to", 250, () =>
-            {
-                var options = TradeableResources();
-                _exchangeTo = Cycle(options, _exchangeTo);
-                if (_exchangeTo == _exchangeFrom && options.Count > 1)
-                {
-                    _exchangeTo = Cycle(options, _exchangeTo);
-                }
-
-                _dirty = true;
-            });
-
-            var quote = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink);
             var tradeRow = Row(card);
+            tradeRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
             Button trade = null;
-            trade = Button(tradeRow.transform, "Trade all", 260, () =>
+            trade = Button(tradeRow.transform, "Trade", 800, () => OfferTrade(trade));
+            KeyAction(trade);
+
+            refresh = () =>
             {
-                var have = _loop.State.GetResource(_exchangeFrom);
-                var got = _loop.TradeAtExchange(_exchangeFrom, _exchangeTo, have);
-                if (got > BigDouble.Zero)
+                giveField.text = ExchangeSideLabel("GIVE", _exchangeFrom);
+                takeField.text = ExchangeSideLabel("GET", _exchangeTo);
+                // Per-unit, and the caravan's cut said plainly: barter replaced
+                // selling for Coin, so this card is the game's only price
+                // signal — it used to show one pre-computed lump and no rate.
+                rate.text = GoodName(_exchangeFrom) + " → " + GoodName(_exchangeTo) + " at "
+                            + NumberFormat.Rate(_loop.ExchangeRate(_exchangeFrom, _exchangeTo)) + " each"
+                            + "  ·  <color=" + OchreInkHex + ">the caravan keeps "
+                            + Percent(_loop.Data.exchange.spread) + "</color>";
+
+                foreach (var chip in chips)
                 {
-                    Flash(trade, "+" + NumberFormat.Short(got) + " " + _exchangeTo, true);
-                    SetNote("traded " + _exchangeFrom + " for " + _exchangeTo + ". a nod. gone before the count.");
+                    SetButtonChosen(chip.Plate, System.Math.Abs(chip.Fraction - _exchangeFraction) < 0.001);
                 }
 
-                _dirty = true;
-            });
+                var spend = ExchangeSpend();
+                var got = _loop.ExchangeQuote(_exchangeFrom, _exchangeTo, spend);
+                var live = got > BigDouble.Zero;
+                trade.interactable = live;
+                SetButtonTint(trade, live, true);
+                SetButtonLabel(trade, live
+                    ? "Trade " + ExchangeDeal(spend, got)
+                    : "no " + GoodName(_exchangeFrom) + " to give");
+            };
 
-            _liveUpdaters.Add(() =>
+            refresh();
+            _liveUpdaters.Add(refresh);
+        }
+
+        /// <summary>
+        /// One side of the caravan's deal: a field naming its good and the
+        /// holding behind it, with the picker on a Change button — the page's
+        /// own idiom (the label describes, the button acts) rather than a plate
+        /// wearing the verb of the trade. The taking side carries the swap,
+        /// since it sits between the two goods it would reverse.
+        /// </summary>
+        private Text BuildExchangeSide(RectTransform card, string field, bool giving, System.Action refresh)
+        {
+            var row = Row(card);
+            var label = MakeText(row.transform, ExchangeSideLabel(field, giving ? _exchangeFrom : _exchangeTo),
+                19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+
+            if (!giving)
             {
-                SetButtonLabel(fromButton, "Give: " + _exchangeFrom);
-                SetButtonLabel(toButton, "Get: " + _exchangeTo);
-                var have = _loop.State.GetResource(_exchangeFrom);
-                var got = _loop.ExchangeQuote(_exchangeFrom, _exchangeTo, have);
-                quote.text = NumberFormat.Short(have) + " " + _exchangeFrom + "  »  "
-                             + NumberFormat.Short(got) + " " + _exchangeTo;
-                trade.interactable = got > BigDouble.Zero;
-                SetButtonTint(trade, got > BigDouble.Zero);
-            });
+                // Reversing the pair was a full lap of both cyclers, and it's
+                // the commonest second thought at a barter table.
+                Button(row.transform, "Swap", 140, () =>
+                {
+                    var was = _exchangeFrom;
+                    _exchangeFrom = _exchangeTo;
+                    _exchangeTo = was;
+                    refresh();
+                });
+            }
+
+            Button(row.transform, "Change", 170, () => OpenExchangePicker(giving, refresh));
+            return label;
+        }
+
+        /// <summary>"GIVE / berries / 240 held" — the field, its good, and the holding under it.</summary>
+        private string ExchangeSideLabel(string field, string id)
+        {
+            return SizeOpen(15) + "<color=" + Ink2Hex + ">" + field + "</color></size>  " + GoodName(id)
+                   + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + ExchangeHeld(id) + "</color></size>";
+        }
+
+        /// <summary>What the camp holds of a good, for a picker line or a field.</summary>
+        private string ExchangeHeld(string id)
+        {
+            var have = _loop.State.GetResource(id);
+            return have > BigDouble.Zero ? NumberFormat.Short(have) + " held" : "none held";
+        }
+
+        /// <summary>The stock the chosen amount comes to right now.</summary>
+        private BigDouble ExchangeSpend()
+        {
+            return Exchange.Portion(_loop.State.GetResource(_exchangeFrom), _exchangeFraction);
+        }
+
+        /// <summary>
+        /// "120 berries → 18 wildflowers". Fraction-capable throughout: half of
+        /// five berries is 2.5, and the whole-unit formatter would call that 2
+        /// while the caravan took two and a half.
+        /// </summary>
+        private string ExchangeDeal(BigDouble spend, BigDouble got)
+        {
+            return NumberFormat.Rate(spend) + " " + GoodName(_exchangeFrom)
+                   + " → " + NumberFormat.Rate(got) + " " + GoodName(_exchangeTo);
+        }
+
+        /// <summary>
+        /// Strike the deal — or, for the whole stock, ask first. Amber asks
+        /// before it's spent for the same reason: emptying a good the camp has
+        /// been gathering all session is not a thing to do by accident.
+        /// </summary>
+        private void OfferTrade(Button trade)
+        {
+            var spend = ExchangeSpend();
+            var got = _loop.ExchangeQuote(_exchangeFrom, _exchangeTo, spend);
+            if (got <= BigDouble.Zero)
+            {
+                return;
+            }
+
+            if (_exchangeFraction < 1.0)
+            {
+                CommitTrade(trade, spend);
+                return;
+            }
+
+            _hud.Sheets.OpenConfirmSheet(
+                "Trade all your " + GoodName(_exchangeFrom) + "?",
+                ExchangeDeal(spend, got) + ", and the trail starts that pile again.",
+                "Trade all",
+                () => CommitTrade(trade, spend));
+        }
+
+        private void CommitTrade(Button trade, BigDouble spend)
+        {
+            var got = _loop.TradeAtExchange(_exchangeFrom, _exchangeTo, spend);
+            if (got > BigDouble.Zero)
+            {
+                Flash(trade, "+" + NumberFormat.Rate(got) + " " + GoodName(_exchangeTo), true);
+                SetNote("traded " + GoodName(_exchangeFrom) + " for " + GoodName(_exchangeTo)
+                        + ". a nod. gone before the count.");
+            }
+
+            _dirty = true;
+        }
+
+        /// <summary>
+        /// The caravan's list for one side. The giving list says what's held;
+        /// the taking list also says what the chosen amount would fetch, which
+        /// is the number the choice actually turns on.
+        /// </summary>
+        private void OpenExchangePicker(bool giving, System.Action refresh)
+        {
+            var spend = ExchangeSpend();
+            _hud.Sheets.OpenGoodPickSheet(
+                giving ? "What will you give?" : "What will you take?",
+                TradeableResources(),
+                giving ? _exchangeTo : _exchangeFrom,
+                id => giving ? ExchangeHeld(id) : ExchangeHeld(id) + ExchangeFetchTail(id, spend),
+                id =>
+                {
+                    if (giving)
+                    {
+                        _exchangeFrom = id;
+                    }
+                    else
+                    {
+                        _exchangeTo = id;
+                    }
+
+                    refresh();
+                });
+        }
+
+        /// <summary>"· 120 berries buys 18" — what this good would come to, on the taking list.</summary>
+        private string ExchangeFetchTail(string id, BigDouble spend)
+        {
+            var got = _loop.ExchangeQuote(_exchangeFrom, id, spend);
+            return got <= BigDouble.Zero
+                ? string.Empty
+                : "  ·  " + NumberFormat.Rate(spend) + " " + GoodName(_exchangeFrom)
+                  + " buys " + NumberFormat.Rate(got);
         }
 
         private void BuildLadderCard()
