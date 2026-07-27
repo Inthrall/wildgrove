@@ -96,7 +96,13 @@ namespace Wildgrove.Game.World
             _badge.RefreshMark();
         }
 
-        public void Refresh(bool selected, float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon)
+        /// <summary>
+        /// Per-frame state refresh. <paramref name="dimIdle"/> false suspends
+        /// the idle dimming — on a fresh camp with nothing posted anywhere,
+        /// dimming EVERY plate read as "disabled" exactly when the first tap
+        /// (posting) had to happen; dim only once dim can mean something.
+        /// </summary>
+        public void Refresh(bool selected, float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
         {
             var pulse = Node.tendBurstRemaining > 0.0
                 ? 1f + PulseAmount * Mathf.Sin(time * PulseSpeed)
@@ -119,15 +125,16 @@ namespace Wildgrove.Game.World
             // One body per post: somebody standing here — warden or familiar —
             // is what "working" means now.
             var working = wardenPosted || occupant != null;
+            var alpha = working || !dimIdle ? 1f : IdleAlpha;
             var colour = _colour;
-            colour.a = working ? 1f : IdleAlpha;
+            colour.a = alpha;
             _disc.color = colour;
 
             // The plate wears the same idle dimming so a fallow node reads as
             // fallow whether it shows a plate or the bare disc.
             if (_plate != null)
             {
-                _plate.color = new Color(1f, 1f, 1f, working ? 1f : IdleAlpha);
+                _plate.color = new Color(1f, 1f, 1f, alpha);
             }
 
             _badge.Refresh(wardenPosted, occupant, occupantIcon);

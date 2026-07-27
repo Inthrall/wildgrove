@@ -29,6 +29,13 @@ namespace Wildgrove.Game.Services
             return _owned.Contains(productId);
         }
 
+        public string PriceLabel(string productId)
+        {
+            // No catalogue in the editor — real-money lines simply omit the
+            // price tail, same as a device before the fetch resolves.
+            return null;
+        }
+
         public void Initialise(Action onReady = null)
         {
             IsInitialised = true;

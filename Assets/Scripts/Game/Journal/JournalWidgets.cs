@@ -40,11 +40,14 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Global type scale. Authored sizes track the mock's rem values 1:1,
-        /// but on a phone the mock's page is ~2.25x the CSS pixel size while
-        /// the canvas reference gives ~1.5x — this closes the gap. Applied in
-        /// MakeText and SizeOpen so every glyph scales together.
+        /// but the mock was proofed on a desktop monitor — at 1.5 the working
+        /// text (ledger, buttons, card heads) landed at 9–13sp on a real phone,
+        /// under Android's ~12sp legibility floor. 2.0 puts the small end of
+        /// the scale on the right side of that floor; the big end (titles)
+        /// compensates with smaller authored sizes. Applied in MakeText and
+        /// SizeOpen so every glyph scales together.
         /// </summary>
-        internal const float FontScale = 1.5f;
+        internal const float FontScale = 2f;
 
         /// <summary>An inline rich-text size tag, scaled like MakeText sizes.</summary>
         internal static string SizeOpen(int size)
@@ -143,7 +146,8 @@ namespace Wildgrove.Game
         {
             var go = new GameObject("Button", typeof(Image), typeof(Button), typeof(LayoutElement));
             go.transform.SetParent(parent, false);
-            go.GetComponent<Image>().color = DeepPaper;
+            var image = go.GetComponent<Image>();
+            image.color = DeepPaper;
             AddBorder(go, Ink2);
             var element = go.GetComponent<LayoutElement>();
             element.preferredWidth = width;
@@ -151,10 +155,21 @@ namespace Wildgrove.Game
             // Intrinsic height so buttons don't collapse to zero in a vertical
             // layout that controls height without force-expanding it (the sheets);
             // in rows, force-expand already governs, so this is a harmless floor.
-            // 76 units ≈ a thumb-sized target on a 1080-wide phone.
-            element.preferredHeight = 76;
-            element.minHeight = 76;
+            // 120 units ≈ 48dp (Android's touch minimum) at the 1080×1920
+            // reference scale — 76 was ~31dp, half a fingertip.
+            element.preferredHeight = 120;
+            element.minHeight = 120;
             var button = go.GetComponent<Button>();
+            // Without a targetGraphic the default ColorTint transition has
+            // nothing to tint — no button anywhere acknowledged a press.
+            button.targetGraphic = image;
+            var colours = button.colors;
+            colours.highlightedColor = new Color(0.97f, 0.96f, 0.93f, 1f);
+            colours.pressedColor = new Color(0.8f, 0.76f, 0.68f, 1f);
+            // Disabled stays SetButtonTint's job — white here so the two
+            // channels don't multiply into a blank plate.
+            colours.disabledColor = Color.white;
+            button.colors = colours;
             button.onClick.AddListener(onClick);
             var label = MakeText(go.transform, text, 19, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
             Stretch((RectTransform)label.transform);
@@ -226,8 +241,8 @@ namespace Wildgrove.Game
             var element = go.GetComponent<LayoutElement>();
             element.preferredWidth = 560;
             element.minWidth = 560;
-            element.preferredHeight = 96;
-            element.minHeight = 96;
+            element.preferredHeight = 120;
+            element.minHeight = 120;
 
             var text = MakeText(go.transform, value, 24, TextAnchor.MiddleLeft, Ink);
             var textRect = (RectTransform)text.transform;

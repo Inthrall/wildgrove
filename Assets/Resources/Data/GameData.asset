@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: 
-  sourceHash: ff8d1b088978cc929b4ab6bb2dc7aeba32045fb7b373d9f69effae3243807bd5
+  sourceHash: 877355ae724676148ded76b6a46fa5827cda43b38a670916edd352332a779abc
   economy:
     costGrowth:
       building: 1.25
@@ -79,7 +79,7 @@ MonoBehaviour:
       gatherPerSecond: 0.5
     bubbles:
       spawnIntervalSec: 25
-      lifetimeSec: 18
+      lifetimeSec: 55
       maxLive: 3
       rewardSeconds: 60
     familiarXp:

@@ -169,5 +169,76 @@ namespace Wildgrove.Game.Tests
         {
             Assert.That(WorldStrip.HitIndex(new Vector2[0], 80f, Vector2.zero), Is.EqualTo(-1));
         }
+
+        [Test]
+        public void ResolveHit_TapOnAPlateInsideAnotherRowsBadgeCircle_ThePlateWins()
+        {
+            // Two rows: the top-row badge (centre 272 − 72 = 200, radius 33)
+            // hangs into the bottom row's plate band (centre 128, radius 57.5,
+            // reaching up to 185.5). A tap at y = 170 is on the bottom plate
+            // AND inside the top badge's circle — the old badge-first order
+            // sent it to the TOP row's posting sheet. Normalised depth:
+            // badge (30/33)² ≈ 0.83 vs plate (42/57.5)² ≈ 0.53 — plate wins.
+            var strip = new Rect(0f, 0f, 400f, 400f);
+            var centres = new[] { new Vector2(200f, 272f), new Vector2(200f, 128f) };
+
+            var hit = WorldStrip.ResolveHit(strip, centres, 57.5f, 100f, new[] { true, true }, new Vector2(200f, 170f));
+
+            Assert.That(hit, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ResolveHit_TapAtTheBadgeCentre_TheBadgeStillWins()
+        {
+            // Dead-on the badge icon: outside the plate circles, proportionally
+            // deepest in the badge — it must keep resolving to its own post.
+            var strip = new Rect(0f, 0f, 400f, 400f);
+            var centres = new[] { new Vector2(200f, 272f), new Vector2(200f, 128f) };
+
+            var hit = WorldStrip.ResolveHit(strip, centres, 57.5f, 100f, new[] { true, true }, new Vector2(200f, 200f));
+
+            Assert.That(hit, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ResolveHit_VacantBadge_HitsNothing()
+        {
+            // A vacant badge draws nothing, so its (invisible) circle must not
+            // swallow taps — the plate is the assign gesture there.
+            var strip = new Rect(0f, 0f, 400f, 400f);
+            var centre = new Vector2(200f, 272f);
+            var badgePoint = centre + new Vector2(0f, WorldStrip.BadgeOffsetFactor * 100f);
+
+            var occupied = WorldStrip.ResolveHit(strip, new[] { centre }, 40f, 100f, new[] { true }, badgePoint);
+            var vacant = WorldStrip.ResolveHit(strip, new[] { centre }, 40f, 100f, new[] { false }, badgePoint);
+
+            Assert.That(occupied, Is.EqualTo(0));
+            Assert.That(vacant, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void ResolveHit_BadgeCircleBelowTheBand_HitsNothing()
+        {
+            // Badges hang low enough to spill under the strip into the chrome
+            // below (the trail-home button) — outside the band they must miss.
+            var strip = new Rect(0f, 100f, 400f, 200f);
+            var centre = new Vector2(200f, 130f);
+            var below = centre + new Vector2(0f, WorldStrip.BadgeOffsetFactor * 100f); // y = 58, under the band
+
+            var hit = WorldStrip.ResolveHit(strip, new[] { centre }, 40f, 100f, new[] { true }, below);
+
+            Assert.That(hit, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void ResolveHit_PlateAlone_StillResolves()
+        {
+            var strip = new Rect(0f, 0f, 400f, 400f);
+            var centres = WorldStrip.LayoutCentres(strip, 3);
+
+            var hit = WorldStrip.ResolveHit(strip, centres, 60f, 80f, new[] { false, false, false }, centres[2] + new Vector2(20f, 10f));
+
+            Assert.That(hit, Is.EqualTo(2));
+        }
     }
 }

@@ -30,5 +30,13 @@ namespace Wildgrove.Game.Input
         /// concept.
         /// </summary>
         bool PointerPressedThisFrame { get; }
+
+        /// <summary>
+        /// True on the single frame the player asked to go back — Android's
+        /// hardware/gesture Back (which Unity surfaces as Escape) or the Escape
+        /// key on desktop. The UI layer dismisses the open sheet, steps to the
+        /// home tab, or lets the app exit.
+        /// </summary>
+        bool BackTriggered { get; }
     }
 }

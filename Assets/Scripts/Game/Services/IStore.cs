@@ -40,6 +40,14 @@ namespace Wildgrove.Game.Services
         /// <summary>Whether a one-off product is owned (persisted by the store; false until the connection resolves).</summary>
         bool IsOwned(string productId);
 
+        /// <summary>
+        /// The product's localized store price ("$1.99"), or null before the
+        /// catalogue is fetched / for an unknown id. Every real-money line
+        /// shows this so the first price a player sees is never the Play
+        /// purchase dialog itself.
+        /// </summary>
+        string PriceLabel(string productId);
+
         /// <summary>Connect to the store and resolve owned products. Safe to call once at startup.</summary>
         void Initialise(Action onReady = null);
 

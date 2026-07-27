@@ -197,8 +197,12 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            label.text = "an amber pack"
-                         + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)amount) + " amber</color></size>";
+            var baseText = "an amber pack"
+                           + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)amount) + " amber</color></size>";
+            label.text = baseText;
+            // The store's price lands after the (lazy) catalogue fetch — keep
+            // the line current so the tap is never a surprise dialog.
+            _liveUpdaters.Add(() => label.text = baseText + PriceTail(productId));
             Button buy = null;
             buy = Button(row.transform, "Buy", 170, () =>
             {

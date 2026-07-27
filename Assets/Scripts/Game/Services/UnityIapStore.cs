@@ -36,6 +36,13 @@ namespace Wildgrove.Game.Services
             return _owned.Contains(productId);
         }
 
+        public string PriceLabel(string productId)
+        {
+            return _products.TryGetValue(productId, out var product)
+                ? product.metadata?.localizedPriceString
+                : null;
+        }
+
         public void Initialise(Action onReady = null)
         {
             if (_ready)

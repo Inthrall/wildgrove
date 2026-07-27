@@ -37,6 +37,20 @@ namespace Wildgrove.Game.World
         /// <summary>The HUD's selected node, mirrored here so its sprite wears the ring.</summary>
         public NodeState SelectedNode { get; set; }
 
+        /// <summary>
+        /// True while a sheet covers the strip — windfalls stop aging and
+        /// spawning so a modal can't silently burn their lifetime. Purely
+        /// presentation state, so freezing it is free.
+        /// </summary>
+        public bool Frozen { get; set; }
+
+        /// <summary>
+        /// True until the player's first-ever catch — new windfalls carry a
+        /// "tap to catch" tag and beckon, because nothing else marks a slowly
+        /// turning plate as the game's most valuable tap target.
+        /// </summary>
+        public bool CatchHintPending { get; set; }
+
         private GameLoop _loop;
         private Camera _camera;
         private GameState _builtFor;
@@ -44,12 +58,19 @@ namespace Wildgrove.Game.World
         private Font _labelFont;
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
         private readonly List<BubbleWorldView> _bubbles = new List<BubbleWorldView>();
+        // Caught windfalls play out a short burst before being destroyed —
+        // out of _bubbles, so they can't be caught twice or block a spawn.
+        private readonly List<BubbleWorldView> _bursting = new List<BubbleWorldView>();
+        private BubbleWorldView _lastCaught;
         private StationWorldView _wanderView;
         private Vector2[] _centres = new Vector2[0];
+        private bool[] _badgeVisible = new bool[0];
         private float _radiusPx;
         private float _diameterPx;
         private float _nextBubbleAt;
         private int _bubbleCursor;
+        private bool _wasFrozen;
+        private float _frozenAt;
 
         private void OnEnable()
         {
@@ -80,37 +101,16 @@ namespace Wildgrove.Game.World
         }
 
         /// <summary>
-        /// The node whose plate is under the screen point, or null for a miss —
-        /// the tend hit. The trail/wander posts share the strip but aren't
-        /// tendable, and a badge tap resolves through
-        /// <see cref="StationAtScreenPoint"/> instead.
+        /// The post whose plate or badge is under the screen point, or null for
+        /// a miss. Plates and badges resolve together — nearest centre wins
+        /// (see <see cref="WorldStrip.ResolveHit"/>) — and <paramref name="node"/>
+        /// carries the gathering node when the hit was one (null for the
+        /// wander plate).
         /// </summary>
-        public NodeState NodeAtScreenPoint(Vector2 screenPoint)
+        public string PostAtScreenPoint(Vector2 screenPoint, out NodeState node)
         {
-            var index = WorldStrip.HitIndex(_centres, _radiusPx, screenPoint);
-            return index >= 0 && index < _views.Count ? _views[index].Node : null;
-        }
-
-        /// <summary>
-        /// The station whose assignment affordance is under the screen point,
-        /// or null: any post's badge, or the trail/wander plates themselves
-        /// (no tend there — the whole sprite is the assign gesture). Callers
-        /// check this BEFORE the tend hit so badges win the overlap band.
-        /// </summary>
-        public string StationAtScreenPoint(Vector2 screenPoint)
-        {
-            var badge = WorldStrip.BadgeHitIndex(_centres, _diameterPx, screenPoint);
-            if (badge >= 0)
-            {
-                return StationIdAt(badge);
-            }
-
-            var plate = WorldStrip.HitIndex(_centres, _radiusPx, screenPoint);
-            return plate >= _views.Count ? StationIdAt(plate) : null;
-        }
-
-        private string StationIdAt(int index)
-        {
+            node = null;
+            var index = WorldStrip.ResolveHit(StripScreenRect, _centres, _radiusPx, _diameterPx, _badgeVisible, screenPoint);
             if (index < 0 || index >= _centres.Length)
             {
                 return null;
@@ -118,7 +118,8 @@ namespace Wildgrove.Game.World
 
             if (index < _views.Count)
             {
-                return _views[index].Node.id;
+                node = _views[index].Node;
+                return node.id;
             }
 
             return Familiar.WanderStation;
@@ -152,14 +153,45 @@ namespace Wildgrove.Game.World
 
             var state = _loop.State;
             var postNodeId = Warden.PostNodeId(state);
-            foreach (var view in _views)
+
+            // A fresh camp with nothing posted anywhere used to render the
+            // whole strip at idle-dim — reading as "disabled" exactly when the
+            // first tap must happen. Dim only once dim can mean something.
+            var anyPosted = postNodeId != null || Warden.IsWandering(state);
+            if (!anyPosted)
             {
+                foreach (var familiar in state.roster)
+                {
+                    if (!familiar.IsResting)
+                    {
+                        anyPosted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (_badgeVisible.Length != _centres.Length)
+            {
+                _badgeVisible = new bool[_centres.Length];
+            }
+
+            for (var i = 0; i < _views.Count; i++)
+            {
+                var view = _views[i];
                 var occupant = Stationing.OccupantOf(state, view.Node.id);
+                var wardenHere = view.Node.id == postNodeId;
+                // A vacant badge draws nothing, so it must hit nothing.
+                _badgeVisible[i] = wardenHere || occupant != null;
                 view.Refresh(view.Node == SelectedNode, Time.time,
-                    view.Node.id == postNodeId, occupant, IconFor(occupant));
+                    wardenHere, occupant, IconFor(occupant), anyPosted);
             }
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
+            if (_badgeVisible.Length > _views.Count)
+            {
+                _badgeVisible[_views.Count] = Warden.IsWandering(state) || wanderer != null;
+            }
+
             _wanderView.Refresh(Warden.IsWandering(state), wanderer, IconFor(wanderer));
 
             UpdateBubbles(state);
@@ -196,12 +228,101 @@ namespace Wildgrove.Game.World
             return _bubbles.Count > 0 ? TakeBubble(0) : null;
         }
 
+        /// <summary>
+        /// True when the tap was a near miss on a live windfall — within twice
+        /// its catch circle but outside it. The caller swallows the tap (a
+        /// whiff must not open the posting sheet underneath) and the windfall
+        /// shivers so the miss reads as a miss, not a dead tap.
+        /// </summary>
+        public bool NudgeNearMiss(Vector2 screenPoint)
+        {
+            const float nearMissFactor = 2f;
+            for (var i = 0; i < _bubbles.Count; i++)
+            {
+                var bubble = _bubbles[i];
+                var radius = bubble.ScreenRadius * nearMissFactor;
+                if ((bubble.ScreenPosition - screenPoint).sqrMagnitude <= radius * radius)
+                {
+                    bubble.Nudge(Time.time);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Style the just-caught windfall's send-off once the sim has decided
+        /// what it paid: a golden burst with a rising "+N" for a real catch, a
+        /// grey deflate for an empty one — feedback AT the finger, not only in
+        /// the journal margin.
+        /// </summary>
+        public void ResolveCatch(string text, bool rewarded)
+        {
+            if (_lastCaught == null)
+            {
+                return;
+            }
+
+            _lastCaught.BeginBurst(Time.time, rewarded);
+            SpawnCatchText(_lastCaught.ScreenPosition, text, rewarded);
+            _lastCaught = null;
+        }
+
         private NodeState TakeBubble(int index)
         {
             var bubble = _bubbles[index];
             _bubbles.RemoveAt(index);
-            Destroy(bubble.gameObject);
+            // Not destroyed yet — it plays out a short burst (ResolveCatch
+            // styles it) and UpdateBubbles retires it when the burst ends.
+            bubble.BeginBurst(Time.time, true);
+            _bursting.Add(bubble);
+            _lastCaught = bubble;
             return bubble.Node;
+        }
+
+        private void SpawnCatchText(Vector2 screen, string text, bool rewarded)
+        {
+            if (_labelFont == null || _container == null)
+            {
+                return;
+            }
+
+            var label = PlaceholderArt.CreateLabel(_container, text, _labelFont,
+                rewarded ? new Color(0.333f, 0.392f, 0.247f, 1f) : new Color(0.431f, 0.376f, 0.278f, 1f));
+            label.anchor = TextAnchor.MiddleCenter;
+            label.transform.position = ScreenToWorld(screen);
+            // CreateLabel sizes for a diameter-scaled parent; this one hangs
+            // off the unscaled container, so size it to the strip instead.
+            var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
+            var diameter = WorldStrip.BubbleDiameter(StripScreenRect, _views.Count + 1) * worldPerPixel;
+            label.characterSize = diameter * 0.055f;
+            label.GetComponent<MeshRenderer>().sortingOrder = 9;
+            StartCoroutine(RiseAndFadeLabel(label, diameter));
+        }
+
+        private System.Collections.IEnumerator RiseAndFadeLabel(TextMesh label, float diameter)
+        {
+            const float life = 1.1f;
+            var start = label.transform.position;
+            var colour = label.color;
+            for (var age = 0f; age < life; age += Time.deltaTime)
+            {
+                if (label == null)
+                {
+                    yield break;
+                }
+
+                var t = age / life;
+                label.transform.position = start + new Vector3(0f, diameter * 0.6f * t, 0f);
+                label.color = new Color(colour.r, colour.g, colour.b, 1f - t * t);
+                yield return null;
+            }
+
+            if (label != null)
+            {
+                Destroy(label.gameObject);
+            }
         }
 
         private void UpdateBubbles(GameState state)
@@ -213,6 +334,50 @@ namespace Wildgrove.Game.World
             }
 
             var now = Time.time;
+
+            // Under a sheet nothing ages, spawns, or expires; on the way back
+            // every timestamp shifts by the pause so the drift resumes exactly
+            // where the sheet interrupted it.
+            if (Frozen)
+            {
+                if (!_wasFrozen)
+                {
+                    _wasFrozen = true;
+                    _frozenAt = now;
+                }
+
+                return;
+            }
+
+            if (_wasFrozen)
+            {
+                _wasFrozen = false;
+                var pause = now - _frozenAt;
+                foreach (var bubble in _bubbles)
+                {
+                    bubble.ShiftTime(pause);
+                }
+
+                foreach (var bubble in _bursting)
+                {
+                    bubble.ShiftTime(pause);
+                }
+
+                if (_nextBubbleAt > 0f)
+                {
+                    _nextBubbleAt += pause;
+                }
+            }
+
+            // Caught windfalls play out their burst, then go.
+            for (var i = _bursting.Count - 1; i >= 0; i--)
+            {
+                if (!_bursting[i].AnimateBurst(now))
+                {
+                    Destroy(_bursting[i].gameObject);
+                    _bursting.RemoveAt(i);
+                }
+            }
 
             // Expired bubbles drift off the top and go.
             for (var i = _bubbles.Count - 1; i >= 0; i--)
@@ -272,9 +437,12 @@ namespace Wildgrove.Game.World
                 }
 
                 _bubbleCursor = index + 1;
+                // Until the first-ever catch, each windfall wears its own
+                // "tap to catch" tag — nothing else marks it as interactive.
                 _bubbles.Add(BubbleWorldView.Create(_container, node,
                     PlaceholderArt.ResourceColour(node.resourceId),
-                    ArtLibrary.ForResource(node.resourceId), now, index * 2.1f));
+                    ArtLibrary.ForResource(node.resourceId), now, index * 2.1f,
+                    CatchHintPending ? _labelFont : null));
                 _nextBubbleAt = now + (float)config.spawnIntervalSec;
                 return;
             }
@@ -316,6 +484,8 @@ namespace Wildgrove.Game.World
             _views.Clear();
             // Any bubbles adrift were children of the torn-down container.
             _bubbles.Clear();
+            _bursting.Clear();
+            _lastCaught = null;
             _container = new GameObject("WorldNodes").transform;
             _container.SetParent(transform, false);
 

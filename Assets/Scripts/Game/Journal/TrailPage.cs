@@ -173,6 +173,12 @@ namespace Wildgrove.Game
             var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft, Ink, _serif);
             FlexibleWidth(label.gameObject, 1f);
 
+            // The page must offer the post it describes — posting used to live
+            // only on the world strip's plates, so the node's own card could
+            // say "0.0/s" without ever explaining or fixing it.
+            Button post = null;
+            post = Button(row.transform, "Post here", 190, () => _hud.Sheets.OpenPostingSheet(captured.id));
+
             Button replant = null;
             replant = Button(row.transform, "Plant back", 190, () =>
             {
@@ -261,14 +267,25 @@ namespace Wildgrove.Game
                 var basketFull = fraction >= 0.999f;
                 fill.color = basketFull ? OchreWash : MossWash;
 
+                // Who stands here — the card must say fallow when it is, or
+                // "0.0/s" is a riddle with the answer hidden on the strip.
+                var occupant = Stationing.OccupantOf(state, captured.id);
+                var wardenHere = Warden.PostNodeId(state) == captured.id;
+                var standing = occupant != null
+                    ? "<color=" + MossDeepHex + ">" + occupant.name + " posted</color>"
+                    : wardenHere
+                        ? "<color=" + MossDeepHex + ">the warden posted</color>"
+                        : "<color=" + OchreInkHex + ">fallow — no one posted</color>";
+
                 var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
                 label.text = captured.resourceId + rich
                              + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "
-                             + NumberFormat.Short(stock) + " at camp</color>"
+                             + NumberFormat.Short(stock) + " at camp · </color>" + standing
                              + (basketFull ? " <color=" + OchreInkHex + ">· basket full — waits on a carrier</color>" : string.Empty)
                              + "</size>";
 
+                SetButtonLabel(post, occupant != null || wardenHere ? "Change post" : "Post here");
                 SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId + "</size>");
                 var ok = _loop.CanReplant(captured);
                 replant.interactable = ok;

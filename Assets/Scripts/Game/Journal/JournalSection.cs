@@ -48,6 +48,20 @@ namespace Wildgrove.Game
         protected void SetNote(string text) => _hud.SetNote(text);
         protected void Flash(Component near, string message, bool good) => _hud.Flash(near, message, good);
 
+        /// <summary>
+        /// The muted " $x.xx" a real-money line wears once the store has
+        /// priced it (empty until the catalogue fetch) — every IAP surface
+        /// shows its price so the Play dialog is never where the player
+        /// first learns it.
+        /// </summary>
+        protected string PriceTail(string productId)
+        {
+            var price = _loop.Store.PriceLabel(productId);
+            return string.IsNullOrEmpty(price)
+                ? string.Empty
+                : "  " + JournalWidgets.SizeOpen(15) + "<color=" + JournalTheme.Ink2Hex + ">" + price + "</color></size>";
+        }
+
         // ─── Data labels (read live game state) ───
         protected List<ZoneData> ZonesInOrder() => _hud.Labels.ZonesInOrder();
         protected ZoneData LatestZone() => _hud.Labels.LatestZone();

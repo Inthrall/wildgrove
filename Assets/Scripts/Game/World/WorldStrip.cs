@@ -53,6 +53,57 @@ namespace Wildgrove.Game.World
             return best;
         }
 
+        /// <summary>
+        /// Resolve a tap against plates and badges TOGETHER, so a top-row
+        /// badge's hit circle can no longer steal a tap meant for the
+        /// bottom-row plate it overlaps. Circles differ in size, so ties are
+        /// broken by RADIUS-NORMALISED distance — the circle the tap is
+        /// proportionally deepest inside wins (a direct badge tap still beats
+        /// the plate whose edge it grazes). Badge circles only answer inside
+        /// the strip (they hang low enough to spill into the chrome below the
+        /// band), and a badge that draws nothing (<paramref name="badgeVisible"/>
+        /// false — the vacant post) hits nothing: the plate is the assign
+        /// gesture there.
+        /// </summary>
+        public static int ResolveHit(Rect strip, Vector2[] centres, float plateRadius, float diameter, bool[] badgeVisible, Vector2 point)
+        {
+            var best = -1;
+            var bestDepth = 1f;
+            var plateSqr = plateRadius * plateRadius;
+            for (var i = 0; i < centres.Length; i++)
+            {
+                var depth = plateSqr > 0f ? (centres[i] - point).sqrMagnitude / plateSqr : float.MaxValue;
+                if (depth <= bestDepth)
+                {
+                    best = i;
+                    bestDepth = depth;
+                }
+            }
+
+            if (strip.Contains(point))
+            {
+                var offset = new Vector2(0f, BadgeOffsetFactor * diameter);
+                var badgeRadius = BadgeRadiusFactor * diameter * BadgeHitSlop;
+                var badgeSqr = badgeRadius * badgeRadius;
+                for (var i = 0; i < centres.Length; i++)
+                {
+                    if (badgeVisible != null && (i >= badgeVisible.Length || !badgeVisible[i]))
+                    {
+                        continue;
+                    }
+
+                    var depth = badgeSqr > 0f ? (centres[i] + offset - point).sqrMagnitude / badgeSqr : float.MaxValue;
+                    if (depth <= bestDepth)
+                    {
+                        best = i;
+                        bestDepth = depth;
+                    }
+                }
+            }
+
+            return best;
+        }
+
         /// <summary>Rows the strip lays out in — one until crowded, then two.</summary>
         public static int Rows(int count)
         {

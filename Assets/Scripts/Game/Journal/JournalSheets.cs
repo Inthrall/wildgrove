@@ -22,8 +22,57 @@ namespace Wildgrove.Game
         private const double TimeSkipHours = 2.0;
         private Button _timeSkipButton;
         private Button _removeAdsButton;
+        // The open sheet's safe way out — what Android Back and a tap on the
+        // scrim mean. Null when no sheet is open.
+        private System.Action _sheetDismiss;
+        private bool _removeAdsPending;
 
         internal JournalSheets(GameHud hud) : base(hud) { }
+
+        /// <summary>
+        /// Dismiss the open sheet the safe way — hardware Back and the scrim
+        /// route here. Each sheet chooses what "dismiss" means (cancel, keep
+        /// the suggested name, walk on); plain close is the default.
+        /// </summary>
+        internal void DismissSheet()
+        {
+            if (_sheet == null)
+            {
+                return;
+            }
+
+            var dismiss = _sheetDismiss;
+            _sheetDismiss = null;
+            if (dismiss != null)
+            {
+                dismiss();
+            }
+            else
+            {
+                CloseSheet();
+            }
+        }
+
+        /// <summary>
+        /// Forwards a tap on a sheet's dim scrim — but only outside the paper
+        /// panel — to the sheet's dismissal. uGUI clicks bubble up from the
+        /// panel's own widgets to the scrim, so the handler must check where
+        /// the tap actually landed rather than trusting that it reached here.
+        /// </summary>
+        private sealed class ScrimTap : MonoBehaviour, UnityEngine.EventSystems.IPointerClickHandler
+        {
+            internal System.Action OnTap;
+            internal RectTransform Panel;
+
+            public void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+            {
+                if (Panel == null
+                    || !RectTransformUtility.RectangleContainsScreenPoint(Panel, eventData.position, eventData.enterEventCamera))
+                {
+                    OnTap?.Invoke();
+                }
+            }
+        }
 
         internal void PumpSheets()
         {
@@ -63,7 +112,13 @@ namespace Wildgrove.Game
         private void OpenWaystoneSheet(ZoneData zone)
         {
             var text = Narrative.WaystoneText(_loop.Data, zone.id);
-            var sheet = BeginSheet();
+            // Dismissing IS walking on — the stone must mark itself read, or
+            // the pump re-raises it a quarter-second later.
+            var sheet = BeginSheet(() =>
+            {
+                _loop.MarkWaystoneRead(zone.id);
+                CloseSheet();
+            });
             MakeText(sheet, "A waystone", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, zone.displayName.ToUpperInvariant(), 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
             if (!string.IsNullOrEmpty(text))
@@ -80,7 +135,14 @@ namespace Wildgrove.Game
 
         private void OpenArrivalSheet(Familiar familiar)
         {
-            var sheet = BeginSheet();
+            // Backing out keeps the (free) suggested name — the arrival must
+            // resolve either way, or the pump re-raises the sheet at once.
+            var sheet = BeginSheet(() =>
+            {
+                _loop.TakePendingArrival();
+                _dirty = true;
+                CloseSheet();
+            });
             MakeText(sheet, "A new friend", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, "a " + SpeciesName(familiar.speciesId) + " arrives", 22, TextAnchor.UpperCenter, Ink2, _hand);
 
@@ -164,7 +226,9 @@ namespace Wildgrove.Game
         internal void OpenMigrationSheet()
         {
             var gain = System.Math.Max(0.0, _loop.VerdureAfterMigration() - _loop.State.verdurePoints);
-            var sheet = BeginSheet();
+            // The scrim stays inert on the run's one destructive confirm — a
+            // stray tap must not answer it either way; Back still cancels.
+            var sheet = BeginSheet(scrimDismisses: false);
             MakeText(sheet, "Fold the camp", 32, TextAnchor.UpperCenter, Ink, _serif);
 
             // Say plainly what a fold IS before saying what it costs. "They were
@@ -211,6 +275,7 @@ namespace Wildgrove.Game
             var dim = MakePanel("Sheet", (RectTransform)_modalLayer, NightInk);
             Stretch((RectTransform)dim.transform);
             _sheet = dim;
+            _sheetDismiss = CloseSheet;
             var tap = dim.AddComponent<Button>();
             tap.transition = Selectable.Transition.None;
             tap.onClick.AddListener(CloseSheet);
@@ -255,6 +320,10 @@ namespace Wildgrove.Game
 
             var field = MakeInputField(sheet, familiar.name);
 
+            // Refusals must land INSIDE the sheet — the margin note sits under
+            // the scrim, so "Save did nothing" read as a broken button.
+            var error = MakeText(sheet, string.Empty, 16, TextAnchor.MiddleCenter, Ink2, _serif);
+
             var save = Button(sheet, cost > 0 ? "Save · " + cost + " amber" : "Save", 320, () =>
             {
                 var typed = field.text;
@@ -268,7 +337,7 @@ namespace Wildgrove.Game
                 // Amber is premium and hard-won — refuse rather than part-charge.
                 if (!_loop.CanRenameFamiliar())
                 {
-                    SetNote("not enough amber for a new name — resin is dear.");
+                    error.text = "<color=" + OchreInkHex + "><i>not enough amber — resin is dear. the old name holds.</i></color>";
                     return;
                 }
 
@@ -383,11 +452,18 @@ namespace Wildgrove.Game
                 }
 
                 string notice = null;
-                if (!anyResting && state.roster.Count > 0)
+                if (state.roster.Count == 0)
+                {
+                    // A brand-new warden's first tap can land here — the sheet
+                    // must answer "how do I ever fill this?" or it's a riddle.
+                    notice = "no companion walks with you yet. the land answers a pile of goods — watch the Trail page for who is drawn to what."
+                             + (wardenCanStand ? " Until then, the warden can stand here alone." : string.Empty);
+                }
+                else if (!anyResting)
                 {
                     notice = "every companion already walks a post — send one here and its own post falls idle. Open a slot on the Ladder, or leave a pile at a plate, to grow the kith.";
                 }
-                else if (anyResting && !hasRoom)
+                else if (!hasRoom)
                 {
                     notice = "a companion waits at camp, but every slot is walked. Open a slot on the Ladder to give them a post — or move a walker here.";
                 }
@@ -459,6 +535,80 @@ namespace Wildgrove.Game
             }
 
             Button(sheet, "Never mind", 320, CloseSheet);
+        }
+
+        /// <summary>
+        /// The posting sheet's mirror, asked from the roster: not "who walks
+        /// here?" but "where shall this one walk?" — every post as a one-tap
+        /// destination, with the current holder named where a move would
+        /// displace someone. The journal pages describe posts; this is how a
+        /// page can also CHANGE one without a trip out to the world strip.
+        /// </summary>
+        internal void OpenStationPickSheet(Familiar familiar)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, "Where shall " + familiar.name + " walk?", 30, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, (SpeciesName(familiar.speciesId) + " · now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
+                16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            if (!familiar.IsResting)
+            {
+                Button(sheet, "Send " + familiar.name + " back to camp", 560, () =>
+                {
+                    Station(familiar, null);
+                    CloseSheet();
+                });
+            }
+
+            foreach (var node in _loop.State.nodes)
+            {
+                AddStationChoice(sheet, familiar, node.id);
+            }
+
+            AddStationChoice(sheet, familiar, Familiar.TrailStation);
+            AddStationChoice(sheet, familiar, Familiar.WanderStation);
+
+            Button(sheet, "Never mind", 320, CloseSheet);
+        }
+
+        /// <summary>One destination line of the station-pick sheet — skipped when the familiar already holds it.</summary>
+        private void AddStationChoice(Transform sheet, Familiar familiar, string stationId)
+        {
+            if (PostMatches(familiar.stationId, stationId))
+            {
+                return;
+            }
+
+            var occupant = Stationing.OccupantOf(_loop.State, stationId);
+            // Taking an empty post from rest needs an open slot; a swap or a
+            // move always works (the vacated slot covers it) — the posting
+            // sheet's rule, asked from the other side.
+            var blocked = familiar.IsResting && occupant == null && !Kith.HasRoom(_loop.State, _loop.Data);
+            string detail;
+            if (blocked)
+            {
+                detail = "needs an open slot";
+            }
+            else if (occupant != null)
+            {
+                detail = "replaces " + occupant.name;
+            }
+            else
+            {
+                detail = "stands empty";
+            }
+
+            var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : OchreInkHex) + ">Walk to " + StationLabel(stationId)
+                                       + "</color>  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + detail + "</color></size>", 560, () =>
+            {
+                Station(familiar, stationId);
+                CloseSheet();
+            });
+            if (blocked)
+            {
+                button.interactable = false;
+                SetButtonTint(button, false);
+            }
         }
 
         /// <summary>Display order for the posting sheet's candidates: free, movable, then slot-blocked.</summary>
@@ -538,7 +688,7 @@ namespace Wildgrove.Game
             // authority): shown only once billing is initialised and the player
             // doesn't already own Remove Ads. Built inactive so an owner never sees
             // it flash up before entitlements land.
-            _removeAdsButton = Button(bar.transform, "Remove ads", 200, OnRemoveAds);
+            _removeAdsButton = Button(bar.transform, RemoveAdsLabel(), 300, OnRemoveAds);
             _removeAdsButton.gameObject.SetActive(false);
 
             RefreshCampActions();
@@ -571,7 +721,20 @@ namespace Wildgrove.Game
                 // doesn't already own it. Owning Remove Ads — or a store that's
                 // still connecting or unavailable — keeps it hidden.
                 _removeAdsButton.gameObject.SetActive(_loop.Store.IsInitialised && !_loop.Store.RemoveAdsOwned);
+                if (!_removeAdsPending)
+                {
+                    // The store's price lands after the catalogue fetch — keep
+                    // the label current so the tap is never a surprise dialog.
+                    SetButtonLabel(_removeAdsButton, RemoveAdsLabel());
+                }
             }
+        }
+
+        /// <summary>"Remove ads · $x.xx" once the catalogue has priced it.</summary>
+        private string RemoveAdsLabel()
+        {
+            var price = _loop.Store.PriceLabel(StoreProductIds.RemoveAds);
+            return string.IsNullOrEmpty(price) ? "Remove ads" : "Remove ads · " + price;
         }
 
         /// <summary>
@@ -582,7 +745,8 @@ namespace Wildgrove.Game
         /// </summary>
         internal void OpenConfirmSheet(string title, string body, string confirmLabel, System.Action onConfirm)
         {
-            var sheet = BeginSheet();
+            // Same rule as the Fold sheet: a confirm's scrim is inert.
+            var sheet = BeginSheet(scrimDismisses: false);
             MakeText(sheet, title, 32, TextAnchor.UpperCenter, Ink, _serif);
             if (!string.IsNullOrEmpty(body))
             {
@@ -635,12 +799,17 @@ namespace Wildgrove.Game
             {
                 // Don't let a second tap launch a second Play flow while the first
                 // is open — Google rejects the re-buy with "you already own this
-                // item". Re-enabled only if the purchase doesn't go through.
+                // item". Re-enabled when the purchase doesn't go through, and
+                // visibly pending meanwhile — a silent dead button reads broken.
+                _removeAdsPending = true;
                 _removeAdsButton.interactable = false;
+                SetButtonTint(_removeAdsButton, false);
+                SetButtonLabel(_removeAdsButton, "Opening the store…");
             }
 
             _loop.Store.Purchase(StoreProductIds.RemoveAds, result =>
             {
+                _removeAdsPending = false;
                 switch (result)
                 {
                     case StoreResult.Purchased:
@@ -652,25 +821,50 @@ namespace Wildgrove.Game
 
                         SetNote("The ads step aside. Thank you for keeping the grove.");
                         break;
+                    case StoreResult.Cancelled:
+                        // The player backed out of the Play sheet — the most
+                        // ordinary outcome. Restore the button, say nothing.
+                        RestoreRemoveAdsButton();
+                        break;
                     case StoreResult.Failed:
-                        if (_removeAdsButton != null)
-                        {
-                            _removeAdsButton.interactable = true;
-                        }
-
+                        RestoreRemoveAdsButton();
                         SetNote("That didn't go through — nothing was charged.");
                         break;
                 }
             });
         }
 
-        private Transform BeginSheet()
+        private void RestoreRemoveAdsButton()
+        {
+            if (_removeAdsButton != null)
+            {
+                _removeAdsButton.interactable = true;
+                SetButtonTint(_removeAdsButton, true);
+                SetButtonLabel(_removeAdsButton, RemoveAdsLabel());
+            }
+        }
+
+        /// <summary>
+        /// Open the standard sheet scaffold. <paramref name="dismiss"/> is the
+        /// sheet's safe way out (Back / scrim tap) — plain close by default;
+        /// <paramref name="scrimDismisses"/> false keeps the scrim inert for
+        /// confirms, where a stray tap must never answer the question (Back
+        /// still cancels — cancelling is always safe).
+        /// </summary>
+        private Transform BeginSheet(System.Action dismiss = null, bool scrimDismisses = true)
         {
             var dim = MakePanel("Sheet", (RectTransform)_modalLayer, DimColor);
             Stretch((RectTransform)dim.transform);
             _sheet = dim;
+            _sheetDismiss = dismiss;
 
             var panel = MakePanel("Panel", (RectTransform)dim.transform, PagePaper);
+            if (scrimDismisses)
+            {
+                var tap = dim.AddComponent<ScrimTap>();
+                tap.OnTap = DismissSheet;
+                tap.Panel = (RectTransform)panel.transform;
+            }
             AddBorder(panel, Ink2);
             AddBorder(panel, RulePaper, 6f);
             var rt = (RectTransform)panel.transform;
@@ -695,6 +889,7 @@ namespace Wildgrove.Game
 
         private void CloseSheet()
         {
+            _sheetDismiss = null;
             if (_sheet != null)
             {
                 Object.Destroy(_sheet);

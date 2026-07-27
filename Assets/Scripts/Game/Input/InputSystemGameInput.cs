@@ -21,6 +21,16 @@ namespace Wildgrove.Game.Input
             }
         }
 
+        public bool BackTriggered
+        {
+            get
+            {
+                // Android delivers the hardware/gesture Back as the Escape key.
+                var keyboard = Keyboard.current;
+                return keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
+            }
+        }
+
         public bool TendTriggered(out Vector2? screenPosition)
         {
             // Non-positional confirms first: the caller resolves these against

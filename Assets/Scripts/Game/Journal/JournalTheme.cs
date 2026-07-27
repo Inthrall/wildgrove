@@ -32,6 +32,10 @@ namespace Wildgrove.Game
         // copy use this darker mix instead.
         internal const string OchreInkHex = "#7E421F";
         internal const string MossDeepHex = "#55643F";
+        // Amber the CURRENCY wears its own resin ink — the paid pile must never
+        // be a visual twin of Renown's ochre on the ledger, where mistaking one
+        // for the other is a real-money misread. ~4.8:1 on page paper.
+        internal const string AmberInkHex = "#8F5B00";
         // The one alarm ink — a barn red that still belongs on parchment.
         // TEXT ONLY: a red button reads as "danger, don't", which is wrong for
         // every key action in this game (those wear moss — see KeyAction).

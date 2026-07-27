@@ -179,11 +179,11 @@ namespace Wildgrove.Game
 
                 var label = MakeText(row.transform, string.Empty, 22, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
-                // Posting AND standing down both live out on the land now —
-                // each node plate, the trail line and the wander post open the
-                // posting sheet, which names the holder and offers to send
-                // them back to camp. The roster is a roster: who they are, not
-                // where they go.
+                // The card is headed "roster & posts" — so the row must offer
+                // the post, not just report it. "Post" opens the where-sheet
+                // (rest, every node, the trail, the wander post); Rename keeps
+                // its own button behind it.
+                Button(row.transform, "Post", 130, () => _hud.Sheets.OpenStationPickSheet(captured));
                 Button(row.transform, "Rename", 150, () => OpenNamingSheet(captured));
 
                 _liveUpdaters.Add(() =>
@@ -248,7 +248,10 @@ namespace Wildgrove.Game
                 bundleLine.gameObject.SetActive(!bundleOwned);
                 if (!bundleOwned)
                 {
-                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>";
+                    // Real money says its price on the line — the Play dialog
+                    // must never be where the player first learns it.
+                    bundleLine.text = "<color=" + OchreInkHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>"
+                                      + PriceTail(StoreProductIds.StarterBundle);
                 }
 
                 // The plain slot waits its turn behind the bundle.
@@ -256,7 +259,7 @@ namespace Wildgrove.Game
                 slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
                 if (bundleOwned && !slotOwned)
                 {
-                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>";
+                    slotLine.text = "<color=" + OchreInkHex + ">+  open the last slot</color>" + PriceTail(StoreProductIds.KithSlot);
                 }
             });
         }

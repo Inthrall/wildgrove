@@ -109,6 +109,18 @@ namespace Wildgrove.Game
         // One open sheet at a time; the dim layer blocks input beneath it.
         private GameObject _sheet;
 
+        // First-run teaching. The margin note used to be overwritten forever by
+        // the first action's outcome note — now outcome notes drift back to the
+        // teaching line after a few seconds until each core gesture (post
+        // someone, catch a windfall) has been performed once. Posting is
+        // derived from state (a loaded save with a posted kith has learned it);
+        // the catch is a one-time flag that survives restarts.
+        private const string HintCaughtKey = "wildgrove.hint.caught";
+        private const float NoteRevertSeconds = 6f;
+        private bool _hintPostDone;
+        private bool _hintCatchDone;
+        private float _noteRevert;
+
         // ─────────────────────────── Section access ──────────────────────────
         // The section builders reach shared HUD state and coordinator calls
         // through these; see JournalSection.
@@ -148,11 +160,33 @@ namespace Wildgrove.Game
 
             EnsureEventSystem();
             BuildChrome();
-            // Keyboard/gamepad hint only where one can exist — on a phone the
-            // margin note is flavour, not a manual for keys it doesn't have.
-            SetNote(Application.isMobilePlatform
-                ? "tap a plate to post someone · catch the bubbles drifting up for a windfall"
-                : "tap a plate to post someone · catch the bubbles drifting up for a windfall · space / (A) catches one");
+            _hintCatchDone = PlayerPrefs.GetInt(HintCaughtKey, 0) == 1;
+            var hint = HintText();
+            if (hint != null)
+            {
+                _note.text = hint;
+            }
+        }
+
+        /// <summary>
+        /// The teaching line for whichever core gesture is still unlearned, or
+        /// null once both are. Keyboard/gamepad tail only where one can exist —
+        /// on a phone the margin note is flavour, not a manual for keys it
+        /// doesn't have.
+        /// </summary>
+        private string HintText()
+        {
+            var catchTail = Application.isMobilePlatform ? string.Empty : " · space / (A) catches one";
+            if (!_hintPostDone)
+            {
+                return _hintCatchDone
+                    ? "tap a plate to post someone — the land only gives to the posted."
+                    : "tap a plate to post someone · catch the windfalls drifting up the strip" + catchTail;
+            }
+
+            return _hintCatchDone
+                ? null
+                : "catch the windfalls drifting up the strip — each pays a burst of goods" + catchTail;
         }
 
         private void Update()
@@ -165,11 +199,28 @@ namespace Wildgrove.Game
             FitLayoutToScreen();
             ReportWorldStrip();
             AnimateTrailCarrier();
+            HandleBack();
             HandleWorldTap();
 
             for (var i = 0; i < _frameUpdaters.Count; i++)
             {
                 _frameUpdaters[i]();
+            }
+
+            // An outcome note drifts back to the teaching line while a core
+            // gesture is still unlearned — the one instruction in the game
+            // must survive its reader's first tap.
+            if (_noteRevert > 0f)
+            {
+                _noteRevert -= Time.deltaTime;
+                if (_noteRevert <= 0f)
+                {
+                    var hint = HintText();
+                    if (hint != null && _note != null)
+                    {
+                        _note.text = hint;
+                    }
+                }
             }
 
             _refreshCountdown -= Time.deltaTime;
@@ -280,7 +331,9 @@ namespace Wildgrove.Game
             headerLayout.childForceExpandHeight = false;
             headerLayout.spacing = 0;
             _eyebrow = MakeText(headerGo.transform, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
-            _title = MakeText(headerGo.transform, string.Empty, 36, TextAnchor.MiddleCenter, Ink, _serif);
+            // 27 authored ≈ the old 36 at the previous FontScale — the title
+            // was already big enough; the scale bump is for the working text.
+            _title = MakeText(headerGo.transform, string.Empty, 27, TextAnchor.MiddleCenter, Ink, _serif);
 
             // Ledger — the running stores line, hairline-ruled like the mock.
             MakeHairline(root);
@@ -337,7 +390,7 @@ namespace Wildgrove.Game
             counterRect.anchorMin = Vector2.one;
             counterRect.anchorMax = Vector2.one;
             counterRect.pivot = Vector2.one;
-            counterRect.sizeDelta = new Vector2(320f, 34f);
+            counterRect.sizeDelta = new Vector2(380f, 44f);
             counterRect.anchoredPosition = new Vector2(-6f, -4f);
 
             // The trail-home line sits at the foot of the world-strip band — the
@@ -405,7 +458,9 @@ namespace Wildgrove.Game
             layout.spacing = 10;
             var element = bar.AddComponent<LayoutElement>();
             element.flexibleHeight = 0;
-            element.minHeight = 40f;
+            // The one affordance for posting a carrier was a ~16dp strip —
+            // 100 units brings it near the 48dp touch floor.
+            element.minHeight = 100f;
             AddBorder(bar, Ink2);
             var button = bar.AddComponent<Button>();
             button.onClick.AddListener(() => _sheets.OpenPostingSheet(Familiar.TrailStation));
@@ -469,7 +524,8 @@ namespace Wildgrove.Game
         private void BuildTabsBar(RectTransform root)
         {
             var barGo = MakeRect("Tabs", root).gameObject;
-            FixedHeight(barGo, 84);
+            // ≥117 units ≈ Android's 48dp touch floor — 84 was ~32dp tabs.
+            FixedHeight(barGo, 132);
             var layout = barGo.AddComponent<HorizontalLayoutGroup>();
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -588,6 +644,20 @@ namespace Wildgrove.Game
 
         private void RefreshChrome()
         {
+            if (!_hintPostDone)
+            {
+                var state = _loop.State;
+                _hintPostDone = Kith.Walking(state) > 0
+                                || Warden.PostNodeId(state) != null
+                                || Warden.IsWandering(state);
+                if (_hintPostDone && _noteRevert <= 0f && _note != null)
+                {
+                    // The gesture just landed (or a posted save just loaded) —
+                    // advance the teaching line rather than leaving stale advice.
+                    _note.text = HintText() ?? string.Empty;
+                }
+            }
+
             RefreshHeader();
             RefreshLedger();
             RefreshTracker();
@@ -627,9 +697,13 @@ namespace Wildgrove.Game
             }
 
             var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
+            // With no roster the ochre invitation opens a sheet nobody can
+            // answer — mute it until there is someone to post.
             _trailStatus.text = carrier != null
                 ? carrier.name + " carrying"
-                : "<color=" + OchreInkHex + ">tap to post a carrier</color>";
+                : _loop.State.roster.Count == 0
+                    ? "no one to carry yet"
+                    : "<color=" + OchreInkHex + ">tap to post a carrier</color>";
         }
 
         private void RefreshHeader()
@@ -685,7 +759,9 @@ namespace Wildgrove.Game
                 }
             }
 
-            parts.Add("<color=" + OchreHex + ">RENOWN <b>" + NumberFormat.Short(state.renown) + "</b></color>");
+            // OchreInk, not Ochre — the theme's own rule: plain ochre fails
+            // contrast at ledger size, and Renown is read hundreds of times.
+            parts.Add("<color=" + OchreInkHex + ">RENOWN <b>" + NumberFormat.Short(state.renown) + "</b></color>");
             // Verdure appears once the fold economy is real — and styled as
             // RENOWN's peer, not lowercase flavour.
             if (state.verdurePoints > 0.0)
@@ -695,7 +771,10 @@ namespace Wildgrove.Game
 
             if (state.amber > 0.0)
             {
-                parts.Add("<color=" + OchreHex + ">amber <b>" + Mathf.FloorToInt((float)state.amber) + "</b></color>");
+                // The paid currency wears its own resin ink and full caps —
+                // lowercase-ochre made it a visual twin of RENOWN, and that's
+                // a real-money misread waiting to happen.
+                parts.Add("<color=" + AmberInkHex + ">AMBER <b>" + Mathf.FloorToInt((float)state.amber) + "</b></color>");
             }
 
             _ledger.text = string.Join(" · ", parts);
@@ -709,7 +788,7 @@ namespace Wildgrove.Game
                 // The banner carries the curve now — a percentage is the one
                 // form of "how close am I" a player can read without knowing
                 // what a Renown threshold is.
-                _trackerText.text = "<color=" + OchreHex + ">THE FOLD</color> · +<b>"
+                _trackerText.text = "<color=" + OchreInkHex + ">THE FOLD</color> · +<b>"
                                     + Mathf.FloorToInt((float)gain) + "</b> Verdure banked · "
                                     + Mathf.FloorToInt((float)_loop.ProgressToNextVerdure() * 100f) + "% to the next";
                 _foldButton.gameObject.SetActive(true);
@@ -750,6 +829,33 @@ namespace Wildgrove.Game
             if (_note != null)
             {
                 _note.text = text;
+                _noteRevert = NoteRevertSeconds;
+            }
+        }
+
+        /// <summary>
+        /// Android's hardware/gesture Back (Escape on desktop): dismiss the open
+        /// sheet the safe way, step back to the Trail tab, then follow platform
+        /// convention and exit (the run saves on pause/quit).
+        /// </summary>
+        private void HandleBack()
+        {
+            if (!_input.BackTriggered)
+            {
+                return;
+            }
+
+            if (_sheet != null)
+            {
+                _sheets.DismissSheet();
+            }
+            else if (_tab != TabTrail)
+            {
+                OpenTab(TabTrail);
+            }
+            else if (Application.isMobilePlatform)
+            {
+                Application.Quit();
             }
         }
 
@@ -761,6 +867,10 @@ namespace Wildgrove.Game
             }
 
             _world.SelectedNode = _selected;
+            // Windfalls freeze under a sheet — they're ephemeral presentation,
+            // and burning their lifetime behind a modal punished opening one.
+            _world.Frozen = _sheet != null;
+            _world.CatchHintPending = !_hintCatchDone;
             _worldGap.GetWorldCorners(Corners);
             var min = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
             var max = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
@@ -787,23 +897,27 @@ namespace Wildgrove.Game
                         return;
                     }
 
-                    // The trail/wander plates (and any leftover badge strip
-                    // under a post) resolve to their station...
-                    var station = _world != null ? _world.StationAtScreenPoint(screenPosition.Value) : null;
-                    if (station != null)
+                    // A whiffed catch near a windfall must NOT punish the miss
+                    // with a full posting sheet — swallow it as a near miss.
+                    if (_world != null && _world.NudgeNearMiss(screenPosition.Value))
                     {
-                        _sheets.OpenPostingSheet(station);
                         return;
                     }
 
-                    // ...and a node plate IS the assign gesture now — tap a
-                    // node to choose who works it (tap-to-tend became the
-                    // bubbles above).
-                    var node = _world != null ? _world.NodeAtScreenPoint(screenPosition.Value) : null;
-                    if (node != null)
+                    // Plates and badges resolve together, nearest centre wins —
+                    // a node plate IS the assign gesture now (tap-to-tend
+                    // became the bubbles above), and the trail/wander plates
+                    // resolve to their station.
+                    NodeState node = null;
+                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out node) : null;
+                    if (station != null)
                     {
-                        _selected = node;
-                        _sheets.OpenPostingSheet(node.id);
+                        if (node != null)
+                        {
+                            _selected = node;
+                        }
+
+                        _sheets.OpenPostingSheet(station);
                     }
                     else if (screenPosition.Value.y > Screen.height * 0.45f)
                     {
@@ -825,14 +939,26 @@ namespace Wildgrove.Game
 
         private void CollectBubble(NodeState node)
         {
+            if (!_hintCatchDone)
+            {
+                _hintCatchDone = true;
+                PlayerPrefs.SetInt(HintCaughtKey, 1);
+            }
+
             var gained = _loop.PopBubble(node);
             if (gained <= BigDouble.Zero)
             {
-                // The node went fallow while the bubble drifted — it pops empty.
-                SetNote("the bubble bursts over the " + node.resourceId + " — nothing inside.");
+                // The node went fallow while the bubble drifted — it pops
+                // empty, and the strip itself says so (grey deflate), not
+                // just a sentence elsewhere.
+                _world?.ResolveCatch("nothing inside", false);
+                SetNote("the windfall bursts over the " + node.resourceId + " — nothing inside.");
                 return;
             }
 
+            // The reward lands where the eye is: a burst and a rising "+N" at
+            // the catch point. The journal-row flash and margin note echo it.
+            _world?.ResolveCatch("+" + NumberFormat.Short(gained) + " " + node.resourceId, true);
             if (_tendFlashes.TryGetValue(node.id, out var flash))
             {
                 flash.text = "+ " + NumberFormat.Short(gained) + " " + node.resourceId;

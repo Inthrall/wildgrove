@@ -94,10 +94,10 @@
   },
   "bubbles": {
     "spawnIntervalSec": 25,
-    "lifetimeSec": 18,
+    "lifetimeSec": 55,
     "maxLive": 3,
     "rewardSeconds": 60,
-    "$note": "windfall bubbles — the active-play reward that replaced tap-to-tend. A worked node floats a bubble up the strip every spawnIntervalSec (at most maxLive adrift at once, each living lifetimeSec); catching one grants rewardSeconds of that node's current output straight to camp AND tends the node (burst + Pristine window + Rite tend deed). All first guesses — tune so an attentive session feels ~2x a passive one, like the old tap-tend ceiling."
+    "$note": "windfall bubbles — the active-play reward that replaced tap-to-tend. A worked node floats a bubble up the strip every spawnIntervalSec (at most maxLive adrift at once, each living lifetimeSec); catching one grants rewardSeconds of that node's current output straight to camp AND tends the node (burst + Pristine window + Rite tend deed). lifetimeSec deliberately exceeds spawnIntervalSec so windfalls BANK — glancing away banks 2-3 to pop in a burst instead of silently losing each one, and maxLive is the real ceiling. All first guesses — tune so an attentive session feels ~2x a passive one, like the old tap-tend ceiling."
   },
   "warden": {
     "gatherPerSecond": 0.5,
