@@ -209,6 +209,8 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 
 Three kit slots — **Hands**, **Pack**, **Camp** — worn by the warden alone; persists for the run, rebuilt cheaply after Migration (the early-run ritual).
 
+Five pieces compete for the three slots, so two are always sitting out. **A made piece is never destroyed: crafting is paid once per run, and the piece a slot displaces keeps in the kit bag and goes back on for nothing** (decided 2026-07-28). Two pieces contend for Pack and two for Camp, and the tradeoff between them changes as the run does — a night away wants the Camp slot's offline pieces, a hauling stretch wants the Pack — so the choice has to be revisitable. Charging materials to change your mind turned it into a trap instead of a decision. The Warden page groups the kit **by slot**, names what is worn in each, and labels a bagged piece's button *Wear* rather than *Craft*.
+
 | Gear (MVP)       | Slot  | Craft     | Materials              | Effect                          |
 | ---------------- | ----- | --------- | ---------------------- | ------------------------------- |
 | Cordage Wraps    | Hands | Bushcraft | Fibres ×40             | Tending burst +50%              |

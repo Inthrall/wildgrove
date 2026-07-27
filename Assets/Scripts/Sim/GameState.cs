@@ -33,6 +33,14 @@ namespace Wildgrove.Sim
         /// <summary>The warden's kit (design §4): worn gear id per slot (hands/pack/camp). Persists for the run; Migration resets it — the kit is rebuilt cheaply each run.</summary>
         public Dictionary<string, string> gearBySlot = new Dictionary<string, string>();
 
+        /// <summary>
+        /// The kit bag: every piece made this run, worn or not. A slot still
+        /// holds one piece at a time, but the pieces it displaces keep in the
+        /// bag and go back on for nothing — materials are spent once per piece,
+        /// never again. Reset by Migration along with the kit itself.
+        /// </summary>
+        public List<string> gearCrafted = new List<string>();
+
         /// <summary>Resources whose Pristine specimen has been fixed into the Folio (design §6) — permanent, surviving every Migration.</summary>
         public List<string> fixedResources = new List<string>();
 

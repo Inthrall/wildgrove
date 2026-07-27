@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 30;
+        public const int CurrentVersion = 31;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -157,6 +157,8 @@ namespace Wildgrove.Sim.Saves
             {
                 save.gear.Add(new SavedGearSlot { slot = pair.Key, gearId = pair.Value });
             }
+
+            save.gearCrafted.AddRange(state.gearCrafted);
 
             foreach (var verse in state.verseProgress)
             {
@@ -440,6 +442,29 @@ namespace Wildgrove.Sim.Saves
                         // EquippedEffects skips what the data doesn't know.
                         state.gearBySlot[worn.slot] = worn.gearId;
                     }
+                }
+            }
+
+            state.gearCrafted.Clear();
+            if (save.gearCrafted != null)
+            {
+                foreach (var gearId in save.gearCrafted)
+                {
+                    if (gearId != null && !state.gearCrafted.Contains(gearId))
+                    {
+                        state.gearCrafted.Add(gearId);
+                    }
+                }
+            }
+
+            // A worn piece was certainly made, so the bag holds it whatever the
+            // save says — this keeps a hand-edited or partially-migrated save
+            // from showing a Craft button for something already on the warden.
+            foreach (var pair in state.gearBySlot)
+            {
+                if (!state.gearCrafted.Contains(pair.Value))
+                {
+                    state.gearCrafted.Add(pair.Value);
                 }
             }
 
@@ -991,6 +1016,28 @@ namespace Wildgrove.Sim.Saves
                         // just means this save starts the tally from zero, which
                         // a live run overtakes on its first frames.
                         save.version = 30;
+                        break;
+
+                    case 30:
+                        // v30 predates the kit bag: taking a slot destroyed the
+                        // piece already in it, so the only pieces this save can
+                        // prove were made are the ones still worn. Seed the bag
+                        // with those. Anything an old save overwrote is
+                        // genuinely gone and is made again at material cost —
+                        // there is no record left to recover it from.
+                        save.gearCrafted = save.gearCrafted ?? new List<string>();
+                        if (save.gear != null)
+                        {
+                            foreach (var worn in save.gear)
+                            {
+                                if (worn?.gearId != null && !save.gearCrafted.Contains(worn.gearId))
+                                {
+                                    save.gearCrafted.Add(worn.gearId);
+                                }
+                            }
+                        }
+
+                        save.version = 31;
                         break;
 
                     default:

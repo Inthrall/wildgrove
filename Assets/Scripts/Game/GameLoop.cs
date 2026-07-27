@@ -1179,7 +1179,7 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>Craft and wear a piece of the kit (design §4) — spends its materials, fills its slot. Returns false when it can't be made.</summary>
+        /// <summary>Craft and wear a piece of the kit (design §4) — spends its materials, fills its slot, and keeps the displaced piece in the bag. Returns false when it can't be made.</summary>
         public bool CraftGear(GearData gear)
         {
             if (!Gear.TryCraft(State, Data, gear))
@@ -1188,6 +1188,24 @@ namespace Wildgrove.Game
             }
 
             Telemetry.LogEvent("gear_crafted", ("gear", gear.id), ("slot", gear.slot));
+            return true;
+        }
+
+        /// <summary>
+        /// Wear a piece already in the kit bag (design §4) — a free swap, since
+        /// its materials were spent when it was made. Returns false when the
+        /// piece hasn't been made, or is already on the warden.
+        /// </summary>
+        public bool WearGear(GearData gear)
+        {
+            if (!Gear.TryWear(State, Data, gear))
+            {
+                return false;
+            }
+
+            // Distinct from gear_crafted: the swap rate is what says whether a
+            // slot's contenders are a live decision or a settled one.
+            Telemetry.LogEvent("gear_worn", ("gear", gear.id), ("slot", gear.slot));
             return true;
         }
 

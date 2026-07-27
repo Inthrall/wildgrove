@@ -609,9 +609,17 @@ balance, tracked in the items below.
   `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
   spoilage system for them to modify — both are recorded on the worn kit and
   shown in the HUD, waiting for their mechanics (night-rate with the offline
-  balance pass, spoilage if it ever ships). Also interpretations: crafting
-  into an occupied slot destroys the old piece (no kit bag), and crafted
-  gear is worn immediately — there is no separate equip step.
+  balance pass, spoilage if it ever ships). While they stay inert the optimal
+  kit is fully determined (Cordage Wraps · Birch Frame Pack · Oilskin Tarp) —
+  the Pack and Camp slots have no live tradeoff yet, so the swapping the kit
+  bag now allows has nothing to reward it until these two land.
+  (`Wildgrove.Sim/Gear.cs`)
+- **Crafted gear is worn immediately — there is no separate equip step.** A
+  piece goes straight into its slot when made; the displaced piece keeps in the
+  kit bag (`GameState.gearCrafted`, save v31) and is re-worn free, so nothing is
+  ever destroyed and each piece is paid for once per run. Migration folds the
+  bag with the kit. Old v30 saves seed the bag from what was worn — anything
+  those saves overwrote is unrecoverable and is made again at cost.
   (`Wildgrove.Sim/Gear.cs`)
 - **Tending's Pristine window is live but invisible.** `Simulation.Tend` opens
   the 30 s pristineBonusRemaining window (chance × (1 + pristineChanceBonus))

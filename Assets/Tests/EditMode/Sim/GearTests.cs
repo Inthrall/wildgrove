@@ -7,9 +7,11 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins the warden's kit (design §4): crafting a piece spends its
-    /// materials and wears it at once, slots hold one piece each (a new craft
-    /// replaces the old), the craft skill gates the making, and worn effects
-    /// join the run's accumulators — the burst, the haul load, the offline cap.
+    /// materials and wears it at once, slots hold one piece each but the
+    /// displaced piece keeps in the kit bag and goes back on for nothing (so a
+    /// piece is paid for once per run, never twice), the craft skill gates the
+    /// making, and only WORN effects join the run's accumulators — the burst,
+    /// the haul load, the offline cap.
     /// </summary>
     public class GearTests
     {
@@ -94,6 +96,21 @@ namespace Wildgrove.Sim.Tests
             Assert.That(crafted, Is.True);
             Assert.That(state.GetResource("fibres").ToDouble(), Is.EqualTo(10.0).Within(Tolerance));
             Assert.That(Gear.EquippedInSlot(state, "hands"), Is.EqualTo("cordage-wraps"));
+            Assert.That(Gear.IsCrafted(state, _data.gear[0]), Is.True);
+        }
+
+        [Test]
+        public void TryCraft_AlreadyInTheBag_RefusesRatherThanChargeTwice()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("reeds", 100);
+            Gear.TryCraft(state, _data, _data.gear[2]); // oilskin tarp — camp
+            Gear.TryCraft(state, _data, _data.gear[3]); // waxed canopy displaces it
+
+            // The tarp is in the bag, not gone — it is worn again, not remade.
+            Assert.That(Gear.CanCraft(state, _data, _data.gear[2]), Is.False);
+            Assert.That(Gear.TryCraft(state, _data, _data.gear[2]), Is.False);
+            Assert.That(state.GetResource("reeds").ToDouble(), Is.EqualTo(60.0).Within(Tolerance));
         }
 
         [Test]
@@ -119,7 +136,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryCraft_OccupiedSlot_ReplacesTheWornPiece()
+        public void TryCraft_OccupiedSlot_WearsTheNewPieceAndBagsTheOld()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddResource("reeds", 60);
@@ -127,11 +144,68 @@ namespace Wildgrove.Sim.Tests
 
             var crafted = Gear.TryCraft(state, _data, _data.gear[3]); // waxed canopy — also camp
 
-            // One piece per slot: the tarp is worn out and gone, and only the
-            // canopy's effect remains.
+            // One piece worn per slot, so only the canopy's effect counts — but
+            // the tarp is in the bag, not destroyed.
             Assert.That(crafted, Is.True);
             Assert.That(Gear.EquippedInSlot(state, "camp"), Is.EqualTo("waxed-canopy"));
             Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(5.0).Within(Tolerance));
+            Assert.That(Gear.IsCrafted(state, _data.gear[2]), Is.True);
+            Assert.That(Gear.CanWear(state, _data.gear[2]), Is.True);
+        }
+
+        [Test]
+        public void TryWear_PieceInTheBag_SwapsForNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("reeds", 60);
+            Gear.TryCraft(state, _data, _data.gear[2]); // oilskin tarp — camp
+            Gear.TryCraft(state, _data, _data.gear[3]); // waxed canopy displaces it
+            var reedsAfterCrafting = state.GetResource("reeds").ToDouble();
+
+            var worn = Gear.TryWear(state, _data, _data.gear[2]);
+
+            // Back to the tarp's +2 h, at no material cost — and the canopy has
+            // taken the tarp's place in the bag, so the swap runs both ways.
+            Assert.That(worn, Is.True);
+            Assert.That(Gear.EquippedInSlot(state, "camp"), Is.EqualTo("oilskin-tarp"));
+            Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(state.GetResource("reeds").ToDouble(), Is.EqualTo(reedsAfterCrafting).Within(Tolerance));
+            Assert.That(Gear.CanWear(state, _data.gear[3]), Is.True);
+        }
+
+        [Test]
+        public void TryWear_PieceNeverMade_Refuses()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // Wearing is not a way around the materials.
+            Assert.That(Gear.CanWear(state, _data.gear[2]), Is.False);
+            Assert.That(Gear.TryWear(state, _data, _data.gear[2]), Is.False);
+            Assert.That(Gear.EquippedInSlot(state, "camp"), Is.Null);
+        }
+
+        [Test]
+        public void TryWear_PieceAlreadyWorn_Refuses()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("fibres", 40);
+            Gear.TryCraft(state, _data, _data.gear[0]);
+
+            Assert.That(Gear.CanWear(state, _data.gear[0]), Is.False);
+            Assert.That(Gear.TryWear(state, _data, _data.gear[0]), Is.False);
+        }
+
+        [Test]
+        public void EquippedEffects_PieceRestingInTheBag_GivesNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("reeds", 60);
+            Gear.TryCraft(state, _data, _data.gear[3]); // waxed canopy — camp, +1 h
+            Gear.TryCraft(state, _data, _data.gear[2]); // oilskin tarp displaces it, +2 h
+
+            // The bag is storage, not a second camp slot — the two bonuses
+            // must not stack.
+            Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(6.0).Within(Tolerance));
         }
 
         [Test]

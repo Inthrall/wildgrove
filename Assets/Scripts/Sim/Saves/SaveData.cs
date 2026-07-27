@@ -34,6 +34,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v13+: the warden's worn kit, one gear id per slot (absent before the gear system — bare hands).</summary>
         public List<SavedGearSlot> gear = new List<SavedGearSlot>();
 
+        /// <summary>v31+: the kit bag — every piece made this run, so a displaced piece can be worn again for nothing (absent before the bag; the v30→v31 step seeds it from what was worn).</summary>
+        public List<string> gearCrafted = new List<string>();
+
         /// <summary>v14–v20 legacy wire name for fixed specimens — read only by the v20→v21 migration.</summary>
         public List<string> donatedResources = new List<string>();
 

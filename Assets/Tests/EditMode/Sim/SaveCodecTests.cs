@@ -434,6 +434,62 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheKitBag()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.gearBySlot["camp"] = "oilskin-tarp";
+            state.gearCrafted.Add("oilskin-tarp");
+            // Made, then displaced from the camp slot — the bag is the only
+            // record that it's paid for.
+            state.gearCrafted.Add("pitch-torch");
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.gearCrafted, Is.EquivalentTo(new[] { "oilskin-tarp", "pitch-torch" }));
+        }
+
+        [Test]
+        public void Restore_WornPieceMissingFromTheBag_IsAddedBack()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.gearBySlot["hands"] = "cordage-wraps";
+
+            // A worn piece was certainly made, whatever the bag says.
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.gearCrafted, Is.EquivalentTo(new[] { "cordage-wraps" }));
+        }
+
+        [Test]
+        public void TryMigrate_V30Save_SeedsTheKitBagFromWhatIsWorn()
+        {
+            // v30 destroyed the displaced piece, so what's worn is all this
+            // save can prove was made.
+            var save = new SaveData
+            {
+                version = 30,
+                gear = new List<SavedGearSlot>
+                {
+                    new SavedGearSlot { slot = "hands", gearId = "cordage-wraps" },
+                    new SavedGearSlot { slot = "camp", gearId = "oilskin-tarp" },
+                },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.gearCrafted, Is.EquivalentTo(new[] { "cordage-wraps", "oilskin-tarp" }));
+        }
+
+        [Test]
+        public void TryMigrate_V30SaveWithBareHands_GetsAnEmptyKitBag()
+        {
+            var save = new SaveData { version = 30, gear = null };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.gearCrafted, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_V12Save_GetsBareHands()
         {
             // v12 predates the warden's kit.

@@ -39,65 +39,163 @@ namespace Wildgrove.Game
                 return;
             }
 
+            var slots = KitSlots();
             var card = Card("THE KIT");
-            MakeText(card, "worn for the run, folded at Migration", 21, TextAnchor.MiddleCenter, Ink2, _hand);
+            // Five pieces, three slots. This card used to list them flat in
+            // data order, so the two PACK pieces sat four rows apart with the
+            // slot named only as a prefix — they read as separate things to
+            // collect rather than one slot's two contenders, and a player could
+            // swap between them for a while without noticing they were the same
+            // decision. Group by slot, and say the arithmetic out loud.
+            MakeText(card, slots.Count + " slots — " + string.Join(" · ", slots), 16, TextAnchor.MiddleCenter, Ink2);
+            MakeText(card, "one piece worn in each; the rest keep in the bag, and go back on for nothing",
+                21, TextAnchor.MiddleCenter, Ink2, _hand);
+            MakeText(card, "worn for the run, folded at Migration", 15, TextAnchor.MiddleCenter, Ink2);
+
             // Skill unlocks are part of the structure signature, so a locked
             // piece's hint can be settled once per rebuild.
             var unlockedSkills = Upgrades.UnlockedSkills(_loop.State, _loop.Data);
+            foreach (var slot in slots)
+            {
+                BuildKitSlot(card, slot, unlockedSkills);
+            }
+        }
+
+        /// <summary>
+        /// The kit's slots in the order the data introduces them (hands, pack,
+        /// camp — design §4). Read off the gear list rather than hardcoded, so a
+        /// new slot in gear.json groups itself instead of quietly appearing
+        /// under the last one.
+        /// </summary>
+        private List<string> KitSlots()
+        {
+            var slots = new List<string>();
             foreach (var gear in _loop.Data.gear)
             {
-                var captured = gear;
-                var skillHint = string.Empty;
-                if (!string.IsNullOrEmpty(captured.skill) && !unlockedSkills.Contains(captured.skill))
+                if (!string.IsNullOrEmpty(gear.slot) && !slots.Contains(gear.slot))
                 {
-                    // Materials alone can't explain this dead button — name
-                    // the missing skill AND the Ladder rung that grants it.
-                    var source = SkillSource(captured.skill);
-                    skillHint = "  <color=" + OchreInkHex + "><b>needs " + captured.skill
-                                + (source != null ? " — take up " + source.displayName : string.Empty)
-                                + "</b></color>";
+                    slots.Add(gear.slot);
                 }
+            }
 
-                var row = Row(card);
-                var kit = ArtLibrary.ForGear(captured.id);
-                if (kit != null)
+            return slots;
+        }
+
+        /// <summary>One slot's group: the slot head naming what's worn there, then every piece that competes for it.</summary>
+        private void BuildKitSlot(RectTransform card, string slot, HashSet<string> unlockedSkills)
+        {
+            MakeHairline(card);
+            var head = MakeText(card, string.Empty, 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
+            _liveUpdaters.Add(() =>
+            {
+                var wornId = Gear.EquippedInSlot(_loop.State, slot);
+                var worn = wornId != null && _loop.Data.GearById.TryGetValue(wornId, out var wornGear)
+                    ? wornGear.displayName
+                    : null;
+                head.text = slot.ToUpperInvariant() + " · " + (worn != null
+                    ? "worn: " + worn
+                    : "<color=" + OchreInkHex + ">empty</color>");
+            });
+
+            foreach (var gear in _loop.Data.gear)
+            {
+                if (gear.slot == slot)
                 {
-                    IconImage(row.transform, kit, 64f, Color.white);
+                    BuildKitRow(card, gear, unlockedSkills);
                 }
+            }
+        }
 
-                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                FlexibleWidth(label.gameObject, 1f);
+        private void BuildKitRow(RectTransform card, GearData gear, HashSet<string> unlockedSkills)
+        {
+            var captured = gear;
+            var skillHint = string.Empty;
+            if (!string.IsNullOrEmpty(captured.skill) && !unlockedSkills.Contains(captured.skill))
+            {
+                // Materials alone can't explain this dead button — name
+                // the missing skill AND the Ladder rung that grants it.
+                var source = SkillSource(captured.skill);
+                skillHint = "  <color=" + OchreInkHex + "><b>needs " + captured.skill
+                            + (source != null ? " — take up " + source.displayName : string.Empty)
+                            + "</b></color>";
+            }
 
-                var gives = EffectsLabel(captured.effects);
-                var givesLine = gives.Length > 0
-                    ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>"
-                    : string.Empty;
-                if (Gear.IsEquipped(_loop.State, captured))
+            var row = Row(card);
+            var kit = ArtLibrary.ForGear(captured.id);
+            if (kit != null)
+            {
+                IconImage(row.transform, kit, 64f, Color.white);
+            }
+
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+
+            var gives = EffectsLabel(captured.effects);
+            var givesLine = gives.Length > 0
+                ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>"
+                : string.Empty;
+
+            // The slot name has moved to the group head, so the row is free to
+            // be the piece itself. One button serves both states — Craft while
+            // the piece has never been made, Wear once it's in the bag — and
+            // since a swap destroys nothing, the rival needs no warning.
+            Button action = null;
+            action = Button(row.transform, "Craft", 160, () =>
+            {
+                if (Gear.IsCrafted(_loop.State, captured))
                 {
-                    label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName
-                                 + "  <color=" + MossDeepHex + ">worn</color>" + givesLine;
-                    continue;
-                }
-
-                Button craft = null;
-                craft = Button(row.transform, "Craft", 160, () =>
-                {
-                    if (_loop.CraftGear(captured))
+                    if (_loop.WearGear(captured))
                     {
-                        Flash(craft, "bound tight", true);
-                        SetNote("bound the " + captured.displayName.ToLowerInvariant() + " tight. the work will mind it less.");
+                        Flash(action, "on the warden", true);
+                        SetNote("took the " + captured.displayName.ToLowerInvariant()
+                                + " out of the bag. what it replaced keeps — nothing is lost.");
                         _dirty = true;
                     }
-                });
-                _liveUpdaters.Add(() =>
+
+                    return;
+                }
+
+                if (_loop.CraftGear(captured))
                 {
-                    label.text = captured.slot.ToUpperInvariant() + " — " + captured.displayName + givesLine
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials) + "</color>" + skillHint + "</size>";
-                    var ok = Gear.CanCraft(_loop.State, _loop.Data, captured);
-                    craft.interactable = ok;
-                    SetButtonTint(craft, ok);
-                });
-            }
+                    Flash(action, "bound tight", true);
+                    SetNote("bound the " + captured.displayName.ToLowerInvariant() + " tight. the work will mind it less.");
+                    _dirty = true;
+                }
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var worn = Gear.IsEquipped(_loop.State, captured);
+                var crafted = Gear.IsCrafted(_loop.State, captured);
+                var status = worn
+                    ? "  <color=" + MossDeepHex + ">worn</color>"
+                    : crafted
+                        ? "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">in the bag</color></size>"
+                        : string.Empty;
+
+                // A made piece shows no price — it's paid for, for the rest of
+                // the run. Only an unmade one carries its materials, and its
+                // skill lock if it has one.
+                var costLine = crafted
+                    ? string.Empty
+                    : "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + BundleHaveLabel(captured.materials)
+                      + "</color>" + skillHint + "</size>";
+
+                label.text = captured.displayName + status + givesLine + costLine;
+
+                action.gameObject.SetActive(!worn);
+                if (worn)
+                {
+                    return;
+                }
+
+                SetButtonLabel(action, crafted ? "Wear" : "Craft");
+                var ok = crafted
+                    ? Gear.CanWear(_loop.State, captured)
+                    : Gear.CanCraft(_loop.State, _loop.Data, captured);
+                action.interactable = ok;
+                SetButtonTint(action, ok);
+            });
         }
 
         private void BuildCraftsCard()

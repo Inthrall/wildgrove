@@ -185,6 +185,7 @@ namespace Wildgrove.Sim.Tests
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
             state.deedCounts["tend"] = 9;
             state.gearBySlot["camp"] = "oilskin-tarp";
+            state.gearCrafted.Add("oilskin-tarp");
 
             var next = Migration.Migrate(state, _data);
 
@@ -202,6 +203,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(next.deedCounts, Is.Empty);
             Assert.That(next.verseProgress, Is.Empty);
             Assert.That(next.gearBySlot, Is.Empty, "the kit is rebuilt cheaply each run, not carried");
+            Assert.That(next.gearCrafted, Is.Empty, "the kit bag folds with the kit — the rebuild is the point");
         }
 
         [Test]
