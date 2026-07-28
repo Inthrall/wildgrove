@@ -554,9 +554,23 @@ namespace Wildgrove.Game
                 && (node != null ? Warden.PostNodeId(state) == node.id : Warden.IsWandering(state));
 
             // Say who holds it before offering anyone else — the whole sheet
-            // then reads as "instead of them, who?".
+            // then reads as "instead of them, who?". The holder's own plate
+            // stands above their name: the creature is the answer to "who
+            // walks here", and its picture says more than its species spelled
+            // out beside it.
+            if (occupantHere != null)
+            {
+                var portrait = ArtLibrary.ForSpecies(occupantHere.speciesId);
+                if (portrait != null)
+                {
+                    PlateImage(sheet, portrait, 200f);
+                }
+            }
+
             var holder = occupantHere != null
-                ? occupantHere.name + " — " + SpeciesName(occupantHere.speciesId)
+                ? occupantHere.name + (ArtLibrary.ForSpecies(occupantHere.speciesId) != null
+                    ? string.Empty
+                    : " — " + SpeciesName(occupantHere.speciesId))
                 : wardenHere ? "the warden" : null;
             MakeText(sheet, holder != null ? "<i>" + holder + " walks here</i>" : "<i>no one walks here</i>",
                 21, TextAnchor.UpperCenter, holder != null ? Ink : Ink2, _serif);
@@ -568,7 +582,7 @@ namespace Wildgrove.Game
             if (occupantHere != null)
             {
                 var standing = occupantHere;
-                Button(sheet, "Send " + standing.name + " back to camp", 560, () =>
+                Button(sheet, "Send " + standing.name + " back to camp", 740, () =>
                 {
                     Station(standing, null);
                     CloseSheet();
@@ -576,7 +590,7 @@ namespace Wildgrove.Game
             }
             else if (wardenHere)
             {
-                Button(sheet, "Send the warden back to camp", 560, () =>
+                Button(sheet, "Send the warden back to camp", 740, () =>
                 {
                     _loop.RestWarden();
                     SetNote("the warden steps back to camp.");
@@ -590,7 +604,7 @@ namespace Wildgrove.Game
                 // ochre made them read as warnings.
                 var wardenVerb = isWanderPost ? "Send the warden wandering" : "Walk the warden here";
                 Button(sheet, "<color=" + MossDeepHex + ">" + wardenVerb + "</color>  "
-                              + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>", 560, () =>
+                              + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>", 740, () =>
                 {
                     if (isWanderPost)
                     {
@@ -679,13 +693,28 @@ namespace Wildgrove.Game
                 // repeating "needs an open slot" on every row it applies to
                 // made a wall of the same sentence and pushed the sheet off
                 // the screen. The greyed plate is the per-line signal.
-                var detail = resting
-                    ? "rests at camp"
-                    : "at " + StationLabel(captured.stationId) + " — that post falls idle";
+                //
+                // The creature and what it works are PICTURES: its own plate
+                // leads the row, and the crop it stands over trails it. A
+                // companion at camp trails nothing at all — an empty hand is
+                // the plainest way to say "resting". Species and station names
+                // only appear where there is no plate to show instead (the
+                // trail and the wander post have no crop, and unmapped art
+                // falls back to its word rather than vanishing).
+                var portrait = ArtLibrary.ForSpecies(captured.speciesId);
+                var working = resting ? null : StationPlate(captured.stationId);
+                var speciesTail = portrait != null
+                    ? string.Empty
+                    : "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + SpeciesName(captured.speciesId) + "</color></size>";
+                var whereTail = resting || working != null
+                    ? string.Empty
+                    : "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + StationLabel(captured.stationId) + "</color></size>";
 
-                var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + verb + "</color>  "
-                                           + captured.name + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
-                                           + SpeciesName(captured.speciesId) + " · " + detail + "</color></size>", 560, () =>
+                var button = PictureButton(sheet, portrait,
+                    "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + verb + "</color>  "
+                    // Wider than a plain row: two plates and a verb on ONE line
+                    // needs the width the sheet's own notice already uses.
+                    + captured.name + speciesTail + whereTail, working, 740, 120f, () =>
                 {
                     Station(captured, stationId);
                     CloseSheet();
@@ -861,6 +890,18 @@ namespace Wildgrove.Game
         {
             var postId = Warden.PostNodeId(_loop.State);
             return postId == null ? "now: at camp" : "now: " + StationLabel(postId);
+        }
+
+        /// <summary>
+        /// The plate for what a post yields — the resource of the node it is.
+        /// Null for camp (no station at all), the trail, the wander post and
+        /// dig stations: none of those stand over a crop, so there is no
+        /// picture to show and the row falls back to naming them.
+        /// </summary>
+        private Sprite StationPlate(string stationId)
+        {
+            var node = FindNode(stationId);
+            return node == null ? null : ArtLibrary.ForResource(node.resourceId);
         }
 
         private NodeState FindNode(string stationId)

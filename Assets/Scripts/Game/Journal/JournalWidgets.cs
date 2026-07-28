@@ -144,6 +144,64 @@ namespace Wildgrove.Game
 
         internal static Button Button(Transform parent, string text, float width, UnityEngine.Events.UnityAction onClick)
         {
+            var button = ButtonPlate(parent, width, onClick);
+            var label = MakeText(button.transform, text, 19, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
+            var labelRect = (RectTransform)label.transform;
+            Stretch(labelRect);
+            // Wrap inside the plate, not against its border — and let the plate
+            // grow when the label needs a third line rather than spilling the
+            // text over the cards above and below it (see LabelFittedElement).
+            labelRect.offsetMin = new Vector2(10, 0);
+            labelRect.offsetMax = new Vector2(-10, 0);
+            FitToLabel(button, label, 120);
+            return button;
+        }
+
+        /// <summary>
+        /// A button that carries pictures beside its words: a leading plate (the
+        /// animal), the label, and a trailing plate (what it works at). Either
+        /// sprite may be null — the plate is simply left off, which is how "rests
+        /// at camp" reads as nothing at all rather than a word.
+        ///
+        /// The posting sheet is why this exists: eight candidate rows spelling
+        /// out species and station in prose was a wall of text for a question
+        /// ("who walks here?") that pictures answer at a glance.
+        /// </summary>
+        internal static Button PictureButton(Transform parent, Sprite lead, string text, Sprite trail,
+            float width, float glyph, UnityEngine.Events.UnityAction onClick)
+        {
+            var button = ButtonPlate(parent, width, onClick);
+            var layout = button.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.padding = new RectOffset(12, 12, 8, 8);
+            layout.spacing = 10;
+
+            if (lead != null)
+            {
+                IconImage(button.transform, lead, glyph, Color.white);
+            }
+
+            var label = MakeText(button.transform, text, 19, TextAnchor.MiddleLeft, Ink, SmallCapsFont);
+            FlexibleWidth(label.gameObject, 1f);
+
+            if (trail != null)
+            {
+                IconImage(button.transform, trail, glyph, Color.white);
+            }
+
+            // The pictures set the floor here, not the touch minimum — a plate
+            // shorter than its own glyph would clip the animal.
+            FitToLabel(button, label, Mathf.Max(120f, glyph + 16f));
+            return button;
+        }
+
+        /// <summary>The bare plate every button is drawn on — paper, border, press tint, touch-sized.</summary>
+        private static Button ButtonPlate(Transform parent, float width, UnityEngine.Events.UnityAction onClick)
+        {
             var go = new GameObject("Button", typeof(Image), typeof(Button), typeof(LayoutElement));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
@@ -171,18 +229,14 @@ namespace Wildgrove.Game
             colours.disabledColor = Color.white;
             button.colors = colours;
             button.onClick.AddListener(onClick);
-            var label = MakeText(go.transform, text, 19, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
-            var labelRect = (RectTransform)label.transform;
-            Stretch(labelRect);
-            // Wrap inside the plate, not against its border — and let the plate
-            // grow when the label needs a third line rather than spilling the
-            // text over the cards above and below it (see LabelFittedElement).
-            labelRect.offsetMin = new Vector2(10, 0);
-            labelRect.offsetMax = new Vector2(-10, 0);
-            var fitted = go.AddComponent<LabelFittedElement>();
-            fitted.label = label;
-            fitted.floorHeight = 120;
             return button;
+        }
+
+        private static void FitToLabel(Button button, Text label, float floorHeight)
+        {
+            var fitted = button.gameObject.AddComponent<LabelFittedElement>();
+            fitted.label = label;
+            fitted.floorHeight = floorHeight;
         }
 
         /// <summary>
