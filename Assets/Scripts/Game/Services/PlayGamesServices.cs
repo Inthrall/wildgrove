@@ -139,16 +139,29 @@ namespace Wildgrove.Game.Services
                     + (success ? ": accepted" : ": REJECTED")));
         }
 
-        public void ShowLeaderboard(string leaderboardId)
+        public void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
                 Diag.Log("Leaderboard " + leaderboardId + ": overlay skipped (signed out)");
+                onClosed?.Invoke(false);
                 return;
             }
 
             Diag.Log("Leaderboard " + leaderboardId + ": opening overlay");
-            PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId);
+
+            // The callback overload, not ShowLeaderboardUI(id): the one-argument
+            // version passes a null callback down, so every reason the overlay
+            // might refuse — board still a draft, Play Services needing an
+            // update, another overlay already up — was discarded and the tap
+            // just did nothing. UserClosedUI counts as a success: the overlay
+            // opened, and the player dismissed it.
+            PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId, LeaderboardTimeSpan.AllTime, status =>
+            {
+                var opened = status == UIStatus.Valid || status == UIStatus.UserClosedUI;
+                Report("Leaderboard " + leaderboardId + ": overlay " + status);
+                onClosed?.Invoke(opened);
+            });
         }
 
         public void LoadCloud(Action<string> onLoaded)

@@ -40,9 +40,10 @@ namespace Wildgrove.Game.Services
             Diag.Log("Leaderboard " + leaderboardId + " score " + score + ": stub accepted"); // TEMP diagnostics
         }
 
-        public void ShowLeaderboard(string leaderboardId)
+        public void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null)
         {
             Debug.Log("[play-games] stub show leaderboard " + leaderboardId);
+            onClosed?.Invoke(true);
         }
 
         public void LoadCloud(Action<string> onLoaded)

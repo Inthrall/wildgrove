@@ -100,8 +100,9 @@ namespace Wildgrove.Game.Tests
                 Submitted[leaderboardId] = score;
             }
 
-            public void ShowLeaderboard(string leaderboardId)
+            public void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null)
             {
+                onClosed?.Invoke(true);
             }
 
             public void LoadCloud(Action<string> onLoaded)

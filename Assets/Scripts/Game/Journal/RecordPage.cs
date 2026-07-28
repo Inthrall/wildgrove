@@ -39,13 +39,15 @@ namespace Wildgrove.Game
             // The board lives behind Play Games, and ShowLeaderboard is a silent
             // no-op while signed out — so the button offers the sign-in instead
             // of swallowing the tap, and every tap ends in either the overlay or
-            // a note saying why not.
+            // a note saying why not. Signed in, the overlay itself can still
+            // refuse (a board Play hasn't published yet is the usual reason),
+            // which is its own dead tap unless the refusal is spoken aloud.
             Button view = null;
             view = Button(row.transform, "View", 160, () =>
             {
                 if (_loop.GameServices.IsSignedIn)
                 {
-                    _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+                    _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown, ViewBoardResult);
                     return;
                 }
 
@@ -54,7 +56,7 @@ namespace Wildgrove.Game
                 {
                     if (signedIn)
                     {
-                        _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown);
+                        _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown, ViewBoardResult);
                         return;
                     }
 
@@ -79,14 +81,27 @@ namespace Wildgrove.Game
                 SetButtonLabel(view, signedIn ? "View" : "Sign in");
             });
 
-            // TEMP diagnostics: the sign-in that stops answering is the one this
-            // card asks for, and the launch popup has long since been dismissed
-            // by the time you tap it — so keep the status lines one tap away
-            // from the button under test. Remove with the Diag sink.
+            // TEMP diagnostics: the Play Games call under test is the one this
+            // card makes, and the launch popup has long since been dismissed by
+            // the time you tap it — so keep the status lines one tap away from
+            // the button under test. Remove with the Diag sink.
             var diagRow = Row(card);
             var diagLabel = MakeText(diagRow.transform, "Play Games status", 15, TextAnchor.MiddleLeft, Ink2);
             FlexibleWidth(diagLabel.gameObject, 1f);
             Button(diagRow.transform, "Show", 160, _hud.ShowDiagnostics);
+        }
+
+        /// <summary>
+        /// Say something when the Renown overlay declines to open. Play Games
+        /// gives no visible sign of its own, so without this the tap reads as a
+        /// dead button — which is exactly how the unpublished board presented.
+        /// </summary>
+        private void ViewBoardResult(bool opened)
+        {
+            if (!opened)
+            {
+                SetNote("the board wouldn't open — Play Games isn't showing it yet.");
+            }
         }
 
         private void BuildCompendiumCard()

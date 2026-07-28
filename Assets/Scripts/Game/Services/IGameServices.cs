@@ -38,8 +38,15 @@ namespace Wildgrove.Game.Services
         /// </summary>
         void SubmitScore(string leaderboardId, long score);
 
-        /// <summary>Open the native Play Games leaderboard overlay for the given ID. No-op when signed out.</summary>
-        void ShowLeaderboard(string leaderboardId);
+        /// <summary>
+        /// Open the native Play Games leaderboard overlay for the given ID.
+        /// No-op when signed out. <paramref name="onClosed"/> reports whether the
+        /// overlay actually opened — GPGS's one-argument overload passes a null
+        /// callback, so a board that refuses to open (unpublished, Play Services
+        /// out of date, another overlay already up) fails silently and the tap
+        /// vanishes. Anything sign-in-gated needs to be able to say why not.
+        /// </summary>
+        void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null);
 
         /// <summary>Read the cloud save blob (null when none exists or signed out).</summary>
         void LoadCloud(Action<string> onLoaded);

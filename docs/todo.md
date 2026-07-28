@@ -427,6 +427,19 @@ Interpretations shipped (tune/confirm):
   is now **unconditional** — it was gated behind `Debug.isDebugBuild`, which
   turned GPGS's own trace off in minified release builds, the only place the hang
   has ever reproduced.
+  **What it caught (v0.1.76, 2026-07-28) — sign-in was never the problem.** The
+  sheet reads clean all the way down: `Sign-in: Success` at 1.4 s, `Leaderboard
+  …AhAD score 6880488: accepted`, `Achievement …AhAC: reported OK`, `Cloud load:
+  read Success, 18319 bytes`. Silent sign-in, achievements, score submission and
+  cloud Snapshots are **all working**. The only broken thing is the *overlay*:
+  three taps of View logged `opening overlay` at 16.3 s / 17.7 s / 17.9 s and
+  nothing appeared. Root cause is `PlayGamesPlatform.ShowLeaderboardUI(id)` — the
+  one-argument overload passes a **null callback** down, so every reason the
+  overlay might refuse was discarded and the tap died in silence. Now on the
+  `Action<UIStatus>` overload, with the status reported and the card saying so.
+  The status will name it: `InternalError` almost certainly means the Renown
+  board is still a **draft in Play Console** (publish it), `VersionUpdateRequired`
+  means Play Services needs updating on the device.
   **History:** v0.1.62 (2026-07-27) caught `PlayGamesServices` selected, sign-in
   requested, and the `Authenticate` callback never returning. R8 was the prime
   suspect — GPGS attaches its result listeners as `AndroidJavaProxy` over the
