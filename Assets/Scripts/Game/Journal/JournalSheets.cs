@@ -951,7 +951,7 @@ namespace Wildgrove.Game
             {
                 MakeText(sheet, entries == null
                         ? "<i>the board would not be read — Play Games kept it shut.</i>"
-                        : "<i>no one has yet been recorded here — Play Games is not\nyet showing this board to anyone.</i>",
+                        : "<i>no one has yet been recorded here.</i>",
                     20, TextAnchor.MiddleCenter, Ink2, _serif);
                 Button(sheet, "Close", 320, CloseSheet);
                 return;
@@ -969,31 +969,6 @@ namespace Wildgrove.Game
             }
 
             Button(sheet, "Close", 320, CloseSheet);
-        }
-
-        /// <summary>
-        /// TEMP: a plain modal that lists diagnostic lines with a single dismiss
-        /// button — surfaces Play Games sign-in, leaderboard and Snapshot status
-        /// on device while we chase the sign-in that stops answering. Remove
-        /// with the <see cref="Diag"/> sink.
-        /// </summary>
-        internal void OpenInfoSheet(string title, IReadOnlyList<string> lines)
-        {
-            var sheet = BeginSheet();
-            MakeText(sheet, title, 32, TextAnchor.UpperCenter, Ink, _serif);
-            if (lines == null || lines.Count == 0)
-            {
-                MakeText(sheet, "no lines recorded", 20, TextAnchor.MiddleCenter, Ink2, _serif);
-            }
-            else
-            {
-                foreach (var line in lines)
-                {
-                    MakeText(sheet, line, 20, TextAnchor.MiddleCenter, Ink2, _serif);
-                }
-            }
-
-            Button(sheet, "OK", 320, CloseSheet);
         }
 
         /// <summary>

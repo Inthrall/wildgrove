@@ -17,27 +17,23 @@ namespace Wildgrove.Game.Services
         public void SignIn(Action<bool> onComplete = null)
         {
             Debug.Log("[play-games] stub sign-in");
-            Diag.Log("Sign-in: stub SUCCESS"); // TEMP diagnostics
             onComplete?.Invoke(true);
         }
 
         public void SignInInteractive(Action<bool> onComplete = null)
         {
             Debug.Log("[play-games] stub manual sign-in");
-            Diag.Log("Manual sign-in: stub SUCCESS"); // TEMP diagnostics
             onComplete?.Invoke(true);
         }
 
         public void UnlockAchievement(string achievementId)
         {
             Debug.Log("[play-games] stub unlock achievement " + achievementId);
-            Diag.Log("Achievement " + achievementId + ": stub reported OK"); // TEMP diagnostics
         }
 
         public void SubmitScore(string leaderboardId, long score)
         {
             Debug.Log("[play-games] stub submit score " + score + " to " + leaderboardId);
-            Diag.Log("Leaderboard " + leaderboardId + " score " + score + ": stub accepted"); // TEMP diagnostics
         }
 
         public void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null)

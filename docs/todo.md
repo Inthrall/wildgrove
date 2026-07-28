@@ -402,91 +402,43 @@ Interpretations shipped (tune/confirm):
   frame ms) is gated behind `Debug.isDebugBuild` in `Bootstrap` — visible in the
   editor and development builds, stripped from release/store builds. Flip a
   development build on when tuning performance on-device.
-- **The Play Games diagnostics sink is TEMP, and is back for a second pass
-  (2026-07-28).** `Diag` + `GameHud.MaybeShowStartupDiagnostics` open a "Play
-  Games status" sheet at launch — after sign-in resolves, or after a 10 s timeout
-  saying the callback never came back. Lines are stamped with seconds since
-  launch, `Application.version`, and which `IGameServices` was selected. Rip the
-  whole sink out once sign-in, the Renown board and cloud Snapshots are all
-  confirmed on device.
-  **Retiring it the first time was the mistake to learn from.** It came out in
-  the same commit as the R8 `gms.tasks` keeps that were meant to fix the hang —
-  fix and instrument removed together — so when sign-in stopped answering again
-  there was nothing left to read it with. Don't retire this one until all three
-  paths are green.
-  **What changed this pass:** the sink is no longer startup-only. The failing
-  path now is *interactive* sign-in (the Standing card's button, added
-  2026-07-27), which a launch popup can never catch — so the Standing card has a
-  "Play Games status · Show" row that reopens the sheet on demand, and the buffer
-  keeps accepting lines all session. Every discarded status code is now recorded:
-  `SubmitScore` used to throw its success flag away (`_ => { }`), and
-  `LoadCloud`/`SaveCloud` swallowed their `SavedGameRequestStatus`, so "the board
-  is empty" and "the submit was rejected" were indistinguishable. Platform
-  construction is reported as its own stage, separating "the GPGS SDK isn't in
-  the APK" from "the native task never completed". `PlayGamesPlatform.DebugLogEnabled`
-  is now **unconditional** — it was gated behind `Debug.isDebugBuild`, which
-  turned GPGS's own trace off in minified release builds, the only place the hang
-  has ever reproduced.
-- **The Play Games leaderboard OVERLAY is unreachable, and the Standing is drawn
-  in the journal instead (2026-07-28).** `com.google.games.bridge.HelperFragment`
-  extends the framework `android.app.Fragment`, deprecated since API 28 — read
-  straight out of the shipped AAR with `javap`. Every GPGS call that routes
-  through that bridge (`ShowLeaderboardUI`, `ShowAchievementsUI`) is dead on
-  `targetSdk 36`; everything that goes to the GMS clients directly (sign-in,
-  `ReportScore`, `ReportProgress`, Snapshots) works fine. That split is the whole
-  diagnosis, and it matches upstream issue #3318
-  (`ClassNotFoundException: com.google.games.bridge.HelperFragment`, "auth and
-  score reporting work fine, but the leaderboard UI fails to display").
-  **GPGS 2.1.0 is the latest release — there is no upstream fix to upgrade to.**
-  So don't reach for the overlay again: read the board with
-  `IGameServices.LoadLeaderboard` (leaderboards client + `LoadUsers` for the
-  names) and draw it with `JournalSheets.OpenStandingSheet`. `ShowLeaderboard` is
-  kept, now wrapped in a try/catch that reports the throw, because the call
-  fails **synchronously** — which is why it looked like a hung callback.
-- **The Renown board reads clean but comes back EMPTY (v0.1.78, 2026-07-28).**
-  `reading top 10` → `read 0 rows`, twice, while scores submitted seconds later
-  are accepted. So the client path is right (a bad read would log
-  `read FAILED — <status>`) and the remaining cause is a **console/account
-  state**, not code. Two candidates, and the read now prints which:
-  the line reports the player's own row and Play's approximate total, so
-  **`player rank N with X`** means the board has the score and only the *public
-  page* is withheld, while **`player unranked`** means Play is not ranking this
-  game's scores at all. Things to check in that order:
-  1. **Is the Play Games Services *configuration* published?** This is a separate
-     publish state from an individual leaderboard being "live", and separate again
-     from the app's internal-testing track. While it is unpublished, testers can
-     sign in and submit — exactly what we see — and the public page stays empty.
-  2. **Play Games account profile visibility.** There is a per-account setting for
-     appearing on public leaderboards; with it off, `LoadScores(Public)` legitimately
-     returns nothing, including the player's own row.
-  An empty top page no longer reads as "no one is here": if Play ranks the player,
-  the sheet shows their own line alone.
-  **What it caught (v0.1.76, 2026-07-28) — sign-in was never the problem.** The
-  sheet reads clean all the way down: `Sign-in: Success` at 1.4 s, `Leaderboard
-  …AhAD score 6880488: accepted`, `Achievement …AhAC: reported OK`, `Cloud load:
-  read Success, 18319 bytes`. Silent sign-in, achievements, score submission and
-  cloud Snapshots are **all working**. The only broken thing is the *overlay*:
-  three taps of View logged `opening overlay` at 16.3 s / 17.7 s / 17.9 s and
-  nothing appeared. Root cause is `PlayGamesPlatform.ShowLeaderboardUI(id)` — the
-  one-argument overload passes a **null callback** down, so every reason the
-  overlay might refuse was discarded and the tap died in silence. Now on the
-  `Action<UIStatus>` overload, with the status reported and the card saying so.
-  The status will name it: `InternalError` almost certainly means the Renown
-  board is still a **draft in Play Console** (publish it), `VersionUpdateRequired`
-  means Play Services needs updating on the device.
-  **History:** v0.1.62 (2026-07-27) caught `PlayGamesServices` selected, sign-in
-  requested, and the `Authenticate` callback never returning. R8 was the prime
-  suspect — GPGS attaches its result listeners as `AndroidJavaProxy` over the
-  `com.google.android.gms.tasks.On*Listener` interface *names*, which had no keep
-  rule (same trap as the billing `PurchasesUpdatedListener` crash). Keeps were
-  added and the "First kith" unlock was confirmed working on device, which is why
-  the sink was retired. It has since regressed to the same symptom (no Play Games
-  UI, no callback) on the interactive path. Note what has *not* been ruled out:
-  the silent launch-time path may still work — `Authenticate` calls
-  `isAuthenticated` and shows no UI by design, while only `ManuallyAuthenticate`
-  calls `signIn`. The keeps are verified present and the sweep is clean, so the
-  next suspects are the interactive path itself and the Unity 6.5 move (new
-  AGP/R8), not the tasks keeps.
+- **Play Games is done and confirmed on device (2026-07-28): sign-in,
+  achievements, score submission, cloud Snapshots and the Renown board all work.**
+  The diagnostics scaffolding that got us there (`Diag`, the startup status
+  popup, `OpenInfoSheet`, the Standing card's status row) has been removed now
+  that all of it is confirmed — which is the safe order, and the opposite of the
+  mistake described below. Two things deliberately stayed, because they are what
+  made a run of silent failures findable at all, and they cost nothing: a
+  try/catch on every JNI entry point, and a one-line `[play-games]` log of every
+  status that used to be discarded (`SignInStatus`, `ReportScore` success,
+  `SavedGameRequestStatus`, overlay `UIStatus`, row count + player rank). GPGS's
+  own verbose trace sits behind `Debug.isDebugBuild`; our own lines cover release
+  logcat without Google's spam.
+  **Do not use Play Games' own overlay.** `ShowLeaderboardUI` /
+  `ShowAchievementsUI` route through `com.google.games.bridge.HelperFragment`,
+  which extends the framework `android.app.Fragment` (deprecated since API 28) —
+  read straight out of the shipped AAR with `javap`. On `targetSdk 36` that
+  throws **synchronously** on the JNI class lookup, which is why it presented as
+  a hung callback and cost two builds to pin down. Everything routed to the GMS
+  clients instead is fine, and that working/broken split is the whole diagnosis;
+  it matches upstream issue #3318. **GPGS 2.1.0 is the latest release — there is
+  no upstream fix to upgrade to.** The Standing is therefore read with
+  `IGameServices.LoadLeaderboard` (`LoadScores` + `LoadUsers` for names) and
+  drawn by `JournalSheets.OpenStandingSheet`, which suits the journal better
+  anyway. `ShowLeaderboard` is kept, unused and try/caught, for the day the
+  bridge is fixed.
+  **A leaderboard's top public page can come back empty while Play still ranks
+  the player** — `read 0 rows` with submissions being accepted. So never rely on
+  `LoadScores` alone: fall back to `data.PlayerScore` and show the player's own
+  line. If a board is ever empty *and* the log says `player unranked`, Play is
+  not ranking the game at all — check the PGS **configuration** publish state (a
+  separate thing from an individual leaderboard being "live", and from the app's
+  testing track) and the account's "appear on public leaderboards" setting.
+  **The lesson worth keeping:** the first diagnostics sink was retired in the
+  very same commit as the R8 `gms.tasks` keeps that were meant to fix the sign-in
+  hang. Fix and instrument removed together — so when the symptom returned there
+  was nothing left to read it with, and it cost a full build cycle to get back to
+  where we had been. Confirm on device first, then remove the instrument.
 - **Android target SDK is pinned to API 36 (2026-07-27).** Was
   `AndroidApiLevelAuto`, which follows whatever platform the installed Android
   module ships — an editor or module update could move a release's target

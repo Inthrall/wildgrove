@@ -11,16 +11,19 @@ namespace Wildgrove.Game.Services
 {
     /// <summary>
     /// The real <see cref="IGameServices"/>, backed by Play Games Services v2:
-    /// authentication, achievement unlocks, and cloud save via Snapshots.
-    /// Android-only — GPGS's <c>PlayGamesPlatform</c> is itself compiled under
-    /// <c>UNITY_ANDROID</c>, so this file is guarded to match (the editor and any
-    /// non-Android target use <see cref="StubGameServices"/>, selected in GameLoop).
-    ///
-    /// Every async call reports its outcome into <see cref="Diag"/> as well as
-    /// logcat. That is deliberate and TEMP: the failures this wiring keeps
-    /// hitting are silent ones — a callback that never returns, or a status code
-    /// that is thrown away at the call site — and neither is visible on a device
-    /// running a store build. Retire the Diag lines with the sink itself.
+    /// authentication, achievement unlocks, the Renown board, and cloud save via
+    /// Snapshots. Android-only — GPGS's <c>PlayGamesPlatform</c> is itself
+    /// compiled under <c>UNITY_ANDROID</c>, so this file is guarded to match (the
+    /// editor and any non-Android target use <see cref="StubGameServices"/>,
+    /// selected in GameLoop).
+    /// <para>
+    /// Every async call logs its outcome, and every JNI call that can throw is
+    /// caught. Both are deliberate: this wiring's failures are all silent ones —
+    /// a callback that never returns, a status code discarded at the call site, a
+    /// JNI throw swallowed by a button handler — and none of them are visible on
+    /// a device running a store build. Two long hunts came down to exactly that,
+    /// so the lines stay.
+    /// </para>
     /// </summary>
     public sealed class PlayGamesServices : IGameServices
     {
@@ -30,11 +33,7 @@ namespace Wildgrove.Game.Services
 
         public void SignIn(Action<bool> onComplete = null)
         {
-            // On unconditionally, not just in debug builds. Minified release
-            // builds are the only place the sign-in hang has ever reproduced, so
-            // gating GPGS's own trace behind Debug.isDebugBuild turned it off in
-            // exactly the build that needed reading.
-            PlayGamesPlatform.DebugLogEnabled = true;
+            PlayGamesPlatform.DebugLogEnabled = Debug.isDebugBuild; // GPGS's own trace into logcat
 
             // Instance construction is a distinct failure stage: the getter
             // builds AndroidClient, which calls PlayGamesSdk.initialize over
@@ -47,19 +46,17 @@ namespace Wildgrove.Game.Services
             }
             catch (Exception e)
             {
-                Report("Sign-in: FAILED building the platform — " + e.GetType().Name + ": " + e.Message);
+                Log("sign-in FAILED building the platform — " + e.GetType().Name + ": " + e.Message);
                 onComplete?.Invoke(false);
                 return;
             }
-
-            Diag.Log("Sign-in: requested (silent)");
 
             try
             {
                 platform.Authenticate(status =>
                 {
                     IsSignedIn = status == SignInStatus.Success;
-                    Report("Sign-in: " + status);
+                    Log("sign-in: " + status);
                     onComplete?.Invoke(IsSignedIn);
                 });
             }
@@ -71,7 +68,7 @@ namespace Wildgrove.Game.Services
                 // the throw happens here, no listener is ever attached, and
                 // sign-in hangs forever with nothing logged — so say it out loud
                 // and resolve the callback as a failure rather than never.
-                Report("Sign-in: THREW — " + e.GetType().Name + ": " + e.Message);
+                Log("sign-in threw: " + e.GetType().Name + " — " + e.Message);
                 onComplete?.Invoke(false);
             }
         }
@@ -84,8 +81,6 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            Diag.Log("Manual sign-in: requested");
-
             try
             {
                 // ManuallyAuthenticate, not Authenticate: after the launch-time
@@ -94,7 +89,7 @@ namespace Wildgrove.Game.Services
                 PlayGamesPlatform.Instance.ManuallyAuthenticate(status =>
                 {
                     IsSignedIn = status == SignInStatus.Success;
-                    Report("Manual sign-in: " + status);
+                    Log("manual sign-in: " + status);
                     onComplete?.Invoke(IsSignedIn);
                 });
             }
@@ -102,7 +97,7 @@ namespace Wildgrove.Game.Services
             {
                 // Same AndroidJavaProxy/R8 trap as SignIn — resolve as a
                 // failure rather than leaving the caller waiting forever.
-                Report("Manual sign-in: THREW — " + e.GetType().Name + ": " + e.Message);
+                Log("manual sign-in threw: " + e.GetType().Name + " — " + e.Message);
                 onComplete?.Invoke(false);
             }
         }
@@ -111,7 +106,6 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn || string.IsNullOrEmpty(achievementId))
             {
-                Diag.Log("Achievement " + achievementId + ": skipped (signed out)");
                 return;
             }
 
@@ -119,24 +113,20 @@ namespace Wildgrove.Game.Services
             // one Play silently rejects (achievement still in draft, or the
             // account isn't on the testers list).
             PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0,
-                success => Report("Achievement " + achievementId + (success ? ": reported OK" : ": report FAILED")));
+                success => Log("achievement " + achievementId + (success ? ": reported OK" : ": report FAILED")));
         }
 
         public void SubmitScore(string leaderboardId, long score)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
-                // Deliberately silent: this rides the autosave cadence (~30 s),
-                // so logging the signed-out skip would roll the sign-in lines
-                // straight out of the buffer — losing the very thing being read.
                 return;
             }
 
-            // The outcome used to be discarded, which made "the board is empty"
-            // impossible to tell apart from "the submit was rejected" — the same
-            // blind spot the achievement report had before it started reporting.
+            // Keep the outcome. Discarding it once made "the board is empty"
+            // impossible to tell apart from "the submit was rejected".
             PlayGamesPlatform.Instance.ReportScore(score, leaderboardId,
-                success => Report("Leaderboard " + leaderboardId + " score " + score
+                success => Log("leaderboard " + leaderboardId + " score " + score
                     + (success ? ": accepted" : ": REJECTED")));
         }
 
@@ -144,39 +134,34 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
-                Diag.Log("Leaderboard " + leaderboardId + ": overlay skipped (signed out)");
                 onClosed?.Invoke(false);
                 return;
             }
 
-            Diag.Log("Leaderboard " + leaderboardId + ": opening overlay");
-
             try
             {
-                // The callback overload, not ShowLeaderboardUI(id): the one-argument
-                // version passes a null callback down, so every reason the overlay
-                // might refuse — board still a draft, Play Services needing an
-                // update, another overlay already up — was discarded and the tap
-                // just did nothing. UserClosedUI counts as a success: the overlay
-                // opened, and the player dismissed it.
+                // The callback overload, not ShowLeaderboardUI(id): the
+                // one-argument version passes a null callback down, so every
+                // reason the overlay might refuse was discarded. UserClosedUI
+                // counts as a success — the overlay opened and was dismissed.
                 PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId, LeaderboardTimeSpan.AllTime, status =>
                 {
                     var opened = status == UIStatus.Valid || status == UIStatus.UserClosedUI;
-                    Report("Leaderboard " + leaderboardId + ": overlay " + status);
+                    Log("leaderboard " + leaderboardId + ": overlay " + status);
                     onClosed?.Invoke(opened);
                 });
             }
             catch (Exception e)
             {
-                // This one throws SYNCHRONOUSLY, before any listener is attached:
-                // the overlay is the only GPGS call routed through
-                // com.google.games.bridge.HelperFragment, which extends the
-                // framework android.app.Fragment (deprecated since API 28), and
-                // resolving that class over JNI fails on a high target SDK. The
-                // throw used to escape into the button handler, where Unity
-                // logged it out of sight — so the tap died with a request line
-                // and no answer, looking exactly like a callback that hung.
-                Report("Leaderboard " + leaderboardId + ": overlay THREW — "
+                // NOTHING CALLS THIS, and the catch is why: the overlay is the
+                // only GPGS call routed through com.google.games.bridge.HelperFragment,
+                // which extends the framework android.app.Fragment (deprecated
+                // since API 28), so resolving it over JNI throws on a modern
+                // target SDK. It throws SYNCHRONOUSLY, before any listener is
+                // attached, which is exactly why it once looked like a hung
+                // callback. The Standing is drawn from LoadLeaderboard instead;
+                // this stays only for the day the bridge is fixed upstream.
+                Log("leaderboard " + leaderboardId + ": overlay threw — "
                     + e.GetType().Name + ": " + e.Message);
                 onClosed?.Invoke(false);
             }
@@ -186,35 +171,27 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
-                Diag.Log("Leaderboard " + leaderboardId + ": read skipped (signed out)");
                 onLoaded?.Invoke(null);
                 return;
             }
-
-            Diag.Log("Leaderboard " + leaderboardId + ": reading top " + rowCount);
 
             PlayGamesPlatform.Instance.LoadScores(leaderboardId, LeaderboardStart.TopScores, rowCount,
                 LeaderboardCollection.Public, LeaderboardTimeSpan.AllTime, data =>
                 {
                     if (data == null || !data.Valid || data.Scores == null)
                     {
-                        Report("Leaderboard " + leaderboardId + ": read FAILED — "
+                        Log("leaderboard " + leaderboardId + ": read FAILED — "
                             + (data == null ? "no data" : data.Status.ToString()));
                         onLoaded?.Invoke(null);
                         return;
                     }
 
-                    // Report the player's own row and Play's approximate total as
-                    // well as the page size. An empty top page with the player
-                    // ranked means the board exists and we asked wrongly; an
-                    // empty page with the player unranked means Play is not
-                    // publishing scores for this game yet, which is a console
-                    // state and not something the client can fix.
-                    var player = data.PlayerScore == null
-                        ? "unranked"
-                        : "rank " + data.PlayerScore.rank + " with " + data.PlayerScore.value;
-                    Report("Leaderboard " + leaderboardId + ": read " + data.Scores.Length
-                        + " rows, player " + player + ", approx total " + data.ApproximateCount);
+                    // The player's own row as well as the page size: an empty top
+                    // page with the player ranked means the board holds the score
+                    // and only the public page is withheld, which is a console
+                    // state rather than anything to fix here.
+                    Log("leaderboard " + leaderboardId + ": read " + data.Scores.Length + " rows, player "
+                        + (data.PlayerScore == null ? "unranked" : "rank " + data.PlayerScore.rank));
                     ResolveNames(data, onLoaded);
                 });
         }
@@ -223,7 +200,7 @@ namespace Wildgrove.Game.Services
         /// Turn a page of scores into journal lines, putting names to the ids.
         /// Play returns only player ids with the scores, so the names take a
         /// second call — and a board is still worth showing without them, so a
-        /// failed lookup falls back to the rank rather than dropping the row.
+        /// failed lookup falls back to a stock name rather than dropping the row.
         /// </summary>
         private static void ResolveNames(LeaderboardScoreData data, Action<LeaderboardEntry[]> onLoaded)
         {
@@ -238,10 +215,8 @@ namespace Wildgrove.Game.Services
             if (ids.Length == 0)
             {
                 // An empty top page does not mean the player has no standing:
-                // Play withholds the public page for a game it is not yet
-                // publishing scores for, while still ranking the player against
-                // it. Their own line is worth showing on its own — it is the
-                // part they actually came to read.
+                // Play can rank them against a board whose public page it is
+                // withholding. Their own line is the part they came to read.
                 if (data.PlayerScore != null)
                 {
                     onLoaded?.Invoke(new[]
@@ -299,17 +274,15 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn)
             {
-                Diag.Log("Cloud load: skipped (signed out)");
                 onLoaded?.Invoke(null);
                 return;
             }
 
-            Diag.Log("Cloud load: opening snapshot");
             OpenSnapshot((status, game) =>
             {
                 if (status != SavedGameRequestStatus.Success || game == null)
                 {
-                    Report("Cloud load: open FAILED — " + status);
+                    Log("cloud load: open FAILED — " + status);
                     onLoaded?.Invoke(null);
                     return;
                 }
@@ -317,7 +290,7 @@ namespace Wildgrove.Game.Services
                 PlayGamesPlatform.Instance.SavedGame.ReadBinaryData(game, (readStatus, bytes) =>
                 {
                     var length = bytes == null ? 0 : bytes.Length;
-                    Report("Cloud load: read " + readStatus + ", " + length + " bytes");
+                    Log("cloud load: read " + readStatus + ", " + length + " bytes");
                     onLoaded?.Invoke(readStatus == SavedGameRequestStatus.Success && length > 0
                         ? Encoding.UTF8.GetString(bytes)
                         : null);
@@ -337,7 +310,7 @@ namespace Wildgrove.Game.Services
             {
                 if (status != SavedGameRequestStatus.Success || game == null)
                 {
-                    Report("Cloud save: open FAILED — " + status);
+                    Log("cloud save: open FAILED — " + status);
                     onComplete?.Invoke();
                     return;
                 }
@@ -352,7 +325,7 @@ namespace Wildgrove.Game.Services
                     .Build();
                 PlayGamesPlatform.Instance.SavedGame.CommitUpdate(game, update, bytes, (commitStatus, __) =>
                 {
-                    Report("Cloud save: commit " + commitStatus + ", " + bytes.Length + " bytes");
+                    Log("cloud save: commit " + commitStatus + ", " + bytes.Length + " bytes");
                     onComplete?.Invoke();
                 });
             });
@@ -367,14 +340,9 @@ namespace Wildgrove.Game.Services
                 callback);
         }
 
-        /// <summary>
-        /// Mirror an outcome to both sinks — logcat for a tethered device, the
-        /// Diag buffer for a phone with no cable. TEMP, with the sink.
-        /// </summary>
-        private static void Report(string line)
+        private static void Log(string line)
         {
             Debug.Log("[play-games] " + line);
-            Diag.Log(line);
         }
     }
 }
