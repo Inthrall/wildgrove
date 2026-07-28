@@ -11,7 +11,8 @@
     "baseCarryCapacity": 15,
     "tripSeconds": 10,
     "basketCapacity": 60,
-    "$note": "first-guess Phase-1 numbers, not in design doc — a carrier's throughput is baseCarryCapacity/tripSeconds (x carry-capacity upgrades); gathered goods wait in a per-node basket of basketCapacity and overflow is lost. Tune with the loop playtest."
+    "selfHaulTripMultiplier": 1.0,
+    "$note": "first-guess Phase-1 numbers, not in design doc. A carrier's throughput is baseCarryCapacity/tripSeconds x carry-capacity upgrades x the Verdure global (so hauling rides the same smooth growth as gathering, instead of being flat between the hauling track's five big rungs). Gathered goods wait in a per-node basket of basketCapacity. When the basket is full the node's own gatherers shoulder the excess themselves: they walk a carrier's trip (x selfHaulTripMultiplier) and gather nothing while they do, so the share that survives is the share of the time they were still gathering - overflow/(1 + gatherRate x trip/load). At selfHaulTripMultiplier 1 a stalled node keeps 60% of a 1/s gatherer and 13% of a 10/s one, ceiling load/trip: enough that a node never dies waiting, never enough to beat posting a carrier who loses no gathering and serves every node. Basket capacity buys TIME, not throughput - it is not the fix for a bottleneck. Tune with the loop playtest."
   },
   "kith": {
     "slotsBase": 1,

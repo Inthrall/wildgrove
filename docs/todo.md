@@ -456,6 +456,35 @@ Interpretations shipped (tune/confirm):
   The warning persists only while a pre-v43 artifact is still active in a track.
   To read a bundled transitive version: download the AAB and
   `unzip -p <aab> base/root/META-INF/<group>_<artifact>.version`.
+- **The haul bottleneck, and what was done about it (2026-07-28).** As slots
+  unlocked, nodes jammed on full baskets and the overflow was silently destroyed.
+  The measured cause: **gathering and hauling grew on different curves.** A
+  gatherer slot multiplies against mastery (+5%/level), richness (+10%/replant),
+  planters and the Verdure global (+2%/point); a carrier slot added a flat
+  `1.5/s × haulMult`. So the carrier share needed to break even *rose* with
+  gather power — 40% of the kith at `g=1`, 67% at `g=3`, i.e. 4 of 6 bodies on
+  the trail. Worse, the five `haulMult` rungs gate on **crafting** skill
+  (bushcraft 12/20/35 ≈ 86/229/1084 batches) while the pressure on them arrives
+  on the **verse** clock, so a slot unlocked mid-gap was pure loss.
+  Three changes:
+  1. **A full basket is no longer a cliff.** The node's own gatherers shoulder the
+     excess: they walk a carrier's trip and gather nothing while walking, so
+     `overflow / (1 + rate · trip / load)` survives (`Simulation.SelfHaul`). At
+     `selfHaulTripMultiplier` 1 that keeps 60% of a 1/s gatherer and 13% of a
+     10/s one. It is a **floor, not a lane** — a posted carrier loses no
+     gathering and serves every node, so delegating always wins, and
+     `Advance_ACarrierBeatsSelfHauling_SoTheTrailPostIsWorthASlot` pins that.
+  2. **Hauling rides the same smooth curve as gathering.** A carrier's load now
+     takes the Verdure global too (`Simulation.HaulLoad`), so the ratio stops
+     drifting between rungs instead of only stepping five times a run.
+  3. **The mid rungs come earlier** — stag-harness bushcraft 12 → 8, wagon 20 → 14
+     (≈46 and ≈112 batches). A first guess, to confirm in playtest.
+  Still true and worth remembering: **basket capacity buys time, not throughput.**
+  Buildings (+5%/level) and the Timber Frame planter (+50%) do nothing for a
+  bottleneck — they only delay it. And overflow still credits XP, Mastery and the
+  Compendium, so skills climb while camp stock doesn't; the Trail page now says
+  "the trail is behind — gathering X/s, carrying Y/s" so the shortfall is visible
+  before it costs anything.
 - **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
   guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
   `GameHud.WelcomeBackMinSeconds`)

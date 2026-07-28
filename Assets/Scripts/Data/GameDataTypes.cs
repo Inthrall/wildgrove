@@ -438,6 +438,13 @@ namespace Wildgrove.Data
             public double baseCarryCapacity;
             public double tripSeconds;
             public double basketCapacity;
+
+            /// <summary>
+            /// How much longer a gatherer's own trip takes than a carrier's,
+            /// when it shoulders what its full basket cannot hold. 1 = the same
+            /// walk; the cost is the gathering it stops to make it.
+            /// </summary>
+            public double selfHaulTripMultiplier;
         }
 
         [Serializable]

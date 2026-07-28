@@ -41,6 +41,7 @@ namespace Wildgrove.Data
             public double BaseCarryCapacity { get; set; }
             public double TripSeconds { get; set; }
             public double BasketCapacity { get; set; }
+            public double SelfHaulTripMultiplier { get; set; }
         }
 
         public sealed class KithSection

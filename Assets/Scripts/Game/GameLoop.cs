@@ -522,6 +522,42 @@ namespace Wildgrove.Game
             return Traits.Of(Data, familiar);
         }
 
+        /// <summary>
+        /// What the grove gathers into its baskets each second — everything that
+        /// needs carrying. The warden's own hands are excluded: they pocket what
+        /// they pick and never touch a basket.
+        /// </summary>
+        public BigDouble BasketGatherPerSecond()
+        {
+            var total = BigDouble.Zero;
+            foreach (var node in State.nodes)
+            {
+                total += Simulation.YieldPerSecond(node, State, Data, Data.economy);
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// What the trail carries each second. Paired with
+        /// <see cref="BasketGatherPerSecond"/> this is the run's real bottleneck:
+        /// gathering above this figure is being lost, and the shortfall was
+        /// invisible until it had already cost a fortune in baskets.
+        /// </summary>
+        public BigDouble HaulPerSecond()
+        {
+            var hauling = Data.economy?.hauling;
+            if (hauling == null || hauling.tripSeconds <= 0.0)
+            {
+                return BigDouble.Zero;
+            }
+
+            var carriers = Stationing.TrailCarriers(State, Data);
+            return carriers <= 0.0
+                ? BigDouble.Zero
+                : Simulation.HaulLoad(State, Data, hauling) * carriers / hauling.tripSeconds;
+        }
+
         /// <summary>The Amber a rename asks (design §4), or 0 when the amber system is inert — drives the rename button's price label.</summary>
         public double RenameCost()
         {

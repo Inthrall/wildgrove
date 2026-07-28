@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 79fd004fff2e1cb46bd9d2c34ecb421ab3a6ddb1c9bcd8396c5f59dac80c4616
+  sourceHash: 758a6dbc68797ac9953c0b0f16d8b467dbb05c56f0f361cf891eb565761070c0
   economy:
     costGrowth:
       building: 1.25
@@ -24,6 +24,7 @@ MonoBehaviour:
       baseCarryCapacity: 15
       tripSeconds: 10
       basketCapacity: 60
+      selfHaulTripMultiplier: 1
     kith:
       slotsBase: 1
       slotsMax: 6
@@ -602,7 +603,7 @@ MonoBehaviour:
     track: hauling
     toolTier: 
     gateSkill: bushcraft
-    gateLevel: 12
+    gateLevel: 8
     materials: []
     effects:
     - type: 2
@@ -727,7 +728,7 @@ MonoBehaviour:
     track: hauling
     toolTier: 
     gateSkill: bushcraft
-    gateLevel: 20
+    gateLevel: 14
     materials: []
     effects:
     - type: 2

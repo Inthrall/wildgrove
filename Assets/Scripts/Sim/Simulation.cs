@@ -88,12 +88,24 @@ namespace Wildgrove.Sim
 
                     if (hauling != null)
                     {
-                        // Into the basket, clamped at capacity — a full basket
-                        // overflows and the excess is lost (the §2 bottleneck).
-                        // Timber-frame planters (design §3) stretch this node's
-                        // basket beyond the global Store line.
+                        // Into the basket, clamped at capacity (the §2
+                        // bottleneck). Timber-frame planters (design §3) stretch
+                        // this node's basket beyond the global Store line.
                         var nodeCapacity = basketCapacity * Planters.BasketCapacityMultiplier(state, data, node);
-                        node.basket = BigDouble.Min(node.basket + gained, nodeCapacity);
+                        var room = BigDouble.Max(nodeCapacity - node.basket, BigDouble.Zero);
+                        if (gained <= room)
+                        {
+                            node.basket += gained;
+                        }
+                        else
+                        {
+                            // What the basket can't hold used to be lost outright,
+                            // which made every new gather slot a way to destroy
+                            // goods until the trail was rebalanced. The node's own
+                            // gatherers now shoulder the excess instead.
+                            node.basket = nodeCapacity;
+                            SelfHaul(state, data, hauling, node, gained - room, baseRate);
+                        }
                     }
                     else
                     {
@@ -194,7 +206,7 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            var load = new BigDouble(hauling.baseCarryCapacity) * Upgrades.HaulCapacityMultiplier(state, data);
+            var load = HaulLoad(state, data, hauling);
             var interval = hauling.tripSeconds / carriers;
             if (interval <= 0.0 || load <= BigDouble.Zero)
             {
@@ -220,6 +232,60 @@ namespace Wildgrove.Sim
                 node.basket -= moved;
                 Deliver(state, data, node, moved);
             }
+        }
+
+        /// <summary>
+        /// One carrier's load. Carry capacity is bought in five big multiplicative
+        /// rungs (the hauling upgrade track), but those gate on crafting skill
+        /// while the pressure on them comes from gather slots, which arrive on the
+        /// verse clock — so between rungs hauling sat flat while gathering grew
+        /// smoothly, and the grove drowned in its own baskets. The Verdure global
+        /// is the same smooth term that lifts every gather rate, so applying it
+        /// here holds the gather:haul ratio steady between rungs instead of
+        /// letting it drift toward "everyone carries".
+        /// </summary>
+        public static BigDouble HaulLoad(GameState state, GameDataAsset data, EconomyData.HaulingData hauling)
+        {
+            var verdure = data?.economy?.verdure;
+            var global = verdure != null ? 1.0 + verdure.yieldBonusPerPoint * state.verdurePoints : 1.0;
+            return new BigDouble(hauling.baseCarryCapacity) * Upgrades.HaulCapacityMultiplier(state, data) * global;
+        }
+
+        /// <summary>
+        /// What a node's own gatherers rescue when the basket is full: they
+        /// shoulder the excess themselves rather than tipping it out. They walk a
+        /// carrier's trip and gather nothing while they walk, so the share that
+        /// survives is the share of the time they were still gathering —
+        /// <c>overflow / (1 + gatherRate · trip / load)</c>, which is exactly the
+        /// steady state of "fill a load, carry a load".
+        /// <para>
+        /// This is a floor, not a lane. A posted carrier loses no gathering and
+        /// serves every node from one trail, so delegating always beats
+        /// self-hauling; what this removes is the cliff, where a node that
+        /// out-gathered the trail quietly destroyed everything it picked.
+        /// </para>
+        /// </summary>
+        private static void SelfHaul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling,
+            NodeState node, BigDouble overflow, BigDouble gatherRate)
+        {
+            if (overflow <= BigDouble.Zero || gatherRate <= BigDouble.Zero)
+            {
+                return;
+            }
+
+            var load = HaulLoad(state, data, hauling);
+            var trip = hauling.tripSeconds * (hauling.selfHaulTripMultiplier > 0.0
+                ? hauling.selfHaulTripMultiplier
+                : 1.0);
+            if (load <= BigDouble.Zero || trip <= 0.0)
+            {
+                // Degenerate hand-built data (the validator rejects real content
+                // like this) — the excess is simply lost, as it was before.
+                return;
+            }
+
+            var carried = overflow / (BigDouble.One + gatherRate * (new BigDouble(trip) / load));
+            Deliver(state, data, node, carried);
         }
 
         /// <summary>

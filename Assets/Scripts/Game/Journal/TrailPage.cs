@@ -148,6 +148,11 @@ namespace Wildgrove.Game
 
             var status = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
 
+            // Under the bar, not in it: the bar is a fixed-height touch target
+            // and this line only exists while the trail is losing goods.
+            var shortfall = MakeText(_body, string.Empty, 16, TextAnchor.MiddleCenter, Ink2, _hand);
+            shortfall.gameObject.SetActive(false);
+
             // The dot walks per frame; who's carrying only changes on the
             // cadence, like every other label on the page.
             _frameUpdaters.Add(() =>
@@ -180,6 +185,24 @@ namespace Wildgrove.Game
                     : _loop.State.roster.Count == 0
                         ? "no one to carry yet"
                         : "<color=" + MossDeepHex + ">tap to post a carrier</color>";
+
+                // The shortfall, said out loud. Gathering above what the trail
+                // can carry is being lost, and nothing on the page used to
+                // report it — the baskets just quietly overflowed while the
+                // skills kept climbing. Ochre, because it is a cost.
+                var gathering = _loop.BasketGatherPerSecond();
+                var carrying = _loop.HaulPerSecond();
+                if (gathering > carrying)
+                {
+                    shortfall.text = "<color=" + OchreInkHex + ">the trail is behind — gathering "
+                                     + NumberFormat.Rate(gathering) + "/s, carrying "
+                                     + NumberFormat.Rate(carrying) + "/s</color>";
+                    shortfall.gameObject.SetActive(true);
+                }
+                else
+                {
+                    shortfall.gameObject.SetActive(false);
+                }
             });
         }
 
@@ -401,7 +424,12 @@ namespace Wildgrove.Game
                 label.text = captured.resourceId + rich
                              + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "
                              + NumberFormat.Short(stock) + " at camp · </color>" + standing
-                             + (basketFull ? " <color=" + OchreInkHex + ">· basket full — waits on a carrier</color>" : string.Empty)
+                             // A full basket is no longer a dead stop — whoever
+                             // is posted here shoulders what it can't hold — but
+                             // it is still a loss, so say so in the ink of costs.
+                             + (basketFull
+                                 ? " <color=" + OchreInkHex + ">· basket full — carrying it themselves, most is lost</color>"
+                                 : string.Empty)
                              + "</size>";
 
                 SetButtonLabel(post, occupant != null || wardenHere ? "Change post" : "Post here");

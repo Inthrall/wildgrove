@@ -325,7 +325,12 @@ namespace Wildgrove.Data
                 {
                     baseCarryCapacity = e.Hauling.BaseCarryCapacity,
                     tripSeconds = e.Hauling.TripSeconds,
-                    basketCapacity = e.Hauling.BasketCapacity
+                    basketCapacity = e.Hauling.BasketCapacity,
+                    // Absent from older content: a carrier's own walk, so
+                    // self-hauling costs only the gathering it interrupts.
+                    selfHaulTripMultiplier = e.Hauling.SelfHaulTripMultiplier > 0.0
+                        ? e.Hauling.SelfHaulTripMultiplier
+                        : 1.0
                 },
                 kith = new EconomyData.KithData
                 {

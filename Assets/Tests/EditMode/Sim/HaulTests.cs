@@ -76,7 +76,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_FullBasket_OverflowsAndTheExcessIsLost()
+        public void Advance_FullBasket_TheNodeCarriesSomeOfTheExcessAndLosesTheRest()
         {
             _data.economy.hauling.basketCapacity = 2.0;
             var state = GameStateFactory.NewGame(_data);
@@ -85,10 +85,52 @@ namespace Wildgrove.Sim.Tests
             Simulation.Advance(state, _data, 10.0);
 
             // A 1-unit delivery lands every 2 s (the basket is never empty), so
-            // camp holds 5; the basket sits in its steady state and the other
-            // 4 gathered units overflowed and are gone.
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(5.0).Within(Tolerance));
+            // the carrier brings 5. The four steps that then overflow are no
+            // longer a total loss: the gatherer shoulders each excess unit
+            // itself, keeping 1/(1 + rate · trip / load) = 1/3 of it, and
+            // gathering nothing while it walks. So 5 + 4/3 reaches camp and the
+            // rest is still lost — self-hauling is a floor, not a lane.
+            Assert.That(state.GetResource("berries").ToDouble(),
+                Is.EqualTo(5.0 + (4.0 / 3.0)).Within(Tolerance));
             Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_FullBasketAndNoCarrier_TheGathererStillBringsATrickleHome()
+        {
+            // The case that used to be a dead stop: a node out-gathering an
+            // unheld trail threw everything away, so unlocking a slot could
+            // make the grove poorer.
+            _data.economy.hauling.basketCapacity = 2.0;
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+
+            Simulation.Advance(state, _data, 10.0);
+
+            // Two seconds fill the basket; each of the remaining eight then
+            // overflows by a unit, of which the gatherer walks a third home.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(8.0 / 3.0).Within(Tolerance));
+            Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_ACarrierBeatsSelfHauling_SoTheTrailPostIsWorthASlot()
+        {
+            // The balance rule the self-haul floor must not break: a posted
+            // carrier loses no gathering and serves the whole grove, so
+            // delegating has to beat every node carrying its own.
+            _data.economy.hauling.basketCapacity = 2.0;
+
+            var alone = GameStateFactory.NewGame(_data);
+            TestKith.Station(alone, alone.nodes[0].id, 1);
+            Simulation.Advance(alone, _data, 10.0);
+
+            var delegated = GameStateFactory.NewGame(_data);
+            TestKith.StageGathererAndCarrier(delegated);
+            Simulation.Advance(delegated, _data, 10.0);
+
+            Assert.That(delegated.GetResource("berries").ToDouble(),
+                Is.GreaterThan(alone.GetResource("berries").ToDouble()));
         }
 
         [Test]
@@ -225,10 +267,13 @@ namespace Wildgrove.Sim.Tests
 
             Simulation.AdvanceOffline(state, _data, 100.0);
 
-            // Sub-stepping keeps the catch-up honest: carriers hauled the whole
-            // absence (0.5/s → 50 at camp). A single naive tick would clamp the
-            // whole absence's gathering into one 2-unit basketful.
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(50.0).Within(Tolerance));
+            // Sub-stepping keeps the catch-up honest: the carrier hauled the
+            // whole absence (0.5/s → 50 at camp), and the 49 steps that
+            // overflowed each sent a third of their excess home in the
+            // gatherer's own arms. A single naive tick would clamp the whole
+            // absence's gathering into one 2-unit basketful.
+            Assert.That(state.GetResource("berries").ToDouble(),
+                Is.EqualTo(50.0 + (49.0 / 3.0)).Within(Tolerance));
         }
     }
 }
