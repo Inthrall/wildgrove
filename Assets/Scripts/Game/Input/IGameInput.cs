@@ -33,10 +33,39 @@ namespace Wildgrove.Game.Input
 
         /// <summary>
         /// True on the single frame the player asked to go back — Android's
-        /// hardware/gesture Back (which Unity surfaces as Escape) or the Escape
-        /// key on desktop. The UI layer dismisses the open sheet, steps to the
-        /// home tab, or lets the app exit.
+        /// hardware/gesture Back (which Unity surfaces as Escape), the Escape
+        /// key on desktop, or the gamepad's East button. The UI layer dismisses
+        /// the open sheet, steps to the home tab, or lets the app exit.
         /// </summary>
         bool BackTriggered { get; }
+
+        /// <summary>
+        /// True while the player is asking to move around the page — arrow keys,
+        /// WASD, the d-pad or the left stick. The UI layer uses this only to
+        /// <em>wake</em> focus: once a control is focused, uGUI's own
+        /// EventSystem does the moving, so this deliberately doesn't say which
+        /// direction. Held input keeps reading true, which is harmless — waking
+        /// an already-woken focus is a no-op.
+        /// </summary>
+        bool NavigateHeld { get; }
+
+        /// <summary>
+        /// -1 or +1 on the single frame the player asked for the previous or
+        /// next journal tab (the gamepad shoulders, or Q and E), otherwise 0.
+        /// Geometric navigation can reach the tab bar, but crossing a long page
+        /// to get there is not navigation — it's a trek.
+        /// </summary>
+        int TabStep { get; }
+
+        /// <summary>
+        /// True on the single frame the player asked to catch a windfall with a
+        /// binding that works <em>regardless of focus</em> — the gamepad's West
+        /// button, or C. Space and the South button also catch, but only while
+        /// no control is focused, because there they mean "press this" instead
+        /// (see <see cref="TendTriggered"/>); without a focus-independent
+        /// binding the windfall — the game's one active-play reward — would be
+        /// unreachable for a controller player working the journal.
+        /// </summary>
+        bool CatchTriggered { get; }
     }
 }

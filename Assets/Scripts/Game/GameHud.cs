@@ -87,6 +87,19 @@ namespace Wildgrove.Game
         private Transform _modalLayer;
         private Canvas _canvas;
         private RectTransform _root;
+
+        // ─── Keyboard / controller focus (design §13 Phase 2) ───
+        // The journal is touch-first: nothing is focused until the player asks
+        // to move with keys or a pad, and a tap puts the mark away again.
+        private CanvasGroup _pageGroup;
+        private GameObject _focusRing;
+        private GameObject _focused;
+        private bool _focusEngaged;
+        // Where focus sat in the page before a rebuild destroyed it, so a
+        // controller player isn't thrown back to the top of the page every time
+        // a craft finishes.
+        private int _focusMemo = -1;
+        private bool _restoreFocus;
         private ScrollRect _scroll;
         private LayoutElement _worldGapElement;
         private RectTransform _feedbackLayer;
@@ -226,7 +239,9 @@ namespace Wildgrove.Game
             FitLayoutToScreen();
             ReportWorldStrip();
             HandleBack();
+            HandleTabStep();
             HandleWorldTap();
+            HandleFocus();
 
             for (var i = 0; i < _frameUpdaters.Count; i++)
             {
@@ -349,6 +364,12 @@ namespace Wildgrove.Game
             var root = MakeRect("Root", canvasGo.transform);
             Stretch(root);
             _root = root;
+            // The modal trap: a sheet switches this off, which makes every
+            // control on the page report itself non-interactable — and uGUI's
+            // own directional navigation skips exactly those. Without it a pad
+            // walks straight out of an open sheet into the page behind it.
+            // (Nothing dims visually: the button plates all disable to white.)
+            _pageGroup = root.gameObject.AddComponent<CanvasGroup>();
             var rootLayout = root.gameObject.AddComponent<VerticalLayoutGroup>();
             rootLayout.childControlWidth = true;
             rootLayout.childControlHeight = true;
@@ -386,6 +407,7 @@ namespace Wildgrove.Game
             var ledgerButton = _ledger.gameObject.AddComponent<Button>();
             ledgerButton.targetGraphic = _ledger;
             ledgerButton.onClick.AddListener(() => OpenTab(TabRecord));
+            NeverDim(ledgerButton);
             MakeHairline(root);
 
             // Margin note — the handwritten aside.
@@ -412,6 +434,7 @@ namespace Wildgrove.Game
             trackerElement.flexibleHeight = 0;
             var trackerButton = trackerGo.AddComponent<Button>();
             trackerButton.onClick.AddListener(() => ScrollToOnTrail("verse"));
+            NeverDim(trackerButton);
             AddBorder(trackerGo, Ink2);
             _trackerText = MakeText(trackerGo.transform, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);
             FlexibleWidth(_trackerText.gameObject, 1f);
@@ -703,6 +726,7 @@ namespace Wildgrove.Game
             var outer = AddBorder(go, RulePaper, 4f);
             var button = go.GetComponent<Button>();
             button.onClick.AddListener(() => OpenTab(id));
+            NeverDim(button);
             var text = MakeText(go.transform, label, 22, TextAnchor.MiddleCenter, Ink2, _smallCaps);
             Stretch((RectTransform)text.transform);
 
@@ -799,6 +823,9 @@ namespace Wildgrove.Game
             scrollbar.targetGraphic = handle;
             scroll.verticalScrollbar = scrollbar;
             scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            // The stitch is draggable furniture, not a place to stand — focus
+            // walking onto it would look like the mark had fallen off the page.
+            NoNavigation(scrollbar);
 
             return content;
         }
@@ -1008,6 +1035,288 @@ namespace Wildgrove.Game
             }
         }
 
+        // ─────────────────────────── Focus navigation ────────────────────────
+        // Level Up asks for every interaction to be reachable without touch,
+        // and the design (§13 Phase 2) makes it a gate rather than polish. The
+        // pieces: uGUI's EventSystem already moves focus geometrically once
+        // something is selected, so this supplies what it can't — waking focus
+        // on the first key press, a visible mark, scrolling the page to keep
+        // the marked control in view, surviving the journal's own rebuilds,
+        // trapping focus inside an open sheet, and stepping tabs from the
+        // shoulders (crossing a long page to reach the tab bar is a trek, not
+        // navigation). The rules worth pinning live in <see cref="JournalNav"/>.
+
+        /// <summary>
+        /// True while the focus mark is up and a control is under it — the state
+        /// in which Submit (Space, pad South) belongs to that control rather
+        /// than to the world strip.
+        /// </summary>
+        private bool FocusHasTarget => _focusEngaged && _focused != null;
+
+        private void HandleFocus()
+        {
+            var events = EventSystem.current;
+            if (events == null)
+            {
+                return;
+            }
+
+            // While a sheet is open the page is switched off, so navigation
+            // can't leave the sheet. Only on a change — the setter dirties the
+            // canvas group's whole subtree.
+            var pageLive = _sheet == null;
+            if (_pageGroup != null && _pageGroup.interactable != pageLive)
+            {
+                _pageGroup.interactable = pageLive;
+            }
+
+            // A tap hands the journal back to the finger. The mark is a
+            // navigation cue; left lit after a tap it reads as a cursor the
+            // touch player doesn't have. uGUI's own selection is deliberately
+            // left alone — clearing it here would cancel a rename field the
+            // same frame the tap opened it.
+            if (_input.PointerPressedThisFrame)
+            {
+                _focusEngaged = false;
+            }
+
+            if (!_focusEngaged)
+            {
+                if (!_input.NavigateHeld)
+                {
+                    MarkFocus(null);
+                    return;
+                }
+
+                // The first direction press wakes the mark rather than moving
+                // it: there is nothing to move from, and uGUI needs a selection
+                // to move against. A live selection left by an earlier tap is
+                // resumed instead of jumped away from.
+                _focusEngaged = true;
+                var resumed = events.currentSelectedGameObject;
+                if (resumed == null || !resumed.activeInHierarchy || !InCurrentContext(resumed))
+                {
+                    FocusFirst();
+                }
+            }
+            else if (!_restoreFocus)
+            {
+                // Self-healing, and the reason opening a sheet needs no hook:
+                // whenever the selection is gone or somewhere it shouldn't be
+                // (a sheet just opened over it, a sheet just closed under it, a
+                // rebuild destroyed it), focus lands somewhere sensible again.
+                var selected = events.currentSelectedGameObject;
+                if (selected == null || !selected.activeInHierarchy || !InCurrentContext(selected))
+                {
+                    FocusFirst();
+                }
+            }
+
+            var target = _focusEngaged ? events.currentSelectedGameObject : null;
+            if (target != _focused)
+            {
+                MarkFocus(target);
+                RevealFocused(target);
+            }
+        }
+
+        /// <summary>Draw (or put away) the focus ring, tracking the marked control.</summary>
+        private void MarkFocus(GameObject target)
+        {
+            if (_focusRing != null)
+            {
+                Destroy(_focusRing);
+                _focusRing = null;
+            }
+
+            _focused = target;
+            if (target != null)
+            {
+                _focusRing = AddFocusRing(target);
+            }
+        }
+
+        /// <summary>
+        /// Which controls focus may visit right now: a sheet's, while one is
+        /// open — everything else is switched off behind it — otherwise the
+        /// page's and the chrome's.
+        /// </summary>
+        private bool InCurrentContext(GameObject go)
+        {
+            if (_sheet != null)
+            {
+                return go.transform.IsChildOf(_sheet.transform);
+            }
+
+            return _root != null && go.transform.IsChildOf(_root);
+        }
+
+        private void FocusFirst()
+        {
+            // The page before the chrome: a player who just asked to move wants
+            // the cards they were reading, not the ledger three rows above them.
+            var first = FirstFocusable(_sheet != null ? _sheet.transform : (Transform)_body)
+                        ?? FirstFocusable(_sheet != null ? _sheet.transform : (Transform)_root);
+            Select(first);
+        }
+
+        private void Select(Selectable selectable)
+        {
+            var events = EventSystem.current;
+            if (events != null)
+            {
+                events.SetSelectedGameObject(selectable != null ? selectable.gameObject : null);
+            }
+        }
+
+        private static Selectable FirstFocusable(Transform root)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            var candidates = root.GetComponentsInChildren<Selectable>(false);
+            foreach (var candidate in candidates)
+            {
+                if (IsFocusable(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsFocusable(Selectable selectable)
+        {
+            return selectable != null
+                   && selectable.IsActive()
+                   && selectable.IsInteractable()
+                   && selectable.navigation.mode != Navigation.Mode.None;
+        }
+
+        /// <summary>
+        /// Bring the marked control into view, in whichever scroll it lives —
+        /// the open page, or a long sheet's own. Geometric navigation is happy
+        /// to walk focus straight off the bottom of a scroll, so without this
+        /// half the journal is unreachable by pad even though every control in
+        /// it is "navigable".
+        /// </summary>
+        private void RevealFocused(GameObject target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var rect = target.transform as RectTransform;
+            var scroll = target.GetComponentInParent<ScrollRect>();
+            if (rect == null || scroll == null || scroll.content == null || scroll.viewport == null
+                || !rect.IsChildOf(scroll.content))
+            {
+                return;
+            }
+
+            // Both scrolls anchor their content by the top, so a child's top
+            // edge in content-local space is its distance down the page (the
+            // same measure ScrollTo takes).
+            var local = (Vector2)scroll.content.InverseTransformPoint(rect.position);
+            var distanceFromTop = -(local.y + rect.rect.yMax);
+            scroll.verticalNormalizedPosition = JournalNav.RevealPosition(
+                scroll.verticalNormalizedPosition,
+                scroll.content.rect.height,
+                scroll.viewport.rect.height,
+                distanceFromTop,
+                rect.rect.height,
+                JournalNav.RevealPad);
+        }
+
+        /// <summary>
+        /// Remember where focus sat in the page, by position among its
+        /// controls, so the rebuild about to destroy it can put it back. The
+        /// journal rebuilds on its own cadence — a familiar arrives, a batch
+        /// finishes — and a controller player must not be thrown to the top of
+        /// the page each time.
+        /// </summary>
+        private void RememberFocus()
+        {
+            _focusMemo = -1;
+            _restoreFocus = false;
+            if (!_focusEngaged || _focused == null || _body == null
+                || !_focused.transform.IsChildOf(_body))
+            {
+                return;
+            }
+
+            var candidates = _body.GetComponentsInChildren<Selectable>(false);
+            var index = 0;
+            foreach (var candidate in candidates)
+            {
+                if (!IsFocusable(candidate))
+                {
+                    continue;
+                }
+
+                if (candidate.gameObject == _focused)
+                {
+                    _focusMemo = index;
+                    _restoreFocus = true;
+                    return;
+                }
+
+                index++;
+            }
+        }
+
+        private void RestoreFocus()
+        {
+            if (!_restoreFocus)
+            {
+                return;
+            }
+
+            _restoreFocus = false;
+            if (!_focusEngaged || _body == null)
+            {
+                return;
+            }
+
+            var focusable = new List<Selectable>();
+            foreach (var candidate in _body.GetComponentsInChildren<Selectable>(false))
+            {
+                if (IsFocusable(candidate))
+                {
+                    focusable.Add(candidate);
+                }
+            }
+
+            var index = JournalNav.RestoreIndex(_focusMemo, focusable.Count);
+            if (index >= 0)
+            {
+                Select(focusable[index]);
+            }
+        }
+
+        /// <summary>
+        /// The shoulders (and Q/E) turn the page. Blocked under a sheet: the
+        /// tabs are switched off behind it, and turning the page beneath an open
+        /// question would be answering it by accident.
+        /// </summary>
+        private void HandleTabStep()
+        {
+            if (_sheet != null)
+            {
+                return;
+            }
+
+            var step = _input.TabStep;
+            if (step != 0)
+            {
+                OpenTab(JournalNav.StepTab(_tab, step, _wide));
+            }
+        }
+
         private void ReportWorldStrip()
         {
             if (_world == null)
@@ -1028,6 +1337,16 @@ namespace Wildgrove.Game
         private void HandleWorldTap()
         {
             if (_sheet != null)
+            {
+                return;
+            }
+
+            // The catch that works whatever is focused (pad West, or C). Space
+            // and pad South catch too, but only while nothing is focused —
+            // there they are Submit, and belong to the marked control. Without
+            // this binding the windfall, the game's one active-play reward,
+            // would be out of reach for a pad player reading the journal.
+            if (_input.CatchTriggered && TryCatchOldest())
             {
                 return;
             }
@@ -1062,16 +1381,28 @@ namespace Wildgrove.Game
                         _sheets.OpenPostingSheet(station);
                     }
                 }
-                else
+                else if (!FocusHasTarget)
                 {
-                    // Space / pad-A: catch the longest-adrift bubble.
-                    var caught = _world != null ? _world.PopOldestBubble() : null;
-                    if (caught != null)
-                    {
-                        CollectBubble(caught);
-                    }
+                    // Space / pad-A with nothing marked: catch the longest-adrift
+                    // bubble. With a control marked these are Submit instead —
+                    // pad South is both, and firing the button AND the catch off
+                    // one press was the double-fire this gate had to settle.
+                    TryCatchOldest();
                 }
             }
+        }
+
+        /// <summary>Catch the longest-adrift windfall, if one is up. True when something was caught.</summary>
+        private bool TryCatchOldest()
+        {
+            var caught = _world != null ? _world.PopOldestBubble() : null;
+            if (caught == null)
+            {
+                return false;
+            }
+
+            CollectBubble(caught);
+            return true;
         }
 
         private void CollectBubble(NodeState node)
@@ -1166,6 +1497,15 @@ namespace Wildgrove.Game
             var landmark = _pendingScroll;
             _pendingScroll = null;
             _firstVerseCard = null;
+
+            // Where the focus mark stood, before the page under it is destroyed.
+            // Only the page's own mark goes: a rebuild can happen under an open
+            // sheet, and the sheet's marked control is still standing.
+            RememberFocus();
+            if (_focused != null && _body != null && _focused.transform.IsChildOf(_body))
+            {
+                MarkFocus(null);
+            }
 
             _liveUpdaters.Clear();
             _frameUpdaters.Clear();
@@ -1268,6 +1608,10 @@ namespace Wildgrove.Game
             {
                 _scroll.verticalNormalizedPosition = Mathf.Clamp01(normalized);
             }
+
+            // The fresh page has its real height now, so the mark can go back
+            // where it was — and RevealFocused can measure honestly.
+            RestoreFocus();
         }
 
         private void ScrollTo(RectTransform target)

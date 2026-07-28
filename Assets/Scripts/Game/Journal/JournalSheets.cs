@@ -141,7 +141,11 @@ namespace Wildgrove.Game
             guard.transform.SetParent(_sheet.transform, false);
             Stretch((RectTransform)guard.transform);
             guard.GetComponent<Image>().color = Color.clear;
-            guard.GetComponent<Button>().transition = Selectable.Transition.None;
+            var guardButton = guard.GetComponent<Button>();
+            guardButton.transition = Selectable.Transition.None;
+            // It only exists to swallow taps — focus landing on it would be a
+            // dead end for the half-second it lives.
+            NoNavigation(guardButton);
             _hud.StartCoroutine(DestroyAfter(guard, seconds));
         }
 
@@ -1318,6 +1322,7 @@ namespace Wildgrove.Game
             scrollbar.targetGraphic = handle;
             scroll.verticalScrollbar = scrollbar;
             scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            NoNavigation(scrollbar);
         }
 
         private void CloseSheet()

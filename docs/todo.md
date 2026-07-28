@@ -653,10 +653,68 @@ Interpretations shipped (tune/confirm):
   root by `Screen.safeArea` and re-applies on every safe-area or canvas
   change (now including width, which the spread needs).
   Still open here: `HeightClampedElement`/`TrackedScrollRect` are no longer
-  used by the HUD (kept compiling — delete or reuse), and **full keyboard /
-  controller navigation is the other half of the Phase 2 gate** — the input
-  abstraction exists but menu focus traversal does not.
+  used by the HUD (kept compiling — delete or reuse).
+  ~~**full keyboard / controller navigation is the other half of the Phase 2
+  gate** — the input abstraction exists but menu focus traversal does not.~~
+  ✅ RESOLVED 2026-07-29 — see the keyboard/controller item below.
   (`GameHud`, `Assets/Scripts/Game/Journal/JournalLayout.cs`)
+
+- **Keyboard / controller navigation (2026-07-29) — the other half of the
+  Phase 2 gate.** uGUI's EventSystem already moves focus geometrically once
+  something is selected, so the build supplies what it doesn't:
+  `Assets/Scripts/Game/Journal/JournalNav.cs` (public, tested — tab stepping,
+  rebuild-safe focus restore, shortest-distance scroll reveal) plus a focus
+  section on `GameHud`. Bindings: arrows / WASD / d-pad / left stick move,
+  Submit (Enter, Space, pad South) presses, **Esc or pad East** backs out
+  (Back gained the pad button — a controller could open a sheet and not close
+  it), the **shoulders or Q/E** turn the page, and **pad West or C** catches a
+  windfall. The two touch-only interactions both have page-reachable paths
+  already: posting is the Trail page's own "Post here" buttons, and the catch
+  now has a focus-independent binding.
+  Interpretations shipped (tune/confirm):
+  - **Touch-first**: nothing is focused until the player asks to move, and a
+    pointer press puts the mark away again — a focus ring left lit after a tap
+    reads as a cursor a phone doesn't have. The pointer handler deliberately
+    does NOT clear uGUI's own selection (that would cancel the rename field
+    the same frame a tap opened it), so waking focus resumes a live selection
+    rather than jumping to the top of the page.
+  - The mark is a **doubled ochre rule just outside the control**, not a fifth
+    parchment tint — every plate is already one of four paper shades, so a
+    tint would read as another kind of button. It lives inside the control it
+    marks, so it rides the layout, scrolls with the page, and is clipped by
+    the viewport for free.
+  - **The modal trap is one flag**: a sheet switches the page's `CanvasGroup`
+    off, which makes its controls report non-interactable, and uGUI's
+    `FindSelectable` skips exactly those. Nothing dims because every button
+    plate disables to white (`NeverDim` extends that to the tabs, ledger and
+    tracker, which were plain Buttons on the default grey).
+  - Focus-in-context is **self-healing** rather than hooked: whenever the
+    selection is missing or out of context, focus re-seeks. That is why
+    opening a sheet needed no change in `JournalSheets` at all.
+  - **Space / pad South is Submit while a control is marked**, and the
+    windfall catch only when nothing is — which settles the double-fire this
+    file has flagged since Phase 1 (pad South being both Submit and the
+    catch). The pad-West/C binding is what keeps the catch reachable mid-page.
+  - **Rebuild survival is by index**, not identity: the page's controls are
+    counted, the position remembered, and focus clamped back into the rebuilt
+    page (`JournalNav.RestoreIndex`). Flipping between portrait and a spread
+    can land focus somewhere unrelated — a shape change is a deliberate act,
+    so that's accepted.
+  - Scroll stitches and the sheets' half-second tap guard are taken out of
+    navigation (`NoNavigation`) — draggable furniture and a click-eater are
+    not places to stand.
+  - **Known edge:** the Input System's default UI actions bind Navigate to
+    WASD as well as the arrows, so typing a familiar's name in the rename
+    field can also move focus. Fixing it properly means shipping a custom
+    actions asset; revisit if it bites in the pad/K&M gate pass.
+  - The margin note's teaching tail still says "space / (A) catches one",
+    which is true in the teaching moment (nothing is focused yet) — the full
+    binding set is documented here and in §12 rather than in a margin note,
+    which is flavour and not a manual.
+  Still open for the Phase 2 gate: the **gamepad manifest**, and playing it
+  through on real 4:3 / 16:10 / 21:9 / foldable hardware.
+  (`GameHud`, `Assets/Scripts/Game/Journal/JournalNav.cs`,
+  `Assets/Scripts/Game/Input/`)
 - **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
   GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
   Replace with a real bootstrap scene when there's content to lay out.

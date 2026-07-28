@@ -530,7 +530,7 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 | Stability <1% crash / <2% ANR                                 | Crashlytics from Phase 1; vitals gate before launch                                                                             | all   |
 | Large screens, no letterboxing (4:3 / 16:10 / 21:9 + portrait)| Adaptive UI is Phase 2, not post-launch polish: portrait column ↔ landscape dashboard                                           | 2     |
 | Play Games on PC                                              | Idle UI suits PC; no touch-only features; opt in at beta                                                                        | 6     |
-| Full keyboard/mouse + controller                              | Input abstraction from Phase 1: Tending = tap/click/Space/pad-A; full menu navigation                                           | 2     |
+| Full keyboard/mouse + controller                              | Input abstraction from Phase 1; **journal navigation built 2026-07-29**: arrows/d-pad/stick move an ochre focus mark, Submit presses it, B/Esc backs out, the shoulders (or Q/E) turn the page, pad-X/C catches a windfall whatever is focused | 2     |
 | Title availability parity                                     | Play-only launch across mobile/tablet/PC                                                                                        | 6     |
 
 > **Leaderboard integrity:** ship Play Integrity API checks and server-side sanity bounds (max plausible Renown/hour) before any competitive stat goes live.
@@ -565,7 +565,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 
 - The four-page journal: **Trail** (zones, stationing, replanting, verse sites; the map is the page's own navigation) · **Camp** (queues, buildings, Exchange) · **Warden** (kit, skills, roster & slots, stats; the Almanac appears here after the first Migration) · **Record** (Compendium, Folio, Deep Pages). The Rite has **no tab** — verses live at their sites, with the compact tracker pinned on every page. *(The map is never called "Almanac.")*
 - Responsive: portrait column ↔ landscape spread (Trail permanent right page; Camp/Warden/Record turn left) — **built 2026-07-28** (`JournalLayout`; the breakpoint is an aspect question, not a pixel one, so a portrait tablet stays a column); cutouts and safe areas land with it. Still to verify on real 4:3, 16:10, 21:9 and foldable-resize hardware
-- Keyboard/mouse + controller: every interaction reachable without touch; focus states; gamepad manifest
+- Keyboard/mouse + controller: every interaction reachable without touch; focus states; gamepad manifest — **built 2026-07-29** (`JournalNav`, GameHud's focus section): touch-first, so the mark appears only once the player asks to move and a tap puts it away; focus is trapped inside an open sheet, survives the journal's own rebuilds, and scrolls its page to stay in view. The two interactions that were touch-only both have page-reachable paths: posting is the Trail page's own buttons, and the windfall catch gained a focus-independent binding. Still open here: the gamepad manifest, and verifying on real 4:3 / 16:10 / 21:9 / foldable hardware
 - Frame-budget pass on a mid-tier reference device
 
 **Gate:** fully playable with a pad and with K&M on a 16:10 tablet window, no letterboxing, no touch fallbacks.

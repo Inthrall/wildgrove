@@ -341,6 +341,58 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// The focus mark — a doubled ochre rule pencilled just outside a
+        /// control while keyboard or controller navigation is driving the
+        /// journal (design §13 Phase 2: "focus states"). Drawn as a ring rather
+        /// than a tint because the page is paper: every plate here is already
+        /// one of four parchment shades, and a fifth would be read as another
+        /// kind of button instead of as "you are here". Ochre is the journal's
+        /// attention ink. Lives INSIDE the control it marks, so it rides the
+        /// layout, scrolls with the page, and is clipped by the viewport mask
+        /// for nothing.
+        /// </summary>
+        internal static GameObject AddFocusRing(GameObject host)
+        {
+            var go = MakeRect("FocusRing", (RectTransform)host.transform).gameObject;
+            go.AddComponent<LayoutElement>().ignoreLayout = true;
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            AddBorder(go, Ochre, 4f);
+            AddBorder(go, Ochre, 7f);
+            return go;
+        }
+
+        /// <summary>
+        /// Keep a button's plate unchanged when it goes non-interactable. The
+        /// modal trap (see GameHud) switches the whole page off while a sheet is
+        /// open, and uGUI answers that by tinting every control to its disabled
+        /// colour — which would flush the page grey behind the sheet. The
+        /// journal's own disabled look is <see cref="SetButtonTint"/>'s job, on
+        /// a separate channel, so this one stays a no-op.
+        /// </summary>
+        internal static void NeverDim(Button button)
+        {
+            var colours = button.colors;
+            colours.disabledColor = Color.white;
+            button.colors = colours;
+        }
+
+        /// <summary>
+        /// Take a control out of directional navigation while leaving it
+        /// clickable — for the scroll stitches, which are draggable furniture
+        /// rather than a stop a player wants focus to land on.
+        /// </summary>
+        internal static void NoNavigation(Selectable selectable)
+        {
+            var navigation = selectable.navigation;
+            navigation.mode = Navigation.Mode.None;
+            selectable.navigation = navigation;
+        }
+
         internal static void SetButtonLabel(Button button, string text)
         {
             var label = button.GetComponentInChildren<Text>();
