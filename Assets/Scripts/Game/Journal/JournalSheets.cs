@@ -760,7 +760,17 @@ namespace Wildgrove.Game
                 OpenNamingSheet(familiar, () => OpenStationPickSheet(familiar));
             });
 
-            MakeText(sheet, (SpeciesName(familiar.speciesId) + " · now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
+            // The one it is about, drawn rather than described — the posting
+            // sheet's portrait, asked from the other side. Its species only
+            // needs saying when there is no plate to say it.
+            var subject = ArtLibrary.ForSpecies(familiar.speciesId);
+            if (subject != null)
+            {
+                PlateImage(sheet, subject, 200f);
+            }
+
+            MakeText(sheet, ((subject != null ? string.Empty : SpeciesName(familiar.speciesId) + " · ")
+                             + "now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
                 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
             // What this one is good at, at the moment it decides where they
@@ -788,7 +798,7 @@ namespace Wildgrove.Game
 
             if (!familiar.IsResting)
             {
-                Button(sheet, "Send " + familiar.name + " back to camp", 560, () =>
+                Button(sheet, "Send " + familiar.name + " back to camp", 740, () =>
                 {
                     Station(familiar, null);
                     CloseSheet();
@@ -820,10 +830,23 @@ namespace Wildgrove.Game
             // sheet's rule, asked from the other side. The reason is on the
             // notice above; the line itself just greys out.
             var blocked = familiar.IsResting && occupant == null && !Kith.HasRoom(_loop.State, _loop.Data);
-            var detail = occupant != null ? "replaces " + occupant.name : "stands empty";
 
-            var button = Button(sheet, "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">Walk to " + StationLabel(stationId)
-                                       + "</color>  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + detail + "</color></size>", 560, () =>
+            // The posting sheet's rows, mirrored: the crop leads (it is the
+            // WHERE being offered) and whoever stands there trails it. An empty
+            // post trails nothing — the plainest way to say "stands empty" —
+            // and since only one of each species walks with you, the plate
+            // names the individual it would replace. Words fill in only where
+            // no plate can: the trail and the wander post have no crop, and a
+            // species without art keeps its name.
+            var where = StationPlate(stationId);
+            var held = occupant != null ? ArtLibrary.ForSpecies(occupant.speciesId) : null;
+            var replaces = occupant != null && held == null
+                ? "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">replaces " + occupant.name + "</color></size>"
+                : string.Empty;
+
+            var button = PictureButton(sheet, where,
+                "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">Walk to " + StationLabel(stationId)
+                + "</color>" + replaces, held, 740, 120f, () =>
             {
                 Station(familiar, stationId);
                 CloseSheet();
