@@ -337,6 +337,34 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// What raising a planter buys, in one short phrase. Nothing on the
+        /// plate said: a Reed Screen asked for 20 reeds under a name alone, and
+        /// the raised line only confirmed it stood there. The dig-site kind is
+        /// sketching speed (Observation reads it as the site's own speed), not
+        /// digging — there is no digging.
+        /// </summary>
+        internal string PlanterGives(PlanterData planter)
+        {
+            if (planter == null || planter.value <= 0.0)
+            {
+                return string.Empty;
+            }
+
+            var percent = UnityEngine.Mathf.RoundToInt((float)(planter.value * 100.0));
+            switch (planter.kind)
+            {
+                case "basketCapacityMult":
+                    return "+" + percent + "% basket";
+                case "nodeYieldMult":
+                    return "+" + percent + "% yield";
+                case "digSpeedMult":
+                    return "+" + percent + "% sketching";
+                default:
+                    return string.Empty;
+            }
+        }
+
         /// <summary>The gathering skill of the node with this id, or null when the target is a dig site.</summary>
         internal string NodeSkill(string targetId)
         {

@@ -172,7 +172,16 @@ namespace Wildgrove.Game
             button.colors = colours;
             button.onClick.AddListener(onClick);
             var label = MakeText(go.transform, text, 19, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
-            Stretch((RectTransform)label.transform);
+            var labelRect = (RectTransform)label.transform;
+            Stretch(labelRect);
+            // Wrap inside the plate, not against its border — and let the plate
+            // grow when the label needs a third line rather than spilling the
+            // text over the cards above and below it (see LabelFittedElement).
+            labelRect.offsetMin = new Vector2(10, 0);
+            labelRect.offsetMax = new Vector2(-10, 0);
+            var fitted = go.AddComponent<LabelFittedElement>();
+            fitted.label = label;
+            fitted.floorHeight = 120;
             return button;
         }
 

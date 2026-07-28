@@ -75,6 +75,7 @@ namespace Wildgrove.Game
         protected string BundleHaveLabel(List<Buildings.MaterialCost> bundle) => _hud.Labels.BundleHaveLabel(bundle);
         protected BigDouble NodeBasketCapacity(NodeState node) => _hud.Labels.NodeBasketCapacity(node);
         protected string PlanterDisplayName(PlanterData planter, string targetId) => _hud.Labels.PlanterDisplayName(planter, targetId);
+        protected string PlanterGives(PlanterData planter) => _hud.Labels.PlanterGives(planter);
         protected string NodeSkill(string targetId) => _hud.Labels.NodeSkill(targetId);
     }
 }

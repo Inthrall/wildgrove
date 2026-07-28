@@ -454,16 +454,23 @@ namespace Wildgrove.Game
             // The same structure wears the name of the work it serves — a trellis
             // over berries, mineshaft beams over ore, set nets over a fishing run.
             var name = PlanterDisplayName(capturedPlanter, capturedTarget);
+            // What the structure is FOR. A name and a material bundle was all
+            // either state carried, so "Reed Screen" asked for 20 reeds without
+            // once saying it steadies the sketching at this site.
+            var gives = PlanterGives(capturedPlanter);
+            var givesTail = gives.Length > 0 ? gives + " · " : string.Empty;
             if (_loop.PlanterBuilt(capturedPlanter, capturedTarget))
             {
-                var built = MakeText(actions, name + " — raised", 16, TextAnchor.MiddleLeft, MossDeep);
+                var built = MakeText(actions, name + " — raised"
+                                              + (gives.Length > 0 ? " · " + gives : string.Empty),
+                    16, TextAnchor.MiddleLeft, MossDeep);
                 built.gameObject.name = "PlanterBuilt";
                 return;
             }
 
             Button build = null;
             build = Button(actions, "Raise " + name
-                                        + "\n" + SizeOpen(14) + BundleLabel(capturedPlanter.materials) + "</size>", 250, () =>
+                                        + "\n" + SizeOpen(14) + givesTail + BundleLabel(capturedPlanter.materials) + "</size>", 320, () =>
             {
                 if (_loop.BuildPlanter(capturedPlanter, capturedTarget))
                 {
@@ -475,7 +482,7 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(() =>
             {
                 SetButtonLabel(build, "Raise " + name
-                                     + "\n" + SizeOpen(14) + BundleHaveLabel(capturedPlanter.materials) + "</size>");
+                                     + "\n" + SizeOpen(14) + givesTail + BundleHaveLabel(capturedPlanter.materials) + "</size>");
                 var ok = _loop.CanBuildPlanter(capturedPlanter, capturedTarget);
                 build.interactable = ok;
                 SetButtonTint(build, ok);
