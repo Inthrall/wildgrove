@@ -332,6 +332,14 @@ namespace Wildgrove.Game
                     continue;
                 }
 
+                // A later tier is not a choice yet — the line below it has to be
+                // learned first. Listing it anyway priced a tap that Almanac
+                // would refuse, so the tree reveals itself one tier at a time.
+                if (!Almanac.PrerequisiteMet(_loop.State, _loop.Data, node))
+                {
+                    continue;
+                }
+
                 var captured = node;
                 var row = Row(card);
                 var label = MakeText(row.transform, node.displayName + givesLine, 18, TextAnchor.MiddleLeft, Ink);
@@ -352,7 +360,7 @@ namespace Wildgrove.Game
 
                 _liveUpdaters.Add(() =>
                 {
-                    var ok = _loop.AvailableVerdure() >= captured.costVerdure;
+                    var ok = Almanac.CanBuy(_loop.State, _loop.Data, captured);
                     buy.interactable = ok;
                     SetButtonTint(buy, ok);
                 });

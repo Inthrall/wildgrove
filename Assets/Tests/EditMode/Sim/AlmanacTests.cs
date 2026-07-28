@@ -104,6 +104,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void PrerequisiteMet_HidesTheNextTierUntilTheOneBelowIsLearned()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.verdurePoints = 20.0;
+
+            // What the journal lists: a root line always, a later tier only
+            // once the line below it is learned.
+            Assert.That(Almanac.PrerequisiteMet(state, _data, _data.almanac[0]), Is.True);
+            Assert.That(Almanac.PrerequisiteMet(state, _data, _data.almanac[1]), Is.False);
+
+            Almanac.TryBuy(state, _data, _data.almanac[0]);
+
+            Assert.That(Almanac.PrerequisiteMet(state, _data, _data.almanac[1]), Is.True);
+        }
+
+        [Test]
         public void TryBuy_OwnedNode_Refuses()
         {
             var state = GameStateFactory.NewGame(_data);

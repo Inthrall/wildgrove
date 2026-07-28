@@ -39,6 +39,24 @@ namespace Wildgrove.Sim
             return state.almanacNodeIds.Contains(node.id);
         }
 
+        /// <summary>
+        /// True when the node's single prerequisite is owned (or it has none).
+        /// An id this data version doesn't know is treated as met, same policy
+        /// as <see cref="SpentVerdure"/> — the validator catches dangling
+        /// requires at build time, so a live tree is never stranded by one.
+        /// Also what decides whether a line is shown at all: the later tiers
+        /// stay off the page until the tier below them is learned.
+        /// </summary>
+        public static bool PrerequisiteMet(GameState state, GameDataAsset data, AlmanacNodeData node)
+        {
+            if (state == null || data == null || node == null || string.IsNullOrEmpty(node.requires))
+            {
+                return true;
+            }
+
+            return !data.AlmanacById.TryGetValue(node.requires, out var prerequisite) || IsOwned(state, prerequisite);
+        }
+
         /// <summary>True when the node can be bought: not owned, prerequisite owned, and unallocated Verdure covers the cost.</summary>
         public static bool CanBuy(GameState state, GameDataAsset data, AlmanacNodeData node)
         {
@@ -47,9 +65,7 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(node.requires)
-                && data.AlmanacById.TryGetValue(node.requires, out var prerequisite)
-                && !IsOwned(state, prerequisite))
+            if (!PrerequisiteMet(state, data, node))
             {
                 return false;
             }
