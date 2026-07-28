@@ -427,6 +427,22 @@ Interpretations shipped (tune/confirm):
   is now **unconditional** — it was gated behind `Debug.isDebugBuild`, which
   turned GPGS's own trace off in minified release builds, the only place the hang
   has ever reproduced.
+- **The Play Games leaderboard OVERLAY is unreachable, and the Standing is drawn
+  in the journal instead (2026-07-28).** `com.google.games.bridge.HelperFragment`
+  extends the framework `android.app.Fragment`, deprecated since API 28 — read
+  straight out of the shipped AAR with `javap`. Every GPGS call that routes
+  through that bridge (`ShowLeaderboardUI`, `ShowAchievementsUI`) is dead on
+  `targetSdk 36`; everything that goes to the GMS clients directly (sign-in,
+  `ReportScore`, `ReportProgress`, Snapshots) works fine. That split is the whole
+  diagnosis, and it matches upstream issue #3318
+  (`ClassNotFoundException: com.google.games.bridge.HelperFragment`, "auth and
+  score reporting work fine, but the leaderboard UI fails to display").
+  **GPGS 2.1.0 is the latest release — there is no upstream fix to upgrade to.**
+  So don't reach for the overlay again: read the board with
+  `IGameServices.LoadLeaderboard` (leaderboards client + `LoadUsers` for the
+  names) and draw it with `JournalSheets.OpenStandingSheet`. `ShowLeaderboard` is
+  kept, now wrapped in a try/catch that reports the throw, because the call
+  fails **synchronously** — which is why it looked like a hung callback.
   **What it caught (v0.1.76, 2026-07-28) — sign-in was never the problem.** The
   sheet reads clean all the way down: `Sign-in: Success` at 1.4 s, `Leaderboard
   …AhAD score 6880488: accepted`, `Achievement …AhAC: reported OK`, `Cloud load:

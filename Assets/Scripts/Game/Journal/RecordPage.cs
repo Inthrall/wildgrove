@@ -36,18 +36,17 @@ namespace Wildgrove.Game
             var label = MakeText(row.transform, string.Empty, 17, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
 
-            // The board lives behind Play Games, and ShowLeaderboard is a silent
-            // no-op while signed out — so the button offers the sign-in instead
-            // of swallowing the tap, and every tap ends in either the overlay or
-            // a note saying why not. Signed in, the overlay itself can still
-            // refuse (a board Play hasn't published yet is the usual reason),
-            // which is its own dead tap unless the refusal is spoken aloud.
+            // The board lives behind Play Games, so a signed-out tap offers the
+            // sign-in rather than swallowing itself. Signed in, we read the
+            // scores and draw them in the journal — Play's own overlay never
+            // opens on a modern target SDK, and a board in the book beats a
+            // Google sheet thrown over the top of it.
             Button view = null;
             view = Button(row.transform, "View", 160, () =>
             {
                 if (_loop.GameServices.IsSignedIn)
                 {
-                    _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown, ViewBoardResult);
+                    ReadTheBoard(view);
                     return;
                 }
 
@@ -56,7 +55,7 @@ namespace Wildgrove.Game
                 {
                     if (signedIn)
                     {
-                        _loop.GameServices.ShowLeaderboard(Services.LeaderboardIds.Renown, ViewBoardResult);
+                        ReadTheBoard(view);
                         return;
                     }
 
@@ -91,17 +90,29 @@ namespace Wildgrove.Game
             Button(diagRow.transform, "Show", 160, _hud.ShowDiagnostics);
         }
 
+        // How much of the ladder the Standing sheet shows. Ten is what fits the
+        // sheet without scrolling and what a player actually reads.
+        private const int StandingRows = 10;
+
         /// <summary>
-        /// Say something when the Renown overlay declines to open. Play Games
-        /// gives no visible sign of its own, so without this the tap reads as a
-        /// dead button — which is exactly how the unpublished board presented.
+        /// Fetch the Renown board and raise the Standing sheet. The read is a
+        /// network round trip, so the button says it is working — without that
+        /// the tap looks dead for the second or so it takes.
         /// </summary>
-        private void ViewBoardResult(bool opened)
+        private void ReadTheBoard(Button view)
         {
-            if (!opened)
+            Flash(view, "reading the board", true);
+            _loop.GameServices.LoadLeaderboard(Services.LeaderboardIds.Renown, StandingRows, entries =>
             {
-                SetNote("the board wouldn't open — Play Games isn't showing it yet.");
-            }
+                if (entries == null)
+                {
+                    SetNote("the board wouldn't be read — Play Games kept it shut.");
+                }
+
+                // A null set still opens the sheet, which says so itself: a tap
+                // that resolves to nothing at all is the thing being fixed here.
+                _hud.Sheets.OpenStandingSheet(entries);
+            });
         }
 
         private void BuildCompendiumCard()

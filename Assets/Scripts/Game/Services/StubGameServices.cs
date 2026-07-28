@@ -46,6 +46,29 @@ namespace Wildgrove.Game.Services
             onClosed?.Invoke(true);
         }
 
+        public void LoadLeaderboard(string leaderboardId, int rowCount, Action<LeaderboardEntry[]> onLoaded)
+        {
+            Debug.Log("[play-games] stub load leaderboard " + leaderboardId);
+
+            // A handful of invented wardens, so the Standing sheet can be laid
+            // out and read in the editor without a device.
+            var names = new[] { "Ashthorn", "Bramblewick", "Corvid", "Dunnock", "Elderfen" };
+            var count = Mathf.Clamp(rowCount, 0, names.Length);
+            var entries = new LeaderboardEntry[count];
+            for (var i = 0; i < count; i++)
+            {
+                entries[i] = new LeaderboardEntry
+                {
+                    rank = i + 1,
+                    name = names[i],
+                    score = 10_000_000L - (i * 1_337_000L),
+                    isPlayer = i == 2,
+                };
+            }
+
+            onLoaded?.Invoke(entries);
+        }
+
         public void LoadCloud(Action<string> onLoaded)
         {
             Debug.Log("[play-games] stub cloud load (none)");

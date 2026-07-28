@@ -935,6 +935,43 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The Standing — the Renown board, set in the journal's own hand rather
+        /// than Play Games' overlay. The overlay is unreachable on a modern
+        /// target SDK (its bridge extends the framework <c>android.app.Fragment</c>),
+        /// so the scores are read through the leaderboards client and drawn here.
+        /// Which is the better place for them anyway: the folk you stand among
+        /// belong in the book, not in a Google sheet over the top of it.
+        /// </summary>
+        internal void OpenStandingSheet(LeaderboardEntry[] entries)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, "The Standing", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            if (entries == null || entries.Length == 0)
+            {
+                MakeText(sheet, entries == null
+                        ? "<i>the board would not be read — Play Games kept it shut.</i>"
+                        : "<i>no one has yet been recorded here.</i>",
+                    20, TextAnchor.MiddleCenter, Ink2, _serif);
+                Button(sheet, "Close", 320, CloseSheet);
+                return;
+            }
+
+            foreach (var entry in entries)
+            {
+                // The player's own line is marked rather than moved — the board
+                // reads as a ladder, and finding yourself on it is the point.
+                var name = string.IsNullOrEmpty(entry.name) ? "a warden" : entry.name;
+                var line = entry.rank + ".  " + name + "   <color=" + OchreHex + ">"
+                           + NumberFormat.Short(entry.score) + "</color>";
+                MakeText(sheet, entry.isPlayer ? "<b>" + line + "</b>" : line,
+                    21, TextAnchor.MiddleCenter, entry.isPlayer ? Ink : Ink2, _serif);
+            }
+
+            Button(sheet, "Close", 320, CloseSheet);
+        }
+
+        /// <summary>
         /// TEMP: a plain modal that lists diagnostic lines with a single dismiss
         /// button — surfaces Play Games sign-in, leaderboard and Snapshot status
         /// on device while we chase the sign-in that stops answering. Remove

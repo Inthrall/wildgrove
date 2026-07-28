@@ -131,6 +131,11 @@ namespace Wildgrove.Game.Tests
                 onClosed?.Invoke(true);
             }
 
+            public void LoadLeaderboard(string leaderboardId, int rowCount, Action<LeaderboardEntry[]> onLoaded)
+            {
+                onLoaded?.Invoke(new LeaderboardEntry[0]);
+            }
+
             public void LoadCloud(Action<string> onLoaded)
             {
                 onLoaded?.Invoke(null);

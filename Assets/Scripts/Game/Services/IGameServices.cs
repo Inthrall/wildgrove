@@ -3,6 +3,23 @@ using System;
 namespace Wildgrove.Game.Services
 {
     /// <summary>
+    /// One line of a leaderboard, flattened for the journal to draw. Play Games'
+    /// own overlay is unreachable on a modern target SDK — its bridge extends the
+    /// framework <c>android.app.Fragment</c> — so the Standing is read through
+    /// <see cref="IGameServices.LoadLeaderboard"/> and set in the journal's own
+    /// hand instead.
+    /// </summary>
+    public struct LeaderboardEntry
+    {
+        public int rank;
+        public string name;
+        public long score;
+
+        /// <summary>True for the signed-in player's own line, so it can be marked.</summary>
+        public bool isPlayer;
+    }
+
+    /// <summary>
     /// The Play Games Services seam — sign-in, achievements, and cloud save
     /// (Snapshots). Game code drives all three through this; the backend is
     /// swappable — <see cref="StubGameServices"/> until the Play Games plugin
@@ -47,6 +64,15 @@ namespace Wildgrove.Game.Services
         /// vanishes. Anything sign-in-gated needs to be able to say why not.
         /// </summary>
         void ShowLeaderboard(string leaderboardId, Action<bool> onClosed = null);
+
+        /// <summary>
+        /// Read the top of a leaderboard so the journal can draw it itself.
+        /// <paramref name="onLoaded"/> receives null when the board can't be
+        /// read (signed out, or Play declined). This is the path that actually
+        /// works: it goes through the leaderboards client, not the fragment
+        /// bridge that <see cref="ShowLeaderboard"/> is stranded on.
+        /// </summary>
+        void LoadLeaderboard(string leaderboardId, int rowCount, Action<LeaderboardEntry[]> onLoaded);
 
         /// <summary>Read the cloud save blob (null when none exists or signed out).</summary>
         void LoadCloud(Action<string> onLoaded);

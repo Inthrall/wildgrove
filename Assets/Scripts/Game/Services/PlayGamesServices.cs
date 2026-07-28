@@ -2,6 +2,7 @@
 using System;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SocialPlatforms;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 using GooglePlayGames.BasicApi.SavedGame;
@@ -150,18 +151,118 @@ namespace Wildgrove.Game.Services
 
             Diag.Log("Leaderboard " + leaderboardId + ": opening overlay");
 
-            // The callback overload, not ShowLeaderboardUI(id): the one-argument
-            // version passes a null callback down, so every reason the overlay
-            // might refuse — board still a draft, Play Services needing an
-            // update, another overlay already up — was discarded and the tap
-            // just did nothing. UserClosedUI counts as a success: the overlay
-            // opened, and the player dismissed it.
-            PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId, LeaderboardTimeSpan.AllTime, status =>
+            try
             {
-                var opened = status == UIStatus.Valid || status == UIStatus.UserClosedUI;
-                Report("Leaderboard " + leaderboardId + ": overlay " + status);
-                onClosed?.Invoke(opened);
+                // The callback overload, not ShowLeaderboardUI(id): the one-argument
+                // version passes a null callback down, so every reason the overlay
+                // might refuse — board still a draft, Play Services needing an
+                // update, another overlay already up — was discarded and the tap
+                // just did nothing. UserClosedUI counts as a success: the overlay
+                // opened, and the player dismissed it.
+                PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId, LeaderboardTimeSpan.AllTime, status =>
+                {
+                    var opened = status == UIStatus.Valid || status == UIStatus.UserClosedUI;
+                    Report("Leaderboard " + leaderboardId + ": overlay " + status);
+                    onClosed?.Invoke(opened);
+                });
+            }
+            catch (Exception e)
+            {
+                // This one throws SYNCHRONOUSLY, before any listener is attached:
+                // the overlay is the only GPGS call routed through
+                // com.google.games.bridge.HelperFragment, which extends the
+                // framework android.app.Fragment (deprecated since API 28), and
+                // resolving that class over JNI fails on a high target SDK. The
+                // throw used to escape into the button handler, where Unity
+                // logged it out of sight — so the tap died with a request line
+                // and no answer, looking exactly like a callback that hung.
+                Report("Leaderboard " + leaderboardId + ": overlay THREW — "
+                    + e.GetType().Name + ": " + e.Message);
+                onClosed?.Invoke(false);
+            }
+        }
+
+        public void LoadLeaderboard(string leaderboardId, int rowCount, Action<LeaderboardEntry[]> onLoaded)
+        {
+            if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
+            {
+                Diag.Log("Leaderboard " + leaderboardId + ": read skipped (signed out)");
+                onLoaded?.Invoke(null);
+                return;
+            }
+
+            Diag.Log("Leaderboard " + leaderboardId + ": reading top " + rowCount);
+
+            PlayGamesPlatform.Instance.LoadScores(leaderboardId, LeaderboardStart.TopScores, rowCount,
+                LeaderboardCollection.Public, LeaderboardTimeSpan.AllTime, data =>
+                {
+                    if (data == null || !data.Valid || data.Scores == null)
+                    {
+                        Report("Leaderboard " + leaderboardId + ": read FAILED — "
+                            + (data == null ? "no data" : data.Status.ToString()));
+                        onLoaded?.Invoke(null);
+                        return;
+                    }
+
+                    Report("Leaderboard " + leaderboardId + ": read " + data.Scores.Length + " rows");
+                    ResolveNames(data, onLoaded);
+                });
+        }
+
+        /// <summary>
+        /// Turn a page of scores into journal lines, putting names to the ids.
+        /// Play returns only player ids with the scores, so the names take a
+        /// second call — and a board is still worth showing without them, so a
+        /// failed lookup falls back to the rank rather than dropping the row.
+        /// </summary>
+        private static void ResolveNames(LeaderboardScoreData data, Action<LeaderboardEntry[]> onLoaded)
+        {
+            var scores = data.Scores;
+            var playerId = data.PlayerScore == null ? null : data.PlayerScore.userID;
+            var ids = new string[scores.Length];
+            for (var i = 0; i < scores.Length; i++)
+            {
+                ids[i] = scores[i].userID;
+            }
+
+            if (ids.Length == 0)
+            {
+                onLoaded?.Invoke(new LeaderboardEntry[0]);
+                return;
+            }
+
+            PlayGamesPlatform.Instance.LoadUsers(ids, profiles =>
+            {
+                var entries = new LeaderboardEntry[scores.Length];
+                for (var i = 0; i < scores.Length; i++)
+                {
+                    entries[i] = new LeaderboardEntry
+                    {
+                        rank = scores[i].rank,
+                        name = NameFor(profiles, scores[i].userID),
+                        score = scores[i].value,
+                        isPlayer = playerId != null && scores[i].userID == playerId,
+                    };
+                }
+
+                onLoaded?.Invoke(entries);
             });
+        }
+
+        private static string NameFor(IUserProfile[] profiles, string userId)
+        {
+            if (profiles != null)
+            {
+                for (var i = 0; i < profiles.Length; i++)
+                {
+                    if (profiles[i] != null && profiles[i].id == userId)
+                    {
+                        return profiles[i].userName;
+                    }
+                }
+            }
+
+            return "a warden";
         }
 
         public void LoadCloud(Action<string> onLoaded)
