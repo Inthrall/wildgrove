@@ -953,6 +953,12 @@ namespace Wildgrove.Game
             return Crafting.ActiveStationFor(State, recipe) != null;
         }
 
+        /// <summary>The recipe a station currently holds, or null while it stands idle.</summary>
+        public RecipeData StationRecipe(string stationId)
+        {
+            return Crafting.WorkingRecipe(State, Data, stationId);
+        }
+
         /// <summary>True when camp stock covers one batch of the recipe's inputs.</summary>
         public bool CanCraft(RecipeData recipe)
         {

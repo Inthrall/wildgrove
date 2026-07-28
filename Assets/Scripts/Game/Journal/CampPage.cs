@@ -13,7 +13,7 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Camp page — the camp's own actions, the fire &amp; bench (crafting),
+    /// The Camp page — the camp's own actions, a card per crafting station,
     /// the building lines, the Ladder's next rungs, and the caravan exchange
     /// beneath them. What the camp makes of what the trail brings home.
     /// </summary>
@@ -54,7 +54,7 @@ namespace Wildgrove.Game
             _hud.Sheets.BuildCampActions(_body);
             _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
 
-            BuildCraftingCard();
+            BuildCraftingCards();
             BuildBuildingsCard();
             BuildLadderCard();
             BuildExchangeCard();
@@ -277,15 +277,125 @@ namespace Wildgrove.Game
             });
         }
 
-        private void BuildCraftingCard()
+        /// <summary>
+        /// The crafting stations, a card each. Every recipe used to sit in one
+        /// flat list, which said nothing about the rule underneath it: a
+        /// station works ONE recipe at a time, and the stations work at once.
+        /// So starting a second recipe either silently stopped the first (same
+        /// station) or didn't (a different one), and the page gave no way to
+        /// tell which — nor any hint of why several bars could turn together.
+        /// A card per station is that rule made into the shape of the page.
+        /// </summary>
+        private void BuildCraftingCards()
         {
-            var recipes = _loop.AvailableRecipes();
-            if (recipes.Count == 0)
+            var stations = CraftingStations();
+            foreach (var station in stations)
             {
-                return;
+                BuildStationCard(station.Key, station.Value, stations);
+            }
+        }
+
+        /// <summary>
+        /// The visible recipes grouped by station, in building-line order so
+        /// the cards sit in the same order the Building Lines card lists them.
+        /// </summary>
+        private List<KeyValuePair<string, List<RecipeData>>> CraftingStations()
+        {
+            var byStation = new Dictionary<string, List<RecipeData>>();
+            var order = new List<string>();
+            foreach (var recipe in _loop.AvailableRecipes())
+            {
+                if (!byStation.TryGetValue(recipe.station, out var list))
+                {
+                    list = new List<RecipeData>();
+                    byStation[recipe.station] = list;
+                    order.Add(recipe.station);
+                }
+
+                list.Add(recipe);
             }
 
-            var card = Card("THE FIRE & BENCH");
+            // Building order first; a station no line claims (hand-built data)
+            // keeps its recipe-order place at the back rather than vanishing —
+            // OrderBy for the stable sort that promise needs.
+            var stations = new List<KeyValuePair<string, List<RecipeData>>>();
+            foreach (var id in order.OrderBy(BuildingOrder))
+            {
+                stations.Add(new KeyValuePair<string, List<RecipeData>>(id, byStation[id]));
+            }
+
+            return stations;
+        }
+
+        private int BuildingOrder(string stationId)
+        {
+            var buildings = _loop.Data.buildings;
+            for (var i = 0; buildings != null && i < buildings.Count; i++)
+            {
+                if (buildings[i].id == stationId)
+                {
+                    return i;
+                }
+            }
+
+            return int.MaxValue;
+        }
+
+        /// <summary>The station's name for a card head — the building line's, or the raw id.</summary>
+        private string CraftStationName(string stationId)
+        {
+            return _loop.Data.BuildingsById.TryGetValue(stationId, out var building)
+                ? building.displayName
+                : GoodName(stationId);
+        }
+
+        /// <summary>
+        /// "one work at a time — the bench and the forge keep their own." The
+        /// second clause is the answer to "why can I craft several things at
+        /// once", so it names the sibling stations rather than gesturing at
+        /// them; with no siblings it's simply left off.
+        /// </summary>
+        private string StationRule(string stationId, List<KeyValuePair<string, List<RecipeData>>> stations)
+        {
+            var others = new List<string>();
+            foreach (var station in stations)
+            {
+                if (station.Key != stationId)
+                {
+                    others.Add(CraftStationName(station.Key).ToLowerInvariant());
+                }
+            }
+
+            if (others.Count == 0)
+            {
+                return "one work at a time.";
+            }
+
+            if (others.Count == 1)
+            {
+                return "one work at a time — " + others[0] + " keeps its own.";
+            }
+
+            var last = others.Count - 1;
+            return "one work at a time — " + string.Join(", ", others.GetRange(0, last))
+                   + " and " + others[last] + " keep their own.";
+        }
+
+        private void BuildStationCard(string stationId, List<RecipeData> recipes,
+            List<KeyValuePair<string, List<RecipeData>>> stations)
+        {
+            var card = Card(CraftStationName(stationId).ToUpperInvariant());
+            // The same plate the Building Lines card wears for this line — the
+            // two cards are the one place, seen from its two sides.
+            var plate = ArtLibrary.ForBuilding(stationId);
+            if (plate != null)
+            {
+                PlateImage(card, plate, 120f);
+            }
+
+            MakeText(card, "<i>" + StationRule(stationId, stations) + "</i>",
+                17, TextAnchor.MiddleCenter, Ink2, _serif);
+
             foreach (var recipe in recipes)
             {
                 var captured = recipe;
@@ -300,7 +410,17 @@ namespace Wildgrove.Game
                 FlexibleWidth(label.gameObject, 1f);
                 var toggle = Button(row.transform, "Craft", 210, () =>
                 {
+                    // Displacement is silent in the sim (the old batch's inputs
+                    // come back, no bar anywhere reports the swap) — so the
+                    // page has to be the one that says what was set aside.
+                    var displaced = _loop.IsCrafting(captured) ? null : _loop.StationRecipe(captured.station);
                     _loop.ToggleCraft(captured);
+                    if (displaced != null && _loop.IsCrafting(captured))
+                    {
+                        SetNote(CraftStationName(captured.station).ToLowerInvariant() + " sets aside the "
+                                + GoodName(displaced.output) + " and takes up the " + GoodName(captured.output) + ".");
+                    }
+
                     _dirty = true;
                 });
 
@@ -377,7 +497,11 @@ namespace Wildgrove.Game
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + inputsLine + "</color></size>";
                     // "Stop" alone read as a state ("it is stopped"), not an
                     // action — the row's own status line is what reports state.
-                    SetButtonLabel(toggle, crafting ? "Stop crafting" : "Craft");
+                    // "Craft instead" is the tap that costs you something: the
+                    // station is on another recipe and this would displace it,
+                    // which the plain "Craft" gave no warning of.
+                    var busyElsewhere = !crafting && _loop.StationRecipe(captured.station) != null;
+                    SetButtonLabel(toggle, crafting ? "Stop crafting" : busyElsewhere ? "Craft instead" : "Craft");
                     // Stopping is always allowed; starting needs the gates AND
                     // a batch of inputs in camp stock.
                     var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));

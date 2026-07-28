@@ -207,6 +207,24 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void WorkingRecipe_NamesWhatAStationHolds_SoTheRowCanWarnBeforeDisplacing()
+        {
+            var state = new GameState();
+
+            Assert.That(Crafting.WorkingRecipe(state, _data, "fire"), Is.Null, "an idle station holds nothing");
+            Assert.That(Crafting.WorkingRecipe(state, _data, "bench"), Is.Null, "nor does a station with no state row");
+
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Assert.That(Crafting.WorkingRecipe(state, _data, "fire")?.id, Is.EqualTo("berry-jam"));
+
+            // A recipe renamed out of the data leaves a dangling id — the row
+            // must read that as "nothing held", not throw on the way to a note.
+            state.stations[0].recipeId = "renamed-away";
+            Assert.That(Crafting.WorkingRecipe(state, _data, "fire"), Is.Null);
+        }
+
+        [Test]
         public void Advance_CraftSpeedUpgrade_DividesTheBatchTime()
         {
             var state = new GameState();

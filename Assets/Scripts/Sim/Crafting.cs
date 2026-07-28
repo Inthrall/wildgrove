@@ -103,6 +103,22 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// The recipe this station currently holds, or null when it stands
+        /// idle — what a row needs to say "this would set aside the jam",
+        /// since assigning displaces silently.
+        /// </summary>
+        public static RecipeData WorkingRecipe(GameState state, GameDataAsset data, string stationId)
+        {
+            var station = StationFor(state, stationId);
+            if (station?.recipeId == null || !data.RecipesById.TryGetValue(station.recipeId, out var recipe))
+            {
+                return null;
+            }
+
+            return recipe;
+        }
+
+        /// <summary>
         /// Assign <paramref name="recipe"/> to its station, displacing whatever
         /// the station was working (an in-flight batch's inputs are refunded —
         /// switching is never a punishment). No-op if it's already assigned.
