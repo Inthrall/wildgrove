@@ -729,12 +729,15 @@ Interpretations shipped (tune/confirm):
   entry) are all live. The amber sink is the time-skip (full live-rate hours,
   no cap — that's what's paid for); amber numbers (digFindsPerHour 0.06,
   perFind 2, skip 4h/15) are first guesses against the ~40-free-per-week
-  lean. Still waiting: IAP/rewarded-ads/weekly-cache earn paths (the §10
-  plugin pass), amber-find telemetry (sim-side roll can't log), cosmetics/
-  extra craft queues as further sinks, excavation skill XP ("XP from every
-  action" — fragments are too rare for per-unit XP; decide a grant when
-  tool-tier / level gates need the level), and the fossil card lore
-  (Compendium).
+  lean. The earn paths have since landed — amber packs (`amber_pack`), the
+  rewarded-ad drip (`amber_drip`), the weekly cache (`weekly_amber_cache`) and
+  amber-find telemetry (`amber_found`) are all live, though the weekly cache is
+  not yet gated on a Play redemption (see the Play Games Rewards item below).
+  Still waiting: cosmetics/extra craft queues as further sinks — cosmetics have
+  no substrate at all, the same blocker as the Wayfarer's Cloak — excavation
+  skill XP ("XP from every action" — fragments are too rare for per-unit XP;
+  decide a grant when tool-tier / level gates need the level), and the fossil
+  card lore (Compendium).
   Interpretations to confirm: digger gifts cost gathererBaseGoods of EACH of
   the zone's resources (a dig site has no resource of its own to leave a pile
   of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
@@ -746,6 +749,59 @@ Interpretations shipped (tune/confirm):
   a book of rubbings keeping the same permanent multiplier + lore. Rename
   `fragment`→`sketch`/`portion` here and in `fossils.json`; "diggers share the zone
   flock cap" is superseded by stationing. Amber stays takeable (unchanged).
+- **Play Games Rewards items — one of three is half-built, and the delivery path
+  doesn't exist at all (reviewed 2026-07-29).** Three items is the complete
+  designed set (§11 line 514, §12 row: two single-use + one repeatable), and two
+  single-use by **Sep 30 2026** is the nearest hard date in the whole plan — it
+  and Mar 1 2027 (the repeatable) are the only forward-looking dates in the
+  design doc; every other date there is a past decision stamp. What's actually
+  outstanding is more than the Play Console setup:
+  - **Weekly Amber Cache (20 amber, max 1/wk) — the in-game half is done and
+    tested, but it is currently a free weekly tap.** Live: `weeklyCacheAmber` 20,
+    `Amber.CanClaimWeeklyCache`/`ClaimWeeklyCache`, the 7-day cooldown,
+    `weeklyCacheClaimedUnixMs` persisted and carried through a fold
+    (`Migration`), `weekly_amber_cache` telemetry, a Claim row in THE AMBER card,
+    and coverage in AmberTests/SaveCodecTests/MigrationTests. What's missing is
+    the gate: `GameLoop.CanClaimWeeklyCache` asks only `GameServices.IsSignedIn`,
+    so nothing ties the claim to a Play redemption. As it stands the requirement
+    isn't met *and* it hands out 20 free amber/week against the ~40-free-per-week
+    lean. Keep the signed-out behaviour when the gate moves — the button
+    deliberately *is* the sign-in, because hiding the row hid the free claim from
+    exactly the players it should convert.
+  - **Spare Wing (+1 trail post) — not built, and it's a design change rather
+    than a flag.** Stationing holds one body per station id and the trail is the
+    single id `"trail"` (`Familiar.TrailStation`, `Stationing.OccupantOf`, and the
+    posting sheet all assume one occupant). It needs a second trail station id (or
+    a trail-capacity concept), an entitlement on `GameState` with a save field and
+    migration, and posting-sheet support. The economics are already N-ready:
+    `Stationing.TrailCarriers` sums every non-resting familiar on the trail. Also
+    do the §14 check when it lands — hauling equipment is tuned assuming two posts
+    eventually exist, so verify the bottleneck triangle survives the reward (see
+    the haul-bottleneck item in Phase 1).
+  - **Wayfarer's Cloak (cosmetic) — not built, and it has nowhere to appear.**
+    There is no cosmetic system of any kind (nothing matching skin / wardrobe /
+    appearance), and no warden or familiar sprite — presentation is journal text
+    plus naturalist plates. So the first job is a design call on what a cosmetic
+    even *is* here (a journal cover, a seal on the Standing card, a camp plate),
+    not an art request. This is the largest of the three, and it's the same
+    substrate the amber cosmetics sink wants — build it once.
+  - **No redemption or grant path exists for any of the three.** No `RewardIds`,
+    no reward SKUs in `StoreProductIds.All`, and nothing in the repo matching
+    redeem / promo / Play Points. Reward offers are awarded on Quest completion,
+    so something has to receive the grant and apply it. The foundation is already
+    there: `UnityIapStore` handles arrivals from outside the app via
+    `FetchPurchases`, `OnPurchasesFetched` and `OnPurchasePending`/`HandlePending`.
+  - **Play Console: create all three products**, alongside the store SKUs noted in
+    the v0.11 section. Any reward UI must be drawn **in-journal** — Play Games' own
+    overlay is permanently dead on `targetSdk 36` (see the Play Games item in
+    Phase 1).
+  - **Re-check the repeatable requirement before planning to it.** Level Up's
+    guidelines were revamped and there's a Level Up+ tier now. "≥2 single-use by
+    Sep 30 2026" holds; the Mar 1 2027 repeatable date comes from the design doc
+    and wasn't corroborated against current guidance.
+  (`Wildgrove.Sim/Amber.cs`, `Stationing.cs`, `GameLoop.cs`,
+  `Assets/Scripts/Game/Journal/CampPage.cs`,
+  `Assets/Scripts/Game/Services/ServiceIds.cs`, `UnityIapStore.cs`)
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
@@ -764,12 +820,13 @@ Interpretations shipped (tune/confirm):
   confirm in balance: the §9 Store's "storage capacity" is implemented as
   basket capacity (camp storage caps don't exist), and the Clay Furnace is
   simply the forge line's first bought level (its ~8,000 debut price is the
-  line's baseCostCoin). The Spare Wing's +1 carrier slot (§10) arrives with
-  the PGS rewards layer. (`design/data/buildings.json`)
+  line's baseCostCoin). The Spare Wing is not a building rung and never gets one —
+  it's a Play Games Rewards item granting **+1 trail post** (§11), and what
+  building it takes is spelled out in the Play Games Rewards item above.
+  (`design/data/buildings.json`)
   **v0.11:** buildings are now a **goods sink**, not a Coin sink (§10) — `baseCostCoin`
-  becomes a material bundle; Roosts & Burrows re-scopes to **familiar comfort** (+XP
-  rate per level, roster capacity at late levels), not headcount caps; and the Spare
-  Wing grants **+1 trail post**, not a carrier slot (§11) — carrying is a post now.
+  becomes a material bundle; and Roosts & Burrows re-scopes to **familiar comfort**
+  (+XP rate per level, roster capacity at late levels), not headcount caps.
 - **`crafting.baseCraftSeconds` (5 s, uniform) is a first guess.** Not in the
   design doc, and one duration for every recipe is a placeholder — tune against
   the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
