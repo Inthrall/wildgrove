@@ -71,6 +71,18 @@
             { "type": "resource", "resource": "wardens-tonic", "amount": 6,  "renownGrant": 2000 },
             { "type": "specimen", "quality": "pristine",       "count": 1,   "renownGrant": 2500 }
           ]
+        },
+        {
+          "id": "verse-hollows",
+          "zone": "the-hollows",
+          "spotlight": ["delving", "forgecraft"],
+          "slots": [
+            { "type": "resource", "resource": "deep-ores",  "amount": 400 },
+            { "type": "resource", "resource": "crystals",   "amount": 150 },
+            { "type": "resource", "resource": "ashglass",   "amount": 250 },
+            { "type": "resource", "resource": "deep-ingot", "amount": 6,  "renownGrant": 10000 },
+            { "type": "specimen", "quality": "pristine",    "count": 1,   "renownGrant": 4000 }
+          ]
         }
       ]
     }

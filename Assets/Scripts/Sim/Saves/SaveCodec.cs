@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 32;
+        public const int CurrentVersion = 33;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -42,6 +42,8 @@ namespace Wildgrove.Sim.Saves
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
                 playedMs = state.playedMs,
+                deepAmberFound = state.deepAmberFound,
+                deepAmberPityHours = state.deepAmberPityHours,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
@@ -267,6 +269,8 @@ namespace Wildgrove.Sim.Saves
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
             state.playedMs = save.playedMs > 0 ? save.playedMs : 0L;
+            state.deepAmberFound = save.deepAmberFound > 0 ? save.deepAmberFound : 0;
+            state.deepAmberPityHours = save.deepAmberPityHours > 0.0 ? save.deepAmberPityHours : 0.0;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
@@ -1073,6 +1077,12 @@ namespace Wildgrove.Sim.Saves
                         // drunk, so the buff list simply starts empty.
                         save.activeTinctures = save.activeTinctures ?? new List<SavedTincture>();
                         save.version = 32;
+                        break;
+
+                    case 32:
+                        // v32 predates the Hollows' deep amber — nothing was
+                        // ever surfaced, so the absent counters (0) are right.
+                        save.version = 33;
                         break;
 
                     default:

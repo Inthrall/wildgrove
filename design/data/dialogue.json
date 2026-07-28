@@ -5,14 +5,16 @@
     "bramble-hedgerows": "The stone does not grow back. Take it like you mean it.",
     "old-growth-wood":   "These roots drink deeper than you will ever dig. Let them.",
     "silverrun-river":   "The river keeps no ledger. Count what you take, for it will not.",
-    "mistfen-marsh":     "The fen remembers every weight it has carried. Step lightly; it is counting."
+    "mistfen-marsh":     "The fen remembers every weight it has carried. Step lightly; it is counting.",
+    "the-hollows":       "The dark below was not always empty. Leave it the quiet it paid for."
   },
   "verses": {
     "sunfield-meadow":   "What you carry is borrowed. Set some down, and see what follows you home.",
     "bramble-hedgerows": "Sweetness kept, stone made bright — show the hedge what the taking taught you.",
     "old-growth-wood":   "Wood made useful, and one bone of what came before. The grove would hold it again.",
     "silverrun-river":   "Of all you pulled from the water, the river asks the finest back. It knows you have it.",
-    "mistfen-marsh":     "Brew what the still water grew, and pour a little back where the lights gather."
+    "mistfen-marsh":     "Brew what the still water grew, and pour a little back where the lights gather.",
+    "the-hollows":       "Ore made bright, and the glass the burning left — carry the deep's own wealth back down."
   },
   "provisioner": [
     { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
@@ -26,6 +28,7 @@
     "stags-herald":   "Antlers on a beetle no longer than your thumb. It fought something once, or meant to. The drawing is all I keep; the meadow keeps the rest.",
     "silver-skimmer": "It held the one reach of river all afternoon and let me sketch it, wings still. The river fed its kind ten thousand years. I gave the page my hand and gave the water back its guest.",
     "those-who-sow":  "They carry the flowers from field to field without being asked, and have longer than we have. Whoever tends this place, it is not only us. I drew them, and let them go on.",
-    "lantern-bearers": "They light the drowned paths every night, for no one. I was never the reason, and I may still be grateful. Four evenings of drawing, and not one lantern paused for me."
+    "lantern-bearers": "They light the drowned paths every night, for no one. I was never the reason, and I may still be grateful. Four evenings of drawing, and not one lantern paused for me.",
+    "quiet-court": "They sing in galleries no light has ever reached, to no audience at all. Five evenings by lamplight, drawing what has never been seen. They did not stop singing once."
   }
 }

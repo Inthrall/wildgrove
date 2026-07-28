@@ -103,7 +103,7 @@ The single most load-bearing rule set in the game — written down so every syst
 | 3 | **Old-Growth Wood**   | Deadfall timber, mushrooms, tin seams | Logging, Bushcraft, **first observation site**                 | Ancient Acorn       | MVP   |
 | 4 | **Silverrun River**   | Fish, reeds, clay, iron-rich gravel   | Fishing, riverbank observation site                            | Moonscale Trout     | MVP   |
 | 5 | **Mistfen Marsh**     | Peat, rare herbs, glow-moss           | Apothecary; marsh observation site                     | Lantern Firefly     | v1.1 (**built 2026-07-28**) |
-| 6 | **The Hollows**       | Deep ores, crystals, bone beds        | Delving; the rarest insects                     | Echo Geode          | v1.1  |
+| 6 | **The Hollows**       | Deep ores, crystals, ashglass         | Delving; the rarest insects; **the deep amber** | Echo Geode          | v1.1 (**built 2026-07-29** — bone beds stopped being a crop for the reason fireflies did: the buried past is watched, never gathered (§6); the third find is ashglass, the glass the burning left) |
 | 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry                                              | Cloudfleece Ram     | v1.2  |
 | 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2  |
 
@@ -196,13 +196,14 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Curation**   | Collection        | Pristine specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
 | **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss    | **Tinctures** (buff consumables — built 2026-07-28) | v1.1 |
+| **Delving**    | Gathering         | Hollows nodes                    | Deep ores, crystals, ashglass (built 2026-07-29; deep ingots feed the deepsteel tier) | v1.1 |
 | **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool                            | v1.2  |
 
 ### Skill structure (per craft)
 
 - **Skill level** 1–99, XP from every action. With Coin gone (§9), *levels are the gate and materials are the cost*, everywhere.
 - **Mastery** per resource: +5% yield/value per mastery level. The long-tail chase.
-- **Tools are mined, smelted, and smithed — never bought, literally.** Tier 1 is knapped from surface flint (a meadow by-find; no forge). Every tier after needs a **skill gate + an ingot batch**: Copper → Bronze → Iron → Steel → deep ores. Each tier ×2 yield. Mining/Forgecraft is the unlock backbone: zones gate ores, ores gate tools, tools gate zones.
+- **Tools are mined, smelted, and smithed — never bought, literally.** Tier 1 is knapped from surface flint (a meadow by-find; no forge). Every tier after needs a **skill gate + an ingot batch**: Copper → Bronze → Iron → Steel → Deepsteel (the "deep ores" tier — built 2026-07-29 with the Hollows; deep ingots at forge 3). Each tier ×2 yield. Mining/Forgecraft is the unlock backbone: zones gate ores, ores gate tools, tools gate zones.
 - A stationed agent works its node's gathering craft; crafting runs in parallel via fire/bench queues — bars always filling. The Melvor texture lives chiefly in the **queues** (the gather side is a handful of trickles, not a wall of flocks); base queue counts are tuned so all four output lanes (§2) genuinely compete.
 
 ### Survival gear (the warden's kit)
@@ -266,7 +267,8 @@ The one system that used to take. It doesn't anymore: **nothing is kept.** From 
 | **The Silver Skimmer**   | 4        | Silverrun River        | +15% fishing, +1% Pristine | A damselfly older than the river's name. It has watched the water change and change. |
 | **Those Who Sow**        | 5        | Both sites, rare hours | +20% all yields            | The pollinators. They have tended this land far longer than you, and asked for nothing. |
 | **The Lantern Bearers**  | 4        | Mistfen Marsh          | +20% observation speed     | They light the drowned paths every night, for no one. Fireflies are **watched, never gathered** — the marsh's third *find* is glow-moss (corrected 2026-07-28; a firefly in a basket contradicted §6 outright). |
-| *The deep amber* (v1.1)  | —        | Hollows                | —                          | An insect no one living has seen, held in resin. The world it flew through has ended. |
+| **The Quiet Court** (v1.1) | 5      | Hollows                | +25% delving               | Pale singers in the galleries no light has reached. The rarest plate (built 2026-07-29). |
+| **The Deep Amber** (v1.1) | 4 pieces | Hollows               | +25% all yields            | An insect no one living has seen, held in resin. The world it flew through has ended. **Built 2026-07-29:** not observe-sketch-release — the one find that is *kept* (§6's exception). Four authored pieces surface **strictly in order** at the Hollows' watch site (`ambers.json`; pity clock so the lore can't starve); each carries a field note, and the finished set is a plate that crosses every fold. The §7 deep-past implication lives in these four notes plus the final waystones. |
 
 Target: ~6 plates at MVP, ~30 by 1.2 — each a multiplier *and* a chapter.
 

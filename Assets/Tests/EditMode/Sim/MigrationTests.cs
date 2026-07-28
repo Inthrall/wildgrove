@@ -337,6 +337,19 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheDeepAmberButNotItsPityClock()
+        {
+            var state = StateWithTheRiteSung();
+            state.deepAmberFound = 2;
+            state.deepAmberPityHours = 3.5;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.deepAmberFound, Is.EqualTo(2), "the deep amber is journal content — it crosses the fold");
+            Assert.That(next.deepAmberPityHours, Is.EqualTo(0.0).Within(Tolerance), "a fresh run starts a fresh watch");
+        }
+
+        [Test]
         public void Migrate_CarriesAmberEarnCooldowns()
         {
             var state = StateWithTheRiteSung();

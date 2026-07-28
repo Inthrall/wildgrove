@@ -59,6 +59,12 @@ namespace Wildgrove.Sim
                     state.amberFoundUnlogged += amber.perFind;
                 }
 
+                // The deep amber (design §6): the authored deep-past pieces,
+                // surfaced only at their own zone's site. Rolled beside the
+                // ordinary amber channel — it too keeps working after every
+                // plate here is recorded.
+                DeepAmber.AdvanceSite(state, data, site.zoneId, watchers, siteDigMult, deltaSeconds);
+
                 // Reused scratch: this runs per site per 1 s substep — a full
                 // offline catch-up is tens of thousands of walks, so the list
                 // must not be a fresh allocation each time.

@@ -1,0 +1,17 @@
+{
+  "$comment": "The deep amber (design §6/§7): the only window the ground still opens onto the deep past, surfaced piece by authored piece at one zone's observation site (the Hollows). Pieces arrive strictly in authored order — the sequence IS the story, so nothing is randomised but the timing. findsPerHour is per watcher before digSpeedMult modifiers; pityHoursWatched guarantees the next piece after that many watched hours without one (these lore lines are load-bearing — they must not starve). Collecting every piece completes the plate: its effects join the run's active-effect union and, like every plate, survive Migration (the journal keeps it). Piece lore lives inline (each is its own channel entry, ~1,200-word budget); completedLore is the finished plate's field note. Rates are first guesses.",
+  "deepAmber": {
+    "zone": "the-hollows",
+    "findsPerHour": 0.05,
+    "pityHoursWatched": 12,
+    "plateName": "The Deep Amber",
+    "completedLore": "An insect no one living has seen, held in resin. The world it flew through has ended. It is in the book now — the one thing the land let me keep.",
+    "effects": [ { "type": "yieldBonus", "skill": "all", "value": 0.25 } ],
+    "pieces": [
+      { "id": "the-wing", "name": "The Wing",         "lore": "A wing in the resin, veined like nothing the trail knows. Whatever sky it flew, that sky has ended." },
+      { "id": "the-seed", "name": "The Seed",         "lore": "A seed, held mid-fall. Something planted in rows once, and widely. The rows are under the meadow." },
+      { "id": "the-ash",  "name": "The Ash",          "lore": "Ash caught through the amber like a held breath. The tree wept this the year the sky went dark, and kept weeping." },
+      { "id": "the-mark", "name": "The Maker's Mark", "lore": "A cut face, too straight for teeth. Someone worked this resin before it set. Their hands would have fit my gloves." }
+    ]
+  }
+}

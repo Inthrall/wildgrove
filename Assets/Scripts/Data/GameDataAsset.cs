@@ -32,6 +32,10 @@ namespace Wildgrove.Data
         public List<PlanterData> planters = new List<PlanterData>();
         public List<RegionData> regions = new List<RegionData>();
         public List<TinctureData> tinctures = new List<TinctureData>();
+
+        /// <summary>The deep amber window (design §6) — Unity serializes an authored-empty section as a zeroed object; DeepAmber.Configured is the liveness check, never a null test.</summary>
+        public DeepAmberData deepAmber;
+
         public ExchangeData exchange;
         public RitesBundle rites;
         public DialogueBundle dialogue;

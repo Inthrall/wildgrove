@@ -24,7 +24,7 @@
 
     { "id": "deep-ores",    "sellValue": 60,  "skill": "delving" },
     { "id": "crystals",     "sellValue": 120, "skill": "delving" },
-    { "id": "bone-beds",    "sellValue": 80,  "skill": "delving" },
+    { "id": "ashglass",     "sellValue": 80,  "skill": "delving" },
 
     { "id": "eggs",         "sellValue": 40,  "skill": "husbandry" },
     { "id": "wool",         "sellValue": 50,  "skill": "husbandry" },

@@ -102,6 +102,15 @@ namespace Wildgrove.Sim
         /// <summary>Amber surfaced by observation sites but not yet reported to telemetry — GameLoop flushes it after each advance so an offline catch-up logs one aggregate find. Never saved.</summary>
         public double amberFoundUnlogged;
 
+        /// <summary>Deep amber pieces surfaced (design §6), a count into the authored order — the journal keeps it across Migration. See <see cref="DeepAmber"/>.</summary>
+        public int deepAmberFound;
+
+        /// <summary>Hours watched at the deep site without a piece surfacing — the pity clock.</summary>
+        public double deepAmberPityHours;
+
+        /// <summary>Pieces surfaced but not yet reported to telemetry — GameLoop flushes after each advance. Never saved.</summary>
+        public int deepAmberFoundUnlogged;
+
         /// <summary>Invalidate the cached modifier snapshot after an effect-source mutation.</summary>
         public void BumpModifiers()
         {

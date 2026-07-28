@@ -7,7 +7,7 @@
     { "id": "river-catch",       "name": "River Catch",       "entries": ["fish", "reeds", "clay", "iron-gravel"],   "effects": [{ "type": "yieldBonus", "skill": "fishing", "value": 0.15 }] },
 
     { "id": "marsh-lights",      "name": "Marsh Lights",      "entries": ["peat", "rare-herbs", "glow-moss"],        "effects": [{ "type": "craftSpeedMult", "value": 1.1 }] },
-    { "id": "hollow-relics",     "name": "Relics of the Hollows", "entries": ["deep-ores", "crystals", "bone-beds"], "effects": [{ "type": "digSpeedMult", "value": 1.25 }] },
+    { "id": "hollow-relics",     "name": "Relics of the Hollows", "entries": ["deep-ores", "crystals", "ashglass"], "effects": [{ "type": "digSpeedMult", "value": 1.25 }] },
     { "id": "crag-flock",        "name": "The Crag Flock",    "entries": ["eggs", "wool", "lichen"],                 "effects": [{ "type": "carrierCapacityBonus", "value": 0.10 }] },
     { "id": "summit-posy",       "name": "Summit Posy",       "entries": ["sky-blossoms", "glacier-ice"],            "effects": [{ "type": "tendingBurstBonus", "value": 0.25 }] },
 

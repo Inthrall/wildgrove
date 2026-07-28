@@ -29,8 +29,8 @@
     "baseCostCoin": 100,
     "costMultPerTier": 12,
     "yieldMultPerTier": 2,
-    "tiers": ["flint", "copper", "bronze", "iron", "steel"],
-    "$note": "flint is knapped (no forge); each later tier also consumes an ingot batch (see recipes)"
+    "tiers": ["flint", "copper", "bronze", "iron", "steel", "deepsteel"],
+    "$note": "flint is knapped (no forge); each later tier also consumes an ingot batch (see recipes). deepsteel is the §5 'deep ores' tier past steel — smelted from the Hollows' deep-ore seams"
   },
   "mastery": {
     "yieldBonusPerLevel": 0.05,

@@ -129,6 +129,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v32+: tincture buffs currently live (absent before the Apothecary existed).</summary>
         public List<SavedTincture> activeTinctures = new List<SavedTincture>();
 
+        /// <summary>v33+: deep amber pieces surfaced, a count into the authored order (absent before the Hollows — none found).</summary>
+        public int deepAmberFound;
+
+        /// <summary>v33+: hours watched at the deep site without a piece surfacing — the pity clock.</summary>
+        public double deepAmberPityHours;
+
         /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
         public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
 

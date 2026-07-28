@@ -372,14 +372,62 @@ Interpretations shipped (tune/confirm):
 - Zone 5's nodes need the same three-plate art the other zones have;
   glow-moss and the otter fall back gracefully until then.
 
+**IMPLEMENTED 2026-07-29 — The Hollows (zone 6) + the deep amber (design
+§3/§5/§6/§7).** The endgame zone, to the pattern Mistfen proved. Landed:
+- **Bone beds stopped being a crop** — the same correction as fireflies: the
+  buried past is borrowed with the eyes only (§6), so a bone bed in a basket
+  contradicted the reframe outright. The third find is **ashglass** (the
+  fused glass the burning left — a Long Winter residue, mineral, takeable),
+  swept through zones/resources/folio (`hollow-relics`) and ArtLibrary
+  (ashglass borrows the res-amber plate until the art pass).
+- `map-hollows` (upgrade #33, glow-moss/smoked-trout/iron-ingot provisions —
+  you pack light to go under) grants zone + `unlockSkill delving` +
+  `unlockDigSite` + `unlockRecipe deep-ingot`. **Deepsteel** = §5's tier past
+  steel: `deep-ingot` (forge 3, forgecraft 8) → `deepsteel-toolset`
+  (upgrade #34, forgecraft 40, all-gathering ×2); economy.tools.tiers gained
+  "deepsteel".
+- **NEW SIM SYSTEM: the deep amber** — `ambers.json` (19th data file) +
+  `Sim/DeepAmber.cs` + `Data/DeepAmberDef.cs`. Four authored pieces (The
+  Wing / The Seed / The Ash / The Maker's Mark, each with its field note —
+  the §7 deep-past channel) surface **strictly in authored order** at the
+  Hollows' watch site, rolled beside the ordinary amber channel in
+  `Observation.Advance`; a pity clock (`pityHoursWatched` 12) guarantees the
+  lore can't starve. The completed set is **The Deep Amber** plate: effects
+  (+25% all yields) join the active-effect union, and the count crosses the
+  fold with the journal (pity clock doesn't). **Save v32→v33**
+  (`deepAmberFound` + `deepAmberPityHours`). Telemetry `deep_amber_found`.
+  Record page: the Deep Pages card ends with the amber's entries — found
+  pieces with their notes, "the resin holds more" until it doesn't.
+- **The Quiet Court** — the rarest plate (rarity 0.2, 5 sketches, +25%
+  delving) at the Hollows site, plus its §7 line. Two new species:
+  **horseshoe bat** (deep-ores + crystals pair, echo-themed inscriptions)
+  and **ermine** (ashglass + glacier-ice — the burning's two residues; the
+  crags pairing lands with v1.2).
+- Verse 6 (`verse-hollows`, spotlight delving + forgecraft; deep-ingot slot
+  renownGrant 10000), waystone + verse lines in the §7 register (draft).
+
+Interpretations shipped (tune/confirm):
+- Deep amber timing: findsPerHour 0.05 per watcher before digSpeedMult
+  stacking (~3–7 h a piece well-modified, 12 h pity worst case) — first
+  guesses; the four pieces are meant to be a run-spanning chase, not a
+  session.
+- The deep pieces grant NO premium Amber — the channels stay separate
+  (ordinary finds keep paying; pieces pay in words and, at the end, the
+  plate).
+- The verse-6 numbers and the Hollows quantities have had **no balance
+  pass**, same as Mistfen — the zones 4–6 sweep is the next-but-one slice.
+- Ermine's pair reaches into v1.2 (glacier-ice), matching the bramble-hare
+  precedent (herbs + rare-herbs before the marsh existed).
+- The old `Validate_VerseZoneNoTrailMapOpens` pin used the-hollows as its
+  never-unlockable example — premise rot once map-hollows landed; it asks
+  after highland-crags now, with the corruption-must-land guard.
+
 **NEXT SLICES (the mid/late plan, in order):**
-1. **The Hollows preview content** — deep amber (§6's deep-past window) and
-   the rarest plates, now that Mistfen has proved the v1.1 zone pattern
-   (zone + specialist + skill + brews + plate + verse in one pass).
-2. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
+1. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
    zone skips) that currently wait for their systems.
-3. **A balance pass over zones 4–5** — the marsh landed unbalanced by
-   design; it wants the spreadsheet treatment alongside the tincture numbers.
+2. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
+   unbalanced by design; they want the spreadsheet treatment alongside the
+   tincture numbers and the deep-amber timing.
 
 ## Phase 1 — Core loop slice (current)
 

@@ -63,6 +63,7 @@ namespace Wildgrove.Data
             ValidatePlanters(data, resourceIds, issues);
             ValidateRegions(data, resourceIds, issues);
             ValidateTinctures(data, resourceIds, issues);
+            ValidateDeepAmber(data, resourceIds, issues);
             ValidateExchange(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
@@ -846,6 +847,84 @@ namespace Wildgrove.Data
                 {
                     ValidateEffect($"Tincture '{tincture.Id}'", effect, data, resourceIds, issues);
                 }
+            }
+        }
+
+        private static void ValidateDeepAmber(GameData data, HashSet<string> resourceIds, List<string> issues)
+        {
+            var amber = data.DeepAmber;
+            if (amber == null)
+            {
+                // The window is optional content — absent is a coherent world.
+                return;
+            }
+
+            CheckIds(amber.Pieces.Select(p => p.Id), "deep amber piece", issues);
+
+            if (amber.Pieces.Count == 0)
+            {
+                issues.Add("Deep amber is configured with no pieces — a window onto nothing");
+            }
+
+            foreach (var piece in amber.Pieces)
+            {
+                if (string.IsNullOrWhiteSpace(piece.Name))
+                {
+                    issues.Add($"Deep amber piece '{piece.Id}' has no name");
+                }
+
+                // The pieces ARE the deep-past channel (§7) — a silent one is a
+                // hole the chase resolves into.
+                if (string.IsNullOrWhiteSpace(piece.Lore))
+                {
+                    issues.Add($"Deep amber piece '{piece.Id}' has no lore — the piece is the story");
+                }
+            }
+
+            if (amber.FindsPerHour <= 0 || amber.PityHoursWatched <= 0)
+            {
+                issues.Add("Deep amber findsPerHour and pityHoursWatched must both be positive — a zero rate with no pity can never surface a piece");
+            }
+
+            if (string.IsNullOrWhiteSpace(amber.PlateName) || string.IsNullOrWhiteSpace(amber.CompletedLore))
+            {
+                issues.Add("Deep amber needs a plateName and completedLore — the finished set is a plate in the journal");
+            }
+
+            if (amber.Effects == null || amber.Effects.Count == 0)
+            {
+                issues.Add("Deep amber has no completion effects — every plate is a multiplier as well as a chapter");
+            }
+            else
+            {
+                foreach (var effect in amber.Effects)
+                {
+                    ValidateEffect("Deep amber", effect, data, resourceIds, issues);
+                }
+            }
+
+            if (amber.Zone == null || !data.ZonesById.TryGetValue(amber.Zone, out var zone))
+            {
+                issues.Add($"Deep amber references unknown zone '{amber.Zone}'");
+                return;
+            }
+
+            if (!zone.DigSite)
+            {
+                issues.Add($"Deep amber zone '{amber.Zone}' has no observation site — nothing could ever surface a piece");
+            }
+
+            // Mirrors the verse-zone rule: only the starting zone and upgrade
+            // unlockZone effects actually open zones at runtime, so a window
+            // keyed anywhere else can never open.
+            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
+            unlockableZones.UnionWith(data.Upgrades
+                .SelectMany(u => u.Effects)
+                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
+                .Select(e => e.Zone));
+            if (!unlockableZones.Contains(amber.Zone))
+            {
+                issues.Add($"Deep amber zone '{amber.Zone}' is never unlockable — no upgrade grants it, so the deep past could never surface");
             }
         }
 

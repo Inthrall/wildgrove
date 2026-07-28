@@ -285,6 +285,69 @@ namespace Wildgrove.Game
 
             MakeText(card, "<i>nothing you sketch is ever taken — the creature is let go, and only these pages remain.</i>",
                 16, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            BuildDeepAmberEntries(card);
+        }
+
+        /// <summary>
+        /// The deep amber at the foot of the Deep Pages (design §6): the one
+        /// find the land lets the warden keep, surfaced piece by authored
+        /// piece at its own zone's watch site. Hidden until that site has been
+        /// walked this run — unless the carried journal already holds a piece,
+        /// because the record crosses every fold.
+        /// </summary>
+        private void BuildDeepAmberEntries(RectTransform card)
+        {
+            if (!Sim.DeepAmber.Configured(_loop.Data))
+            {
+                return;
+            }
+
+            var amber = _loop.Data.deepAmber;
+            var siteWalked = false;
+            foreach (var site in _loop.State.digSites)
+            {
+                if (site.zoneId == amber.zoneId)
+                {
+                    siteWalked = true;
+                    break;
+                }
+            }
+
+            if (!siteWalked && Sim.DeepAmber.FoundCount(_loop.State) == 0)
+            {
+                return;
+            }
+
+            var art = ArtLibrary.ForLine("deep-amber");
+            if (art != null)
+            {
+                PlateImage(card, art, 200f);
+            }
+
+            var title = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+            var body = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2, _serif);
+            _liveUpdaters.Add(() =>
+            {
+                var found = Sim.DeepAmber.FoundCount(_loop.State);
+                var complete = Sim.DeepAmber.IsComplete(_loop.State, _loop.Data);
+                title.text = amber.plateName + "  " + SizeOpen(15)
+                             + (complete
+                                 ? "<color=" + MossDeepHex + ">recorded — it outlives every Migration</color>"
+                                 : "<color=" + Ink2Hex + ">" + found + " of " + amber.pieces.Count + " surfaced</color>")
+                             + "</size>";
+
+                var lines = new List<string>();
+                foreach (var piece in Sim.DeepAmber.FoundPieces(_loop.State, _loop.Data))
+                {
+                    lines.Add("<b>" + piece.displayName + "</b> — <i>" + piece.lore + "</i>");
+                }
+
+                lines.Add(complete
+                    ? "<i>" + amber.completedLore + "</i>"
+                    : "<i>— the resin holds more —</i>");
+                body.text = string.Join("\n", lines);
+            });
         }
 
         private void BuildAlmanacCard()

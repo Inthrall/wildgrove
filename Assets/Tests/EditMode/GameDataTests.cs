@@ -27,8 +27,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(32),
-                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, and Mistfen's trail map landed with the zone's v1.1 companions (apothecary, observation site, waystone)");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(34),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), and the Hollows brought its map plus the deepsteel toolset");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -39,6 +39,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Planters, Is.Not.Empty, "design §3 defines the planters");
             Assert.That(data.Regions, Is.Not.Empty, "design §8 defines the region modifiers");
             Assert.That(data.Tinctures, Is.Not.Empty, "design §5 defines the Apothecary's tinctures");
+            Assert.That(data.DeepAmber, Is.Not.Null, "design §6 defines the deep amber window");
             Assert.That(data.Exchange, Is.Not.Null, "design §9 the Exchange spread");
             Assert.That(data.Dialogue.Waystones, Is.Not.Empty);
             Assert.That(data.Dialogue.Verses, Is.Not.Empty);
@@ -136,10 +137,38 @@ namespace Wildgrove.Data.Tests
                 Is.True, "and opens its observation site");
             Assert.That(data.SpeciesById["osier-otter"].Trait.Resources,
                 Is.EquivalentTo(new[] { "peat", "glow-moss" }), "the marsh's pair specialist");
-            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("mistfen-marsh"),
-                "the Rite grew a fifth verse with the zone");
             Assert.That(data.Tinctures.All(t => t.DurationSec > 0 && t.Effects.Count > 0), Is.True);
             Assert.That(data.Recipes.Any(r => r.Skill == "apothecary"), Is.True, "the brews are fire recipes");
+
+            // The Hollows (zone 6, v1.1) — bone beds stopped being a crop for
+            // the same reason fireflies did: the buried past is borrowed with
+            // the eyes only (§6). The third find is ashglass, the deep amber
+            // is the site's authored chase, and delving feeds the deepsteel tier.
+            Assert.That(data.ZonesById["the-hollows"].Resources,
+                Is.EquivalentTo(new[] { "deep-ores", "crystals", "ashglass" }));
+            Assert.That(data.Resources.Any(r => r.Id == "bone-beds"), Is.False,
+                "bone beds stopped being a gatherable — digging up the dead contradicts §6 outright");
+            Assert.That(data.ZonesById["the-hollows"].VerseSite, Is.EqualTo("the echo gallery"));
+            Assert.That(data.UpgradesById["map-hollows"].Effects.Any(e => e.Type == EffectType.UnlockSkill && e.Skill == "delving"),
+                Is.True, "the Hollows map teaches delving");
+            Assert.That(data.UpgradesById["map-hollows"].Effects.Any(e => e.Type == EffectType.UnlockDigSite && e.Zone == "the-hollows"),
+                Is.True, "and opens the deep watch site");
+            Assert.That(data.UpgradesById["deepsteel-toolset"].ToolTier, Is.EqualTo("deepsteel"),
+                "§5's tier past steel — deep ores gate it");
+            Assert.That(data.Economy.Tools.Tiers.Last(), Is.EqualTo("deepsteel"));
+            Assert.That(data.RecipesById["deep-ingot"].StationLevel, Is.EqualTo(3), "deep heat is forge 3");
+            Assert.That(data.SpeciesById["horseshoe-bat"].Trait.Resources,
+                Is.EquivalentTo(new[] { "deep-ores", "crystals" }), "the dark's pair specialist");
+            Assert.That(data.SpeciesById["ermine"].Trait.Resources,
+                Is.EquivalentTo(new[] { "ashglass", "glacier-ice" }), "the winter-walker pairs the burning's two residues");
+            Assert.That(data.InsectsById["quiet-court"].Rarity, Is.EqualTo(data.Insects.Min(i => i.Rarity)),
+                "the Hollows hosts the rarest plate");
+            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("the-hollows"),
+                "the Rite grew a sixth verse with the zone");
+            Assert.That(data.DeepAmber.Zone, Is.EqualTo("the-hollows"));
+            Assert.That(data.DeepAmber.Pieces, Has.Count.EqualTo(4), "the four authored deep-past pieces");
+            Assert.That(data.DeepAmber.Pieces.First().Id, Is.EqualTo("the-wing"), "the sequence is the story");
+            Assert.That(data.DeepAmber.Effects, Is.Not.Empty, "the finished set is a plate — a multiplier as well as a chapter");
         }
 
         [Test]
@@ -195,6 +224,50 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues, Has.Some.Contains("could never be brewed"));
+        }
+
+        [Test]
+        public void Validate_DeepAmberZoneWithoutASite_IsCaught()
+        {
+            var sources = LoadSources();
+            // sunfield-meadow has no observation site — a window keyed there
+            // could never surface a piece.
+            sources.AmbersJson = sources.AmbersJson.Replace(
+                "\"zone\": \"the-hollows\"",
+                "\"zone\": \"sunfield-meadow\"");
+            Assert.That(sources.AmbersJson, Does.Contain("sunfield-meadow"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("no observation site"));
+        }
+
+        [Test]
+        public void Validate_DeepAmberPieceWithoutLore_IsCaught()
+        {
+            var sources = LoadSources();
+            sources.AmbersJson = sources.AmbersJson.Replace(
+                "\"lore\": \"A wing in the resin, veined like nothing the trail knows. Whatever sky it flew, that sky has ended.\"",
+                "\"lore\": \"\"");
+            Assert.That(sources.AmbersJson, Does.Contain("\"lore\": \"\""), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("the piece is the story"));
+        }
+
+        [Test]
+        public void Validate_DeepAmberWithDeadRates_IsCaught()
+        {
+            var sources = LoadSources();
+            sources.AmbersJson = sources.AmbersJson.Replace(
+                "\"findsPerHour\": 0.05",
+                "\"findsPerHour\": 0");
+            Assert.That(sources.AmbersJson, Does.Contain("\"findsPerHour\": 0"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("can never surface a piece"));
         }
 
         [Test]
@@ -277,14 +350,16 @@ namespace Wildgrove.Data.Tests
         public void Validate_VerseZoneNoTrailMapOpens_IsReported()
         {
             var sources = LoadSources();
-            // the-hollows exists but is staged content — nothing unlocks it.
+            // highland-crags exists but is staged content — nothing unlocks it.
+            // (the-hollows held this role until its trail map landed.)
             sources.RitesJson = sources.RitesJson.Replace(
                 "\"zone\": \"silverrun-river\"",
-                "\"zone\": \"the-hollows\"");
+                "\"zone\": \"highland-crags\"");
+            Assert.That(sources.RitesJson, Does.Contain("highland-crags"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("the-hollows") && i.Contains("never unlockable")),
+            Assert.That(issues.Any(i => i.Contains("highland-crags") && i.Contains("never unlockable")),
                 Is.True, string.Join("\n", issues));
         }
 
@@ -804,11 +879,15 @@ namespace Wildgrove.Data.Tests
         public void Validate_RequiredToolNoUpgradeGrants_IsReported()
         {
             var sources = LoadSources();
-            // Strip the steel toolset's tier — the steel-gated zones become
-            // unenterable forever.
-            sources.UpgradesJson = sources.UpgradesJson.Replace(
-                "\"toolTier\": \"steel\",",
-                "");
+            // Strip the steel AND deepsteel toolsets' tiers — the highest
+            // grantable tier falls below steel and the steel-gated zones
+            // become unenterable forever. (Stripping steel alone stopped
+            // proving anything once the deepsteel toolset out-ranked it.)
+            sources.UpgradesJson = sources.UpgradesJson
+                .Replace("\"toolTier\": \"steel\",", "")
+                .Replace("\"toolTier\": \"deepsteel\",", "");
+            Assert.That(sources.UpgradesJson, Does.Not.Contain("steel\","),
+                "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -920,8 +999,12 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.5d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
-            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(5), "one verse per zone through Mistfen");
+            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(6), "one verse per zone through the Hollows");
             Assert.That(asset.dialogue.verses.Single(v => v.key == "sunfield-meadow").text, Is.Not.Empty);
+            Assert.That(asset.deepAmber.zoneId, Is.EqualTo("the-hollows"));
+            Assert.That(asset.deepAmber.pieces, Has.Count.EqualTo(data.DeepAmber.Pieces.Count));
+            Assert.That(asset.deepAmber.pieces.First().lore, Is.Not.Empty);
+            Assert.That(asset.deepAmber.effects, Is.Not.Empty);
         }
 
         [Test]

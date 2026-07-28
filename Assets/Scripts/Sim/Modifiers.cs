@@ -82,7 +82,8 @@ namespace Wildgrove.Sim
                    + state.gearBySlot.Count * 1000_000_000L
                    + buildingLevels * 1000_000_000_000L
                    + sketches * 1000_000_000_000_000L
-                   + state.activeTinctures.Count * 100_000_000_000_000_000L;
+                   + state.activeTinctures.Count * 100_000_000_000_000_000L
+                   + state.deepAmberFound * 1000_000_000_000_000_000L;
         }
 
         private static ModifierSnapshot Build(GameState state, GameDataAsset data)

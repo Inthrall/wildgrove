@@ -44,7 +44,7 @@ namespace Wildgrove.Game
             { "glow-moss", Plates + "Resources/res-lichen" },
             { "deep-ores", Plates + "Resources/res-deep-ores" },
             { "crystals", Plates + "Resources/res-crystals" },
-            { "bone-beds", Plates + "Resources/res-bone" },
+            { "ashglass", Plates + "Resources/res-amber" },
             { "eggs", Plates + "Resources/res-eggs" },
             { "wool", Plates + "Resources/res-wool" },
             { "lichen", Plates + "Resources/res-lichen" },
@@ -151,6 +151,7 @@ namespace Wildgrove.Game
             { "planter", Plates + "Goods/goods-trellis" },
             { "seedling", Plates + "Goods/goods-seedling" },
             { "tools", Plates + "Goods/goods-tools" },
+            { "deep-amber", Plates + "Resources/res-amber" },
         };
 
         // journal furniture — chrome, keyed by a plain name

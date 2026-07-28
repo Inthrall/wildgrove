@@ -302,6 +302,43 @@ namespace Wildgrove.Data
     }
 
     /// <summary>
+    /// The deep amber (design §6/§7): authored pieces surfaced in order at one
+    /// zone's observation site (DeepAmber.cs). The completed set is a plate —
+    /// its effects join the active-effect union and survive Migration.
+    /// </summary>
+    [Serializable]
+    public sealed class DeepAmberData
+    {
+        /// <summary>The zone whose observation site surfaces the pieces.</summary>
+        public string zoneId;
+
+        /// <summary>Piece find rate per watcher-hour, before digSpeedMult modifiers.</summary>
+        public double findsPerHour;
+
+        /// <summary>Watched hours without a piece that guarantee the next one.</summary>
+        public double pityHoursWatched;
+
+        public string plateName;
+
+        /// <summary>The finished plate's field note.</summary>
+        public string completedLore;
+
+        public List<EffectData> effects = new List<EffectData>();
+
+        /// <summary>The pieces, in the order they surface.</summary>
+        public List<AmberPieceData> pieces = new List<AmberPieceData>();
+    }
+
+    /// <summary>One authored piece of the deep amber and its lore line.</summary>
+    [Serializable]
+    public sealed class AmberPieceData
+    {
+        public string id;
+        public string displayName;
+        public string lore;
+    }
+
+    /// <summary>
     /// A region modifier (design §8): the flavour a run-2+ region arrives
     /// with, drawn deterministically from the migration count (Regions.cs).
     /// Its effects join the run's active-effect union for the whole run.

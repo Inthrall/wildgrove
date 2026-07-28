@@ -421,6 +421,13 @@ namespace Wildgrove.Sim
                 yield return effect;
             }
 
+            // The completed deep amber plate (design §6) — permanent like the
+            // insect plates it sits beside in the journal.
+            foreach (var effect in DeepAmber.CompletedEffects(state, data))
+            {
+                yield return effect;
+            }
+
             foreach (var effect in Folio.CompletedSpreadEffects(state, data))
             {
                 yield return effect;

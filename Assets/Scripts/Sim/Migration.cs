@@ -171,6 +171,10 @@ namespace Wildgrove.Sim
                 next.insectSketches[pair.Key] = pair.Value;
             }
 
+            // The deep amber crosses too — journal content, like the plates.
+            // (The pity clock doesn't: a fresh run starts a fresh watch.)
+            next.deepAmberFound = state.deepAmberFound;
+
             // "You keep … the Compendium" — the lifetime record crosses whole.
             foreach (var pair in state.lifetimeGathered)
             {

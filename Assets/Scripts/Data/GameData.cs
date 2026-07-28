@@ -29,6 +29,7 @@ namespace Wildgrove.Data
         public string PlantersJson { get; set; }
         public string RegionsJson { get; set; }
         public string TincturesJson { get; set; }
+        public string AmbersJson { get; set; }
     }
 
     /// <summary>
@@ -65,6 +66,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<PlanterDef> Planters { get; private set; }
         public IReadOnlyList<RegionDef> Regions { get; private set; }
         public IReadOnlyList<TinctureDef> Tinctures { get; private set; }
+        public DeepAmberDef DeepAmber { get; private set; }
         public ExchangeConfig Exchange { get; private set; }
         public DialogueData Dialogue { get; private set; }
 
@@ -107,6 +109,7 @@ namespace Wildgrove.Data
                 Planters = JsonConvert.DeserializeObject<PlantersFile>(sources.PlantersJson, settings).Planters,
                 Regions = JsonConvert.DeserializeObject<RegionsFile>(sources.RegionsJson, settings).Regions,
                 Tinctures = JsonConvert.DeserializeObject<TincturesFile>(sources.TincturesJson, settings).Tinctures,
+                DeepAmber = JsonConvert.DeserializeObject<AmbersFile>(sources.AmbersJson, settings).DeepAmber,
                 Exchange = JsonConvert.DeserializeObject<ExchangeConfig>(sources.ExchangeJson, settings),
                 Dialogue = JsonConvert.DeserializeObject<DialogueData>(sources.DialogueJson, settings)
             };
@@ -142,7 +145,8 @@ namespace Wildgrove.Data
                 DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json")),
                 PlantersJson = File.ReadAllText(Path.Combine(directory, "planters.json")),
                 RegionsJson = File.ReadAllText(Path.Combine(directory, "regions.json")),
-                TincturesJson = File.ReadAllText(Path.Combine(directory, "tinctures.json"))
+                TincturesJson = File.ReadAllText(Path.Combine(directory, "tinctures.json")),
+                AmbersJson = File.ReadAllText(Path.Combine(directory, "ambers.json"))
             };
         }
 
@@ -156,7 +160,7 @@ namespace Wildgrove.Data
             var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.InsectsJson, sources.RitesJson,
                 sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson,
-                sources.PlantersJson, sources.RegionsJson, sources.TincturesJson);
+                sources.PlantersJson, sources.RegionsJson, sources.TincturesJson, sources.AmbersJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -276,6 +280,11 @@ namespace Wildgrove.Data
         private sealed class TincturesFile
         {
             public List<TinctureDef> Tinctures { get; set; }
+        }
+
+        private sealed class AmbersFile
+        {
+            public DeepAmberDef DeepAmber { get; set; }
         }
 
         private sealed class FolioFile

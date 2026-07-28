@@ -23,6 +23,7 @@ namespace Wildgrove.Data
             asset.planters = data.Planters.Select(MapPlanter).ToList();
             asset.regions = data.Regions.Select(MapRegion).ToList();
             asset.tinctures = data.Tinctures.Select(MapTincture).ToList();
+            asset.deepAmber = MapDeepAmber(data.DeepAmber);
             asset.exchange = data.Exchange == null ? null : new ExchangeData
             {
                 spread = data.Exchange.Spread
@@ -177,6 +178,25 @@ namespace Wildgrove.Data
                 description = t.Description,
                 durationSec = t.DurationSec,
                 effects = t.Effects.Select(MapEffect).ToList()
+            };
+        }
+
+        private static DeepAmberData MapDeepAmber(DeepAmberDef d)
+        {
+            return d == null ? null : new DeepAmberData
+            {
+                zoneId = d.Zone,
+                findsPerHour = d.FindsPerHour,
+                pityHoursWatched = d.PityHoursWatched,
+                plateName = d.PlateName,
+                completedLore = d.CompletedLore,
+                effects = d.Effects.Select(MapEffect).ToList(),
+                pieces = d.Pieces.Select(p => new AmberPieceData
+                {
+                    id = p.Id,
+                    displayName = p.Name,
+                    lore = p.Lore
+                }).ToList()
             };
         }
 

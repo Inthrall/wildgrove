@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 758a6dbc68797ac9953c0b0f16d8b467dbb05c56f0f361cf891eb565761070c0
+  sourceHash: 3394e0fc7f089ccfad1f41f329f6cfe3e48814c4ff835d4821ab926eaff22821
   economy:
     costGrowth:
       building: 1.25
@@ -44,6 +44,7 @@ MonoBehaviour:
       - bronze
       - iron
       - steel
+      - deepsteel
     mastery:
       yieldBonusPerLevel: 0.05
       baseXp: 50
@@ -165,7 +166,7 @@ MonoBehaviour:
   - id: crystals
     sellValue: 120
     skill: delving
-  - id: bone-beds
+  - id: ashglass
     sellValue: 80
     skill: delving
   - id: eggs
@@ -264,12 +265,12 @@ MonoBehaviour:
     resources:
     - deep-ores
     - crystals
-    - bone-beds
+    - ashglass
     unlocks:
     - delving
     keystone: echo-geode
     digSite: 1
-    verseSite: 
+    verseSite: the echo gallery
     requiredTool: steel
     scope: v1.1
   - id: highland-crags
@@ -987,6 +988,67 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 0
+  - order: 33
+    id: map-hollows
+    displayName: 'Trail Map: The Hollows'
+    track: trail
+    toolTier: 
+    gateSkill: 
+    gateLevel: 0
+    materials:
+    - id: glow-moss
+      amount: 150
+    - id: smoked-trout
+      amount: 30
+    - id: iron-ingot
+      amount: 10
+    effects:
+    - type: 14
+      skill: 
+      zone: the-hollows
+      resource: 
+      recipe: 
+      species: 
+      value: 0
+    - type: 15
+      skill: delving
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0
+    - type: 17
+      skill: 
+      zone: the-hollows
+      resource: 
+      recipe: 
+      species: 
+      value: 0
+    - type: 16
+      skill: 
+      zone: 
+      resource: 
+      recipe: deep-ingot
+      species: 
+      value: 0
+  - order: 34
+    id: deepsteel-toolset
+    displayName: Deepsteel Toolset
+    track: tools
+    toolTier: deepsteel
+    gateSkill: forgecraft
+    gateLevel: 40
+    materials:
+    - id: deep-ingot
+      amount: 10
+    effects:
+    - type: 0
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 2
   recipes:
   - id: berry-preserve
     station: fire
@@ -1130,6 +1192,20 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 2
     skillLevel: 5
+  - id: deep-ingot
+    station: forge
+    skill: forgecraft
+    inputs:
+    - id: deep-ores
+      amount: 4
+    - id: charcoal
+      amount: 3
+    output: deep-ingot
+    valueMult: 6
+    kind: material
+    defaultKnown: 0
+    stationLevel: 3
+    skillLevel: 8
   - id: wardens-tonic
     station: fire
     skill: apothecary
@@ -1387,6 +1463,20 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 1.2
+  - id: quiet-court
+    displayName: The Quiet Court
+    sketches: 5
+    habitats:
+    - the-hollows
+    rarity: 0.2
+    effects:
+    - type: 1
+      skill: delving
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.25
   almanac:
   - id: old-songs-i
     displayName: Old Songs I
@@ -1614,7 +1704,7 @@ MonoBehaviour:
     entries:
     - deep-ores
     - crystals
-    - bone-beds
+    - ashglass
     effects:
     - type: 5
       skill: 
@@ -1856,6 +1946,48 @@ MonoBehaviour:
     - Works the wet margins as if the water owed him.
     - Brought the moss up glowing and dry. I no longer ask how.
     - The fen holds its breath around him. He has never once noticed.
+  - id: horseshoe-bat
+    displayName: Horseshoe bat
+    roleLean: gatherer
+    suggestedNames:
+    - Vesper
+    - Bell
+    - Dusk
+    - Flit
+    - Ping
+    trait:
+      displayName: Dark-delver
+      description: +40% yield at deep ore and crystal nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - deep-ores
+      - crystals
+    inscriptions:
+    - Hangs over the lamp while I work. I have decided this is company.
+    - Found the seam by singing at it. The stone sang back.
+    - The dark is her country and she its keeper. Nothing below moves unannounced.
+  - id: ermine
+    displayName: Ermine
+    roleLean: gatherer
+    suggestedNames:
+    - Drift
+    - Pale
+    - Frost
+    - Silk
+    - Winter
+    trait:
+      displayName: Winter-walker
+      description: +40% yield at ashglass and glacier ice nodes
+      kind: nodeYieldBonus
+      value: 0.4
+      resources:
+      - ashglass
+      - glacier-ice
+    inscriptions:
+    - White as the glass he digs. The ash does not stick to him.
+    - Circled the pit all night. No other track comes near it.
+    - He wears the old winter like it was fitted. Perhaps it was.
   - id: pack-raven
     displayName: Pack raven
     roleLean: carrier
@@ -2014,6 +2146,39 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 1.5
+  deepAmber:
+    zoneId: the-hollows
+    findsPerHour: 0.05
+    pityHoursWatched: 12
+    plateName: The Deep Amber
+    completedLore: "An insect no one living has seen, held in resin. The world it
+      flew through has ended. It is in the book now \u2014 the one thing the land
+      let me keep."
+    effects:
+    - type: 1
+      skill: all
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.25
+    pieces:
+    - id: the-wing
+      displayName: The Wing
+      lore: A wing in the resin, veined like nothing the trail knows. Whatever sky
+        it flew, that sky has ended.
+    - id: the-seed
+      displayName: The Seed
+      lore: A seed, held mid-fall. Something planted in rows once, and widely. The
+        rows are under the meadow.
+    - id: the-ash
+      displayName: The Ash
+      lore: Ash caught through the amber like a held breath. The tree wept this the
+        year the sky went dark, and kept weeping.
+    - id: the-mark
+      displayName: The Maker's Mark
+      lore: A cut face, too straight for teeth. Someone worked this resin before
+        it set. Their hands would have fit my gloves.
   exchange:
     spread: 0.15
   rites:
@@ -2228,6 +2393,47 @@ MonoBehaviour:
           count: 1
           quality: pristine
           renownGrant: 2500
+      - id: verse-hollows
+        zone: the-hollows
+        spotlight:
+        - delving
+        - forgecraft
+        slots:
+        - type: 0
+          resource: deep-ores
+          amount: 400
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: crystals
+          amount: 150
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: ashglass
+          amount: 250
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: deep-ingot
+          amount: 6
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 10000
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: pristine
+          renownGrant: 4000
   dialogue:
     waystones:
     - key: sunfield-meadow
@@ -2240,6 +2446,8 @@ MonoBehaviour:
       text: The river keeps no ledger. Count what you take, for it will not.
     - key: mistfen-marsh
       text: The fen remembers every weight it has carried. Step lightly; it is counting.
+    - key: the-hollows
+      text: The dark below was not always empty. Leave it the quiet it paid for.
     verses:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.
@@ -2255,6 +2463,9 @@ MonoBehaviour:
     - key: mistfen-marsh
       text: Brew what the still water grew, and pour a little back where the lights
         gather.
+    - key: the-hollows
+      text: "Ore made bright, and the glass the burning left \u2014 carry the deep's
+        own wealth back down."
     provisioner:
     - id: prov-01
       trigger: first-visit
@@ -2282,3 +2493,7 @@ MonoBehaviour:
       text: They light the drowned paths every night, for no one. I was never the
         reason, and I may still be grateful. Four evenings of drawing, and not one
         lantern paused for me.
+    - key: quiet-court
+      text: They sing in galleries no light has ever reached, to no audience at all.
+        Five evenings by lamplight, drawing what has never been seen. They did not
+        stop singing once.

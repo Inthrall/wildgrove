@@ -1142,13 +1142,24 @@ namespace Wildgrove.Game
 
         private void FlushAmberFindTelemetry()
         {
-            if (State == null || State.amberFoundUnlogged <= 0.0)
+            if (State == null)
             {
                 return;
             }
 
-            Telemetry.LogEvent("amber_found", ("amount", State.amberFoundUnlogged));
-            State.amberFoundUnlogged = 0.0;
+            if (State.amberFoundUnlogged > 0.0)
+            {
+                Telemetry.LogEvent("amber_found", ("amount", State.amberFoundUnlogged));
+                State.amberFoundUnlogged = 0.0;
+            }
+
+            if (State.deepAmberFoundUnlogged > 0)
+            {
+                Telemetry.LogEvent("deep_amber_found",
+                    ("pieces", State.deepAmberFoundUnlogged),
+                    ("total_found", State.deepAmberFound));
+                State.deepAmberFoundUnlogged = 0;
+            }
         }
 
         /// <summary>True when offering into this slot could land something now — the verse is open and the camp holds what it asks (the HUD's button gate).</summary>
