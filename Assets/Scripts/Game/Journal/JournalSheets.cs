@@ -935,6 +935,31 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// TEMP: a plain modal that lists diagnostic lines with a single dismiss
+        /// button — surfaces Play Games sign-in, leaderboard and Snapshot status
+        /// on device while we chase the sign-in that stops answering. Remove
+        /// with the <see cref="Diag"/> sink.
+        /// </summary>
+        internal void OpenInfoSheet(string title, IReadOnlyList<string> lines)
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, title, 32, TextAnchor.UpperCenter, Ink, _serif);
+            if (lines == null || lines.Count == 0)
+            {
+                MakeText(sheet, "no lines recorded", 20, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
+            else
+            {
+                foreach (var line in lines)
+                {
+                    MakeText(sheet, line, 20, TextAnchor.MiddleCenter, Ink2, _serif);
+                }
+            }
+
+            Button(sheet, "OK", 320, CloseSheet);
+        }
+
+        /// <summary>
         /// A modal yes/no confirmation — a title, a body line, and a paired
         /// "never mind" / go-ahead choice styled like the Fold sheet's Migrate.
         /// The confirmed action runs after the sheet closes, so it may open a

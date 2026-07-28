@@ -257,6 +257,7 @@ namespace Wildgrove.Game
                 // the next unread waystone — a quarter-second delay to raise a
                 // sheet is imperceptible and keeps that scan off the hot path.
                 _sheets.PumpSheets();
+                MaybeShowStartupDiagnostics(); // TEMP diagnostics popup
                 RefreshChrome(); // cadence, not per-frame — avoids string allocs every frame
                 var signature = StructureSignature();
                 if (_dirty || signature != _structureSignature)
@@ -271,6 +272,60 @@ namespace Wildgrove.Game
                     _liveUpdaters[i]();
                 }
             }
+        }
+
+        // TEMP diagnostics: one-shot Play Games status popup (sign-in +
+        // achievement, leaderboard and Snapshot outcomes). Remove with the Diag
+        // sink.
+        private const float DiagSettleSeconds = 1.5f;
+        private const float DiagTimeoutSeconds = 10f;
+        private bool _diagShown;
+        private float _diagElapsed;
+
+        private void MaybeShowStartupDiagnostics()
+        {
+            if (_diagShown)
+            {
+                return;
+            }
+
+            _diagElapsed += RefreshInterval;
+
+            // Sign-in resolving is the normal cue, with a settle delay so the
+            // async achievement report lands in the lines first. The timeout
+            // exists because a popup that only appears on success can't report
+            // the failure we're hunting: if Play Games never calls back, the
+            // sheet must still open and say so.
+            var timedOut = _diagElapsed >= DiagTimeoutSeconds;
+            if (!timedOut && (!Diag.Ready || _diagElapsed < DiagSettleSeconds))
+            {
+                return;
+            }
+
+            if (_sheet != null)
+            {
+                return;
+            }
+
+            if (!Diag.Ready)
+            {
+                Diag.Log("Sign-in: NO RESPONSE after " + Mathf.RoundToInt(DiagTimeoutSeconds)
+                    + "s — the Play Games callback never returned");
+            }
+
+            _diagShown = true;
+            _sheets.OpenInfoSheet("Play Games status", Diag.Snapshot());
+        }
+
+        /// <summary>
+        /// TEMP diagnostics: reopen the status sheet on demand. The launch popup
+        /// cannot catch a sign-in the player asks for by tapping a button
+        /// minutes later, which is the failure now under test — so the Standing
+        /// card can call for the lines again after a tap. Remove with the sink.
+        /// </summary>
+        internal void ShowDiagnostics()
+        {
+            _sheets.OpenInfoSheet("Play Games status", Diag.Snapshot());
         }
 
         /// <summary>

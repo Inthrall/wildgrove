@@ -14,6 +14,12 @@ namespace Wildgrove.Game.Services
     /// Android-only — GPGS's <c>PlayGamesPlatform</c> is itself compiled under
     /// <c>UNITY_ANDROID</c>, so this file is guarded to match (the editor and any
     /// non-Android target use <see cref="StubGameServices"/>, selected in GameLoop).
+    ///
+    /// Every async call reports its outcome into <see cref="Diag"/> as well as
+    /// logcat. That is deliberate and TEMP: the failures this wiring keeps
+    /// hitting are silent ones — a callback that never returns, or a status code
+    /// that is thrown away at the call site — and neither is visible on a device
+    /// running a store build. Retire the Diag lines with the sink itself.
     /// </summary>
     public sealed class PlayGamesServices : IGameServices
     {
@@ -23,14 +29,36 @@ namespace Wildgrove.Game.Services
 
         public void SignIn(Action<bool> onComplete = null)
         {
-            PlayGamesPlatform.DebugLogEnabled = Debug.isDebugBuild; // GPGS's own trace into logcat
+            // On unconditionally, not just in debug builds. Minified release
+            // builds are the only place the sign-in hang has ever reproduced, so
+            // gating GPGS's own trace behind Debug.isDebugBuild turned it off in
+            // exactly the build that needed reading.
+            PlayGamesPlatform.DebugLogEnabled = true;
+
+            // Instance construction is a distinct failure stage: the getter
+            // builds AndroidClient, which calls PlayGamesSdk.initialize over
+            // JNI. Naming the stage separates "the SDK isn't in the APK" from
+            // "the SDK is there and the auth task never finished".
+            PlayGamesPlatform platform;
+            try
+            {
+                platform = PlayGamesPlatform.Instance;
+            }
+            catch (Exception e)
+            {
+                Report("Sign-in: FAILED building the platform — " + e.GetType().Name + ": " + e.Message);
+                onComplete?.Invoke(false);
+                return;
+            }
+
+            Diag.Log("Sign-in: requested (silent)");
 
             try
             {
-                PlayGamesPlatform.Instance.Authenticate(status =>
+                platform.Authenticate(status =>
                 {
                     IsSignedIn = status == SignInStatus.Success;
-                    Debug.Log("[play-games] sign-in: " + status);
+                    Report("Sign-in: " + status);
                     onComplete?.Invoke(IsSignedIn);
                 });
             }
@@ -42,7 +70,7 @@ namespace Wildgrove.Game.Services
                 // the throw happens here, no listener is ever attached, and
                 // sign-in hangs forever with nothing logged — so say it out loud
                 // and resolve the callback as a failure rather than never.
-                Debug.LogWarning("[play-games] sign-in threw: " + e.GetType().Name + " — " + e.Message);
+                Report("Sign-in: THREW — " + e.GetType().Name + ": " + e.Message);
                 onComplete?.Invoke(false);
             }
         }
@@ -55,6 +83,8 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
+            Diag.Log("Manual sign-in: requested");
+
             try
             {
                 // ManuallyAuthenticate, not Authenticate: after the launch-time
@@ -63,7 +93,7 @@ namespace Wildgrove.Game.Services
                 PlayGamesPlatform.Instance.ManuallyAuthenticate(status =>
                 {
                     IsSignedIn = status == SignInStatus.Success;
-                    Debug.Log("[play-games] manual sign-in: " + status);
+                    Report("Manual sign-in: " + status);
                     onComplete?.Invoke(IsSignedIn);
                 });
             }
@@ -71,7 +101,7 @@ namespace Wildgrove.Game.Services
             {
                 // Same AndroidJavaProxy/R8 trap as SignIn — resolve as a
                 // failure rather than leaving the caller waiting forever.
-                Debug.LogWarning("[play-games] manual sign-in threw: " + e.GetType().Name + " — " + e.Message);
+                Report("Manual sign-in: THREW — " + e.GetType().Name + ": " + e.Message);
                 onComplete?.Invoke(false);
             }
         }
@@ -80,6 +110,7 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn || string.IsNullOrEmpty(achievementId))
             {
+                Diag.Log("Achievement " + achievementId + ": skipped (signed out)");
                 return;
             }
 
@@ -87,27 +118,36 @@ namespace Wildgrove.Game.Services
             // one Play silently rejects (achievement still in draft, or the
             // account isn't on the testers list).
             PlayGamesPlatform.Instance.ReportProgress(achievementId, 100.0,
-                success => Debug.Log("[play-games] achievement " + achievementId
-                    + (success ? ": reported OK" : ": report FAILED")));
+                success => Report("Achievement " + achievementId + (success ? ": reported OK" : ": report FAILED")));
         }
 
         public void SubmitScore(string leaderboardId, long score)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
+                // Deliberately silent: this rides the autosave cadence (~30 s),
+                // so logging the signed-out skip would roll the sign-in lines
+                // straight out of the buffer — losing the very thing being read.
                 return;
             }
 
-            PlayGamesPlatform.Instance.ReportScore(score, leaderboardId, _ => { });
+            // The outcome used to be discarded, which made "the board is empty"
+            // impossible to tell apart from "the submit was rejected" — the same
+            // blind spot the achievement report had before it started reporting.
+            PlayGamesPlatform.Instance.ReportScore(score, leaderboardId,
+                success => Report("Leaderboard " + leaderboardId + " score " + score
+                    + (success ? ": accepted" : ": REJECTED")));
         }
 
         public void ShowLeaderboard(string leaderboardId)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))
             {
+                Diag.Log("Leaderboard " + leaderboardId + ": overlay skipped (signed out)");
                 return;
             }
 
+            Diag.Log("Leaderboard " + leaderboardId + ": opening overlay");
             PlayGamesPlatform.Instance.ShowLeaderboardUI(leaderboardId);
         }
 
@@ -115,21 +155,26 @@ namespace Wildgrove.Game.Services
         {
             if (!IsSignedIn)
             {
+                Diag.Log("Cloud load: skipped (signed out)");
                 onLoaded?.Invoke(null);
                 return;
             }
 
+            Diag.Log("Cloud load: opening snapshot");
             OpenSnapshot((status, game) =>
             {
                 if (status != SavedGameRequestStatus.Success || game == null)
                 {
+                    Report("Cloud load: open FAILED — " + status);
                     onLoaded?.Invoke(null);
                     return;
                 }
 
                 PlayGamesPlatform.Instance.SavedGame.ReadBinaryData(game, (readStatus, bytes) =>
                 {
-                    onLoaded?.Invoke(readStatus == SavedGameRequestStatus.Success && bytes != null && bytes.Length > 0
+                    var length = bytes == null ? 0 : bytes.Length;
+                    Report("Cloud load: read " + readStatus + ", " + length + " bytes");
+                    onLoaded?.Invoke(readStatus == SavedGameRequestStatus.Success && length > 0
                         ? Encoding.UTF8.GetString(bytes)
                         : null);
                 });
@@ -148,6 +193,7 @@ namespace Wildgrove.Game.Services
             {
                 if (status != SavedGameRequestStatus.Success || game == null)
                 {
+                    Report("Cloud save: open FAILED — " + status);
                     onComplete?.Invoke();
                     return;
                 }
@@ -160,7 +206,11 @@ namespace Wildgrove.Game.Services
                 var update = new SavedGameMetadataUpdate.Builder()
                     .WithUpdatedPlayedTime(TimeSpan.FromMilliseconds(playedMs))
                     .Build();
-                PlayGamesPlatform.Instance.SavedGame.CommitUpdate(game, update, bytes, (_, __) => onComplete?.Invoke());
+                PlayGamesPlatform.Instance.SavedGame.CommitUpdate(game, update, bytes, (commitStatus, __) =>
+                {
+                    Report("Cloud save: commit " + commitStatus + ", " + bytes.Length + " bytes");
+                    onComplete?.Invoke();
+                });
             });
         }
 
@@ -171,6 +221,16 @@ namespace Wildgrove.Game.Services
                 DataSource.ReadCacheOrNetwork,
                 ConflictResolutionStrategy.UseLongestPlaytime,
                 callback);
+        }
+
+        /// <summary>
+        /// Mirror an outcome to both sinks — logcat for a tethered device, the
+        /// Diag buffer for a phone with no cable. TEMP, with the sink.
+        /// </summary>
+        private static void Report(string line)
+        {
+            Debug.Log("[play-games] " + line);
+            Diag.Log(line);
         }
     }
 }

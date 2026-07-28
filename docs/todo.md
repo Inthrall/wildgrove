@@ -402,23 +402,44 @@ Interpretations shipped (tune/confirm):
   frame ms) is gated behind `Debug.isDebugBuild` in `Bootstrap` — visible in the
   editor and development builds, stripped from release/store builds. Flip a
   development build on when tuning performance on-device.
-- **The Play Games diagnostics popup is TEMP, and now fails loudly.** `Diag` +
-  `GameHud.MaybeShowStartupDiagnostics` open a one-shot "Play Games status" sheet
-  at launch. It used to require sign-in to resolve first, so a Play Games callback
-  that never returned showed nothing at all — exactly the case being hunted
-  (2026-07-27: no sheet appeared on device). It now opens after a 10 s timeout
-  regardless and says the callback never came back, and the lines are stamped with
-  `Application.version` and which `IGameServices` was selected. Rip the whole sink
-  out once the "First kith" unlock is confirmed working.
-  **What it caught (v0.1.62, 2026-07-27):** `PlayGamesServices` selected, sign-in
-  requested, and the `Authenticate` callback never returned — so the achievement
-  never had a signed-in session to report into. Not the Testers list. Prime
-  suspect is R8: GPGS attaches its result listeners as `AndroidJavaProxy` over
-  the `com.google.android.gms.tasks.On*Listener` interface *names*, which had no
-  keep rule (same trap as the billing `PurchasesUpdatedListener` crash) — rules
-  added. `SignIn` now also catches and reports a JNI throw instead of hanging,
-  and GPGS's own debug log is on, so the next build distinguishes "the proxy
-  couldn't be built" from "the native task never completed".
+- **The Play Games diagnostics sink is TEMP, and is back for a second pass
+  (2026-07-28).** `Diag` + `GameHud.MaybeShowStartupDiagnostics` open a "Play
+  Games status" sheet at launch — after sign-in resolves, or after a 10 s timeout
+  saying the callback never came back. Lines are stamped with seconds since
+  launch, `Application.version`, and which `IGameServices` was selected. Rip the
+  whole sink out once sign-in, the Renown board and cloud Snapshots are all
+  confirmed on device.
+  **Retiring it the first time was the mistake to learn from.** It came out in
+  the same commit as the R8 `gms.tasks` keeps that were meant to fix the hang —
+  fix and instrument removed together — so when sign-in stopped answering again
+  there was nothing left to read it with. Don't retire this one until all three
+  paths are green.
+  **What changed this pass:** the sink is no longer startup-only. The failing
+  path now is *interactive* sign-in (the Standing card's button, added
+  2026-07-27), which a launch popup can never catch — so the Standing card has a
+  "Play Games status · Show" row that reopens the sheet on demand, and the buffer
+  keeps accepting lines all session. Every discarded status code is now recorded:
+  `SubmitScore` used to throw its success flag away (`_ => { }`), and
+  `LoadCloud`/`SaveCloud` swallowed their `SavedGameRequestStatus`, so "the board
+  is empty" and "the submit was rejected" were indistinguishable. Platform
+  construction is reported as its own stage, separating "the GPGS SDK isn't in
+  the APK" from "the native task never completed". `PlayGamesPlatform.DebugLogEnabled`
+  is now **unconditional** — it was gated behind `Debug.isDebugBuild`, which
+  turned GPGS's own trace off in minified release builds, the only place the hang
+  has ever reproduced.
+  **History:** v0.1.62 (2026-07-27) caught `PlayGamesServices` selected, sign-in
+  requested, and the `Authenticate` callback never returning. R8 was the prime
+  suspect — GPGS attaches its result listeners as `AndroidJavaProxy` over the
+  `com.google.android.gms.tasks.On*Listener` interface *names*, which had no keep
+  rule (same trap as the billing `PurchasesUpdatedListener` crash). Keeps were
+  added and the "First kith" unlock was confirmed working on device, which is why
+  the sink was retired. It has since regressed to the same symptom (no Play Games
+  UI, no callback) on the interactive path. Note what has *not* been ruled out:
+  the silent launch-time path may still work — `Authenticate` calls
+  `isAuthenticated` and shows no UI by design, while only `ManuallyAuthenticate`
+  calls `signIn`. The keeps are verified present and the sweep is clean, so the
+  next suspects are the interactive path itself and the Unity 6.5 move (new
+  AGP/R8), not the tasks keeps.
 - **Android target SDK is pinned to API 36 (2026-07-27).** Was
   `AndroidApiLevelAuto`, which follows whatever platform the installed Android
   module ships — an editor or module update could move a release's target

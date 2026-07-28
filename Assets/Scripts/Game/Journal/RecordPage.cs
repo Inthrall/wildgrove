@@ -78,6 +78,15 @@ namespace Wildgrove.Game
                       + ">Play Games isn't signed in</color></size>";
                 SetButtonLabel(view, signedIn ? "View" : "Sign in");
             });
+
+            // TEMP diagnostics: the sign-in that stops answering is the one this
+            // card asks for, and the launch popup has long since been dismissed
+            // by the time you tap it — so keep the status lines one tap away
+            // from the button under test. Remove with the Diag sink.
+            var diagRow = Row(card);
+            var diagLabel = MakeText(diagRow.transform, "Play Games status", 15, TextAnchor.MiddleLeft, Ink2);
+            FlexibleWidth(diagLabel.gameObject, 1f);
+            Button(diagRow.transform, "Show", 160, _hud.ShowDiagnostics);
         }
 
         private void BuildCompendiumCard()
