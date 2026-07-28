@@ -214,6 +214,11 @@ namespace Wildgrove.Game
                 return "wandering";
             }
 
+            if (stationId == Familiar.PonyStation)
+            {
+                return "her own lane";
+            }
+
             foreach (var node in _loop.State.nodes)
             {
                 if (node.id == stationId)

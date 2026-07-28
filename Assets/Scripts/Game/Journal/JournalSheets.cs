@@ -668,7 +668,11 @@ namespace Wildgrove.Game
             var ordered = new List<Familiar>();
             foreach (var familiar in state.roster)
             {
-                if (!PostMatches(familiar.stationId, stationId))
+                // The pony is never offered anywhere (§11): she walks her own
+                // lane and cannot be posted, so listing her would only be a row
+                // that refuses. This covers every post — nodes, the trail and
+                // the wander post all open this sheet.
+                if (!PostMatches(familiar.stationId, stationId) && !familiar.IsPony)
                 {
                     ordered.Add(familiar);
                 }
@@ -747,8 +751,9 @@ namespace Wildgrove.Game
             var headingLayout = heading.GetComponent<HorizontalLayoutGroup>();
             headingLayout.childAlignment = TextAnchor.MiddleCenter;
             headingLayout.spacing = 2;
-            MakeText(heading.transform, "Where shall " + familiar.name + " walk?", 30,
-                TextAnchor.MiddleCenter, Ink, _serif);
+            MakeText(heading.transform,
+                familiar.IsPony ? familiar.name + " walks her own lane" : "Where shall " + familiar.name + " walk?",
+                30, TextAnchor.MiddleCenter, Ink, _serif);
             IconButton(heading.transform, JournalSprites.QuillSprite(), 40f, 120f, () =>
             {
                 CloseSheet();
@@ -776,6 +781,20 @@ namespace Wildgrove.Game
             {
                 MakeText(sheet, "<i>" + trait.displayName.ToLowerInvariant() + " — " + trait.description + "</i>",
                     17, TextAnchor.UpperCenter, MossDeep, _serif);
+            }
+
+            // The pony's page is the one page in the journal with nothing to
+            // decide — say why, and stop. Renaming her stays available above,
+            // because the name is the player's.
+            if (familiar.IsPony)
+            {
+                var untamed = MakeText(sheet,
+                    "<i>this wild pony can't be fully tamed. she comes to the panniers and no further — she walks her own lane, takes no slot from the kith, and will not be posted elsewhere or sent back to camp.</i>",
+                    16, TextAnchor.UpperCenter, Ink2);
+                var untamedElement = untamed.gameObject.AddComponent<LayoutElement>();
+                untamedElement.minWidth = 740;
+                untamedElement.preferredWidth = 740;
+                return;
             }
 
             // Said once, above the list: from rest, an EMPTY post needs a free

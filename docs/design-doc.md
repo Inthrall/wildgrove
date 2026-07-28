@@ -86,7 +86,7 @@ The single most load-bearing rule set in the game — written down so every syst
 - **Assigned or wandering (DECIDED 2026-07-18).** An assigned agent works its post deliberately. An **unassigned familiar wanders** — it drifts to work on its own, a random unlocked node, or the trail when baskets back up and no one holds the post — at **×0.5 rate and ×0.5 XP**, with no powerup effects. Help, never zero: deliberate assignment is optimization, not a chore. The warden can be **assigned to the wander post** like any familiar — roaming every node and watch site — but never *drifts*: an unassigned warden simply stands at camp (or wherever they last tended), gathering nothing until posted again.
 - **Unattended nodes.** A node with no assigned agent keeps its richness, planters, and basket; only wanderers touch it, glancingly.
 - **Transit.** Reassignment is always allowed and never costs goods; the agent *walks* — seconds, scaled by trail distance, producing nothing en route and visible on the trail. The map is honest.
-- **The trail post.** Hauling is a stationing assignment: one trail post at MVP, a second via Spare Wing (§11). The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the kith carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
+- **The trail post.** Hauling is a stationing assignment: one trail post at MVP, plus a second lane walked by the fell pony of **The Drover's Halter** (§11) — always at its lane, holding no slot, carrying half a load. The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the kith carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
 - **Offline.** Per node: `earn = min(gather rate, trail-post throughput) · min(t, cap)`, with wanderers counting at ×0.5 and an unheld trail moving ×0.5 of one lane. The welcome-back sheet always names what limited the night (the haul cap, or wanderers covering the trail). Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet).
 - **Reachability.** Anywhere the design says "reachable" — most importantly the Rite validator (§8) — it means *satisfiable under plausible stationing with the current kith size*, not merely unlocked.
 
@@ -137,7 +137,7 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 | 2–4         | Early / mid / late          | **Lifetime verses sung** cross the milestones (`economy.kith.verseMilestones`, first guess 2 / 5 / 10 — counted across Migrations; a verse sung is never unsung). |
 | 5           | Store                       | The **starter bundle** (the initial purchase offer, Play Level Up): a slot and a one-time pile of Amber. |
 | 6           | Store                       | The plain **kith slot** product — the ladder's last rung. |
-| Trail posts | 1 at MVP · 2nd via **Spare Wing** (§11) | A second haul lane — at these counts, enormous; hauling equipment (§10) is tuned assuming two posts eventually exist (§14). |
+| Trail posts | 1 at MVP · a 2nd lane via **The Drover's Halter** (§11) | The pony walks the second lane always, holds no slot, and carries **half** a carrier's load — a standing +50% on a manned trail, not a doubling. Hauling equipment (§10) is tuned assuming two lanes eventually exist (§14). |
 
 **Gift piles** (reworked 2026-07-23): every verse sung earns the warden **one pile, one yes** — counted for life, across Migrations. Leave a pile of a node's own resource and *that resource's specialist* answers, taking the node as its post: **where the pile is left is who comes.** A pile is refused where the specialist already walks (one familiar per species, ever) or when no slot is open for the arrival. The first verse is answered by the warden's own hands. Nothing repeatedly buys a creature; nothing ever has. Bonds honour the companion of their species — or bring it, resting, if it has never come.
 
@@ -511,7 +511,13 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 
 **Never sold: the Rite — and never sold: a creature or a Kinship level.** Amber accelerates production; it cannot fill a verse slot, recruit a familiar, or level one. (The last two *slots* are sold — the right to field more, never the friends themselves.)
 
-**Play Games Rewards (Level Up requirement, not IAP):** Wayfarer's Cloak (cosmetic) + **Spare Wing** (+1 trail post) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
+**Play Games Rewards (Level Up requirement, not IAP):** Wayfarer's Cloak (cosmetic) + **The Drover's Halter** (a fell pony that walks a second haul lane) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
+
+**DECIDED 2026-07-29 — the second haul lane is an animal, not a post.** The Drover's Halter (renamed from "Spare Wing") grants a **fell pony** — a real semi-feral Pennine pack breed, in register with the rest of the kith, and its historical job was carrying ore in panniers. The pony:
+- **is always at its lane** while owned. There is no posting choice, it cannot rest, and it cannot be moved; its station is derived from the entitlement and re-asserted on load, so a reinstall or a Migration resolves to the same state.
+- **holds no slot.** The lane costs nothing from the §4 ladder, so the reward lands the moment it is redeemed rather than waiting for a slot the player may not have. Because the pony can stand nowhere else, the exemption cannot leak into gathering — the reason it is an animal and not an abstract free post.
+- **carries half a load.** Her trait ("Half-broke", kind `trailCarryFactor` 0.5) *is* the half load rather than a bonus on top of a lane, and unlike every other trait it **never deepens** — she cannot be fully tamed, so Kinship buys no sharper signature from her. That is what keeps a free, always-manned lane from doubling throughput, and it is the same fact her info page states in words.
+- **is never offered anywhere a familiar is assigned to a node.** It is a hauler only.
 
 ---
 
@@ -524,7 +530,7 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 | Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)    | Resources gathered (competitive) · deepest zone, Rites completed (progression) · verses · recipes · specimens · insect plates · Migrations · Renown earned | 5     |
 | Cloud save + conflict policy                                  | Saved Games API (<100 KB); conflict = highest lifetime Renown wins, prompt on tie                                               | 5     |
 | Sidekick overlay                                              | App Bundle + Play Console toggle; test early                                                                                    | 5     |
-| Rewards items (2 single-use / 1 repeatable)                   | Cloak, Spare Wing, Weekly Amber Cache                                                                                           | 6     |
+| Rewards items (2 single-use / 1 repeatable)                   | Cloak, Drover's Halter, Weekly Amber Cache                                                                                           | 6     |
 | Vulkan primary (Unity 2021+)                                  | Unity 6 LTS + URP, Vulkan first from day one                                                                                    | 0     |
 | 60 fps (avg ≥55 / P90 ≥50 / P99 ≥30)                          | 2D URP; frame budget checked each phase gate                                                                                    | all   |
 | Stability <1% crash / <2% ANR                                 | Crashlytics from Phase 1; vitals gate before launch                                                                             | all   |
@@ -628,7 +634,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Planter caps:** per-run richness cap, and whether the self-funding loop (berries→berries) needs a clamp beyond the cost curve. Spreadsheet proof alongside the generator's.
 - **Exchange spread value:** ~15% starting point — big enough to stop arbitrage hoarding, small enough to feel generous.
 - **Offline magnitude:** per-agent base rates and caps for a ≤6-agent kith — a night away must still feel generous.
-- **Spare Wing verification:** hauling equipment (#2, #6, #13, #19, #28) tuned assuming two trail posts eventually exist; verify the bottleneck triangle survives the reward.
+- **Drover's Halter verification:** hauling equipment (#2, #6, #13, #19, #28) tuned assuming two trail lanes eventually exist; verify the bottleneck triangle survives the reward. Sharper now that the second lane is free and always manned — the half-load pony is the balancing term, so it is the number to move if two lanes over-deliver.
 - **Amber earn rate:** lean generous — ~40/week free between dig finds and the weekly cache.
 
 **Before Phase 4**

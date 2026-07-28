@@ -63,6 +63,9 @@ namespace Wildgrove.Sim
         /// <summary>True once the starter bundle's one-time Amber grant has been paid out — the entitlement re-resolves on every device, the pile arrives once.</summary>
         public bool starterBundleAmberGranted;
 
+        /// <summary>True once The Drover's Halter has been redeemed (design §11) — the fell pony's presence and lane derive from this; see Roster.SyncDroversHalter. Survives Migration: a redemption is a redemption.</summary>
+        public bool droversHalterOwned;
+
         /// <summary>UTC unix ms of the last weekly Amber cache claim (design §11) — 0 = never claimed; the cache re-arms a week after this.</summary>
         public long weeklyCacheClaimedUnixMs;
 

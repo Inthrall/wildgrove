@@ -624,7 +624,7 @@ namespace Wildgrove.Data
         // kind would sit on a species and do nothing.
         private static readonly HashSet<string> KnownTraitKinds = new HashSet<string>
         {
-            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus"
+            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus", "trailCarryFactor"
         };
 
         // The trait's authored resource pair, falling back to the legacy single

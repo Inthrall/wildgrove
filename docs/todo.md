@@ -768,16 +768,24 @@ Interpretations shipped (tune/confirm):
     lean. Keep the signed-out behaviour when the gate moves — the button
     deliberately *is* the sign-in, because hiding the row hid the free claim from
     exactly the players it should convert.
-  - **Spare Wing (+1 trail post) — not built, and it's a design change rather
-    than a flag.** Stationing holds one body per station id and the trail is the
-    single id `"trail"` (`Familiar.TrailStation`, `Stationing.OccupantOf`, and the
-    posting sheet all assume one occupant). It needs a second trail station id (or
-    a trail-capacity concept), an entitlement on `GameState` with a save field and
-    migration, and posting-sheet support. The economics are already N-ready:
-    `Stationing.TrailCarriers` sums every non-resting familiar on the trail. Also
-    do the §14 check when it lands — hauling equipment is tuned assuming two posts
-    eventually exist, so verify the bottleneck triangle survives the reward (see
-    the haul-bottleneck item in Phase 1).
+  - **The Drover's Halter (a fell pony walking a second haul lane) — the sim,
+    save and UI are built; only the redemption is missing.** Renamed from "Spare
+    Wing" and redesigned 2026-07-29 (design §11 DECIDED): the reward grants an
+    animal rather than an abstract post, because a body that can stand nowhere
+    else cannot leak its slot exemption into gathering. Live: the `fell-pony`
+    species, `Familiar.PonyStation`/`IsPony`, `Kith.Walking` skipping her,
+    `Roster.Station` refusing to move her (and refusing anyone else into her
+    lane), `Roster.SyncDroversHalter` deriving her arrival and station from
+    `GameState.droversHalterOwned`, save v34 + fold carry-over, the second dot on
+    the Trail page, the untameable note on her info page, and exclusion from
+    every posting sheet. **What's left is the grant:** nothing sets
+    `droversHalterOwned` yet — that's the shared plumbing above.
+    Balance: her trait is the new `trailCarryFactor` kind (0.5) — the lane's load
+    as a *fraction* of a carrier's rather than a bonus on one, and the only trait
+    that never Kinship-deepens. So the free always-manned lane is a standing +50%
+    on a manned trail rather than a doubling. That value is the §14 dial — verify
+    the bottleneck triangle with two lanes (see the haul-bottleneck item in
+    Phase 1).
   - **Wayfarer's Cloak (cosmetic) — not built, and it has nowhere to appear.**
     There is no cosmetic system of any kind (nothing matching skin / wardrobe /
     appearance), and no warden or familiar sprite — presentation is journal text

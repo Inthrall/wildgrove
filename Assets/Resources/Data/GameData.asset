@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 3394e0fc7f089ccfad1f41f329f6cfe3e48814c4ff835d4821ab926eaff22821
+  sourceHash: 96f670f8800dd6a184e581a47828ed3719b40f1cd576788303ecfc816e903b8f
   economy:
     costGrowth:
       building: 1.25
@@ -2010,6 +2010,26 @@ MonoBehaviour:
     - Carries more than looks possible, and counts every piece.
     - Took the long way round the storm and set down nothing.
     - I have stopped checking the loads. Her idea, somehow.
+  - id: fell-pony
+    displayName: Fell pony
+    roleLean: carrier
+    suggestedNames:
+    - Moss
+    - Bracken
+    - Tor
+    - Gale
+    - Pennine
+    trait:
+      displayName: Half-broke
+      description: "Walks her own lane and carries half a load \u2014 never fully
+        broken to harness"
+      kind: trailCarryFactor
+      value: 0.5
+      resources: []
+    inscriptions:
+    - Came down off the fell on her own account and has stayed on it.
+    - Will take the panniers. Will not take the halter twice.
+    - Ten winters of her own weather in her. I lead her nowhere; we go the same way.
   planters:
   - id: timber-frame
     displayName: Timber Frame

@@ -125,6 +125,15 @@ namespace Wildgrove.Sim
                 return false;
             }
 
+            // The pony's lane is bijective with the pony (§11): it cannot be
+            // moved or rested, and no one else may take its lane. Refusing both
+            // directions here is the whole enforcement — the UI simply never
+            // offers the move.
+            if (familiar.IsPony || stationId == Familiar.PonyStation)
+            {
+                return false;
+            }
+
             var wants = string.IsNullOrEmpty(stationId) ? null : stationId;
             if (wants == null)
             {
@@ -204,6 +213,58 @@ namespace Wildgrove.Sim
                     name = string.IsNullOrEmpty(bond.displayName) ? SuggestName(state, data, bond.species) : bond.displayName,
                     stationId = null
                 });
+            }
+        }
+
+        /// <summary>
+        /// Honour The Drover's Halter (design §11): while the entitlement is
+        /// owned the fell pony is in the roster and standing in its lane, and
+        /// while it is not, she is absent. The entitlement is the source of
+        /// truth and the roster entry is derived from it — so a lazy billing
+        /// connection, a reinstall and a Migration all resolve to the same
+        /// state. Idempotent; call at new game, on load, after Migration, and
+        /// after the store reports entitlements. Her name survives, because the
+        /// player gave it.
+        ///
+        /// This is the only place the pony is placed: <see cref="Station"/>
+        /// refuses to move her, which is what keeps her slot exemption from
+        /// leaking into gathering.
+        /// </summary>
+        public static void SyncDroversHalter(GameState state, GameDataAsset data)
+        {
+            if (state?.roster == null)
+            {
+                return;
+            }
+
+            var pony = OfSpecies(state, Familiar.PonySpecies);
+            if (!state.droversHalterOwned)
+            {
+                if (pony != null)
+                {
+                    state.roster.Remove(pony);
+                    state.BumpModifiers();
+                }
+
+                return;
+            }
+
+            if (pony == null)
+            {
+                pony = new Familiar
+                {
+                    id = state.NextFamiliarId(),
+                    speciesId = Familiar.PonySpecies,
+                    name = SuggestName(state, data, Familiar.PonySpecies)
+                };
+
+                state.roster.Add(pony);
+            }
+
+            if (pony.stationId != Familiar.PonyStation)
+            {
+                pony.stationId = Familiar.PonyStation;
+                state.BumpModifiers();
             }
         }
     }

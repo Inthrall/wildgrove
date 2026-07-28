@@ -146,6 +146,18 @@ namespace Wildgrove.Game
             var carrierDot = (RectTransform)dot.transform;
             carrierDot.sizeDelta = new Vector2(14f, 14f);
 
+            // The pony's lane shares the one dashed line — two dots walking it
+            // is the whole picture of a second lane, and it costs no layout.
+            // She keeps half a step out of phase so the pair reads as two
+            // bodies rather than one blurred dot.
+            var ponyGo = new GameObject("Pony", typeof(Image));
+            ponyGo.transform.SetParent(lineGo.transform, false);
+            var ponyImage = ponyGo.GetComponent<Image>();
+            ponyImage.color = MossDeep;
+            ponyImage.raycastTarget = false;
+            var ponyDot = (RectTransform)ponyGo.transform;
+            ponyDot.sizeDelta = new Vector2(14f, 14f);
+
             var status = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
 
             // Under the bar, not in it: the bar is a fixed-height touch target
@@ -160,7 +172,9 @@ namespace Wildgrove.Game
                 var carriers = Stationing.TrailCarriers(_loop.State, _loop.Data);
                 var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
                 var show = carriers > 0.0 && tripSeconds > 0.0;
-                carrierDot.gameObject.SetActive(show);
+                var showPony = show && Stationing.OccupantOf(_loop.State, Familiar.PonyStation) != null;
+                carrierDot.gameObject.SetActive(show && Stationing.OccupantOf(_loop.State, Familiar.TrailStation) != null);
+                ponyDot.gameObject.SetActive(showPony);
                 if (!show)
                 {
                     return;
@@ -171,20 +185,44 @@ namespace Wildgrove.Game
                 carrierDot.anchorMin = new Vector2(fraction, 0.5f);
                 carrierDot.anchorMax = new Vector2(fraction, 0.5f);
                 carrierDot.anchoredPosition = Vector2.zero;
+
+                if (showPony)
+                {
+                    var ponyFraction = Mathf.Repeat(fraction + 0.5f, 1f);
+                    ponyDot.anchorMin = new Vector2(ponyFraction, 0.5f);
+                    ponyDot.anchorMax = new Vector2(ponyFraction, 0.5f);
+                    ponyDot.anchoredPosition = Vector2.zero;
+                }
             });
 
             _liveUpdaters.Add(() =>
             {
                 var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
+                var pony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation);
+                var invitation = "<color=" + MossDeepHex + ">tap to post a carrier</color>";
+
                 // With no roster the invitation opens a sheet nobody can
                 // answer — mute it until there is someone to post. Moss, not
                 // ochre: this is an invitation, and ochre is reserved for
-                // costs, shortfalls and halted work.
-                status.text = carrier != null
-                    ? carrier.name + " carrying"
-                    : _loop.State.roster.Count == 0
+                // costs, shortfalls and halted work. The pony is never the
+                // invitation's answer — her lane isn't postable (§11) — so an
+                // unheld trail still asks, even while she walks.
+                if (carrier != null)
+                {
+                    status.text = pony != null
+                        ? carrier.name + " and " + pony.name + " carrying"
+                        : carrier.name + " carrying";
+                }
+                else if (pony != null)
+                {
+                    status.text = pony.name + " carrying alone — " + invitation;
+                }
+                else
+                {
+                    status.text = _loop.State.roster.Count == 0
                         ? "no one to carry yet"
-                        : "<color=" + MossDeepHex + ">tap to post a carrier</color>";
+                        : invitation;
+                }
 
                 // The shortfall, said out loud. Gathering above what the trail
                 // can carry is being lost, and nothing on the page used to

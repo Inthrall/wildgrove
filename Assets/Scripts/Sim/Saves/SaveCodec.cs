@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 33;
+        public const int CurrentVersion = 34;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -38,6 +38,7 @@ namespace Wildgrove.Sim.Saves
                 foldedVersesSung = state.foldedVersesSung,
                 purchasedKithSlots = state.purchasedKithSlots,
                 starterBundleAmberGranted = state.starterBundleAmberGranted,
+                droversHalterOwned = state.droversHalterOwned,
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
@@ -265,6 +266,7 @@ namespace Wildgrove.Sim.Saves
             state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
             state.starterBundleAmberGranted = save.starterBundleAmberGranted;
+            state.droversHalterOwned = save.droversHalterOwned;
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
@@ -586,7 +588,10 @@ namespace Wildgrove.Sim.Saves
                     .OrderByDescending(f => f.bonded)
                     .ThenByDescending(f => f.kinshipXp))
                 {
-                    if (familiar.IsResting)
+                    // The pony is not on the ladder (§11): she holds no slot, so
+                    // she must neither be rested by the trim nor spend one of
+                    // the posts it is preserving.
+                    if (familiar.IsResting || familiar.IsPony)
                     {
                         continue;
                     }
@@ -606,6 +611,10 @@ namespace Wildgrove.Sim.Saves
             // already satisfied must have its companion honoured — bind or
             // materialise any the saved roster lacks (idempotent by bondId).
             Roster.SyncBonded(state, data);
+
+            // The fell pony's presence and lane derive from the entitlement, not
+            // from what the save happened to store (§11).
+            Roster.SyncDroversHalter(state, data);
 
             // Last, so recorded insect plates' effects fold in with the upgrades'.
             Upgrades.RecomputeYieldMultipliers(state, data);
@@ -671,7 +680,8 @@ namespace Wildgrove.Sim.Saves
         {
             if (string.IsNullOrEmpty(stationId)
                 || stationId == Familiar.TrailStation
-                || stationId == Familiar.WanderStation)
+                || stationId == Familiar.WanderStation
+                || stationId == Familiar.PonyStation)
             {
                 return true;
             }
@@ -1083,6 +1093,13 @@ namespace Wildgrove.Sim.Saves
                         // v32 predates the Hollows' deep amber — nothing was
                         // ever surfaced, so the absent counters (0) are right.
                         save.version = 33;
+                        break;
+
+                    case 33:
+                        // v33 predates The Drover's Halter — the reward was never
+                        // redeemed, so the absent flag (false) is right and the
+                        // fell pony is simply absent from the roster.
+                        save.version = 34;
                         break;
 
                     default:

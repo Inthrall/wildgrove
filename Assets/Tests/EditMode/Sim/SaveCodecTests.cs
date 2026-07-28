@@ -80,6 +80,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheDroversHalterAndStandsThePonyInHerLane()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.droversHalterOwned = true;
+            Roster.SyncDroversHalter(state, _data);
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.droversHalterOwned, Is.True, "the redemption survives a save");
+            var pony = Roster.OfSpecies(restored, Familiar.PonySpecies);
+            Assert.That(pony, Is.Not.Null, "and the pony with it");
+            Assert.That(pony.stationId, Is.EqualTo(Familiar.PonyStation),
+                "her lane is a valid station, so the codec must not clear it to resting");
+        }
+
+        [Test]
         public void RoundTrip_RestoresCurrenciesResourcesAndNodeProgress()
         {
             var state = GameStateFactory.NewGame(_data);

@@ -20,6 +20,18 @@ namespace Wildgrove.Sim
         public const string TrailStation = "trail";
 
         /// <summary>
+        /// The second haul lane, walked by the fell pony of The Drover's Halter
+        /// (§11). Bijective with the pony: nothing else may stand here, and the
+        /// pony may stand nowhere else — which is what makes its slot exemption
+        /// safe (<see cref="Kith.Walking"/>), since it can never carry a free
+        /// slot off to a node.
+        /// </summary>
+        public const string PonyStation = "pony-lane";
+
+        /// <summary>The species that walks <see cref="PonyStation"/> — the reward grants an animal, not a post.</summary>
+        public const string PonySpecies = "fell-pony";
+
+        /// <summary>
         /// The wander-post station id: its holder roams the run's nodes,
         /// gathering a little of everything and watching the small lives at
         /// every observation site along the way (the watch is no longer a
@@ -66,8 +78,15 @@ namespace Wildgrove.Sim
         /// <summary>An unstationed familiar rests at camp — no post, no slot, no output (§4).</summary>
         public bool IsResting => string.IsNullOrEmpty(stationId);
 
-        /// <summary>True when stationed at the trail post (holding a haul lane, gathering nothing).</summary>
-        public bool IsOnTrail => stationId == TrailStation;
+        /// <summary>True when stationed on either haul lane (the trail post or the pony's lane) — carrying, gathering nothing.</summary>
+        public bool IsOnTrail => stationId == TrailStation || stationId == PonyStation;
+
+        /// <summary>
+        /// True for the fell pony (§11): it holds no slot, is always at its lane
+        /// while owned, and can be neither moved nor rested. Keyed on the species
+        /// rather than the station so the exemption travels with the animal.
+        /// </summary>
+        public bool IsPony => speciesId == PonySpecies;
 
         /// <summary>True when stationed at the wander post (roaming every node and watch site).</summary>
         public bool IsWandering => stationId == WanderStation;

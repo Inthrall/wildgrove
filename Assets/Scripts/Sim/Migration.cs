@@ -129,6 +129,7 @@ namespace Wildgrove.Sim
             next.foldedVersesSung = state.foldedVersesSung + Rite.CompletedVerseCount(state, data);
             next.purchasedKithSlots = state.purchasedKithSlots;
             next.starterBundleAmberGranted = state.starterBundleAmberGranted;
+            next.droversHalterOwned = state.droversHalterOwned;
 
             // Amber earn/claim cooldowns are cross-run: they gate premium
             // currency, so a fold must not re-arm them (migrating is the one
@@ -195,6 +196,10 @@ namespace Wildgrove.Sim
             // stays earned — make sure its companion is present in the carried
             // roster (idempotent by bondId).
             Roster.SyncBonded(next, data);
+
+            // A redemption is a redemption — the pony crosses the fold and is
+            // standing in her lane in the new run (§11).
+            Roster.SyncDroversHalter(next, data);
 
             // Recorded plates' effects fold into the fresh run's multipliers at once.
             Upgrades.RecomputeYieldMultipliers(next, data);

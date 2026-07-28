@@ -61,6 +61,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v26+: whether the starter bundle's one-time Amber grant has been paid out.</summary>
         public bool starterBundleAmberGranted;
 
+        /// <summary>v34+: whether The Drover's Halter has been redeemed (absent before the reward — false, so the fell pony is simply absent).</summary>
+        public bool droversHalterOwned;
+
         /// <summary>v28+: UTC unix ms of the last weekly Amber cache claim (absent before the cache — 0, reads as never claimed).</summary>
         public long weeklyCacheClaimedUnixMs;
 

@@ -92,7 +92,12 @@ namespace Wildgrove.Sim
             return state?.roster != null ? state.roster.Count : 0;
         }
 
-        /// <summary>How many familiars currently hold a post (and so a slot).</summary>
+        /// <summary>
+        /// How many familiars currently hold a post (and so a slot). The fell
+        /// pony is not counted: its lane costs no slot (§11), and because it can
+        /// stand nowhere else the exemption cannot follow it to a node — so the
+        /// ladder stays honest without any check at stationing time.
+        /// </summary>
         public static int Walking(GameState state)
         {
             if (state?.roster == null)
@@ -103,7 +108,7 @@ namespace Wildgrove.Sim
             var count = 0;
             foreach (var familiar in state.roster)
             {
-                if (!familiar.IsResting)
+                if (!familiar.IsResting && !familiar.IsPony)
                 {
                     count++;
                 }

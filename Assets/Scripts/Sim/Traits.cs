@@ -54,11 +54,30 @@ namespace Wildgrove.Sim
             return 1.0;
         }
 
-        /// <summary>Trail-lane factor a familiar holding the trail post contributes: 1, plus a (Kinship-deepened) trailThroughputBonus trait.</summary>
+        /// <summary>
+        /// Trail-lane factor a familiar holding a haul lane contributes: 1, plus
+        /// a (Kinship-deepened) trailThroughputBonus trait.
+        ///
+        /// A trailCarryFactor trait REPLACES the lane instead of adding to it —
+        /// it is the fraction of a carrier's load the animal walks, and it never
+        /// deepens. Kinship cannot tame what was never broken to harness (§11:
+        /// the fell pony's lane is free and always manned, so its half load is
+        /// what keeps two lanes from doubling the trail).
+        /// </summary>
         public static double TrailThroughputFactor(Familiar familiar, GameDataAsset data)
         {
             var trait = Of(data, familiar);
-            return trait != null && trait.kind == "trailThroughputBonus"
+            if (trait == null)
+            {
+                return 1.0;
+            }
+
+            if (trait.kind == "trailCarryFactor")
+            {
+                return trait.value;
+            }
+
+            return trait.kind == "trailThroughputBonus"
                 ? 1.0 + trait.value * DeepeningFactor(data, familiar)
                 : 1.0;
         }

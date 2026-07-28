@@ -326,6 +326,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheDroversHalterAndItsPony()
+        {
+            var state = StateWithTheRiteSung();
+            state.droversHalterOwned = true;
+
+            var next = Migration.Migrate(state, _data);
+
+            // A redemption is a redemption (§11): the entitlement crosses the
+            // fold and the pony is already standing in her lane in the new run.
+            Assert.That(next.droversHalterOwned, Is.True, "the reward crosses the fold");
+            var pony = Roster.OfSpecies(next, Familiar.PonySpecies);
+            Assert.That(pony, Is.Not.Null, "and she comes with it");
+            Assert.That(pony.stationId, Is.EqualTo(Familiar.PonyStation), "already at her lane, unasked");
+        }
+
+        [Test]
         public void Migrate_KeepsAmber()
         {
             var state = StateWithTheRiteSung();

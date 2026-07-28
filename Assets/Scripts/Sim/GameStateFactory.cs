@@ -20,6 +20,7 @@ namespace Wildgrove.Sim
             var state = new GameState { rngState = Rng.NewSeed() };
             AddZone(state, data, data.ZonesById[StartingZoneId]);
             Roster.SyncBonded(state, data);
+            Roster.SyncDroversHalter(state, data);
             SeedWardenPost(state);
 
             // The starting zone's waystone stays quiet — a brand-new player
