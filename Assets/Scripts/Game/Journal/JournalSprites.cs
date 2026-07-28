@@ -14,6 +14,53 @@ namespace Wildgrove.Game
         private static Sprite _grainSprite;
         private static Sprite _dashSprite;
         private static Sprite _dashAcrossSprite;
+        private static Sprite _quillSprite;
+
+        /// <summary>
+        /// A quill — the rename affordance beside a familiar's name. Drawn as a
+        /// stroke that tapers to a nib, because a bar of even width reads as a
+        /// slash and a nib is what says "you may write here". Code-drawn like
+        /// every other glyph in this file; there is no icon set to draw from,
+        /// and the journal's own fonts carry no pen character.
+        /// </summary>
+        internal static Sprite QuillSprite()
+        {
+            if (_quillSprite == null)
+            {
+                const int size = 32;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                // Nib at the lower left, feather end at the upper right — the
+                // angle a right-handed pen rests at, which is what makes the
+                // shape legible at a glyph's size.
+                var nib = new Vector2(6.5f, 6.5f);
+                var feather = new Vector2(24.5f, 24.5f);
+                var along = feather - nib;
+                var lengthSq = along.sqrMagnitude;
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var point = new Vector2(x + 0.5f, y + 0.5f);
+                        var t = Mathf.Clamp01(Vector2.Dot(point - nib, along) / lengthSq);
+                        var distance = Vector2.Distance(point, nib + (along * t));
+                        var halfWidth = Mathf.Lerp(0.55f, 3.1f, t);
+                        // Alpha from the distance rather than a hard cut: the
+                        // stroke is diagonal, and stair-stepped edges look like
+                        // a mistake next to type this soft.
+                        var alpha = Mathf.Clamp01(halfWidth - distance + 0.5f);
+                        texture.SetPixel(x, y, alpha <= 0f
+                            ? Color.clear
+                            : new Color(Ink.r, Ink.g, Ink.b, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _quillSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _quillSprite;
+        }
 
         /// <summary>A sliced border-only sprite — the journal's ruled ink outlines.</summary>
         internal static Sprite BorderSprite()

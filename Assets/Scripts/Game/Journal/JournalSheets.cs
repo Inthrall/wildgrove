@@ -457,9 +457,27 @@ namespace Wildgrove.Game
             }
         }
 
-        internal void OpenNamingSheet(Familiar familiar)
+        /// <summary>
+        /// Rename a familiar. <paramref name="onClosed"/> runs after the sheet
+        /// closes however it closes — saved, cancelled, or dismissed by the
+        /// scrim — so a caller mid-decision can put its own sheet back up. The
+        /// station sheet uses it: renaming there is an aside, and losing the
+        /// post you were choosing would make the pen cost more than it offers.
+        /// </summary>
+        internal void OpenNamingSheet(Familiar familiar, System.Action onClosed = null)
         {
-            var sheet = BeginSheet();
+            System.Action done = () =>
+            {
+                CloseSheet();
+                if (onClosed != null)
+                {
+                    onClosed();
+                }
+            };
+
+            // The dismiss hook takes over closing entirely when it is set (see
+            // DismissSheet), so it has to close as well as continue.
+            var sheet = onClosed == null ? BeginSheet() : BeginSheet(done);
             MakeText(sheet, "Rename", 32, TextAnchor.UpperCenter, Ink, _serif);
 
             var cost = Mathf.FloorToInt((float)_loop.RenameCost());
@@ -481,7 +499,7 @@ namespace Wildgrove.Game
                 if (string.IsNullOrWhiteSpace(typed) || typed.Trim() == familiar.name)
                 {
                     // Nothing changed — no charge, just close.
-                    CloseSheet();
+                    done();
                     return;
                 }
 
@@ -498,11 +516,11 @@ namespace Wildgrove.Game
                     _dirty = true;
                 }
 
-                CloseSheet();
+                done();
             });
             KeyAction(save);
 
-            Button(sheet, "Cancel", 320, CloseSheet);
+            Button(sheet, "Cancel", 320, () => done());
         }
 
         /// <summary>
@@ -694,7 +712,25 @@ namespace Wildgrove.Game
         internal void OpenStationPickSheet(Familiar familiar)
         {
             var sheet = BeginSheet();
-            MakeText(sheet, "Where shall " + familiar.name + " walk?", 30, TextAnchor.UpperCenter, Ink, _serif);
+
+            // The name is asked about here, so this is where it can be changed —
+            // a quill beside it, rather than a word competing for room on every
+            // roster line. Centred as a pair: the question and the pen read as
+            // one heading, and the pen is next to the name it renames.
+            var heading = Row((RectTransform)sheet);
+            var headingLayout = heading.GetComponent<HorizontalLayoutGroup>();
+            headingLayout.childAlignment = TextAnchor.MiddleCenter;
+            headingLayout.spacing = 2;
+            MakeText(heading.transform, "Where shall " + familiar.name + " walk?", 30,
+                TextAnchor.MiddleCenter, Ink, _serif);
+            IconButton(heading.transform, JournalSprites.QuillSprite(), 40f, 120f, () =>
+            {
+                CloseSheet();
+                // Back to this sheet afterwards, rebuilt — so the new name is in
+                // the question, and the post being chosen is not lost to an aside.
+                OpenNamingSheet(familiar, () => OpenStationPickSheet(familiar));
+            });
+
             MakeText(sheet, (SpeciesName(familiar.speciesId) + " · now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
                 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 

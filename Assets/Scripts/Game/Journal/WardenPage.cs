@@ -20,10 +20,6 @@ namespace Wildgrove.Game
     {
         internal WardenPage(GameHud hud) : base(hud) { }
 
-        // The naming sheet lives in JournalSheets; forwarded so the kith roster
-        // bodies below read as they did when they lived on GameHud.
-        private void OpenNamingSheet(Familiar familiar) => _hud.Sheets.OpenNamingSheet(familiar);
-
         internal void BuildWardenPage()
         {
             BuildKitCard();
@@ -323,11 +319,12 @@ namespace Wildgrove.Game
                 FlexibleWidth(label.gameObject, 1f);
                 // The card is headed "roster & posts" — so the row must offer
                 // the post, not just report it. "Post" opens the where-sheet
-                // (rest, every node, the trail, the wander post); Rename keeps
-                // its own button behind it. 120 units is the touch floor, and
-                // every unit off these two goes to the name beside them.
+                // (rest, every node, the trail, the wander post), and renaming
+                // now lives in there too, behind a quill beside the name: it
+                // belongs where the name is being read, not on a second button
+                // squeezing the name on every line. 120 units is the touch
+                // floor, and every unit off it goes to the name beside it.
                 Button(row.transform, "Post", 120, () => _hud.Sheets.OpenStationPickSheet(captured));
-                Button(row.transform, "Rename", 120, () => OpenNamingSheet(captured));
 
                 // Two lines, and the row's height is then the buttons' 120-unit
                 // touch floor rather than the text. The four lines this used to

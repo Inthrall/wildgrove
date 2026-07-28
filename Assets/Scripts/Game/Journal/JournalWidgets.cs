@@ -177,6 +177,50 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// An icon-only button: a small glyph centred in an invisible touch
+        /// plate. The plate carries the 120-unit (48dp) floor so the target is a
+        /// whole fingertip, while the glyph stays the size the line it sits on
+        /// can afford — a bordered plate that big beside a title would read as
+        /// the title's equal, which a rename is not.
+        /// </summary>
+        internal static Button IconButton(Transform parent, Sprite sprite, float glyph, float touch,
+            UnityEngine.Events.UnityAction onClick)
+        {
+            var go = new GameObject("IconButton", typeof(Image), typeof(Button), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            // Clear, but still a raycast target: the whole plate takes the tap,
+            // not just the pixels of the glyph.
+            go.GetComponent<Image>().color = Color.clear;
+            var element = go.GetComponent<LayoutElement>();
+            element.minWidth = touch;
+            element.preferredWidth = touch;
+            element.minHeight = touch;
+            element.preferredHeight = touch;
+
+            // No layout group on the plate, so the glyph is anchored by hand.
+            var icon = IconImage(go.transform, sprite, glyph, Ink);
+            var rect = (RectTransform)icon.transform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(glyph, glyph);
+
+            var button = go.GetComponent<Button>();
+            // Tint the glyph, not the clear plate — a ColorTint on an invisible
+            // graphic acknowledges nothing, which is how buttons here have gone
+            // silent before.
+            button.targetGraphic = icon.GetComponent<Image>();
+            var colours = button.colors;
+            colours.highlightedColor = new Color(0.97f, 0.96f, 0.93f, 1f);
+            colours.pressedColor = new Color(0.8f, 0.76f, 0.68f, 1f);
+            colours.disabledColor = Color.white;
+            button.colors = colours;
+            button.onClick.AddListener(onClick);
+            return button;
+        }
+
+        /// <summary>
         /// Style a button as the page's key action — the fold, the migrate, the
         /// confirm. Moss, not ochre: the rust wash read as a warning colour on
         /// exactly the taps the player is meant to take, and it's now reserved
