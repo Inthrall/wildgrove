@@ -227,6 +227,21 @@ namespace Wildgrove.Game
             return SizeOpen(15) + "<color=" + Ink2Hex + ">  ready in " + NumberFormat.Countdown(seconds) + "</color></size>";
         }
 
+        /// <summary>
+        /// Which pack a line is offering. Both rows read "an amber pack" before,
+        /// so the only thing telling the small pile from the large was the
+        /// number beside it — two near-identical lines, one above the other.
+        /// </summary>
+        private static string AmberPackTitle(string productId)
+        {
+            if (productId == StoreProductIds.AmberPackLarge)
+            {
+                return "a hoard of amber";
+            }
+
+            return "a handful of amber";
+        }
+
         private void BuildAmberPackRow(RectTransform card, string productId, double amount)
         {
             if (amount <= 0.0)
@@ -237,7 +252,7 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            var baseText = "an amber pack"
+            var baseText = AmberPackTitle(productId)
                            + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)amount) + " amber</color></size>";
             label.text = baseText;
             // The store's price lands after the (lazy) catalogue fetch — keep

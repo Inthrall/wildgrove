@@ -498,7 +498,6 @@ namespace Wildgrove.Game
             // unwritten.
             List<RiteVerseData> sung = null;
             var sealedShown = false;
-            var unlockedZones = Upgrades.UnlockedZoneIds(_loop.State, _loop.Data);
             for (var i = 0; i < rite.verses.Count; i++)
             {
                 var verse = rite.verses[i];
@@ -507,8 +506,14 @@ namespace Wildgrove.Game
                 var number = i + 1;
                 if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse))
                 {
-                    if (!sealedShown && unlockedZones.Contains(verse.zone)
-                        && Rite.IsVerseSealed(_loop.State, _loop.Data, verse))
+                    // One quiet card for the next verse that isn't open yet,
+                    // whichever holds it — its turn, or a trail that hasn't
+                    // reached its site. The site used to have to be reached
+                    // before the card would draw, so a run with every reachable
+                    // verse sung showed nothing but SUNG VERSES, and the rite's
+                    // last verse — the whole Migration gate — went unmentioned
+                    // on every page in the book.
+                    if (!sealedShown)
                     {
                         BuildSealedVerseCard(rite, verse, number);
                         sealedShown = true;
@@ -554,8 +559,9 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The card for a verse whose site is reached but whose turn hasn't
-        /// come — it names the verse still barring it and asks nothing.
+        /// The card for the next verse that isn't open yet — it names what
+        /// holds it (an earlier verse still unsung, its turn, or a trail that
+        /// hasn't reached its site) and asks nothing.
         /// </summary>
         private void BuildSealedVerseCard(RiteData rite, RiteVerseData verse, int number)
         {
@@ -575,10 +581,20 @@ namespace Wildgrove.Game
             }
 
             var card = Card("VERSE " + Roman(number) + " · " + ZoneName(verse.zone).ToUpperInvariant());
-            MakeText(card, barring == null
-                    ? "<i>the cairn keeps its silence — its turn has not come</i>"
-                    : "<i>the cairn keeps its silence — the verse of " + barring + " is still unsung</i>",
+            var line = barring != null
+                ? "the verse of " + barring + " is still unsung"
+                : Upgrades.UnlockedZoneIds(_loop.State, _loop.Data).Contains(verse.zone)
+                    ? "its turn has not come"
+                    // Every earlier verse is sung and the site is still beyond
+                    // the trail: buying that zone's map IS the rite's next step,
+                    // so the card says so rather than leaving the gate mute.
+                    : "the trail has not reached " + ZoneName(verse.zone);
+            MakeText(card, "<i>the cairn keeps its silence — " + line + "</i>",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
+            if (_firstVerseCard == null)
+            {
+                _firstVerseCard = card;
+            }
         }
 
         private RectTransform BuildVerseCard(RiteVerseData verse, int number)

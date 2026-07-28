@@ -932,9 +932,28 @@ namespace Wildgrove.Game
             {
                 foreach (var verse in rite.verses)
                 {
-                    if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse) || Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
+                    if (Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
                     {
                         continue;
+                    }
+
+                    // An unsung verse whose site the trail hasn't reached is
+                    // still the rite's next step — and still what the fold is
+                    // waiting on. Skipping it blanked the banner outright, so a
+                    // run that had sung every reachable verse lost the only
+                    // signpost to Migration the HUD has.
+                    if (!Rite.IsVerseRevealed(_loop.State, _loop.Data, verse))
+                    {
+                        // How many verses still stand between the run and the
+                        // fold — the one number that says why the fold button
+                        // isn't there. Which zone they wait in is the Trail
+                        // page's job; the banner is a count, not a route.
+                        var unsung = rite.verses.Count - Rite.CompletedVerseCount(_loop.State, _loop.Data);
+                        _trackerText.text = "<color=" + OchreInkHex + ">THE FOLD</color> · <b>" + unsung
+                                            + (unsung == 1 ? " verse</b> must be sung" : " verses</b> must be sung")
+                                            + " before migration  »";
+                        _trackerPanel.SetActive(true);
+                        return;
                     }
 
                     var done = Rite.CompletedSlotCount(_loop.State, verse);
