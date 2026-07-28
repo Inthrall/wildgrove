@@ -171,32 +171,69 @@ namespace Wildgrove.Game
             float width, float glyph, UnityEngine.Events.UnityAction onClick)
         {
             var button = ButtonPlate(parent, width, onClick);
-            var layout = button.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.padding = new RectOffset(12, 12, 8, 8);
-            layout.spacing = 10;
-
-            if (lead != null)
-            {
-                IconImage(button.transform, lead, glyph, Color.white);
-            }
-
-            var label = MakeText(button.transform, text, 19, TextAnchor.MiddleLeft, Ink, SmallCapsFont);
-            FlexibleWidth(label.gameObject, 1f);
-
-            if (trail != null)
-            {
-                IconImage(button.transform, trail, glyph, Color.white);
-            }
-
+            var label = PictureStrip(button.transform, lead, text, trail, glyph, TextAnchor.MiddleCenter);
             // The pictures set the floor here, not the touch minimum — a plate
             // shorter than its own glyph would clip the animal.
             FitToLabel(button, label, Mathf.Max(120f, glyph + 16f));
             return button;
+        }
+
+        /// <summary>
+        /// <see cref="PictureButton"/>'s strip without the tap — the same
+        /// pictures-either-side-of-words line for a heading that states what a
+        /// row would choose. Returns the label so the caller can style it.
+        /// </summary>
+        internal static Text PictureRow(Transform parent, Sprite lead, string text, Sprite trail, float glyph,
+            float width)
+        {
+            var go = MakeRect("PictureRow", (RectTransform)parent).gameObject;
+            // The heading's own width, not the words' — a strip that hugged its
+            // text would stand its plates somewhere other than the rows below,
+            // and the point of the heading is that it matches them.
+            var element = go.AddComponent<LayoutElement>();
+            element.minWidth = width;
+            element.preferredWidth = width;
+            return PictureStrip(go.transform, lead, text, trail, glyph, TextAnchor.MiddleCenter);
+        }
+
+        /// <summary>
+        /// Lay out plate · words · plate across a host. A missing plate leaves an
+        /// EMPTY plate of the same size rather than nothing: the words then sit
+        /// in the same place on every row, so a column of them reads as a column
+        /// even where one side has no picture to show.
+        /// </summary>
+        private static Text PictureStrip(Transform host, Sprite lead, string text, Sprite trail, float glyph,
+            TextAnchor anchor)
+        {
+            var layout = host.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.padding = new RectOffset(12, 12, 8, 8);
+            layout.spacing = 10;
+
+            PictureSlot(host, lead, glyph);
+            var label = MakeText(host, text, 19, anchor, Ink, SmallCapsFont);
+            FlexibleWidth(label.gameObject, 1f);
+            PictureSlot(host, trail, glyph);
+            return label;
+        }
+
+        /// <summary>One picture's worth of room — the plate when there is one, blank space when there isn't.</summary>
+        private static void PictureSlot(Transform parent, Sprite sprite, float glyph)
+        {
+            if (sprite != null)
+            {
+                IconImage(parent, sprite, glyph, Color.white);
+                return;
+            }
+
+            var go = MakeRect("Empty", (RectTransform)parent).gameObject;
+            var element = go.AddComponent<LayoutElement>();
+            element.minWidth = glyph;
+            element.preferredWidth = glyph;
         }
 
         /// <summary>The bare plate every button is drawn on — paper, border, press tint, touch-sized.</summary>

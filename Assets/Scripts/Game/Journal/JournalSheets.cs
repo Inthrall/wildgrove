@@ -538,7 +538,6 @@ namespace Wildgrove.Game
         {
             var sheet = BeginSheet();
             MakeText(sheet, "Who walks here?", 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, StationLabel(stationId).ToUpperInvariant(), 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
             var state = _loop.State;
             var occupantHere = Stationing.OccupantOf(state, stationId);
@@ -553,27 +552,20 @@ namespace Wildgrove.Game
             var wardenHere = wardenCanStand
                 && (node != null ? Warden.PostNodeId(state) == node.id : Warden.IsWandering(state));
 
-            // Say who holds it before offering anyone else — the whole sheet
-            // then reads as "instead of them, who?". The holder's own plate
-            // stands above their name: the creature is the answer to "who
-            // walks here", and its picture says more than its species spelled
-            // out beside it.
-            if (occupantHere != null)
-            {
-                var portrait = ArtLibrary.ForSpecies(occupantHere.speciesId);
-                if (portrait != null)
-                {
-                    PlateImage(sheet, portrait, 200f);
-                }
-            }
-
+            // The post itself, drawn the way the rows below it are drawn: its
+            // crop on the left, whoever holds it on the right, the words
+            // between. The heading is then the same shape as the choice it
+            // introduces — "instead of them, who?" — instead of a portrait and
+            // three separate lines of type saying the same thing.
             var holder = occupantHere != null
-                ? occupantHere.name + (ArtLibrary.ForSpecies(occupantHere.speciesId) != null
-                    ? string.Empty
-                    : " — " + SpeciesName(occupantHere.speciesId))
-                : wardenHere ? "the warden" : null;
-            MakeText(sheet, holder != null ? "<i>" + holder + " walks here</i>" : "<i>no one walks here</i>",
-                21, TextAnchor.UpperCenter, holder != null ? Ink : Ink2, _serif);
+                ? occupantHere.name + " walks here"
+                : wardenHere ? "the warden walks here" : "no one walks here";
+            var holderPlate = occupantHere != null ? ArtLibrary.ForSpecies(occupantHere.speciesId) : null;
+            PictureRow(sheet, StationPlate(stationId),
+                StationLabel(stationId).ToUpperInvariant()
+                + "\n" + SizeOpen(16) + "<color=" + (occupantHere != null || wardenHere ? InkHex : Ink2Hex) + ">"
+                + holder + "</color></size>", holderPlate, 120f, 740f);
+
             MakeText(sheet, "posts walked " + _loop.KithWalking() + " of " + _loop.KithSlots(),
                 14, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
@@ -641,16 +633,19 @@ namespace Wildgrove.Game
                 {
                     // A brand-new warden's first tap can land here — the sheet
                     // must answer "how do I ever fill this?" or it's a riddle.
-                    notice = "no companion walks with you yet. the land answers a pile of goods — watch the Trail page for who is drawn to what."
-                             + (wardenCanStand ? " Until then, the warden can stand here alone." : string.Empty);
+                    // One instruction, in the order it is done: leave the pile,
+                    // someone comes. The old line opened on what the land does
+                    // and left the doing to be inferred.
+                    notice = "no one walks with you yet. leave a pile of a plate's own goods on the Trail page and whoever is drawn to it comes to stay."
+                             + (wardenCanStand ? " until then the warden can stand here alone." : string.Empty);
                 }
                 else if (!anyResting)
                 {
-                    notice = "every companion already walks a post — send one here and its own post falls idle. Open a slot on the Ladder, or leave a pile at a plate, to grow the kith.";
+                    notice = "everyone is already posted. move one here and the post they leave falls idle — or open a slot on the Ladder to walk with one more.";
                 }
                 else if (!hasRoom)
                 {
-                    notice = "a companion waits at camp, but every slot is walked. Open a slot on the Ladder to give them a post — or move a walker here.";
+                    notice = "someone waits at camp, but every slot is walked. open a slot on the Ladder to put them to work — or move a walker here from a post you need less.";
                 }
 
                 if (notice != null)
@@ -727,8 +722,6 @@ namespace Wildgrove.Game
                     SetButtonTint(button, false);
                 }
             }
-
-            Button(sheet, "Never mind", 320, CloseSheet);
         }
 
         /// <summary>
@@ -760,18 +753,16 @@ namespace Wildgrove.Game
                 OpenNamingSheet(familiar, () => OpenStationPickSheet(familiar));
             });
 
-            // The one it is about, drawn rather than described — the posting
-            // sheet's portrait, asked from the other side. Its species only
-            // needs saying when there is no plate to say it.
+            // The one it is about and where they stand now, drawn as the rows
+            // below are drawn: the animal on the "who" side, the crop they work
+            // on the "where" side. The posting sheet's heading, mirrored — and
+            // at camp the crop side is simply empty. Species and station are
+            // spelled out only where no plate can stand in.
             var subject = ArtLibrary.ForSpecies(familiar.speciesId);
-            if (subject != null)
-            {
-                PlateImage(sheet, subject, 200f);
-            }
-
-            MakeText(sheet, ((subject != null ? string.Empty : SpeciesName(familiar.speciesId) + " · ")
-                             + "now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
-                16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+            PictureRow(sheet, subject,
+                ((subject != null ? string.Empty : SpeciesName(familiar.speciesId) + " · ")
+                 + "now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
+                StationPlate(familiar.stationId), 120f, 740f);
 
             // What this one is good at, at the moment it decides where they
             // walk — the roster row used to carry it on every line, which is
@@ -789,7 +780,7 @@ namespace Wildgrove.Game
             if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
             {
                 var notice = MakeText(sheet,
-                    "<i>every slot is walked — the empty posts stay shut until you open one on the Ladder. Taking a post from someone else still works.</i>",
+                    "<i>every slot is walked, so the empty posts stay shut — open one on the Ladder to walk with one more. stepping in for someone already posted still works: they go back to camp.</i>",
                     16, TextAnchor.UpperCenter, Ink2);
                 var element = notice.gameObject.AddComponent<LayoutElement>();
                 element.minWidth = 740;
@@ -812,8 +803,6 @@ namespace Wildgrove.Game
 
             AddStationChoice(sheet, familiar, Familiar.TrailStation);
             AddStationChoice(sheet, familiar, Familiar.WanderStation);
-
-            Button(sheet, "Never mind", 320, CloseSheet);
         }
 
         /// <summary>One destination line of the station-pick sheet — skipped when the familiar already holds it.</summary>
@@ -893,8 +882,6 @@ namespace Wildgrove.Game
                         onPick(captured);
                     });
             }
-
-            Button(sheet, "Never mind", 320, CloseSheet);
         }
 
         /// <summary>Display order for the posting sheet's candidates: free, movable, then slot-blocked.</summary>
@@ -1053,7 +1040,6 @@ namespace Wildgrove.Game
                         ? "<i>the board would not be read — Play Games kept it shut.</i>"
                         : "<i>no one has yet been recorded here.</i>",
                     20, TextAnchor.MiddleCenter, Ink2, _serif);
-                Button(sheet, "Close", 320, CloseSheet);
                 return;
             }
 
@@ -1067,8 +1053,6 @@ namespace Wildgrove.Game
                 MakeText(sheet, entry.isPlayer ? "<b>" + line + "</b>" : line,
                     21, TextAnchor.MiddleCenter, entry.isPlayer ? Ink : Ink2, _serif);
             }
-
-            Button(sheet, "Close", 320, CloseSheet);
         }
 
         /// <summary>
@@ -1263,7 +1247,39 @@ namespace Wildgrove.Game
             clamp.maxCanvasShare = SheetMaxCanvasShare;
 
             AddSheetStitch(panel, scroll);
+            // A cross in the corner, where a hand looks for the way out — but
+            // only where leaving is free. A sheet whose scrim is inert is
+            // asking a question, and those keep their own worded way out
+            // rather than gaining a corner that answers for the player.
+            if (scrimDismisses)
+            {
+                AddSheetClose(panel);
+            }
+
             return content;
+        }
+
+        /// <summary>
+        /// The sheet's close cross — pinned to the panel's top-right corner,
+        /// outside the vertical flow (and so outside the scroll), so a long
+        /// sheet can't carry it off the bottom of the screen the way a trailing
+        /// "Never mind" did.
+        /// </summary>
+        private void AddSheetClose(GameObject panel)
+        {
+            var close = IconButton(panel.transform, JournalSprites.CrossSprite(), 36f, 96f, DismissSheet);
+            var element = close.GetComponent<LayoutElement>();
+            element.ignoreLayout = true;
+            var rect = (RectTransform)close.transform;
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            // Sized by hand: an ignored layout element still carries the touch
+            // size, but nothing is left to apply it.
+            rect.sizeDelta = new Vector2(96f, 96f);
+            // Riding the panel's own padding, so it sits in the corner rather
+            // than shouldering the title out of the middle.
+            rect.anchoredPosition = new Vector2(-6f, -6f);
         }
 
         /// <summary>

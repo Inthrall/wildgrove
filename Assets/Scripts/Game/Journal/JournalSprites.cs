@@ -15,6 +15,57 @@ namespace Wildgrove.Game
         private static Sprite _dashSprite;
         private static Sprite _dashAcrossSprite;
         private static Sprite _quillSprite;
+        private static Sprite _crossSprite;
+
+        /// <summary>
+        /// A cross — the sheets' close affordance, in the corner where a hand
+        /// expects it. Two tapering strokes rather than even bars: the same
+        /// pen-drawn logic as the quill, so it reads as written in the journal
+        /// and not pasted in from an icon set (there is none to draw from).
+        /// </summary>
+        internal static Sprite CrossSprite()
+        {
+            if (_crossSprite == null)
+            {
+                const int size = 32;
+                const float margin = 8.5f;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                var strokes = new[]
+                {
+                    (from: new Vector2(margin, margin), to: new Vector2(size - margin, size - margin)),
+                    (from: new Vector2(margin, size - margin), to: new Vector2(size - margin, margin)),
+                };
+
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var point = new Vector2(x + 0.5f, y + 0.5f);
+                        var alpha = 0f;
+                        foreach (var stroke in strokes)
+                        {
+                            var along = stroke.to - stroke.from;
+                            var t = Mathf.Clamp01(Vector2.Dot(point - stroke.from, along) / along.sqrMagnitude);
+                            var distance = Vector2.Distance(point, stroke.from + (along * t));
+                            // Thickest at the middle, tapering to both ends —
+                            // a stroke a nib would leave crossing itself.
+                            var halfWidth = Mathf.Lerp(0.9f, 1.9f, 1f - Mathf.Abs((t * 2f) - 1f));
+                            alpha = Mathf.Max(alpha, Mathf.Clamp01(halfWidth - distance + 0.5f));
+                        }
+
+                        texture.SetPixel(x, y, alpha <= 0f
+                            ? Color.clear
+                            : new Color(Ink.r, Ink.g, Ink.b, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _crossSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _crossSprite;
+        }
 
         /// <summary>
         /// A quill — the rename affordance beside a familiar's name. Drawn as a
