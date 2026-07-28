@@ -443,6 +443,24 @@ Interpretations shipped (tune/confirm):
   names) and draw it with `JournalSheets.OpenStandingSheet`. `ShowLeaderboard` is
   kept, now wrapped in a try/catch that reports the throw, because the call
   fails **synchronously** — which is why it looked like a hung callback.
+- **The Renown board reads clean but comes back EMPTY (v0.1.78, 2026-07-28).**
+  `reading top 10` → `read 0 rows`, twice, while scores submitted seconds later
+  are accepted. So the client path is right (a bad read would log
+  `read FAILED — <status>`) and the remaining cause is a **console/account
+  state**, not code. Two candidates, and the read now prints which:
+  the line reports the player's own row and Play's approximate total, so
+  **`player rank N with X`** means the board has the score and only the *public
+  page* is withheld, while **`player unranked`** means Play is not ranking this
+  game's scores at all. Things to check in that order:
+  1. **Is the Play Games Services *configuration* published?** This is a separate
+     publish state from an individual leaderboard being "live", and separate again
+     from the app's internal-testing track. While it is unpublished, testers can
+     sign in and submit — exactly what we see — and the public page stays empty.
+  2. **Play Games account profile visibility.** There is a per-account setting for
+     appearing on public leaderboards; with it off, `LoadScores(Public)` legitimately
+     returns nothing, including the player's own row.
+  An empty top page no longer reads as "no one is here": if Play ranks the player,
+  the sheet shows their own line alone.
   **What it caught (v0.1.76, 2026-07-28) — sign-in was never the problem.** The
   sheet reads clean all the way down: `Sign-in: Success` at 1.4 s, `Leaderboard
   …AhAD score 6880488: accepted`, `Achievement …AhAC: reported OK`, `Cloud load:

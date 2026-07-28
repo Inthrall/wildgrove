@@ -951,7 +951,7 @@ namespace Wildgrove.Game
             {
                 MakeText(sheet, entries == null
                         ? "<i>the board would not be read — Play Games kept it shut.</i>"
-                        : "<i>no one has yet been recorded here.</i>",
+                        : "<i>no one has yet been recorded here — Play Games is not\nyet showing this board to anyone.</i>",
                     20, TextAnchor.MiddleCenter, Ink2, _serif);
                 Button(sheet, "Close", 320, CloseSheet);
                 return;

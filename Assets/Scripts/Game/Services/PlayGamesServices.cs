@@ -204,7 +204,17 @@ namespace Wildgrove.Game.Services
                         return;
                     }
 
-                    Report("Leaderboard " + leaderboardId + ": read " + data.Scores.Length + " rows");
+                    // Report the player's own row and Play's approximate total as
+                    // well as the page size. An empty top page with the player
+                    // ranked means the board exists and we asked wrongly; an
+                    // empty page with the player unranked means Play is not
+                    // publishing scores for this game yet, which is a console
+                    // state and not something the client can fix.
+                    var player = data.PlayerScore == null
+                        ? "unranked"
+                        : "rank " + data.PlayerScore.rank + " with " + data.PlayerScore.value;
+                    Report("Leaderboard " + leaderboardId + ": read " + data.Scores.Length
+                        + " rows, player " + player + ", approx total " + data.ApproximateCount);
                     ResolveNames(data, onLoaded);
                 });
         }
@@ -227,6 +237,26 @@ namespace Wildgrove.Game.Services
 
             if (ids.Length == 0)
             {
+                // An empty top page does not mean the player has no standing:
+                // Play withholds the public page for a game it is not yet
+                // publishing scores for, while still ranking the player against
+                // it. Their own line is worth showing on its own — it is the
+                // part they actually came to read.
+                if (data.PlayerScore != null)
+                {
+                    onLoaded?.Invoke(new[]
+                    {
+                        new LeaderboardEntry
+                        {
+                            rank = data.PlayerScore.rank,
+                            name = PlayGamesPlatform.Instance.GetUserDisplayName(),
+                            score = data.PlayerScore.value,
+                            isPlayer = true,
+                        },
+                    });
+                    return;
+                }
+
                 onLoaded?.Invoke(new LeaderboardEntry[0]);
                 return;
             }
