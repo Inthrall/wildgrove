@@ -920,7 +920,7 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   (`Assets/Scripts/Game/Services/GameStats.cs`, `IGameServices.cs`,
   `PlayGamesServices.cs`, `StubGameServices.cs`, `GameLoop.cs`,
   `store/play-games/gamestats/`)
-- **Sidekick — nothing to build, and one setting that will bite if missed.** The
+- **Sidekick — ON in Play Console 2026-07-29. Nothing to build; one setting that bites if missed.** The
   overlay is added at *upload* time for App Bundle games: Play Console → create an
   internal/closed release with **"Sidekick is on by default"**, then Testing →
   Advanced settings → **Play Games Sidekick** → *"Automatically make Sidekick is on
