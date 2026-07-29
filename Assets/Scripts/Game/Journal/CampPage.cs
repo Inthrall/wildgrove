@@ -206,7 +206,14 @@ namespace Wildgrove.Game
                     SetButtonLabel(look, signedIn ? "Look" : "Sign in");
                 }
 
-                var live = !checking;
+                // Greys out once the week has turned back over, like the drip's
+                // Watch — a live button that only ever answers "nothing set out
+                // yet" teaches the player to stop reading the row. Signed out it
+                // stays live, because there it is the sign-in. Cost of greying:
+                // an off-cadence delivery (Play's week need not start where our
+                // stamp did) waits for the next launch's purchase fetch, which
+                // receives it unprompted — deferred, never lost.
+                var live = !checking && (!signedIn || due);
                 look.interactable = live;
                 SetButtonTint(look, live);
             });
