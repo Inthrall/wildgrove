@@ -147,6 +147,7 @@ namespace Wildgrove.Game
             { "stags-herald", Plates + "Insects/insect-stags-herald" },
             { "silver-skimmer", Plates + "Insects/insect-silver-skimmer" },
             { "those-who-sow", Plates + "Insects/insect-those-who-sow" },
+            { "wayfarers-plate", Plates + "Insects/insect-wayfarers-plate" },
         };
 
         // manufactured line-art motifs the HUD places by a plain name — the PSF

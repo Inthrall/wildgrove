@@ -69,6 +69,12 @@ CARDS = [
     # ── In-app products ────────────────────────────────────────────────────
     Card("iap/reward_drovers_halter-icon.png", "Familiars/familiar-pony", centre=0.493),
     Card("iap/reward_weekly_amber_cache-icon.png", "Insects/insect-deep-amber", plate_fraction=0.561),
+    # The awarded plate wears its own moth, because the reward *is* a plate —
+    # anything else on this card would advertise the wrong thing. Cut from
+    # Scott, "Australian Lepidoptera and their Transformations" (1864) Plate 4,
+    # drawn from nature by Helena Scott: a hand that really did walk somewhere
+    # first, which is the fiction the reward is built on.
+    Card("iap/reward_wayfarers_plate-icon.png", "Insects/insect-wayfarers-plate"),
     # ── Play Games Services ───────────────────────────────────────────────
     # "First kith": the vole is the seed familiar and the first friend the
     # fiction gives you, so it is the one that belongs on this card.
