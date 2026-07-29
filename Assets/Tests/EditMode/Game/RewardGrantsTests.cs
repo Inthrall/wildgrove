@@ -38,6 +38,18 @@ namespace Wildgrove.Game.Tests
                     trait = new TraitData { displayName = "Half-broke", kind = "trailCarryFactor", value = 0.5 },
                 },
             };
+            _data.insects = new List<InsectData>
+            {
+                new InsectData
+                {
+                    id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
+                    sketches = 1, rarity = 0, rewarded = true,
+                    effects = new List<EffectData>
+                    {
+                        new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 },
+                    },
+                },
+            };
         }
 
         [TearDown]
@@ -74,6 +86,45 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Apply_TheWayfarersPlate_RecordsThePlateAndNamesTheGift()
+        {
+            var state = new GameState();
+
+            var grant = RewardGrants.Apply(state, _data, RewardProductIds.WayfarersPlate, Now);
+
+            Assert.That(grant, Is.Not.Null);
+            Assert.That(state.wayfarersPlateOwned, Is.True);
+            Assert.That(Insects.IsRecorded(state, _data.insects[0]), Is.True,
+                "an awarded plate arrives finished — no one sketches it");
+            Assert.That(grant.statement, Does.Contain("Play Games"), "Play requires the source be said out loud");
+            Assert.That(grant.statement, Does.Contain(grant.itemName), "and the item named plainly");
+        }
+
+        [Test]
+        public void Apply_TheWayfarersPlateTwice_StillAcknowledgesAndDrawsNoSecondPage()
+        {
+            var state = new GameState();
+            RewardGrants.Apply(state, _data, RewardProductIds.WayfarersPlate, Now);
+
+            Assert.That(RewardGrants.Apply(state, _data, RewardProductIds.WayfarersPlate, Now), Is.Not.Null);
+            Assert.That(Insects.SketchCount(state, PlayRewards.WayfarersPlateId), Is.EqualTo(1),
+                "a re-delivery is acknowledged, but the book gains nothing");
+        }
+
+        [Test]
+        public void Apply_TheWayfarersPlate_SurvivesAPlateTheDataHasNotHeardOf()
+        {
+            // Authoring order is not guaranteed: an award can arrive on a build
+            // whose data hasn't caught up. It is written down anyway rather than
+            // acknowledged into nothing, and a later data version finds it.
+            _data.insects = new List<InsectData>();
+            var state = new GameState();
+
+            Assert.That(RewardGrants.Apply(state, _data, RewardProductIds.WayfarersPlate, Now), Is.Not.Null);
+            Assert.That(Insects.SketchCount(state, PlayRewards.WayfarersPlateId), Is.EqualTo(1));
+        }
+
+        [Test]
         public void Apply_TheWeeklyCache_CreditsTheAmberAndStatesTheAmount()
         {
             var state = new GameState();
@@ -102,9 +153,10 @@ namespace Wildgrove.Game.Tests
         {
             var state = new GameState();
 
-            // The Wayfarer's Cloak is named but has no cosmetic substrate to
-            // land in, which is exactly why it is kept out of the catalogue.
-            Assert.That(RewardGrants.Apply(state, _data, RewardProductIds.WayfarersCloak, Now), Is.Null);
+            // An id with nothing behind it — a console product created ahead of
+            // its grant, or a retired one still attached to a live offer.
+            Assert.That(RewardGrants.Apply(state, _data, "reward_wayfarers_cloak", Now), Is.Null,
+                "the cloak was retired unbuilt; an award of it must not be acknowledged");
             Assert.That(RewardGrants.Apply(state, _data, "reward_nonsense", Now), Is.Null);
             Assert.That(RewardGrants.Apply(state, _data, null, Now), Is.Null);
         }
@@ -125,7 +177,7 @@ namespace Wildgrove.Game.Tests
                     rewardId + " is catalogued, so a delivery of it must land somewhere");
             }
 
-            Assert.That(RewardProductIds.IsReward(RewardProductIds.WayfarersCloak), Is.False,
+            Assert.That(RewardProductIds.IsReward("reward_wayfarers_cloak"), Is.False,
                 "an ungrantable reward must stay out of the catalogue — uncatalogued means never acknowledged");
         }
 
@@ -136,9 +188,12 @@ namespace Wildgrove.Game.Tests
                 "a repeatable reward must be consumable or its second delivery reads as already owned");
             Assert.That(RewardProductIds.IsRepeatable(RewardProductIds.DroversHalter), Is.False,
                 "a single-use reward is a durable entitlement, resolved from the owned set");
+            Assert.That(RewardProductIds.IsRepeatable(RewardProductIds.WayfarersPlate), Is.False,
+                "and the plate is the second single-use one, not a repeatable");
 
             Assert.That(StoreCatalogue.IsConsumable(RewardProductIds.WeeklyAmberCache), Is.True);
             Assert.That(StoreCatalogue.IsConsumable(RewardProductIds.DroversHalter), Is.False);
+            Assert.That(StoreCatalogue.IsConsumable(RewardProductIds.WayfarersPlate), Is.False);
             Assert.That(StoreCatalogue.IsConsumable(StoreProductIds.AmberPackSmall), Is.True,
                 "and the bought consumables still read as they did");
         }

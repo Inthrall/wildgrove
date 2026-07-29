@@ -259,6 +259,7 @@ namespace Wildgrove.Data
                 sketches = f.Sketches,
                 habitats = new List<string>(f.Habitats),
                 rarity = f.Rarity,
+                rewarded = f.Rewarded,
                 effects = f.Effects.Select(MapEffect).ToList()
             };
         }

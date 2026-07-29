@@ -131,6 +131,14 @@ namespace Wildgrove.Sim
 
             foreach (var insect in data.insects)
             {
+                // An awarded plate holds no habitats, so it would fall out here
+                // anyway — say so explicitly, because "no habitats" is a data
+                // convention and this is the rule it stands for.
+                if (insect.rewarded)
+                {
+                    continue;
+                }
+
                 if (insect.habitats != null && insect.habitats.Contains(zoneId) && !Insects.IsRecorded(state, insect))
                 {
                     eligible.Add(insect);

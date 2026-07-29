@@ -64,6 +64,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v34+: whether The Drover's Halter has been redeemed (absent before the reward — false, so the fell pony is simply absent).</summary>
         public bool droversHalterOwned;
 
+        /// <summary>v36+: whether The Wayfarer's Plate has been redeemed (absent before the reward — false; the plate's own record lives in insectSketches).</summary>
+        public bool wayfarersPlateOwned;
+
         /// <summary>v28+: UTC unix ms of the last weekly Amber cache claim (absent before the cache — 0, reads as never claimed).</summary>
         public long weeklyCacheClaimedUnixMs;
 

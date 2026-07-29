@@ -131,6 +131,11 @@ namespace Wildgrove.Sim
             next.starterBundleAmberGranted = state.starterBundleAmberGranted;
             next.droversHalterOwned = state.droversHalterOwned;
 
+            // The Wayfarer's Plate needs no more than its flag here: the page
+            // itself rides insectSketches across the fold with the rest of the
+            // Folio, and the flag only keeps a re-delivery from re-announcing.
+            next.wayfarersPlateOwned = state.wayfarersPlateOwned;
+
             // Amber earn/claim cooldowns are cross-run: they gate premium
             // currency, so a fold must not re-arm them (migrating is the one
             // repeatable act a player controls). The weekly cache especially —

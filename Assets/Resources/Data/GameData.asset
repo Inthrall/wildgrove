@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 82e36c31724bc35898f93a71786a53b871299ba36c0bb0d2f2f86dc3fd3a0839
+  sourceHash: d685e739adff1e2c6eeb600b1f351b05cd31774ad05e096fc3cf80c47ad817c7
   economy:
     costGrowth:
       building: 1.25
@@ -1406,6 +1406,7 @@ MonoBehaviour:
     habitats:
     - old-growth-wood
     rarity: 1
+    rewarded: 0
     effects:
     - type: 1
       skill: all
@@ -1420,6 +1421,7 @@ MonoBehaviour:
     habitats:
     - silverrun-river
     rarity: 0.7
+    rewarded: 0
     effects:
     - type: 1
       skill: fishing
@@ -1442,6 +1444,7 @@ MonoBehaviour:
     - old-growth-wood
     - silverrun-river
     rarity: 0.35
+    rewarded: 0
     effects:
     - type: 1
       skill: all
@@ -1456,6 +1459,7 @@ MonoBehaviour:
     habitats:
     - mistfen-marsh
     rarity: 0.6
+    rewarded: 0
     effects:
     - type: 5
       skill: 
@@ -1470,6 +1474,7 @@ MonoBehaviour:
     habitats:
     - the-hollows
     rarity: 0.2
+    rewarded: 0
     effects:
     - type: 1
       skill: delving
@@ -1478,6 +1483,20 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 0.25
+  - id: wayfarers-plate
+    displayName: The Wayfarer's Plate
+    sketches: 1
+    habitats: []
+    rarity: 0
+    rewarded: 1
+    effects:
+    - type: 6
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.005
   almanac:
   - id: old-songs-i
     displayName: Old Songs I
@@ -2553,3 +2572,7 @@ MonoBehaviour:
       text: They sing in galleries no light has ever reached, to no audience at all.
         Five evenings by lamplight, drawing what has never been seen. They did not
         stop singing once.
+    - key: wayfarers-plate
+      text: A loose leaf, folded twice, left in a place I would pass. Another hand
+        drew it, steadier than mine and long gone. I did not walk for this one. It
+        is in the book now, and I am still walking.

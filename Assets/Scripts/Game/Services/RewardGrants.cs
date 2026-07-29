@@ -68,6 +68,24 @@ namespace Wildgrove.Game.Services
                 };
             }
 
+            if (productId == RewardProductIds.WayfarersPlate)
+            {
+                // Already in the book — same as the Halter: a re-delivery is a
+                // legitimate arrival to acknowledge, it just says nothing new.
+                if (!PlayRewards.ApplyWayfarersPlate(state, data, true) && !state.wayfarersPlateOwned)
+                {
+                    return null;
+                }
+
+                return new RewardGrant
+                {
+                    rewardId = productId,
+                    itemName = "The Wayfarer's Plate",
+                    statement = "Received from Play Games: The Wayfarer's Plate.",
+                    flavour = "a page in another hand, steadier than yours and long gone. the book has room for it."
+                };
+            }
+
             if (productId == RewardProductIds.WeeklyAmberCache)
             {
                 var amount = Amber.ReceiveWeeklyCache(state, data, nowUnixMs);

@@ -74,6 +74,9 @@ namespace Wildgrove.Sim
         /// <summary>True once The Drover's Halter has been redeemed (design §11) — the fell pony's presence and lane derive from this; see Roster.SyncDroversHalter. Survives Migration: a redemption is a redemption.</summary>
         public bool droversHalterOwned;
 
+        /// <summary>True once The Wayfarer's Plate has been redeemed (design §11). The plate itself lives in insectSketches like every other, so it crosses Migration on that alone — this only bridges sessions that start before billing resolves, and re-recording is idempotent.</summary>
+        public bool wayfarersPlateOwned;
+
         /// <summary>UTC unix ms of the last weekly Amber cache claim (design §11) — 0 = never claimed; the cache re-arms a week after this.</summary>
         public long weeklyCacheClaimedUnixMs;
 

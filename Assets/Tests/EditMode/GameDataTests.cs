@@ -165,8 +165,11 @@ namespace Wildgrove.Data.Tests
                 Is.EquivalentTo(new[] { "deep-ores", "crystals" }), "the dark's pair specialist");
             Assert.That(data.SpeciesById["ermine"].Trait.Resources,
                 Is.EquivalentTo(new[] { "ashglass", "glacier-ice" }), "the winter-walker pairs the burning's two residues");
-            Assert.That(data.InsectsById["quiet-court"].Rarity, Is.EqualTo(data.Insects.Min(i => i.Rarity)),
-                "the Hollows hosts the rarest plate");
+            // Drawable plates only: an awarded plate holds rarity 0 because it
+            // is never in the roll, which would otherwise read as the rarest.
+            Assert.That(data.InsectsById["quiet-court"].Rarity,
+                Is.EqualTo(data.Insects.Where(i => !i.Rewarded).Min(i => i.Rarity)),
+                "the Hollows hosts the rarest plate anyone can draw");
             Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("the-hollows"),
                 "the Rite grew a sixth verse with the zone");
             Assert.That(data.DeepAmber.Zone, Is.EqualTo("the-hollows"));
@@ -470,6 +473,63 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("no observation site")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void RealData_TheAwardedPlateIsOutOfTheRollAndCarriesItsFieldNote()
+        {
+            var data = GameData.Parse(LoadSources());
+            var plate = data.InsectsById["wayfarers-plate"];
+            var effect = plate.Effects.Single();
+
+            Assert.That(plate.Rewarded, Is.True);
+            Assert.That(plate.Habitats, Is.Empty, "no site can offer it — it is given, not drawn");
+            Assert.That(plate.Rarity, Is.EqualTo(0.0), "and it holds no draw weight");
+            Assert.That(data.Dialogue.InsectPlates.ContainsKey("wayfarers-plate"), Is.True,
+                "a plate with no field note reads as a hole in the journal");
+
+            // Free, permanent and across every fold — so it sits below the
+            // mildest thing anyone can earn in the same band, deliberately.
+            var earned = data.Insects
+                .Where(i => !i.Rewarded)
+                .SelectMany(i => i.Effects)
+                .Where(e => e.Type == effect.Type)
+                .Select(e => e.Value)
+                .ToList();
+            Assert.That(earned, Is.Not.Empty, "nothing to compare against, so this test proves nothing");
+            Assert.That(effect.Value, Is.LessThan(earned.Min()),
+                "the gift is the weakest plate in the book: its value is that no one walked for it");
+        }
+
+        [Test]
+        public void Validate_AwardedInsectWithADrawWeight_IsReported()
+        {
+            var sources = LoadSources();
+            sources.InsectsJson = sources.InsectsJson.Replace(
+                "\"rarity\": 0, \"rewarded\": true",
+                "\"rarity\": 0.4, \"rewarded\": true");
+            Assert.That(sources.InsectsJson, Does.Contain("\"rarity\": 0.4"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("must have rarity 0"), string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_AwardedInsectWithAHabitat_IsReported()
+        {
+            // A habitat on an awarded plate promises a site that will never
+            // offer it — the roll skips awarded plates outright.
+            var sources = LoadSources();
+            sources.InsectsJson = sources.InsectsJson.Replace(
+                "\"habitats\": [], \"rarity\": 0, \"rewarded\": true",
+                "\"habitats\": [\"the-hollows\"], \"rarity\": 0, \"rewarded\": true");
+            Assert.That(sources.InsectsJson, Does.Contain("\"habitats\": [\"the-hollows\"], \"rarity\": 0"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("must hold no habitats"), string.Join("\n", issues));
         }
 
         [Test]

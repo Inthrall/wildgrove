@@ -77,23 +77,24 @@ namespace Wildgrove.Game.Services
         public const string WeeklyAmberCache = "reward_weekly_amber_cache";
 
         /// <summary>
-        /// Single-use: the cosmetic cloak (design §11). Named here so the set is
-        /// legible and the console product can be planned, but deliberately NOT
-        /// in <see cref="All"/> — the game has no cosmetic substrate, so nothing
-        /// can grant it. An id absent from the catalogue is never fetched, never
-        /// acknowledged, and Play refunds the offer rather than the player paying
-        /// a Quest for nothing. Add it here the same day its grant lands.
+        /// Single-use: a plate drawn by another hand, arriving already recorded
+        /// (design §11). A durable entitlement, and the second single-use reward
+        /// the Sep 30 2026 guideline asks for. It replaced a cosmetic cloak that
+        /// was never built: an id with no grant behind it can be catalogued but
+        /// never acknowledged, so Play would refund the offer and the player
+        /// would have paid a Quest for nothing. Nothing goes in <see cref="All"/>
+        /// until something can land it — a test pins that.
         /// </summary>
-        public const string WayfarersCloak = "reward_wayfarers_cloak";
+        public const string WayfarersPlate = "reward_wayfarers_plate";
 
         /// <summary>Single-use rewards: durable entitlements, resolved from the store's owned set like the kith products.</summary>
-        public static readonly string[] Durable = { DroversHalter };
+        public static readonly string[] Durable = { DroversHalter, WayfarersPlate };
 
         /// <summary>Repeatable rewards: consumables, credited once per delivery and never owned.</summary>
         public static readonly string[] Repeatable = { WeeklyAmberCache };
 
-        /// <summary>Every reward the game can actually grant. Only these are catalogued — see the Wayfarer's Cloak note.</summary>
-        public static readonly string[] All = { DroversHalter, WeeklyAmberCache };
+        /// <summary>Every reward the game can actually grant — and only those; see the Wayfarer's Plate note.</summary>
+        public static readonly string[] All = { DroversHalter, WeeklyAmberCache, WayfarersPlate };
 
         /// <summary>Whether a product id is a Play Games Reward this build can receive.</summary>
         public static bool IsReward(string productId)

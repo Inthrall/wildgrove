@@ -437,6 +437,31 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheWayfarersPlateAndItsPage()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            PlayRewards.ApplyWayfarersPlate(state, _data, true);
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.wayfarersPlateOwned, Is.True, "the redemption survives a save");
+            Assert.That(Insects.SketchCount(restored, PlayRewards.WayfarersPlateId), Is.EqualTo(1),
+                "and so does the page, which is where the plate actually lives");
+        }
+
+        [Test]
+        public void TryMigrate_V35Save_HasNoWayfarersPlate()
+        {
+            // v35 predates the reward, so it cannot have been redeemed — the
+            // plate is simply unrecorded and the flag reads false.
+            var save = new SaveData { version = 35 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.wayfarersPlateOwned, Is.False);
+        }
+
+        [Test]
         public void TryMigrate_V34Save_GetsAnUnsungLongSong()
         {
             // v34 predates the Almanac's repeatable line — no levels held, and

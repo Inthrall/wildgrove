@@ -34,5 +34,29 @@ namespace Wildgrove.Sim
             Roster.SyncDroversHalter(state, data);
             return true;
         }
+
+        /// <summary>
+        /// Honour The Wayfarer's Plate: a plate drawn by another hand, arriving
+        /// already recorded (design §11). Returns true when it landed just now
+        /// and false when the book already held it or it isn't owned.
+        ///
+        /// The plate is written into the Folio's own record rather than being
+        /// derived from the flag, which is why it needs no Migration handling —
+        /// recorded plates cross the fold on their own, like every other page.
+        /// </summary>
+        public static bool ApplyWayfarersPlate(GameState state, GameDataAsset data, bool owned)
+        {
+            if (state == null || !owned || state.wayfarersPlateOwned)
+            {
+                return false;
+            }
+
+            state.wayfarersPlateOwned = true;
+            Insects.Record(state, data, WayfarersPlateId);
+            return true;
+        }
+
+        /// <summary>The awarded plate's insects.json id — the one plate no observation site can offer.</summary>
+        public const string WayfarersPlateId = "wayfarers-plate";
     }
 }

@@ -498,14 +498,32 @@ namespace Wildgrove.Data
                     issues.Add($"Insect '{insect.Id}' has non-positive sketch count");
                 }
 
-                if (insect.Rarity <= 0 || insect.Rarity > 1)
+                // An awarded plate is never entered in the roll, so a draw
+                // weight or a habitat on one is a claim the sketch loop will
+                // silently ignore — refuse both rather than read as drawable.
+                if (insect.Rewarded)
                 {
-                    issues.Add($"Insect '{insect.Id}' rarity {insect.Rarity} is outside (0, 1]");
-                }
+                    if (insect.Rarity != 0)
+                    {
+                        issues.Add($"Insect '{insect.Id}' is awarded, so it is never drawn for and must have rarity 0");
+                    }
 
-                if (insect.Habitats.Count == 0)
+                    if (insect.Habitats.Count > 0)
+                    {
+                        issues.Add($"Insect '{insect.Id}' is awarded, so it must hold no habitats");
+                    }
+                }
+                else
                 {
-                    issues.Add($"Insect '{insect.Id}' has no habitats");
+                    if (insect.Rarity <= 0 || insect.Rarity > 1)
+                    {
+                        issues.Add($"Insect '{insect.Id}' rarity {insect.Rarity} is outside (0, 1]");
+                    }
+
+                    if (insect.Habitats.Count == 0)
+                    {
+                        issues.Add($"Insect '{insect.Id}' has no habitats");
+                    }
                 }
 
                 foreach (var site in insect.Habitats)

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 35;
+        public const int CurrentVersion = 36;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -39,6 +39,7 @@ namespace Wildgrove.Sim.Saves
                 purchasedKithSlots = state.purchasedKithSlots,
                 starterBundleAmberGranted = state.starterBundleAmberGranted,
                 droversHalterOwned = state.droversHalterOwned,
+                wayfarersPlateOwned = state.wayfarersPlateOwned,
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
@@ -272,6 +273,7 @@ namespace Wildgrove.Sim.Saves
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
             state.starterBundleAmberGranted = save.starterBundleAmberGranted;
             state.droversHalterOwned = save.droversHalterOwned;
+            state.wayfarersPlateOwned = save.wayfarersPlateOwned;
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
@@ -1126,6 +1128,13 @@ namespace Wildgrove.Sim.Saves
                         // lists carry over untouched.
                         save.almanacLevels = save.almanacLevels ?? new List<SavedAlmanacLevel>();
                         save.version = 35;
+                        break;
+
+                    case 35:
+                        // v35 predates The Wayfarer's Plate — nothing to hold:
+                        // the reward did not exist, so it cannot have been
+                        // redeemed, and the plate is simply unrecorded.
+                        save.version = 36;
                         break;
 
                     default:

@@ -773,7 +773,7 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   (`play_reward_received`) rather than a free tap — see the Play Games Rewards
   item below.
   Still waiting: cosmetics/extra craft queues as further sinks — cosmetics have
-  no substrate at all, the same blocker as the Wayfarer's Cloak — excavation
+  no substrate at all, which is what retired the cosmetic reward cloak — excavation
   skill XP ("XP from every action" — fragments are too rare for per-unit XP;
   decide a grant when tool-tier / level gates need the level), and the fossil
   card lore (Compendium).
@@ -788,8 +788,8 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   a book of rubbings keeping the same permanent multiplier + lore. Rename
   `fragment`→`sketch`/`portion` here and in `fossils.json`; "diggers share the zone
   flock cap" is superseded by stationing. Amber stays takeable (unchanged).
-- **Play Games Rewards — the delivery path is BUILT (2026-07-29); two of three
-  items land, the third has nowhere to land.** Three items is the designed set
+- **Play Games Rewards — the delivery path is BUILT (2026-07-29) and all three
+  items land (the third since 2026-07-30).** Three items is the designed set
   (§11 line 514, §12 row: two single-use + one repeatable). Requirements
   re-checked against Google's live guidelines the same day, and they hold as the
   doc has them: **≥2 single-use by Sep 30 2026** (awarded on Quest completion),
@@ -849,24 +849,41 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
     free always-manned lane a standing +50% on a manned trail rather than a
     doubling — verify the bottleneck triangle with two lanes (see the
     haul-bottleneck item in Phase 1).
-  - **Wayfarer's Cloak — STILL NOT BUILT, and deliberately out of the catalogue.**
-    There is no cosmetic system of any kind (nothing matching skin / wardrobe /
-    appearance), and no warden or familiar sprite — presentation is journal text
-    plus naturalist plates. The first job is a design call on what a cosmetic even
-    *is* here (a journal cover, a seal on the Standing card, a camp plate), not an
-    art request. It's the same substrate the amber cosmetics sink wants — build it
-    once. Its id is named in `RewardProductIds` but **kept out of `All`** so it is
-    never fetched and so an order for it could never be acknowledged; a test pins
-    that every catalogued reward can actually be granted. **Consequence to own:
-    with only the Halter shipping, the Sep 30 2026 bar of ≥2 single-use is NOT
-    met.** Either the cloak (or some second single-use item) lands before then, or
-    the Level Up benefits lapse on that date.
+  - **The Wayfarer's Plate — BUILT 2026-07-30, and it closes the Sep 30 bar.**
+    The second single-use reward: an insect plate that arrives already recorded,
+    drawn by a hand that walked the trail first. `rewarded: true` in
+    `insects.json` marks the one plate no observation site can offer — the
+    validator refuses a habitat or a draw weight on such a plate, and
+    `Observation.EligibleInsectsInto` skips them outright rather than relying on
+    "no habitats" as a convention. The grant writes it into the Folio
+    (`Insects.Record`) instead of deriving it from the entitlement, which is why
+    it needs **no Migration handling**: recorded plates already cross the fold.
+    Its effect (`pristineChanceBonus` 0.005) is deliberately the mildest in the
+    book — a test pins that it sits below anything earnable in the same band,
+    because a free permanent that crosses every fold must not out-earn the pages
+    someone walked for. Save **v36** carries `wayfarersPlateOwned`, which only
+    bridges sessions starting before billing resolves.
+    (`design/data/insects.json`, `Sim/Insects.cs`, `Sim/PlayRewards.cs`,
+    `Services/ServiceIds.cs`, `RewardGrants.cs`)
+  - **The cosmetic cloak was RETIRED unbuilt (2026-07-30).** It wanted a cosmetic
+    substrate the game has never had — no skin/wardrobe/appearance system, no
+    warden or familiar sprite, presentation is journal text plus plates — and
+    building one to justify one reward is backwards. Its id is gone from
+    `RewardProductIds`; a test pins that `reward_wayfarers_cloak` is not a
+    catalogued reward, so an award of it could never be acknowledged. **Do not
+    create that console product.** If a cosmetic substrate is ever built for the
+    amber sink, a cosmetic reward can be reconsidered on its own merits.
+    **Still owed for the plate:** its own plate art (it falls back to the
+    placeholder disc today, like `lantern-bearers` and `quiet-court` — three
+    Commons sourcing passes that could be one), and the console product
+    `reward_wayfarers_plate`.
   - **Play Console — the products are DONE (2026-07-30).** One-time products
     `reward_drovers_halter` and `reward_weekly_amber_cache` are created and
-    activated; `reward_wayfarers_cloak` waits on a grant existing. Remaining:
-    **attach a Play Games Reward offer to each — the association UI and reward
-    testing do not open until Sep 1 2026**, so that is a September job, and the
-    window against the Sep 30 bar is one month wide. Any reward UI must be drawn
+    activated. Still to create: **`reward_wayfarers_plate`** (the second
+    single-use reward, built 2026-07-30). Then: **attach a Play Games Reward
+    offer to each — the association UI and reward testing do not open until Sep 1
+    2026**, so that is a September job, and the window against the Sep 30 bar is
+    one month wide. Any reward UI must be drawn
     **in-journal**; Play Games' own overlay is permanently dead on
     `targetSdk 36` (see the Play Games item in Phase 1).
   - Still untested on a device, like everything billing: the real out-of-app

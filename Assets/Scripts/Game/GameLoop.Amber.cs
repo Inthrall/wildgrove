@@ -102,7 +102,13 @@ namespace Wildgrove.Game
         /// </summary>
         public void SyncRewardEntitlements()
         {
-            if (PlayRewards.ApplyDroversHalter(State, Data, Store.IsOwned(RewardProductIds.DroversHalter)))
+            var landed = PlayRewards.ApplyDroversHalter(State, Data, Store.IsOwned(RewardProductIds.DroversHalter));
+
+            // Non-short-circuiting on purpose: both entitlements are asked
+            // about on every launch, and one landing must not skip the other.
+            landed |= PlayRewards.ApplyWayfarersPlate(State, Data, Store.IsOwned(RewardProductIds.WayfarersPlate));
+
+            if (landed)
             {
                 SaveNow();
             }

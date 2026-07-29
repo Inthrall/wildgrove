@@ -141,6 +141,10 @@ namespace Wildgrove.Data
         public int sketches;
         public List<string> habitats = new List<string>();
         public double rarity;
+
+        /// <summary>Awarded, never drawn (design §11) — excluded from the observation roll; see Observation.EligibleInsectsInto.</summary>
+        public bool rewarded;
+
         public List<EffectData> effects = new List<EffectData>();
     }
 

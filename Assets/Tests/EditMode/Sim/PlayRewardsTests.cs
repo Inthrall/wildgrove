@@ -28,6 +28,18 @@ namespace Wildgrove.Sim.Tests
                     trait = new TraitData { displayName = "Half-broke", kind = "trailCarryFactor", value = 0.5 },
                 },
             };
+            _data.insects = new List<InsectData>
+            {
+                new InsectData
+                {
+                    id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
+                    sketches = 1, rarity = 0, rewarded = true,
+                    effects = new List<EffectData>
+                    {
+                        new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 },
+                    },
+                },
+            };
         }
 
         [TearDown]
@@ -82,5 +94,47 @@ namespace Wildgrove.Sim.Tests
             // The store can resolve entitlements before a run is loaded.
             Assert.That(PlayRewards.ApplyDroversHalter(null, _data, true), Is.False);
         }
+
+        [Test]
+        public void ApplyWayfarersPlate_WhenOwned_RecordsThePlateOnceAndReportsIt()
+        {
+            var state = new GameState();
+
+            Assert.That(PlayRewards.ApplyWayfarersPlate(state, _data, true), Is.True, "it landed just now");
+            Assert.That(state.wayfarersPlateOwned, Is.True);
+            Assert.That(Insects.IsRecorded(state, _data.insects[0]), Is.True, "and arrives finished");
+
+            Assert.That(PlayRewards.ApplyWayfarersPlate(state, _data, true), Is.False,
+                "a re-delivered entitlement has nothing new to say");
+            Assert.That(Insects.SketchCount(state, PlayRewards.WayfarersPlateId), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ApplyWayfarersPlate_WhenNotOwned_ChangesNothing()
+        {
+            var state = new GameState();
+
+            Assert.That(PlayRewards.ApplyWayfarersPlate(state, _data, false), Is.False);
+            Assert.That(state.wayfarersPlateOwned, Is.False);
+            Assert.That(Insects.SketchCount(state, PlayRewards.WayfarersPlateId), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ApplyWayfarersPlate_NeverRevokesWhatTheSaveRemembers()
+        {
+            var state = new GameState();
+            PlayRewards.ApplyWayfarersPlate(state, _data, true);
+
+            Assert.That(PlayRewards.ApplyWayfarersPlate(state, _data, false), Is.False);
+            Assert.That(state.wayfarersPlateOwned, Is.True, "the redemption holds");
+            Assert.That(Insects.IsRecorded(state, _data.insects[0]), Is.True, "and the page stays in the book");
+        }
+
+        [Test]
+        public void ApplyWayfarersPlate_OnANullRun_IsSafe()
+        {
+            Assert.That(PlayRewards.ApplyWayfarersPlate(null, _data, true), Is.False);
+        }
+
     }
 }

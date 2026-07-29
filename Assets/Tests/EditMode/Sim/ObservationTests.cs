@@ -221,6 +221,44 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void EligibleInsects_NeverOffersAnAwardedPlate()
+        {
+            // The Wayfarer's Plate is given, not drawn (design §11). If the roll
+            // could reach it, a player would record it unawarded — and worse, an
+            // award arriving for a plate already in the book would have nothing
+            // to land, so the order could never be acknowledged.
+            _data.insects.Add(new InsectData
+            {
+                id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
+                sketches = 1, rarity = 0, rewarded = true,
+                effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 } },
+            });
+
+            var state = NewGameWithDigSite();
+            var eligible = Observation.EligibleInsects(state, _data, "old-growth-wood");
+
+            Assert.That(eligible.Count, Is.EqualTo(1), "only the drawable plate is in the roll");
+            Assert.That(eligible[0].id, Is.EqualTo("stags-herald"));
+        }
+
+        [Test]
+        public void EligibleInsects_StillSkipsAnAwardedPlateThatWasGivenAHabitat()
+        {
+            // Belt and braces: the validator refuses habitats on an awarded
+            // plate, but the roll must not depend on that to hold the line.
+            _data.insects.Add(new InsectData
+            {
+                id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
+                sketches = 1, habitats = new List<string> { "old-growth-wood" }, rarity = 1.0, rewarded = true,
+                effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 } },
+            });
+
+            var state = NewGameWithDigSite();
+
+            Assert.That(Observation.EligibleInsects(state, _data, "old-growth-wood").Count, Is.EqualTo(1));
+        }
+
+        [Test]
         public void TheWanderer_IsTheWatcher_AtEverySite()
         {
             var state = NewGameWithDigSite();

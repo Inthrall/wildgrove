@@ -342,6 +342,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheWayfarersPlateOnTheFoliosOwnRecord()
+        {
+            var state = StateWithTheRiteSung();
+            state.wayfarersPlateOwned = true;
+            state.insectSketches[PlayRewards.WayfarersPlateId] = 1;
+
+            var next = Migration.Migrate(state, _data);
+
+            // The page needs no handling of its own: recorded plates already
+            // cross the fold, which is why the grant writes it into the Folio
+            // instead of deriving it from the flag each run.
+            Assert.That(next.wayfarersPlateOwned, Is.True, "the redemption crosses the fold");
+            Assert.That(next.insectSketches.ContainsKey(PlayRewards.WayfarersPlateId), Is.True,
+                "and the page crosses with the rest of the book");
+        }
+
+        [Test]
         public void Migrate_KeepsAmber()
         {
             var state = StateWithTheRiteSung();
