@@ -861,17 +861,22 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
     with only the Halter shipping, the Sep 30 2026 bar of ≥2 single-use is NOT
     met.** Either the cloak (or some second single-use item) lands before then, or
     the Level Up benefits lapse on that date.
-  - **Play Console — Mo-side, nothing else blocks it.** Create the one-time
-    products `reward_drovers_halter` and `reward_weekly_amber_cache` (and
-    `reward_wayfarers_cloak` only once it has a grant), then attach a Play Games
-    Reward offer to each. **Reward-offer association and testing open on Sep 1
-    2026** — the integration can go in ahead of it, which is what this is. Any
-    reward UI must be drawn **in-journal**; Play Games' own overlay is permanently
-    dead on `targetSdk 36` (see the Play Games item in Phase 1).
+  - **Play Console — the products are DONE (2026-07-30).** One-time products
+    `reward_drovers_halter` and `reward_weekly_amber_cache` are created and
+    activated; `reward_wayfarers_cloak` waits on a grant existing. Remaining:
+    **attach a Play Games Reward offer to each — the association UI and reward
+    testing do not open until Sep 1 2026**, so that is a September job, and the
+    window against the Sep 30 bar is one month wide. Any reward UI must be drawn
+    **in-journal**; Play Games' own overlay is permanently dead on
+    `targetSdk 36` (see the Play Games item in Phase 1).
   - Still untested on a device, like everything billing: the real out-of-app
     delivery. `StubStore.DeliverReward` exercises the whole path in the editor
-    (grant → acknowledge, and the refusal branch) but a live Quest award can only
-    be checked once console products exist.
+    (grant → acknowledge, and the refusal branch), and a live Quest award can't
+    be tried before Sep 1. What the active products DO make checkable now: an
+    internal-track build's catalogue fetch should resolve both reward ids with a
+    price. An id coming back unavailable means the console entry and
+    `RewardProductIds` disagree — the one failure that would silently swallow
+    every future award.
   (`Wildgrove.Sim/Amber.cs`, `PlayRewards.cs`, `Stationing.cs`, `GameLoop.cs`,
   `Assets/Scripts/Game/Journal/CampPage.cs`, `JournalSheets.cs`,
   `Assets/Scripts/Game/Services/ServiceIds.cs`, `RewardGrants.cs`,
