@@ -1103,15 +1103,30 @@ namespace Wildgrove.Game
                 return;
             }
 
+            var unranked = false;
             foreach (var entry in entries)
             {
                 // The player's own line is marked rather than moved — the board
                 // reads as a ladder, and finding yourself on it is the point.
                 var name = string.IsNullOrEmpty(entry.name) ? "a warden" : entry.name;
-                var line = entry.rank + ".  " + name + "   <color=" + OchreHex + ">"
-                           + NumberFormat.Short(entry.score) + "</color>";
+
+                // Play hands back rank -1 for a score it holds but has not placed,
+                // and "-1." read as a position. A dash says the same thing honestly.
+                unranked |= entry.rank <= 0;
+                var place = entry.rank > 0 ? entry.rank + "." : "—";
+
+                // Scores come off the board log-scaled (see Leaderboards.RenownScore),
+                // so they are decoded back to Renown before anyone reads them.
+                var line = place + "  " + name + "   <color=" + OchreHex + ">"
+                           + NumberFormat.Short(Leaderboards.RenownFromScore(entry.score)) + "</color>";
                 MakeText(sheet, entry.isPlayer ? "<b>" + line + "</b>" : line,
                     21, TextAnchor.MiddleCenter, entry.isPlayer ? Ink : Ink2, _serif);
+            }
+
+            if (unranked)
+            {
+                MakeText(sheet, "<i>a dash means Play holds the score but has not yet placed it.</i>",
+                    16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
         }
 

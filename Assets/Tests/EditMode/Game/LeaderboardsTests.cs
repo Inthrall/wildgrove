@@ -74,6 +74,24 @@ namespace Wildgrove.Game.Tests
             Assert.That(score, Is.EqualTo(300_000_000).Within(1_000));
         }
 
+        [Test]
+        public void RenownFromScore_RoundTripsTheRenownItWasScaledFrom()
+        {
+            // The bug this pins: the Standing sheet drew the raw score, so 72.43M
+            // Renown (score 7_860_000) read as "7.86M" — the exponent, not the Renown.
+            var state = new GameState { renown = new BigDouble(7.243e7) };
+
+            var renown = Leaderboards.RenownFromScore(Leaderboards.RenownScore(state));
+
+            Assert.That(renown.Log10(), Is.EqualTo(state.renown.Log10()).Within(1e-5));
+        }
+
+        [Test]
+        public void RenownFromScore_AtZeroScore_IsZero()
+        {
+            Assert.That(Leaderboards.RenownFromScore(0), Is.EqualTo(BigDouble.Zero));
+        }
+
         /// <summary>An <see cref="IGameServices"/> that records the scores it was asked to submit.</summary>
         private sealed class RecordingGameServices : IGameServices
         {

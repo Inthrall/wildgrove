@@ -42,5 +42,18 @@ namespace Wildgrove.Game.Services
             // log10(0) = -infinity otherwise.
             return (long)(BigDouble.Log10(BigDouble.Max(state.renown, BigDouble.One)) * 1_000_000);
         }
+
+        /// <summary>
+        /// The inverse of <see cref="RenownScore"/> — a board score read back as the
+        /// Renown it stands for. Anything that DISPLAYS a score must go through this:
+        /// the raw value is an encoded exponent, so drawing it directly showed a
+        /// warden with 72.43M Renown as "7.86M" (log10(7.243e7) = 7.86). Lossy in the
+        /// last digits, since the score is truncated to a whole millionth of an
+        /// exponent — near enough for a ladder, never for game state.
+        /// </summary>
+        public static BigDouble RenownFromScore(long score)
+        {
+            return score <= 0 ? BigDouble.Zero : BigDouble.Pow10(score / 1_000_000.0);
+        }
     }
 }
