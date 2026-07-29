@@ -165,6 +165,9 @@ namespace Wildgrove.Data
         /// <summary>Single prerequisite node id; null/empty for a root node.</summary>
         public string requires;
 
+        /// <summary>Bought over and over (level L costs costVerdure · costGrowth.almanac^L, effects scaled by levels held) rather than learned once.</summary>
+        public bool repeatable;
+
         public List<EffectData> effects = new List<EffectData>();
     }
 
@@ -385,6 +388,15 @@ namespace Wildgrove.Data
         public double demandGrowth;
         public double spotlightDiscount;
         public double offSpotlightPremium;
+
+        /// <summary>
+        /// Migrations per extra required slot — the fold gate's breadth step.
+        /// Zero or less means no ramp (chooseCount stays where the data put it).
+        /// </summary>
+        public int chooseCountPerMigrations;
+
+        /// <summary>Ceiling on the ramped chooseCount; zero or less leaves the ramp bounded only by each verse's slot count.</summary>
+        public int chooseCountMax;
     }
 
     [Serializable]
@@ -460,6 +472,9 @@ namespace Wildgrove.Data
         public sealed class CostGrowthData
         {
             public double building;
+
+            /// <summary>Geometric step on a repeatable Almanac line. Zero or less = unconfigured (fixtures) — a repeatable line then prices every level flat.</summary>
+            public double almanac;
         }
 
         /// <summary>The gift event (design §4): one pile of a node's own resource, one deterministic arrival.</summary>

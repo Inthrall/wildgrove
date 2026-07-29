@@ -95,7 +95,11 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
             Assert.That(data.SpreadsById["river-catch"].Entries, Has.Count.EqualTo(4));
             Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
-            Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(2.5), "the run-2+ generator's d in baseQty · d^m");
+            Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(1.45), "the run-2+ generator's d in baseQty · d^m");
+            Assert.That(data.Rites.Generator.ChooseCountPerMigrations, Is.EqualTo(2), "folds per extra required slot — the breadth ramp");
+            Assert.That(data.Rites.Generator.ChooseCountMax, Is.EqualTo(5));
+            Assert.That(data.Economy.CostGrowth.Almanac, Is.EqualTo(1.25), "the geometric step on the endless Almanac line");
+            Assert.That(data.AlmanacById["the-long-song"].Repeatable, Is.True, "Verdure's endless sink");
             Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
             Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("folioSpread"));
             Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
@@ -814,9 +818,11 @@ namespace Wildgrove.Data.Tests
             var sources = LoadSources();
             // d <= 1 would make each Rite CHEAPER than the last while the
             // economy compounds — the gate would stop gating.
+            var before = sources.RitesJson;
             sources.RitesJson = sources.RitesJson.Replace(
-                "\"demandGrowth\": 2.5,",
+                "\"demandGrowth\": 1.45,",
                 "\"demandGrowth\": 0.9,");
+            Assert.That(sources.RitesJson, Is.Not.EqualTo(before), "the corruption must land — retuning d silently no-ops this Replace");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -834,6 +840,54 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("spotlightDiscount must be in (0, 1]")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RiteGeneratorBreadthCeilingBelowChooseCount_IsReported()
+        {
+            var sources = LoadSources();
+            var before = sources.RitesJson;
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"chooseCountMax\": 5,",
+                "\"chooseCountMax\": 2,");
+            Assert.That(sources.RitesJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("breadth ramp must not go backwards")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RepeatableAlmanacLineWithAMultiplicativeEffect_IsReported()
+        {
+            // Levels scale a repeatable line's effect value LINEARLY, which is
+            // only right for the additive bands — a multiplicative type would
+            // want value^levels and would otherwise fail silently.
+            var sources = LoadSources();
+            var before = sources.AlmanacJson;
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "{ \"type\": \"carrierCapacityBonus\", \"value\": 0.05 }",
+                "{ \"type\": \"haulMult\", \"value\": 1.05 }");
+            Assert.That(sources.AlmanacJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("may only grant additive effects")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RepeatableAlmanacLinePricedFlat_IsReported()
+        {
+            var sources = LoadSources();
+            var before = sources.EconomyJson;
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"almanac\": 1.25,",
+                "\"almanac\": 1.0,");
+            Assert.That(sources.EconomyJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("costGrowth.almanac must exceed 1")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

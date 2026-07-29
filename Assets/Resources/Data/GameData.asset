@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 96f670f8800dd6a184e581a47828ed3719b40f1cd576788303ecfc816e903b8f
+  sourceHash: 82e36c31724bc35898f93a71786a53b871299ba36c0bb0d2f2f86dc3fd3a0839
   economy:
     costGrowth:
       building: 1.25
+      almanac: 1.25
     gifts:
       pileGoods:
         mantissa: 1
@@ -1482,6 +1483,7 @@ MonoBehaviour:
     displayName: Old Songs I
     costVerdure: 2
     requires: 
+    repeatable: 0
     effects:
     - type: 1
       skill: all-gathering
@@ -1494,6 +1496,7 @@ MonoBehaviour:
     displayName: The Long Watch I
     costVerdure: 2
     requires: 
+    repeatable: 0
     effects:
     - type: 8
       skill: 
@@ -1506,6 +1509,7 @@ MonoBehaviour:
     displayName: Verdant Eye I
     costVerdure: 3
     requires: 
+    repeatable: 0
     effects:
     - type: 6
       skill: 
@@ -1518,6 +1522,7 @@ MonoBehaviour:
     displayName: Sure Paths I
     costVerdure: 3
     requires: 
+    repeatable: 0
     effects:
     - type: 2
       skill: 
@@ -1530,6 +1535,7 @@ MonoBehaviour:
     displayName: Patient Hands
     costVerdure: 4
     requires: 
+    repeatable: 0
     effects:
     - type: 4
       skill: 
@@ -1542,6 +1548,7 @@ MonoBehaviour:
     displayName: Deep Sight I
     costVerdure: 4
     requires: 
+    repeatable: 0
     effects:
     - type: 5
       skill: 
@@ -1554,6 +1561,7 @@ MonoBehaviour:
     displayName: Old Songs II
     costVerdure: 6
     requires: old-songs-i
+    repeatable: 0
     effects:
     - type: 1
       skill: all-gathering
@@ -1566,6 +1574,7 @@ MonoBehaviour:
     displayName: The Long Watch II
     costVerdure: 6
     requires: long-watch-i
+    repeatable: 0
     effects:
     - type: 8
       skill: 
@@ -1578,6 +1587,7 @@ MonoBehaviour:
     displayName: Sure Paths II
     costVerdure: 9
     requires: sure-paths-i
+    repeatable: 0
     effects:
     - type: 2
       skill: 
@@ -1590,6 +1600,7 @@ MonoBehaviour:
     displayName: Verdant Eye II
     costVerdure: 12
     requires: verdant-eye-i
+    repeatable: 0
     effects:
     - type: 6
       skill: 
@@ -1602,11 +1613,13 @@ MonoBehaviour:
     displayName: The Old Friend
     costVerdure: 12
     requires: 
+    repeatable: 0
     effects: []
   - id: long-watch-iii
     displayName: The Long Watch III
     costVerdure: 16
     requires: long-watch-ii
+    repeatable: 0
     effects:
     - type: 8
       skill: 
@@ -1619,6 +1632,7 @@ MonoBehaviour:
     displayName: Old Songs III
     costVerdure: 20
     requires: old-songs-ii
+    repeatable: 0
     effects:
     - type: 1
       skill: all-gathering
@@ -1627,6 +1641,26 @@ MonoBehaviour:
       recipe: 
       species: 
       value: 0.25
+  - id: the-long-song
+    displayName: The Long Song
+    costVerdure: 8
+    requires: old-songs-iii
+    repeatable: 1
+    effects:
+    - type: 1
+      skill: all-gathering
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.05
+    - type: 12
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      value: 0.05
   folioSpreads:
   - id: meadow-blooms
     displayName: Meadow Blooms
@@ -2204,9 +2238,11 @@ MonoBehaviour:
   rites:
     chooseCount: 3
     generator:
-      demandGrowth: 2.5
+      demandGrowth: 1.45
       spotlightDiscount: 0.6
       offSpotlightPremium: 1.5
+      chooseCountPerMigrations: 2
+      chooseCountMax: 5
     rites:
     - id: first-rite
       migration: 0

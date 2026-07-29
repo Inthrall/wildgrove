@@ -545,6 +545,39 @@ namespace Wildgrove.Data
                 {
                     ValidateEffect($"Almanac node '{node.Id}'", effect, data, resourceIds, issues);
                 }
+
+                if (!node.Repeatable)
+                {
+                    continue;
+                }
+
+                if (node.Effects.Count == 0)
+                {
+                    issues.Add($"Almanac node '{node.Id}' is repeatable but grants nothing — an endless sink must pay per level");
+                }
+
+                // Upgrades.ActiveEffects pays a repeatable line by scaling its
+                // effect VALUE by the levels held. That is only the same as
+                // holding the effect N times for the additive bands; a
+                // multiplicative type would want value^levels, so it would
+                // silently compute the wrong curve rather than fail.
+                foreach (var effect in node.Effects)
+                {
+                    if (effect.Type != EffectType.YieldBonus
+                        && effect.Type != EffectType.CarrierCapacityBonus
+                        && effect.Type != EffectType.TendingBurstBonus
+                        && effect.Type != EffectType.OfflineCapBonusHours)
+                    {
+                        issues.Add($"Almanac node '{node.Id}' is repeatable but grants '{effect.Type}' — a repeatable line may only grant additive effects (levels scale the value linearly)");
+                    }
+                }
+            }
+
+            if (data.Almanac.Any(n => n.Repeatable)
+                && data.Economy?.CostGrowth != null
+                && data.Economy.CostGrowth.Almanac <= 1.0)
+            {
+                issues.Add("costGrowth.almanac must exceed 1 — a repeatable Almanac line priced flat is an infinite bonus for a finite Verdure total");
             }
 
             // The requires chain must ground out — a cycle makes every node in
@@ -1012,6 +1045,23 @@ namespace Wildgrove.Data
                 {
                     issues.Add("Rites generator offSpotlightPremium must be at least 1 — off-spotlight grinds at a premium");
                 }
+
+                if (generator.ChooseCountPerMigrations < 0)
+                {
+                    issues.Add("Rites generator chooseCountPerMigrations cannot be negative — it is folds per extra required slot, or 0 for no ramp");
+                }
+
+                // A ceiling under the floor would ramp the gate DOWNWARDS.
+                if (generator.ChooseCountMax > 0 && generator.ChooseCountMax < data.Rites.ChooseCount)
+                {
+                    issues.Add($"Rites generator chooseCountMax ({generator.ChooseCountMax}) is below chooseCount ({data.Rites.ChooseCount}) — the breadth ramp must not go backwards");
+                }
+
+                // Whether a widened verse still offers a CHOICE depends on how
+                // many candidate goods its zone has by that point in the run,
+                // which the validator can't see — so that proof lives in
+                // RiteGeneratorTests alongside the existing reachability sweep,
+                // the same split the generator's other invariants already use.
             }
 
             // CurrentRite takes the FIRST rite matching a migration index —

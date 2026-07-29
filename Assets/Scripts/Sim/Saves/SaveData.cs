@@ -141,6 +141,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
         public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
 
+        /// <summary>v35+: levels held on each repeatable Almanac line (absent before the endless line existed).</summary>
+        public List<SavedAlmanacLevel> almanacLevels = new List<SavedAlmanacLevel>();
+
         /// <summary>v5+: total XP per skill (absent before the XP system existed; levels are derived, never stored).</summary>
         public List<SavedSkillXp> skillXp = new List<SavedSkillXp>();
     }
@@ -233,6 +236,14 @@ namespace Wildgrove.Sim.Saves
     /// <summary>Bought levels of one camp building line (§9 milestone upgrades live in purchasedUpgradeIds).</summary>
     [Serializable]
     public sealed class SavedBuildingLevel
+    {
+        public string id;
+        public int levels;
+    }
+
+    /// <summary>Levels held on one repeatable Almanac line.</summary>
+    [Serializable]
+    public sealed class SavedAlmanacLevel
     {
         public string id;
         public int levels;

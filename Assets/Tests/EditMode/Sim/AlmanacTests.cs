@@ -54,7 +54,17 @@ namespace Wildgrove.Sim.Tests
                     id = "long-watch-i", displayName = "The Long Watch I", costVerdure = 2,
                     effects = { new EffectData { type = EffectType.OfflineCapHours, value = 6 } },
                 },
+                new AlmanacNodeData
+                {
+                    id = "the-long-song", displayName = "The Long Song", costVerdure = 8, repeatable = true,
+                    effects =
+                    {
+                        new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.05 },
+                        new EffectData { type = EffectType.CarrierCapacityBonus, value = 0.05 },
+                    },
+                },
             };
+            _data.economy.costGrowth = new EconomyData.CostGrowthData { building = 1.25, almanac = 1.25 };
         }
 
         [TearDown]
@@ -152,6 +162,81 @@ namespace Wildgrove.Sim.Tests
             Almanac.TryBuy(state, _data, _data.almanac[2]);
 
             Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(6.0).Within(Tolerance));
+        }
+
+        /// <summary>The endless line (design §7's sink) — index 3 in the fixture.</summary>
+        private AlmanacNodeData LongSong => _data.almanac[3];
+
+        [Test]
+        public void TryBuy_RepeatableLine_TakesAnotherLevelAtAClimbingPrice()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.verdurePoints = 100.0;
+
+            Assert.That(Almanac.NextCost(state, _data, LongSong), Is.EqualTo(8.0).Within(Tolerance));
+            Assert.That(Almanac.TryBuy(state, _data, LongSong), Is.True);
+            Assert.That(Almanac.Levels(state, LongSong.id), Is.EqualTo(1));
+
+            // 8 · 1.25 — the level just taken moved the price.
+            Assert.That(Almanac.NextCost(state, _data, LongSong), Is.EqualTo(10.0).Within(Tolerance));
+            Assert.That(Almanac.TryBuy(state, _data, LongSong), Is.True);
+            Assert.That(Almanac.Levels(state, LongSong.id), Is.EqualTo(2));
+
+            // A repeatable line is never "owned out" the way a one-off is.
+            Assert.That(Almanac.CanBuy(state, _data, LongSong), Is.True);
+            Assert.That(state.almanacNodeIds, Does.Not.Contain(LongSong.id), "levels are the whole record of an endless line");
+        }
+
+        [Test]
+        public void SpentVerdure_RepeatableLine_AllocatesTheWholeSeries()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.verdurePoints = 100.0;
+
+            Almanac.TryBuy(state, _data, LongSong);
+            Almanac.TryBuy(state, _data, LongSong);
+            Almanac.TryBuy(state, _data, LongSong);
+
+            // 8 + 10 + 12.5 — allocated, never destroyed, like every other node.
+            Assert.That(Almanac.SpentVerdure(state, _data), Is.EqualTo(30.5).Within(Tolerance));
+            Assert.That(Almanac.AvailableVerdure(state, _data), Is.EqualTo(69.5).Within(Tolerance));
+            Assert.That(state.verdurePoints, Is.EqualTo(100.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void CanBuy_RepeatableLine_RefusedOnceTheNextLevelOutrunsTheFreePool()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.verdurePoints = 17.0;
+
+            Assert.That(Almanac.TryBuy(state, _data, LongSong), Is.True, "8 of 17");
+
+            // 9 free, next level wants 10 — the exponential cost is what stops
+            // the endless line being an infinite bonus.
+            Assert.That(Almanac.CanBuy(state, _data, LongSong), Is.False);
+            Assert.That(Almanac.TryBuy(state, _data, LongSong), Is.False);
+            Assert.That(Almanac.Levels(state, LongSong.id), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void RepeatableLine_MovesGatheringAndCarryingTogether()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.verdurePoints = 100.0;
+
+            var yieldBefore = state.nodes[0].yieldMultiplier;
+            var haulBefore = Upgrades.HaulCapacityMultiplier(state, _data);
+
+            Almanac.TryBuy(state, _data, LongSong);
+            Almanac.TryBuy(state, _data, LongSong);
+            Almanac.TryBuy(state, _data, LongSong);
+            Almanac.TryBuy(state, _data, LongSong);
+
+            // Four levels of +5% on both additive bands. They must move by the
+            // SAME proportion: a line that lifted gathering alone would re-open
+            // the full-basket jam the self-haul floor exists to catch.
+            Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(yieldBefore * 1.2).Within(Tolerance));
+            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(haulBefore * 1.2).Within(Tolerance));
         }
     }
 }

@@ -95,6 +95,33 @@ namespace Wildgrove.Sim
             return rites?.generator != null && rites.generator.demandGrowth > 0.0;
         }
 
+        /// <summary>
+        /// How many slots a verse asks for at this migration — the fold gate's
+        /// BREADTH lever (design §8). The authored chooseCount plus one every
+        /// chooseCountPerMigrations folds, capped at chooseCountMax.
+        ///
+        /// Breadth is the safe thing to scale with the fold count and quantity
+        /// is not: a fold multiplies production by (1 + 0.02·Verdure) and
+        /// Verdure is a square root of lifetime Renown, so player power grows
+        /// asymptotically LINEARLY in the fold count. Anything exponential
+        /// eventually beats it — which is what demandGrowth alone did. An extra
+        /// required slot instead costs stationing, kith slots and map coverage,
+        /// and it is bounded by how many slots a verse has, so it can never run
+        /// away. Zero/absent tuning leaves the authored chooseCount alone.
+        /// </summary>
+        public static int ScaledChooseCount(RitesBundle rites, int migration)
+        {
+            var baseCount = rites != null ? rites.chooseCount : 0;
+            var config = rites?.generator;
+            if (config == null || config.chooseCountPerMigrations <= 0 || migration <= 0)
+            {
+                return baseCount;
+            }
+
+            var scaled = baseCount + migration / config.chooseCountPerMigrations;
+            return config.chooseCountMax > 0 ? Math.Min(scaled, config.chooseCountMax) : scaled;
+        }
+
         /// <summary>The generated Rite for this migration, or null when the data has no generator or no template.</summary>
         public static RiteData Generate(GameDataAsset data, int migration)
         {
@@ -116,17 +143,24 @@ namespace Wildgrove.Sim
             // §9's modifierWeight: more of what the season gives freely.
             var region = Regions.ForMigration(data, migration);
 
+            // The gate widens with the fold, so the verse widens with it: each
+            // extra required slot brings an extra goods slot, keeping the
+            // choice margin the authored Rite has (five slots, choose three).
+            // Widening the ask without widening the offer would quietly turn
+            // "choose 3 of 5" into "fill 5 of 5" and remove the decision.
+            var extraSlots = ScaledChooseCount(data.rites, migration) - data.rites.chooseCount;
+
             var rite = new RiteData { id = $"rite-m{migration}", migration = migration };
             foreach (var verse in template.verses)
             {
-                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, region, ref seed));
+                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, region, extraSlots, ref seed));
             }
 
             return rite;
         }
 
         private static RiteVerseData GenerateVerse(GameDataAsset data, RiteVerseData template,
-            RiteGeneratorConfigData config, int migration, double scale, RegionData region, ref ulong seed)
+            RiteGeneratorConfigData config, int migration, double scale, RegionData region, int extraSlots, ref ulong seed)
         {
             data.ZonesById.TryGetValue(template.zone, out var zone);
             var candidates = CandidateGoods(data, zone);
@@ -160,7 +194,9 @@ namespace Wildgrove.Sim
                 }
             }
 
-            goodsCount = Math.Min(goodsCount, candidates.Count);
+            // A lean zone simply can't offer more, and asking for a good twice
+            // is not a choice — so the widening is capped by the candidates.
+            goodsCount = Math.Min(goodsCount + Math.Max(0, extraSlots), candidates.Count);
             var spotlightSlots = Math.Min(Math.Min(2, goodsCount), inSpotlight.Count);
 
             var picks = new List<RiteSlotData>();
@@ -191,6 +227,10 @@ namespace Wildgrove.Sim
                 spotlight = spotlight
             };
             var nextPick = 0;
+            // Where the widening's extra goods slots go: straight after the
+            // template's last goods slot, so the authored shape holds and the
+            // deed/specimen slot stays where the player expects it, last.
+            var afterGoods = 0;
             foreach (var slot in template.slots)
             {
                 if (slot.type == RiteSlotType.Resource)
@@ -198,6 +238,7 @@ namespace Wildgrove.Sim
                     if (nextPick < picks.Count)
                     {
                         verse.slots.Add(picks[nextPick++]);
+                        afterGoods = verse.slots.Count;
                     }
                 }
                 else
@@ -214,6 +255,12 @@ namespace Wildgrove.Sim
                         renownGrant = ToLongSaturating(slot.renownGrant * scale)
                     });
                 }
+            }
+
+            // Anything the template had no room for — the widening's extra asks.
+            for (var i = picks.Count - 1; i >= nextPick; i--)
+            {
+                verse.slots.Insert(afterGoods, picks[i]);
             }
 
             return verse;

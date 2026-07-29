@@ -445,6 +445,35 @@ namespace Wildgrove.Sim
                     yield return effect;
                 }
             }
+
+            // Repeatable lines (design §7's endless sink) pay per level held.
+            // Scaling the VALUE by the level count is the same as yielding the
+            // effect that many times — but ONLY for the additive bands
+            // (yieldBonus sums into mult·(1+bonus), carrierCapacityBonus into
+            // haulMult·(1+bonus)). A multiplicative type would want value^level
+            // instead, so the validator refuses one on a repeatable line rather
+            // than let this silently compute the wrong curve.
+            foreach (var pair in state.almanacLevels)
+            {
+                if (pair.Value <= 0 || !data.AlmanacById.TryGetValue(pair.Key, out var node) || !node.repeatable)
+                {
+                    continue;
+                }
+
+                foreach (var effect in node.effects)
+                {
+                    yield return new EffectData
+                    {
+                        type = effect.type,
+                        skill = effect.skill,
+                        zone = effect.zone,
+                        resource = effect.resource,
+                        recipe = effect.recipe,
+                        species = effect.species,
+                        value = effect.value * pair.Value
+                    };
+                }
+            }
         }
 
         internal static IEnumerable<EffectData> PurchasedEffects(GameState state, GameDataAsset data)

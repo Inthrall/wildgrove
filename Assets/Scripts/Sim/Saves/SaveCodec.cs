@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 34;
+        public const int CurrentVersion = 35;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -134,6 +134,11 @@ namespace Wildgrove.Sim.Saves
             foreach (var pair in state.buildingLevels)
             {
                 save.buildingLevels.Add(new SavedBuildingLevel { id = pair.Key, levels = pair.Value });
+            }
+
+            foreach (var pair in state.almanacLevels)
+            {
+                save.almanacLevels.Add(new SavedAlmanacLevel { id = pair.Key, levels = pair.Value });
             }
 
             foreach (var pair in state.skillXp)
@@ -392,6 +397,19 @@ namespace Wildgrove.Sim.Saves
                     {
                         // Unknown line ids are kept, same policy as elsewhere.
                         state.buildingLevels[building.id] = building.levels;
+                    }
+                }
+            }
+
+            state.almanacLevels.Clear();
+            if (save.almanacLevels != null)
+            {
+                foreach (var line in save.almanacLevels)
+                {
+                    if (line?.id != null)
+                    {
+                        // Unknown line ids are kept, same policy as elsewhere.
+                        state.almanacLevels[line.id] = line.levels;
                     }
                 }
             }
@@ -1100,6 +1118,14 @@ namespace Wildgrove.Sim.Saves
                         // redeemed, so the absent flag (false) is right and the
                         // fell pony is simply absent from the roster.
                         save.version = 34;
+                        break;
+
+                    case 34:
+                        // v34 predates the Almanac's repeatable line — no
+                        // levels held, and the one-off nodes the save already
+                        // lists carry over untouched.
+                        save.almanacLevels = save.almanacLevels ?? new List<SavedAlmanacLevel>();
+                        save.version = 35;
                         break;
 
                     default:

@@ -121,6 +121,56 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RequiredSlots_ClampsSoAVerseAlwaysKeepsAChoice()
+        {
+            // The ramp is authored against verses the generator widened in
+            // step; a verse that couldn't widen must NOT become "fill every
+            // slot", because a verse asking for a slot it hasn't got would seal
+            // the Rite — and Migration with it — forever.
+            _data.rites.generator = new RiteGeneratorConfigData
+            {
+                demandGrowth = 1.45,
+                spotlightDiscount = 0.6,
+                offSpotlightPremium = 1.5,
+                chooseCountPerMigrations = 1,
+                chooseCountMax = 20,
+            };
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Rite.RequiredSlots(state, _data, _sunfieldVerse), Is.EqualTo(2), "run 1 asks the authored count");
+
+            state.migrationCount = 50;
+
+            Assert.That(Rite.RequiredSlots(state, _data, _sunfieldVerse),
+                Is.EqualTo(_sunfieldVerse.slots.Count - 1));
+        }
+
+        [Test]
+        public void IsVerseComplete_WidensWithTheFold()
+        {
+            _data.rites.generator = new RiteGeneratorConfigData
+            {
+                demandGrowth = 1.45,
+                spotlightDiscount = 0.6,
+                offSpotlightPremium = 1.5,
+                chooseCountPerMigrations = 2,
+                chooseCountMax = 3,
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True, "two answered, two asked");
+
+            // The same two deliveries no longer answer a wider fold's verse.
+            state.migrationCount = 2;
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.False);
+        }
+
+        [Test]
         public void IsVerseRevealed_NeedsTheZoneAndEveryEarlierVerseSung()
         {
             var state = GameStateFactory.NewGame(_data);

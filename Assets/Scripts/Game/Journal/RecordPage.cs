@@ -379,6 +379,47 @@ namespace Wildgrove.Game
                 var givesLine = gives.Length > 0
                     ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>"
                     : string.Empty;
+
+                // An endless line is never "learned" — it wears its level
+                // instead, and the price on the tap climbs with it.
+                if (node.repeatable)
+                {
+                    var heldNow = Almanac.Levels(_loop.State, node.id);
+                    if (heldNow == 0 && !Almanac.PrerequisiteMet(_loop.State, _loop.Data, node))
+                    {
+                        continue;
+                    }
+
+                    var endlessNode = node;
+                    var endlessRow = Row(card);
+                    var endlessLabel = MakeText(endlessRow.transform, node.displayName + givesLine, 18, TextAnchor.MiddleLeft, Ink);
+                    FlexibleWidth(endlessLabel.gameObject, 1f);
+                    Button take = null;
+                    take = Button(endlessRow.transform, string.Empty, 300, () =>
+                    {
+                        if (_loop.BuyAlmanacNode(endlessNode))
+                        {
+                            Flash(take, "sung", true);
+                            SetNote("the long song takes another verse. it crosses every fold with you.");
+                            _dirty = true;
+                        }
+                    });
+
+                    _liveUpdaters.Add(() =>
+                    {
+                        var held = Almanac.Levels(_loop.State, endlessNode.id);
+                        var cost = Mathf.CeilToInt((float)Almanac.NextCost(_loop.State, _loop.Data, endlessNode));
+                        endlessLabel.text = node.displayName
+                                            + (held > 0 ? "  <color=" + MossDeepHex + ">verse " + held + "</color>" : string.Empty)
+                                            + givesLine;
+                        SetButtonLabel(take, "Sing · " + cost + " Verdure");
+                        var ok = Almanac.CanBuy(_loop.State, _loop.Data, endlessNode);
+                        take.interactable = ok;
+                        SetButtonTint(take, ok);
+                    });
+                    continue;
+                }
+
                 if (_loop.State.almanacNodeIds.Contains(node.id))
                 {
                     MakeText(card, node.displayName + "  <color=" + MossDeepHex + ">learned</color>" + givesLine,
@@ -433,7 +474,10 @@ namespace Wildgrove.Game
             var effects = EffectsLabel(node.effects);
             if (effects.Length > 0)
             {
-                parts.Add(effects);
+                // On an endless line the numbers are what ONE more verse adds,
+                // not the whole line — saying so is the difference between a
+                // price that looks poor and one that reads as a choice.
+                parts.Add(node.repeatable ? effects + ", every verse" : effects);
             }
 
             var bond = Bonds.BondForSource(_loop.Data, "almanacNode", node.id);

@@ -63,6 +63,17 @@ namespace Wildgrove.Data
 
         /// <summary>Off-spotlight slots price at value × this (≥ 1 — grind at a premium).</summary>
         public double OffSpotlightPremium { get; set; }
+
+        /// <summary>
+        /// Migrations per extra required slot: the gate grows in breadth (how
+        /// many slots a verse asks for) rather than in quantity. Bounded by the
+        /// verse's slot count, so it can never outrun the player's power curve
+        /// the way demand growth does. Zero disables the ramp.
+        /// </summary>
+        public int ChooseCountPerMigrations { get; set; }
+
+        /// <summary>Ceiling on the ramped chooseCount.</summary>
+        public int ChooseCountMax { get; set; }
     }
 
     /// <summary>Top-level shape of rites.json.</summary>

@@ -423,6 +423,33 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_KeepsTheRepeatableAlmanacLine_AtItsLevel()
+        {
+            _data.economy.costGrowth = new EconomyData.CostGrowthData { building = 1.25, almanac = 1.25 };
+            _data.almanac = new List<AlmanacNodeData>
+            {
+                new AlmanacNodeData
+                {
+                    id = "the-long-song", displayName = "The Long Song", costVerdure = 8, repeatable = true,
+                    effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.05 } },
+                },
+            };
+            var state = StateWithTheRiteSung();
+            state.verdurePoints = 100.0;
+            Almanac.TryBuy(state, _data, _data.almanac[0]);
+            Almanac.TryBuy(state, _data, _data.almanac[0]);
+
+            var next = Migration.Migrate(state, _data);
+
+            // The endless sink is the reason Verdure still buys something after
+            // the 99-point tree is finished — its levels are as permanent as
+            // the one-off nodes, and its allocation crosses with them.
+            Assert.That(Almanac.Levels(next, "the-long-song"), Is.EqualTo(2));
+            Assert.That(Almanac.SpentVerdure(next, _data), Is.EqualTo(18.0).Within(Tolerance));
+            Assert.That(next.nodes[0].yieldMultiplier, Is.EqualTo(1.1).Within(Tolerance));
+        }
+
+        [Test]
         public void Migrate_RecordedPlateEffects_CarryIntoTheFreshRun()
         {
             var state = StateWithTheRiteSung();

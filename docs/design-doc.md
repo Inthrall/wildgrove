@@ -406,11 +406,18 @@ verdureGain       = floor( √( Renown / K ) )        K tuned to the XP scale
 offlineEarn       = Σ per node: min(gather, trail rate) · min(t, cap)   wanderers ×0.5; unheld trail ×0.5 lane
 pristineChance    = (0.5% + fieldPress + almanac) · (1 + tendingBonus)
 sketchProgress    = watchers · siteSpeed · rarity              pity: portion sketched / 4 h watched
-verseDemand(m)    = baseQty · d^m · modifierWeight
+verseDemand(m)    = baseQty · d^m · modifierWeight    d = 1.45
+verseSlots(m)     = chooseCount + ⌊m / 2⌋, capped     the breadth ramp
 spotlight(m)      = rotate(crafts, m + regionSeed)
+almanacLevel(L)   = baseCost · 1.25^L                 the endless line
 ```
 
 The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown ≈ 2× Verdure); offerings crediting Renown in full means the Rite never taxes prestige; Kinship's matching √ means both permanent tracks decelerate in step (§8); the observation pity timer keeps the deep chase strictly fair.
+
+**What may scale with the fold count, and what may not.** Because Verdure is a √ of lifetime Renown and pays +2%/pt, player power grows asymptotically **linearly** in the fold count — the fold-to-fold power ratio starts near 3× and settles at 1.10–1.15× by fold 7. Anything exponential therefore beats it eventually, so:
+
+- **Gates** (the Rite) may grow at most linearly. `d` sits just above the settled power ratio; the real growth is `verseSlots(m)` — **breadth**, which costs stationing, kith slots and map coverage rather than wait-time, and which is hard-bounded by how many slots a verse has. The generator widens each verse in step so the choice margin never narrows, and a per-verse clamp guarantees at least one slot of choice even where a lean zone can't be widened.
+- **Sinks** (the Almanac) may grow exponentially, precisely because they gate nothing. *The Long Song* is the one repeatable line: level `L` costs `baseCost · 1.25^L` forever and pays an additive +5% to gathering **and** carrying — the same additive bands, so every level moves the two by the same proportion and the gather-vs-haul ratio cannot drift. Without it the 99-point tree finishes around the third fold and Verdure stops buying anything, which is what makes a late fold feel empty.
 
 ### Run 1 Rite — paper prototype (placeholder quantities; structure is the shipped run-1 tutorial)
 

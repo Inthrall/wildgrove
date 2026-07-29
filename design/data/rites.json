@@ -2,10 +2,13 @@
   "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant, and so do resource slots offering unsellable MATERIALS (ingots, cordage — trade value is zero, the validator enforces the grant; values approximate amount x the material's notional input-derived worth). Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
   "chooseCount": 3,
   "generator": {
-    "$comment": "Run-2+ generator tuning (design §8: verseDemand(m) = baseQty · d^m, spotlight slots cheapest). demandGrowth is d; spotlight slots price at value × spotlightDiscount, off-spotlight at value × offSpotlightPremium. All first guesses.",
-    "demandGrowth": 2.5,
+    "$comment": "Run-2+ generator tuning (design §8: verseDemand(m) = baseQty · d^m, spotlight slots cheapest). demandGrowth is d; spotlight slots price at value × spotlightDiscount, off-spotlight at value × offSpotlightPremium. d is tuned against the fold's power ratio, not picked freely. A fold multiplies production by (1 + 0.02·Verdure) and Verdure is a square root of lifetime Renown, so that ratio starts near 3x across the first folds and settles at 1.10-1.15x from fold 7 on. d must sit just above the settled ratio: below it the gate stops gating, far above it the gate walls, because exponential demand always beats a power curve that is asymptotically linear. At the old 2.5 the twelfth fold asked ~1000x the wall-clock of the first; at 1.45 it asks ~2.5x, and folds 2-8 still run faster than the first (which is the prestige promise). spotlightDiscount / offSpotlightPremium are still first guesses.",
+    "demandGrowth": 1.45,
     "spotlightDiscount": 0.6,
-    "offSpotlightPremium": 1.5
+    "offSpotlightPremium": 1.5,
+    "chooseCountPerMigrations": 2,
+    "chooseCountMax": 5,
+    "$breadthNote": "The fold gate grows in BREADTH, not depth. Every second migration a verse asks for one more filled slot (chooseCount + m/chooseCountPerMigrations, capped at chooseCountMax), and the generator adds a goods slot in step so the choice margin the authored Rite has (5 slots, choose 3) never narrows. Breadth costs stationing, kith slots and map coverage rather than wait-time, and it is BOUNDED by how many slots a verse has — so unlike a quantity multiplier it can never outrun the player's power curve. The per-verse clamp in Rite.RequiredSlots is the real guarantee: a verse always keeps at least one slot of choice even where a lean zone gives the generator too few candidates to widen."
   },
   "rites": [
     {

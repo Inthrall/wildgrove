@@ -422,10 +422,48 @@ Interpretations shipped (tune/confirm):
   never-unlockable example — premise rot once map-hollows landed; it asks
   after highland-crags now, with the corruption-must-land guard.
 
+**Fold-pacing pass (2026-07-29)** — Mo reached the end of the content in a
+morning on run 3. Diagnosis: the content ladder is gated by ABSOLUTE numbers
+(34 rungs of fixed materials, skill gates topping out at forgecraft 40, six
+zones) while permanent power compounds every fold, so each fold re-runs the
+same content faster; meanwhile the only thing that *did* scale, `demandGrowth`
+at 2.5, walled by about fold 5. Both halves are now addressed:
+
+- `demandGrowth` **2.5 → 1.45** (see the generator interpretations below).
+- **The breadth ramp** — `chooseCountPerMigrations` / `chooseCountMax` in
+  rites.json, `RiteGenerator.ScaledChooseCount`, `Rite.RequiredSlots`. Every
+  second fold a verse asks for one more filled slot and the generator widens it
+  by one goods slot in step. Bounded by the verse's slot count, so it cannot
+  outrun the power curve the way a quantity multiplier does.
+- **The endless Almanac line** — *The Long Song* in almanac.json
+  (`repeatable`, `costGrowth.almanac` 1.25, `state.almanacLevels`, **save v35**).
+  The one-off tree totals 99 Verdure and finishes around fold 3; the endless
+  line means the currency never dead-ends. It grants the SAME additive value to
+  gathering and carrying so the haul ratio can't drift — the validator refuses a
+  multiplicative effect on a repeatable line, because levels scale the value
+  linearly and a multiplicative type would want value^levels.
+
+**Still open from this pass:** the early folds (2–4) will still shorten,
+because the fold-to-fold power ratio is ~3× there — that's the Verdure curve
+(`verdure.exponent` 0.5 / `renownDivisor` 2800), not the Rite. Deliberately NOT
+retuned: flattening the exponent would make the Almanac last but would also
+flatten the power curve to ~1.03× per fold, and the +2%/pt passive would stop
+feeling like anything. The endless line is the better answer to the same
+symptom. Revisit only if playtests say folds 2–4 feel hollow rather than fast.
+Numbers throughout are model-derived (scratch model against the shipping
+constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sitting.
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
-   zone skips) that currently wait for their systems.
-2. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
+   zone skips) that currently wait for their systems. These are the lever that
+   scales the ladder re-climb DOWNWARD with the fold count, which is the half of
+   the pacing fix no knob can deliver. (The endless line above is the sink half,
+   already landed.)
+2. **Content gated on migration count** — nothing in the ladder, the zones or
+   the species reads `migrationCount`; the generator re-walks the same six zones
+   forever. A `minMigration` on zones/upgrades/species is what actually answers
+   "I've seen it all in a morning"; the pacing knobs only change how fast.
+3. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
    unbalanced by design; they want the spreadsheet treatment alongside the
    tincture numbers and the deep-amber timing.
 
@@ -904,8 +942,18 @@ Interpretations shipped (tune/confirm):
   a run-3 verse *says*). ✅ Region modifiers landed 2026-07-28 (see the
   Mid/late-game content section) — modifierWeight is live via
   `Regions.DemandWeight`. Generator interpretations flagged:
-  generator numbers (demandGrowth 2.5, spotlightDiscount 0.6,
-  offSpotlightPremium 1.5) are first guesses against §8's "similar share of
+  demandGrowth was **retuned 2.5 → 1.45 on 2026-07-29** after Mo reached the
+  end of the content in a morning on run 3. The exponent has to track the
+  fold's power ratio, and that ratio is not constant: production scales with
+  (1 + 0.02·Verdure), Verdure is √(lifetime Renown), so the ratio runs ~3×
+  across folds 2–3 and settles at 1.10–1.15× from fold 7. At 2.5 fold 12 asked
+  ~1000× the wall-clock of fold 1 (exponential demand always beats an
+  asymptotically-linear power curve); at 1.45 it asks ~2.5×, with folds 2–8
+  still faster than the first. **A single exponent cannot fix both ends** —
+  the early folds shorten because Verdure explodes, which is the
+  `verdure.exponent`/`renownDivisor` curve's problem, not the Rite's (see the
+  Verdure-curve item). spotlightDiscount 0.6 / offSpotlightPremium 1.5 are
+  still first guesses against §8's "similar share of
   each run's lifetime output" — tune with real run-2 playtests; deed/
   specimen/fragment COUNTS stay authored (they price in taps and luck —
   only their renownGrant scales); Coin-bought skills with no home zone

@@ -28,6 +28,9 @@ namespace Wildgrove.Data
         public sealed class CostGrowthSection
         {
             public double Building { get; set; }
+
+            /// <summary>Geometric step on a repeatable Almanac line (almanac.json's repeatable node).</summary>
+            public double Almanac { get; set; }
         }
 
         /// <summary>Gift piles (design §4): one pile per verse sung; the arrival is the node resource's specialist.</summary>

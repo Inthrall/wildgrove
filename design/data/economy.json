@@ -1,7 +1,9 @@
 {
   "$comment": "Global economy constants from design doc §8. All first-pass values — tune in Phase 3 against pacing targets.",
   "costGrowth": {
-    "building": 1.25
+    "building": 1.25,
+    "almanac": 1.25,
+    "$note": "almanac is the geometric step on a REPEATABLE Almanac line (see almanac.json). A repeatable line is a sink, never a gate, which is the only reason an exponential cost is safe here: its benefit is additive per level (linear) against a cost that is exponential, so it tapers forever without ever walling. Gates must scale at most linearly with the fold count — see rites.json's demandGrowth note for why."
   },
   "gifts": {
     "pileGoods": 10,

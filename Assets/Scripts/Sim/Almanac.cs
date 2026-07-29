@@ -11,7 +11,40 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Almanac
     {
-        /// <summary>Verdure allocated to owned nodes.</summary>
+        /// <summary>Levels held on a repeatable line; zero for a line never bought, and for every one-off node.</summary>
+        public static int Levels(GameState state, string nodeId)
+        {
+            return state != null && state.almanacLevels.TryGetValue(nodeId, out var levels) ? levels : 0;
+        }
+
+        /// <summary>
+        /// The geometric step on a repeatable line. Fixtures without economy
+        /// tuning price every level flat (the Configured pattern) rather than
+        /// collapsing the cost to zero.
+        /// </summary>
+        private static double CostGrowth(GameDataAsset data)
+        {
+            var growth = data?.economy?.costGrowth != null ? data.economy.costGrowth.almanac : 0.0;
+            return growth > 0.0 ? growth : 1.0;
+        }
+
+        /// <summary>
+        /// What the next level of this line costs: the flat cost for a one-off
+        /// node, costVerdure · costGrowth.almanac^levels for a repeatable one.
+        /// </summary>
+        public static double NextCost(GameState state, GameDataAsset data, AlmanacNodeData node)
+        {
+            if (node == null)
+            {
+                return 0.0;
+            }
+
+            return node.repeatable
+                ? node.costVerdure * System.Math.Pow(CostGrowth(data), Levels(state, node.id))
+                : node.costVerdure;
+        }
+
+        /// <summary>Verdure allocated to owned nodes — flat for one-offs, the geometric series so far for a repeatable line.</summary>
         public static double SpentVerdure(GameState state, GameDataAsset data)
         {
             var spent = 0.0;
@@ -25,6 +58,21 @@ namespace Wildgrove.Sim
                 }
             }
 
+            foreach (var pair in state.almanacLevels)
+            {
+                if (pair.Value <= 0 || !data.AlmanacById.TryGetValue(pair.Key, out var node) || !node.repeatable)
+                {
+                    continue;
+                }
+
+                // Σ cost·g^i for i < levels. The closed form drifts at g == 1
+                // (zero denominator), which is exactly the untuned-fixture case.
+                var growth = CostGrowth(data);
+                spent += growth == 1.0
+                    ? node.costVerdure * pair.Value
+                    : node.costVerdure * (System.Math.Pow(growth, pair.Value) - 1.0) / (growth - 1.0);
+            }
+
             return spent;
         }
 
@@ -34,9 +82,14 @@ namespace Wildgrove.Sim
             return state.verdurePoints - SpentVerdure(state, data);
         }
 
+        /// <summary>
+        /// Learned at all. A repeatable line counts as owned once it holds a
+        /// level, so it can satisfy another node's prerequisite — but it is
+        /// never "finished", so <see cref="CanBuy"/> doesn't consult this.
+        /// </summary>
         public static bool IsOwned(GameState state, AlmanacNodeData node)
         {
-            return state.almanacNodeIds.Contains(node.id);
+            return node != null && (state.almanacNodeIds.Contains(node.id) || Levels(state, node.id) > 0);
         }
 
         /// <summary>
@@ -57,10 +110,15 @@ namespace Wildgrove.Sim
             return !data.AlmanacById.TryGetValue(node.requires, out var prerequisite) || IsOwned(state, prerequisite);
         }
 
-        /// <summary>True when the node can be bought: not owned, prerequisite owned, and unallocated Verdure covers the cost.</summary>
+        /// <summary>True when the node can be bought: not already learned (a repeatable line always can), prerequisite owned, and unallocated Verdure covers the next cost.</summary>
         public static bool CanBuy(GameState state, GameDataAsset data, AlmanacNodeData node)
         {
-            if (state == null || data == null || node == null || IsOwned(state, node))
+            if (state == null || data == null || node == null)
+            {
+                return false;
+            }
+
+            if (!node.repeatable && IsOwned(state, node))
             {
                 return false;
             }
@@ -70,13 +128,14 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            return AvailableVerdure(state, data) >= node.costVerdure;
+            return AvailableVerdure(state, data) >= NextCost(state, data, node);
         }
 
         /// <summary>
-        /// Buy the node: records ownership (allocating its Verdure) and
-        /// recomputes the yield multipliers its effects may feed. Returns
-        /// false (and changes nothing) when <see cref="CanBuy"/> says no.
+        /// Buy the node: records ownership (allocating its Verdure) — or takes
+        /// the next level of a repeatable line — and recomputes the yield
+        /// multipliers its effects may feed. Returns false (and changes
+        /// nothing) when <see cref="CanBuy"/> says no.
         /// </summary>
         public static bool TryBuy(GameState state, GameDataAsset data, AlmanacNodeData node)
         {
@@ -85,7 +144,15 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            state.almanacNodeIds.Add(node.id);
+            if (node.repeatable)
+            {
+                state.almanacLevels[node.id] = Levels(state, node.id) + 1;
+            }
+            else
+            {
+                state.almanacNodeIds.Add(node.id);
+            }
+
             Upgrades.RecomputeYieldMultipliers(state, data);
             return true;
         }

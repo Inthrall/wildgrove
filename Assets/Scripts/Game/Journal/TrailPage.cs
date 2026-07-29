@@ -696,10 +696,11 @@ namespace Wildgrove.Game
             {
                 // Clamp for saves that over-delivered before expiry was
                 // enforced — "5 of 3" reads broken, and any three IS answered.
-                var answered = Mathf.Min(Rite.CompletedSlotCount(_loop.State, capturedVerse), _loop.Data.rites.chooseCount);
+                var need = Rite.RequiredSlots(_loop.State, _loop.Data, capturedVerse);
+                var answered = Mathf.Min(Rite.CompletedSlotCount(_loop.State, capturedVerse), need);
                 progress.text = Rite.IsVerseComplete(_loop.State, _loop.Data, capturedVerse)
                     ? "<color=" + MossDeepHex + ">answered — the verse is sung</color>"
-                    : "answered " + answered + " of " + _loop.Data.rites.chooseCount;
+                    : "answered " + answered + " of " + need;
             });
 
             for (var i = 0; i < verse.slots.Count; i++)

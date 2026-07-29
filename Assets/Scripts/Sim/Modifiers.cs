@@ -76,8 +76,14 @@ namespace Wildgrove.Sim
                 sketches += pair.Value;
             }
 
+            var almanacLevels = 0L;
+            foreach (var pair in state.almanacLevels)
+            {
+                almanacLevels += pair.Value;
+            }
+
             return state.purchasedUpgradeIds.Count
-                   + state.almanacNodeIds.Count * 1000L
+                   + (state.almanacNodeIds.Count + almanacLevels) * 1000L
                    + state.fixedResources.Count * 1000_000L
                    + state.gearBySlot.Count * 1000_000_000L
                    + buildingLevels * 1000_000_000_000L

@@ -1272,12 +1272,16 @@ namespace Wildgrove.Game
         public bool BuyAlmanacNode(AlmanacNodeData node)
         {
             var bondsBefore = EarnedBondIds();
+            // An endless line's price climbs with the level it's about to take,
+            // so the cost has to be read before the purchase moves it.
+            var cost = Almanac.NextCost(State, Data, node);
             if (!Almanac.TryBuy(State, Data, node))
             {
                 return false;
             }
 
-            Telemetry.LogEvent("almanac_node_bought", ("node", node.id), ("verdure_cost", node.costVerdure));
+            Telemetry.LogEvent("almanac_node_bought", ("node", node.id), ("verdure_cost", cost),
+                ("level", Almanac.Levels(State, node.id)));
             ReportNewBonds(bondsBefore);
             // The Old Friend opens kith slot 5 — a bond that was waiting for
             // room steps in now (SyncBonded is idempotent).

@@ -1,5 +1,5 @@
 {
-  "$comment": "The Almanac (design doc §7): the permanent tree bought with Verdure, surviving every Migration. Verdure is never spent away — nodes ALLOCATE from the banked total (available = verdurePoints - sum of owned node costs) so the +2%/pt passive keeps counting the full total. All costs and effect sizes are first guesses tuned to ~10 Verdure from the first Migration; the exotic §7 nodes (starting tool tiers, auto-craft, starting-zone skips) wait for their systems. requires = single prerequisite node.",
+  "$comment": "The Almanac (design doc §7): the permanent tree bought with Verdure, surviving every Migration. Verdure is never spent away — nodes ALLOCATE from the banked total (available = verdurePoints - sum of owned node costs) so the +2%/pt passive keeps counting the full total. All costs and effect sizes are first guesses tuned to ~10 Verdure from the first Migration; the exotic §7 nodes (starting tool tiers, auto-craft, starting-zone skips) wait for their systems. requires = single prerequisite node. repeatable = the line is bought over and over, level L costing costVerdure · costGrowth.almanac^L, its effects scaled by the levels held; every other node is a one-off.",
   "nodes": [
     { "id": "old-songs-i",    "name": "Old Songs I",    "costVerdure": 2,                                 "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.10 }] },
     { "id": "long-watch-i",   "name": "The Long Watch I",  "costVerdure": 2,                              "effects": [{ "type": "offlineCapHours", "value": 6 }] },
@@ -13,6 +13,9 @@
     { "id": "verdant-eye-ii", "name": "Verdant Eye II", "costVerdure": 12, "requires": "verdant-eye-i",   "effects": [{ "type": "pristineChanceBonus", "value": 0.01 }] },
     { "id": "old-friend",     "name": "The Old Friend", "costVerdure": 12,                                 "effects": [] },
     { "id": "long-watch-iii", "name": "The Long Watch III", "costVerdure": 16, "requires": "long-watch-ii", "effects": [{ "type": "offlineCapHours", "value": 12 }] },
-    { "id": "old-songs-iii",  "name": "Old Songs III",  "costVerdure": 20, "requires": "old-songs-ii",    "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 }] }
+    { "id": "old-songs-iii",  "name": "Old Songs III",  "costVerdure": 20, "requires": "old-songs-ii",    "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 }] },
+    { "id": "the-long-song",  "name": "The Long Song",  "costVerdure": 8,  "requires": "old-songs-iii", "repeatable": true,
+      "$note": "The endless line — the Almanac's only repeatable node, and the reason Verdure never dead-ends. The rest of the tree totals 99 points, which a steady warden passes around the third fold; after that the currency kept arriving with nothing to spend it on, which is what made a late fold feel like it had nothing in it. Level L costs costVerdure · costGrowth.almanac^L forever. It grants the SAME additive value to gathering and to carrying on purpose: yieldBonus and carrierCapacityBonus are both summed bands (yield is mult·(1+bonus), haul is haulMult·(1+carrierBonus)), so every level moves the two by the same proportion and the gather-vs-haul ratio cannot drift. Granting the gathering half alone would re-open the full-basket jam that the self-haul floor was built to catch.",
+      "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.05 }, { "type": "carrierCapacityBonus", "value": 0.05 }] }
   ]
 }

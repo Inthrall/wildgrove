@@ -134,10 +134,34 @@ namespace Wildgrove.Sim
             return complete;
         }
 
-        /// <summary>A verse completes when chooseCount of its slots are filled (design §7: choose 3 of 5).</summary>
+        /// <summary>
+        /// How many of THIS verse's slots must be filled: the migration-ramped
+        /// chooseCount (design §8's breadth lever — see
+        /// <see cref="RiteGenerator.ScaledChooseCount"/>), clamped so the verse
+        /// always keeps at least one slot of choice.
+        ///
+        /// The clamp is the guarantee, not a tidy-up. The ramp is authored
+        /// against verses the generator widened in step, but a lean zone can
+        /// leave it too few candidates to widen with; without the clamp such a
+        /// verse would quietly become "fill every slot", and a verse asking for
+        /// a slot it doesn't have would seal the Rite — and with it Migration —
+        /// forever.
+        /// </summary>
+        public static int RequiredSlots(GameState state, GameDataAsset data, RiteVerseData verse)
+        {
+            var required = RiteGenerator.ScaledChooseCount(data.rites, state != null ? state.migrationCount : 0);
+            if (verse != null && verse.slots.Count > 0)
+            {
+                required = System.Math.Min(required, verse.slots.Count - 1);
+            }
+
+            return System.Math.Max(1, required);
+        }
+
+        /// <summary>A verse completes when <see cref="RequiredSlots"/> of its slots are filled (design §7: choose 3 of 5, widening with the fold).</summary>
         public static bool IsVerseComplete(GameState state, GameDataAsset data, RiteVerseData verse)
         {
-            return CompletedSlotCount(state, verse) >= data.rites.chooseCount;
+            return CompletedSlotCount(state, verse) >= RequiredSlots(state, data, verse);
         }
 
         /// <summary>

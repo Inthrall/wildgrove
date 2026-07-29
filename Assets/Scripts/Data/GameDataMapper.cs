@@ -245,6 +245,7 @@ namespace Wildgrove.Data
                 displayName = a.Name,
                 costVerdure = a.CostVerdure,
                 requires = a.Requires,
+                repeatable = a.Repeatable,
                 effects = a.Effects.Select(MapEffect).ToList()
             };
         }
@@ -285,7 +286,9 @@ namespace Wildgrove.Data
                 {
                     demandGrowth = r.Generator.DemandGrowth,
                     spotlightDiscount = r.Generator.SpotlightDiscount,
-                    offSpotlightPremium = r.Generator.OffSpotlightPremium
+                    offSpotlightPremium = r.Generator.OffSpotlightPremium,
+                    chooseCountPerMigrations = r.Generator.ChooseCountPerMigrations,
+                    chooseCountMax = r.Generator.ChooseCountMax
                 },
                 rites = r.Rites.Select(rite => new RiteData
                 {
@@ -335,7 +338,8 @@ namespace Wildgrove.Data
             {
                 costGrowth = new EconomyData.CostGrowthData
                 {
-                    building = e.CostGrowth.Building
+                    building = e.CostGrowth.Building,
+                    almanac = e.CostGrowth.Almanac
                 },
                 gifts = new EconomyData.GiftsData
                 {

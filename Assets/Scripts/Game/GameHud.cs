@@ -984,7 +984,7 @@ namespace Wildgrove.Game
                     }
 
                     var done = Rite.CompletedSlotCount(_loop.State, verse);
-                    var need = _loop.Data.rites.chooseCount;
+                    var need = Rite.RequiredSlots(_loop.State, _loop.Data, verse);
                     // The trailing guillemet marks the banner as a link — it
                     // jumps to the verse card, far down the Trail page.
                     _trackerText.text = "Verse of " + _labels.ZoneName(verse.zone) + " — <b>"

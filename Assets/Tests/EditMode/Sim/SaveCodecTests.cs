@@ -437,6 +437,35 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void TryMigrate_V34Save_GetsAnUnsungLongSong()
+        {
+            // v34 predates the Almanac's repeatable line — no levels held, and
+            // the one-off nodes the save already lists are untouched.
+            var save = new SaveData
+            {
+                version = 34,
+                almanacNodeIds = new List<string> { "old-songs-i" },
+                almanacLevels = null,
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.almanacLevels, Is.Empty);
+            Assert.That(save.almanacNodeIds, Is.EqualTo(new[] { "old-songs-i" }));
+        }
+
+        [Test]
+        public void RoundTrip_RestoresTheEndlessAlmanacLine()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.almanacLevels["the-long-song"] = 3;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(Almanac.Levels(restored, "the-long-song"), Is.EqualTo(3));
+        }
+
+        [Test]
         public void RoundTrip_RestoresTheWornKit()
         {
             var state = GameStateFactory.NewGame(_data);

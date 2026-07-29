@@ -159,8 +159,13 @@ namespace Wildgrove.Sim
                 Narrative.MarkWaystoneRead(next, zoneId);
             }
 
-            // The Almanac is the permanent tree — bought once, kept forever.
+            // The Almanac is the permanent tree — bought once, kept forever,
+            // and the repeatable line's levels cross with the rest of it.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);
+            foreach (var pair in state.almanacLevels)
+            {
+                next.almanacLevels[pair.Key] = pair.Value;
+            }
 
             // "You keep … the Folio" — fixed specimens and their spread bonuses too.
             next.fixedResources.AddRange(state.fixedResources);

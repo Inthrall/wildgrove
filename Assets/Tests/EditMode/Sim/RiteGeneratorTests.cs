@@ -338,6 +338,105 @@ namespace Wildgrove.Sim.Tests
             }
         }
 
+        // ---- The breadth ramp (design §8): the fold gate grows in how many
+        // slots a verse asks for, which is bounded, rather than in quantity,
+        // which is not.
+
+        private void GiveTheGeneratorABreadthRamp(int perMigrations, int max)
+        {
+            _data.rites.generator.chooseCountPerMigrations = perMigrations;
+            _data.rites.generator.chooseCountMax = max;
+        }
+
+        /// <summary>
+        /// A third thing the starting zone can be asked for. The base fixture
+        /// offers exactly two, which is the number the template already uses —
+        /// so without this the widening has nothing to widen WITH and the ramp
+        /// tests would pass on the cap rather than on the behaviour.
+        /// </summary>
+        private void GiveTheStartingZoneAThirdFind()
+        {
+            _data.resources.Add(new ResourceData { id = "fibres", sellValue = 1, skill = "foraging" });
+            _data.zones[0].resources.Add("fibres");
+        }
+
+        [Test]
+        public void ScaledChooseCount_StepsEveryFewMigrations_AndStopsAtTheCeiling()
+        {
+            GiveTheGeneratorABreadthRamp(2, 4);
+
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 0), Is.EqualTo(2), "run 1 is the authored Rite");
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 1), Is.EqualTo(2));
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 2), Is.EqualTo(3));
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 4), Is.EqualTo(4));
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 40), Is.EqualTo(4), "the ceiling is what keeps breadth bounded");
+        }
+
+        [Test]
+        public void ScaledChooseCount_WithoutTuning_LeavesTheAuthoredCount()
+        {
+            // Data with no ramp configured must behave exactly as before.
+            Assert.That(RiteGenerator.ScaledChooseCount(_data.rites, 9), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Generate_WidensTheGoodsSlotsInStepWithTheRamp()
+        {
+            GiveTheGeneratorABreadthRamp(2, 4);
+            GiveTheStartingZoneAThirdFind();
+
+            var before = RiteGenerator.Generate(_data, 1).verses[0];
+            var after = RiteGenerator.Generate(_data, 2).verses[0];
+
+            // Asking for one more slot without OFFERING one more would turn
+            // "choose 2 of 4" into "fill 3 of 4" and shrink the decision.
+            var goodsBefore = before.slots.Count(s => s.type == RiteSlotType.Resource);
+            var goodsAfter = after.slots.Count(s => s.type == RiteSlotType.Resource);
+            Assert.That(goodsAfter, Is.EqualTo(goodsBefore + 1));
+            Assert.That(after.slots.Count - RiteGenerator.ScaledChooseCount(_data.rites, 2),
+                Is.EqualTo(before.slots.Count - RiteGenerator.ScaledChooseCount(_data.rites, 1)),
+                "the choice margin holds as the gate widens");
+        }
+
+        [Test]
+        public void Generate_WidenedVerse_KeepsTheSpecialSlotLast()
+        {
+            GiveTheGeneratorABreadthRamp(2, 4);
+            GiveTheStartingZoneAThirdFind();
+
+            var verse = RiteGenerator.Generate(_data, 2).verses[0];
+
+            // The extra ask lands among the goods, not after the deed/specimen
+            // pair the authored shape ends on.
+            Assert.That(verse.slots.Last().type, Is.EqualTo(RiteSlotType.Specimen));
+            Assert.That(verse.slots.Select(s => s.type), Is.EqualTo(new[]
+            {
+                RiteSlotType.Resource, RiteSlotType.Resource, RiteSlotType.Resource,
+                RiteSlotType.Deed, RiteSlotType.Specimen,
+            }));
+        }
+
+        [Test]
+        public void Generate_WideningStopsAtWhatTheZoneCanOffer()
+        {
+            // Bramble has exactly two candidates (copper, copper-ingot), so the
+            // ramp has nothing to widen with — it must not ask for a good twice
+            // or invent one, and Rite.RequiredSlots is what keeps the verse
+            // answerable when that happens.
+            GiveTheGeneratorABreadthRamp(1, 6);
+
+            var verse = RiteGenerator.Generate(_data, 4).verses[1];
+            var goods = verse.slots.Where(s => s.type == RiteSlotType.Resource).ToList();
+
+            Assert.That(goods, Has.Count.EqualTo(2));
+            Assert.That(goods.Select(s => s.resource).Distinct().Count(), Is.EqualTo(2), "no good asked for twice");
+
+            var state = GameStateFactory.NewGame(_data);
+            state.migrationCount = 4;
+            Assert.That(Rite.RequiredSlots(state, _data, verse), Is.LessThan(verse.slots.Count),
+                "a lean zone still leaves a slot of choice");
+        }
+
         // ---- The real-data proof (design §12: "verify runs 2+ before wiring
         // UI") — generated Rites from the shipping JSON must never be able to
         // hard-stick a run.
@@ -416,8 +515,17 @@ namespace Wildgrove.Sim.Tests
                             || (slot.type == RiteSlotType.Specimen && SpecimenChance(data, slot.quality) > 0)
                             || (slot.type == RiteSlotType.Sketch && grantsDigSite && data.insects.Count > 0));
 
-                        Assert.That(reachable, Is.GreaterThanOrEqualTo(data.rites.chooseCount),
+                        // The bar is the RAMPED requirement, not the authored
+                        // chooseCount: the gate widens with the fold, so the
+                        // proof has to widen with it or it stops proving
+                        // anything from the first ramp step on.
+                        var required = System.Math.Min(
+                            RiteGenerator.ScaledChooseCount(data.rites, migration),
+                            verse.slots.Count - 1);
+                        Assert.That(reachable, Is.GreaterThanOrEqualTo(required),
                             $"migration {migration}, verse '{verse.id}': a generated Rite can never hard-stick a run");
+                        Assert.That(verse.slots.Count, Is.GreaterThan(required),
+                            $"migration {migration}, verse '{verse.id}': a verse must always keep a slot of choice");
                         Assert.That(verse.spotlight, Is.Not.Empty, $"verse '{verse.id}' spotlights nothing");
 
                         foreach (var slot in verse.slots.Where(s => s.type == RiteSlotType.Resource))

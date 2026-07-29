@@ -30,6 +30,14 @@ namespace Wildgrove.Sim
         /// <summary>Almanac nodes bought with Verdure (design §7) — permanent, surviving every Migration. Their costs stay allocated; see Almanac.AvailableVerdure.</summary>
         public List<string> almanacNodeIds = new List<string>();
 
+        /// <summary>
+        /// Levels held on each REPEATABLE Almanac line (design §7's endless
+        /// sink) — permanent like the one-off nodes beside them. A repeatable
+        /// line never appears in <see cref="almanacNodeIds"/>; its levels are
+        /// the whole record of it.
+        /// </summary>
+        public Dictionary<string, int> almanacLevels = new Dictionary<string, int>();
+
         /// <summary>The warden's kit (design §4): worn gear id per slot (hands/pack/camp). Persists for the run; Migration resets it — the kit is rebuilt cheaply each run.</summary>
         public Dictionary<string, string> gearBySlot = new Dictionary<string, string>();
 
