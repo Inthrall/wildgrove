@@ -876,6 +876,71 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   `Assets/Scripts/Game/Journal/CampPage.cs`, `JournalSheets.cs`,
   `Assets/Scripts/Game/Services/ServiceIds.cs`, `RewardGrants.cs`,
   `UnityIapStore.cs`, `StubStore.cs`)
+- **Game Stats — decided and wired 2026-07-29, but it cannot submit yet, and that
+  is Google's side not ours.** The guideline wants 5 repetitive stats (≥1 usable
+  for competitive engagement) + 1 progression stat. Chosen, all on the free path
+  because the guideline forbids stats reachable only by paying or watching an ad:
+  **resources gathered** (SUM, the competitive one — the same quantity the Renown
+  board ranks), **goods crafted** (SUM), **windfalls caught**, **specimens fixed**,
+  **verses sung**, **migrations** (COUNT), and **trails walked** as the
+  progression level. Trails walked is `seenWaystoneZoneIds.Count` deliberately:
+  waystones cross a fold (`Migration.Migrate` carries them) so the level only ever
+  climbs, where zones-open would drop to 1 on every Migration and read as a bug on
+  the profile.
+  - **The two continuous stats go as deltas.** Play aggregates SUM over events
+    received; the game holds lifetime totals. So `GameStats` keeps a baseline and
+    reports the growth — seeded at launch (`Rebase`) so a loaded run's lifetime
+    total isn't posted as one session's work, and re-seeded on cloud-save adoption
+    so the gap between two runs isn't either. A delta is only banked once the event
+    is actually recorded, so a signed-out stretch accumulates instead of vanishing.
+    The baseline is **in-memory, not saved**: a hard kill loses the stretch since
+    the last save. Persisting it would mean a save-version bump for a stat, which
+    isn't worth it — revisit only if the profile numbers read visibly low.
+  - **Cadence is the save cadence** (autosave 30 s / pause / quit), not per event:
+    hauls and crafts land every tick, so "as soon as it occurs" would be an event
+    per frame. The discrete five fire at their own call sites.
+  - **Blocked on Google, twice over.** Client integration "will be made available
+    using Unity, Java and C++ SDKs" — the shipped plugin (GPGS 2.1.0, July 2025,
+    still the newest release) has no `PlayerGameEvent` and no `RecordEvent`, and
+    the Java coordinate is unpublished so there is nothing to reach over JNI
+    either. The API is GA **July 2026** and the **Play Console CSV upload opens
+    August 2026**. So: `PlayGamesServices.RecordStat` counts what it could not send
+    and says so in logcat; when the plugin lands it becomes three lines
+    (`new PlayerGameEvent.Builder(name)` → `.AddProperty` → `RecordEvent`) and
+    nothing else moves. Server-to-server is live now but needs service-account
+    credentials a client can't hold — not a path for a serverless game.
+  - **Console side is authored and waiting** in `store/play-games/gamestats/`
+    (`PlayerGameEvent.csv` + the two config CSVs + a README). Two knowingly-unfinished
+    parts: the **stat icons aren't drawn** (Google has published no size spec — draw
+    them with `tools/make-store-art.py` once the console says what shape), and the
+    column values (`HIGHER`, the free-text units) are the guide's documented
+    spellings, not ones a console has accepted. Expect one correction round.
+    A test (`EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema`) fails if code
+    and CSV drift, because Play drops undeclared events silently.
+  (`Assets/Scripts/Game/Services/GameStats.cs`, `IGameServices.cs`,
+  `PlayGamesServices.cs`, `StubGameServices.cs`, `GameLoop.cs`,
+  `store/play-games/gamestats/`)
+- **Sidekick — nothing to build, and one setting that will bite if missed.** The
+  overlay is added at *upload* time for App Bundle games: Play Console → create an
+  internal/closed release with **"Sidekick is on by default"**, then Testing →
+  Advanced settings → **Play Games Sidekick** → *"Automatically make Sidekick is on
+  by default for new app bundles you upload"*. The SDK dependency route
+  (`com.google.android.play:sidekick`, minSdk 23) is only for APK publishing, which
+  we don't do — our minSdk is 26 either way. **The trap:** every release here is
+  uploaded by `android-release.yml` via `r0adkll/upload-google-play`, so without
+  that "automatically" setting each CI upload lands Sidekick-less and the guideline
+  quietly fails. Testing needs a device on Android 13+ with 4 GB+ RAM, the build
+  installed from Play (not sideloaded), and **Play Store → Settings → About → tap
+  Play Store version ×7 → General → Developer options → Play Games Sidekick** on.
+  Sidekick surfaces achievements, so it reads thin until the achievement ladder
+  grows past `FirstKith`.
+- **Level Up milestone dates the compliance table was missing.** From the March
+  2026 Level Up post: **July 2026** — Sidekick integrated *and* achievements
+  implemented with PGS (we have **1** of a minimum 10, so this is the nearest real
+  gap); **November 2026** — cloud save (done: Snapshots, single-device confirmed);
+  Rewards **Sep 30 2026** / **Mar 1 2027** as already tracked above. Achievements
+  past `FirstKith` are the next Level Up job, and Game Stats' five repetitive stats
+  make a natural source of achievement thresholds — do them together.
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on

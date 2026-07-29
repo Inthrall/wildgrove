@@ -65,6 +65,25 @@ namespace Wildgrove.Game.Services
             onLoaded?.Invoke(entries);
         }
 
+        public void RecordStat(string eventName, params (string key, object value)[] properties)
+        {
+            var line = "[game-stats] stub record " + eventName;
+            if (properties != null)
+            {
+                foreach (var property in properties)
+                {
+                    line += " " + property.key + "=" + property.value;
+                }
+            }
+
+            Debug.Log(line);
+        }
+
+        public void FlushStats()
+        {
+            Debug.Log("[game-stats] stub flush");
+        }
+
         public void LoadCloud(Action<string> onLoaded)
         {
             Debug.Log("[play-games] stub cloud load (none)");

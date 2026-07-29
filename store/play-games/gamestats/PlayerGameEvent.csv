@@ -1,0 +1,8 @@
+Event Name,Property Name,Property Type
+haulArrived,amount,DOUBLE
+craftCompleted,amount,DOUBLE
+windfallCaught,resource,STRING
+specimenFixed,resource,STRING
+verseCompleted,verse,STRING
+migrationCompleted,number,INT
+progressUpdate,currentProgress,INT

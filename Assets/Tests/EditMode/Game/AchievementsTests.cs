@@ -136,6 +136,14 @@ namespace Wildgrove.Game.Tests
                 onLoaded?.Invoke(new LeaderboardEntry[0]);
             }
 
+            public void RecordStat(string eventName, params (string key, object value)[] properties)
+            {
+            }
+
+            public void FlushStats()
+            {
+            }
+
             public void LoadCloud(Action<string> onLoaded)
             {
                 onLoaded?.Invoke(null);

@@ -270,6 +270,54 @@ namespace Wildgrove.Game.Services
             return "a warden";
         }
 
+        // How many stat events this session has had to hold. Counted rather than
+        // buffered: an idle run records on every save, and a queue that can never
+        // drain is a leak, not a recovery plan.
+        private int _statEventsHeld;
+        private bool _statApiWarned;
+
+        /// <summary>
+        /// Records a Game Stats event — or rather, will. **The client SDK does not
+        /// exist yet.** Google's Game Stats guide says client integration "will be
+        /// made available using Unity, Java and C++ SDKs", GA from July 2026, with
+        /// the Play Console CSV upload live August 2026; the shipped Unity plugin
+        /// (GPGS 2.1.0, July 2025 — still the latest release) has no
+        /// <c>PlayerGameEvent</c> and no <c>RecordEvent</c> on
+        /// <c>PlayGamesPlatform</c>. There is nothing to call and nothing to
+        /// reach over JNI: the Java coordinate isn't published either.
+        /// <para>
+        /// So this counts what it could not send and says so in logcat. When the
+        /// plugin lands, the whole body becomes the documented three lines —
+        /// <c>new PlayerGameEvent.Builder(eventName)</c>, <c>.AddProperty(k, v)</c>
+        /// per property, <c>PlayGamesPlatform.Instance.RecordEvent(built)</c> —
+        /// and nothing else in the game changes: <see cref="GameStats"/> already
+        /// decides what is recorded and when.
+        /// </para>
+        /// </summary>
+        public void RecordStat(string eventName, params (string key, object value)[] properties)
+        {
+            if (!IsSignedIn || string.IsNullOrEmpty(eventName))
+            {
+                return;
+            }
+
+            _statEventsHeld++;
+            if (!_statApiWarned)
+            {
+                _statApiWarned = true;
+                Log("game-stats: NOT submitted — GPGS " + GooglePlayGames.PluginVersion.VersionString
+                    + " has no Game Stats client API (first held event: " + eventName + ")");
+            }
+        }
+
+        public void FlushStats()
+        {
+            if (_statEventsHeld > 0)
+            {
+                Log("game-stats: " + _statEventsHeld + " event(s) unsent this session");
+            }
+        }
+
         public void LoadCloud(Action<string> onLoaded)
         {
             if (!IsSignedIn)

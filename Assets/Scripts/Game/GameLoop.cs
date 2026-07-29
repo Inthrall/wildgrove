@@ -53,6 +53,9 @@ namespace Wildgrove.Game
         /// <summary>Play Games seam — sign-in, achievements, cloud save (stub until the implementation lands).</summary>
         public IGameServices GameServices { get; private set; }
 
+        /// <summary>The Game Stats recorder (Level Up): what the gamer profile is told, and when.</summary>
+        public GameStats Stats { get; private set; }
+
         private double _autosaveCountdown = AutosaveIntervalSeconds;
         private float _sessionStartRealtime;
         private bool _sessionOpen;
@@ -176,6 +179,7 @@ namespace Wildgrove.Game
             Store = new StubStore();
             GameServices = new StubGameServices();
 #endif
+            Stats = new GameStats(GameServices);
             // Credit consumable purchases that resolved after their session ended
             // (fetched back and consumed on this launch, so no live callback is
             // waiting). The store's fetch is lazy — it runs no earlier than the
@@ -218,6 +222,10 @@ namespace Wildgrove.Game
             _loadedPlayedMs = State.playedMs;
             _lastSavedUnixMs = NowUnixMs();
             _autosaveCountdown = AutosaveIntervalSeconds;
+            // The stats baseline is the run as loaded: the lifetime totals it
+            // arrives with were gathered in earlier sessions and mustn't be
+            // reported as this one's.
+            Stats.Rebase(State);
 
             // Sign in, then reconcile against the cloud once authenticated. The
             // local run above starts the game responsively; the cloud pull is
@@ -310,6 +318,9 @@ namespace Wildgrove.Game
 
                 State = SaveCodec.Restore(cloud, Data);
                 _loadedPlayedMs = State.playedMs;
+                // Re-baseline the stats on the adopted run, or the gap between two
+                // runs' lifetime totals would post as this session's gathering.
+                Stats.Rebase(State);
                 // A cloud kith has already been met and named, like a local load.
                 MarkArrivalsSeen();
                 MarkKithSlotsSeen();
@@ -458,6 +469,9 @@ namespace Wildgrove.Game
             // Post the run's standing on the same cadence as the save (autosave,
             // pause, quit). Idempotent — Play Games keeps only the player's best.
             SubmitLeaderboards();
+            // Same cadence for the Game Stats totals: hauls and crafts land every
+            // tick, so they go as one figure per save rather than one event each.
+            Stats.Flush(State);
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
@@ -739,6 +753,7 @@ namespace Wildgrove.Game
             {
                 Telemetry.LogEvent("bubble_popped",
                     ("node", node.id), ("resource", node.resourceId), ("gained", gained.ToDouble()));
+                Stats.RecordWindfall(node.resourceId);
             }
 
             return gained;
@@ -1139,6 +1154,9 @@ namespace Wildgrove.Game
         {
             Narrative.MarkWaystoneRead(State, zoneId);
             Telemetry.LogEvent("waystone_read", ("zone", zoneId));
+            // A new stone is the progression stat moving — Google asks for the
+            // progress event on change, not only at launch.
+            Stats.ReportProgress(State);
         }
 
         /// <summary>Whether the time-skip is configured and affordable — the button's enabled state.</summary>
@@ -1345,6 +1363,7 @@ namespace Wildgrove.Game
             }
 
             Telemetry.LogEvent("specimen_fixed", ("resource", resourceId));
+            Stats.RecordSpecimenFixed(resourceId);
             ReportNewBonds(bondsBefore);
             // A completed Gallery opens kith slot 6 — a bond that was waiting
             // for room steps in now (SyncBonded is idempotent).
@@ -1580,6 +1599,7 @@ namespace Wildgrove.Game
                 ("number", next.migrationCount),
                 ("verdure", next.verdurePoints),
                 ("renown", State.renown.ToDouble()));
+            Stats.RecordMigration(next.migrationCount);
             State = next;
             // The carried kith has already been met — don't re-prompt naming.
             MarkArrivalsSeen();
@@ -1595,6 +1615,7 @@ namespace Wildgrove.Game
             if (!verseWasComplete && Rite.IsVerseComplete(State, Data, verse))
             {
                 Telemetry.LogEvent("verse_completed", ("verse", verse.id));
+                Stats.RecordVerseCompleted(verse.id);
                 if (Rite.IsRiteComplete(State, Data))
                 {
                     Telemetry.LogEvent("rite_completed", ("renown", State.renown.ToDouble()));

@@ -74,6 +74,24 @@ namespace Wildgrove.Game.Services
         /// </summary>
         void LoadLeaderboard(string leaderboardId, int rowCount, Action<LeaderboardEntry[]> onLoaded);
 
+        /// <summary>
+        /// Record one Game Stats player event (a Level Up guideline: five
+        /// repetitive stats, one of them competitive, plus a progression stat).
+        /// The event name and every property key must already be declared in the
+        /// Play Console CSV schema — see <see cref="GameStats"/>, which owns the
+        /// vocabulary, and <c>store/play-games/gamestats/</c>, which holds the
+        /// CSVs uploaded to the console. Undeclared events are dropped by Play.
+        /// No-op when signed out: the stat belongs to a gamer profile.
+        /// </summary>
+        void RecordStat(string eventName, params (string key, object value)[] properties);
+
+        /// <summary>
+        /// Ask for the recorded events to be uploaded now. Play batches on its
+        /// own schedule, so this is a nudge at a natural boundary (the save
+        /// cadence), not a delivery guarantee.
+        /// </summary>
+        void FlushStats();
+
         /// <summary>Read the cloud save blob (null when none exists or signed out).</summary>
         void LoadCloud(Action<string> onLoaded);
 
