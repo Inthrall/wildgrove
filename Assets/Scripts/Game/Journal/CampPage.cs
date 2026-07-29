@@ -299,12 +299,12 @@ namespace Wildgrove.Game
                     if (result == StoreResult.Purchased)
                     {
                         Flash(buy, "+" + Mathf.FloorToInt((float)amount) + " amber", true);
-                        SetNote("the caravan trades in resin — amber for the coffer.");
+                        SetNote("the caravan trades in resin, amber for the coffer.");
                         _dirty = true;
                     }
                     else if (result == StoreResult.Failed)
                     {
-                        SetNote("that didn't go through — nothing was charged.");
+                        SetNote("that didn't go through, nothing was charged.");
                     }
                 });
             });
@@ -499,7 +499,7 @@ namespace Wildgrove.Game
                     string inputsLine;
                     if (_loop.CanCraft(captured))
                     {
-                        inputsLine = BundleLabel(captured.inputs) + " — in hand";
+                        inputsLine = BundleLabel(captured.inputs) + " in hand";
                     }
                     else
                     {

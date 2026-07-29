@@ -947,7 +947,7 @@ namespace Wildgrove.Game
                 // what a Renown threshold is.
                 _trackerText.text = "<color=" + OchreInkHex + ">THE FOLD</color> · +<b>"
                                     + Mathf.FloorToInt((float)gain) + "</b> Verdure banked · "
-                                    + Mathf.FloorToInt((float)_loop.ProgressToNextVerdure() * 100f) + "% to the next";
+                                    + Mathf.FloorToInt((float)_loop.ProgressToNextVerdure() * 100f) + "% 'til the next point";
                 _foldButton.gameObject.SetActive(true);
                 _trackerPanel.SetActive(true);
                 return;
@@ -1420,7 +1420,7 @@ namespace Wildgrove.Game
                 // empty, and the strip itself says so (grey deflate), not
                 // just a sentence elsewhere.
                 _world?.ResolveCatch("nothing inside", false);
-                SetNote("the windfall bursts over the " + node.resourceId + " — nothing inside.");
+                SetNote("the windfall bursts over the " + node.resourceId + ", with nothing inside.");
                 return;
             }
 
@@ -1433,7 +1433,7 @@ namespace Wildgrove.Game
             }
 
             _flashAges[node.id] = 0f;
-            SetNote("caught a windfall — " + NumberFormat.Short(gained) + " " + node.resourceId + ", straight to camp.");
+            SetNote("caught a windfall of " + NumberFormat.Short(gained) + " " + node.resourceId);
         }
 
         // ─────────────────────────── Body ────────────────────────────────────

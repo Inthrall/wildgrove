@@ -90,7 +90,7 @@ namespace Wildgrove.Game
             MakeText(card, slots.Count + " slots — " + string.Join(" · ", slots), 16, TextAnchor.MiddleCenter, Ink2);
             MakeText(card, "one piece worn in each; the rest keep in the bag, and go back on for nothing",
                 21, TextAnchor.MiddleCenter, Ink2, _hand);
-            MakeText(card, "worn for the run, folded at Migration", 15, TextAnchor.MiddleCenter, Ink2);
+            MakeText(card, "Worn for the run, folded at Migration", 15, TextAnchor.MiddleCenter, Ink2);
 
             // Skill unlocks are part of the structure signature, so a locked
             // piece's hint can be settled once per rebuild.

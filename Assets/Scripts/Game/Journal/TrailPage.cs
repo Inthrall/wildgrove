@@ -466,7 +466,7 @@ namespace Wildgrove.Game
                              // is posted here shoulders what it can't hold — but
                              // it is still a loss, so say so in the ink of costs.
                              + (basketFull
-                                 ? " <color=" + OchreInkHex + ">· basket full — carrying it themselves, most is lost</color>"
+                                 ? " <color=" + OchreInkHex + ">· basket is full! By carrying it themselves, much is lost</color>"
                                  : string.Empty)
                              + "</size>";
 
