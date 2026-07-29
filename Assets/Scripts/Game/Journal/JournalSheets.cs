@@ -129,6 +129,16 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // After the bond: earning one can be the same beat that opens a
+            // place for it, and the companion is the news — the room is why.
+            var slots = _loop.TakePendingSlotCelebration();
+            if (slots > 0)
+            {
+                OpenKithSlotSheet(slots);
+                AddTapGuard(PumpedSheetGuardSeconds);
+                return;
+            }
+
             var waystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
             if (waystoneZone != null)
             {
@@ -213,8 +223,17 @@ namespace Wildgrove.Game
                 _dirty = true;
                 CloseSheet();
             });
+            Celebrate(sheet, ArrivalSeeds);
             MakeText(sheet, "A new friend", 32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, "a " + SpeciesName(familiar.speciesId) + " arrives", 22, TextAnchor.UpperCenter, Ink2, _hand);
+
+            // Who it is, in the book's own hand — a name is being asked for, and
+            // naming something you can't see is a form filled in, not a meeting.
+            var portrait = ArtLibrary.ForSpecies(familiar.speciesId);
+            if (portrait != null)
+            {
+                PlateImage(sheet, portrait, 200f);
+            }
 
             var cost = Mathf.FloorToInt((float)_loop.RenameCost());
             if (cost > 0)
@@ -273,9 +292,67 @@ namespace Wildgrove.Game
             _loop.GameServices.UnlockAchievement(AchievementIds.FirstKith);
 
             var sheet = BeginSheet();
+            // The heaviest drift in the game. A bond is the one thing the fold
+            // can't take back, and it was reading like a receipt for it.
+            Celebrate(sheet, BondSeeds);
             MakeText(sheet, "A bond is made", 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, bond.displayName + " will cross every fold with you.", 22, TextAnchor.UpperCenter, Ink2, _serif);
+
+            var portrait = ArtLibrary.ForSpecies(bond.species);
+            if (portrait != null)
+            {
+                PlateImage(sheet, portrait, 220f);
+            }
+
+            MakeText(sheet, bond.displayName, 26, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "will cross every fold with you.", 22, TextAnchor.UpperCenter, Ink2, _serif);
+            MakeText(sheet, "<i>the grove keeps few things through a migration. this is one.</i>",
+                18, TextAnchor.MiddleCenter, Ink2, _hand);
             Button(sheet, "Walk together", 320, CloseSheet);
+        }
+
+        /// <summary>
+        /// The warden's own ladder widening (design §4) — a verse sung past a
+        /// milestone, or a slot bought. Nothing announced it before: the count
+        /// on the Warden page simply read one higher the next time anyone
+        /// looked, which is no way to mark the thing the whole kith is gated on.
+        /// </summary>
+        private void OpenKithSlotSheet(int slots)
+        {
+            var sheet = BeginSheet();
+            Celebrate(sheet, SlotSeeds);
+            MakeText(sheet, "The circle widens", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            var hearth = ArtLibrary.ForBuilding("fire");
+            if (hearth != null)
+            {
+                PlateImage(sheet, hearth, 180f);
+            }
+
+            MakeText(sheet, "another may hold a post", 22, TextAnchor.UpperCenter, Ink2, _hand);
+            MakeText(sheet, slots + " of " + Kith.SlotsMax(_loop.Data) + " places at the fire",
+                20, TextAnchor.UpperCenter, Ink, _smallCaps);
+
+            // Where the reward actually lands — a slot is worth nothing until
+            // someone resting is walked out to a node.
+            var resting = _loop.KithCount() - _loop.KithWalking();
+            MakeText(sheet, resting > 0
+                    ? "<i>" + (resting == 1 ? "one of the kith rests" : resting + " of the kith rest")
+                      + " at camp — the Warden page will station them.</i>"
+                    : "<i>the next to arrive can walk straight out.</i>",
+                18, TextAnchor.MiddleCenter, Ink2, _hand);
+            Button(sheet, "Good", 320, CloseSheet);
+        }
+
+        // How heavy the drift is, by how much the moment is worth: a bond is
+        // permanent, a slot is the ladder, an arrival happens most runs.
+        private const int BondSeeds = 16;
+        private const int SlotSeeds = 12;
+        private const int ArrivalSeeds = 8;
+
+        /// <summary>Sow a drift of seed up a sheet — the journal's one celebration, in the ink it reads in.</summary>
+        private static void Celebrate(Transform sheet, int seeds)
+        {
+            Seedfall.Sow(sheet, seeds, new Color(Ink2.r, Ink2.g, Ink2.b, 0.5f));
         }
 
         private void OpenWelcomeSheet(OfflineSummary summary)

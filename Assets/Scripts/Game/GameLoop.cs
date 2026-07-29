@@ -71,6 +71,12 @@ namespace Wildgrove.Game
         private readonly Queue<Familiar> _pendingArrivals = new Queue<Familiar>();
         private readonly HashSet<string> _announcedFamiliars = new HashSet<string>();
 
+        // The kith's slot count is DERIVED (lifetime verses sung, plus bought
+        // slots), so nothing raises an event when the ladder widens — it has to
+        // be noticed. -1 means "not yet seen": the first look seeds the mark
+        // silently, so a loaded ladder isn't announced as a new one.
+        private int _seenKithSlots = -1;
+
         private void Awake()
         {
             Initialise();
@@ -93,6 +99,7 @@ namespace Wildgrove.Game
             Simulation.Advance(State, Data, Time.deltaTime);
             FlushAmberFindTelemetry();
             RefreshArrivals();
+            RefreshKithSlots();
 
             _autosaveCountdown -= Time.deltaTime;
             if (_autosaveCountdown <= 0.0)
@@ -195,6 +202,7 @@ namespace Wildgrove.Game
                 State = SaveCodec.Restore(save, Data);
                 // A loaded kith has already been met and named — don't re-prompt.
                 MarkArrivalsSeen();
+                MarkKithSlotsSeen();
                 CreditAbsence((NowUnixMs() - save.savedAtUnixMs) / 1000.0);
             }
             else
@@ -304,6 +312,7 @@ namespace Wildgrove.Game
                 _loadedPlayedMs = State.playedMs;
                 // A cloud kith has already been met and named, like a local load.
                 MarkArrivalsSeen();
+                MarkKithSlotsSeen();
                 // The local load's summary credited the state we've just discarded;
                 // drop it so the absence since the cloud save credits the adopted run.
                 PendingOfflineSummary = null;
@@ -501,6 +510,41 @@ namespace Wildgrove.Game
         public Familiar TakePendingArrival()
         {
             return _pendingArrivals.Count > 0 ? _pendingArrivals.Dequeue() : null;
+        }
+
+        /// <summary>
+        /// Watch the slot ladder for a rung the player just earned. Both ways
+        /// of widening it — a verse sung past a milestone, a slot bought — land
+        /// in the same derived count, so watching the count catches both and
+        /// can't be forgotten at a new call site.
+        /// </summary>
+        private void RefreshKithSlots()
+        {
+            var slots = KithSlots();
+            if (_seenKithSlots >= 0 && slots > _seenKithSlots)
+            {
+                Telemetry.LogEvent("kith_slot_opened", ("slots", slots));
+                PendingSlotCelebration = slots;
+            }
+
+            _seenKithSlots = slots;
+        }
+
+        /// <summary>Forget the slot mark, so the next look re-seeds it silently — for a ladder that arrived rather than was earned (a load, an adopted cloud save).</summary>
+        private void MarkKithSlotsSeen()
+        {
+            _seenKithSlots = -1;
+        }
+
+        /// <summary>The slot count just reached, awaiting its celebration; 0 when none is pending.</summary>
+        public int PendingSlotCelebration { get; private set; }
+
+        /// <summary>Claim the pending slot celebration (clears it), or 0.</summary>
+        public int TakePendingSlotCelebration()
+        {
+            var slots = PendingSlotCelebration;
+            PendingSlotCelebration = 0;
+            return slots;
         }
 
         /// <summary>Active kith slots on the ladder (design §4): one to start, verses sung earn three more, the store opens the last two.</summary>
@@ -1539,6 +1583,9 @@ namespace Wildgrove.Game
             State = next;
             // The carried kith has already been met — don't re-prompt naming.
             MarkArrivalsSeen();
+            // The ladder crosses the fold intact (slots ride lifetime verses),
+            // so re-seed the mark rather than announce it as newly won.
+            MarkKithSlotsSeen();
             SaveNow();
             return true;
         }

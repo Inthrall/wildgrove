@@ -5,9 +5,10 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// One windfall adrift in the node strip: the resource's own naturalist
-    /// plate, risen from a worked node on a soft parchment mount and turning
-    /// slowly as it goes — a pressed cutting carried on the wind. Caught with
-    /// a tap for a burst of that node's goods (see <see cref="Wildgrove.Sim.Bubbles"/>).
+    /// plate, risen from a worked node on a dandelion clock and turning slowly
+    /// as it goes — a pressed cutting carried on the wind. Caught with a tap
+    /// for a burst of that node's goods, and the clock lets its seed go as it
+    /// does (see <see cref="Wildgrove.Sim.Bubbles"/>).
     /// Purely ephemeral — nothing here persists. <see cref="WorldView"/> owns
     /// spawn timing, the float path, expiry and the hit test; this is just
     /// the sprite.
@@ -18,10 +19,14 @@ namespace Wildgrove.Game.World
         // per-diameter scale, leaving the mount showing as a halo around it
         // (the same fit NodeWorldView gives a node's face).
         private const float PlateFit = 1f;
-        private const float MountAlpha = 0.4f;
+        private const float MountAlpha = 0.55f;
         private const float SkinAlpha = 0.8f;
         private const float SwayDegrees = 7f;
         private const float SwaySpeed = 1.1f;
+
+        // The clock stands a little proud of the cutting it carries, so its
+        // hairs show all the way round as a halo rather than a backing.
+        private const float MountFit = 1.2f;
 
         // Warm parchment: a windfall is the land handing something over, so it
         // carries the journal's own paper light rather than a resource hue.
@@ -48,6 +53,16 @@ namespace Wildgrove.Game.World
         private const float BurstSeconds = 0.45f;
         private const float NudgeSeconds = 0.3f;
 
+        // The seed outlives the head that let it go — the clock is gone in
+        // under half a second, the seed is still drifting a second later.
+        private const float SeedSeconds = 1.15f;
+        private const int RewardedSeeds = 9;
+        private const int EmptySeeds = 3;
+        private const float SeedScale = 0.24f;
+
+        private static readonly Color SeedColour = new Color(1f, 0.97f, 0.87f, 1f);
+        private static readonly Color SpentSeedColour = new Color(0.62f, 0.6f, 0.55f, 1f);
+
         private SpriteRenderer _mount;
         private SpriteRenderer _plate;
         private SpriteRenderer _skin;
@@ -58,6 +73,12 @@ namespace Wildgrove.Game.World
         private bool _burstRewarded;
         private float _nudgedAt = -10f;
         private float _placedDiameter = 1f;
+
+        private SpriteRenderer[] _seeds;
+        private Vector2[] _seedDrift;
+        private float[] _seedSpin;
+        private Color _seedColour;
+        private bool _seedsSown;
 
         public static BubbleWorldView Create(Transform parent, NodeState node, Color colour, Sprite face, float spawnTime, float seed, Font hintFont = null)
         {
@@ -80,12 +101,14 @@ namespace Wildgrove.Game.World
                 view._hint.GetComponent<MeshRenderer>().sortingOrder = 8;
             }
 
+            // The clock the windfall rides on, whatever it's carrying — a
+            // seedhead lit like paper, so it reads against the strip without
+            // borrowing the Pristine window's gold halo.
+            view._mount = CreateSprite(go.transform, "Seedhead", PlaceholderArt.Seedhead, MountColour, 5);
+            view._mount.transform.localScale = Vector3.one * MountFit;
+
             if (face != null)
             {
-                // A soft paper glow behind the cutting so it reads against the
-                // strip without borrowing the Pristine window's gold halo.
-                view._mount = CreateSprite(go.transform, "Mount", PlaceholderArt.Disc, MountColour, 6);
-
                 view._plate = CreateSprite(go.transform, "Plate", face, Color.white, 7);
                 var longest = Mathf.Max(face.bounds.size.x, face.bounds.size.y);
                 view._plate.transform.localScale = Vector3.one * (longest > 0f ? PlateFit / longest : 1f);
@@ -172,10 +195,24 @@ namespace Wildgrove.Game.World
         /// <summary>Advance the send-off; false once it has played out and the object can go.</summary>
         public bool AnimateBurst(float now)
         {
-            var t = Mathf.Clamp01((now - _burstAt) / BurstSeconds);
+            var elapsed = now - _burstAt;
+            if (!_seedsSown)
+            {
+                // Sown on the first tick and not in BeginBurst: the catch is
+                // taken before the sim knows what it paid, and the seed carries
+                // that answer's colour.
+                SowSeeds();
+                _seedsSown = true;
+            }
+
+            AnimateSeeds(elapsed);
+
+            var t = Mathf.Clamp01(elapsed / BurstSeconds);
             if (t >= 1f)
             {
-                return false;
+                // The head is spent, but the seed it let go is still in the air
+                // — hold the object open until the last of it has drifted out.
+                return elapsed < SeedSeconds;
             }
 
             var scale = _burstRewarded ? 1f + 0.4f * t : 1f - 0.35f * t;
@@ -199,6 +236,67 @@ namespace Wildgrove.Game.World
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Let the clock go. A full catch scatters a headful, an empty one
+        /// three grey ones that barely leave — the send-off already says which
+        /// it was, and the seed says it again a beat later.
+        /// </summary>
+        private void SowSeeds()
+        {
+            var count = _burstRewarded ? RewardedSeeds : EmptySeeds;
+            _seedColour = _burstRewarded ? SeedColour : SpentSeedColour;
+            _seeds = new SpriteRenderer[count];
+            _seedDrift = new Vector2[count];
+            _seedSpin = new float[count];
+
+            for (var i = 0; i < count; i++)
+            {
+                // Fanned evenly and offset by the windfall's own phase, so the
+                // scatter is neither a starburst nor a different lottery each
+                // time a plate is caught.
+                var angle = (i + 0.5f) / count * Mathf.PI * 2f + Seed;
+                var reach = _burstRewarded ? 1f : 0.45f;
+
+                // Outward, and upward on top of that: seed leaves on the wind
+                // rather than falling away from the head.
+                _seedDrift[i] = new Vector2(Mathf.Cos(angle) * 0.6f, Mathf.Sin(angle) * 0.35f + 0.7f) * reach;
+                _seedSpin[i] = Mathf.Sin(angle * 3f) * 90f;
+
+                var seed = CreateSprite(transform, "Seed", PlaceholderArt.Pappus, _seedColour, 9);
+                seed.transform.localScale = Vector3.one * SeedScale;
+                _seeds[i] = seed;
+            }
+        }
+
+        private void AnimateSeeds(float elapsed)
+        {
+            if (_seeds == null)
+            {
+                return;
+            }
+
+            var t = Mathf.Clamp01(elapsed / SeedSeconds);
+            // Out-quad: away from the head at once, then coasting — the shape
+            // of something the wind has taken rather than something thrown.
+            var eased = 1f - (1f - t) * (1f - t);
+            for (var i = 0; i < _seeds.Length; i++)
+            {
+                var seed = _seeds[i];
+                if (seed == null)
+                {
+                    continue;
+                }
+
+                var drift = _seedDrift[i];
+                var sway = Mathf.Sin(elapsed * 5f + i) * 0.05f * eased;
+                seed.transform.localPosition = new Vector3(drift.x * eased + sway, drift.y * eased, 0f);
+                seed.transform.localRotation = Quaternion.Euler(0f, 0f, _seedSpin[i] * eased);
+                // Whole until the last third, then gone — a seed that starts
+                // fading the moment it leaves never reads as having left.
+                SetAlpha(seed, _seedColour, Mathf.Clamp01((1f - t) * 3f));
+            }
         }
 
         private static void SetAlpha(SpriteRenderer renderer, Color colour, float alpha)
