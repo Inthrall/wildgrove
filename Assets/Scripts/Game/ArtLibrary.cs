@@ -93,8 +93,10 @@ namespace Wildgrove.Game
         };
 
         // species id (species.json) → roster plate. One plate per species; the
-        // animal is chosen to match the powerup it gives (§4). All eight plates
-        // are now wired to the starting kith.
+        // animal is chosen to match the powerup it gives (§4).
+        // Still unplated (the lookup returns null and the placeholder disc
+        // stands in, which is the designed fallback): osier-otter,
+        // horseshoe-bat, ermine.
         private static readonly Dictionary<string, string> Familiar = new Dictionary<string, string>
         {
             { "meadow-vole", Plates + "Familiars/familiar-vole" },
@@ -105,6 +107,10 @@ namespace Wildgrove.Game
             { "furrow-hedgehog", Plates + "Familiars/familiar-hedgehog" },
             { "tawny-owl", Plates + "Familiars/familiar-owl" },
             { "pack-raven", Plates + "Familiars/familiar-raven" },
+            // The Drover's Halter pony (§11). A head-and-neck portrait rather
+            // than the whole animal — the plate's lower legs stand against dark
+            // grass and would not cut, and the halter is a head thing anyway.
+            { "fell-pony", Plates + "Familiars/familiar-pony" },
         };
 
         // skill id (resources.json / recipes.json) → craft glyph

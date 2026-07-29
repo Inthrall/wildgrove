@@ -2,7 +2,9 @@
 
 All source works are public domain (original artworks out of copyright) or openly licensed. Sourced from Wikimedia Commons and cropped/trimmed for use as naturalist plates and UI glyphs. Files live under `Assets/Resources/Art/Plates/` (hero plates: zones, resources, familiars, insects, gear, goods) and `Assets/Resources/Art/UI/` (craft glyphs, journal furniture). They sit under `Resources/` so the runtime `ArtLibrary` can load them by id via `Resources.Load<Sprite>`.
 
-**Attribution required (CC BY):** craft-entomology.png, craft-mining.png, insect-deep-amber.jpg, res-amber.jpg, res-peat.jpg. These must carry the attribution string below if shipped; everything else is public-domain equivalent (PD / CC0 / "no known restrictions").
+**Attribution required (CC BY):** craft-entomology.png, craft-mining.png, insect-deep-amber.jpg, res-amber.jpg, res-peat.jpg. Everything else is public-domain equivalent (PD / CC0 / "no known restrictions").
+
+These five are credited **in the shipped build**, in the journal's colophon — Record page → THE COLOPHON → Read. The strings live in `Assets/Scripts/Game/ArtCredits.cs`, which is the only copy the build carries; the section at the foot of this file reproduces them so a reviewer can check the two agree. **Add a line to `ArtCredits.Licensed` the same day a CC-licensed work joins the art** — a credit that exists only in this file is not carried by the game.
 
 *Craft glyphs have been re-baked to a two-tone sepia (HUD ink #3A3126 / #6E6047) for a coherent journal look; the rows below name the original source works.*
 
@@ -23,6 +25,7 @@ All source works are public domain (original artworks out of copyright) or openl
 | Hare familiar | familiar-hare.jpg | The handy natural history (Coloured Plate XIII) (5984800981).jpg — Protheroe, Ernest. | 1910 | https://commons.wikimedia.org/w/index.php?curid=43572394 | Public domain | No |
 | Hedgehog familiar | familiar-hedgehog.jpg | Natural history of the animal kingdom for the use of young people (Plate X) (5974369839).jpg — Kirby, W. F.; Schubert, Gotthilf Heinrich von; Society for Promoting Christian Knowledge (Great Britain). | 1889 | https://commons.wikimedia.org/w/index.php?curid=43104427 | Public domain | No |
 | Owl familiar | familiar-owl.jpg | Natural history of the animal kingdom for the use of young people (Plate V) (5974947146).jpg — Kirby, W. F.; Schubert, Gotthilf Heinrich von; Society for Promoting Christian Knowledge (Great Britain). | 1889 | https://commons.wikimedia.org/w/index.php?curid=43103814 | Public domain | No |
+| Fell Pony familiar ("The Drover's Halter") | familiar-pony.png | The handy natural history (Coloured Plate XVI) (5984801945).jpg — Protheroe, Ernest. Figure 2 ("Horse"), head and neck, cut out and vignetted. | 1910 | https://commons.wikimedia.org/w/index.php?curid=43572272 | Public domain | No |
 | Pack Raven | familiar-raven.jpg | The birds of America. (Livraison) 21, Plate CI, Raven, Male (i.e. Common Raven) ; Thick Shell-bark Hickory - estampe - Drawn from Nature by John J. Audubon ; Engraved, printed & Coloured by R. Havell Jun.r - btv1b53144073b.jpg — Audubon, John James (1785-1851). Dessinateur du modèle Havell, Robert (1793-1878). Graveur | 1830date QS:P571,+1830-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=162290208 | Public domain | No |
 | Songbird familiar | familiar-songbird.jpg | Natural history of the animal kingdom for the use of young people (Plate XVI) (5974951224).jpg — Kirby, W. F.; Schubert, Gotthilf Heinrich von; Society for Promoting Christian Knowledge (Great Britain). | 1889 | https://commons.wikimedia.org/w/index.php?curid=43103747 | Public domain | No |
 | Squirrel familiar | familiar-squirrel.jpg | The handy natural history (Coloured Plate XIV) (5984801179).jpg — Protheroe, Ernest. | 1910 | https://commons.wikimedia.org/w/index.php?curid=43572340 | Public domain | No |
@@ -64,7 +67,7 @@ All source works are public domain (original artworks out of copyright) or openl
 | Res Amber | res-amber.jpg | Dolichoderus longipilosus SMFBE1244 specimen tag and amber.jpg — Vincent Perrichot | 2012-06-22 00:04:42 | https://commons.wikimedia.org/w/index.php?curid=76491639 | CC BY 4.0 | Yes |
 | Res Berries | res-berries.jpg | Ribes rubrum - Groseiller rouge. (Garden red currant) (NYPL b14485031-1108919).tiff — Scan by NYPL | 1801 | https://commons.wikimedia.org/w/index.php?curid=50957248 | Public domain | No |
 | Res Bone | res-bone.jpg | Cow anatomy dorsal skeleton.jpg — * Artwork: Hermann Dittrich Book authors: Wilhelm Ellenberger, Hermann Baum | 1889 | https://commons.wikimedia.org/w/index.php?curid=2844496 | Public domain | No |
-| Res Clay | res-clay.jpg | A supplement to Ures Dictionary of Arts, Manufactures, and Mines, - containing a clear exposition of their principles and practice. (1864) (14595138467).jpg — Internet Archive Book Images | 1864 | https://commons.wikimedia.org/w/index.php?curid=43662661 | No restrictions | No |
+| Res Clay | res-clay.png | Erdstück von dunkelgrünem Thon an dem rechten Ufer der Pulkowka — N. P. Gubert (lith.). The stratified clay bank at the waterline, cropped and vignetted. Replaced 2026-07-29: the previous source was a figure from Ure's Dictionary that turned out to be a wheel mechanism, not clay at all. | 1836 | https://commons.wikimedia.org/w/index.php?curid=194130585 | Public domain | No |
 | Res Copper Ore | res-copper-ore.jpg | Plate XVI- Copper, Malachite - DPLA - 7d63fa8d962f50f3bd86588b67cfc20a.jpg — Kurr, J. G. (Johann Gottlob), 1798-1870 | 1859date QS:P571,+1859-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=123751404 | Public domain | No |
 | Res Crystals | res-crystals.jpg | Plate IV- Quartz and Opal - DPLA - 8c000fd0258fff88cf23f36d42caefb4.jpg — Kurr, J. G. (Johann Gottlob), 1798-1870 | 1859date QS:P571,+1859-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=123791266 | Public domain | No |
 | Res Deep Ores | res-deep-ores.jpg | Plate XV- Mercury, Quicksilver, Copper Ore - DPLA - 8674b9c3f67931a854de5927134542a0.jpg — Kurr, J. G. (Johann Gottlob), 1798-1870 | 1859date QS:P571,+1859-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=123789166 | Public domain | No |
@@ -82,7 +85,7 @@ All source works are public domain (original artworks out of copyright) or openl
 | Res Rare Herbs | res-rare-herbs.jpg | Menyanthes trifoliata Sturm10004.jpg — Johann Georg Sturm (Painter: Jacob Sturm) | 1796 | https://commons.wikimedia.org/w/index.php?curid=16848932 | Public domain | No |
 | Res Reeds | res-reeds.jpg | Poaceae spp Sturm25.jpg — Johann Georg Sturm (Painter: Jacob Sturm) | 1796 | https://commons.wikimedia.org/w/index.php?curid=744337 | Public domain | No |
 | Res Sky Blossoms | res-sky-blossoms.jpg | Bley, Botanisches Bilderbuch 39.jpg — Franz Bley &amp; H. Berdrow | 1897 | https://commons.wikimedia.org/w/index.php?curid=7850449 | Public domain | No |
-| Res Timber | res-timber.jpg | Bark (Tree) (PSF).png — Pearson Scott Foresman |  | https://commons.wikimedia.org/w/index.php?curid=3565467 | Public domain | No |
+| Res Timber | res-timber.png | Beech tree (PSF).png — Pearson Scott Foresman. Re-baked to sepia ink on transparency. Replaced 2026-07-29: the previous Bark (Tree) crop was abstract texture that read as nothing at plate size. | | https://commons.wikimedia.org/w/index.php?curid=4774534 | Public domain | No |
 | Res Tin Ore | res-tin-ore.jpg | Plate XX- Galena, Cerussite, Anglesite, Pyromorphite, Molybdate, Chromate, Tin Ore, Zinc Ores - DPLA - a5eef0c3a6f7477af22a3c38dc15bde9.jpg — Kurr, J. G. (Johann Gottlob), 1798-1870 | 1859date QS:P571,+1859-00-00T00:00:00Z/9 | https://commons.wikimedia.org/w/index.php?curid=123759629 | Public domain | No |
 | Res Wildflowers | res-wildflowers.jpg | Leucanthemum vulgare (Masclef et al. 1891, Tome 2, planche 181) clean, no-description.png — Amédée Masclef | 2018-11-29 | https://commons.wikimedia.org/w/index.php?curid=74755366 | Public domain | No |
 | Res Wool | res-wool.jpg | Illustrated natural history of the animal kingdom, being a systematic and popular description of the habits, structure, and classification of animals from the highest to the lowest forms, with their (Pl. 9) (9722806555).jpg — Goodrich, Samuel G. | 1859 | https://commons.wikimedia.org/w/index.php?curid=43333805 | Public domain | No |
@@ -91,3 +94,37 @@ All source works are public domain (original artworks out of copyright) or openl
 | Ui Caravan | ui-caravan.png | Huifkar met familie onderweg (RP-P-OB-27.747) — Karel Frederik Bombled, Rijksmuseum. Re-baked to sepia ink on transparency. | 1832–1902 | https://commons.wikimedia.org/w/index.php?curid=85197458 | CC0 | No |
 | Ui Paper Texture | ui-paper-texture.jpg | Band van blank perkament, roodbruin bedrukt-KONB12-583K8.jpeg | 1793 or 1794date QS:P571,+1793-00-00T00:00:00Z/8,P1319,+1793 | https://commons.wikimedia.org/w/index.php?curid=46663786 | Public domain | No |
 | Ui Waystone | ui-waystone.jpg | Stendös vid Vrångstad i Bottna socken (Montelius, Sveriges hednatid (1877) sid 54 fig 91).jpg — Oskar Montelius (1843-1921), engraving by Wilhelm Meyer (1844-1944) | 2011-10-05 | https://commons.wikimedia.org/w/index.php?curid=16877891 | Public domain | No |
+
+## Store artwork (`store/`)
+
+Play Console artwork is built from the same plates on the same parchment card, so the
+store reads as part of the journal. It lives outside `Resources/` because nothing loads
+it at runtime — Google does.
+
+**Generated: `python tools/make-store-art.py`** (`--check` verifies what is on disk).
+Every card is reproducible from committed plates, so the provenance of a card is the
+provenance of its plate. The five icons that predate the tool
+(remove_ads, starter_bundle, kith_slot, amber_pack_small, amber_pack_large) were made
+by hand and are not in its manifest; the tool's template was measured off
+`kith_slot-icon.png` so new cards match them.
+
+| Product icon | Original work / artist | Year | Source (Wikimedia Commons) | Licence | Attribution required? |
+|---|---|---|---|---|---|
+| reward_drovers_halter-icon.png | Built from `familiar-pony.png` (row above) — the same plate the roster uses. | 1910 | https://commons.wikimedia.org/w/index.php?curid=43572272 | Public domain | No |
+| play-games/achievement-first-kith-512.png | Built from `familiar-vole.png` — the seed familiar, and so the one on the "First kith" card. | 1911 | https://commons.wikimedia.org/w/index.php?curid=44251305 | No restrictions | No |
+| reward_weekly_amber_cache-icon.png | insect-deep-amber source work (Fly in amber, Samland Peninsula — James St. John), as already used by amber_pack_small/large-icon.png | 2007-02-13 | https://commons.wikimedia.org/w/index.php?curid=35517824 | CC BY 2.0 | **Yes** |
+
+A Play Console icon has nowhere to carry a credit of its own, so the three amber
+cards (two packs, one cache) rest on the in-app colophon, which names the work and
+its licence. That is the same basis on which the plate is used inside the game.
+
+## Attribution strings (as shipped)
+
+Reproduced from `Assets/Scripts/Game/ArtCredits.cs`, which is the copy the build
+carries. If these two lists disagree, the code is right and this section is stale.
+
+- Fly in amber, Samland Peninsula along the Baltic Sea RU — James St. John, CC BY 2.0 (creativecommons.org/licenses/by/2.0), cropped and trimmed.
+- Dolichoderus longipilosus SMFBE1244 specimen tag and amber — Vincent Perrichot, CC BY 4.0 (creativecommons.org/licenses/by/4.0), cropped and trimmed.
+- Orchid, rotted and azalea peats, leaf mould, live sphagnum moss… — C. W. Brownell & Co., CC BY 2.0 (creativecommons.org/licenses/by/2.0), cropped and trimmed.
+- Butterfly (game-icons.svg) — Lorc, CC BY 3.0 (creativecommons.org/licenses/by/3.0), re-baked to sepia ink.
+- Pickaxe icon (white).svg — Arthur Shlain, CC BY 3.0 (creativecommons.org/licenses/by/3.0), re-baked to sepia ink.

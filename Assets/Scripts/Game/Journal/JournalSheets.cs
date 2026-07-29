@@ -1116,6 +1116,28 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The colophon — the plates and the hands that drew them. The five CC BY
+        /// works are named in full with their licence and the change made to
+        /// them, because that is what the licence asks of a shipped build; the
+        /// public-domain remainder is thanked without obligation.
+        /// </summary>
+        internal void OpenColophonSheet()
+        {
+            var sheet = BeginSheet();
+            MakeText(sheet, "The Colophon", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, ArtCredits.Preamble, 17, TextAnchor.UpperLeft, Ink2, _serif);
+
+            foreach (var work in ArtCredits.Licensed)
+            {
+                MakeText(sheet, ArtCredits.Line(work), 15, TextAnchor.UpperLeft, Ink, _serif);
+            }
+
+            MakeText(sheet, ArtCredits.PublicDomainNote, 15, TextAnchor.UpperLeft, Ink2, _serif);
+            var done = Button(sheet, "Close the book", 320, CloseSheet);
+            KeyAction(done);
+        }
+
+        /// <summary>
         /// A modal yes/no confirmation — a title, a body line, and a paired
         /// "never mind" / go-ahead choice styled like the Fold sheet's Migrate.
         /// The confirmed action runs after the sheet closes, so it may open a

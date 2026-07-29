@@ -25,6 +25,25 @@ namespace Wildgrove.Game
             BuildDeepPagesCard();
             BuildAlmanacCard();
             BuildStandingCard();
+            BuildColophonCard();
+        }
+
+        /// <summary>
+        /// The colophon — who drew the plates. Last card on the last page, where
+        /// a book puts it. It exists because five of the source works are CC BY
+        /// and the licence obliges the *shipped* game to name them; a credit
+        /// sitting in a repo file is not carried by the build.
+        /// </summary>
+        private void BuildColophonCard()
+        {
+            var card = Card("THE COLOPHON");
+            MakeText(card, ArtCredits.Preamble, 16, TextAnchor.UpperLeft, Ink2, _serif);
+
+            var row = Row(card);
+            var label = MakeText(row.transform, "the plates, and the hands that drew them",
+                17, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            Button(row.transform, "Read", 160, () => _hud.Sheets.OpenColophonSheet());
         }
 
         private void BuildStandingCard()
