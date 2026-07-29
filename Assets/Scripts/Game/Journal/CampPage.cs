@@ -139,6 +139,13 @@ namespace Wildgrove.Game
             });
         }
 
+        /// <summary>
+        /// The weekly Amber cache (design §11) — a Play Games Reward, not a tap
+        /// the game grants itself. Play sets one out at most weekly for a Social
+        /// Challenge and delivers it through the store, so this row reports the
+        /// week's state and offers a re-read for a player who redeemed a moment
+        /// ago; the cache itself lands through the reward sheet either way.
+        /// </summary>
         private void BuildWeeklyCacheRow(RectTransform card, EconomyData economy)
         {
             var row = Row(card);
@@ -146,43 +153,62 @@ namespace Wildgrove.Game
             FlexibleWidth(label.gameObject, 1f);
             var text = "the weekly amber cache"
                        + SizeOpen(15) + "<color=" + OchreHex + ">  +" + Mathf.FloorToInt((float)economy.amber.weeklyCacheAmber) + " amber</color></size>";
-            Button claim = null;
-            claim = Button(row.transform, "Claim", 170, () =>
+            var checking = false;
+            Button look = null;
+            look = Button(row.transform, "Look", 170, () =>
             {
-                // Signed out, the button IS the sign-in — hiding the row hid
-                // the free weekly claim from exactly the players it should
-                // convert (the Standing card's pattern).
+                // Signed out, the button IS the sign-in — hiding the row hid the
+                // cache from exactly the players it should convert, and a reward
+                // can't be awarded to someone Play Games doesn't know at all
+                // (the Standing card's pattern).
                 if (!_loop.GameServices.IsSignedIn)
                 {
-                    Flash(claim, "asking Play Games", true);
+                    Flash(look, "asking Play Games", true);
                     _loop.GameServices.SignInInteractive(signedIn => SetNote(signedIn
-                        ? "signed in — the week's cache is yours to claim."
+                        ? "signed in — Play Games can set the cache out now."
                         : "Play Games didn't answer — the cache keeps for now."));
                     return;
                 }
 
-                var amount = _loop.ClaimWeeklyCache();
-                if (amount > 0.0)
+                if (checking)
                 {
-                    Flash(claim, "+" + Mathf.FloorToInt((float)amount) + " amber", true);
-                    SetNote("the week's cache — a little resin, freely given.");
-                    _dirty = true;
+                    return;
                 }
+
+                checking = true;
+                SetButtonLabel(look, "Looking…");
+                _loop.CheckPlayRewards(found =>
+                {
+                    checking = false;
+                    if (found > 0)
+                    {
+                        // The reward sheet says what arrived and by whose hand —
+                        // this line only stops the page reading dead.
+                        _dirty = true;
+                        return;
+                    }
+
+                    SetNote("nothing set out yet. Play Games leaves the cache for a challenge met.");
+                });
             });
 
-            // A claimed cache stays on the page counting down to the week's
-            // turn rather than vanishing.
             _liveUpdaters.Add(() =>
             {
                 var signedIn = _loop.GameServices.IsSignedIn;
-                var ready = _loop.CanClaimWeeklyCache();
+                var due = _loop.WeeklyCacheDue;
                 label.text = signedIn
-                    ? text + (ready ? string.Empty : WaitingTail(_loop.WeeklyCacheCooldownRemaining))
+                    ? text + (due
+                        ? SizeOpen(15) + "<color=" + Ink2Hex + ">  set out by Play Games</color></size>"
+                        : WaitingTail(_loop.WeeklyCacheCooldownRemaining))
                     : text + SizeOpen(15) + "<color=" + Ink2Hex + ">  Play Games isn't signed in</color></size>";
-                SetButtonLabel(claim, signedIn ? "Claim" : "Sign in");
-                var live = !signedIn || ready;
-                claim.interactable = live;
-                SetButtonTint(claim, live);
+                if (!checking)
+                {
+                    SetButtonLabel(look, signedIn ? "Look" : "Sign in");
+                }
+
+                var live = !checking;
+                look.interactable = live;
+                SetButtonTint(look, live);
             });
         }
 

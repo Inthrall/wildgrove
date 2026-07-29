@@ -520,6 +520,10 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 
 **Play Games Rewards (Level Up requirement, not IAP):** Wayfarer's Cloak (cosmetic) + **The Drover's Halter** (a fell pony that walks a second haul lane) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
 
+**BUILT 2026-07-29 — how a reward reaches the grove.** A reward is an ordinary one-time product with a Play Games Reward offer attached: Google awards it for a Quest (single-use) or a Social Challenge (repeatable) and delivers it through the **out-of-app purchase flow**, so the game receives it like any other purchase. The order the game owes the player is **grant → tell them → acknowledge**; an unacknowledged order is refunded by Play after three days, which makes refusing to acknowledge the *safe* failure and acknowledging-before-granting the unsafe one. The confirmation is a compliance artifact and outranks the journal's usual reticence: the item is named plainly, Play Games is said out loud, there is no way to decline, and it stays up until the player acknowledges it. The Halter and the Cache land through this. **The Cloak does not** — there is still no cosmetic substrate for it to appear in, so its id is deliberately kept out of the catalogue where it can never be acknowledged, and the Sep 30 2026 bar of two single-use items is **not yet met** on the Halter alone.
+
+**The weekly cache is no longer the game's to give.** It was a free weekly tap; it is now granted only by a Play delivery, and the grant is deliberately unconditional — Play owns the once-a-week cadence, and refusing an early delivery would drop a reward the player can never be offered again. The seven days survive only as the page's countdown.
+
 **DECIDED 2026-07-29 — the second haul lane is an animal, not a post.** The Drover's Halter (renamed from "Spare Wing") grants a **fell pony** — a real semi-feral Pennine pack breed, in register with the rest of the kith, and its historical job was carrying ore in panniers. The pony:
 - **is always at its lane** while owned. There is no posting choice, it cannot rest, and it cannot be moved; its station is derived from the entitlement and re-asserted on load, so a reinstall or a Migration resolves to the same state.
 - **holds no slot.** The lane costs nothing from the §4 ladder, so the reward lands the moment it is redeemed rather than waiting for a slot the player may not have. Because the pony can stand nowhere else, the exemption cannot leak into gathering — the reason it is an animal and not an abstract free post.
@@ -537,7 +541,7 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 | Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)    | Resources gathered (competitive) · deepest zone, Rites completed (progression) · verses · recipes · specimens · insect plates · Migrations · Renown earned | 5     |
 | Cloud save + conflict policy                                  | Saved Games API (<100 KB); conflict = highest lifetime Renown wins, prompt on tie                                               | 5     |
 | Sidekick overlay                                              | App Bundle + Play Console toggle; test early                                                                                    | 5     |
-| Rewards items (2 single-use / 1 repeatable)                   | Cloak, Drover's Halter, Weekly Amber Cache                                                                                           | 6     |
+| Rewards items (2 single-use by Sep 30 2026 / 1 repeatable by Mar 1 2027) | Cloak, Drover's Halter, Weekly Amber Cache. **Delivery path built 2026-07-29** — out-of-app purchase flow, grant → confirm → acknowledge; the Halter and the Cache land, the Cloak waits on a cosmetic substrate, so the ≥2 single-use bar is not yet met | 6     |
 | Vulkan primary (Unity 2021+)                                  | Unity 6 LTS + URP, Vulkan first from day one                                                                                    | 0     |
 | 60 fps (avg ≥55 / P90 ≥50 / P99 ≥30)                          | 2D URP; frame budget checked each phase gate                                                                                    | all   |
 | Stability <1% crash / <2% ANR                                 | Crashlytics from Phase 1; vitals gate before launch                                                                             | all   |
@@ -549,6 +553,8 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 > **Leaderboard integrity:** ship Play Integrity API checks and server-side sanity bounds (max plausible Renown/hour) before any competitive stat goes live.
 
 Reference: [Google Play Level Up guidelines](https://developer.android.com/games/guidelines)
+
+> **Level Up vs Level Up+ (checked 2026-07-29).** Everything in this table is base **Level Up**, including the Rewards items. **Level Up+** is a further tier — a reduced service fee for games meeting *all* the revamped guidelines — so these rows gate it rather than belong to it. The one thing reserved to Level Up+ is **Play Points product promotions** (points exchanged for an in-game item), which ride the same one-time-product delivery the Rewards items are built on; nothing extra would be needed to serve them.
 
 ---
 

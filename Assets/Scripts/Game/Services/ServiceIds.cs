@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Wildgrove.Game.Services
 {
     /// <summary>
@@ -55,6 +57,105 @@ namespace Wildgrove.Game.Services
             }
 
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Play Games Rewards product IDs (design §11) — the one-time products a
+    /// Play Games Reward offer is attached to in the console. These are never
+    /// bought: Google Play awards them for a Quest or a Social Challenge and
+    /// delivers them through the ordinary out-of-app purchase flow, so the game
+    /// receives them like any other purchase. See <see cref="RewardGrants"/> for
+    /// what each one lands and the delivery contract.
+    /// </summary>
+    public static class RewardProductIds
+    {
+        /// <summary>Single-use: a fell pony walking a second haul lane (design §11). A durable entitlement — owned forever, so it re-resolves after a reinstall.</summary>
+        public const string DroversHalter = "reward_drovers_halter";
+
+        /// <summary>Repeatable: the weekly Amber cache (design §11). Consumable — Play sets one out at most weekly and each delivery is credited on arrival.</summary>
+        public const string WeeklyAmberCache = "reward_weekly_amber_cache";
+
+        /// <summary>
+        /// Single-use: the cosmetic cloak (design §11). Named here so the set is
+        /// legible and the console product can be planned, but deliberately NOT
+        /// in <see cref="All"/> — the game has no cosmetic substrate, so nothing
+        /// can grant it. An id absent from the catalogue is never fetched, never
+        /// acknowledged, and Play refunds the offer rather than the player paying
+        /// a Quest for nothing. Add it here the same day its grant lands.
+        /// </summary>
+        public const string WayfarersCloak = "reward_wayfarers_cloak";
+
+        /// <summary>Single-use rewards: durable entitlements, resolved from the store's owned set like the kith products.</summary>
+        public static readonly string[] Durable = { DroversHalter };
+
+        /// <summary>Repeatable rewards: consumables, credited once per delivery and never owned.</summary>
+        public static readonly string[] Repeatable = { WeeklyAmberCache };
+
+        /// <summary>Every reward the game can actually grant. Only these are catalogued — see the Wayfarer's Cloak note.</summary>
+        public static readonly string[] All = { DroversHalter, WeeklyAmberCache };
+
+        /// <summary>Whether a product id is a Play Games Reward this build can receive.</summary>
+        public static bool IsReward(string productId)
+        {
+            return Contains(All, productId);
+        }
+
+        /// <summary>Whether a reward is a repeatable (consumable) offer rather than a single-use entitlement.</summary>
+        public static bool IsRepeatable(string productId)
+        {
+            return Contains(Repeatable, productId);
+        }
+
+        private static bool Contains(string[] ids, string productId)
+        {
+            foreach (var id in ids)
+            {
+                if (id == productId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Everything the billing catalogue carries: the products a player can buy
+    /// (<see cref="StoreProductIds"/>) plus the Play Games Rewards a player can
+    /// be awarded (<see cref="RewardProductIds"/>). The store fetches this union
+    /// — an id missing from it can't be resolved when its order arrives, which
+    /// is what keeps an ungrantable reward from ever being acknowledged.
+    /// </summary>
+    public static class StoreCatalogue
+    {
+        /// <summary>Every product the store initialises with — purchasable and awarded alike.</summary>
+        public static readonly string[] All = Union(StoreProductIds.All, RewardProductIds.All);
+
+        /// <summary>
+        /// Whether a catalogued product is consumable (re-deliverable) rather
+        /// than a one-off entitlement. Ownership is only ever tracked for the
+        /// latter, so a repeatable reward must answer true here or its second
+        /// delivery would be refused as already owned.
+        /// </summary>
+        public static bool IsConsumable(string productId)
+        {
+            return StoreProductIds.IsConsumable(productId) || RewardProductIds.IsRepeatable(productId);
+        }
+
+        private static string[] Union(string[] first, string[] second)
+        {
+            var all = new List<string>(first);
+            foreach (var id in second)
+            {
+                if (!all.Contains(id))
+                {
+                    all.Add(id);
+                }
+            }
+
+            return all.ToArray();
         }
     }
 

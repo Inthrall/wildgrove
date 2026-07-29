@@ -173,8 +173,8 @@ namespace Wildgrove.Sim
             return remaining > 0L ? remaining : 0L;
         }
 
-        /// <summary>Whether the weekly Amber cache is configured and its week has elapsed since the last claim.</summary>
-        public static bool CanClaimWeeklyCache(GameState state, GameDataAsset data, long nowUnixMs)
+        /// <summary>Whether the weekly Amber cache is configured and its week has elapsed since the last one arrived — the card's "ready" reading, not a gate (see <see cref="ReceiveWeeklyCache"/>).</summary>
+        public static bool WeeklyCacheDue(GameState state, GameDataAsset data, long nowUnixMs)
         {
             var amber = data?.economy?.amber;
             if (amber == null || amber.weeklyCacheAmber <= 0.0)
@@ -186,7 +186,7 @@ namespace Wildgrove.Sim
                 || nowUnixMs - state.weeklyCacheClaimedUnixMs >= WeeklyCacheCooldownMs;
         }
 
-        /// <summary>Milliseconds until the weekly Amber cache re-arms, or 0 when it's ready now — drives the amber card's countdown.</summary>
+        /// <summary>Milliseconds until the weekly Amber cache is next due, or 0 when it's due now — drives the amber card's countdown.</summary>
         public static long WeeklyCacheCooldownRemainingMs(GameState state, GameDataAsset data, long nowUnixMs)
         {
             var amber = data?.economy?.amber;
@@ -200,18 +200,24 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Claim the weekly Amber cache (design §11): credit its pile and stamp
-        /// the claim time so it re-arms a week later. Returns the amount granted,
-        /// or 0 when unconfigured or still cooling down.
+        /// Receive the weekly Amber cache that Play Games has set out (design
+        /// §11): credit its pile and stamp the arrival so the card can say when
+        /// the next is due. Returns the amount, or 0 when unconfigured.
+        ///
+        /// Deliberately unconditional. Play enforces the once-a-week cadence on
+        /// its side, so a delivery that lands early is Play's arithmetic, not an
+        /// exploit — and refusing it would drop a reward the player has already
+        /// been promised and can never be offered again. The cooldown here is a
+        /// countdown for the page, not a gate.
         /// </summary>
-        public static double ClaimWeeklyCache(GameState state, GameDataAsset data, long nowUnixMs)
+        public static double ReceiveWeeklyCache(GameState state, GameDataAsset data, long nowUnixMs)
         {
-            if (!CanClaimWeeklyCache(state, data, nowUnixMs))
+            var amount = data?.economy?.amber != null ? data.economy.amber.weeklyCacheAmber : 0.0;
+            if (state == null || amount <= 0.0)
             {
                 return 0.0;
             }
 
-            var amount = data.economy.amber.weeklyCacheAmber;
             state.amber += amount;
             state.weeklyCacheClaimedUnixMs = nowUnixMs;
             return amount;

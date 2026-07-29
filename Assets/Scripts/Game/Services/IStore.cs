@@ -31,6 +31,21 @@ namespace Wildgrove.Game.Services
         /// </summary>
         event Action<string> ConsumablePurchased;
 
+        /// <summary>
+        /// Set by the game to receive Play Games Rewards (design §11) — items
+        /// Google Play awards for a Quest or Social Challenge and delivers
+        /// through the ordinary purchase flow, with no purchase of ours behind
+        /// them. Called with the reward's product id BEFORE the order is
+        /// acknowledged, on the main thread.
+        ///
+        /// Return true only once the grant has landed and been saved: the store
+        /// then acknowledges the order. Return false and the order is left
+        /// unacknowledged, so Play refunds the offer after three days rather
+        /// than the player spending a Quest on nothing. That ordering is the
+        /// whole point of a handler that answers instead of an event that doesn't.
+        /// </summary>
+        Func<string, bool> RewardRedeemed { get; set; }
+
         /// <summary>True once the billing connection is established and entitlements are known.</summary>
         bool IsInitialised { get; }
 
@@ -56,7 +71,10 @@ namespace Wildgrove.Game.Services
 
         /// <summary>
         /// Restore non-consumable entitlements (remove_ads). Store-mandated on iOS;
-        /// harmless on Android where owned products resolve on Initialise.
+        /// harmless on Android where owned products resolve on Initialise. Also
+        /// the "has anything arrived from Play?" re-read: a reward redeemed a
+        /// moment ago lands through <see cref="RewardRedeemed"/> during this.
+        /// <paramref name="onComplete"/> runs once the re-read has resolved.
         /// </summary>
         void RestorePurchases(Action onComplete = null);
     }

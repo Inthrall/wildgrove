@@ -101,6 +101,18 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // Then anything Play Games handed over while we were away. Ahead of
+            // the arrivals because a reward can BE an arrival — the Halter's
+            // pony is named on the sheet after this one, and being asked to
+            // name her before being told where she came from read backwards.
+            var reward = _loop.TakePendingReward();
+            if (reward != null)
+            {
+                OpenRewardSheet(reward);
+                AddTapGuard(PumpedSheetGuardSeconds);
+                return;
+            }
+
             var arrival = _loop.PeekPendingArrival();
             if (arrival != null)
             {
@@ -228,6 +240,31 @@ namespace Wildgrove.Game
                 _dirty = true;
                 CloseSheet();
             });
+        }
+
+        /// <summary>
+        /// The confirmation Google requires for anything granted outside the
+        /// game (design §11). The rules are specific and they outrank the
+        /// journal's usual reticence: the item must be named plainly, the source
+        /// said out loud, there must be no way to decline, and it must stay up
+        /// until the player acknowledges it. So the plain line comes first and
+        /// the grove's own voice second, there is one button, the scrim is inert,
+        /// and backing out with Esc takes the same door as Continue — the reward
+        /// is already granted and saved by the time this opens; this is the
+        /// telling, not the taking.
+        /// </summary>
+        private void OpenRewardSheet(RewardGrant grant)
+        {
+            var sheet = BeginSheet(CloseSheet, scrimDismisses: false);
+            MakeText(sheet, "A gift from Play Games", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, grant.statement, 21, TextAnchor.MiddleCenter, Ink, _serif);
+            if (!string.IsNullOrEmpty(grant.flavour))
+            {
+                MakeText(sheet, "<i>" + grant.flavour + "</i>", 20, TextAnchor.MiddleCenter, Ink2, _hand);
+            }
+
+            var accept = Button(sheet, "Continue", 320, CloseSheet);
+            KeyAction(accept);
         }
 
         private void OpenBondSheet(BondData bond)

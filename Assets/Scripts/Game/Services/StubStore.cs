@@ -20,7 +20,32 @@ namespace Wildgrove.Game.Services
         public event Action<string> ConsumablePurchased;
 #pragma warning restore 67
 
+        public Func<string, bool> RewardRedeemed { get; set; }
+
         public bool IsInitialised { get; private set; }
+
+        /// <summary>
+        /// Stand in for Google Play awarding a reward, so the whole delivery path
+        /// — grant, confirmation sheet, acknowledgement — is exercisable in the
+        /// editor and in tests. Mirrors the real store: the handler grants first
+        /// and only a true answer "acknowledges" the order (here, marks a durable
+        /// reward owned). Returns whether the reward was accepted.
+        /// </summary>
+        public bool DeliverReward(string productId)
+        {
+            if (RewardRedeemed == null || !RewardRedeemed(productId))
+            {
+                Debug.LogWarning("[store] stub reward not granted, left unacknowledged: " + productId);
+                return false;
+            }
+
+            if (!RewardProductIds.IsRepeatable(productId))
+            {
+                _owned.Add(productId);
+            }
+
+            return true;
+        }
 
         public bool RemoveAdsOwned => IsOwned(StoreProductIds.RemoveAds);
 

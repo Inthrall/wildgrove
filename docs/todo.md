@@ -768,9 +768,10 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   no cap — that's what's paid for); amber numbers (digFindsPerHour 0.06,
   perFind 2, skip 4h/15) are first guesses against the ~40-free-per-week
   lean. The earn paths have since landed — amber packs (`amber_pack`), the
-  rewarded-ad drip (`amber_drip`), the weekly cache (`weekly_amber_cache`) and
-  amber-find telemetry (`amber_found`) are all live, though the weekly cache is
-  not yet gated on a Play redemption (see the Play Games Rewards item below).
+  rewarded-ad drip (`amber_drip`) and amber-find telemetry (`amber_found`) are
+  all live; the weekly cache is now granted only by a Play Games delivery
+  (`play_reward_received`) rather than a free tap — see the Play Games Rewards
+  item below.
   Still waiting: cosmetics/extra craft queues as further sinks — cosmetics have
   no substrate at all, the same blocker as the Wayfarer's Cloak — excavation
   skill XP ("XP from every action" — fragments are too rare for per-unit XP;
@@ -787,67 +788,94 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   a book of rubbings keeping the same permanent multiplier + lore. Rename
   `fragment`→`sketch`/`portion` here and in `fossils.json`; "diggers share the zone
   flock cap" is superseded by stationing. Amber stays takeable (unchanged).
-- **Play Games Rewards items — one of three is half-built, and the delivery path
-  doesn't exist at all (reviewed 2026-07-29).** Three items is the complete
-  designed set (§11 line 514, §12 row: two single-use + one repeatable), and two
-  single-use by **Sep 30 2026** is the nearest hard date in the whole plan — it
-  and Mar 1 2027 (the repeatable) are the only forward-looking dates in the
-  design doc; every other date there is a past decision stamp. What's actually
-  outstanding is more than the Play Console setup:
-  - **Weekly Amber Cache (20 amber, max 1/wk) — the in-game half is done and
-    tested, but it is currently a free weekly tap.** Live: `weeklyCacheAmber` 20,
-    `Amber.CanClaimWeeklyCache`/`ClaimWeeklyCache`, the 7-day cooldown,
-    `weeklyCacheClaimedUnixMs` persisted and carried through a fold
-    (`Migration`), `weekly_amber_cache` telemetry, a Claim row in THE AMBER card,
-    and coverage in AmberTests/SaveCodecTests/MigrationTests. What's missing is
-    the gate: `GameLoop.CanClaimWeeklyCache` asks only `GameServices.IsSignedIn`,
-    so nothing ties the claim to a Play redemption. As it stands the requirement
-    isn't met *and* it hands out 20 free amber/week against the ~40-free-per-week
-    lean. Keep the signed-out behaviour when the gate moves — the button
-    deliberately *is* the sign-in, because hiding the row hid the free claim from
-    exactly the players it should convert.
-  - **The Drover's Halter (a fell pony walking a second haul lane) — the sim,
-    save and UI are built; only the redemption is missing.** Renamed from "Spare
-    Wing" and redesigned 2026-07-29 (design §11 DECIDED): the reward grants an
-    animal rather than an abstract post, because a body that can stand nowhere
-    else cannot leak its slot exemption into gathering. Live: the `fell-pony`
-    species, `Familiar.PonyStation`/`IsPony`, `Kith.Walking` skipping her,
-    `Roster.Station` refusing to move her (and refusing anyone else into her
-    lane), `Roster.SyncDroversHalter` deriving her arrival and station from
-    `GameState.droversHalterOwned`, save v34 + fold carry-over, the second dot on
-    the Trail page, the untameable note on her info page, and exclusion from
-    every posting sheet. **What's left is the grant:** nothing sets
-    `droversHalterOwned` yet — that's the shared plumbing above.
-    Balance: her trait is the new `trailCarryFactor` kind (0.5) — the lane's load
-    as a *fraction* of a carrier's rather than a bonus on one, and the only trait
-    that never Kinship-deepens. So the free always-manned lane is a standing +50%
-    on a manned trail rather than a doubling. That value is the §14 dial — verify
-    the bottleneck triangle with two lanes (see the haul-bottleneck item in
-    Phase 1).
-  - **Wayfarer's Cloak (cosmetic) — not built, and it has nowhere to appear.**
+- **Play Games Rewards — the delivery path is BUILT (2026-07-29); two of three
+  items land, the third has nowhere to land.** Three items is the designed set
+  (§11 line 514, §12 row: two single-use + one repeatable). Requirements
+  re-checked against Google's live guidelines the same day, and they hold as the
+  doc has them: **≥2 single-use by Sep 30 2026** (awarded on Quest completion),
+  **≥1 repeatable by Mar 1 2027** (awarded on Social Challenge completion, max 1
+  per player per week). Both belong to base **Level Up**, not the newer Level Up+
+  tier — Level Up+ is the reduced-service-fee tier for games meeting *all* the
+  revamped guidelines, so these are a gate on it rather than an extra of it. The
+  one Level Up+-only thing nearby is **Play Points product promotions**, which
+  ride the very same one-time-product plumbing built here, so that door is open
+  if the tier is ever taken.
+  - **How a reward actually arrives** (worth knowing before touching any of it):
+    a reward is an ordinary **one-time product** in the console with a Play Games
+    Reward offer attached. Google awards it, and it is delivered through the
+    **out-of-app purchase flow** — no promo codes, no separate API. The game
+    queries purchases on launch/resume, finds an unacknowledged order, and owes
+    the player, in this order: **grant → tell them → acknowledge**. Acknowledging
+    first loses the reward outright if anything goes wrong between; leaving it
+    unacknowledged is the safe failure — **Play refunds the offer after three
+    days** and it can be awarded again. Everything below is shaped by that.
+  - **Shared plumbing — DONE.** `RewardProductIds` (three ids named, two
+    catalogued) + `StoreCatalogue` (the union the store fetches, and the single
+    consumable/entitlement answer for both bought and awarded products);
+    `IStore.RewardRedeemed` is a **`Func<string,bool>`, not an event**, precisely
+    so the store can wait for the grant's answer before confirming the order —
+    `UnityIapStore.HandlePending` grants first and only calls `ConfirmPurchase`
+    when every reward in the order landed. `RewardGrants.Apply` maps an id to its
+    grant and the words owed for it; `GameLoop.OnRewardRedeemed` queues the
+    confirmation and saves before answering true. Also fixed on the way past:
+    `RestorePurchases`'s callback used to fire the moment `FetchPurchases` was
+    *called*, so it could never report what arrived — it now waits for the fetch.
+  - **The in-game confirmation — DONE, and it is a compliance artifact, not
+    flavour.** Google's rules for anything granted outside the app: name the item
+    plainly, say the source out loud, no way to decline, and it stays up until
+    the player acknowledges it. `JournalSheets.OpenRewardSheet` does all four —
+    plain statement first and the grove's voice second, one Continue button, inert
+    scrim, and Esc/pad-East takes the same door as Continue. It pumps after
+    welcome-back and **before** the arrivals, because the Halter's pony is herself
+    an arrival and being asked to name her before being told where she came from
+    read backwards.
+  - **Weekly Amber Cache (20 amber, max 1/wk) — RE-GATED.** It was a free weekly
+    tap; it is now only ever granted by a Play delivery. `Amber.ClaimWeeklyCache`
+    is gone, replaced by `Amber.ReceiveWeeklyCache` — **deliberately
+    unconditional**, because Play owns the cadence now and refusing an early
+    delivery would drop a reward the player can never be offered again. The old
+    cooldown survives as `Amber.WeeklyCacheDue` + the countdown, for the page's
+    reading only. The card's row keeps the sign-out behaviour (the button still
+    *is* the sign-in) and becomes **"Look"** when signed in — a manual re-read for
+    someone who redeemed a moment ago and would rather not relaunch. That also
+    closes the ~40-free-per-week leak the free tap was opening.
+  - **The Drover's Halter — GRANTED now.** `PlayRewards.ApplyDroversHalter` sets
+    `droversHalterOwned` and stands the pony in her lane, from both the redemption
+    moment and — the reinstall-proof half — `GameLoop.SyncRewardEntitlements`
+    reading the store's owned set, folded in beside `SyncKithPurchases` at startup
+    and after a cloud-save adoption. Additive only: a store that can't see the
+    entitlement (offline, mid-connect) never takes the pony back.
+    Balance unchanged and still the §14 dial: her `trailCarryFactor` 0.5 makes the
+    free always-manned lane a standing +50% on a manned trail rather than a
+    doubling — verify the bottleneck triangle with two lanes (see the
+    haul-bottleneck item in Phase 1).
+  - **Wayfarer's Cloak — STILL NOT BUILT, and deliberately out of the catalogue.**
     There is no cosmetic system of any kind (nothing matching skin / wardrobe /
     appearance), and no warden or familiar sprite — presentation is journal text
-    plus naturalist plates. So the first job is a design call on what a cosmetic
-    even *is* here (a journal cover, a seal on the Standing card, a camp plate),
-    not an art request. This is the largest of the three, and it's the same
-    substrate the amber cosmetics sink wants — build it once.
-  - **No redemption or grant path exists for any of the three.** No `RewardIds`,
-    no reward SKUs in `StoreProductIds.All`, and nothing in the repo matching
-    redeem / promo / Play Points. Reward offers are awarded on Quest completion,
-    so something has to receive the grant and apply it. The foundation is already
-    there: `UnityIapStore` handles arrivals from outside the app via
-    `FetchPurchases`, `OnPurchasesFetched` and `OnPurchasePending`/`HandlePending`.
-  - **Play Console: create all three products**, alongside the store SKUs noted in
-    the v0.11 section. Any reward UI must be drawn **in-journal** — Play Games' own
-    overlay is permanently dead on `targetSdk 36` (see the Play Games item in
-    Phase 1).
-  - **Re-check the repeatable requirement before planning to it.** Level Up's
-    guidelines were revamped and there's a Level Up+ tier now. "≥2 single-use by
-    Sep 30 2026" holds; the Mar 1 2027 repeatable date comes from the design doc
-    and wasn't corroborated against current guidance.
-  (`Wildgrove.Sim/Amber.cs`, `Stationing.cs`, `GameLoop.cs`,
-  `Assets/Scripts/Game/Journal/CampPage.cs`,
-  `Assets/Scripts/Game/Services/ServiceIds.cs`, `UnityIapStore.cs`)
+    plus naturalist plates. The first job is a design call on what a cosmetic even
+    *is* here (a journal cover, a seal on the Standing card, a camp plate), not an
+    art request. It's the same substrate the amber cosmetics sink wants — build it
+    once. Its id is named in `RewardProductIds` but **kept out of `All`** so it is
+    never fetched and so an order for it could never be acknowledged; a test pins
+    that every catalogued reward can actually be granted. **Consequence to own:
+    with only the Halter shipping, the Sep 30 2026 bar of ≥2 single-use is NOT
+    met.** Either the cloak (or some second single-use item) lands before then, or
+    the Level Up benefits lapse on that date.
+  - **Play Console — Mo-side, nothing else blocks it.** Create the one-time
+    products `reward_drovers_halter` and `reward_weekly_amber_cache` (and
+    `reward_wayfarers_cloak` only once it has a grant), then attach a Play Games
+    Reward offer to each. **Reward-offer association and testing open on Sep 1
+    2026** — the integration can go in ahead of it, which is what this is. Any
+    reward UI must be drawn **in-journal**; Play Games' own overlay is permanently
+    dead on `targetSdk 36` (see the Play Games item in Phase 1).
+  - Still untested on a device, like everything billing: the real out-of-app
+    delivery. `StubStore.DeliverReward` exercises the whole path in the editor
+    (grant → acknowledge, and the refusal branch) but a live Quest award can only
+    be checked once console products exist.
+  (`Wildgrove.Sim/Amber.cs`, `PlayRewards.cs`, `Stationing.cs`, `GameLoop.cs`,
+  `Assets/Scripts/Game/Journal/CampPage.cs`, `JournalSheets.cs`,
+  `Assets/Scripts/Game/Services/ServiceIds.cs`, `RewardGrants.cs`,
+  `UnityIapStore.cs`, `StubStore.cs`)
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
@@ -866,9 +894,10 @@ constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sittin
   confirm in balance: the §9 Store's "storage capacity" is implemented as
   basket capacity (camp storage caps don't exist), and the Clay Furnace is
   simply the forge line's first bought level (its ~8,000 debut price is the
-  line's baseCostCoin). The Spare Wing is not a building rung and never gets one —
-  it's a Play Games Rewards item granting **+1 trail post** (§11), and what
-  building it takes is spelled out in the Play Games Rewards item above.
+  line's baseCostCoin). The old Spare Wing is not a building rung and never gets
+  one — it became **The Drover's Halter** (§11 DECIDED 2026-07-29), a Play Games
+  Reward granting a fell pony rather than an abstract post, and it is built and
+  granted; see the Play Games Rewards item above.
   (`design/data/buildings.json`)
   **v0.11:** buildings are now a **goods sink**, not a Coin sink (§10) — `baseCostCoin`
   becomes a material bundle; and Roosts & Burrows re-scopes to **familiar comfort**

@@ -23,9 +23,12 @@ namespace Wildgrove.Game.Services
 
         private StoreController _controller;
         private Action _onReady;
+        private Action _onPurchasesFetched;
         private bool _ready;
 
         public event Action<string> ConsumablePurchased;
+
+        public Func<string, bool> RewardRedeemed { get; set; }
 
         public bool IsInitialised => _ready;
 
@@ -98,12 +101,16 @@ namespace Wildgrove.Game.Services
         private void OnStoreConnected()
         {
             var definitions = new List<ProductDefinition>();
-            foreach (var productId in StoreProductIds.All)
+            // The union of what can be bought and what Play can award — a reward
+            // product missing from here can't be resolved when its order arrives,
+            // which is exactly how an ungrantable one stays unacknowledged.
+            foreach (var productId in StoreCatalogue.All)
             {
-                // Amber packs are consumable (re-purchasable); ConfirmPurchase
-                // consumes them on Google Play by their fetched product type,
-                // while the one-off entitlements are acknowledged and kept.
-                var type = StoreProductIds.IsConsumable(productId)
+                // Amber packs and repeatable rewards are consumable
+                // (re-deliverable); ConfirmPurchase consumes them on Google Play
+                // by their fetched product type, while the one-off entitlements
+                // are acknowledged and kept.
+                var type = StoreCatalogue.IsConsumable(productId)
                     ? ProductType.Consumable
                     : ProductType.NonConsumable;
                 definitions.Add(new ProductDefinition(productId, type));
@@ -146,7 +153,7 @@ namespace Wildgrove.Game.Services
                     // Consumables are never owned — they were consumed on
                     // confirmation, so a lingering confirmed order isn't standing
                     // entitlement.
-                    if (!StoreProductIds.IsConsumable(productId))
+                    if (!StoreCatalogue.IsConsumable(productId))
                     {
                         _owned.Add(productId);
                     }
@@ -154,19 +161,35 @@ namespace Wildgrove.Game.Services
             }
 
             // A purchase left unacknowledged by a previous session (e.g. the app
-            // closed before ProcessPurchase) resurfaces here as pending.
+            // closed before ProcessPurchase) resurfaces here as pending — and so
+            // does a Play Games Reward awarded while the game wasn't running,
+            // which is the only way one ever arrives.
             foreach (var order in orders.PendingOrders)
             {
                 HandlePending(order);
             }
 
+            FinishFetch();
             FinishReady();
         }
 
         private void OnPurchasesFetchFailed(PurchasesFetchFailureDescription description)
         {
             Debug.LogError("[store] IAP purchases fetch failed: " + description?.Message);
+            FinishFetch();
             FinishReady();
+        }
+
+        /// <summary>
+        /// Release whoever asked for the last purchase re-read. Callers wait on
+        /// the resolved fetch, not the request — a restore that returned the
+        /// moment FetchPurchases was *called* could never report what arrived.
+        /// </summary>
+        private void FinishFetch()
+        {
+            var callback = _onPurchasesFetched;
+            _onPurchasesFetched = null;
+            callback?.Invoke();
         }
 
         private void FinishReady()
@@ -195,7 +218,7 @@ namespace Wildgrove.Game.Services
 
             // Consumables re-buy every time; only the one-off entitlements
             // short-circuit as already owned.
-            if (!StoreProductIds.IsConsumable(productId) && _owned.Contains(productId))
+            if (!StoreCatalogue.IsConsumable(productId) && _owned.Contains(productId))
             {
                 onComplete?.Invoke(StoreResult.AlreadyOwned);
                 return;
@@ -228,12 +251,38 @@ namespace Wildgrove.Game.Services
 
         private void HandlePending(PendingOrder order)
         {
+            var rewards = 0;
+            var granted = 0;
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                if (!StoreProductIds.IsConsumable(productId))
+                if (!StoreCatalogue.IsConsumable(productId))
                 {
                     _owned.Add(productId);
                 }
+
+                if (!RewardProductIds.IsReward(productId))
+                {
+                    continue;
+                }
+
+                // A Play Games Reward: grant it BEFORE acknowledging. An
+                // acknowledged reward the game never landed is gone for good; an
+                // unacknowledged one is refunded by Play in three days and can be
+                // offered again. So an order we can't fully honour is left alone.
+                rewards++;
+                if (RewardRedeemed != null && RewardRedeemed(productId))
+                {
+                    granted++;
+                }
+                else
+                {
+                    Debug.LogError("[store] Play reward not granted, leaving it unacknowledged: " + productId);
+                }
+            }
+
+            if (rewards > 0 && granted < rewards)
+            {
+                return;
             }
 
             // Acknowledge (or, for a consumable, consume) the purchase; the
@@ -245,7 +294,7 @@ namespace Wildgrove.Game.Services
         {
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                if (!StoreProductIds.IsConsumable(productId))
+                if (!StoreCatalogue.IsConsumable(productId))
                 {
                     _owned.Add(productId);
                 }
@@ -255,7 +304,12 @@ namespace Wildgrove.Game.Services
                     // The live purchase flow: its callback grants the pile.
                     Resolve(productId, StoreResult.Purchased);
                 }
-                else if (StoreProductIds.IsConsumable(productId))
+                else if (RewardProductIds.IsReward(productId))
+                {
+                    // A reward was granted before this confirmation was asked
+                    // for — that ordering is the contract. Nothing to recover.
+                }
+                else if (StoreCatalogue.IsConsumable(productId))
                 {
                     // A consumable confirmed with no waiting callback = a purchase
                     // whose session ended before it resolved (fetched back as
@@ -296,9 +350,10 @@ namespace Wildgrove.Game.Services
             }
 
             // Android resolves owned non-consumables from the purchase history, so a
-            // restore is just a re-read; OnPurchasesFetched refreshes the owned set.
+            // restore is just a re-read; OnPurchasesFetched refreshes the owned set
+            // and delivers any reward Play has set out since the last look.
+            _onPurchasesFetched += onComplete;
             _controller.FetchPurchases();
-            onComplete?.Invoke();
         }
 
         private static IEnumerable<string> ProductIdsOf(ICart cart)

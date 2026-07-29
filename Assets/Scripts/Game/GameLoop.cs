@@ -174,6 +174,11 @@ namespace Wildgrove.Game
             // waiting). The store's fetch is lazy — it runs no earlier than the
             // first purchase, by which point State is loaded.
             Store.ConsumablePurchased += OnConsumableRecovered;
+            // Receive Play Games Rewards (design §11). Set before the billing
+            // connection is asked for anything: a reward awarded while the game
+            // was closed arrives on the very first purchase fetch, and the store
+            // will not acknowledge it until this has granted it.
+            Store.RewardRedeemed = OnRewardRedeemed;
 
             Ads.Initialise();
             // The billing connection must not run *at* startup — on some devices it
@@ -239,7 +244,19 @@ namespace Wildgrove.Game
         /// </summary>
         private void ResolveEntitlements()
         {
-            Store.Initialise(SyncKithPurchases);
+            Store.Initialise(SyncStoreEntitlements);
+        }
+
+        /// <summary>
+        /// Fold everything the store says this player holds into the run — the
+        /// bought kith slots and the single-use Play Games Rewards alike. Both
+        /// are durable entitlements that must survive a reinstall, so the store
+        /// is asked rather than the save trusted.
+        /// </summary>
+        private void SyncStoreEntitlements()
+        {
+            SyncKithPurchases();
+            SyncRewardEntitlements();
         }
 
         /// <summary>
@@ -291,10 +308,10 @@ namespace Wildgrove.Game
                 // drop it so the absence since the cloud save credits the adopted run.
                 PendingOfflineSummary = null;
                 CreditAbsence((NowUnixMs() - cloud.savedAtUnixMs) / 1000.0);
-                // The adopted save may predate a purchase this device already
-                // owns — re-fold the entitlements rather than let the cloud
-                // roll a paid slot back.
-                SyncKithPurchases();
+                // The adopted save may predate a purchase or a reward this device
+                // already owns — re-fold the entitlements rather than let the
+                // cloud roll a paid slot or a redeemed pony back.
+                SyncStoreEntitlements();
                 // Converge the device and cloud on the adopted save now rather than
                 // waiting for the autosave interval to write it back down locally.
                 SaveNow();
@@ -766,6 +783,76 @@ namespace Wildgrove.Game
             }
         }
 
+        // ───────────────── Play Games Rewards (design §11) ───────────────────
+
+        private readonly Queue<RewardGrant> _pendingRewards = new Queue<RewardGrant>();
+
+        /// <summary>How many rewards have landed this session — lets a caller tell whether its own re-read found anything.</summary>
+        private int _rewardsReceived;
+
+        /// <summary>
+        /// Fold the single-use Play Games Rewards the store says are owned. Same
+        /// shape as <see cref="SyncKithPurchases"/>: additive, idempotent, and
+        /// the reinstall-proof path — the redemption handler catches the moment
+        /// one arrives, this catches every launch after.
+        /// </summary>
+        public void SyncRewardEntitlements()
+        {
+            if (PlayRewards.ApplyDroversHalter(State, Data, Store.IsOwned(RewardProductIds.DroversHalter)))
+            {
+                SaveNow();
+            }
+        }
+
+        /// <summary>
+        /// Receive a reward Google Play has awarded. Grants it, queues the
+        /// confirmation the player is owed, and saves — returning true only then,
+        /// because the store acknowledges the order on the strength of this
+        /// answer. A refusal (no run loaded yet, or an id this build can't grant)
+        /// leaves the order unacknowledged so Play can refund and re-offer it.
+        /// </summary>
+        private bool OnRewardRedeemed(string productId)
+        {
+            if (State == null)
+            {
+                return false;
+            }
+
+            var grant = RewardGrants.Apply(State, Data, productId, NowUnixMs());
+            if (grant == null)
+            {
+                return false;
+            }
+
+            _pendingRewards.Enqueue(grant);
+            _rewardsReceived++;
+            Telemetry.LogEvent("play_reward_received", ("reward", grant.rewardId));
+            SaveNow();
+            return true;
+        }
+
+        /// <summary>The next delivered reward still owed its confirmation, or null. The sheet pump drains this.</summary>
+        public RewardGrant TakePendingReward()
+        {
+            return _pendingRewards.Count > 0 ? _pendingRewards.Dequeue() : null;
+        }
+
+        /// <summary>
+        /// Ask Play whether anything has been set out since the last look, for a
+        /// player who redeemed a moment ago and would rather not relaunch. Calls
+        /// back with how many rewards landed. Rewards also arrive unprompted on
+        /// the first purchase fetch of every launch — this is the manual nudge.
+        /// </summary>
+        public void CheckPlayRewards(System.Action<int> onComplete)
+        {
+            var before = _rewardsReceived;
+            Store.RestorePurchases(() =>
+            {
+                SyncRewardEntitlements();
+                onComplete?.Invoke(_rewardsReceived - before);
+            });
+        }
+
         /// <summary>
         /// Start a store purchase of a kith slot product and fold the
         /// entitlement in on success. The HUD owns the button copy; the result
@@ -1057,27 +1144,16 @@ namespace Wildgrove.Game
         /// <summary>Seconds until the rewarded time-skip re-arms, or 0 when it's ready now — the camp strip counts down from this.</summary>
         public double TimeSkipRewardCooldownRemaining => Amber.RewardedTimeSkipCooldownRemainingMs(State, NowUnixMs()) / 1000.0;
 
-        /// <summary>Whether the weekly Amber cache is signed in, configured, and off cooldown — the button's shown/enabled state.</summary>
-        public bool CanClaimWeeklyCache()
-        {
-            return GameServices.IsSignedIn && Amber.CanClaimWeeklyCache(State, Data, NowUnixMs());
-        }
+        /// <summary>
+        /// Whether a week has turned since the last Amber cache arrived — the
+        /// card's "due" reading only. The cache is no longer a tap the game can
+        /// grant itself: it is a Play Games Reward, set out by Play and received
+        /// through <see cref="CheckPlayRewards"/> or on launch (design §11).
+        /// </summary>
+        public bool WeeklyCacheDue => Amber.WeeklyCacheDue(State, Data, NowUnixMs());
 
-        /// <summary>Seconds until the weekly Amber cache re-arms, or 0 when it's ready now — the amber card counts down from this.</summary>
+        /// <summary>Seconds until the weekly Amber cache is next due, or 0 when it's due now — the amber card counts down from this.</summary>
         public double WeeklyCacheCooldownRemaining => Amber.WeeklyCacheCooldownRemainingMs(State, Data, NowUnixMs()) / 1000.0;
-
-        /// <summary>Claim the weekly Amber cache (design §11). Returns the amount granted (0 = refused).</summary>
-        public double ClaimWeeklyCache()
-        {
-            var amount = Amber.ClaimWeeklyCache(State, Data, NowUnixMs());
-            if (amount > 0.0)
-            {
-                Telemetry.LogEvent("weekly_amber_cache", ("amount", amount));
-                SaveNow();
-            }
-
-            return amount;
-        }
 
         /// <summary>
         /// Buy a consumable Amber pack (design §10) and credit its pile on success.

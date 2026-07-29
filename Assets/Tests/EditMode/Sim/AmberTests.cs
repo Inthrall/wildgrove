@@ -267,9 +267,9 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             const long now = 1_000_000_000_000L;
 
-            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now), Is.EqualTo(0L), "never claimed — ready now");
+            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now), Is.EqualTo(0L), "none yet — due now");
 
-            Amber.ClaimWeeklyCache(state, _data, now);
+            Amber.ReceiveWeeklyCache(state, _data, now);
             var oneDay = 24L * 60L * 60L * 1000L;
             Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now + oneDay),
                 Is.EqualTo(Amber.WeeklyCacheCooldownMs - oneDay), "six days left after one");
@@ -303,43 +303,69 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void WeeklyCache_FirstClaimGrantsAndStamps()
+        public void WeeklyCache_FirstDeliveryGrantsAndStamps()
         {
             var state = GameStateFactory.NewGame(_data);
             const long now = 1_000_000_000_000L;
 
-            Assert.That(Amber.CanClaimWeeklyCache(state, _data, now), Is.True, "never claimed — ready now");
-            var granted = Amber.ClaimWeeklyCache(state, _data, now);
+            Assert.That(Amber.WeeklyCacheDue(state, _data, now), Is.True, "none yet — due now");
+            var granted = Amber.ReceiveWeeklyCache(state, _data, now);
 
             Assert.That(granted, Is.EqualTo(20.0).Within(Tolerance));
             Assert.That(state.amber, Is.EqualTo(20.0).Within(Tolerance));
-            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(now), "the claim time is stamped");
+            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(now), "the arrival time is stamped");
         }
 
         [Test]
-        public void WeeklyCache_RefusedBeforeAWeekElapses()
+        public void WeeklyCache_ReadsNotDueBeforeAWeekElapses()
         {
             var state = GameStateFactory.NewGame(_data);
             const long now = 1_000_000_000_000L;
-            Amber.ClaimWeeklyCache(state, _data, now);
+            Amber.ReceiveWeeklyCache(state, _data, now);
 
             var sixDays = now + (6L * 24L * 60L * 60L * 1000L);
-            Assert.That(Amber.CanClaimWeeklyCache(state, _data, sixDays), Is.False, "still cooling down");
-            Assert.That(Amber.ClaimWeeklyCache(state, _data, sixDays), Is.EqualTo(0.0));
-            Assert.That(state.amber, Is.EqualTo(20.0).Within(Tolerance), "no second pile before the week is out");
+            Assert.That(Amber.WeeklyCacheDue(state, _data, sixDays), Is.False, "the week has not turned");
         }
 
         [Test]
-        public void WeeklyCache_ReArmsAfterAWeek()
+        public void WeeklyCache_ComesDueAgainAfterAWeek()
         {
             var state = GameStateFactory.NewGame(_data);
             const long now = 1_000_000_000_000L;
-            Amber.ClaimWeeklyCache(state, _data, now);
+            Amber.ReceiveWeeklyCache(state, _data, now);
 
             var aWeekOn = now + Amber.WeeklyCacheCooldownMs;
-            Assert.That(Amber.CanClaimWeeklyCache(state, _data, aWeekOn), Is.True, "the cache re-arms a week later");
-            Assert.That(Amber.ClaimWeeklyCache(state, _data, aWeekOn), Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(Amber.WeeklyCacheDue(state, _data, aWeekOn), Is.True, "the cache comes due a week later");
+            Assert.That(Amber.ReceiveWeeklyCache(state, _data, aWeekOn), Is.EqualTo(20.0).Within(Tolerance));
             Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance), "two weeks, two caches");
+        }
+
+        [Test]
+        public void WeeklyCache_HonoursAnEarlyDeliveryRatherThanDroppingIt()
+        {
+            // Play owns the once-a-week cadence now. If it hands one over early
+            // that is Play's arithmetic — refusing it would lose a reward the
+            // player was promised and can never be offered again.
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+            Amber.ReceiveWeeklyCache(state, _data, now);
+
+            var nextDay = now + (24L * 60L * 60L * 1000L);
+            Assert.That(Amber.WeeklyCacheDue(state, _data, nextDay), Is.False, "the page still says it isn't due");
+            Assert.That(Amber.ReceiveWeeklyCache(state, _data, nextDay), Is.EqualTo(20.0).Within(Tolerance),
+                "but a delivery is never turned away");
+            Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance));
+            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(nextDay), "and it re-stamps from the latest");
+        }
+
+        [Test]
+        public void WeeklyCache_MintsNothingWhenUnconfigured()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Amber.ReceiveWeeklyCache(state, _data, 1_000_000_000_000L), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
