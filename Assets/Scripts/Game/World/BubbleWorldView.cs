@@ -18,19 +18,22 @@ namespace Wildgrove.Game.World
         // The plate's longest side in local units before the parent's
         // per-diameter scale, leaving the mount showing as a halo around it
         // (the same fit NodeWorldView gives a node's face).
-        private const float PlateFit = 1f;
-        private const float MountAlpha = 0.55f;
+        // The cutting rides in the MIDDLE of the clock rather than filling it:
+        // a plate fitted to the full diameter left the tuft ring sitting under
+        // its own edge, which is a mount again and not a dandelion.
+        private const float PlateFit = 0.75f;
+        private const float MountFit = 1.3f;
+        private const float MountAlpha = 0.7f;
         private const float SkinAlpha = 0.8f;
         private const float SwayDegrees = 7f;
         private const float SwaySpeed = 1.1f;
 
-        // The clock stands a little proud of the cutting it carries, so its
-        // hairs show all the way round as a halo rather than a backing.
-        private const float MountFit = 1.2f;
-
-        // Warm parchment: a windfall is the land handing something over, so it
-        // carries the journal's own paper light rather than a resource hue.
-        private static readonly Color MountColour = new Color(1f, 0.93f, 0.74f, MountAlpha);
+        // Sepia ink, NOT paper. The world camera clears to the journal's own
+        // page colour, so the warm parchment this used to be drawn in differed
+        // from the background by about three percent — survivable for a solid
+        // disc's glow, invisible for hair. A clock is a line drawing; draw it
+        // in the colour the plates are drawn in.
+        private static readonly Color MountColour = new Color(0.404f, 0.345f, 0.259f, MountAlpha);
         private static readonly Color ShineColour = new Color(1f, 1f, 1f, 0.55f);
 
         /// <summary>The node this windfall rose from — what a catch pays out in.</summary>
@@ -60,8 +63,12 @@ namespace Wildgrove.Game.World
         private const int EmptySeeds = 3;
         private const float SeedScale = 0.24f;
 
-        private static readonly Color SeedColour = new Color(1f, 0.97f, 0.87f, 1f);
-        private static readonly Color SpentSeedColour = new Color(0.62f, 0.6f, 0.55f, 1f);
+        // Same trap as the clock: near-white seed on a parchment sky is no seed
+        // at all. A real catch throws ochre — the journal's own warm accent —
+        // and an empty one a washed-out grey that still has to be seen to read
+        // as the lesser answer.
+        private static readonly Color SeedColour = new Color(0.627f, 0.353f, 0.212f, 1f);
+        private static readonly Color SpentSeedColour = new Color(0.5f, 0.47f, 0.42f, 1f);
 
         private SpriteRenderer _mount;
         private SpriteRenderer _plate;
@@ -101,9 +108,7 @@ namespace Wildgrove.Game.World
                 view._hint.GetComponent<MeshRenderer>().sortingOrder = 8;
             }
 
-            // The clock the windfall rides on, whatever it's carrying — a
-            // seedhead lit like paper, so it reads against the strip without
-            // borrowing the Pristine window's gold halo.
+            // The clock the windfall rides on, whatever it's carrying.
             view._mount = CreateSprite(go.transform, "Seedhead", PlaceholderArt.Seedhead, MountColour, 5);
             view._mount.transform.localScale = Vector3.one * MountFit;
 
@@ -119,10 +124,13 @@ namespace Wildgrove.Game.World
             // No plate for this resource: fall back to a tinted disc with an
             // off-centre highlight, which reads as a drifting bead rather than
             // another node.
+            // Sized to the plate it stands in for, so the clock rings the bead
+            // exactly as it rings a cutting.
             view._skin = CreateSprite(go.transform, "Skin", PlaceholderArt.Disc, colour, 6);
+            view._skin.transform.localScale = Vector3.one * PlateFit;
             view._shine = CreateSprite(go.transform, "Shine", PlaceholderArt.Disc, ShineColour, 7);
-            view._shine.transform.localScale = Vector3.one * 0.28f;
-            view._shine.transform.localPosition = new Vector3(-0.22f, 0.24f, 0f);
+            view._shine.transform.localScale = Vector3.one * (0.28f * PlateFit);
+            view._shine.transform.localPosition = new Vector3(-0.22f, 0.24f, 0f) * PlateFit;
 
             return view;
         }
@@ -220,7 +228,9 @@ namespace Wildgrove.Game.World
             var fade = 1f - t * t;
             if (_burstRewarded)
             {
-                SetAlpha(_mount, new Color(1f, 0.87f, 0.45f, MountAlpha + 0.3f), (MountAlpha + 0.3f) * fade);
+                // Ochre rather than pale gold, for the same reason the clock is
+                // drawn in ink: a lit flash has to out-read the paper behind it.
+                SetAlpha(_mount, SeedColour, (MountAlpha + 0.35f) * fade);
                 SetAlpha(_plate, Color.white, fade);
                 SetAlpha(_skin, _colour, SkinAlpha * fade);
                 SetAlpha(_shine, ShineColour, ShineColour.a * fade);

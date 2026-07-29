@@ -25,8 +25,10 @@ namespace Wildgrove.Game.World
         // A windfall carries the resource's plate, so it needs enough room to
         // be recognised as that specimen — WorldStrip.BubbleDiameter sizes it
         // off the band; the finger circle is a little blunter still so the
-        // catch isn't fiddly.
-        private const float BubbleHitSlop = 1.2f;
+        // catch isn't fiddly. It must also clear the seedhead the plate rides
+        // on (BubbleWorldView.MountFit), or the outer tufts would be drawn
+        // outside anything a tap can land on.
+        private const float BubbleHitSlop = 1.4f;
 
         /// <summary>The HUD's free gap, in screen pixels — where the node strip lives.</summary>
         public Rect StripScreenRect { get; set; }
