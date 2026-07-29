@@ -91,6 +91,16 @@ namespace Wildgrove.Sim.Tests
                 },
                 new UpgradeData
                 {
+                    order = 10, id = "smokehouse",
+                    effects = { new EffectData { type = EffectType.OfflineCapHours, value = 8 } },
+                },
+                new UpgradeData
+                {
+                    order = 11, id = "oilskin-tarp",
+                    effects = { new EffectData { type = EffectType.OfflineCapBonusHours, value = 2 } },
+                },
+                new UpgradeData
+                {
                     order = 15, id = "whetstone",
                     effects = { new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.25 } },
                 },
@@ -242,6 +252,49 @@ namespace Wildgrove.Sim.Tests
             var credited = Simulation.AdvanceOffline(state, _data, 10 * 3600.0);
 
             Assert.That(credited, Is.EqualTo(6 * 3600.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void OfflineCapGainHours_WhenUnowned_IsTheRiseOverTheCurrentFloor()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // Base floor 4 h, so the cellar's 6 h reads as +2 h; buy it and the
+            // smokehouse's 8 h is worth only the 2 h beyond the cellar.
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 6), Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 8), Is.EqualTo(4.0).Within(Tolerance));
+
+            Upgrades.TryPurchase(state, _data, Upgrade("root-cellar"));
+
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 8), Is.EqualTo(2.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void OfflineCapGainHours_WhenOwned_StillCreditsItsOwnRise()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Upgrades.TryPurchase(state, _data, Upgrade("root-cellar"));
+            Upgrades.TryPurchase(state, _data, Upgrade("smokehouse"));
+
+            // Each raise measured without itself: the cellar lifted 4 → 6, the
+            // smokehouse 6 → 8. A floor the run has since cleared adds nothing.
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 8), Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 6), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void OfflineCapGainHours_WithBonusBandOwned_IgnoresTheBand()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            Upgrades.TryPurchase(state, _data, Upgrade("oilskin-tarp"));
+
+            // The band applies after the floor, so it cancels out of the rise —
+            // the cellar is still worth +2 h, and the cap now stands at 8 h.
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 6), Is.EqualTo(2.0).Within(Tolerance));
+
+            Upgrades.TryPurchase(state, _data, Upgrade("root-cellar"));
+
+            Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(8.0).Within(Tolerance));
         }
 
         [Test]

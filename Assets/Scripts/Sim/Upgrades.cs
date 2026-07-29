@@ -384,6 +384,28 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// What ONE offlineCapHours effect adds to the away cap, so the journal
+        /// can say "+2h" about an effect that is authored as a raise-to. These
+        /// raise a floor rather than stack, so the gain is measured against the
+        /// floor the run would stand on without this one — a floor the run has
+        /// already cleared adds nothing. The additive band cancels out of the
+        /// comparison, since it applies after the floor either way.
+        /// </summary>
+        public static double OfflineCapGainHours(GameState state, GameDataAsset data, double raiseToHours)
+        {
+            var floor = data.economy.offline.baseCapHours;
+            foreach (var effect in ActiveEffects(state, data))
+            {
+                if (effect.type == EffectType.OfflineCapHours && effect.value != raiseToHours)
+                {
+                    floor = System.Math.Max(floor, effect.value);
+                }
+            }
+
+            return System.Math.Max(0.0, raiseToHours - floor);
+        }
+
+        /// <summary>
         /// Purchased upgrade effects, completed insects', owned Almanac nodes',
         /// worn gear's, and the run's region modifier (design §8) — everything
         /// currently modifying the run. The RAW walk (the Museum leg clones) —

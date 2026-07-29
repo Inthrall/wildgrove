@@ -149,9 +149,8 @@ namespace Wildgrove.Game
                 case EffectType.FolioSpreadBonusMult:
                     return "folio spreads ×" + PlainNumber(effect.value);
                 case EffectType.OfflineCapHours:
-                    return "away credit up to " + PlainNumber(effect.value) + "h";
                 case EffectType.OfflineCapBonusHours:
-                    return "away credit +" + PlainNumber(effect.value) + "h";
+                    return AwayCreditLabel(effect);
                 case EffectType.OfflineNightFullRate:
                     return "full pace through the night away";
                 case EffectType.TendingBurstBonus:
@@ -175,6 +174,23 @@ namespace Wildgrove.Game
                 default:
                     return string.Empty;
             }
+        }
+
+        /// <summary>
+        /// Away credit in ONE shape whatever the mechanism underneath: what this
+        /// piece adds, then where the run stands with everything it already has.
+        /// A rung reading "away credit up to 8h" beside a tarp reading "away
+        /// credit +2h" looked like two different currencies, and neither said
+        /// what the cap actually is — so the hours were never comparable.
+        /// </summary>
+        private string AwayCreditLabel(EffectData effect)
+        {
+            var gain = effect.type == EffectType.OfflineCapBonusHours
+                ? effect.value
+                : Upgrades.OfflineCapGainHours(_loop.State, _loop.Data, effect.value);
+
+            return "away credit +" + PlainNumber(gain) + "h (now "
+                   + PlainNumber(Upgrades.OfflineCapHours(_loop.State, _loop.Data)) + "h)";
         }
 
         private string YieldTarget(EffectData effect)
