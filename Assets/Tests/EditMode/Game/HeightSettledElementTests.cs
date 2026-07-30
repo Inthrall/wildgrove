@@ -6,8 +6,12 @@ namespace Wildgrove.Game.Tests
 {
     /// <summary>
     /// Pins the journal row's height rule: grow to whatever the contents ask
-    /// for, never give the height back when they ask for less, and stay out of
-    /// the layout pass entirely until the component is wired up.
+    /// for, never give the height back when they ask for less — while the
+    /// row's width holds — and stay out of the layout pass entirely until the
+    /// component is wired up. A height measured at one width says nothing
+    /// about another, so a width change lets the settle go: the first reads of
+    /// a freshly built row arrive at its creation size, and a label wrapped at
+    /// that width once locked every busy row open at ~700px.
     /// </summary>
     public class HeightSettledElementTests
     {
@@ -34,6 +38,20 @@ namespace Wildgrove.Game.Tests
         public void SettledHeight_ContentUnderTheFloor_ReportsTheFloor()
         {
             Assert.That(HeightSettledElement.SettledHeight(0f, 40f, 76f), Is.EqualTo(76f));
+        }
+
+        [Test]
+        public void SameWidth_FloatNoise_HoldsTheSettle()
+        {
+            // Half a pixel of slack: layout must not re-measure over FP dust,
+            // or the bounce this component stops comes straight back.
+            Assert.That(HeightSettledElement.SameWidth(900.4f, 900f), Is.True);
+        }
+
+        [Test]
+        public void SameWidth_AGenuineMove_LetsTheSettleGo()
+        {
+            Assert.That(HeightSettledElement.SameWidth(100f, 900f), Is.False);
         }
 
         [Test]
@@ -77,6 +95,44 @@ namespace Wildgrove.Game.Tests
                 element.preferredHeight = 90f;
                 Measure(group);
                 Assert.That(settled.preferredHeight, Is.EqualTo(200f), "and holds it when the content shrinks");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void PreferredHeight_RowWidens_MeasuresAfresh()
+        {
+            var go = new GameObject("row", typeof(RectTransform));
+            try
+            {
+                // The screenshot bug: a label measured while the row still had
+                // its creation width wraps enormously tall, and a settle with
+                // no memory of the width kept that height at every width after.
+                var rect = (RectTransform)go.transform;
+                rect.sizeDelta = new Vector2(100f, 0f);
+
+                var group = go.AddComponent<HorizontalLayoutGroup>();
+                group.childControlHeight = true;
+                var settled = go.AddComponent<HeightSettledElement>();
+                settled.source = group;
+                settled.floorHeight = 76f;
+
+                var child = new GameObject("label", typeof(RectTransform));
+                child.transform.SetParent(go.transform, false);
+                var element = child.AddComponent<LayoutElement>();
+                element.preferredHeight = 600f;
+
+                Measure(group);
+                Assert.That(settled.preferredHeight, Is.EqualTo(600f), "the narrow measurement settles at the narrow width");
+
+                rect.sizeDelta = new Vector2(900f, 0f);
+                element.preferredHeight = 150f;
+                Measure(group);
+                Assert.That(settled.preferredHeight, Is.EqualTo(150f),
+                    "a new width owes nothing to the old one's height");
             }
             finally
             {

@@ -19,11 +19,14 @@ namespace Wildgrove.Game
     /// object; heights are read in the vertical layout pass, by which point the
     /// label's width is settled, so the wrap is measured at the real width.
     ///
-    /// The plate grows and never shrinks back, for the reason a row does — see
-    /// <see cref="HeightSettledElement"/>. A live button relabels itself as
-    /// often as the line it sits on ("Craft" ⇄ "Craft instead", the Exchange's
-    /// whole deal), and a plate that took a line back every time would rock the
-    /// page as surely as the label did.
+    /// The plate grows and never shrinks back while its width holds, for the
+    /// reason a row does — see <see cref="HeightSettledElement"/>. A live
+    /// button relabels itself as often as the line it sits on ("Craft" ⇄
+    /// "Craft instead", the Exchange's whole deal), and a plate that took a
+    /// line back every time would rock the page as surely as the label did.
+    /// A width change lets the settle go, for the reason a row's does too: a
+    /// label measured before the first layout pass has widened its rect wraps
+    /// at its creation size, far taller than the plate will ever need.
     /// </summary>
     public sealed class LabelFittedElement : MonoBehaviour, ILayoutElement
     {
@@ -36,6 +39,7 @@ namespace Wildgrove.Game
         public float padding = 16f;
 
         private float _settled;
+        private float _settledWidth = -1f;
 
         public float minWidth => -1f;
         public float preferredWidth => -1f;
@@ -53,9 +57,17 @@ namespace Wildgrove.Game
                     return -1f;
                 }
 
+                var rect = (RectTransform)label.transform;
+                var width = rect.rect.width;
+                if (!HeightSettledElement.SameWidth(width, _settledWidth))
+                {
+                    _settled = 0f;
+                    _settledWidth = width;
+                }
+
                 _settled = HeightSettledElement.SettledHeight(
                     _settled,
-                    LayoutUtility.GetPreferredHeight((RectTransform)label.transform) + padding,
+                    LayoutUtility.GetPreferredHeight(rect) + padding,
                     floorHeight);
                 return _settled;
             }

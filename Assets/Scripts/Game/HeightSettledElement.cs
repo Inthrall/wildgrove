@@ -5,7 +5,8 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// Layout element for a row whose contents keep re-measuring: reports the
-    /// tallest height the row has ever needed, and never a shorter one.
+    /// tallest height the row has needed at its current width, and never a
+    /// shorter one.
     /// <para>
     /// A journal row is sized by its label, and the busy pages rewrite their
     /// labels four times a second — a percentage gains a digit, a status clause
@@ -20,6 +21,14 @@ namespace Wildgrove.Game
     /// is a little whitespace on a row that had one tall moment, which is the
     /// better half of the trade — and the page rebuilds whenever its structure
     /// changes (see <see cref="GameHud"/>), so each rebuild measures afresh.
+    /// </para>
+    /// <para>
+    /// The hold is per width. A height measured at one width says nothing about
+    /// any other: the first reads of a freshly built row can arrive while its
+    /// rect still carries its creation size, before any horizontal pass has
+    /// widened it, and a long label wrapped at a fingertip measures several
+    /// times taller than the real column will ever ask. Settling THAT opened
+    /// every busy row at its worst case — so a width change lets the settle go.
     /// </para>
     /// <para>
     /// Reads its height from a sibling layout group rather than measuring its
@@ -37,6 +46,7 @@ namespace Wildgrove.Game
         public float floorHeight = 76f;
 
         private float _settled;
+        private float _settledWidth = -1f;
 
         public float minWidth => -1f;
         public float preferredWidth => -1f;
@@ -61,6 +71,13 @@ namespace Wildgrove.Game
                     return -1f;
                 }
 
+                var width = ((RectTransform)transform).rect.width;
+                if (!SameWidth(width, _settledWidth))
+                {
+                    _settled = 0f;
+                    _settledWidth = width;
+                }
+
                 _settled = SettledHeight(_settled, source.preferredHeight, floorHeight);
                 return _settled;
             }
@@ -70,6 +87,17 @@ namespace Wildgrove.Game
         public static float SettledHeight(float settled, float measured, float floorHeight)
         {
             return Mathf.Max(settled, Mathf.Max(measured, floorHeight));
+        }
+
+        /// <summary>
+        /// Whether a width still counts as the one the height settled at. Half
+        /// a pixel of slack: parent-driven widths only move when the layout
+        /// genuinely changes, but float noise must not shake the settle loose —
+        /// that would be the bounce this component exists to stop.
+        /// </summary>
+        public static bool SameWidth(float width, float settledWidth)
+        {
+            return Mathf.Abs(width - settledWidth) <= 0.5f;
         }
 
         public void CalculateLayoutInputHorizontal()
