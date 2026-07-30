@@ -1065,6 +1065,34 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void Parse_ReadsThePaidSkipCap()
+        {
+            var data = GameData.Parse(LoadSources());
+
+            // The whale throttle (design §10): sim-time is the only thing amber
+            // buys, so this one number pins a heavy spender to at most twice a
+            // free player's pace (24 natural sim-hours a day + 24 skipped).
+            Assert.That(data.Economy.Amber.TimeSkipDailyCapHours, Is.EqualTo(24.0));
+        }
+
+        [Test]
+        public void Validate_PaidSkipCapBelowOneSkip_IsReported()
+        {
+            var sources = LoadSources();
+            var before = sources.EconomyJson;
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"timeSkipDailyCapHours\": 24,",
+                "\"timeSkipDailyCapHours\": 2,");
+            Assert.That(sources.EconomyJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            // The budget refills to the cap and a skip needs timeSkipHours of it,
+            // so a positive cap below one skip is a sink that can never be spent.
+            Assert.That(issues.Any(i => i.Contains("timeSkipDailyCapHours")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_AlmanacRequiresUnknownNode_IsReported()
         {
             var sources = LoadSources();

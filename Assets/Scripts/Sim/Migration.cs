@@ -144,6 +144,8 @@ namespace Wildgrove.Sim
             next.weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs;
             next.adDripClaimedUnixMs = state.adDripClaimedUnixMs;
             next.timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs;
+            next.timeSkipBudgetHours = state.timeSkipBudgetHours;
+            next.timeSkipBudgetStampUnixMs = state.timeSkipBudgetStampUnixMs;
 
             // Play time is lifetime, not per-run — it only ever grows, so a fold
             // carries it (a migrated save is further along, not reset to zero).

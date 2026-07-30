@@ -117,6 +117,7 @@ namespace Wildgrove.Data
             public double PerFind { get; set; }
             public double TimeSkipHours { get; set; }
             public double TimeSkipCostAmber { get; set; }
+            public double TimeSkipDailyCapHours { get; set; }
             public double AdDripAmber { get; set; }
             public double WeeklyCacheAmber { get; set; }
             public double RenameCostAmber { get; set; }

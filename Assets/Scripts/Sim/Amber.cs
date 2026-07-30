@@ -33,28 +33,99 @@ namespace Wildgrove.Sim
             return economy?.amber != null && economy.amber.timeSkipCostAmber > 0.0 && economy.amber.timeSkipHours > 0.0;
         }
 
-        public static bool CanTimeSkip(GameState state, GameDataAsset data)
+        public static bool CanTimeSkip(GameState state, GameDataAsset data, long nowUnixMs)
         {
-            return Configured(data.economy) && state.amber >= data.economy.amber.timeSkipCostAmber;
+            return Configured(data.economy)
+                && state.amber >= data.economy.amber.timeSkipCostAmber
+                && SkipBudgetHours(state, data, nowUnixMs) >= data.economy.amber.timeSkipHours;
         }
 
         /// <summary>
         /// Spend Amber to instantly credit timeSkipHours of production at the
         /// FULL live rate — unlike offline credit there is no cap and no rate
         /// multiplier; that's what makes it worth paying for. Returns the
-        /// hours credited, or 0 when refused (unconfigured or short).
+        /// hours credited, or 0 when refused (unconfigured, short, or the
+        /// day's skip budget spent — see <see cref="SkipBudgetHours"/>).
         /// </summary>
-        public static double TryTimeSkip(GameState state, GameDataAsset data)
+        public static double TryTimeSkip(GameState state, GameDataAsset data, long nowUnixMs)
         {
-            if (!CanTimeSkip(state, data))
+            if (!CanTimeSkip(state, data, nowUnixMs))
             {
                 return 0.0;
             }
 
             var amber = data.economy.amber;
+            SpendSkipBudget(state, data, nowUnixMs, amber.timeSkipHours);
             state.amber -= amber.timeSkipCostAmber;
             Simulation.Advance(state, data, amber.timeSkipHours * 3600.0);
             return amber.timeSkipHours;
+        }
+
+        // ─────────────── The paid-skip budget (the whale throttle) ───────────
+        //
+        // Sim-time is the only thing money buys here, so bounding how much of
+        // it PAID skips may add per real day bounds a heavy spender's pace
+        // outright: a day holds 24 natural sim-hours, the budget lets skips
+        // add at most timeSkipDailyCapHours more (24 = at most twice a free
+        // player's pace). It is a leaky bucket, not a midnight counter — the
+        // budget refills at cap/24 per wall-clock hour and holds at the cap,
+        // so the rule is the same on every timescale and no timezone or
+        // date-rollover question exists. The REWARDED skip stays outside the
+        // budget: free players get it too, so it is part of the shared
+        // baseline, and its own cooldown already bounds it.
+
+        /// <summary>
+        /// Paid-skip hours available right now: the stored remainder plus
+        /// everything refilled since it was stamped, held at the cap. A zero
+        /// or absent cap means uncapped; an unstamped state (fresh run, older
+        /// save) starts with the budget full.
+        /// </summary>
+        public static double SkipBudgetHours(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            var cap = data?.economy?.amber != null ? data.economy.amber.timeSkipDailyCapHours : 0.0;
+            if (cap <= 0.0)
+            {
+                return double.MaxValue;
+            }
+
+            if (state.timeSkipBudgetStampUnixMs <= 0L)
+            {
+                return cap;
+            }
+
+            var refilled = (nowUnixMs - state.timeSkipBudgetStampUnixMs) / 3600000.0 * (cap / 24.0);
+            var budget = state.timeSkipBudgetHours + (refilled > 0.0 ? refilled : 0.0);
+            return budget < cap ? budget : cap;
+        }
+
+        /// <summary>Milliseconds until the budget next covers one full skip, or 0 when it already does — drives the hasten row's countdown.</summary>
+        public static long SkipBudgetRemainingMs(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            var amber = data?.economy?.amber;
+            if (amber == null || amber.timeSkipDailyCapHours <= 0.0)
+            {
+                return 0L;
+            }
+
+            var deficit = amber.timeSkipHours - SkipBudgetHours(state, data, nowUnixMs);
+            if (deficit <= 0.0)
+            {
+                return 0L;
+            }
+
+            return (long)System.Math.Ceiling(deficit / (amber.timeSkipDailyCapHours / 24.0) * 3600000.0);
+        }
+
+        private static void SpendSkipBudget(GameState state, GameDataAsset data, long nowUnixMs, double hours)
+        {
+            var cap = data?.economy?.amber != null ? data.economy.amber.timeSkipDailyCapHours : 0.0;
+            if (cap <= 0.0)
+            {
+                return;
+            }
+
+            state.timeSkipBudgetHours = SkipBudgetHours(state, data, nowUnixMs) - hours;
+            state.timeSkipBudgetStampUnixMs = nowUnixMs;
         }
 
         /// <summary>
@@ -148,7 +219,7 @@ namespace Wildgrove.Sim
             return amber.adDripAmber;
         }
 
-        /// <summary>Whether the rewarded time-skip is off cooldown — gates "Hasten a while" on both the ad and the ad-free paths. (The amber-paid <see cref="TryTimeSkip"/> is throttled by its own cost, not this.)</summary>
+        /// <summary>Whether the rewarded time-skip is off cooldown — gates "Hasten a while" on both the ad and the ad-free paths. (The amber-paid <see cref="TryTimeSkip"/> is throttled by its cost and the skip budget, not this.)</summary>
         public static bool CanRewardedTimeSkip(GameState state, long nowUnixMs)
         {
             return state.timeSkipClaimedUnixMs <= 0L

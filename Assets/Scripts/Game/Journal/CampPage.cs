@@ -105,8 +105,9 @@ namespace Wildgrove.Game
             var row = Row(card);
             var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            label.text = "hasten " + NumberFormat.Duration(hours * 3600.0) + " at full pace"
-                         + SizeOpen(15) + "<color=" + OchreHex + ">  " + Mathf.FloorToInt((float)cost) + " amber</color></size>";
+            var text = "hasten " + NumberFormat.Duration(hours * 3600.0) + " at full pace"
+                       + SizeOpen(15) + "<color=" + OchreHex + ">  " + Mathf.FloorToInt((float)cost) + " amber</color></size>";
+            label.text = text;
             var amber = Mathf.FloorToInt((float)cost);
             Button skip = null;
             skip = Button(row.transform, "Hasten", 170, () =>
@@ -131,9 +132,15 @@ namespace Wildgrove.Game
                     });
             });
 
+            // The skip budget is what the warden can wait out, so it's what
+            // the line counts down (like the drip's cooldown); being short of
+            // amber only greys the button.
             _liveUpdaters.Add(() =>
             {
                 var ok = _loop.CanTimeSkip();
+                label.text = text + (_loop.TimeSkipBudgetSpent()
+                    ? WaitingTail(_loop.TimeSkipBudgetRemaining)
+                    : string.Empty);
                 skip.interactable = ok;
                 SetButtonTint(skip, ok);
             });

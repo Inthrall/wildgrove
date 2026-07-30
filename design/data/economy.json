@@ -65,11 +65,12 @@
     "$note": "design §5: quality rolls per haul batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
   },
   "amber": {
-    "$note": "Amber (design §10): the premium currency's free earn + soft sink. Site finds roll per tick at watchers * digFindsPerHour * digSpeedMult (a separate channel from field sketches — a fully-recorded site keeps surfacing amber; it's old resin with an ancient insect in it, the one thing takeable); a time-skip instantly credits timeSkipHours of full live production for timeSkipCostAmber. adDripAmber is the small pile a rewarded ad gives; weeklyCacheAmber is the once-a-week Play Games cache (design §11). renameCostAmber is the small resin a familiar's rename asks — the arrival naming too, unless you keep the suggested name. All first guesses against the ~40/week-free lean.",
+    "$note": "Amber (design §10): the premium currency's free earn + soft sink. Site finds roll per tick at watchers * digFindsPerHour * digSpeedMult (a separate channel from field sketches — a fully-recorded site keeps surfacing amber; it's old resin with an ancient insect in it, the one thing takeable); a time-skip instantly credits timeSkipHours of full live production for timeSkipCostAmber. timeSkipDailyCapHours bounds PAID skips to that many skipped hours per real day (a leaky budget refilling at cap/24 per wall hour, so it holds on every timescale, no midnight cliff; 0/absent = uncapped). At 24 it pins a heavy spender to at most x2 a free player's pace: a day holds 24 natural sim-hours and skips may add at most 24 more — sim-time is the only thing money buys here, so this one number IS the whale throttle. The rewarded-ad skip sits OUTSIDE the budget (free players get it too — it's part of the baseline both sides share). adDripAmber is the small pile a rewarded ad gives; weeklyCacheAmber is the once-a-week Play Games cache (design §11). renameCostAmber is the small resin a familiar's rename asks — the arrival naming too, unless you keep the suggested name. All first guesses against the ~40/week-free lean.",
     "digFindsPerHour": 0.06,
     "perFind": 2,
     "timeSkipHours": 4,
     "timeSkipCostAmber": 15,
+    "timeSkipDailyCapHours": 24,
     "adDripAmber": 3,
     "weeklyCacheAmber": 20,
     "renameCostAmber": 5

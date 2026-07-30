@@ -423,6 +423,7 @@ namespace Wildgrove.Data
                     perFind = e.Amber.PerFind,
                     timeSkipHours = e.Amber.TimeSkipHours,
                     timeSkipCostAmber = e.Amber.TimeSkipCostAmber,
+                    timeSkipDailyCapHours = e.Amber.TimeSkipDailyCapHours,
                     adDripAmber = e.Amber.AdDripAmber,
                     weeklyCacheAmber = e.Amber.WeeklyCacheAmber,
                     renameCostAmber = e.Amber.RenameCostAmber

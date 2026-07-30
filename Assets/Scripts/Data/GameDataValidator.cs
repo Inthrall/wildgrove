@@ -1478,6 +1478,16 @@ namespace Wildgrove.Data
                 issues.Add("Economy warden.gatherPerSecond must be positive or bare nodes can never afford their first gift");
             }
 
+            if (economy.Amber != null
+                && economy.Amber.TimeSkipDailyCapHours > 0
+                && economy.Amber.TimeSkipDailyCapHours < economy.Amber.TimeSkipHours)
+            {
+                // The budget refills to the cap and a skip needs timeSkipHours of
+                // it, so a positive cap below one skip is a sink that can never
+                // be spent — dead, not merely slow.
+                issues.Add("Economy amber.timeSkipDailyCapHours must be 0 (uncapped) or at least timeSkipHours — a cap below one skip can never be spent");
+            }
+
             if (economy.Hauling != null
                 && (economy.Hauling.BaseCarryCapacity <= 0 || economy.Hauling.TripSeconds <= 0 || economy.Hauling.BasketCapacity <= 0))
             {

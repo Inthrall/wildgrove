@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 37;
+        public const int CurrentVersion = 38;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -43,6 +43,8 @@ namespace Wildgrove.Sim.Saves
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
+                timeSkipBudgetHours = state.timeSkipBudgetHours,
+                timeSkipBudgetStampUnixMs = state.timeSkipBudgetStampUnixMs,
                 playedMs = state.playedMs,
                 deepAmberFound = state.deepAmberFound,
                 deepAmberPityHours = state.deepAmberPityHours,
@@ -279,6 +281,10 @@ namespace Wildgrove.Sim.Saves
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
+            state.timeSkipBudgetStampUnixMs = save.timeSkipBudgetStampUnixMs > 0 ? save.timeSkipBudgetStampUnixMs : 0L;
+            state.timeSkipBudgetHours = state.timeSkipBudgetStampUnixMs > 0L && save.timeSkipBudgetHours > 0.0
+                ? save.timeSkipBudgetHours
+                : 0.0;
             state.playedMs = save.playedMs > 0 ? save.playedMs : 0L;
             state.deepAmberFound = save.deepAmberFound > 0 ? save.deepAmberFound : 0;
             state.deepAmberPityHours = save.deepAmberPityHours > 0.0 ? save.deepAmberPityHours : 0.0;
@@ -1189,6 +1195,13 @@ namespace Wildgrove.Sim.Saves
                         }
 
                         save.version = 37;
+                        break;
+
+                    case 37:
+                        // v37 predates the paid-skip budget — no skip was ever
+                        // charged against it, so the absent stamp (0) is right
+                        // and the budget simply reads full.
+                        save.version = 38;
                         break;
 
                     default:

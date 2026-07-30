@@ -181,17 +181,28 @@ namespace Wildgrove.Game
             });
         }
 
-        /// <summary>Whether the time-skip is configured and affordable — the button's enabled state.</summary>
+        /// <summary>Whether the time-skip is configured, affordable and inside the day's skip budget — the button's enabled state.</summary>
         public bool CanTimeSkip()
         {
-            return Amber.CanTimeSkip(State, Data);
+            return Amber.CanTimeSkip(State, Data, NowUnixMs());
         }
+
+        /// <summary>Whether only the day's skip budget stands in the way — affordable, but the land will not be hastened further yet. Drives the hasten row's countdown wording.</summary>
+        public bool TimeSkipBudgetSpent()
+        {
+            return State != null && Amber.Configured(Data.economy)
+                && State.amber >= Data.economy.amber.timeSkipCostAmber
+                && !Amber.CanTimeSkip(State, Data, NowUnixMs());
+        }
+
+        /// <summary>Seconds until the skip budget covers one full skip again, or 0 when it already does — the hasten row counts down from this.</summary>
+        public double TimeSkipBudgetRemaining => Amber.SkipBudgetRemainingMs(State, Data, NowUnixMs()) / 1000.0;
 
         /// <summary>Spend Amber to instantly credit hours of full-rate production (design §10). Returns the hours credited (0 = refused).</summary>
         public double TimeSkip()
         {
             var cost = Data.economy?.amber?.timeSkipCostAmber ?? 0.0;
-            var hours = Amber.TryTimeSkip(State, Data);
+            var hours = Amber.TryTimeSkip(State, Data, NowUnixMs());
             if (hours > 0.0)
             {
                 Telemetry.LogEvent("time_skip_used", ("hours", hours), ("amber_cost", cost));

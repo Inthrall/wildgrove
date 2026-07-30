@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 47863b77306f53bc2caa15395a72047261598bd73b999ae4b8348fb396f12e99
+  sourceHash: a03080fa402bdb1a0b64e79ddfc39eeb123c9758591791a6bfa447c9707937a9
   economy:
     costGrowth:
       building: 1.25
@@ -34,11 +34,6 @@ MonoBehaviour:
     crafting:
       baseCraftSeconds: 5
     tools:
-      baseCostCoin:
-        mantissa: 1
-        exponent: 2
-      costMultPerTier: 12
-      yieldMultPerTier: 2
       tiers:
       - flint
       - copper
@@ -105,6 +100,7 @@ MonoBehaviour:
       perFind: 2
       timeSkipHours: 4
       timeSkipCostAmber: 15
+      timeSkipDailyCapHours: 24
       adDripAmber: 3
       weeklyCacheAmber: 20
       renameCostAmber: 5
@@ -322,7 +318,7 @@ MonoBehaviour:
     - id: berries
       amount: 100
     effects:
-    - type: 19
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -342,7 +338,7 @@ MonoBehaviour:
     - id: berries
       amount: 250
     effects:
-    - type: 19
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -418,7 +414,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 12
       skill: 
       zone: bramble-hedgerows
       resource: 
@@ -426,7 +422,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: mining
       zone: 
       resource: 
@@ -488,7 +484,7 @@ MonoBehaviour:
     - id: berries
       amount: 40
     effects:
-    - type: 15
+    - type: 13
       skill: firecraft
       zone: 
       resource: 
@@ -496,7 +492,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: forgecraft
       zone: 
       resource: 
@@ -504,7 +500,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -512,7 +508,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -590,7 +586,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 12
       skill: 
       zone: old-growth-wood
       resource: 
@@ -598,7 +594,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: logging
       zone: 
       resource: 
@@ -606,7 +602,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: entomology
       zone: 
       resource: 
@@ -614,7 +610,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 17
+    - type: 15
       skill: 
       zone: old-growth-wood
       resource: 
@@ -674,7 +670,7 @@ MonoBehaviour:
     - id: fibres
       amount: 40
     effects:
-    - type: 15
+    - type: 13
       skill: bushcraft
       zone: 
       resource: 
@@ -682,7 +678,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -690,7 +686,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -726,7 +722,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -774,7 +770,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -832,7 +828,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 12
       skill: 
       zone: silverrun-river
       resource: 
@@ -840,7 +836,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: fishing
       zone: 
       resource: 
@@ -848,7 +844,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 17
+    - type: 15
       skill: 
       zone: silverrun-river
       resource: 
@@ -920,7 +916,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -946,7 +942,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -1016,28 +1012,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - order: 31
-    id: almanac-desk
-    displayName: Almanac Desk
-    track: camp
-    toolTier: 
-    gateSkill: 
-    gateLevel: 0
-    minMigration: 0
-    materials:
-    - id: planks
-      amount: 80
-    - id: timber
-      amount: 100
-    effects:
-    - type: 18
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
   - order: 32
     id: map-mistfen
     displayName: 'Trail Map: Mistfen Marsh'
@@ -1054,7 +1028,7 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 4
     effects:
-    - type: 14
+    - type: 12
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -1062,7 +1036,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: apothecary
       zone: 
       resource: 
@@ -1070,7 +1044,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 17
+    - type: 15
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -1094,7 +1068,7 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 10
     effects:
-    - type: 14
+    - type: 12
       skill: 
       zone: the-hollows
       resource: 
@@ -1102,7 +1076,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 13
       skill: delving
       zone: 
       resource: 
@@ -1110,7 +1084,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 17
+    - type: 15
       skill: 
       zone: the-hollows
       resource: 
@@ -1118,7 +1092,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 16
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -1420,7 +1394,7 @@ MonoBehaviour:
     - id: fibres
       amount: 40
     effects:
-    - type: 11
+    - type: 10
       skill: 
       zone: 
       resource: 
@@ -1438,7 +1412,7 @@ MonoBehaviour:
     - id: cordage
       amount: 5
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: 
       resource: 
@@ -1446,24 +1420,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.25
-  - id: pitch-torch
-    displayName: Pitch Torch
-    slot: camp
-    skill: firecraft
-    materials:
-    - id: timber
-      amount: 10
-    - id: fibres
-      amount: 10
-    effects:
-    - type: 10
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
   - id: oilskin-tarp
     displayName: Oilskin Tarp
     slot: camp
@@ -1482,24 +1438,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - id: clay-lined-creel
-    displayName: Clay-Lined Creel
-    slot: pack
-    skill: bushcraft
-    materials:
-    - id: clay
-      amount: 20
-    - id: reeds
-      amount: 15
-    effects:
-    - type: 13
-      skill: 
-      zone: 
-      resource: fish
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
   insects:
   - id: stags-herald
     displayName: The Stag's Herald
@@ -1758,7 +1696,7 @@ MonoBehaviour:
     requires: patient-hands
     repeatable: 0
     effects:
-    - type: 21
+    - type: 18
       skill: 
       zone: 
       resource: 
@@ -1766,13 +1704,55 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
+  - id: the-pitch-torch
+    displayName: The Pitch Torch
+    costVerdure: 6
+    requires: patient-hands
+    repeatable: 0
+    effects:
+    - type: 4
+      skill: firecraft
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
+  - id: the-clay-lined-creel
+    displayName: The Clay-Lined Creel
+    costVerdure: 5
+    requires: old-songs-i
+    repeatable: 0
+    effects:
+    - type: 0
+      skill: 
+      zone: 
+      resource: fish
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
+  - id: the-almanac-desk
+    displayName: The Almanac Desk
+    costVerdure: 8
+    requires: long-watch-ii
+    repeatable: 0
+    effects:
+    - type: 9
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 2
   - id: remembered-edge-i
     displayName: The Remembered Edge
     costVerdure: 6
     requires: 
     repeatable: 0
     effects:
-    - type: 20
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1786,7 +1766,7 @@ MonoBehaviour:
     requires: remembered-edge-i
     repeatable: 0
     effects:
-    - type: 20
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1800,7 +1780,7 @@ MonoBehaviour:
     requires: known-way-i
     repeatable: 0
     effects:
-    - type: 20
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1814,7 +1794,7 @@ MonoBehaviour:
     requires: remembered-edge-ii
     repeatable: 0
     effects:
-    - type: 20
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1864,7 +1844,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.05
-    - type: 12
+    - type: 11
       skill: 
       zone: 
       resource: 
@@ -1971,7 +1951,7 @@ MonoBehaviour:
     - wool
     - lichen
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: 
       resource: 
@@ -1985,7 +1965,7 @@ MonoBehaviour:
     - sky-blossoms
     - glacier-ice
     effects:
-    - type: 11
+    - type: 10
       skill: 
       zone: 
       resource: 

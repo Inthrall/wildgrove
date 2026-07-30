@@ -589,6 +589,7 @@ namespace Wildgrove.Data
             public double perFind;
             public double timeSkipHours;
             public double timeSkipCostAmber;
+            public double timeSkipDailyCapHours;
             public double adDripAmber;
             public double weeklyCacheAmber;
             public double renameCostAmber;

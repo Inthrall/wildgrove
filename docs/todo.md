@@ -630,6 +630,32 @@ What moved (all data-only, no sim change):
 Numbers are model-derived, NOT playtested — same caveat as the fold-pacing
 pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
 
+**IMPLEMENTED 2026-07-30 — the paid-skip budget (the whale throttle, design
+§10).** Mo: "cap the amber time skips to ×2 the speed of a FTP." Sim-time is
+the only thing money buys in Wildgrove (a skip runs the whole sim — craft XP,
+watched hours, tincture clocks), so bounding how much of it PAID skips may add
+per real day bounds a heavy spender's pace outright. `timeSkipDailyCapHours`
+(economy.json amber, 24 = a free player's 24 natural sim-hours + at most 24
+skipped = ×2) drives a **leaky-bucket budget**: it refills at cap/24 per
+wall-clock hour and holds at the cap, so the rule is identical on every
+timescale — no midnight counter, no timezone or date-rollover question, and
+unspent days never bank extra hastening. Landed as:
+- `Amber.SkipBudgetHours/SkipBudgetRemainingMs` + the spend inside
+  `TryTimeSkip`; `CanTimeSkip` now takes `nowUnixMs`. **Save v37→v38**
+  (`timeSkipBudgetHours` + `timeSkipBudgetStampUnixMs`; absent = full budget).
+  The budget crosses the fold like the other amber stamps — migrating must not
+  refill the day's hastening.
+- **The REWARDED skip stays outside the budget** — free players get it too, so
+  it's part of the shared baseline, and its own 4 h cooldown already bounds it.
+- Validator: a positive cap below one skip is a sink that can never be spent —
+  refused, not merely slow. 0/absent = uncapped (pre-cap data keeps working).
+- HUD: the hasten row counts down until the budget covers one skip again
+  (the drip row's WaitingTail idiom); being short of amber only greys the
+  button.
+- Cap 24 is the ×2 answer, not a model output — revisit with the same
+  playtest sitting if ×2 still reads too fast (the next lever after this one
+  is fold-gated content, not a tighter cap).
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
    demandGrowth, Almanac costs, this pass) is model-derived and waiting on it.

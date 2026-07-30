@@ -76,6 +76,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v29+: UTC unix ms of the last rewarded time-skip (absent before time-skip throttling — 0, ready now).</summary>
         public long timeSkipClaimedUnixMs;
 
+        /// <summary>v38+: paid-skip budget hours left at the stamp below (absent before the hasten cap — 0 with no stamp, reads as a full budget).</summary>
+        public double timeSkipBudgetHours;
+
+        /// <summary>v38+: UTC unix ms the paid-skip budget was last settled (absent before the cap — 0, never spent).</summary>
+        public long timeSkipBudgetStampUnixMs;
+
         /// <summary>v30+: accumulated foreground play time in ms (absent before — 0). Monotonic; the basis cloud saves are compared on.</summary>
         public long playedMs;
 

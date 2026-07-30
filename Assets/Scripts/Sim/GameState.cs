@@ -86,6 +86,12 @@ namespace Wildgrove.Sim
         /// <summary>UTC unix ms of the last rewarded time-skip — 0 = never; re-arms after Amber.TimeSkipCooldownMs. Persisted for the same reason as the drip.</summary>
         public long timeSkipClaimedUnixMs;
 
+        /// <summary>Paid-skip budget hours left when it was last stamped (Amber.SkipBudgetHours refills from here at timeSkipDailyCapHours/24 per wall hour). Meaningful only alongside the stamp below.</summary>
+        public double timeSkipBudgetHours;
+
+        /// <summary>UTC unix ms the paid-skip budget was last settled — 0 = never spent, the budget reads full. Persisted so relaunching can't refill the day's hastening.</summary>
+        public long timeSkipBudgetStampUnixMs;
+
         /// <summary>
         /// Accumulated foreground play time in ms — a monotonic, clock-independent
         /// measure of how far a run has been carried. GameLoop adds each real

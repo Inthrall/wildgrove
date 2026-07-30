@@ -16,6 +16,11 @@ namespace Wildgrove.Sim.Tests
     {
         private const double Tolerance = 1e-9;
 
+        /// <summary>A fixed "now" for the paid skip's budget settling — the fixture's cap is 0 (uncapped) unless a test sets one.</summary>
+        private const long Now = 1_000_000_000_000L;
+
+        private const long HourMs = 60L * 60L * 1000L;
+
         private GameDataAsset _data;
 
         [SetUp]
@@ -115,7 +120,7 @@ namespace Wildgrove.Sim.Tests
             TestKith.Station(state, state.nodes[0].id, 1);
             state.amber = 15.0;
 
-            var hours = Amber.TryTimeSkip(state, _data);
+            var hours = Amber.TryTimeSkip(state, _data, Now);
 
             Assert.That(hours, Is.EqualTo(0.01).Within(Tolerance));
             Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance), "the cost is spent");
@@ -129,8 +134,8 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             state.amber = 14.0;
 
-            Assert.That(Amber.CanTimeSkip(state, _data), Is.False);
-            Assert.That(Amber.TryTimeSkip(state, _data), Is.EqualTo(0.0));
+            Assert.That(Amber.CanTimeSkip(state, _data, Now), Is.False);
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.0));
             Assert.That(state.amber, Is.EqualTo(14.0).Within(Tolerance), "nothing spent on a refusal");
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
@@ -142,7 +147,118 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             state.amber = 100.0;
 
-            Assert.That(Amber.TryTimeSkip(state, _data), Is.EqualTo(0.0));
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void TimeSkip_BudgetSpendsDownAndRefusesTheThird()
+        {
+            // Cap = exactly two skips' worth. The throttle is the whole point:
+            // sim-time is the only thing amber buys, so this is the number
+            // that bounds a heavy spender's pace (x2 a free player at 24).
+            _data.economy.amber.timeSkipDailyCapHours = 0.02;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.01).Within(Tolerance), "a full budget covers the first");
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.01).Within(Tolerance), "and the second");
+            Assert.That(Amber.CanTimeSkip(state, _data, Now), Is.False, "the day's budget is spent");
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(70.0).Within(Tolerance), "two costs spent, never a third — refusal charges nothing");
+        }
+
+        [Test]
+        public void TimeSkip_BudgetRefillsAtCapPer24Hours()
+        {
+            _data.economy.amber.timeSkipDailyCapHours = 0.02;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+            Amber.TryTimeSkip(state, _data, Now);
+            Amber.TryTimeSkip(state, _data, Now);
+
+            // The bucket leaks back at cap/24 per wall hour: half a day
+            // refills half the cap — exactly one skip's worth here.
+            var halfADayOn = Now + 12L * HourMs;
+            Assert.That(Amber.CanTimeSkip(state, _data, halfADayOn - 1L), Is.False, "a moment short of one skip's refill");
+            Assert.That(Amber.TryTimeSkip(state, _data, halfADayOn), Is.EqualTo(0.01).Within(Tolerance));
+            Assert.That(Amber.CanTimeSkip(state, _data, halfADayOn), Is.False, "and it is spent again");
+        }
+
+        [Test]
+        public void TimeSkip_BudgetStartsFullAndHoldsAtTheCap()
+        {
+            _data.economy.amber.timeSkipDailyCapHours = 0.02;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            Assert.That(Amber.SkipBudgetHours(state, _data, Now), Is.EqualTo(0.02).Within(Tolerance),
+                "an unstamped state reads a full budget");
+
+            // Draining it and then waiting a hundred days refills to the cap,
+            // never beyond — unspent days don't bank extra hastening.
+            Amber.TryTimeSkip(state, _data, Now);
+            Amber.TryTimeSkip(state, _data, Now);
+            var muchLater = Now + 100L * 24L * HourMs;
+            Assert.That(Amber.SkipBudgetHours(state, _data, muchLater), Is.EqualTo(0.02).Within(Tolerance));
+        }
+
+        [Test]
+        public void SkipBudgetRemaining_CountsDownToOneSkipAndReadsZeroWhenCovered()
+        {
+            _data.economy.amber.timeSkipDailyCapHours = 0.02;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            Assert.That(Amber.SkipBudgetRemainingMs(state, _data, Now), Is.EqualTo(0L), "a full budget waits for nothing");
+
+            Amber.TryTimeSkip(state, _data, Now);
+            Amber.TryTimeSkip(state, _data, Now);
+            Assert.That(Amber.SkipBudgetRemainingMs(state, _data, Now), Is.EqualTo(12L * HourMs),
+                "one skip's worth refills in half a day at cap 0.02");
+            Assert.That(Amber.SkipBudgetRemainingMs(state, _data, Now + 12L * HourMs), Is.EqualTo(0L));
+        }
+
+        [Test]
+        public void TimeSkip_UncappedWhenNoCapIsConfigured()
+        {
+            // The fixture ships cap 0 — the pre-cap behaviour, kept for data
+            // that never opts in. Ten in a row must all land.
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 150.0;
+
+            for (var i = 0; i < 10; i++)
+            {
+                Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.EqualTo(0.01).Within(Tolerance), "skip " + i);
+            }
+        }
+
+        [Test]
+        public void TimeSkip_BudgetSurvivesMigration()
+        {
+            _data.economy.amber.timeSkipDailyCapHours = 0.02;
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData> { new RiteData { id = "first-rite", migration = 0, verses = { verse } } },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+            state.amber = 100.0;
+            Amber.TryTimeSkip(state, _data, Now);
+            Amber.TryTimeSkip(state, _data, Now);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next, Is.Not.Null, "the sung rite lets the fold happen at all");
+            Assert.That(Amber.CanTimeSkip(next, _data, Now), Is.False,
+                "folding is the one repeatable act a player controls — it must not refill the day's hastening");
         }
 
         [Test]

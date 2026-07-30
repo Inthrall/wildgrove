@@ -396,7 +396,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 | ----------- | ---------------- | ------------------------------------------------------- | --------------------------------------------- |
 | **Renown**  | Per-run score    | All XP earned (warden + familiars) + offering credits   | None — the measure, not a wallet              |
 | **Verdure** | Meta (permanent) | Migration (√ of Renown)                                 | Almanac nodes; +2%/pt passive                 |
-| **Amber**   | Hard / premium   | IAP, observation sites, rewarded ads, weekly Play Games Reward  | Time-skips, cosmetics, extra craft queues     |
+| **Amber**   | Hard / premium   | IAP, observation sites, rewarded ads, weekly Play Games Reward  | Time-skips (paid skips budgeted to `timeSkipDailyCapHours`/day — 24 pins a heavy spender to ≤×2 a free player's pace, since sim-time is the only thing money buys; **built 2026-07-30**), cosmetics, extra craft queues |
 | *(Goods)*   | Everything else  | Gathering, crafting                                     | Kit · Exchange · offerings · replanting/planters · buildings · provisions — six sinks competing |
 
 ### Formulas
