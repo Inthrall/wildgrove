@@ -160,15 +160,11 @@ namespace Wildgrove.Game.Services
         }
     }
 
-    /// <summary>
-    /// Play Games Services achievement IDs, from the console-generated
-    /// games-ids.xml (the encoded IDs, not the resource names).
-    /// </summary>
-    public static class AchievementIds
-    {
-        /// <summary>"First kith" — achievement_first_kith.</summary>
-        public const string FirstKith = "CggIp4me7kEQAhAC";
-    }
+    // AchievementIds now lives in AchievementIds.g.cs, written by
+    // tools/pgs-achievements.py from store/play-games/achievements.json and the
+    // ids the Play Console replies with. Forty-five constants are too many to
+    // keep by hand, and copying an encoded id out of games-ids.xml is exactly
+    // the step that mistypes one.
 
     /// <summary>
     /// Play Games Services leaderboard IDs, from the console-generated

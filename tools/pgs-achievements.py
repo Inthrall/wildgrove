@@ -47,11 +47,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "store" / "play-games" / "achievements.json"
-# Generated beside the manifest rather than into Assets/: the class it declares
-# replaces the AchievementIds in ServiceIds.cs, and dropping a second copy into a
-# live editor's compile would be CS0101 in someone's running session. Moving it
-# into Assets/ is a deliberate step in the same change that removes the old one.
-GENERATED = ROOT / "store" / "play-games" / "AchievementIds.g.cs"
+# Written straight into Assets/ — this file *is* the AchievementIds the game
+# compiles, ServiceIds.cs having given the class up. A run therefore recompiles a
+# live editor, which is the point: the ids in code and the ids in the console
+# cannot drift if only one of them is ever typed.
+GENERATED = ROOT / "Assets" / "Scripts" / "Game" / "Services" / "AchievementIds.g.cs"
 DEFAULT_TOKEN = Path.home() / "Documents" / "Wildgrove-secrets" / "pgs-token.txt"
 
 BASE = "https://www.googleapis.com/games/v1configuration"
