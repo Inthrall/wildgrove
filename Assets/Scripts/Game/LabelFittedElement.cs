@@ -18,6 +18,12 @@ namespace Wildgrove.Game
     /// Priority 2 so this beats the LayoutElement's fixed height on the same
     /// object; heights are read in the vertical layout pass, by which point the
     /// label's width is settled, so the wrap is measured at the real width.
+    ///
+    /// The plate grows and never shrinks back, for the reason a row does — see
+    /// <see cref="HeightSettledElement"/>. A live button relabels itself as
+    /// often as the line it sits on ("Craft" ⇄ "Craft instead", the Exchange's
+    /// whole deal), and a plate that took a line back every time would rock the
+    /// page as surely as the label did.
     /// </summary>
     public sealed class LabelFittedElement : MonoBehaviour, ILayoutElement
     {
@@ -29,6 +35,8 @@ namespace Wildgrove.Game
         /// <summary>Breathing room between the text and the plate's border.</summary>
         public float padding = 16f;
 
+        private float _settled;
+
         public float minWidth => -1f;
         public float preferredWidth => -1f;
         public float flexibleWidth => -1f;
@@ -36,9 +44,22 @@ namespace Wildgrove.Game
         public float flexibleHeight => -1f;
         public int layoutPriority => 2;
 
-        public float preferredHeight => label == null
-            ? -1f
-            : Mathf.Max(floorHeight, LayoutUtility.GetPreferredHeight((RectTransform)label.transform) + padding);
+        public float preferredHeight
+        {
+            get
+            {
+                if (label == null)
+                {
+                    return -1f;
+                }
+
+                _settled = HeightSettledElement.SettledHeight(
+                    _settled,
+                    LayoutUtility.GetPreferredHeight((RectTransform)label.transform) + padding,
+                    floorHeight);
+                return _settled;
+            }
+        }
 
         public void CalculateLayoutInputHorizontal()
         {

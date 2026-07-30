@@ -119,6 +119,9 @@ namespace Wildgrove.Game
             return go.transform;
         }
 
+        /// <summary>The height a row holds when its contents ask for nothing more.</summary>
+        private const float RowFloor = 76f;
+
         internal static GameObject Row(RectTransform parent)
         {
             var go = MakeRect("Row", parent).gameObject;
@@ -131,7 +134,13 @@ namespace Wildgrove.Game
             layout.padding = new RectOffset(0, 0, 6, 6);
             layout.spacing = 8;
             var fitter = go.AddComponent<LayoutElement>();
-            fitter.minHeight = 76;
+            fitter.minHeight = RowFloor;
+            // Grow-only, so a label that rewrites itself four times a second
+            // can't drag every card below it up and down the page. The
+            // LayoutElement above stays as the fallback if this goes unwired.
+            var settled = go.AddComponent<HeightSettledElement>();
+            settled.source = layout;
+            settled.floorHeight = RowFloor;
             return go;
         }
 

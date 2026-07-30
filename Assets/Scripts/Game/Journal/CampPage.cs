@@ -441,7 +441,10 @@ namespace Wildgrove.Game
 
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
                 FlexibleWidth(label.gameObject, 1f);
-                var toggle = Button(row.transform, "Craft", 210, () =>
+                // Wide enough for the longest thing this plate ever says
+                // ("Stop crafting"). At 210 that label wrapped to two lines and
+                // took the whole row down with it.
+                var toggle = Button(row.transform, "Craft", 300, () =>
                 {
                     // Displacement is silent in the sim (the old batch's inputs
                     // come back, no bar anywhere reports the swap) — so the
@@ -472,8 +475,11 @@ namespace Wildgrove.Game
                     }
                     else if (crafting)
                     {
+                        // Three characters wide throughout, so climbing 7% → 43%
+                        // → 100% doesn't shift where the line wraps mid-craft.
                         progress = "  <color=" + MossDeepHex + ">crafting · "
-                                   + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f) + "%</color>";
+                                   + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f).ToString().PadLeft(3)
+                                   + "%</color>";
                     }
 
                     var need = string.Empty;
@@ -492,35 +498,22 @@ namespace Wildgrove.Game
                         need += "  <color=" + OchreInkHex + "><b>needs " + line + " level " + captured.stationLevel + "</b></color>";
                     }
 
-                    // With every input in stock, itemising them wrapped the
-                    // line and buried nothing useful; the itemised (have N)
-                    // treatment is saved for the shortfall, where it earns
-                    // its space by naming exactly what's blocking.
-                    string inputsLine;
-                    if (_loop.CanCraft(captured))
+                    // One shape in every state: every input, always with what's
+                    // held. The line used to switch between "needs 5 timber"
+                    // and an itemised shortfall, so it changed length — and
+                    // often wrapped — every time stock crossed a recipe's cost,
+                    // which during a busy camp is constantly. What's blocking is
+                    // now said in ochre rather than by rewriting the line.
+                    var inputs = new List<string>();
+                    foreach (var input in captured.inputs)
                     {
-                        inputsLine = "needs " + BundleLabel(captured.inputs);
+                        var have = _loop.State.GetResource(input.id);
+                        var held = "(have " + NumberFormat.Short(have) + ")";
+                        inputs.Add(input.amount + " " + input.id + " "
+                                   + (have >= input.amount ? held : "<color=" + OchreInkHex + ">" + held + "</color>"));
                     }
-                    else
-                    {
-                        var shortOf = new List<string>();
-                        var metCount = 0;
-                        foreach (var input in captured.inputs)
-                        {
-                            var have = _loop.State.GetResource(input.id);
-                            if (have >= input.amount)
-                            {
-                                metCount++;
-                                continue;
-                            }
 
-                            shortOf.Add(input.amount + " " + input.id + " <color=" + OchreInkHex + ">(have "
-                                        + NumberFormat.Short(have) + ")</color>");
-                        }
-
-                        inputsLine = string.Join(", ", shortOf)
-                                     + (metCount > 0 ? "<color=" + Ink2Hex + ">, the rest in hand</color>" : string.Empty);
-                    }
+                    var inputsLine = "needs " + string.Join(", ", inputs);
 
                     // The inputs already say what the camp holds of each; the
                     // OUTPUT didn't, so the one number you want while deciding

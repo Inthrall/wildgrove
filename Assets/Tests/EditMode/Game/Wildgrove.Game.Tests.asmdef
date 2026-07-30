@@ -6,6 +6,7 @@
         "Wildgrove.Sim",
         "Wildgrove.Data",
         "BreakInfinity",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
