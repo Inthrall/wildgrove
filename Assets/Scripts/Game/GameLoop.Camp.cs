@@ -22,6 +22,12 @@ namespace Wildgrove.Game
             return Upgrades.MissingToolTier(State, Data, upgrade);
         }
 
+        /// <summary>Folds still to walk before this rung joins the ladder (design §8), or 0 when it already has — for the rung's "after two folds" line.</summary>
+        public int FoldsUntilUpgrade(UpgradeData upgrade)
+        {
+            return Upgrades.FoldsUntilAvailable(State, Data, upgrade);
+        }
+
         /// <summary>True when the run holds the upgrade's materials (money→XP: no Coin) — for the buy button's enabled state.</summary>
         public bool CanAffordUpgrade(UpgradeData upgrade)
         {

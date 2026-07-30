@@ -175,6 +175,111 @@ namespace Wildgrove.Data
             }
 
             ValidateToolGating(data, issues);
+            ValidateFoldGating(data, issues);
+        }
+
+        /// <summary>
+        /// The design §8 fold gate: content may wait for a fold, but it must
+        /// never wait forever, and the run it waits out must still be finishable.
+        ///
+        /// Every rule here guards a soft-lock the sim cannot detect at runtime —
+        /// a Rite with no verse in play, or a starting zone that does not exist
+        /// on the first run, leaves a save that simply cannot progress.
+        /// </summary>
+        private static void ValidateFoldGating(GameData data, List<string> issues)
+        {
+            foreach (var zone in data.Zones.Where(z => z.MinMigration < 0))
+            {
+                issues.Add($"Zone '{zone.Id}' minMigration {zone.MinMigration} is negative");
+            }
+
+            foreach (var upgrade in data.Upgrades.Where(u => u.MinMigration < 0))
+            {
+                issues.Add($"Upgrade '{upgrade.Id}' minMigration {upgrade.MinMigration} is negative");
+            }
+
+            foreach (var species in data.Species.Where(s => s.MinMigration < 0))
+            {
+                issues.Add($"Species '{species.Id}' minMigration {species.MinMigration} is negative");
+            }
+
+            // The run has to start somewhere: the factory seeds this zone before
+            // any fold has happened, so gating it would open run 1 with no trail.
+            var starting = data.Zones.FirstOrDefault(z => z.Id == GameData.StartingZoneId);
+            if (starting != null && starting.MinMigration > 0)
+            {
+                issues.Add($"Starting zone '{starting.Id}' has minMigration {starting.MinMigration} — the first run would open with no trail");
+            }
+
+            // A trail is gated in ONE place, the zone. A map rung carrying its
+            // own fold as well is two numbers that must agree forever; Upgrades
+            // .FoldGate takes the greater of them, so a mismatch doesn't lock
+            // anything, but it does make the ladder and the Rite answer to
+            // different authoring.
+            foreach (var upgrade in data.Upgrades)
+            {
+                if (upgrade.MinMigration != 0
+                    && upgrade.Effects.Any(e => e.Type == EffectType.UnlockZone && !string.IsNullOrEmpty(e.Zone)))
+                {
+                    issues.Add($"Upgrade '{upgrade.Id}' sets minMigration and also unlocks a zone — gate the zone instead, the map rung inherits it");
+                }
+            }
+
+            // A rung that calls a familiar must not arrive before the species
+            // will answer: Roster.Recruit doesn't consult the species' fold (the
+            // rung's own gate is the gate), so the earlier rung would quietly
+            // win and the species' gate would mean nothing.
+            var speciesById = data.Species.ToDictionary(s => s.Id, s => s);
+            foreach (var upgrade in data.Upgrades)
+            {
+                foreach (var effect in upgrade.Effects.Where(e => e.Type == EffectType.RecruitSpecies && !string.IsNullOrEmpty(e.Species)))
+                {
+                    if (speciesById.TryGetValue(effect.Species, out var species)
+                        && species.MinMigration > upgrade.MinMigration)
+                    {
+                        issues.Add($"Upgrade '{upgrade.Id}' recruits '{species.Id}' at fold {upgrade.MinMigration} but that species is gated to fold {species.MinMigration}");
+                    }
+                }
+            }
+
+            ValidateRiteFoldReach(data, issues);
+        }
+
+        /// <summary>
+        /// Every Rite must have at least one verse in play on the fold it serves,
+        /// and the authored template must have one on the first run. A Rite with
+        /// nothing in play can never complete, and the Rite is the Migration
+        /// gate — so the fold that cannot finish its Rite is the last fold the
+        /// save will ever see.
+        /// </summary>
+        private static void ValidateRiteFoldReach(GameData data, List<string> issues)
+        {
+            var rites = data.Rites?.Rites;
+            if (rites == null)
+            {
+                return;
+            }
+
+            var gateByZone = data.Zones.ToDictionary(z => z.Id, z => z.MinMigration);
+            foreach (var rite in rites)
+            {
+                var inPlay = rite.Verses.Count(v =>
+                    gateByZone.TryGetValue(v.Zone ?? string.Empty, out var gate) && gate <= rite.Migration);
+                if (rite.Verses.Count > 0 && inPlay == 0)
+                {
+                    issues.Add($"Rite '{rite.Id}' (migration {rite.Migration}) has no verse whose zone is open by then — the Rite could never be completed");
+                }
+            }
+
+            // Runs past the authored set generate from the FIRST rite as their
+            // template, so its verse list is what every later fold draws on. A
+            // zone gated beyond a fold simply stands its verse aside then.
+            var template = rites.FirstOrDefault();
+            if (template != null && template.Verses.Count > 0
+                && !template.Verses.Any(v => gateByZone.TryGetValue(v.Zone ?? string.Empty, out var gate) && gate <= 0))
+            {
+                issues.Add("The rite template has no verse open on the first run — run 1 could never complete its Rite");
+            }
         }
 
         /// <summary>

@@ -17,6 +17,15 @@ namespace Wildgrove.Data
 
         /// <summary>Tool tier the zone's trail map demands (design doc §3: Zone 2 flint … deeper steel+); null = ungated.</summary>
         public string RequiredTool { get; set; }
+
+        /// <summary>
+        /// Folds that must be behind the warden before this trail exists at all
+        /// (design doc §8): 0 (the default) = open from the first run. Gates the
+        /// zone's trail map, and holds the zone's verse out of the Rite while it
+        /// waits — the far trails arrive over runs instead of all at once.
+        /// </summary>
+        public int MinMigration { get; set; }
+
         public string Scope { get; set; }
     }
 }

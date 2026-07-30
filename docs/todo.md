@@ -494,19 +494,69 @@ insects in it** — swapping `res-amber` to it would drop one of the five CC BY
 attributions the build has to carry, but it also feeds the store's amber icons,
 so it wants a deliberate pass rather than a drive-by.
 
+**IMPLEMENTED 2026-07-30 — the fold gate: content that arrives over runs
+(design §8).** Nothing in the ladder, the zones or the species read
+`migrationCount`, so the generator re-walked the same six zones forever and a
+run-1 warden was expected to reach the Hollows. Zones (and, for tuning,
+upgrades and species) now carry **`minMigration`** — folds that must be behind
+the warden before that content exists. 742/742 EditMode green on both Android
+and Win64.
+
+- **The Rite is the load-bearing part, not the ladder.** A Rite completes only
+  when every verse in it is sung, a verse reveals only once its zone is open,
+  and the Rite is the *only* Migration gate — so a verse for a zone the fold
+  cannot reach would have sealed Migration **permanently**, including the fold
+  that would have opened that zone. `Rite.IsVerseInPlay` is what prevents it,
+  and `Rite.VersesInPlay` is what the journal, the tracker and the counts read.
+  An early run therefore walks a **shorter** Rite, not a slower one.
+- **Authored in one place.** `minMigration` on the zone gates the trail map *and*
+  holds the verse; `Upgrades.FoldGate` reads the zone's fold through the map
+  rung so the number is never written twice, and the validator refuses a map
+  rung that carries its own (two numbers that must agree forever is the typo
+  that would reach the hard-lock above).
+- **Validator rules added** (each guards a save that could never progress):
+  negative folds; a gated starting zone; a map rung with its own fold; a recruit
+  rung earlier than the species it calls (`Roster.Recruit` doesn't consult the
+  species' fold, so the rung would silently win); and any Rite — authored or
+  template — with no verse open on the fold it serves.
+- **HUD:** a gated rung reads "not before the next fold" / "not for another N
+  folds" *instead of* its shopping list, deliberately — a trail that does not
+  exist has no use for one, and "needs iron tools" beside it would send the
+  warden off earning something that changes nothing this run.
+- **Species gating is nearly moot and kept anyway:** a species whose resources
+  live in a gated zone already has no node to leave a pile at, so the field only
+  earns its keep for holding one back inside a zone the run has opened.
+
+Interpretations shipped (tune/confirm):
+- **First guesses: zones 1–3 open run 1, then one new trail per fold** —
+  Silverrun on run 2 (`minMigration` 1), Mistfen on run 3, the Hollows on run 4.
+  Model-derived, NOT playtested; a real run-1-to-run-5 sitting is what should
+  set them. A test pins the *shape* (non-decreasing in zone order, never
+  skipping a fold) rather than the exact numbers, so retuning doesn't fight it.
+- **Fewer verses early means fewer gift piles**, and the kith-slot milestones
+  (§4, verses 2/5/10) come later — the second slot now lands in run 2 rather
+  than run 1. Whether that reads as pacing or as a tax wants the same sitting.
+- Opening a zone is **never taken back**: a save whose data was retuned
+  underneath it keeps a trail it already holds, and keeps that verse in play
+  (the alternative is a zone you can work whose verse doesn't count).
+- The generator still generates every verse and `IsVerseInPlay` filters them, so
+  there is ONE truth about what a run is walking rather than two that can drift.
+  Its reachability sweep is unchanged.
+- No upgrade or species is gated in the shipping data — the zone gate is doing
+  all the work. The fields exist for tuning; don't sprinkle numbers into them
+  without a reason.
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
    zone skips) that currently wait for their systems. These are the lever that
    scales the ladder re-climb DOWNWARD with the fold count, which is the half of
-   the pacing fix no knob can deliver. (The endless line above is the sink half,
-   already landed.)
-2. **Content gated on migration count** — nothing in the ladder, the zones or
-   the species reads `migrationCount`; the generator re-walks the same six zones
-   forever. A `minMigration` on zones/upgrades/species is what actually answers
-   "I've seen it all in a morning"; the pacing knobs only change how fast.
-3. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
+   the pacing fix no knob can deliver. (The endless line is the sink half and
+   the fold gate is the arrival half; both have landed.)
+2. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
    unbalanced by design; they want the spreadsheet treatment alongside the
-   tincture numbers and the deep-amber timing.
+   tincture numbers and the deep-amber timing. The fold gate changes what this
+   pass is even measuring: those zones are now first seen on runs 3 and 4, by a
+   warden with two or three folds of Verdure behind them.
 
 ## Phase 1 — Core loop slice (current)
 
@@ -914,17 +964,15 @@ so it wants a deliberate pass rather than a drive-by.
     catalogued reward, so an award of it could never be acknowledged. **Do not
     create that console product.** If a cosmetic substrate is ever built for the
     amber sink, a cosmetic reward can be reconsidered on its own merits.
-    **Still owed for the plate:** its own plate art (it falls back to the
-    placeholder disc today, like `lantern-bearers` and `quiet-court` — three
-    Commons sourcing passes that could be one), and the console product
-    `reward_wayfarers_plate`.
-  - **Play Console — the products are DONE (2026-07-30).** One-time products
-    `reward_drovers_halter` and `reward_weekly_amber_cache` are created and
-    activated. Still to create: **`reward_wayfarers_plate`** (the second
-    single-use reward, built 2026-07-30). Then: **attach a Play Games Reward
-    offer to each — the association UI and reward testing do not open until Sep 1
-    2026**, so that is a September job, and the window against the Sep 30 bar is
-    one month wide. Any reward UI must be drawn
+    ~~**Still owed for the plate:** its own plate art, and the console product
+    `reward_wayfarers_plate`.~~ ✅ Both landed 2026-07-30 — the moth from Helena
+    Scott's 1864 plate, and the console product is created.
+  - **Play Console — all three products are DONE (2026-07-30).** One-time products
+    `reward_drovers_halter`, `reward_weekly_amber_cache` and
+    `reward_wayfarers_plate` are created and activated. All that remains is to
+    **attach a Play Games Reward offer to each — the association UI and reward
+    testing do not open until Sep 1 2026**, so that is a September job, and the
+    window against the Sep 30 bar is one month wide. Any reward UI must be drawn
     **in-journal**; Play Games' own overlay is permanently dead on
     `targetSdk 36` (see the Play Games item in Phase 1).
   - Still untested on a device, like everything billing: the real out-of-app
@@ -983,7 +1031,7 @@ so it wants a deliberate pass rather than a drive-by.
   (`Assets/Scripts/Game/Services/GameStats.cs`, `IGameServices.cs`,
   `PlayGamesServices.cs`, `StubGameServices.cs`, `GameLoop.cs`,
   `store/play-games/gamestats/`)
-- **Sidekick — ON in Play Console 2026-07-29. Nothing to build; one setting that bites if missed.** The
+- **Sidekick — ON in Play Console 2026-07-29, CONFIRMED ON DEVICE 2026-07-30. Nothing to build; one setting that bites if missed.** The
   overlay is added at *upload* time for App Bundle games: Play Console → create an
   internal/closed release with **"Sidekick is on by default"**, then Testing →
   Advanced settings → **Play Games Sidekick** → *"Automatically make Sidekick is on
@@ -995,15 +1043,19 @@ so it wants a deliberate pass rather than a drive-by.
   quietly fails. Testing needs a device on Android 13+ with 4 GB+ RAM, the build
   installed from Play (not sideloaded), and **Play Store → Settings → About → tap
   Play Store version ×7 → General → Developer options → Play Games Sidekick** on.
-  Sidekick surfaces achievements, so it reads thin until the achievement ladder
-  grows past `FirstKith`.
+  **That developer-options toggle is the whole verification** — it was on in the
+  console and still invisible until the toggle was flipped, so an absent overlay
+  means the device, not the build. Verified against v0.1.104 (built from the tip,
+  so the full 45-achievement ladder was there to surface — before 2026-07-30 the
+  panel would have read nearly empty, which is a misleading way to test it).
 - **Level Up milestone dates the compliance table was missing.** From the March
   2026 Level Up post: **July 2026** — Sidekick integrated *and* achievements
-  implemented with PGS (we have **1** of a minimum 10, so this is the nearest real
-  gap); **November 2026** — cloud save (done: Snapshots, single-device confirmed);
-  Rewards **Sep 30 2026** / **Mar 1 2027** as already tracked above. Achievements
-  past `FirstKith` are the next Level Up job, and Game Stats' five repetitive stats
-  make a natural source of achievement thresholds — do them together.
+  implemented with PGS: **both DONE and both confirmed on device 2026-07-30** (45
+  published achievements, unlocking; Sidekick surfacing them);
+  **November 2026** — cloud save (done: Snapshots, single-device confirmed);
+  Rewards **Sep 30 2026** / **Mar 1 2027** as already tracked above. The only
+  Level Up work left is the Rewards offer association, which cannot start before
+  **Sep 1 2026**, and Game Stats, which waits on Google's own client SDK.
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on

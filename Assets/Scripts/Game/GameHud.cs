@@ -954,10 +954,13 @@ namespace Wildgrove.Game
             }
 
             _foldButton.gameObject.SetActive(false);
-            var rite = Rite.CurrentRite(_loop.State, _loop.Data);
-            if (rite != null && rite.verses != null)
+            // Verses in play only — a verse whose trail this fold cannot reach
+            // is not something the run can sing, so counting it would tell the
+            // warden to walk somewhere that does not exist yet.
+            var versesInPlay = Rite.VersesInPlay(_loop.State, _loop.Data);
+            if (versesInPlay.Count > 0)
             {
-                foreach (var verse in rite.verses)
+                foreach (var verse in versesInPlay)
                 {
                     if (Rite.IsVerseComplete(_loop.State, _loop.Data, verse))
                     {
@@ -975,7 +978,7 @@ namespace Wildgrove.Game
                         // fold — the one number that says why the fold button
                         // isn't there. Which zone they wait in is the Trail
                         // page's job; the banner is a count, not a route.
-                        var unsung = rite.verses.Count - Rite.CompletedVerseCount(_loop.State, _loop.Data);
+                        var unsung = versesInPlay.Count - Rite.CompletedVerseCount(_loop.State, _loop.Data);
                         _trackerText.text = "<color=" + OchreInkHex + ">THE FOLD</color> · <b>" + unsung
                                             + (unsung == 1 ? " verse</b> must be sung" : " verses</b> must be sung")
                                             + " before migration  »";

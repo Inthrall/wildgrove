@@ -53,9 +53,9 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Buy <paramref name="upgrade"/> if it isn't owned, has something
         /// left to give, and the run clears every gate — skill level, tool
-        /// tier, and material cost — then recompute the node multipliers its
-        /// effects feed. Returns false (no change) otherwise, so the caller
-        /// can leave the button disabled.
+        /// tier, fold count, and material cost — then recompute the node
+        /// multipliers its effects feed. Returns false (no change) otherwise,
+        /// so the caller can leave the button disabled.
         /// </summary>
         public static bool TryPurchase(GameState state, GameDataAsset data, UpgradeData upgrade)
         {
@@ -63,6 +63,7 @@ namespace Wildgrove.Sim
                 || state.HasUpgrade(upgrade.id) || IsSpentRecruit(state, upgrade)
                 || !CanAfford(state, upgrade)
                 || !MeetsToolRequirement(state, data, upgrade)
+                || !MeetsFoldGate(state, data, upgrade)
                 || !MeetsSkillGate(state, data, upgrade))
             {
                 return false;
@@ -203,6 +204,64 @@ namespace Wildgrove.Sim
             }
 
             return missing;
+        }
+
+        /// <summary>
+        /// The fold this rung first appears on (design §8): the greatest
+        /// minMigration of the upgrade itself and of every zone its unlockZone
+        /// effects open. Zero — the default — means it is on the ladder from the
+        /// first run.
+        ///
+        /// Reading the zone's gate through the map rung is what lets a trail be
+        /// gated in ONE place. Authoring the fold on both the zone and its map
+        /// would be two numbers that must agree, and the day they disagree the
+        /// zone's verse and the rung that opens it would answer to different
+        /// folds — which is the hard-lock in <see cref="Rite.IsVerseInPlay"/>'s
+        /// remarks, arrived at by a typo.
+        /// </summary>
+        public static int FoldGate(GameDataAsset data, UpgradeData upgrade)
+        {
+            if (upgrade == null)
+            {
+                return 0;
+            }
+
+            var gate = upgrade.minMigration;
+            if (data == null)
+            {
+                return gate;
+            }
+
+            foreach (var effect in upgrade.effects)
+            {
+                if (effect.type == EffectType.UnlockZone && !string.IsNullOrEmpty(effect.zone)
+                    && data.ZonesById.TryGetValue(effect.zone, out var zone)
+                    && zone.minMigration > gate)
+                {
+                    gate = zone.minMigration;
+                }
+            }
+
+            return gate;
+        }
+
+        /// <summary>
+        /// The design §8 fold gate: the run must have that many folds behind it.
+        /// Ungated rungs (the default) always pass.
+        /// </summary>
+        public static bool MeetsFoldGate(GameState state, GameDataAsset data, UpgradeData upgrade)
+        {
+            return state != null && state.migrationCount >= FoldGate(data, upgrade);
+        }
+
+        /// <summary>
+        /// Folds still to walk before this rung appears, for the ladder's
+        /// "after two folds" line — zero when nothing is waiting.
+        /// </summary>
+        public static int FoldsUntilAvailable(GameState state, GameDataAsset data, UpgradeData upgrade)
+        {
+            var missing = FoldGate(data, upgrade) - (state != null ? state.migrationCount : 0);
+            return missing > 0 ? missing : 0;
         }
 
         /// <summary>

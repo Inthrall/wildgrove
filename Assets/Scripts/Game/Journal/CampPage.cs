@@ -920,7 +920,8 @@ namespace Wildgrove.Game
                                  + (gives.Length > 0 ? "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">" + gives + "</color></size>" : string.Empty)
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + UpgradeRequirement(captured) + "</color></size>";
                     var ok = !_loop.IsUpgradePurchased(captured) && _loop.CanAffordUpgrade(captured)
-                             && _loop.MeetsUpgradeSkillGate(captured) && string.IsNullOrEmpty(_loop.MissingToolTier(captured));
+                             && _loop.MeetsUpgradeSkillGate(captured) && string.IsNullOrEmpty(_loop.MissingToolTier(captured))
+                             && _loop.FoldsUntilUpgrade(captured) == 0;
                     buy.interactable = ok;
                     SetButtonTint(buy, ok);
                 });

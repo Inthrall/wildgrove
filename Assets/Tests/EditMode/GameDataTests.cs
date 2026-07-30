@@ -310,6 +310,116 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void RealData_FoldGates_OpenOneNewTrailPerFold()
+        {
+            // Design §8's fold gate as authored: the first three zones are the
+            // run-1 trail and one new zone arrives per fold, so the whole map is
+            // only walked from the fourth run on. Pins the shape (a
+            // non-decreasing gate in zone order, reachable one fold at a time),
+            // not the exact folds — those are first guesses and meant to be
+            // tuned.
+            var data = GameData.Parse(LoadSources());
+            var ladder = data.Zones
+                .Where(z => z.Scope != "v1.2")
+                .OrderBy(z => z.Order)
+                .ToList();
+
+            Assert.That(ladder.First().MinMigration, Is.EqualTo(0), "the run has to start somewhere");
+            for (var i = 1; i < ladder.Count; i++)
+            {
+                Assert.That(ladder[i].MinMigration, Is.GreaterThanOrEqualTo(ladder[i - 1].MinMigration),
+                    $"'{ladder[i].Id}' opens before the zone in front of it — the trail would arrive out of order");
+                Assert.That(ladder[i].MinMigration, Is.LessThanOrEqualTo(ladder[i - 1].MinMigration + 1),
+                    $"'{ladder[i].Id}' skips a fold — a run with nothing new in it is the thing this gate exists to prevent");
+            }
+
+            Assert.That(ladder.Count(z => z.MinMigration == 0), Is.EqualTo(3), "run 1 walks three zones");
+            Assert.That(data.Zones.Single(z => z.Id == "the-hollows").MinMigration, Is.EqualTo(3),
+                "the deepest trail waits for the fourth run");
+        }
+
+        [Test]
+        public void Validate_GatedStartingZone_IsReported()
+        {
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"id\": \"sunfield-meadow\",    \"order\": 1",
+                "\"id\": \"sunfield-meadow\",    \"minMigration\": 1,    \"order\": 1");
+            Assert.That(sources.ZonesJson, Does.Contain("\"minMigration\": 1,    \"order\": 1"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("Starting zone") && i.Contains("no trail")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_MapRungCarryingItsOwnFold_IsReported()
+        {
+            // A trail is gated in one place. Authoring the fold on the rung as
+            // well is two numbers that must agree forever, and the day they
+            // drift the Rite and the ladder answer to different folds.
+            var sources = LoadSources();
+            sources.UpgradesJson = sources.UpgradesJson.Replace(
+                "\"id\": \"map-mistfen\",",
+                "\"id\": \"map-mistfen\", \"minMigration\": 4,");
+            Assert.That(sources.UpgradesJson, Does.Contain("\"minMigration\": 4,"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("map-mistfen") && i.Contains("gate the zone instead")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RecruitRungEarlierThanItsSpecies_IsReported()
+        {
+            // Roster.Recruit doesn't consult the species' fold — the rung's own
+            // gate is the gate — so an earlier rung would silently beat the
+            // species' gate and make it mean nothing.
+            var sources = LoadSources();
+            sources.SpeciesJson = sources.SpeciesJson.Replace(
+                "\"id\": \"meadow-vole\",",
+                "\"id\": \"meadow-vole\", \"minMigration\": 3,");
+            Assert.That(sources.SpeciesJson, Does.Contain("\"minMigration\": 3,"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("meadow-vole") && i.Contains("gated to fold 3")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_RiteTemplateWithNothingOpenOnRunOne_IsReported()
+        {
+            // The Rite is the Migration gate, so a Rite with no verse in play
+            // can never be completed and the save can never fold again. Gating
+            // every zone of the template would do exactly that.
+            var sources = LoadSources();
+            // Gate the three zones that are open on run 1 (the others already
+            // carry a fold), targeting each by its map cost so no zone ends up
+            // with the key twice.
+            foreach (var cost in new[] { "0", "400", "6500" })
+            {
+                sources.ZonesJson = sources.ZonesJson.Replace(
+                    $"\"mapCostCoin\": {cost},",
+                    $"\"minMigration\": 5, \"mapCostCoin\": {cost},");
+            }
+
+            Assert.That(sources.ZonesJson.Split(new[] { "\"minMigration\": 5" }, System.StringSplitOptions.None).Length - 1,
+                Is.EqualTo(3), "the corruption must land on all three, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("no verse open on the first run")
+                                        || i.Contains("no verse whose zone is open")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_StartingZoneNotLowestOrder_IsReported()
         {
             var sources = LoadSources();

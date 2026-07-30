@@ -55,6 +55,9 @@ namespace Wildgrove.Data
         /// <summary>Tool tier the zone's trail map demands (design §3); null/empty = ungated.</summary>
         public string requiredTool;
 
+        /// <summary>Folds that must be behind the warden before this trail exists (design §8); 0 = from the first run.</summary>
+        public int minMigration;
+
         public string scope;
     }
 
@@ -72,6 +75,9 @@ namespace Wildgrove.Data
         /// <summary>Skill gate (design §9 money→XP): the skill that must reach <see cref="gateLevel"/> to buy this. Null/empty = no skill gate.</summary>
         public string gateSkill;
         public int gateLevel;
+
+        /// <summary>Folds that must be behind the warden before this rung is on the ladder (design §8); 0 = from the first run.</summary>
+        public int minMigration;
 
         public List<ItemAmount> materials = new List<ItemAmount>();
         public List<EffectData> effects = new List<EffectData>();
@@ -281,6 +287,9 @@ namespace Wildgrove.Data
 
         public List<string> suggestedNames = new List<string>();
         public TraitData trait;
+
+        /// <summary>Folds that must be behind the warden before this species answers a gift pile (design §8); 0 = from the first run.</summary>
+        public int minMigration;
 
         /// <summary>
         /// Plate inscription lines (design §7) — one earned per signature

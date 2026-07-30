@@ -55,6 +55,7 @@ namespace Wildgrove.Data
                 digSite = z.DigSite,
                 verseSite = z.VerseSite,
                 requiredTool = z.RequiredTool,
+                minMigration = z.MinMigration,
                 scope = z.Scope
             };
         }
@@ -70,6 +71,7 @@ namespace Wildgrove.Data
                 toolTier = u.ToolTier,
                 gateSkill = u.GateSkill,
                 gateLevel = u.GateLevel,
+                minMigration = u.MinMigration,
                 materials = MapItemAmounts(u.Materials),
                 effects = u.Effects.Select(MapEffect).ToList()
             };
@@ -154,6 +156,7 @@ namespace Wildgrove.Data
                 roleLean = s.RoleLean,
                 suggestedNames = new List<string>(s.SuggestedNames),
                 trait = MapTrait(s.Trait),
+                minMigration = s.MinMigration,
                 inscriptions = new List<string>(s.Inscriptions)
             };
         }

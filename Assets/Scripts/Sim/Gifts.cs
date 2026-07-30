@@ -84,14 +84,33 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Whether a species will answer a pile this run at all — design §8's
+        /// fold gate. Mostly moot, since a species whose resources live in a
+        /// gated zone has no node to leave a pile at; it earns its keep for one
+        /// held back inside a zone the run has already opened.
+        ///
+        /// Recruit RUNGS deliberately don't ask this: a rung that grants a
+        /// familiar is gated by its own minMigration, and the validator refuses
+        /// data where the two disagree — so the gate lives in one place per
+        /// species rather than being checked twice with different answers.
+        /// </summary>
+        public static bool SpeciesAnswers(GameState state, SpeciesData species)
+        {
+            return species != null && (state != null ? state.migrationCount : 0) >= species.minMigration;
+        }
+
+        /// <summary>
         /// True when a pile at this node could ever be answered: a specialist
-        /// exists and hasn't already joined. (Affordability and slot room are
-        /// CanLeavePile's business — this is the "worth showing the line" test.)
+        /// exists, this run is late enough for it, and it hasn't already joined.
+        /// (Affordability and slot room are CanLeavePile's business — this is
+        /// the "worth showing the line" test.)
         /// </summary>
         public static bool NodeCanCall(GameState state, GameDataAsset data, NodeState node)
         {
             var specialist = SpecialistFor(data, node);
-            return specialist != null && Roster.OfSpecies(state, specialist.id) == null;
+            return specialist != null
+                && SpeciesAnswers(state, specialist)
+                && Roster.OfSpecies(state, specialist.id) == null;
         }
 
         /// <summary>

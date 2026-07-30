@@ -50,6 +50,15 @@ namespace Wildgrove.Data
         public TraitDef Trait { get; set; }
 
         /// <summary>
+        /// Folds that must be behind the warden before this species will answer
+        /// a gift pile (design doc §8); 0 (the default) = from the first run.
+        /// Mostly redundant with its node's zone gate — a species whose
+        /// resources live in a gated zone is already unreachable — so this is
+        /// for holding one back inside a zone the run has already opened.
+        /// </summary>
+        public int MinMigration { get; set; }
+
+        /// <summary>
         /// Plate inscription lines (design §7) — one earned per signature
         /// milestone passed (economy.familiarXp.signatureMilestones), in the
         /// warden's hand. Unauthored lines simply never show.

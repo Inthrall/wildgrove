@@ -557,8 +557,14 @@ namespace Wildgrove.Game
 
         private void BuildVerseCards()
         {
-            var rite = Rite.CurrentRite(_loop.State, _loop.Data);
-            if (rite == null || rite.verses == null)
+            // Only the verses this run is walking (design §8's fold gate): a
+            // verse whose trail does not exist yet is not a sealed verse the
+            // warden could reach by working, so drawing it would set the whole
+            // page to a task that cannot be started. The numerals count the
+            // verses in play, so an early run reads I, II, III with no gaps —
+            // the deep verses are not yet part of this Rite to be missing from.
+            var verses = Rite.VersesInPlay(_loop.State, _loop.Data);
+            if (verses.Count == 0)
             {
                 return;
             }
@@ -571,9 +577,9 @@ namespace Wildgrove.Game
             // unwritten.
             List<RiteVerseData> sung = null;
             var sealedShown = false;
-            for (var i = 0; i < rite.verses.Count; i++)
+            for (var i = 0; i < verses.Count; i++)
             {
-                var verse = rite.verses[i];
+                var verse = verses[i];
                 // Verses are sung in order; their number is their place in the
                 // rite, shown as a numeral so a verse can be spoken of by name.
                 var number = i + 1;
@@ -588,7 +594,7 @@ namespace Wildgrove.Game
                     // on every page in the book.
                     if (!sealedShown)
                     {
-                        BuildSealedVerseCard(rite, verse, number);
+                        BuildSealedVerseCard(verses, verse, number);
                         sealedShown = true;
                     }
 
@@ -611,7 +617,7 @@ namespace Wildgrove.Game
 
             if (sung != null)
             {
-                BuildSungVersesCard(rite, sung);
+                BuildSungVersesCard(verses, sung);
             }
         }
 
@@ -619,14 +625,14 @@ namespace Wildgrove.Game
         /// The collapsed record of verses already answered — one line each, so a
         /// long-lived rite doesn't bury the open verses under finished ones.
         /// </summary>
-        private void BuildSungVersesCard(RiteData rite, List<RiteVerseData> verses)
+        private void BuildSungVersesCard(List<RiteVerseData> inPlay, List<RiteVerseData> verses)
         {
             var card = Card("SUNG VERSES");
             foreach (var verse in verses)
             {
                 var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
                 var site = zone != null && !string.IsNullOrEmpty(zone.verseSite) ? zone.verseSite : ZoneName(verse.zone);
-                MakeText(card, Roman(rite.verses.IndexOf(verse) + 1) + " · " + ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
+                MakeText(card, Roman(inPlay.IndexOf(verse) + 1) + " · " + ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
                                + ">" + site + ", sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
             }
         }
@@ -636,10 +642,10 @@ namespace Wildgrove.Game
         /// holds it (an earlier verse still unsung, its turn, or a trail that
         /// hasn't reached its site) and asks nothing.
         /// </summary>
-        private void BuildSealedVerseCard(RiteData rite, RiteVerseData verse, int number)
+        private void BuildSealedVerseCard(List<RiteVerseData> inPlay, RiteVerseData verse, int number)
         {
             string barring = null;
-            foreach (var earlier in rite.verses)
+            foreach (var earlier in inPlay)
             {
                 if (earlier.id == verse.id)
                 {

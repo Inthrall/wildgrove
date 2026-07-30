@@ -256,6 +256,17 @@ namespace Wildgrove.Game
         internal string UpgradeRequirement(UpgradeData upgrade)
         {
             var parts = new List<string>();
+
+            // The fold gate speaks first and alone: a trail that does not exist
+            // yet has no use for a shopping list, and reading "needs iron tools"
+            // beside it would send the warden off earning something that changes
+            // nothing this run.
+            var folds = _loop.FoldsUntilUpgrade(upgrade);
+            if (folds > 0)
+            {
+                return folds == 1 ? "not before the next fold" : "not for another " + folds + " folds";
+            }
+
             if (!_loop.MeetsUpgradeSkillGate(upgrade) && !string.IsNullOrEmpty(upgrade.gateSkill))
             {
                 parts.Add("needs " + upgrade.gateSkill + " " + upgrade.gateLevel);

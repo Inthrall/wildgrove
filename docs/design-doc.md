@@ -347,6 +347,15 @@ When the Rite completes and the region slows, the camp folds. Levels, builds, ri
 - **Region modifiers** (lush: +herbs · misted: +fish, −flowers · ashen: +observation speed · windswept: +trail) flavour each run and feed the Rite generator (**built 2026-07-28**, `regions.json`): the draw is deterministic from the migration count — nothing persists, a reload never rerolls a season — run 1 is always home ground (the authored tutorial Rite assumes it), the fold forecast names the region ahead, and the vignette speaks the arriving season's one-line sign.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
 
+### The fold gate — content that arrives over runs (BUILT 2026-07-30)
+
+The pacing knobs (`demandGrowth`, the breadth ramp) only change *how fast* the same six zones go by; they cannot stop a run from reaching the end of the map. The fold gate is the lever that can. A zone may carry a **`minMigration`** — folds that must be behind the warden before that trail exists at all — so the far country is something the warden earns runs to see rather than a wall to grind through on the first.
+
+- **Authored on the zone, once.** `minMigration` gates the zone's trail map *and* holds the zone's verse out of the Rite until then; the map rung inherits the zone's fold rather than repeating it, and the validator refuses a rung that carries its own. `upgrades.json` and `species.json` accept the same field for holding one rung or one specialist back inside a zone the run has already opened.
+- **An early run is a shorter Rite, not a slower one.** Verses whose trail does not exist stand aside, so run 1 sings three verses over three zones and the Rite lengthens as the warden grows. **This is load-bearing:** the Rite is the only Migration gate, and a verse for an unreachable zone would seal Migration permanently — the fold that would have opened that zone included. The deep verses rejoin in their authored place on the fold their zone opens.
+- **First guesses:** zones 1–3 open the first run, then one new trail per fold — Silverrun on run 2, Mistfen on run 3, the Hollows on run 4. Numbers are model-derived, not playtested.
+- **Known consequence:** fewer verses early means fewer gift piles and slower kith-slot milestones (§4's verse milestones at 2/5/10), so the second slot now lands in run 2 rather than run 1. Watch it in a real run-1-to-run-5 sitting before tuning either side.
+
 ### When to migrate — DECIDED (2026-07-18): the fold forecast is the decision
 
 Once the Rite completes, the pinned tracker becomes the **fold forecast** — **every permanent gain in one panel, nothing hidden**:

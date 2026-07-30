@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: fce6b2bd6a83b03f5f933b3adc15e039677b80bcd84cbdd7c065d5169b20ff3c
+  sourceHash: ce516b454c6ab86595a55c5b8816e3cf873fcaa424b0b09aa4623421398557cf
   economy:
     costGrowth:
       building: 1.25
@@ -199,6 +199,7 @@ MonoBehaviour:
     digSite: 0
     verseSite: the fire circle
     requiredTool: 
+    minMigration: 0
     scope: mvp
   - id: bramble-hedgerows
     order: 2
@@ -214,6 +215,7 @@ MonoBehaviour:
     digSite: 0
     verseSite: the hollow oak
     requiredTool: flint
+    minMigration: 0
     scope: mvp
   - id: old-growth-wood
     order: 3
@@ -230,6 +232,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: the oldest root
     requiredTool: copper
+    minMigration: 0
     scope: mvp
   - id: silverrun-river
     order: 4
@@ -245,6 +248,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: the river bend
     requiredTool: bronze
+    minMigration: 1
     scope: mvp
   - id: mistfen-marsh
     order: 5
@@ -259,6 +263,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: the lantern pool
     requiredTool: iron
+    minMigration: 2
     scope: v1.1
   - id: the-hollows
     order: 6
@@ -273,6 +278,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: the echo gallery
     requiredTool: steel
+    minMigration: 3
     scope: v1.1
   - id: highland-crags
     order: 7
@@ -287,6 +293,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: steel
+    minMigration: 0
     scope: v1.2
   - id: cloudreach-peaks
     order: 8
@@ -300,6 +307,7 @@ MonoBehaviour:
     digSite: 1
     verseSite: 
     requiredTool: steel
+    minMigration: 0
     scope: v1.2
   upgrades:
   - order: 1
@@ -309,6 +317,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: berries
       amount: 100
@@ -327,6 +336,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: berries
       amount: 250
@@ -345,6 +355,7 @@ MonoBehaviour:
     toolTier: flint
     gateSkill: foraging
     gateLevel: 2
+    minMigration: 0
     materials: []
     effects:
     - type: 0
@@ -361,6 +372,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: foraging
     gateLevel: 4
+    minMigration: 0
     materials: []
     effects:
     - type: 2
@@ -377,6 +389,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: fibres
       amount: 80
@@ -397,6 +410,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials: []
     effects:
     - type: 14
@@ -420,6 +434,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: foraging
     gateLevel: 8
+    minMigration: 0
     materials: []
     effects:
     - type: 0
@@ -436,6 +451,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: fibres
       amount: 150
@@ -456,6 +472,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: fibres
       amount: 100
@@ -497,6 +514,7 @@ MonoBehaviour:
     toolTier: copper
     gateSkill: foraging
     gateLevel: 12
+    minMigration: 0
     materials:
     - id: copper-ingot
       amount: 5
@@ -515,6 +533,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: fibres
       amount: 150
@@ -535,6 +554,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: firecraft
     gateLevel: 10
+    minMigration: 0
     materials: []
     effects:
     - type: 3
@@ -551,6 +571,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials: []
     effects:
     - type: 14
@@ -588,6 +609,7 @@ MonoBehaviour:
     toolTier: bronze
     gateSkill: logging
     gateLevel: 5
+    minMigration: 0
     materials:
     - id: bronze-ingot
       amount: 5
@@ -606,6 +628,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: bushcraft
     gateLevel: 8
+    minMigration: 0
     materials: []
     effects:
     - type: 2
@@ -622,6 +645,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: timber
       amount: 60
@@ -656,6 +680,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: mining
     gateLevel: 10
+    minMigration: 0
     materials: []
     effects:
     - type: 1
@@ -672,6 +697,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: firecraft
     gateLevel: 18
+    minMigration: 0
     materials: []
     effects:
     - type: 16
@@ -688,6 +714,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: planks
       amount: 15
@@ -708,6 +735,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: forgecraft
     gateLevel: 15
+    minMigration: 0
     materials: []
     effects:
     - type: 4
@@ -731,6 +759,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: bushcraft
     gateLevel: 14
+    minMigration: 0
     materials: []
     effects:
     - type: 2
@@ -747,6 +776,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: planks
       amount: 50
@@ -767,6 +797,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials: []
     effects:
     - type: 14
@@ -797,6 +828,7 @@ MonoBehaviour:
     toolTier: iron
     gateSkill: forgecraft
     gateLevel: 20
+    minMigration: 0
     materials:
     - id: iron-ingot
       amount: 8
@@ -829,6 +861,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: entomology
     gateLevel: 8
+    minMigration: 0
     materials: []
     effects:
     - type: 5
@@ -845,6 +878,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: firecraft
     gateLevel: 28
+    minMigration: 0
     materials: []
     effects:
     - type: 16
@@ -868,6 +902,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: bushcraft
     gateLevel: 30
+    minMigration: 0
     materials: []
     effects:
     - type: 16
@@ -884,6 +919,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: planks
       amount: 60
@@ -904,6 +940,7 @@ MonoBehaviour:
     toolTier: steel
     gateSkill: forgecraft
     gateLevel: 30
+    minMigration: 0
     materials:
     - id: iron-ingot
       amount: 10
@@ -924,6 +961,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: bushcraft
     gateLevel: 35
+    minMigration: 0
     materials: []
     effects:
     - type: 2
@@ -940,6 +978,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: planks
       amount: 80
@@ -960,6 +999,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: smoked-trout
       amount: 20
@@ -996,6 +1036,7 @@ MonoBehaviour:
     toolTier: 
     gateSkill: 
     gateLevel: 0
+    minMigration: 0
     materials:
     - id: glow-moss
       amount: 150
@@ -1039,6 +1080,7 @@ MonoBehaviour:
     toolTier: deepsteel
     gateSkill: forgecraft
     gateLevel: 40
+    minMigration: 0
     materials:
     - id: deep-ingot
       amount: 10
@@ -1848,6 +1890,7 @@ MonoBehaviour:
       resources:
       - berries
       - wildflowers
+    minMigration: 0
     inscriptions:
     - Knows my step now. Doesn't look up.
     - Found the last ripe cane in the rain, and left me half.
@@ -1869,6 +1912,7 @@ MonoBehaviour:
       resources:
       - nuts
       - mushrooms
+    minMigration: 0
     inscriptions:
     - Buries more than he digs up. The wood is in his debt.
     - Showed me a cache I never taught him. I think it was a gift.
@@ -1890,6 +1934,7 @@ MonoBehaviour:
       resources:
       - fibres
       - reeds
+    minMigration: 0
     inscriptions:
     - Pulls the year's best grasses first, and sings over the work.
     - Wove a strand of my rope into her nest. I take that as a wage.
@@ -1911,6 +1956,7 @@ MonoBehaviour:
       resources:
       - herbs
       - rare-herbs
+    minMigration: 0
     inscriptions:
     - Tastes the hedge for what's ripe. Leaves my mistakes on the stem.
     - Steered me round the thorn patch by sitting still in front of it.
@@ -1932,6 +1978,7 @@ MonoBehaviour:
       resources:
       - copper-scree
       - tin-seam
+    minMigration: 0
     inscriptions:
     - Follows the seam like a burrow. Comes up dusted green.
     - Taps the stone twice where it's worth my while. Twice, always.
@@ -1953,6 +2000,7 @@ MonoBehaviour:
       resources:
       - clay
       - iron-gravel
+    minMigration: 0
     inscriptions:
     - Roots the wet ground, and huffs when it's good.
     - Sleeps in the clay pit as if the ground had been warmed for him.
@@ -1974,6 +2022,7 @@ MonoBehaviour:
       resources:
       - timber
       - fish
+    minMigration: 0
     inscriptions:
     - Works the wood's edge and the shallows, and judges my knots.
     - Left a trout at my feet at dusk. No comment offered.
@@ -1995,6 +2044,7 @@ MonoBehaviour:
       resources:
       - peat
       - glow-moss
+    minMigration: 0
     inscriptions:
     - Works the wet margins as if the water owed him.
     - Brought the moss up glowing and dry. I no longer ask how.
@@ -2016,6 +2066,7 @@ MonoBehaviour:
       resources:
       - deep-ores
       - crystals
+    minMigration: 0
     inscriptions:
     - Hangs over the lamp while I work. I have decided this is company.
     - Found the seam by singing at it. The stone sang back.
@@ -2037,6 +2088,7 @@ MonoBehaviour:
       resources:
       - ashglass
       - glacier-ice
+    minMigration: 0
     inscriptions:
     - White as the glass he digs. The ash does not stick to him.
     - Circled the pit all night. No other track comes near it.
@@ -2059,6 +2111,7 @@ MonoBehaviour:
       kind: trailThroughputBonus
       value: 0.25
       resources: []
+    minMigration: 0
     inscriptions:
     - Carries more than looks possible, and counts every piece.
     - Took the long way round the storm and set down nothing.
@@ -2079,6 +2132,7 @@ MonoBehaviour:
       kind: trailCarryFactor
       value: 0.5
       resources: []
+    minMigration: 0
     inscriptions:
     - Came down off the fell on her own account and has stayed on it.
     - Will take the panniers. Will not take the halter twice.

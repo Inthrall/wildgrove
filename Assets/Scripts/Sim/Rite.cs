@@ -73,6 +73,64 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Whether this verse belongs to THIS run at all (design §8's fold
+        /// gate): its zone's gate is met, or the zone is already open.
+        ///
+        /// This is load-bearing, not a nicety. A Rite completes only when every
+        /// one of its verses is sung, and a verse can only be sung once its zone
+        /// is open — so a verse for a zone this fold cannot reach would seal the
+        /// Rite, and Migration with it, permanently. The whole fold-gating idea
+        /// therefore rests on the deep verses standing aside until their trail
+        /// exists. They rejoin the Rite on the fold their zone opens, which is
+        /// the point: the run gets longer as the warden gets stronger.
+        ///
+        /// The "or already open" half covers the save whose data was retuned
+        /// underneath it. Opening a zone is never taken back (see
+        /// <see cref="Upgrades.UnlockedZoneIds"/>), so a run holding a map for a
+        /// now-gated trail keeps its verse rather than being handed a zone it
+        /// can work and a verse that does not count.
+        /// </summary>
+        public static bool IsVerseInPlay(GameState state, GameDataAsset data, RiteVerseData verse)
+        {
+            if (verse == null)
+            {
+                return false;
+            }
+
+            if (data != null && data.ZonesById.TryGetValue(verse.zone, out var zone)
+                && zone.minMigration > (state != null ? state.migrationCount : 0))
+            {
+                return Upgrades.UnlockedZoneIds(state, data).Contains(verse.zone);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// The current Rite's verses that belong to this run, in Rite order —
+        /// what the journal numbers and counts. Empty when there is no rite.
+        /// </summary>
+        public static List<RiteVerseData> VersesInPlay(GameState state, GameDataAsset data)
+        {
+            var verses = new List<RiteVerseData>();
+            var rite = CurrentRite(state, data);
+            if (rite?.verses == null)
+            {
+                return verses;
+            }
+
+            foreach (var verse in rite.verses)
+            {
+                if (IsVerseInPlay(state, data, verse))
+                {
+                    verses.Add(verse);
+                }
+            }
+
+            return verses;
+        }
+
+        /// <summary>
         /// Sealed = an earlier verse of the current rite is still unsung, so
         /// this one hasn't had its turn — regardless of whether its site has
         /// been reached. Verses not in the current rite are never sealed.
@@ -90,6 +148,13 @@ namespace Wildgrove.Sim
                 if (ReferenceEquals(earlier, verse) || earlier.id == verse.id)
                 {
                     return false;
+                }
+
+                // A verse this fold cannot reach never had its turn, so it
+                // cannot be holding up the ones behind it.
+                if (!IsVerseInPlay(state, data, earlier))
+                {
+                    continue;
                 }
 
                 if (!IsVerseComplete(state, data, earlier))
@@ -180,7 +245,7 @@ namespace Wildgrove.Sim
             var complete = 0;
             foreach (var verse in rite.verses)
             {
-                if (IsVerseComplete(state, data, verse))
+                if (IsVerseInPlay(state, data, verse) && IsVerseComplete(state, data, verse))
                 {
                     complete++;
                 }
@@ -190,9 +255,12 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The Rite completes — Migration eligibility — when every one of its
-        /// verses is complete (the all-revealed-verses rule; the deepest
-        /// verses force the trail to be walked to its end).
+        /// The Rite completes — Migration eligibility — when every verse in play
+        /// this run is complete (the all-revealed-verses rule; the deepest
+        /// verses force the trail to be walked to its end). Verses whose trail
+        /// this fold cannot reach stand aside — see
+        /// <see cref="IsVerseInPlay"/>. A rite with nothing in play never
+        /// completes, which is why the validator refuses one.
         /// </summary>
         public static bool IsRiteComplete(GameState state, GameDataAsset data)
         {
@@ -202,15 +270,22 @@ namespace Wildgrove.Sim
                 return false;
             }
 
+            var inPlay = 0;
             foreach (var verse in rite.verses)
             {
+                if (!IsVerseInPlay(state, data, verse))
+                {
+                    continue;
+                }
+
+                inPlay++;
                 if (!IsVerseComplete(state, data, verse))
                 {
                     return false;
                 }
             }
 
-            return true;
+            return inPlay > 0;
         }
 
         /// <summary>

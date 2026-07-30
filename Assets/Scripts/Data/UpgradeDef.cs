@@ -16,6 +16,14 @@ namespace Wildgrove.Data
         public string GateSkill { get; set; }
         public int GateLevel { get; set; }
 
+        /// <summary>
+        /// Folds that must be behind the warden before this rung is on the
+        /// ladder (design doc §8); 0 (the default) = from the first run. A map
+        /// rung also inherits its zone's gate, so a trail is gated in one place
+        /// (the zone) rather than two.
+        /// </summary>
+        public int MinMigration { get; set; }
+
         public Dictionary<string, int> Materials { get; set; } = new Dictionary<string, int>();
         public List<EffectDef> Effects { get; set; } = new List<EffectDef>();
     }
