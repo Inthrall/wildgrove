@@ -9,7 +9,8 @@ namespace Wildgrove.Sim
     /// Drinking one spends a single unit of common camp stock and grants its
     /// effects for durationSec of SIM time (live or offline catch-up alike —
     /// sub-stepping ticks the clock down either way); drinking again while
-    /// active refreshes the duration, never stacks. Active effects join
+    /// active adds the full duration on top of what's left — the clock
+    /// stacks, the effect never does. Active effects join
     /// <see cref="Upgrades.ActiveEffects"/>, so yields, site speed, and craft
     /// speed all flow through the existing modifier plumbing. No-ops when no
     /// tinctures are authored (fixtures).
@@ -42,15 +43,15 @@ namespace Wildgrove.Sim
             return active != null && active.remainingSeconds > 0.0 ? active.remainingSeconds : 0.0;
         }
 
-        /// <summary>A bottle in stock is all drinking asks — refreshing an active buff is allowed (and the point).</summary>
+        /// <summary>A bottle in stock is all drinking asks — extending an active buff is allowed (and the point).</summary>
         public static bool CanDrink(GameState state, TinctureData tincture)
         {
             return state != null && tincture != null && state.GetResource(tincture.id) >= BigDouble.One;
         }
 
         /// <summary>
-        /// Drink one: spend a unit of stock and set (or refresh) the buff to
-        /// its full duration, then rebuild the modifiers its effects feed.
+        /// Drink one: spend a unit of stock and add the full duration to the
+        /// buff's clock, then rebuild the modifiers its effects feed.
         /// False (no change) when the shelf is bare.
         /// </summary>
         public static bool TryDrink(GameState state, GameDataAsset data, TinctureData tincture)
@@ -73,8 +74,8 @@ namespace Wildgrove.Sim
             }
             else
             {
-                // Refresh, never stack — a second bottle buys time, not depth.
-                active.remainingSeconds = tincture.durationSec;
+                // The clock stacks, the effect doesn't — a second bottle banks time, not depth.
+                active.remainingSeconds += tincture.durationSec;
             }
 
             Upgrades.RecomputeYieldMultipliers(state, data);

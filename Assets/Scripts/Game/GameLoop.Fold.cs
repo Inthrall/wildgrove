@@ -251,7 +251,7 @@ namespace Wildgrove.Game
             return tincture == null ? 0.0 : Tinctures.RemainingSeconds(State, tincture.id);
         }
 
-        /// <summary>Drink one bottle: spends a unit of stock; a second bottle refreshes the clock, never stacks.</summary>
+        /// <summary>Drink one bottle: spends a unit of stock; a second bottle adds its duration on top — the clock stacks, the effect never does.</summary>
         public bool DrinkTincture(TinctureData tincture)
         {
             if (!Tinctures.TryDrink(State, Data, tincture))

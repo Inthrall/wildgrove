@@ -10,7 +10,8 @@ namespace Wildgrove.Sim.Tests
     /// <summary>
     /// Pins the tinctures (design §5, Apothecary): drinking spends one bottle
     /// of camp stock and grants the effects for durationSec of sim time; a
-    /// second bottle refreshes the clock, never stacks; expiry drops the buff
+    /// second bottle adds its duration on top (the clock stacks, the effect
+    /// never does); expiry drops the buff
     /// and rebuilds the modifiers the same step. Unauthored tinctures leave
     /// everything untouched, and the buff survives a save round trip.
     /// </summary>
@@ -95,7 +96,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryDrink_WhileActive_RefreshesNeverStacks()
+        public void TryDrink_WhileActive_StacksDurationNeverEffect()
         {
             var state = StateWithNode();
             state.AddResource("wardens-tonic", new BigDouble(2));
@@ -105,8 +106,8 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Tinctures.TryDrink(state, _data, Tonic), Is.True);
 
             Assert.That(state.activeTinctures, Has.Count.EqualTo(1), "one buff, not two");
-            Assert.That(Tinctures.RemainingSeconds(state, "wardens-tonic"), Is.EqualTo(10.0).Within(Tolerance),
-                "the second bottle buys time back, not depth");
+            Assert.That(Tinctures.RemainingSeconds(state, "wardens-tonic"), Is.EqualTo(13.0).Within(Tolerance),
+                "the second bottle banks its full duration on top of what's left");
             Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(1.25).Within(Tolerance), "the bonus never doubles");
         }
 

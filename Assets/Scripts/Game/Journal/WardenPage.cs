@@ -44,7 +44,7 @@ namespace Wildgrove.Game
             }
 
             var card = Card("TINCTURES · brewed at the fire");
-            MakeText(card, "one at a time each: a second bottle buys time, not depth",
+            MakeText(card, "one at a time each: a second bottle adds time, not depth",
                 15, TextAnchor.MiddleCenter, Ink2);
 
             foreach (var tincture in _loop.Data.tinctures)
