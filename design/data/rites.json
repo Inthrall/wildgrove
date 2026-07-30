@@ -1,6 +1,7 @@
 {
   "$comment": "The Rite (design doc §7): each region's staged offering ritual and the Migration gate. Run 1 is authored here; runs 2+ come from the generator (Phase 4) using this as the template. A verse completes when chooseCount of its five slots are filled; slots are weighted so the spotlight crafts are the cheapest path. Resource offerings credit Renown at trade value; deed/specimen/fragment slots carry a fixed renownGrant, and so do resource slots offering unsellable MATERIALS (ingots, cordage — trade value is zero, the validator enforces the grant; values approximate amount x the material's notional input-derived worth). Verse lines live in dialogue.json (verses), verse sites in zones.json (verseSite). Quantities are first-pass — tune in Phase 3 against the §8 pacing targets.",
   "chooseCount": 3,
+  "$zoneRampNote": "Goods amounts carry a GEOMETRIC zone ramp: x2.5 per zone order, anchored at zone 2 (zone 3 x2.5, 4 x6, 5 x15, 6 x40, 7 x100, rounded clean). The within-run power curve grows ~x2.5 per zone step — each later zone debuts against more stacked tool mults, more banked Verdure and more kith slots — so a flat ask collapses to seconds by the Hollows; tracking it holds every debut verse at roughly 20-40 min of its own node's production, and demandGrowth^m stacks on top as the real fold-over-fold stretch. Zones 1-2 are pinned by the hour-one pacing targets (verse 1 ~30 min) — do not ramp them. Material-slot renownGrants scale WITH their amounts (grant ~ amount x notional worth, the no-tax promise); deed/specimen/sketch slots stay authored — they price in taps and luck, and the generator scales only their grants. Zones 4-7 never play from this table (fold-gated past run 1) — their rows exist as the generator's value anchors. Ramp is model-derived 2026-07-31, NOT playtested — the run-3-to-run-6 sitting judges it.",
   "generator": {
     "$comment": "Run-2+ generator tuning (design §8: verseDemand(m) = baseQty · d^m, spotlight slots cheapest). demandGrowth is d; spotlight slots price at value × spotlightDiscount, off-spotlight at value × offSpotlightPremium. d is tuned against the fold's power ratio, not picked freely. A fold multiplies production by (1 + 0.02·Verdure) and Verdure is a square root of lifetime Renown, so that ratio starts near 3x across the first folds and settles at 1.10-1.15x from fold 7 on. d must sit just above the settled ratio: below it the gate stops gating, far above it the gate walls, because exponential demand always beats a power curve that is asymptotically linear. At the old 2.5 the twelfth fold asked ~1000x the wall-clock of the first; at 1.45 it asks ~2.5x, and folds 2-8 still run faster than the first (which is the prestige promise). spotlightDiscount / offSpotlightPremium are still first guesses.",
     "demandGrowth": 1.45,
@@ -44,10 +45,10 @@
           "zone": "old-growth-wood",
           "spotlight": ["bushcraft", "forgecraft"],
           "slots": [
-            { "type": "resource", "resource": "planks",          "amount": 20 },
-            { "type": "resource", "resource": "cordage",         "amount": 12, "renownGrant": 200 },
-            { "type": "resource", "resource": "mushroom-skewer", "amount": 12 },
-            { "type": "resource", "resource": "bronze-ingot",    "amount": 4,  "renownGrant": 550 },
+            { "type": "resource", "resource": "planks",          "amount": 50 },
+            { "type": "resource", "resource": "cordage",         "amount": 30, "renownGrant": 500 },
+            { "type": "resource", "resource": "mushroom-skewer", "amount": 30 },
+            { "type": "resource", "resource": "bronze-ingot",    "amount": 10, "renownGrant": 1375 },
             { "type": "sketch", "count": 1, "renownGrant": 500 }
           ]
         },
@@ -56,10 +57,10 @@
           "zone": "silverrun-river",
           "spotlight": ["fishing"],
           "slots": [
-            { "type": "resource", "resource": "fish",         "amount": 500 },
-            { "type": "resource", "resource": "smoked-trout", "amount": 20 },
-            { "type": "resource", "resource": "clay",         "amount": 300 },
-            { "type": "resource", "resource": "iron-ingot",   "amount": 6,   "renownGrant": 3000 },
+            { "type": "resource", "resource": "fish",         "amount": 3000 },
+            { "type": "resource", "resource": "smoked-trout", "amount": 120 },
+            { "type": "resource", "resource": "clay",         "amount": 1800 },
+            { "type": "resource", "resource": "iron-ingot",   "amount": 36,   "renownGrant": 18000 },
             { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 1000 }
           ]
         },
@@ -68,10 +69,10 @@
           "zone": "mistfen-marsh",
           "spotlight": ["apothecary"],
           "slots": [
-            { "type": "resource", "resource": "peat",          "amount": 600 },
-            { "type": "resource", "resource": "rare-herbs",    "amount": 250 },
-            { "type": "resource", "resource": "glow-moss",     "amount": 400 },
-            { "type": "resource", "resource": "wardens-tonic", "amount": 6,  "renownGrant": 6000 },
+            { "type": "resource", "resource": "peat",          "amount": 9000 },
+            { "type": "resource", "resource": "rare-herbs",    "amount": 3750 },
+            { "type": "resource", "resource": "glow-moss",     "amount": 6000 },
+            { "type": "resource", "resource": "wardens-tonic", "amount": 90,  "renownGrant": 90000 },
             { "type": "specimen", "quality": "pristine",       "count": 1,   "renownGrant": 2500 }
           ]
         },
@@ -80,10 +81,10 @@
           "zone": "the-hollows",
           "spotlight": ["delving", "forgecraft"],
           "slots": [
-            { "type": "resource", "resource": "deep-ores",  "amount": 400 },
-            { "type": "resource", "resource": "crystals",   "amount": 150 },
-            { "type": "resource", "resource": "ashglass",   "amount": 250 },
-            { "type": "resource", "resource": "deep-ingot", "amount": 6,  "renownGrant": 10000 },
+            { "type": "resource", "resource": "deep-ores",  "amount": 16000 },
+            { "type": "resource", "resource": "crystals",   "amount": 6000 },
+            { "type": "resource", "resource": "ashglass",   "amount": 10000 },
+            { "type": "resource", "resource": "deep-ingot", "amount": 240,  "renownGrant": 400000 },
             { "type": "specimen", "quality": "pristine",    "count": 1,   "renownGrant": 4000 }
           ]
         },
@@ -92,10 +93,10 @@
           "zone": "highland-crags",
           "spotlight": ["husbandry", "bushcraft"],
           "slots": [
-            { "type": "resource", "resource": "eggs",         "amount": 350 },
-            { "type": "resource", "resource": "wool",         "amount": 250 },
-            { "type": "resource", "resource": "lichen",       "amount": 300 },
-            { "type": "resource", "resource": "felted-cloak", "amount": 6 },
+            { "type": "resource", "resource": "eggs",         "amount": 35000 },
+            { "type": "resource", "resource": "wool",         "amount": 25000 },
+            { "type": "resource", "resource": "lichen",       "amount": 30000 },
+            { "type": "resource", "resource": "felted-cloak", "amount": 600 },
             { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 7000 }
           ]
         }

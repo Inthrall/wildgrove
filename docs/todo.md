@@ -714,9 +714,36 @@ Interpretations shipped (tune/confirm):
 - The paid-skip budget, breadth ramp and demandGrowth all now stretch over a
   seven-verse Rite from fold 4 — the run-3-to-run-6 sitting covers it.
 
+**Zone-demand geometric ramp (2026-07-31)** — the verse goods asks were flat
+across zones (300–600 units) while within-run power grows ~×2.5 per zone step
+(stacked tool rungs, banked Verdure, extra kith slots), so a debut verse
+collapsed to seconds by the Hollows (~2 min) and the Crags (~30 s). rites.json
+goods amounts now carry ×2.5 per zone order anchored at zone 2 — z3 ×2.5,
+z4 ×6, z5 ×15, z6 ×40, z7 ×100, rounded clean; the file's $zoneRampNote
+records the rule. Material-slot grants scale WITH their amounts (the no-tax
+promise); deed/specimen/sketch slots stay authored; zones 1–2 stay pinned to
+the hour-one pacing targets. Zones 4–7 rows never play directly (fold-gated) —
+they are the generator's value anchors, so runs 2+ inherit the ramp and
+demandGrowth^m stacks on top. 778/778 EditMode green. Model estimate: a debut
+verse holds at ~20–60 min of its own node's production; FTP walks the full
+map (fold-4 Rite) in ~9–12 days, a committed payer ~4–6 — the 24 h paid-skip
+budget is the deliberate ×2 floor.
+
+Missing parts (zone-ramp pass):
+- **Not playtested** — every multiplier is model-derived; the run-3-to-run-6
+  sitting judges it. If it plays too slow, soften the ratio to ×2
+  (2/4/8/16/32, ~a week FTP); ×3 risks walling the crags verse behind the
+  deepsteel door it already waits on.
+- **Warden's Sigil is design-doc-only** (§IAP: permanent ×2 yields + craft
+  speed, ~US$7) — it is NOT in the built store catalogue. Shipping it would
+  halve the paid floor to ~2–3 days for the whole map. Decide deliberately
+  whether it ships and at what effect size; don't let it drift in as-designed
+  without re-running the pacing math.
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
-   demandGrowth, Almanac costs, this pass) is model-derived and waiting on it.
+   demandGrowth, Almanac costs, the crags pass, the zone-demand ramp) is
+   model-derived and waiting on it.
 2. **Cloudreach Peaks (zone 8) + the final waystones** — the endgame proper,
    last on the trail: the deep-past chain the amber notes point at (§7), the
    Aurora Bloom, sky-blossoms/glacier-ice (already specialist-covered by pika
