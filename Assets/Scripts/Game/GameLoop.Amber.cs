@@ -54,7 +54,7 @@ namespace Wildgrove.Game
         public bool RewardedReady(RewardedPlacement placement) => Store.RemoveAdsOwned || Ads.IsRewardedReady(placement);
 
         /// <summary>The tail a reward button's label carries — dropped once Remove Ads is owned, since no ad plays.</summary>
-        public string RewardedActionSuffix => Store.RemoveAdsOwned ? string.Empty : " — watch a short ad";
+        public string RewardedActionSuffix => Store.RemoveAdsOwned ? string.Empty : " (watch a short ad)";
 
         /// <summary>
         /// Take a rewarded reward for <paramref name="placement"/>. Normally shows

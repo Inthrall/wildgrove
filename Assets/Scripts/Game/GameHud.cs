@@ -220,13 +220,13 @@ namespace Wildgrove.Game
             if (!_hintPostDone)
             {
                 return _hintCatchDone
-                    ? "tap a plate to post someone — the land only gives to the posted."
+                    ? "tap a plate to post someone · the land only gives to the posted."
                     : "tap a plate to post someone · catch the windfalls drifting up the strip" + catchTail;
             }
 
             return _hintCatchDone
                 ? null
-                : "catch the windfalls drifting up the strip — each pays a burst of goods" + catchTail;
+                : "catch the windfalls drifting up the strip · each pays a burst of goods" + catchTail;
         }
 
         private void Update()
@@ -987,7 +987,7 @@ namespace Wildgrove.Game
                     var need = Rite.RequiredSlots(_loop.State, _loop.Data, verse);
                     // The trailing guillemet marks the banner as a link — it
                     // jumps to the verse card, far down the Trail page.
-                    _trackerText.text = "Verse of " + _labels.ZoneName(verse.zone) + " — <b>"
+                    _trackerText.text = "Verse of " + _labels.ZoneName(verse.zone) + ": <b>"
                                         + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
                     _trackerPanel.SetActive(true);
                     return;

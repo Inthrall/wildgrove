@@ -35,7 +35,7 @@ namespace Wildgrove.Game
 
         /// <summary>The public-domain remainder, acknowledged without obligation.</summary>
         public const string PublicDomainNote =
-            "Every other plate is public domain or CC0 — chiefly Ernest Protheroe's "
+            "Every other plate is public domain or CC0, chiefly Ernest Protheroe's "
             + "<i>The handy natural history</i> (1910), Kirby &amp; Schubert's <i>Natural history "
             + "of the animal kingdom</i> (1889), J. G. Kurr's mineral atlas (1859), Sturm's and "
             + "Köhler's botanical plates, Audubon, and the Pearson Scott Foresman drawings.";
@@ -85,7 +85,7 @@ namespace Wildgrove.Game
             },
         };
 
-        /// <summary>One credit line: "Title — Author, CC BY 2.0 (link), cropped and trimmed".</summary>
+        /// <summary>One credit line: "Title by Author, CC BY 2.0 (link), cropped and trimmed".</summary>
         public static string Line(Work work)
         {
             if (work == null)
@@ -93,7 +93,7 @@ namespace Wildgrove.Game
                 return string.Empty;
             }
 
-            return work.title + " — " + work.author + ", " + work.licence
+            return work.title + " by " + work.author + ", " + work.licence
                    + " (" + work.licenceUrl + "), " + work.change + ".";
         }
     }
