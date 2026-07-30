@@ -14,9 +14,8 @@ namespace Wildgrove.Game
     /// is purely additive and a missing plate never breaks a screen.
     ///
     /// The id → file maps live here (not in filenames) because a few plates
-    /// serve more than one id — one ingot plate covers copper/bronze/iron, the
-    /// lichen plate stands in for glow-moss — and the file names stay stable
-    /// for the CREDITS ledger.
+    /// serve more than one id — one ingot plate covers copper, bronze, iron and
+    /// deepsteel — and the file names stay stable for the CREDITS ledger.
     /// </summary>
     public static class ArtLibrary
     {
@@ -41,10 +40,10 @@ namespace Wildgrove.Game
             { "iron-gravel", Plates + "Resources/res-iron-ore" },
             { "peat", Plates + "Resources/res-peat" },
             { "rare-herbs", Plates + "Resources/res-rare-herbs" },
-            { "glow-moss", Plates + "Resources/res-lichen" },
+            { "glow-moss", Plates + "Resources/res-glow-moss" },
             { "deep-ores", Plates + "Resources/res-deep-ores" },
             { "crystals", Plates + "Resources/res-crystals" },
-            { "ashglass", Plates + "Resources/res-amber" },
+            { "ashglass", Plates + "Resources/res-ashglass" },
             { "eggs", Plates + "Resources/res-eggs" },
             { "wool", Plates + "Resources/res-wool" },
             { "lichen", Plates + "Resources/res-lichen" },
@@ -66,7 +65,14 @@ namespace Wildgrove.Game
             { "copper-ingot", Plates + "Goods/goods-ingot" },
             { "bronze-ingot", Plates + "Goods/goods-ingot" },
             { "iron-ingot", Plates + "Goods/goods-ingot" },
+            { "deep-ingot", Plates + "Goods/goods-ingot" },
             { "cordage", Plates + "Gear/gear-cordage" },
+            // The tinctures (§5, Apothecary). Each is its own vessel so the three
+            // read apart on a shelf of three rows: a carried flask, a salve pot,
+            // a wicker-bound jug of something smoked.
+            { "wardens-tonic", Plates + "Goods/goods-tonic" },
+            { "glow-salve", Plates + "Goods/goods-salve" },
+            { "peat-smoke-draught", Plates + "Goods/goods-draught" },
         };
 
         // building id (buildings.json) → camp-line plate
@@ -93,10 +99,9 @@ namespace Wildgrove.Game
         };
 
         // species id (species.json) → roster plate. One plate per species; the
-        // animal is chosen to match the powerup it gives (§4).
-        // Still unplated (the lookup returns null and the placeholder disc
-        // stands in, which is the designed fallback): osier-otter,
-        // horseshoe-bat, ermine.
+        // animal is chosen to match the powerup it gives (§4). Every species has
+        // one; the null path is still the designed fallback for anything added to
+        // species.json ahead of its plate.
         private static readonly Dictionary<string, string> Familiar = new Dictionary<string, string>
         {
             { "meadow-vole", Plates + "Familiars/familiar-vole" },
@@ -106,6 +111,14 @@ namespace Wildgrove.Game
             { "warren-weasel", Plates + "Familiars/familiar-weasel" },
             { "furrow-hedgehog", Plates + "Familiars/familiar-hedgehog" },
             { "tawny-owl", Plates + "Familiars/familiar-owl" },
+            { "osier-otter", Plates + "Familiars/familiar-otter" },
+            // A long-eared bat stands in for the horseshoe — the roosting pose is
+            // the one the inscription describes, and the coloured plate cuts
+            // where the horseshoe engravings (a dark roof scene) would not.
+            { "horseshoe-bat", Plates + "Familiars/familiar-bat" },
+            // Mustela erminea, drawn in its summer coat as the plate has it; the
+            // warden's is the winter animal the inscriptions describe.
+            { "ermine", Plates + "Familiars/familiar-ermine" },
             { "pack-raven", Plates + "Familiars/familiar-raven" },
             // The Drover's Halter pony (§11). A head-and-neck portrait rather
             // than the whole animal — the plate's lower legs stand against dark
@@ -147,6 +160,10 @@ namespace Wildgrove.Game
             { "stags-herald", Plates + "Insects/insect-stags-herald" },
             { "silver-skimmer", Plates + "Insects/insect-silver-skimmer" },
             { "those-who-sow", Plates + "Insects/insect-those-who-sow" },
+            // Both sexes of the glow-worm on one page — the winged male and the
+            // wingless female who carries the light. "Bearers" is plural.
+            { "lantern-bearers", Plates + "Insects/insect-lantern-bearers" },
+            { "quiet-court", Plates + "Insects/insect-quiet-court" },
             { "wayfarers-plate", Plates + "Insects/insect-wayfarers-plate" },
         };
 

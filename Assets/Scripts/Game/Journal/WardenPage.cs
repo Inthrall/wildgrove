@@ -51,6 +51,14 @@ namespace Wildgrove.Game
             {
                 var captured = tincture;
                 var row = Row(card);
+                // A tincture id is also its recipe output, so the brew's own
+                // vessel is the good's plate.
+                var vessel = ArtLibrary.ForGood(captured.id);
+                if (vessel != null)
+                {
+                    IconImage(row.transform, vessel, 56f, Color.white);
+                }
+
                 var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink, _serif);
                 FlexibleWidth(label.gameObject, 1f);
                 var drink = Button(row.transform, "Drink", 120, () => _loop.DrinkTincture(captured));

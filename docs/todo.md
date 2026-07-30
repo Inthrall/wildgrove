@@ -30,8 +30,8 @@ Implementation + interpretations:
   13 species authored — 9 node specialists, 2 trail, 1 watch, 1 pristine).
   `offlineBonus` powerup kind dropped (was never consumed by the sim). Old Friend
   and Warden's Gallery lose their `kithSlot` effects (EffectType removed); Old
-  Friend keeps Burr's bond. Species art: new species need plates (ArtLibrary
-  falls back gracefully until then).
+  Friend keeps Burr's bond. Species art: all 12 species have plates as of
+  2026-07-30; a 13th added ahead of its art still falls back gracefully.
 - **Gift piles rescoped: one pile per verse sung** (was one-shot). The pile at a
   node calls *that resource's un-owned specialist* (derived from traits —
   `gifts.species` config retired; validator enforces one specialist per resource).
@@ -338,8 +338,8 @@ marsh's watch site. Landed with it:
   lantern pool", unlocks apothecary (entomology already arrives with the
   Old-Growth map, so listing it here was a lie the validator couldn't see).
   `resources.json` prices glow-moss and drops fireflies; `folio.json`'s Marsh
-  Lights spread and `ArtLibrary` follow (glow-moss borrows the lichen plate
-  until the art pass).
+  Lights spread and `ArtLibrary` follow (glow-moss borrowed the lichen plate;
+  own plate landed 2026-07-30).
 - `map-mistfen` (upgrade #32) now grants zone + `unlockSkill apothecary` +
   `unlockDigSite` for a provisions bundle — it previously granted a zone with
   no skills and no site, the long-standing data-layer review item.
@@ -369,8 +369,8 @@ Interpretations shipped (tune/confirm):
   burns down during the offline catch-up rather than waiting.
 - Mistfen quantities, tincture durations/effects, and the map's provisions
   bundle are all first guesses — the zone has had no balance pass.
-- Zone 5's nodes need the same three-plate art the other zones have;
-  glow-moss and the otter fall back gracefully until then.
+- Zone 5's nodes have their three plates as of 2026-07-30 (glow-moss got its
+  own; peat and rare-herbs already had theirs).
 
 **IMPLEMENTED 2026-07-29 — The Hollows (zone 6) + the deep amber (design
 §3/§5/§6/§7).** The endgame zone, to the pattern Mistfen proved. Landed:
@@ -379,7 +379,7 @@ Interpretations shipped (tune/confirm):
   contradicted the reframe outright. The third find is **ashglass** (the
   fused glass the burning left — a Long Winter residue, mineral, takeable),
   swept through zones/resources/folio (`hollow-relics`) and ArtLibrary
-  (ashglass borrows the res-amber plate until the art pass).
+  (it borrowed the res-amber plate; own plate landed 2026-07-30).
 - `map-hollows` (upgrade #33, glow-moss/smoked-trout/iron-ingot provisions —
   you pack light to go under) grants zone + `unlockSkill delving` +
   `unlockDigSite` + `unlockRecipe deep-ingot`. **Deepsteel** = §5's tier past
@@ -452,6 +452,47 @@ feeling like anything. The endless line is the better answer to the same
 symptom. Revisit only if playtests say folds 2–4 feel hollow rather than fast.
 Numbers throughout are model-derived (scratch model against the shipping
 constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sitting.
+
+**IMPLEMENTED 2026-07-30 — the missing plates (every id in the data now has
+one).** The mid/late content landed faster than its art, so five zones' worth of
+new ids were drawing the placeholder disc or borrowing a neighbour's plate. Ten
+new plates, all public domain, sourced and cut to the existing pipeline (rembg
+cut for the naturalist plates, sepia-ink keying for the PSF pen drawings), placed
+with hand-authored sprite metas, and credited in `CREDITS.md`:
+- **Familiars** — `familiar-otter`, `familiar-bat`, `familiar-ermine`
+  (Protheroe's coloured plates, the same book as the hare and the weasel). The
+  three unplated species from the traits rework now have portraits on the kith
+  roster, the world strip and the bond cards.
+- **Insects** — `insect-lantern-bearers` (both sexes of the glow-worm on one
+  page, Jacobson's beetle plate) and `insect-quiet-court` (Curtis's mole
+  cricket — the insect that sings from galleries it digs itself).
+- **Tinctures** — `goods-tonic`, `goods-salve`, `goods-draught`, one vessel
+  each, so the three read apart in the crafts card and on the new icon column
+  of the TINCTURES card (`WardenPage.BuildBrewsCard`).
+- **Borrows retired** — `ashglass` had the amber plate (an insect in resin,
+  standing in for volcanic glass) and now has `res-ashglass`; `glow-moss` had
+  the lichen plate and now has `res-glow-moss`. `deep-ingot` joins copper,
+  bronze and iron on the one ingot plate, which is the deliberate kind of
+  sharing.
+- **`ArtLibraryTests` (8 tests)** walks the real GameData asset and asserts
+  every resource, recipe output, species, insect, zone, gear piece, building,
+  skill, journal furnishing and line motif resolves to a sprite — the coverage
+  this pass establishes, and the only thing that would ever notice a plate
+  being renamed out from under `ArtLibrary` (a missing one is silent by
+  design). 718/718 EditMode green.
+- Rerunning `Wildgrove/Fix Art Import Settings` over the new files also caught
+  three older plates the tool had never seen: `familiar-pony` and
+  `insect-wayfarers-plate` were still importing at 2048 with crunch off, and
+  **`res-timber` had `alphaUsage: 0`** — its transparency was being discarded
+  on import, so the re-baked beech tree had been drawing on a solid block since
+  the 2026-07-29 swap. Run the menu item after adding art.
+
+Still deliberately unwired: `res-flint` (there is no flint resource — a spare
+kept for a tool-tier surface that doesn't exist yet). Cheap future win found
+while sourcing: Kurr's coal plate, fig. 6, is a **public-domain amber with
+insects in it** — swapping `res-amber` to it would drop one of the five CC BY
+attributions the build has to carry, but it also feeds the store's amber icons,
+so it wants a deliberate pass rather than a drive-by.
 
 **NEXT SLICES (the mid/late plan, in order):**
 1. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
