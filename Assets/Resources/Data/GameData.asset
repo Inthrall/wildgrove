@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: ce516b454c6ab86595a55c5b8816e3cf873fcaa424b0b09aa4623421398557cf
+  sourceHash: 9f05df909ae026ac6abe3925ac5055804894aa0963b92983b52d222c21668a04
   economy:
     costGrowth:
       building: 1.25
@@ -328,6 +328,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: meadow-vole
+      upgrade: 
       value: 0
   - order: 2
     id: wingbeats
@@ -347,6 +348,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: pack-raven
+      upgrade: 
       value: 0
   - order: 3
     id: flint-sickle
@@ -364,6 +366,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 4
     id: waxed-satchel
@@ -381,6 +384,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - order: 5
     id: drying-rack
@@ -402,6 +406,7 @@ MonoBehaviour:
       resource: berries
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - order: 6
     id: map-bramble
@@ -419,6 +424,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: mining
@@ -426,6 +432,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - order: 7
     id: rawhide-gloves
@@ -443,6 +450,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 8
     id: handcart
@@ -464,6 +472,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 9
     id: camp-fire-ring
@@ -485,6 +494,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: forgecraft
@@ -492,6 +502,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 16
       skill: 
@@ -499,6 +510,7 @@ MonoBehaviour:
       resource: 
       recipe: berry-preserve
       species: 
+      upgrade: 
       value: 0
     - type: 16
       skill: 
@@ -506,6 +518,7 @@ MonoBehaviour:
       resource: 
       recipe: copper-ingot
       species: 
+      upgrade: 
       value: 0
   - order: 10
     id: copper-sickle
@@ -525,6 +538,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 11
     id: root-cellar
@@ -546,6 +560,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 6
   - order: 12
     id: preserving-jars
@@ -563,6 +578,7 @@ MonoBehaviour:
       resource: berry-preserve
       recipe: 
       species: 
+      upgrade: 
       value: 0.5
   - order: 13
     id: map-oldgrowth
@@ -580,6 +596,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: logging
@@ -587,6 +604,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: entomology
@@ -594,6 +612,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 17
       skill: 
@@ -601,6 +620,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - order: 14
     id: bronze-hatchet
@@ -620,6 +640,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 15
     id: stag-harness
@@ -637,6 +658,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 16
     id: carving-bench
@@ -658,6 +680,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 16
       skill: 
@@ -665,6 +688,7 @@ MonoBehaviour:
       resource: 
       recipe: planks
       species: 
+      upgrade: 
       value: 0
     - type: 16
       skill: 
@@ -672,6 +696,7 @@ MonoBehaviour:
       resource: 
       recipe: cordage
       species: 
+      upgrade: 
       value: 0
   - order: 17
     id: whetstone
@@ -689,6 +714,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - order: 18
     id: foragers-skewers
@@ -706,6 +732,7 @@ MonoBehaviour:
       resource: 
       recipe: mushroom-skewer
       species: 
+      upgrade: 
       value: 0
   - order: 19
     id: field-press
@@ -727,6 +754,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.01
   - order: 20
     id: bellows-forge
@@ -744,6 +772,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
     - type: 16
       skill: 
@@ -751,6 +780,7 @@ MonoBehaviour:
       resource: 
       recipe: iron-ingot
       species: 
+      upgrade: 
       value: 0
   - order: 21
     id: wagon
@@ -768,6 +798,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 22
     id: smokehouse
@@ -789,6 +820,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 8
   - order: 23
     id: map-silverrun
@@ -806,6 +838,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: fishing
@@ -813,6 +846,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 17
       skill: 
@@ -820,6 +854,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - order: 24
     id: iron-toolset
@@ -839,6 +874,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
     - type: 0
       skill: logging
@@ -846,6 +882,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
     - type: 0
       skill: mining
@@ -853,6 +890,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 25
     id: brush-screens
@@ -870,6 +908,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 26
     id: smoking-racks
@@ -887,6 +926,7 @@ MonoBehaviour:
       resource: 
       recipe: smoked-trout
       species: 
+      upgrade: 
       value: 0
     - type: 0
       skill: fishing
@@ -894,6 +934,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 27
     id: reed-weaving
@@ -911,6 +952,7 @@ MonoBehaviour:
       resource: 
       recipe: reed-baskets
       species: 
+      upgrade: 
       value: 0
   - order: 28
     id: curators-cabinet
@@ -932,6 +974,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - order: 29
     id: steel-toolset
@@ -953,6 +996,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 30
     id: raven-panniers
@@ -970,6 +1014,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - order: 31
     id: almanac-desk
@@ -991,6 +1036,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - order: 32
     id: map-mistfen
@@ -1014,6 +1060,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: apothecary
@@ -1021,6 +1068,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 17
       skill: 
@@ -1028,6 +1076,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - order: 33
     id: map-hollows
@@ -1051,6 +1100,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 15
       skill: delving
@@ -1058,6 +1108,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 17
       skill: 
@@ -1065,6 +1116,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
     - type: 16
       skill: 
@@ -1072,6 +1124,7 @@ MonoBehaviour:
       resource: 
       recipe: deep-ingot
       species: 
+      upgrade: 
       value: 0
   - order: 34
     id: deepsteel-toolset
@@ -1091,6 +1144,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   recipes:
   - id: berry-preserve
@@ -1372,6 +1426,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.5
   - id: birch-frame-pack
     displayName: Birch Frame Pack
@@ -1389,6 +1444,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - id: pitch-torch
     displayName: Pitch Torch
@@ -1406,6 +1462,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0
   - id: oilskin-tarp
     displayName: Oilskin Tarp
@@ -1423,6 +1480,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 2
   - id: clay-lined-creel
     displayName: Clay-Lined Creel
@@ -1440,6 +1498,7 @@ MonoBehaviour:
       resource: fish
       recipe: 
       species: 
+      upgrade: 
       value: 0
   insects:
   - id: stags-herald
@@ -1456,6 +1515,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.1
   - id: silver-skimmer
     displayName: The Silver Skimmer
@@ -1471,6 +1531,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.15
     - type: 6
       skill: 
@@ -1478,6 +1539,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.01
   - id: those-who-sow
     displayName: Those Who Sow
@@ -1494,6 +1556,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.2
   - id: lantern-bearers
     displayName: The Lantern Bearers
@@ -1509,6 +1572,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.2
   - id: quiet-court
     displayName: The Quiet Court
@@ -1524,6 +1588,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - id: wayfarers-plate
     displayName: The Wayfarer's Plate
@@ -1538,6 +1603,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.005
   almanac:
   - id: old-songs-i
@@ -1552,6 +1618,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.1
   - id: long-watch-i
     displayName: The Long Watch I
@@ -1565,6 +1632,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 6
   - id: verdant-eye-i
     displayName: Verdant Eye I
@@ -1578,6 +1646,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.005
   - id: sure-paths-i
     displayName: Sure Paths I
@@ -1591,6 +1660,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
   - id: patient-hands
     displayName: Patient Hands
@@ -1604,6 +1674,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
   - id: deep-sight-i
     displayName: Deep Sight I
@@ -1617,6 +1688,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - id: old-songs-ii
     displayName: Old Songs II
@@ -1630,6 +1702,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.15
   - id: long-watch-ii
     displayName: The Long Watch II
@@ -1643,6 +1716,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 8
   - id: sure-paths-ii
     displayName: Sure Paths II
@@ -1656,6 +1730,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - id: verdant-eye-ii
     displayName: Verdant Eye II
@@ -1669,6 +1744,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.01
   - id: old-friend
     displayName: The Old Friend
@@ -1676,6 +1752,76 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects: []
+  - id: the-fire-remembers
+    displayName: The Fire Remembers
+    costVerdure: 8
+    requires: patient-hands
+    repeatable: 0
+    effects:
+    - type: 21
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+  - id: remembered-edge-i
+    displayName: The Remembered Edge
+    costVerdure: 6
+    requires: 
+    repeatable: 0
+    effects:
+    - type: 20
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: flint-sickle
+      value: 0
+  - id: known-way-i
+    displayName: The Known Way
+    costVerdure: 10
+    requires: remembered-edge-i
+    repeatable: 0
+    effects:
+    - type: 20
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: map-bramble
+      value: 0
+  - id: remembered-edge-ii
+    displayName: The Remembered Edge II
+    costVerdure: 14
+    requires: known-way-i
+    repeatable: 0
+    effects:
+    - type: 20
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: copper-sickle
+      value: 0
+  - id: known-way-ii
+    displayName: The Known Way II
+    costVerdure: 22
+    requires: remembered-edge-ii
+    repeatable: 0
+    effects:
+    - type: 20
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: map-oldgrowth
+      value: 0
   - id: long-watch-iii
     displayName: The Long Watch III
     costVerdure: 16
@@ -1688,6 +1834,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 12
   - id: old-songs-iii
     displayName: Old Songs III
@@ -1701,6 +1848,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - id: the-long-song
     displayName: The Long Song
@@ -1714,6 +1862,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.05
     - type: 12
       skill: 
@@ -1721,6 +1870,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.05
   folioSpreads:
   - id: meadow-blooms
@@ -1736,6 +1886,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.1
   - id: hedgerow-harvest
     displayName: Hedgerow Harvest
@@ -1750,6 +1901,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.005
   - id: old-growth-bounty
     displayName: Old-Growth Bounty
@@ -1764,6 +1916,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1
   - id: river-catch
     displayName: River Catch
@@ -1779,6 +1932,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.15
   - id: marsh-lights
     displayName: Marsh Lights
@@ -1793,6 +1947,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.1
   - id: hollow-relics
     displayName: Relics of the Hollows
@@ -1807,6 +1962,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
   - id: crag-flock
     displayName: The Crag Flock
@@ -1821,6 +1977,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.1
   - id: summit-posy
     displayName: Summit Posy
@@ -1834,6 +1991,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - id: wardens-gallery
     displayName: The Warden's Gallery
@@ -1853,6 +2011,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.1
   bonds:
   - id: sootwing
@@ -2173,6 +2332,7 @@ MonoBehaviour:
       resource: herbs
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
     - type: 0
       skill: 
@@ -2180,6 +2340,7 @@ MonoBehaviour:
       resource: rare-herbs
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
     - type: 0
       skill: 
@@ -2187,6 +2348,7 @@ MonoBehaviour:
       resource: berries
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
   - id: misted
     displayName: a misted region
@@ -2198,6 +2360,7 @@ MonoBehaviour:
       resource: fish
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
     - type: 0
       skill: 
@@ -2205,6 +2368,7 @@ MonoBehaviour:
       resource: reeds
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
     - type: 0
       skill: 
@@ -2212,6 +2376,7 @@ MonoBehaviour:
       resource: wildflowers
       recipe: 
       species: 
+      upgrade: 
       value: 0.75
   - id: ashen
     displayName: an ashen region
@@ -2224,6 +2389,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - id: windswept
     displayName: a windswept region
@@ -2235,6 +2401,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.25
   tinctures:
   - id: wardens-tonic
@@ -2248,6 +2415,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
   - id: glow-salve
     displayName: Glow Salve
@@ -2260,6 +2428,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   - id: peat-smoke-draught
     displayName: Peat-Smoke Draught
@@ -2272,6 +2441,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 1.5
   deepAmber:
     zoneId: the-hollows
@@ -2288,6 +2458,7 @@ MonoBehaviour:
       resource: 
       recipe: 
       species: 
+      upgrade: 
       value: 0.25
     pieces:
     - id: the-wing

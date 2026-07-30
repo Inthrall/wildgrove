@@ -546,13 +546,44 @@ Interpretations shipped (tune/confirm):
   all the work. The fields exist for tuning; don't sprinkle numbers into them
   without a reason.
 
+**IMPLEMENTED 2026-07-30 — Almanac depth: the exotic lines (design §8).** The
+fold gate paces what a run may *reach*; these pace what it must *repeat*. Each
+fold re-ran the whole ladder from bare hands, and no yield knob can shorten
+that — only starting further up can. Two new effect types, both Almanac-only
+(validator-enforced):
+
+- **`grantUpgrade` — granted rungs.** An owned node puts a named ladder rung on
+  every run free — no materials, no skill gate; the grant IS the head start.
+  Shipping nodes: *The Remembered Edge I/II* (start at flint, then copper
+  tools) and *The Known Way I/II* (start with the Bramble, then Old-Growth
+  trail maps) — one requires chain, edge→way→edge→way, so the tool always
+  precedes the trail that demands it. `Almanac.SyncGrantedUpgrades` is
+  idempotent and re-derived at every fold, on buy (the run that pays gets it
+  NOW, not next fold), and on restore (a save older than the grant picks it
+  up); granted ids simply join `purchasedUpgradeIds`, so the ladder UI, zone
+  sync, and multipliers all follow for free. The **fold gate and tool
+  requirement still hold** — a granted trail behind `minMigration` waits for
+  the run that earns it — and the sweep runs to a fixpoint so a granted tool
+  can satisfy a granted map whatever order the ladder lists them.
+- **`keepCraftOrders` — *The Fire Remembers*.** The stations carry their
+  standing orders across the fold: the assignment only, never the batch (the
+  old camp's in-flight inputs fold with it). No new bookkeeping — `Advance`
+  already re-checks workability every tick, so each station stalls quietly
+  until the new run re-earns its recipe's skill and heat, then takes the order
+  up again unasked.
+- **Validator rules added:** grantUpgrade/keepCraftOrders outside the Almanac;
+  a grant naming an unknown rung; a grant of a recruit rung (§4 — familiar
+  permanence is Kinship's alone, the Almanac never buys creatures, not even
+  sideways); and a map grant whose requires chain doesn't carry the zone's
+  covering tool — that node would be bought and then sit inert forever, which
+  is worse than refused.
+- **Costs are first guesses:** 6/10/14/22 up the granted chain + 8 for the Fire
+  Remembers (~60 Verdure across the five, one-off tree total now 159 from 99).
+  Tuned so the line opens around folds 2–4; wants the same run-3-to-run-6
+  sitting as the rest of the pacing pass.
+
 **NEXT SLICES (the mid/late plan, in order):**
-1. **Almanac depth** — the §8 exotic nodes (starting tool tiers, auto-craft,
-   zone skips) that currently wait for their systems. These are the lever that
-   scales the ladder re-climb DOWNWARD with the fold count, which is the half of
-   the pacing fix no knob can deliver. (The endless line is the sink half and
-   the fold gate is the arrival half; both have landed.)
-2. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
+1. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
    unbalanced by design; they want the spreadsheet treatment alongside the
    tincture numbers and the deep-amber timing. The fold gate changes what this
    pass is even measuring: those zones are now first seen on runs 3 and 4, by a
@@ -1231,13 +1262,14 @@ Interpretations shipped (tune/confirm):
   (per-node, from replanting/planters) and "museum" becomes **Folio spreads**
   (`museumSets` → spread bonuses) — fold both in with their systems.
 
-- **The Almanac is 12 nodes of existing effect types; costs and the
-  allocation model are interpretations.** Verdure is never destroyed — a node
+- **The Almanac's costs and the allocation model are interpretations.**
+  Verdure is never destroyed — a node
   allocates from the banked total (available = verdurePoints − owned costs)
   so the +2%/pt passive keeps counting the full total and Migration's
-  recompute-from-lifetime-Renown can't refund spent points. The §7 exotic
-  nodes (starting tool tiers, auto-craft, starting-zone skips) wait for
-  their systems; all costs are first guesses tuned to ~10 Verdure from the
+  recompute-from-lifetime-Renown can't refund spent points. The §8 exotic
+  nodes (starting tool tiers, zone skips, auto-craft) landed 2026-07-30 as
+  `grantUpgrade`/`keepCraftOrders`; all costs are first guesses tuned to ~10
+  Verdure from the
   first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
   **v0.11 (§3, §8):** add **The First Planting** — a node that lets one planter survive
   the fold — once replanting/planters land. The Almanac deliberately gets **no

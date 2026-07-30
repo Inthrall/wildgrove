@@ -277,6 +277,7 @@ namespace Wildgrove.Data
                 resource = e.Resource,
                 recipe = e.Recipe,
                 species = e.Species,
+                upgrade = e.Upgrade,
                 value = e.Value ?? 0
             };
         }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Wildgrove.Data;
 
 namespace Wildgrove.Sim
@@ -151,10 +152,86 @@ namespace Wildgrove.Sim
             else
             {
                 state.almanacNodeIds.Add(node.id);
+
+                // A grantUpgrade node pays out now as well as at every fold —
+                // "from the first morning" must not mean "from NEXT fold" to
+                // the run that just paid the Verdure.
+                SyncGrantedUpgrades(state, data);
             }
 
             Upgrades.RecomputeYieldMultipliers(state, data);
             return true;
+        }
+
+        /// <summary>
+        /// Ensure every rung an owned node's grantUpgrade effect names is on
+        /// the run — free, no materials or skill gate: the grant IS the head
+        /// start (design §8's starting tool tiers and zone skips). The fold
+        /// gate and the tool requirement still hold, so a granted trail whose
+        /// fold hasn't come simply waits for the run that earns it — this is
+        /// re-derived at every fold, on buy, and on restore, all idempotent.
+        /// Sweeps to a fixpoint so a granted tool rung can satisfy a granted
+        /// map rung whatever order the ladder lists them in.
+        /// </summary>
+        public static void SyncGrantedUpgrades(GameState state, GameDataAsset data)
+        {
+            if (state == null || data == null)
+            {
+                return;
+            }
+
+            var granted = new HashSet<string>();
+            foreach (var nodeId in state.almanacNodeIds)
+            {
+                if (!data.AlmanacById.TryGetValue(nodeId, out var node))
+                {
+                    continue;
+                }
+
+                foreach (var effect in node.effects)
+                {
+                    if (effect.type == EffectType.GrantUpgrade && !string.IsNullOrEmpty(effect.upgrade))
+                    {
+                        granted.Add(effect.upgrade);
+                    }
+                }
+            }
+
+            if (granted.Count == 0)
+            {
+                return;
+            }
+
+            var applied = false;
+            bool progressed;
+            do
+            {
+                progressed = false;
+                foreach (var upgrade in data.upgrades)
+                {
+                    if (!granted.Contains(upgrade.id) || state.HasUpgrade(upgrade.id)
+                        || !Upgrades.MeetsFoldGate(state, data, upgrade)
+                        || !Upgrades.MeetsToolRequirement(state, data, upgrade))
+                    {
+                        continue;
+                    }
+
+                    state.purchasedUpgradeIds.Add(upgrade.id);
+                    applied = true;
+                    progressed = true;
+                }
+            }
+            while (progressed);
+
+            if (applied)
+            {
+                // The same wake-up a purchase does: a granted trail map opens
+                // its zone (and dig site), the multipliers fold the new
+                // effects in, and a newly revealed verse credits deeds done.
+                GameStateFactory.SyncUnlockedZones(state, data);
+                Upgrades.RecomputeYieldMultipliers(state, data);
+                Rite.SyncDeedSlots(state, data);
+            }
         }
     }
 }

@@ -465,6 +465,24 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// True when anything active on the run carries an effect of this type
+        /// — for the flag-shaped types with no value or target (the Almanac's
+        /// keepCraftOrders), read at a moment rather than every tick.
+        /// </summary>
+        public static bool HasActiveEffect(GameState state, GameDataAsset data, EffectType type)
+        {
+            foreach (var effect in ActiveEffects(state, data))
+            {
+                if (effect.type == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Purchased upgrade effects, completed insects', owned Almanac nodes',
         /// worn gear's, and the run's region modifier (design §8) — everything
         /// currently modifying the run. The RAW walk (the Museum leg clones) —
@@ -551,6 +569,7 @@ namespace Wildgrove.Sim
                         resource = effect.resource,
                         recipe = effect.recipe,
                         species = effect.species,
+                        upgrade = effect.upgrade,
                         value = effect.value * pair.Value
                     };
                 }

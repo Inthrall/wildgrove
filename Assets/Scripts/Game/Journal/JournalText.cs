@@ -51,6 +51,13 @@ namespace Wildgrove.Game
                 : zoneId;
         }
 
+        internal string UpgradeName(string upgradeId)
+        {
+            return _loop.Data.UpgradesById.TryGetValue(upgradeId ?? string.Empty, out var upgrade)
+                ? upgrade.displayName
+                : upgradeId;
+        }
+
         /// <summary>The Ladder rung whose effects unlock <paramref name="skill"/>, or null when nothing grants it.</summary>
         internal UpgradeData SkillSource(string skill)
         {
@@ -171,6 +178,10 @@ namespace Wildgrove.Game
                     return "a " + SpeciesName(effect.species) + " joins the kith";
                 case EffectType.UnlockVerdureForecast:
                     return "reveals the verdure forecast";
+                case EffectType.GrantUpgrade:
+                    return "every fold begins with " + UpgradeName(effect.upgrade);
+                case EffectType.KeepCraftOrders:
+                    return "the stations keep their orders across the fold";
                 default:
                     return string.Empty;
             }

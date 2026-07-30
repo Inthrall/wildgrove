@@ -635,6 +635,13 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
+            // Rungs the Almanac grants (starting tools, known trails) are
+            // derived from node ownership, never trusted from the save — a
+            // save older than the grant (a data retune, a node bought on a
+            // build without the sync) picks them up here. Idempotent; a save
+            // already carrying them is untouched.
+            Almanac.SyncGrantedUpgrades(state, data);
+
             // A bond whose source (a kept Folio spread / Almanac node) is
             // already satisfied must have its companion honoured — bind or
             // materialise any the saved roster lacks (idempotent by bondId).

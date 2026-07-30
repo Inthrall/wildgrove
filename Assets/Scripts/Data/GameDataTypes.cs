@@ -25,6 +25,7 @@ namespace Wildgrove.Data
         public string resource;
         public string recipe;
         public string species;
+        public string upgrade;
         public double value;
     }
 

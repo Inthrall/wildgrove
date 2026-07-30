@@ -173,6 +173,34 @@ namespace Wildgrove.Sim
                 next.almanacLevels[pair.Key] = pair.Value;
             }
 
+            // The exotic lines act here, at the fold (design §8): granted
+            // rungs — starting tools, known trails — are on the new run from
+            // its first morning. Re-derived against the NEW fold count, so a
+            // granted trail the fold gate still holds back arrives on the run
+            // that earns it.
+            Almanac.SyncGrantedUpgrades(next, data);
+
+            // The Fire Remembers: stations carry their standing orders across
+            // the fold — the assignment only, never the batch (the old camp's
+            // in-flight inputs fold with it). Each station stalls quietly
+            // until the new run re-earns its recipe's skill and heat, then
+            // takes the order up again — Advance re-checks workability every
+            // tick, so no bookkeeping is owed here.
+            if (Upgrades.HasActiveEffect(state, data, EffectType.KeepCraftOrders))
+            {
+                foreach (var station in state.stations)
+                {
+                    if (station.recipeId != null)
+                    {
+                        next.stations.Add(new StationState
+                        {
+                            stationId = station.stationId,
+                            recipeId = station.recipeId,
+                        });
+                    }
+                }
+            }
+
             // "You keep … the Folio" — fixed specimens and their spread bonuses too.
             next.fixedResources.AddRange(state.fixedResources);
 

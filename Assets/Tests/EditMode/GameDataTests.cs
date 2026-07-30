@@ -100,6 +100,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Rites.Generator.ChooseCountMax, Is.EqualTo(5));
             Assert.That(data.Economy.CostGrowth.Almanac, Is.EqualTo(1.25), "the geometric step on the endless Almanac line");
             Assert.That(data.AlmanacById["the-long-song"].Repeatable, Is.True, "Verdure's endless sink");
+            Assert.That(data.AlmanacById["known-way-i"].Effects.Single().Upgrade, Is.EqualTo("map-bramble"),
+                "the zone skip grants the trail's own rung, never a second unlock path");
+            Assert.That(data.AlmanacById["the-fire-remembers"].Effects.Single().Type, Is.EqualTo(EffectType.KeepCraftOrders));
             Assert.That(data.BondsById["sootwing"].Role, Is.EqualTo("carrier"), "a carrier bonds as a carrier");
             Assert.That(data.BondsById["sootwing"].Source.Type, Is.EqualTo("folioSpread"));
             Assert.That(data.BondsById["burr"].Source.Id, Is.EqualTo("old-friend"), "the Almanac-node bond");
@@ -1084,6 +1087,70 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("must cost Verdure")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_GrantUpgradeOutsideTheAlmanac_IsReported()
+        {
+            // Only the tree that survives the fold may hand out rungs — a rung
+            // granting a rung is a cycle waiting to happen.
+            var sources = LoadSources();
+            var before = sources.UpgradesJson;
+            sources.UpgradesJson = sources.UpgradesJson.Replace(
+                "{ \"type\": \"sellValueBonus\", \"resource\": \"berries\", \"value\": 0.25 }",
+                "{ \"type\": \"grantUpgrade\", \"upgrade\": \"flint-sickle\" }");
+            Assert.That(sources.UpgradesJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("only the Almanac may grant ladder rungs")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_GrantOfUnknownUpgrade_IsReported()
+        {
+            var sources = LoadSources();
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "\"upgrade\": \"flint-sickle\"",
+                "\"upgrade\": \"nonsuch\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("grants unknown upgrade 'nonsuch'")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_GrantOfARecruitRung_IsReported()
+        {
+            // Familiar permanence is Kinship's alone (design §4) — the Almanac
+            // never buys creatures, not even sideways through a granted rung.
+            var sources = LoadSources();
+            var before = sources.AlmanacJson;
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "\"upgrade\": \"map-bramble\"",
+                "\"upgrade\": \"first-friend\"");
+            Assert.That(sources.AlmanacJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("recruits a familiar")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_ZoneSkipWithoutItsCoveringTool_IsReported()
+        {
+            // A map grant whose requires chain doesn't carry the zone's tool
+            // would sit inert forever — a bought node that does nothing.
+            var sources = LoadSources();
+            var before = sources.AlmanacJson;
+            sources.AlmanacJson = sources.AlmanacJson.Replace(
+                "\"requires\": \"remembered-edge-i\",",
+                "");
+            Assert.That(sources.AlmanacJson, Is.Not.EqualTo(before), "the corruption must land");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("demands flint tools")), Is.True, string.Join("\n", issues));
         }
 
         [Test]

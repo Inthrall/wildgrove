@@ -666,8 +666,10 @@ namespace Wildgrove.Data
 
                 foreach (var effect in node.Effects)
                 {
-                    ValidateEffect($"Almanac node '{node.Id}'", effect, data, resourceIds, issues);
+                    ValidateEffect($"Almanac node '{node.Id}'", effect, data, resourceIds, issues, almanacNode: true);
                 }
+
+                ValidateGrantToolCoverage(data, node, issues);
 
                 if (!node.Repeatable)
                 {
@@ -720,6 +722,80 @@ namespace Wildgrove.Data
                     data.AlmanacById.TryGetValue(current.Requires, out current);
                 }
             }
+        }
+
+        /// <summary>
+        /// A zone-skip grant must never outrun the tool its trail demands.
+        /// The sync applies grants under the same tool gate as a purchase, so
+        /// a map rung granted without its covering tool would sit inert
+        /// forever — a bought node that does nothing, which is worse than a
+        /// refused one. The requires chain is the guarantee: the node itself
+        /// or an ancestor must grant a tool rung of at least the needed tier,
+        /// and prerequisite-owned then implies tool-granted.
+        /// </summary>
+        private static void ValidateGrantToolCoverage(GameData data, AlmanacDef node, List<string> issues)
+        {
+            var tiers = data.Economy?.Tools?.Tiers;
+            if (tiers == null || tiers.Count == 0)
+            {
+                return;
+            }
+
+            var covered = BestGrantedToolTier(data, node, tiers);
+            foreach (var effect in node.Effects)
+            {
+                if (effect.Type != EffectType.GrantUpgrade || effect.Upgrade == null
+                    || !data.UpgradesById.TryGetValue(effect.Upgrade, out var rung))
+                {
+                    continue;
+                }
+
+                foreach (var rungEffect in rung.Effects)
+                {
+                    if (rungEffect.Type != EffectType.UnlockZone || rungEffect.Zone == null
+                        || !data.ZonesById.TryGetValue(rungEffect.Zone, out var zone)
+                        || string.IsNullOrEmpty(zone.RequiredTool))
+                    {
+                        continue;
+                    }
+
+                    if (tiers.IndexOf(zone.RequiredTool) > covered)
+                    {
+                        issues.Add($"Almanac node '{node.Id}' grants '{effect.Upgrade}' but zone '{zone.Id}' demands {zone.RequiredTool} tools — no node in its requires chain grants a covering tool rung, so the grant would sit inert forever");
+                    }
+                }
+            }
+        }
+
+        /// <summary>The best tool tier granted by this node or its requires ancestors, as an index into economy.tools.tiers; −1 with none.</summary>
+        private static int BestGrantedToolTier(GameData data, AlmanacDef node, IList<string> tiers)
+        {
+            var best = -1;
+            var visited = new HashSet<string>();
+            var current = node;
+            while (current != null && visited.Add(current.Id))
+            {
+                foreach (var effect in current.Effects)
+                {
+                    if (effect.Type == EffectType.GrantUpgrade && effect.Upgrade != null
+                        && data.UpgradesById.TryGetValue(effect.Upgrade, out var rung)
+                        && !string.IsNullOrEmpty(rung.ToolTier))
+                    {
+                        var index = tiers.IndexOf(rung.ToolTier);
+                        if (index > best)
+                        {
+                            best = index;
+                        }
+                    }
+                }
+
+                current = !string.IsNullOrEmpty(current.Requires)
+                          && data.AlmanacById.TryGetValue(current.Requires, out var parent)
+                    ? parent
+                    : null;
+            }
+
+            return best;
         }
 
         private static readonly HashSet<string> KnownBondRoles = new HashSet<string> { "gatherer", "carrier" };
@@ -1652,7 +1728,7 @@ namespace Wildgrove.Data
             return value >= 0 && value <= 1;
         }
 
-        private static void ValidateEffect(string owner, EffectDef effect, GameData data, HashSet<string> resourceIds, List<string> issues)
+        private static void ValidateEffect(string owner, EffectDef effect, GameData data, HashSet<string> resourceIds, List<string> issues, bool almanacNode = false)
         {
             switch (effect.Type)
             {
@@ -1752,6 +1828,35 @@ namespace Wildgrove.Data
                     if (effect.Species == null || !data.SpeciesById.ContainsKey(effect.Species))
                     {
                         issues.Add($"{owner} recruits unknown species '{effect.Species}'");
+                    }
+
+                    break;
+
+                case EffectType.GrantUpgrade:
+                    // Only the tree that survives the fold may hand out rungs;
+                    // a rung granting a rung is a cycle waiting to happen, and
+                    // gear or insects doing it would be a second ladder.
+                    if (!almanacNode)
+                    {
+                        issues.Add($"{owner} carries a grantUpgrade effect — only the Almanac may grant ladder rungs");
+                    }
+                    else if (effect.Upgrade == null || !data.UpgradesById.TryGetValue(effect.Upgrade, out var grantedRung))
+                    {
+                        issues.Add($"{owner} grants unknown upgrade '{effect.Upgrade}'");
+                    }
+                    else if (grantedRung.Effects.Any(x => x.Type == EffectType.RecruitSpecies))
+                    {
+                        // Familiar permanence is Kinship's alone (design §4) —
+                        // the Almanac never buys creatures, not even sideways.
+                        issues.Add($"{owner} grants '{effect.Upgrade}', which recruits a familiar — the Almanac carries no familiar power (design §4)");
+                    }
+
+                    break;
+
+                case EffectType.KeepCraftOrders:
+                    if (!almanacNode)
+                    {
+                        issues.Add($"{owner} carries a keepCraftOrders effect — only the Almanac crosses the fold");
                     }
 
                     break;

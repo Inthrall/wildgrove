@@ -356,6 +356,15 @@ The pacing knobs (`demandGrowth`, the breadth ramp) only change *how fast* the s
 - **First guesses:** zones 1–3 open the first run, then one new trail per fold — Silverrun on run 2, Mistfen on run 3, the Hollows on run 4. Numbers are model-derived, not playtested.
 - **Known consequence:** fewer verses early means fewer gift piles and slower kith-slot milestones (§4's verse milestones at 2/5/10), so the second slot now lands in run 2 rather than run 1. Watch it in a real run-1-to-run-5 sitting before tuning either side.
 
+### The Almanac's exotic lines — the re-climb scaled down (BUILT 2026-07-30)
+
+The fold gate paces what a run may *reach*; these pace what it must *repeat*. Every fold re-runs the ladder from bare hands, and no yield knob shortens that — only starting further up can. The exotic lines act at the fold itself:
+
+- **Granted rungs** (`grantUpgrade`, Almanac-only): an owned node puts a named ladder rung on every run **free** — no materials, no skill gate; the grant is the head start. *The Remembered Edge I/II* start the run at flint then copper tools; *The Known Way I/II* start it with the Bramble then Old-Growth trail maps, one requires chain (edge→way→edge→way) so the tool always precedes the trail that demands it. The **fold gate and the tool requirement still hold** — a granted trail behind `minMigration` arrives on the fold that earns it — and the validator refuses a map grant whose requires chain doesn't carry the zone's covering tool (a bought node that does nothing is worse than a refused one). Recruit rungs can never be granted: familiar permanence is Kinship's alone (§4).
+- ***The Fire Remembers*** (`keepCraftOrders`): the stations carry their standing orders across the fold — the assignment, never the batch. Each stalls quietly until the new run re-earns its recipe's skill and heat, then takes the order up again without being asked.
+
+Costs (6/10/14/22 up the granted chain, 8 for the Fire Remembers; the one-off tree now totals 159) are first guesses tuned so the line opens around folds 2–4 — the same playtest sitting as the rest of the pacing pass should set them.
+
 ### When to migrate — DECIDED (2026-07-18): the fold forecast is the decision
 
 Once the Rite completes, the pinned tracker becomes the **fold forecast** — **every permanent gain in one panel, nothing hidden**:
