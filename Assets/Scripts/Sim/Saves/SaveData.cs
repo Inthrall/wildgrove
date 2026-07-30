@@ -87,6 +87,10 @@ namespace Wildgrove.Sim.Saves
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();
         public List<SavedResource> lifetimePristine = new List<SavedResource>();
 
+        /// <summary>v37+: every species ever befriended and every station that has ever finished a batch. Absent before — the roster and the stations were the only record, and both are rebuilt each run.</summary>
+        public List<string> speciesEverBefriended = new List<string>();
+        public List<string> stationsEverWorked = new List<string>();
+
         /// <summary>v2–v19 legacy: the anonymous camp-wide carrier count. Read only by the v19→v20 migration, which rebuilds it into <see cref="roster"/>.</summary>
         public int carrierCount;
 

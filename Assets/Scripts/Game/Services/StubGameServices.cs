@@ -31,6 +31,11 @@ namespace Wildgrove.Game.Services
             Debug.Log("[play-games] stub unlock achievement " + achievementId);
         }
 
+        public void SetAchievementSteps(string achievementId, int steps)
+        {
+            Debug.Log("[play-games] stub achievement " + achievementId + " steps " + steps);
+        }
+
         public void SubmitScore(string leaderboardId, long score)
         {
             Debug.Log("[play-games] stub submit score " + score + " to " + leaderboardId);

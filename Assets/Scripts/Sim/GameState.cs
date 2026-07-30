@@ -139,6 +139,21 @@ namespace Wildgrove.Sim
         public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();
         public Dictionary<string, BigDouble> lifetimePristine = new Dictionary<string, BigDouble>();
 
+        /// <summary>
+        /// Every species ever befriended, kept for good. The roster itself is
+        /// rebuilt each run, so it can only ever say who walks with the warden
+        /// now — and "befriend every species in the grove" is a question about
+        /// the whole record, not about one camp.
+        /// </summary>
+        public List<string> speciesEverBefriended = new List<string>();
+
+        /// <summary>
+        /// Every station that has ever finished a batch. Stations are put to
+        /// work afresh each run, so like the roster they cannot answer a
+        /// question spanning Migrations on their own.
+        /// </summary>
+        public List<string> stationsEverWorked = new List<string>();
+
         /// <summary>Warden deeds performed this run, keyed by deed id (e.g. "tend") — deed slots of the Rite fill from these.</summary>
         public Dictionary<string, int> deedCounts = new Dictionary<string, int>();
 

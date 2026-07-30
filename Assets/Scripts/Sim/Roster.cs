@@ -56,6 +56,7 @@ namespace Wildgrove.Sim
             };
 
             state.roster.Add(familiar);
+            Compendium.RecordSpecies(state, speciesId);
 
             if (!string.IsNullOrEmpty(stationId) && Kith.HasRoom(state, data)
                 && Stationing.OccupantOf(state, stationId) == null
@@ -213,6 +214,8 @@ namespace Wildgrove.Sim
                     name = string.IsNullOrEmpty(bond.displayName) ? SuggestName(state, data, bond.species) : bond.displayName,
                     stationId = null
                 });
+
+                Compendium.RecordSpecies(state, bond.species);
             }
         }
 
@@ -259,6 +262,7 @@ namespace Wildgrove.Sim
                 };
 
                 state.roster.Add(pony);
+                Compendium.RecordSpecies(state, Familiar.PonySpecies);
             }
 
             if (pony.stationId != Familiar.PonyStation)

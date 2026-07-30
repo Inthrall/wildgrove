@@ -116,6 +116,21 @@ namespace Wildgrove.Game.Services
                 success => Log("achievement " + achievementId + (success ? ": reported OK" : ": report FAILED")));
         }
 
+        public void SetAchievementSteps(string achievementId, int steps)
+        {
+            if (!IsSignedIn || string.IsNullOrEmpty(achievementId) || steps <= 0)
+            {
+                return;
+            }
+
+            // SetStepsAtLeast, not IncrementAchievement: Reassert reports the
+            // same figure repeatedly and an increment would stack it. Play keeps
+            // the highest, so a lower report after a fold is harmless.
+            PlayGamesPlatform.Instance.SetStepsAtLeast(achievementId, steps,
+                success => Log("achievement " + achievementId + " steps " + steps
+                    + (success ? ": reported OK" : ": report FAILED")));
+        }
+
         public void SubmitScore(string leaderboardId, long score)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(leaderboardId))

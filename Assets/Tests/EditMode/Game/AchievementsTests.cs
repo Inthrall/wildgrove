@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using BreakInfinity;
 using NUnit.Framework;
 using UnityEngine;
 using Wildgrove.Data;
@@ -100,12 +104,151 @@ namespace Wildgrove.Game.Tests
             Assert.That(_services.Unlocked.FindAll(id => id == AchievementIds.FirstKith).Count, Is.EqualTo(2));
         }
 
+        [Test]
+        public void EveryAchievementId_IsEvaluatedByReassert()
+        {
+            // The failure this catches is silent by nature: an achievement no
+            // rule evaluates never unlocks on anyone's device, and nothing
+            // anywhere says so. The console will happily hold it forever.
+            var evaluated = new HashSet<string>(Achievements.EvaluatedIds());
+            var missing = DeclaredIds()
+                .Where(pair => !evaluated.Contains(pair.Value))
+                .Select(pair => pair.Key)
+                .ToList();
+
+            Assert.That(missing, Is.Empty,
+                "these AchievementIds constants have no rule in Achievements: " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void EveryRule_TargetsADeclaredAchievementId()
+        {
+            var declared = new HashSet<string>(DeclaredIds().Select(pair => pair.Value));
+            var unknown = Achievements.EvaluatedIds().Where(id => !declared.Contains(id)).ToList();
+
+            Assert.That(unknown, Is.Empty,
+                "these rules target ids that are not in AchievementIds: " + string.Join(", ", unknown));
+        }
+
+        [Test]
+        public void NoAchievement_HasTwoRules()
+        {
+            var ids = Achievements.EvaluatedIds().ToList();
+
+            Assert.That(ids.Count, Is.EqualTo(ids.Distinct().Count()), "an id is evaluated by more than one rule");
+        }
+
+        [Test]
+        public void TheZonesTheLadderNamesByHand_ExistInTheShippedData()
+        {
+            // Into the Hollows and Cloudreach are the only rules that name a
+            // zone as a literal, so they are the only two a rename could quietly
+            // strand. Everything else reads a count.
+            var dataDir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "design", "data"));
+            var design = GameData.Parse(GameData.ReadSourcesFromFiles(dataDir));
+            var zoneIds = design.Zones.Select(zone => zone.Id).ToList();
+
+            Assert.That(zoneIds, Does.Contain("the-hollows"));
+            Assert.That(zoneIds, Does.Contain("cloudreach-peaks"));
+        }
+
+        [Test]
+        public void Reassert_WhenSignedOut_ReportsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.almanacNodeIds.Add("old-friend");
+            _services.SignedIn = false;
+
+            Achievements.Reassert(_services, state, _data);
+
+            Assert.That(_services.Unlocked, Is.Empty, "achievements belong to a gamer profile");
+            Assert.That(_services.Steps, Is.Empty);
+        }
+
+        [Test]
+        public void Reassert_WithAThousandGathered_UnlocksAFullBasket()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.lifetimeGathered["berries"] = new BigDouble(1000);
+
+            Achievements.Reassert(_services, state, _data);
+
+            Assert.That(_services.Unlocked, Does.Contain(AchievementIds.AFullBasket));
+            Assert.That(_services.Unlocked, Does.Not.Contain(AchievementIds.TheLongHaul),
+                "a hundred thousand is a further rung");
+        }
+
+        [Test]
+        public void Reassert_ReportsIncrementalProgressAsSteps()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.migrationCount = 2;
+
+            Achievements.Reassert(_services, state, _data);
+
+            Assert.That(_services.Steps[AchievementIds.ThreeFolds], Is.EqualTo(2));
+            Assert.That(_services.Unlocked, Does.Contain(AchievementIds.TheFirstFold),
+                "one fold is a plain unlock and two folds have passed it");
+        }
+
+        [Test]
+        public void Reassert_ClampsStepsToTheTarget()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.migrationCount = 99;
+
+            Achievements.Reassert(_services, state, _data);
+
+            // Play rejects a step count above the configured total, so a run
+            // that runs away with the counter must still report the target.
+            Assert.That(_services.Steps[AchievementIds.TenFolds], Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Reassert_CountsSpeciesFromTheLifetimeRecord_NotTheRoster()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.speciesEverBefriended.AddRange(new[] { "meadow-vole", "red-squirrel", "bramble-hare" });
+
+            Achievements.Reassert(_services, state, _data);
+
+            // The roster is empty — these were befriended in runs already folded.
+            Assert.That(state.roster, Is.Empty);
+            Assert.That(_services.Steps[AchievementIds.TheWholeWood], Is.EqualTo(3));
+        }
+
+        [Test]
+        public void Reassert_CountsStationsFromTheLifetimeRecord()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.stationsEverWorked.AddRange(new[] { "fire", "bench", "forge" });
+
+            Achievements.Reassert(_services, state, _data);
+
+            Assert.That(_services.Steps[AchievementIds.TheWholeCampWorking], Is.EqualTo(3));
+        }
+
+        /// <summary>The encoded ids declared in the generated <see cref="AchievementIds"/>, by constant name.</summary>
+        private static IEnumerable<KeyValuePair<string, string>> DeclaredIds()
+        {
+            return typeof(AchievementIds)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+                .Select(field => new KeyValuePair<string, string>(field.Name, (string)field.GetRawConstantValue()));
+        }
+
         /// <summary>An <see cref="IGameServices"/> that records the achievements it was asked to unlock.</summary>
         private sealed class RecordingGameServices : IGameServices
         {
             public readonly List<string> Unlocked = new List<string>();
 
-            public bool IsSignedIn => true;
+            /// <summary>Latest step count reported per incremental achievement.</summary>
+            public readonly Dictionary<string, int> Steps = new Dictionary<string, int>();
+
+            /// <summary>Settable so a test can ask what happens with no gamer profile.</summary>
+            public bool SignedIn = true;
+
+            public bool IsSignedIn => SignedIn;
 
             public void SignIn(Action<bool> onComplete = null)
             {
@@ -120,6 +263,11 @@ namespace Wildgrove.Game.Tests
             public void UnlockAchievement(string achievementId)
             {
                 Unlocked.Add(achievementId);
+            }
+
+            public void SetAchievementSteps(string achievementId, int steps)
+            {
+                Steps[achievementId] = steps;
             }
 
             public void SubmitScore(string leaderboardId, long score)

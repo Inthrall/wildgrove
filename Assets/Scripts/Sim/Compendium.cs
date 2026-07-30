@@ -33,6 +33,37 @@ namespace Wildgrove.Sim
             state.lifetimeCrafted[recipeId] = total + 1.0;
         }
 
+        /// <summary>
+        /// Note that a species has been befriended at least once. Idempotent —
+        /// the same species recruited again in a later run adds nothing.
+        /// </summary>
+        public static void RecordSpecies(GameState state, string speciesId)
+        {
+            if (state == null || string.IsNullOrEmpty(speciesId))
+            {
+                return;
+            }
+
+            if (!state.speciesEverBefriended.Contains(speciesId))
+            {
+                state.speciesEverBefriended.Add(speciesId);
+            }
+        }
+
+        /// <summary>Note that a station has finished a batch at least once. Idempotent.</summary>
+        public static void RecordStationWorked(GameState state, string stationId)
+        {
+            if (state == null || string.IsNullOrEmpty(stationId))
+            {
+                return;
+            }
+
+            if (!state.stationsEverWorked.Contains(stationId))
+            {
+                state.stationsEverWorked.Add(stationId);
+            }
+        }
+
         public static void RecordPristine(GameState state, string resourceId, BigDouble amount)
         {
             if (amount <= BigDouble.Zero)

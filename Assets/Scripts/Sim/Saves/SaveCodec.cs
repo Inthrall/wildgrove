@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 36;
+        public const int CurrentVersion = 37;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -47,6 +47,8 @@ namespace Wildgrove.Sim.Saves
                 deepAmberFound = state.deepAmberFound,
                 deepAmberPityHours = state.deepAmberPityHours,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
+                speciesEverBefriended = new List<string>(state.speciesEverBefriended),
+                stationsEverWorked = new List<string>(state.stationsEverWorked),
                 nextFamiliarSeq = state.nextFamiliarSeq,
                 haulTripProgress = state.haulTripProgress,
                 rngState = state.rngState,
@@ -282,6 +284,12 @@ namespace Wildgrove.Sim.Saves
             state.deepAmberPityHours = save.deepAmberPityHours > 0.0 ? save.deepAmberPityHours : 0.0;
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
+                : new List<string>();
+            state.speciesEverBefriended = save.speciesEverBefriended != null
+                ? new List<string>(save.speciesEverBefriended)
+                : new List<string>();
+            state.stationsEverWorked = save.stationsEverWorked != null
+                ? new List<string>(save.stationsEverWorked)
                 : new List<string>();
 
             state.resources.Clear();
@@ -1135,6 +1143,45 @@ namespace Wildgrove.Sim.Saves
                         // the reward did not exist, so it cannot have been
                         // redeemed, and the plate is simply unrecorded.
                         save.version = 36;
+                        break;
+
+                    case 36:
+                        // v36 predates the two records the roster and the camp
+                        // cannot keep for themselves. Seeded from the run in
+                        // hand rather than left empty: the species walking with
+                        // the warden right now, and the stations already at
+                        // work, are the part of the history that can still be
+                        // recovered. The rest is genuinely lost — an older save
+                        // never wrote it down — so a returning player may have
+                        // to re-befriend a species they once knew before "The
+                        // Whole Wood" reads true.
+                        save.speciesEverBefriended = save.speciesEverBefriended ?? new List<string>();
+                        if (save.roster != null)
+                        {
+                            foreach (var familiar in save.roster)
+                            {
+                                if (!string.IsNullOrEmpty(familiar?.speciesId)
+                                    && !save.speciesEverBefriended.Contains(familiar.speciesId))
+                                {
+                                    save.speciesEverBefriended.Add(familiar.speciesId);
+                                }
+                            }
+                        }
+
+                        save.stationsEverWorked = save.stationsEverWorked ?? new List<string>();
+                        if (save.stations != null)
+                        {
+                            foreach (var station in save.stations)
+                            {
+                                if (!string.IsNullOrEmpty(station?.stationId)
+                                    && !save.stationsEverWorked.Contains(station.stationId))
+                                {
+                                    save.stationsEverWorked.Add(station.stationId);
+                                }
+                            }
+                        }
+
+                        save.version = 37;
                         break;
 
                     default:

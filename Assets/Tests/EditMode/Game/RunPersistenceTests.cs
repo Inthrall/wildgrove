@@ -271,6 +271,10 @@ namespace Wildgrove.Game.Tests
             {
             }
 
+            public void SetAchievementSteps(string achievementId, int steps)
+            {
+            }
+
             public void SubmitScore(string leaderboardId, long score)
             {
             }

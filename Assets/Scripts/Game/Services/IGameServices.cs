@@ -49,6 +49,21 @@ namespace Wildgrove.Game.Services
         void UnlockAchievement(string achievementId);
 
         /// <summary>
+        /// Report progress on an incremental achievement as a step count, which
+        /// Play draws as a bar and unlocks on its own once the steps are met.
+        /// <para>
+        /// Deliberately set-to-at-least rather than increment-by. <see
+        /// cref="Achievements.Reassert"/> re-derives every achievement from
+        /// whole state on a cadence, so the same progress is reported over and
+        /// over; an increment would add it every time and race to the unlock.
+        /// Setting an absolute figure is idempotent, and Play keeps the highest
+        /// it has seen — which also makes a per-run high-water mark safe to
+        /// report after a Migration has reset the run's own counter.
+        /// </para>
+        /// </summary>
+        void SetAchievementSteps(string achievementId, int steps);
+
+        /// <summary>
         /// Submit a score to a leaderboard by its encoded ID (see <see cref="LeaderboardIds"/>).
         /// No-op when signed out. Play Games keeps only the player's best, so
         /// re-submitting an equal-or-lower score is harmless.

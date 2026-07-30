@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Wildgrove.Data;
 
 namespace Wildgrove.Sim
@@ -185,6 +186,12 @@ namespace Wildgrove.Sim
             // The deep amber crosses too — journal content, like the plates.
             // (The pity clock doesn't: a fresh run starts a fresh watch.)
             next.deepAmberFound = state.deepAmberFound;
+
+            // The kith and the camp are rebuilt every run, so these two records
+            // are the only memory that a species was ever befriended or a
+            // station ever worked. They cross with the rest of the Compendium.
+            next.speciesEverBefriended = new List<string>(state.speciesEverBefriended);
+            next.stationsEverWorked = new List<string>(state.stationsEverWorked);
 
             // "You keep … the Compendium" — the lifetime record crosses whole.
             foreach (var pair in state.lifetimeGathered)

@@ -332,6 +332,10 @@ namespace Wildgrove.Game
             // Same cadence for the Game Stats totals: hauls and crafts land every
             // tick, so they go as one figure per save rather than one event each.
             Stats.Flush(State);
+            // And the achievements, for the same reason the leaderboards are
+            // here: sign-in alone would leave a milestone crossed mid-session
+            // waiting for the next launch to be granted.
+            ReassertAchievements();
         }
 
         /// <summary>Collect (and clear) the load-time offline summary, so the welcome-back sheet shows once.</summary>
@@ -347,8 +351,11 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Re-assert achievements the current state already satisfies, run when
-        /// sign-in completes — closing the sign-in race where a milestone reached
-        /// while signed out never gets its one-shot celebration again. The mapping
+        /// sign-in completes and again on each save — closing the sign-in race
+        /// where a milestone reached while signed out never gets its one-shot
+        /// celebration again, and granting mid-session ones without waiting for
+        /// a relaunch. Idempotent either way: Play ignores an unlock it holds,
+        /// and progress is set rather than added. The mapping
         /// lives in <see cref="Achievements.Reassert"/> so it can be tested with a
         /// fake service, without this MonoBehaviour's Awake/Initialise lifecycle.
         /// </summary>
