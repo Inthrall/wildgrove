@@ -857,8 +857,11 @@ pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
   device-scale pass had already landed them: `FitLayoutToScreen` offsets the
   root by `Screen.safeArea` and re-applies on every safe-area or canvas
   change (now including width, which the spread needs).
-  Still open here: `HeightClampedElement`/`TrackedScrollRect` are no longer
-  used by the HUD (kept compiling — delete or reuse).
+  ~~Still open here: `HeightClampedElement`/`TrackedScrollRect` are no longer
+  used by the HUD (kept compiling — delete or reuse).~~ ✅ RESOLVED 2026-07-30:
+  `HeightClampedElement` came back into use (the sheet scroll clamp,
+  `JournalSheets.BeginSheet`); `TrackedScrollRect` was still referenced by
+  nothing and is deleted.
   ~~**full keyboard / controller navigation is the other half of the Phase 2
   gate** — the input abstraction exists but menu focus traversal does not.~~
   ✅ RESOLVED 2026-07-29 — see the keyboard/controller item below.
@@ -1280,15 +1283,31 @@ pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
   separate rarer honour this item already describes. The `role: carrier|gatherer`
   split goes away — carrying is a post, so a bonded familiar is stationed like any
   other. Final bond counts/rarity still Mo's to settle (§14).
-- **Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
-  `noSpoilage` (Clay-Lined Creel).** There is no night-rate reduction and no
-  spoilage system for them to modify — both are recorded on the worn kit and
-  shown in the HUD, waiting for their mechanics (night-rate with the offline
-  balance pass, spoilage if it ever ships). While they stay inert the optimal
-  kit is fully determined (Cordage Wraps · Birch Frame Pack · Oilskin Tarp) —
-  the Pack and Camp slots have no live tradeoff yet, so the swapping the kit
-  bag now allows has nothing to reward it until these two land.
-  (`Wildgrove.Sim/Gear.cs`)
+- ~~**Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
+  `noSpoilage` (Clay-Lined Creel).**~~ ✅ RESOLVED 2026-07-30 — Mo's call: don't
+  wait for the mechanics; the dead items **move into the Almanac as
+  Verdure nodes** with effects the sim already consumes. The three dead
+  effect types (`offlineNightFullRate`, `noSpoilage`, and
+  `unlockVerdureForecast` on the Almanac Desk — the forecast was never gated,
+  so that rung was a no-op too) are **removed from the vocabulary** (enum,
+  validator, journal copy); Pitch Torch and Clay-Lined Creel leave the kit
+  (their plates stay on disk as spares, like `res-flint`) and the Almanac
+  Desk leaves the ladder (33 rungs now). The kept things, in the tree:
+  - **The Pitch Torch** (6 Verdure, off Patient Hands) →
+    `craftSpeedMult firecraft ×1.25` — stacks with Patient Hands' global.
+  - **The Clay-Lined Creel** (5 Verdure, off Old Songs I) →
+    `yieldMult fish ×1.25` (the catch comes home whole — the old
+    no-spoilage flavour, via the region modifiers' resource grain).
+  - **The Almanac Desk** (8 Verdure, off The Long Watch II) →
+    `offlineCapBonusHours +2` — additive, deliberately NOT another
+    raise-to so it stacks on the Long Watch line instead of shadowing it.
+  One-off tree total 159 → 178. Costs/values are first guesses — tune with
+  the run-3-to-run-6 sitting. Consequence accepted with the call: the kit is
+  back to one piece per slot, so the kit bag's swap has nothing to reward
+  until new gear ships. If a real night-rate or spoilage mechanic ever
+  lands, re-add its effect type then.
+  (`design/data/almanac.json`, `gear.json`, `upgrades.json`, `EffectDef.cs`,
+  `GameDataValidator.cs`, `JournalText.cs`, `ArtLibrary.cs`)
 - **Crafted gear is worn immediately — there is no separate equip step.** A
   piece goes straight into its slot when made; the displaced piece keeps in the
   kit bag (`GameState.gearCrafted`, save v31) and is re-worn free, so nothing is
@@ -1336,6 +1355,81 @@ pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
   **v0.11 (§7):** narrative grows to **six channels** — a new **plate-inscription**
   channel adds a margin line to a familiar's plate at Kinship milestones (the only
   channel about individuals), which lands with the Kinship system.
+
+## UI surfacing gaps (audit 2026-07-30)
+
+A sim-vs-journal diff: every `Sim/*` system and `GameState` field checked
+against every reader in `Assets/Scripts/Game/**`. These are systems that
+work — and pay out — without the player ever being shown them. (The three
+dead effects the same audit found are already resolved; see the Phase 3
+kit-effects item.)
+
+**Fully invisible systems (real mechanics, zero UI):**
+
+- **Mastery is entirely invisible — the biggest hole.** `Mastery.Level` /
+  `ProgressToNext` are called from nowhere in the Game assembly; no `GameLoop`
+  wrapper exists. Node cards show richness but not mastery, which silently
+  compounds to +495% yield *and* sell value at cap — the stated long-tail
+  chase. Wants a per-node line (level + % to next) on the Trail node cards.
+  (`Sim/Mastery.cs`, `TrailPage.BuildNodePlate`)
+- **The Fine pool is a black hole.** `state.fineResources` has no reader in
+  any view — 3.5% of every haul batch lands where the player can't see,
+  trade, or spend it (`Exchange.TryTrade` reads only `resources`; its only
+  exit is a fine-quality Rite specimen slot). Surface the stock (Compendium
+  row beside Pristine?) and decide whether the Exchange should take Fine.
+  (`Sim/Quality.cs`, `RecordPage`)
+- **Rite deed slots render no progress and no action** — `deedCounts`
+  accumulates and `SlotName` can *name* a deed slot, but `BuildSlotRow` only
+  builds rows for Resource/Specimen/Sketch, so deed progress is invisible
+  until the slot happens to complete. Looks like an actual gap in the verse
+  card, not a deferral. (`TrailPage.BuildSlotRow`, `Sim/Rite.cs`)
+- **No "current bonuses" readout anywhere.** The live `ModifierSnapshot`
+  (region + gear + tinctures + upgrades + plates + spreads + Almanac) is
+  never shown as an aggregate — effects only ever appear as per-source label
+  strings, so "why is this node at 4.2/s" is unanswerable. (`Sim/Modifiers.cs`)
+- **Observation rates and pity clocks are never surfaced.** Sketch chance per
+  site, `DigSiteState.pityHours` (4 h guarantee) and `deepAmberPityHours`
+  (12 h) — both load-bearing anti-starvation timers — appear in no UI. The
+  watch plate says only "someone wanders / no one wanders".
+  (`Sim/Observation.cs`, `Sim/DeepAmber.cs`, `TrailPage.BuildWatchPlate`)
+
+**Partially surfaced — the system shows but its key numbers don't:**
+
+- Familiar rows show a Roman level with no progress readout —
+  `GameLoop.FamiliarLevelProgress` exists and is called by nothing (skills
+  show "% to next"; familiars should match). (`WardenPage`)
+- Kinship's actual perks (+2% XP rate/level, trait deepening ×1.25 per
+  milestone, starting-level carry) are never stated as numbers — only the
+  level and inscriptions show. (`Sim/Kinship.cs`, `Sim/Traits.cs`)
+- The warden's own hands (0.5/s straight to camp) are excluded from the node
+  plates' "X/s" (`Simulation.YieldPerSecond`), so posting the warden looks
+  like it does nothing. (`Sim/Warden.cs`)
+- Roosts comfort (`Buildings.ComfortXpMultiplier`) is computed every tick but
+  never shown as a live rate on the roster.
+- `Regions.DemandWeight` is invisible — a modified season's verse just costs
+  more with no explanation; and nothing explains that runs 2+ re-pick verse
+  contents on a rotating spotlight (discount/premium). (`Sim/Regions.cs`,
+  `Sim/RiteGenerator.cs`)
+- The Compendium shows lifetime *gathered* but never lifetime *crafted*
+  (`lifetimeCrafted` feeds only achievements/Game Stats); `lifetimePristine`
+  likewise. Cross-run collection (`speciesEverBefriended`,
+  `stationsEverWorked`) has no page — the roster is this-run only and there
+  is no in-game achievements screen. (`RecordPage`, `Sim/Compendium.cs`)
+- The Ladder card windows to the next 3 rungs; the shape of the 34-rung tree
+  is never visible (the Almanac, by contrast, lists revealed tiers).
+  (`CampPage`)
+- A live tincture is only visible on the Warden tab — no global buff
+  indicator. (`Sim/Tinctures.cs`)
+
+**Structural absences:**
+
+- **No settings surface at all** — no audio, no save management, no
+  cloud-save status (the most-played-wins reconcile in `RunPersistence` is
+  completely silent), no privacy/consent access beyond the SDK's own UMP
+  dialog.
+- **No aggregate camp production view** — per-resource rates exist only on
+  individual node cards; the only rollup is the trail's gather-vs-carry
+  shortfall line.
 
 ## Narrative authoring
 

@@ -535,9 +535,6 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class ToolsData
         {
-            public BigDouble baseCostCoin;
-            public double costMultPerTier;
-            public double yieldMultPerTier;
             public List<string> tiers = new List<string>();
         }
 

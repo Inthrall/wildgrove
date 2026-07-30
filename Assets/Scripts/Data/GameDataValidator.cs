@@ -1532,15 +1532,6 @@ namespace Wildgrove.Data
                 issues.Add("Economy tools.tiers is empty");
             }
 
-            if (economy.Tools != null
-                && (economy.Tools.BaseCostCoin <= 0 || economy.Tools.CostMultPerTier <= 1
-                    || economy.Tools.YieldMultPerTier <= 1))
-            {
-                // Cost ≤ 0 makes tiers free; a mult ≤ 1 makes each tier cheaper
-                // or weaker than the last — the ladder inverts.
-                issues.Add("Economy tools progression is degenerate");
-            }
-
             if (economy.Xp != null && (economy.Xp.Base <= 0 || economy.Xp.Growth <= 1 || economy.Xp.MaxLevel <= 1))
             {
                 // Base ≤ 0 means every rung costs nothing — all skills read
@@ -1780,10 +1771,6 @@ namespace Wildgrove.Data
                     RequireKnownResource(owner, effect, resourceIds, issues);
                     break;
 
-                case EffectType.NoSpoilage:
-                    RequireKnownResource(owner, effect, resourceIds, issues);
-                    break;
-
                 case EffectType.UnlockZone:
                     if (effect.Zone == null || !data.ZonesById.ContainsKey(effect.Zone))
                     {
@@ -1818,10 +1805,6 @@ namespace Wildgrove.Data
                         issues.Add($"{owner} unlocks unknown recipe '{effect.Recipe}'");
                     }
 
-                    break;
-
-                case EffectType.UnlockVerdureForecast:
-                case EffectType.OfflineNightFullRate:
                     break;
 
                 case EffectType.RecruitSpecies:

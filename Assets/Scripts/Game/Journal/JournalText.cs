@@ -158,14 +158,10 @@ namespace Wildgrove.Game
                 case EffectType.OfflineCapHours:
                 case EffectType.OfflineCapBonusHours:
                     return AwayCreditLabel(effect);
-                case EffectType.OfflineNightFullRate:
-                    return "full pace through the night away";
                 case EffectType.TendingBurstBonus:
                     return "tending burst +" + Percent(effect.value);
                 case EffectType.CarrierCapacityBonus:
                     return "carriers hold +" + Percent(effect.value);
-                case EffectType.NoSpoilage:
-                    return effect.resource + " never spoils";
                 case EffectType.UnlockZone:
                     return "opens " + ZoneName(effect.zone);
                 case EffectType.UnlockSkill:
@@ -176,8 +172,6 @@ namespace Wildgrove.Game
                     return "opens the watch in " + ZoneName(effect.zone);
                 case EffectType.RecruitSpecies:
                     return "a " + SpeciesName(effect.species) + " joins the kith";
-                case EffectType.UnlockVerdureForecast:
-                    return "reveals the verdure forecast";
                 case EffectType.GrantUpgrade:
                     return "every fold begins with " + UpgradeName(effect.upgrade);
                 case EffectType.KeepCraftOrders:

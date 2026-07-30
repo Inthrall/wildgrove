@@ -28,9 +28,6 @@
     "$note": "first-guess Phase-3 number, not in design doc — seconds per craft at every station before craftSpeedMult upgrades divide it. Tune against the §2 pacing targets (first recipe cooked ~20 min)."
   },
   "tools": {
-    "baseCostCoin": 100,
-    "costMultPerTier": 12,
-    "yieldMultPerTier": 2,
     "tiers": ["flint", "copper", "bronze", "iron", "steel", "deepsteel"],
     "$note": "flint is knapped (no forge); each later tier also consumes an ingot batch (see recipes). deepsteel is the §5 'deep ores' tier past steel — smelted from the Hollows' deep-ore seams"
   },

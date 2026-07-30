@@ -5,9 +5,9 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// The camp building lines (design §9) — the repeatable Coin sink. A
+    /// The camp building lines (design §9) — the repeatable goods sink. A
     /// line's level is its bought levels plus the §9 milestone upgrades the
-    /// run owns; the next bought level always costs baseCostCoin ·
+    /// run owns; the next bought level always costs the line's bundle ·
     /// costGrowth.building^level, forever. Bought levels each grant the
     /// line's perLevel effect: station craft speed, basket capacity, or the
     /// Roosts line's comfort (+familiar XP rate while stationed, design §4 —
@@ -17,7 +17,7 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Buildings
     {
-        /// <summary>Levels of this line bought with Coin (milestone upgrades not included).</summary>
+        /// <summary>Levels of this line bought with goods (milestone upgrades not included).</summary>
         public static int BoughtLevels(GameState state, string buildingId)
         {
             return state.buildingLevels.TryGetValue(buildingId, out var levels) ? levels : 0;

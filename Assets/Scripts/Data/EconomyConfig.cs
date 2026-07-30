@@ -62,9 +62,6 @@ namespace Wildgrove.Data
 
         public sealed class ToolsSection
         {
-            public long BaseCostCoin { get; set; }
-            public double CostMultPerTier { get; set; }
-            public double YieldMultPerTier { get; set; }
             public List<string> Tiers { get; set; }
         }
 

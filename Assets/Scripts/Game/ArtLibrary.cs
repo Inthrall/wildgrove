@@ -149,9 +149,7 @@ namespace Wildgrove.Game
         {
             { "cordage-wraps", Plates + "Gear/gear-cordage" },
             { "birch-frame-pack", Plates + "Gear/gear-pack" },
-            { "pitch-torch", Plates + "Gear/gear-torch" },
             { "oilskin-tarp", Plates + "Gear/gear-tarp" },
-            { "clay-lined-creel", Plates + "Gear/gear-creel" },
         };
 
         // insect id (insects.json) → deep-page plate

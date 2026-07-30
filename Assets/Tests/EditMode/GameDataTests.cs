@@ -27,8 +27,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(34),
-                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), and the Hollows brought its map plus the deepsteel toolset");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(33),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, and the Almanac Desk moved into the Verdure tree");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -404,13 +404,13 @@ namespace Wildgrove.Data.Tests
             // every zone of the template would do exactly that.
             var sources = LoadSources();
             // Gate the three zones that are open on run 1 (the others already
-            // carry a fold), targeting each by its map cost so no zone ends up
-            // with the key twice.
-            foreach (var cost in new[] { "0", "400", "6500" })
+            // carry a fold), targeting each by its verse site so no zone ends
+            // up with the key twice.
+            foreach (var site in new[] { "the fire circle", "the hollow oak", "the oldest root" })
             {
                 sources.ZonesJson = sources.ZonesJson.Replace(
-                    $"\"mapCostCoin\": {cost},",
-                    $"\"minMigration\": 5, \"mapCostCoin\": {cost},");
+                    $"\"verseSite\": \"{site}\",",
+                    $"\"minMigration\": 5, \"verseSite\": \"{site}\",");
             }
 
             Assert.That(sources.ZonesJson.Split(new[] { "\"minMigration\": 5" }, System.StringSplitOptions.None).Length - 1,
@@ -717,7 +717,7 @@ namespace Wildgrove.Data.Tests
             var sources = LoadSources();
             sources.InsectsJson = sources.InsectsJson.Replace(
                 "{ \"type\": \"pristineChanceBonus\", \"value\": 0.01 }",
-                "{ \"type\": \"noSpoilage\", \"resource\": \"bogus-item\" }");
+                "{ \"type\": \"sellValueBonus\", \"resource\": \"bogus-item\", \"value\": 0.5 }");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 

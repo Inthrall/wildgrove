@@ -74,7 +74,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "pitch-torch", displayName = "Pitch Torch", slot = "camp", skill = "firecraft",
                     materials = { new ItemAmount { id = "timber", amount = 10 } },
-                    effects = { new EffectData { type = EffectType.OfflineNightFullRate } },
+                    effects = { new EffectData { type = EffectType.CraftSpeedMult, skill = "firecraft", value = 1.25 } },
                 },
             };
         }

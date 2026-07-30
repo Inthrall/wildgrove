@@ -376,9 +376,6 @@ namespace Wildgrove.Data
                 },
                 tools = new EconomyData.ToolsData
                 {
-                    baseCostCoin = e.Tools.BaseCostCoin,
-                    costMultPerTier = e.Tools.CostMultPerTier,
-                    yieldMultPerTier = e.Tools.YieldMultPerTier,
                     tiers = new List<string>(e.Tools.Tiers)
                 },
                 mastery = new EconomyData.MasteryData

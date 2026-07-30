@@ -12,17 +12,12 @@ namespace Wildgrove.Data
         FolioSpreadBonusMult,
         OfflineCapHours,
         OfflineCapBonusHours,
-        OfflineNightFullRate,
         TendingBurstBonus,
         CarrierCapacityBonus,
-        NoSpoilage,
         UnlockZone,
         UnlockSkill,
         UnlockRecipe,
         UnlockDigSite,
-
-        /// <summary>Reveals the live Verdure forecast (the Almanac Desk). Migration itself is gated by the Rite, not an upgrade.</summary>
-        UnlockVerdureForecast,
 
         /// <summary>A familiar of <see cref="EffectDef.Species"/> joins the kith when the upgrade is taken (resting at camp, named on arrival). No-op if that species already walks — each joins once, ever.</summary>
         RecruitSpecies,
