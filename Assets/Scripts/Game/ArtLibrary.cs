@@ -73,6 +73,7 @@ namespace Wildgrove.Game
             { "wardens-tonic", Plates + "Goods/goods-tonic" },
             { "glow-salve", Plates + "Goods/goods-salve" },
             { "peat-smoke-draught", Plates + "Goods/goods-draught" },
+            { "felted-cloak", Plates + "Goods/goods-cloak" },
         };
 
         // building id (buildings.json) → camp-line plate
@@ -119,6 +120,10 @@ namespace Wildgrove.Game
             // Mustela erminea, drawn in its summer coat as the plate has it; the
             // warden's is the winter animal the inscriptions describe.
             { "ermine", Plates + "Familiars/familiar-ermine" },
+            // Keulemans' Buller plate — wings up over the scree, and a sheep
+            // already fleeing in the background, which is the whole trait.
+            { "kea", Plates + "Familiars/familiar-kea" },
+            { "pika", Plates + "Familiars/familiar-pika" },
             { "pack-raven", Plates + "Familiars/familiar-raven" },
             // The Drover's Halter pony (§11). A head-and-neck portrait rather
             // than the whole animal — the plate's lower legs stand against dark
@@ -162,6 +167,9 @@ namespace Wildgrove.Game
             // wingless female who carries the light. "Bearers" is plural.
             { "lantern-bearers", Plates + "Insects/insect-lantern-bearers" },
             { "quiet-court", Plates + "Insects/insect-quiet-court" },
+            // Parnassius apollo — the mountain white whose worn wings scale
+            // like the pages it is drawn on.
+            { "parchment-wings", Plates + "Insects/insect-parchment-wings" },
             { "wayfarers-plate", Plates + "Insects/insect-wayfarers-plate" },
         };
 

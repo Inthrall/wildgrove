@@ -1,5 +1,5 @@
 {
-  "$comment": "Familiar species (design doc S4). The kith is a collection of individuals: at most ONE familiar of each species ever walks with the warden (each has unique plate art), and each species carries a single fixed trait. A node specialist now works a PAIR of related nodes (e.g. copper + tin), so one familiar answers either node's gift pile and boosts both wherever it is posted or when it wanders. Trait kinds the sim interprets: nodeYieldBonus (at a node whose resource is in trait.resources), trailThroughputBonus (holding the trail post), digSpeedBonus (at a watch site), pristineBonus (points at its node, any resource), trailCarryFactor (the lane's load as a fraction of a carrier's, NOT a bonus - and never Kinship-deepened: the fell pony of The Drover's Halter cannot be fully tamed, S11). Node specialists arrive by gift pile at either of their nodes (one pile per verse sung); the carrier arrives through the recruit rungs and bonds. The roster is sized to the gatherable nodes: seven pair-specialists cover zones 1-4 plus rare-herbs, and each species' animal matches the powerup it gives. Names each start with a distinct letter. inscriptions = the plate's margin lines (design S7, the channel about individuals): one is earned per signature milestone passed (economy.familiarXp.signatureMilestones), in order, in the warden's hand — draft wording, re-voice with the narrative pass. Values are first guesses.",
+  "$comment": "Familiar species (design doc S4). The kith is a collection of individuals: at most ONE familiar of each species ever walks with the warden (each has unique plate art), and each species carries a single fixed trait. A node specialist now works a PAIR of related nodes (e.g. copper + tin), so one familiar answers either node's gift pile and boosts both wherever it is posted or when it wanders. Trait kinds the sim interprets: nodeYieldBonus (at a node whose resource is in trait.resources), trailThroughputBonus (holding the trail post), digSpeedBonus (at a watch site), pristineBonus (points at its node, any resource), trailCarryFactor (the lane's load as a fraction of a carrier's, NOT a bonus - and never Kinship-deepened: the fell pony of The Drover's Halter cannot be fully tamed, S11). Node specialists arrive by gift pile at either of their nodes (one pile per verse sung); the carrier arrives through the recruit rungs and bonds. The roster is sized to the gatherable nodes: twelve pair-specialists cover every priced find on the map (zones 1-7 built, plus both peaks finds ahead of their zone), and each species' animal matches the powerup it gives. Names each start with a distinct letter. inscriptions = the plate's margin lines (design S7, the channel about individuals): one is earned per signature milestone passed (economy.familiarXp.signatureMilestones), in order, in the warden's hand — draft wording, re-voice with the narrative pass. Values are first guesses.",
   "species": [
     {
       "id": "meadow-vole",
@@ -80,6 +80,22 @@
       "suggestedNames": ["Drift", "Pale", "Frost", "Silk", "Winter"],
       "trait": { "name": "Winter-walker", "description": "+40% yield at ashglass and glacier ice nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["ashglass", "glacier-ice"] },
       "inscriptions": ["White as the glass he digs. The ash does not stick to him.", "Circled the pit all night. No other track comes near it.", "He wears the old winter like it was fitted. Perhaps it was."]
+    },
+    {
+      "id": "kea",
+      "name": "Kea",
+      "roleLean": "gatherer",
+      "suggestedNames": ["Kee", "Scoria", "Sleet", "Rascal", "Vane"],
+      "trait": { "name": "Flock-rider", "description": "+40% yield at egg and wool nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["eggs", "wool"] },
+      "inscriptions": ["Undid the strap I tied twice, and left the buckle where I'd find it. A fee, I think.", "Rides the ewes down the slope for the joy of it. The flock has voted to allow this.", "The wind is his and he lends it. Nothing on this mountain is closed to him now."]
+    },
+    {
+      "id": "pika",
+      "name": "Pika",
+      "roleLean": "gatherer",
+      "suggestedNames": ["Mow", "Posy", "Stack", "Whin", "Cairn"],
+      "trait": { "name": "Hay-piler", "description": "+40% yield at lichen and sky-blossom nodes", "kind": "nodeYieldBonus", "value": 0.40, "resources": ["lichen", "sky-blossoms"] },
+      "inscriptions": ["Cuts her hay in the sun hours and stacks it under the one dry stone. I have started copying her.", "Whistles the hawk's arrival before the hawk. The whole slope moves on her word.", "Her winter is stacked and dried by midsummer. The cold arrives and finds it owes her."]
     },
     {
       "id": "pack-raven",

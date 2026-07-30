@@ -6,7 +6,8 @@
     "old-growth-wood":   "These roots drink deeper than you will ever dig. Let them.",
     "silverrun-river":   "The river keeps no ledger. Count what you take, for it will not.",
     "mistfen-marsh":     "The fen remembers every weight it has carried. Step lightly; it is counting.",
-    "the-hollows":       "The dark below was not always empty. Leave it the quiet it paid for."
+    "the-hollows":       "The dark below was not always empty. Leave it the quiet it paid for.",
+    "highland-crags":    "Others folded flocks on this height, and the wind has their names. Count yours home each night."
   },
   "verses": {
     "sunfield-meadow":   "What you carry is borrowed. Set some down, and see what follows you home.",
@@ -14,7 +15,8 @@
     "old-growth-wood":   "Wood made useful, and one bone of what came before. The grove would hold it again.",
     "silverrun-river":   "Of all you pulled from the water, the river asks the finest back. It knows you have it.",
     "mistfen-marsh":     "Brew what the still water grew, and pour a little back where the lights gather.",
-    "the-hollows":       "Ore made bright, and the glass the burning left. Carry the deep's own wealth back down."
+    "the-hollows":       "Ore made bright, and the glass the burning left. Carry the deep's own wealth back down.",
+    "highland-crags":    "What the flock gives freely, give on. The warmth was never yours to keep."
   },
   "provisioner": [
     { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
@@ -30,6 +32,7 @@
     "those-who-sow":  "They carry the flowers from field to field without being asked, and have longer than we have. Whoever tends this place, it is not only us. I drew them, and let them go on.",
     "lantern-bearers": "They light the drowned paths every night, for no one. I was never the reason, and I may still be grateful. Four evenings of drawing, and not one lantern paused for me.",
     "quiet-court": "They sing in galleries no light has ever reached, to no audience at all. Five evenings by lamplight, drawing what has never been seen. They did not stop singing once.",
+    "parchment-wings": "Wings thin as the pages I draw them on, and they fly only while the sun holds. Four afternoons of sun, this high, in this wind. I owed the mountain every one.",
     "wayfarers-plate": "A loose leaf, folded twice, left in a place I would pass. Another hand drew it, steadier than mine and long gone. I did not walk for this one. It is in the book now, and I am still walking."
   }
 }

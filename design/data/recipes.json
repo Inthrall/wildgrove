@@ -14,6 +14,8 @@
     { "id": "iron-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "iron-gravel": 4, "charcoal": 2 },    "output": "iron-ingot",      "valueMult": 5, "kind": "material", "stationLevel": 2, "skillLevel": 5 },
     { "id": "deep-ingot",      "station": "forge", "skill": "forgecraft", "inputs": { "deep-ores": 4, "charcoal": 3 },      "output": "deep-ingot",      "valueMult": 6, "kind": "material", "stationLevel": 3, "skillLevel": 8 },
 
+    { "id": "felted-cloak",    "station": "bench", "skill": "bushcraft",  "inputs": { "wool": 6, "cordage": 2 },            "output": "felted-cloak",    "valueMult": 5, "kind": "trade", "skillLevel": 6 },
+
     { "id": "wardens-tonic",   "station": "fire",  "skill": "apothecary", "inputs": { "herbs": 120, "mushrooms": 60 },       "output": "wardens-tonic",   "valueMult": 1, "kind": "material", "defaultKnown": true },
     { "id": "glow-salve",      "station": "fire",  "skill": "apothecary", "inputs": { "glow-moss": 90, "fish-oil": 12 },     "output": "glow-salve",      "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 3 },
     { "id": "peat-smoke-draught", "station": "fire", "skill": "apothecary", "inputs": { "peat": 75, "rare-herbs": 45 },     "output": "peat-smoke-draught", "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 5 }

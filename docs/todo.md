@@ -656,9 +656,71 @@ unspent days never bank extra hastening. Landed as:
   playtest sitting if ×2 still reads too fast (the next lever after this one
   is fold-gated content, not a tighter cap).
 
+**IMPLEMENTED 2026-07-31 — Highland Crags (zone 7) + Husbandry (design
+§3/§5/§6/§7), the first endgame slice.** The v1.2 trail begins, to the pattern
+Mistfen and the Hollows proved. Pure data + content — no new sim system (§3
+names none for zone 7; the zone's texture is the deepsteel door and the flock)
+and therefore **no save bump**. Landed:
+- `map-crags` (#35: smoked-trout 40 / **wardens-tonic 3** / deep-ingot 6 — you
+  pack food, medicine and metal to go high; the tonics give Apothecary a
+  cross-zone pull) grants zone + `unlockSkill husbandry` + `unlockDigSite`.
+  **The crags are the first zone behind the deepsteel gate** (`requiredTool`
+  flipped from the steel stub): the tool ladder kept stepping one tier per
+  zone through the Hollows and then stopped mattering, so deepsteel was a pure
+  ×2 with no door — now forgecraft 40 IS the road to the endgame, The Fire
+  Remembers auto-resumes the climb across folds, and the fold gate
+  (`minMigration` 4, one trail per fold past the Hollows' 3) means four folds
+  of compounded power arrive with it.
+- `fleece-shears` (#36, gateSkill husbandry 10, mirrors Smoking Racks) grants
+  the **felted-cloak** recipe (bench, bushcraft 6, wool ×6 + cordage ×2,
+  trade ×5 — the crags' crafted good) + husbandry yield ×2.
+- Verse 7 (`verse-crags`, spotlight husbandry + bushcraft): eggs 350 / wool
+  250 / lichen 300 / cloaks 6 / pristine specimen (renownGrant 7000, on the
+  1000→2500→4000 ramp). Verse site "the shieling"; waystone + verse lines in
+  the §7 register (draft — "Count yours home each night" / "The warmth was
+  never yours to keep").
+- Eggs/wool/lichen repriced 90/140/70 (the stub 40/50/30 priced zone 7 *below*
+  the Hollows). Seasons arrived with the zone: windswept thickens the fleece
+  (+wool 1.25), ashen's first life back on burned rock (+lichen 1.25).
+- **Two new species — Mo's steer: more diverse picks, "something like a kea".**
+  The **kea** (Flock-rider, eggs+wool — its real history with highland flocks,
+  down to riding the ewes) and the **pika** (Hay-piler, lichen+sky-blossoms —
+  the alpine harvester whose haypiles ARE the gatherer register; reaches into
+  zone 8 like ermine did). Every priced find on the map now has its
+  specialist. Names/inscriptions are §7-register drafts.
+- **The Parchment Wings** (Parnassius apollo, rarity 0.4, 4 sketches, +20%
+  husbandry) at the crag observation site, with its plate line.
+- **Four real PD plates sourced same-day** (no borrows, no colophon change —
+  all PD/no-restrictions): Keulemans' 1888 Buller kea (a sheep already fleeing
+  in the background), Audubon's 1845 Little Chief Hare (the pika, cropped off
+  its DPLA scan board), an F. Nemos Apollo chromolith, and Cloak (PSF).
+  CREDITS.md rows added; `FixArtImportSettings` re-run headless.
+- Tests: the never-unlockable-zone example moved highland-crags →
+  cloudreach-peaks; the never-granted-skill example moved husbandry →
+  **excavation** (the retired, whitelist-only skill — the LAST stable example;
+  every real zone skill is granted somewhere once the crags land). The fold
+  ladder test now derives its ladder from unlockZone effects instead of the
+  scope label, so the peaks join it automatically when their map lands. Pins:
+  35 rungs, 7 verses, crags minMigration 4 as the deepest trail.
+
+Interpretations shipped (tune/confirm):
+- Every crags number is a first guess measured against the zones 4–6 model
+  logic, not a playtest: prices 90/140/70, verse amounts, husbandry gate 10,
+  cloak inputs/×5, provisions bundle, specimen grant 7000, Apollo rarity 0.4.
+- **Deepsteel-as-door is a design decision to sit with**: zone 7 now waits on
+  forgecraft 40 (~1770 batches, offline-resumed) AND fold 4. If the playtest
+  says the two gates stack too harshly, the lever is the crags' requiredTool
+  back to steel — not the forgecraft curve.
+- The paid-skip budget, breadth ramp and demandGrowth all now stretch over a
+  seven-verse Rite from fold 4 — the run-3-to-run-6 sitting covers it.
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
    demandGrowth, Almanac costs, this pass) is model-derived and waiting on it.
+2. **Cloudreach Peaks (zone 8) + the final waystones** — the endgame proper,
+   last on the trail: the deep-past chain the amber notes point at (§7), the
+   Aurora Bloom, sky-blossoms/glacier-ice (already specialist-covered by pika
+   and ermine), minMigration 5.
 
 ## Phase 1 — Core loop slice (current)
 
@@ -1161,6 +1223,33 @@ unspent days never bank extra hastening. Landed as:
   Rewards **Sep 30 2026** / **Mar 1 2027** as already tracked above. The only
   Level Up work left is the Rewards offer association, which cannot start before
   **Sep 1 2026**, and Game Stats, which waits on Google's own client SDK.
+- **"The Almanac Complete" has drifted from the tree it counts.** The published
+  incremental achievement counts owned one-off Almanac nodes to **14 steps** —
+  set when the tree WAS 14 one-offs, left alone when the exotic lines took it to
+  19 (deliberate at the time: already published to Play Console), and now
+  further out at **22** since the torch/creel/desk moved in (`082e896`). Today
+  it unlocks at 14 nodes while its description promises "buy every node the
+  Almanac holds". Fix is a three-place re-step that must land together:
+  1. **Play Console** — edit the achievement's step count to 22 (Play permits
+     raising steps on a published incremental; players past 14 keep the unlock).
+  2. **`store/play-games/achievements.json`** — `steps: 14 → 22` (the console's
+     source-of-truth doc; anchor `almanacNodeIds.Count` is already right).
+  3. **`Achievements.cs`** — `Count(TheAlmanacComplete, 14, …) → 22`.
+  Worth adding with it: a test pinning the constant to the data's one-off node
+  count (`almanac nodes where !repeatable`) so the NEXT node added fails a test
+  instead of drifting silently — the constant itself has to stay hardcoded
+  because the console must agree with it. Re-step deliberately, not drive-by:
+  every future one-off node moves it again, so batch it with the next planned
+  console visit (the Sep 1 Rewards offer association is the natural one).
+- **Two more published incrementals drifted the same way with the Crags
+  (2026-07-31)** — batch into the same console visit, same three-place recipe:
+  - **"The Whole Wood"** counts `speciesEverBefriended` to **12 steps**; the
+    kea and the pika take the roster to **14** species. Unlocks two early
+    against its "every species" description until re-stepped.
+  - **"All Five Plates"** counts recorded drawable plates to **5 steps**; The
+    Parchment Wings makes **6** drawable. (The name itself rots — "All Five" —
+    so this one likely wants a rename in the console too, or the step count
+    left alone and the description re-worded to "the first five".)
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
@@ -1392,38 +1481,37 @@ kit-effects item.)
 
 **Fully invisible systems (real mechanics, zero UI):**
 
-- **Mastery is entirely invisible — the biggest hole.** `Mastery.Level` /
-  `ProgressToNext` are called from nowhere in the Game assembly; no `GameLoop`
-  wrapper exists. Node cards show richness but not mastery, which silently
-  compounds to +495% yield *and* sell value at cap — the stated long-tail
-  chase. Wants a per-node line (level + % to next) on the Trail node cards.
-  (`Sim/Mastery.cs`, `TrailPage.BuildNodePlate`)
-- **The Fine pool is a black hole.** `state.fineResources` has no reader in
-  any view — 3.5% of every haul batch lands where the player can't see,
-  trade, or spend it (`Exchange.TryTrade` reads only `resources`; its only
-  exit is a fine-quality Rite specimen slot). Surface the stock (Compendium
-  row beside Pristine?) and decide whether the Exchange should take Fine.
-  (`Sim/Quality.cs`, `RecordPage`)
-- **Rite deed slots render no progress and no action** — `deedCounts`
-  accumulates and `SlotName` can *name* a deed slot, but `BuildSlotRow` only
-  builds rows for Resource/Specimen/Sketch, so deed progress is invisible
-  until the slot happens to complete. Looks like an actual gap in the verse
-  card, not a deferral. (`TrailPage.BuildSlotRow`, `Sim/Rite.cs`)
-- **No "current bonuses" readout anywhere.** The live `ModifierSnapshot`
-  (region + gear + tinctures + upgrades + plates + spreads + Almanac) is
-  never shown as an aggregate — effects only ever appear as per-source label
-  strings, so "why is this node at 4.2/s" is unanswerable. (`Sim/Modifiers.cs`)
-- **Observation rates and pity clocks are never surfaced.** Sketch chance per
-  site, `DigSiteState.pityHours` (4 h guarantee) and `deepAmberPityHours`
-  (12 h) — both load-bearing anti-starvation timers — appear in no UI. The
-  watch plate says only "someone wanders / no one wanders".
-  (`Sim/Observation.cs`, `Sim/DeepAmber.cs`, `TrailPage.BuildWatchPlate`)
+- ~~**Mastery is entirely invisible — the biggest hole.**~~ ✅ RESOLVED
+  2026-07-31: each node plate carries a mastery line — level, its standing
+  "+X% yield & worth", and % to next (level 0 shows the way to the first;
+  cap says "the hand knows this ground"). (`TrailPage.MasteryLine`)
+- **The Fine pool is a black hole.** ✅ SURFACED 2026-07-31: the Compendium
+  rows show "N fine" beside held stock, with a foot-note saying what the
+  pool is for (a verse's fine find). STILL OPEN: whether the Exchange
+  should take Fine — a sim/design call, not a display one.
+  (`Sim/Quality.cs`, `RecordPage.BuildCompendiumCard`)
+- ~~**Rite deed slots render no progress and no action**~~ ✅ RESOLVED
+  2026-07-31 — mostly stale: `BuildSlotRow` already built a progress row
+  for every slot type (the audit line predated re-checking). What was
+  genuinely missing: nothing said a deed has no button on purpose; the
+  in-progress deed row now carries "counted as the work is done".
+  (`TrailPage.BuildSlotRow`)
+- ~~**No "current bonuses" readout anywhere.**~~ ✅ RESOLVED 2026-07-31:
+  THE FAVOURS card on the Warden page — the modifier union folded into one
+  reckoning (Verdure global, haul, baskets, craft speeds, watching,
+  pristine, tending, comfort, offline cap), hidden while everything is
+  baseline. (`WardenPage.BuildFavoursCard`)
+- ~~**Observation rates and pity clocks are never surfaced.**~~ ✅ RESOLVED
+  2026-07-31: the watch card now exists whenever the site does (it used to
+  need planters) and, while someone wanders, says how often a sketch comes
+  at current rates, the pity guarantee and hours banked toward it — plus
+  the deep amber's own clock at its one site. (`TrailPage.WatchClocks`)
 
 **Partially surfaced — the system shows but its key numbers don't:**
 
-- Familiar rows show a Roman level with no progress readout —
-  `GameLoop.FamiliarLevelProgress` exists and is called by nothing (skills
-  show "% to next"; familiars should match). (`WardenPage`)
+- ~~Familiar rows show a Roman level with no progress readout~~ ✅ RESOLVED
+  2026-07-31: roster rows show "% to next" on the crafts card's idiom, via
+  the previously-orphaned `GameLoop.FamiliarLevelProgress`. (`WardenPage`)
 - Kinship's actual perks (+2% XP rate/level, trait deepening ×1.25 per
   milestone, starting-level carry) are never stated as numbers — only the
   level and inscriptions show. (`Sim/Kinship.cs`, `Sim/Traits.cs`)
@@ -1431,7 +1519,9 @@ kit-effects item.)
   plates' "X/s" (`Simulation.YieldPerSecond`), so posting the warden looks
   like it does nothing. (`Sim/Warden.cs`)
 - Roosts comfort (`Buildings.ComfortXpMultiplier`) is computed every tick but
-  never shown as a live rate on the roster.
+  never shown as a live rate on the roster. (Partially covered 2026-07-31:
+  THE FAVOURS card shows the aggregate "+X% familiar XP while posted"; a
+  per-roster-row rate is still open.)
 - `Regions.DemandWeight` is invisible — a modified season's verse just costs
   more with no explanation; and nothing explains that runs 2+ re-pick verse
   contents on a rotating spotlight (discount/premium). (`Sim/Regions.cs`,

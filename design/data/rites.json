@@ -86,6 +86,18 @@
             { "type": "resource", "resource": "deep-ingot", "amount": 6,  "renownGrant": 10000 },
             { "type": "specimen", "quality": "pristine",    "count": 1,   "renownGrant": 4000 }
           ]
+        },
+        {
+          "id": "verse-crags",
+          "zone": "highland-crags",
+          "spotlight": ["husbandry", "bushcraft"],
+          "slots": [
+            { "type": "resource", "resource": "eggs",         "amount": 350 },
+            { "type": "resource", "resource": "wool",         "amount": 250 },
+            { "type": "resource", "resource": "lichen",       "amount": 300 },
+            { "type": "resource", "resource": "felted-cloak", "amount": 6 },
+            { "type": "specimen", "quality": "pristine",      "count": 1, "renownGrant": 7000 }
+          ]
         }
       ]
     }

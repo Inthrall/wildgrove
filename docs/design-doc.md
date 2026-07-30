@@ -104,7 +104,7 @@ The single most load-bearing rule set in the game — written down so every syst
 | 4 | **Silverrun River**   | Fish, reeds, clay, iron-rich gravel   | Fishing, riverbank observation site                            | Moonscale Trout     | MVP   |
 | 5 | **Mistfen Marsh**     | Peat, rare herbs, glow-moss           | Apothecary; marsh observation site                     | Lantern Firefly     | v1.1 (**built 2026-07-28**) |
 | 6 | **The Hollows**       | Deep ores, crystals, ashglass         | Delving; the rarest insects; **the deep amber** | Echo Geode          | v1.1 (**built 2026-07-29** — bone beds stopped being a crop for the reason fireflies did: the buried past is watched, never gathered (§6); the third find is ashglass, the glass the burning left) |
-| 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry                                              | Cloudfleece Ram     | v1.2  |
+| 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry; crag observation site                       | Cloudfleece Ram     | v1.2 (**built 2026-07-31** — the first zone behind the deepsteel gate and the fold-4 trail; the kea and the pika answer its gift piles) |
 | 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2  |
 
 Each zone is a screen: 2–3 nodes, the trail home, one keystone specimen, one **waystone** (the past speaking, §7), and one **verse site** (the present, §8). From Zone 3, a **observation site**. Zone entry costs **provisions** (a goods bundle — you pack for the walk, §9) *and* a tool tier, so Trail progress is paced by economy and craft investment.
@@ -197,7 +197,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
 | **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss    | **Tinctures** (buff consumables — built 2026-07-28) | v1.1 |
 | **Delving**    | Gathering         | Hollows nodes                    | Deep ores, crystals, ashglass (built 2026-07-29; deep ingots feed the deepsteel tier) | v1.1 |
-| **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool                            | v1.2  |
+| **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool (built 2026-07-31; wool feeds the felted cloak, the crags' bushcraft trade good) | v1.2 |
 
 ### Skill structure (per craft)
 
@@ -268,6 +268,7 @@ The one system that used to take. It doesn't anymore: **nothing is kept.** From 
 | **Those Who Sow**        | 5        | Both sites, rare hours | +20% all yields            | The pollinators. They have tended this land far longer than you, and asked for nothing. |
 | **The Lantern Bearers**  | 4        | Mistfen Marsh          | +20% observation speed     | They light the drowned paths every night, for no one. Fireflies are **watched, never gathered** — the marsh's third *find* is glow-moss (corrected 2026-07-28; a firefly in a basket contradicted §6 outright). |
 | **The Quiet Court** (v1.1) | 5      | Hollows                | +25% delving               | Pale singers in the galleries no light has reached. The rarest plate (built 2026-07-29). |
+| **The Parchment Wings** (v1.2) | 4  | Highland Crags         | +20% husbandry             | The mountain white, wings worn thin as the pages it is drawn on. It flies only while the sun holds (built 2026-07-31). |
 | **The Deep Amber** (v1.1) | 4 pieces | Hollows               | +25% all yields            | An insect no one living has seen, held in resin. The world it flew through has ended. **Built 2026-07-29:** not observe-sketch-release — the one find that is *kept* (§6's exception). Four authored pieces surface **strictly in order** at the Hollows' watch site (`ambers.json`; pity clock so the lore can't starve); each carries a field note, and the finished set is a plate that crosses every fold. The §7 deep-past implication lives in these four notes plus the final waystones. |
 
 Target: ~6 plates at MVP, ~30 by 1.2 — each a multiplier *and* a chapter.

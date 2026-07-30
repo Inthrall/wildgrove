@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -27,8 +28,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(33),
-                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, and the Almanac Desk moved into the Verdure tree");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(35),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, the Almanac Desk moved into the Verdure tree, and the Crags brought its map plus the fleece shears");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -173,8 +174,12 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.InsectsById["quiet-court"].Rarity,
                 Is.EqualTo(data.Insects.Where(i => !i.Rewarded).Min(i => i.Rarity)),
                 "the Hollows hosts the rarest plate anyone can draw");
-            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("the-hollows"),
-                "the Rite grew a sixth verse with the zone");
+            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("highland-crags"),
+                "the Rite grew a seventh verse with the zone");
+            Assert.That(data.SpeciesById["kea"].Trait.Resources,
+                Is.EquivalentTo(new[] { "eggs", "wool" }), "the flock-rider works the flock's two gifts");
+            Assert.That(data.SpeciesById["pika"].Trait.Resources,
+                Is.EquivalentTo(new[] { "lichen", "sky-blossoms" }), "the hay-piler grazes the heights, half a zone ahead");
             Assert.That(data.DeepAmber.Zone, Is.EqualTo("the-hollows"));
             Assert.That(data.DeepAmber.Pieces, Has.Count.EqualTo(4), "the four authored deep-past pieces");
             Assert.That(data.DeepAmber.Pieces.First().Id, Is.EqualTo("the-wing"), "the sequence is the story");
@@ -317,14 +322,20 @@ namespace Wildgrove.Data.Tests
         public void RealData_FoldGates_OpenOneNewTrailPerFold()
         {
             // Design §8's fold gate as authored: the first three zones are the
-            // run-1 trail and one new zone arrives per fold, so the whole map is
-            // only walked from the fourth run on. Pins the shape (a
+            // run-1 trail and one new zone arrives per fold. Pins the shape (a
             // non-decreasing gate in zone order, reachable one fold at a time),
             // not the exact folds — those are first guesses and meant to be
-            // tuned.
+            // tuned. The ladder is every zone a trail map can open; a staged
+            // zone with no map yet (cloudreach-peaks) stands aside until its
+            // rung lands, and then this test covers it with no edit.
             var data = GameData.Parse(LoadSources());
+            var unlockable = new HashSet<string> { GameData.StartingZoneId };
+            unlockable.UnionWith(data.Upgrades
+                .SelectMany(u => u.Effects)
+                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
+                .Select(e => e.Zone));
             var ladder = data.Zones
-                .Where(z => z.Scope != "v1.2")
+                .Where(z => unlockable.Contains(z.Id))
                 .OrderBy(z => z.Order)
                 .ToList();
 
@@ -338,8 +349,8 @@ namespace Wildgrove.Data.Tests
             }
 
             Assert.That(ladder.Count(z => z.MinMigration == 0), Is.EqualTo(3), "run 1 walks three zones");
-            Assert.That(data.Zones.Single(z => z.Id == "the-hollows").MinMigration, Is.EqualTo(3),
-                "the deepest trail waits for the fourth run");
+            Assert.That(data.Zones.Single(z => z.Id == "highland-crags").MinMigration, Is.EqualTo(4),
+                "the deepest trail waits for the fifth run");
         }
 
         [Test]
@@ -471,16 +482,17 @@ namespace Wildgrove.Data.Tests
         public void Validate_VerseZoneNoTrailMapOpens_IsReported()
         {
             var sources = LoadSources();
-            // highland-crags exists but is staged content — nothing unlocks it.
-            // (the-hollows held this role until its trail map landed.)
+            // cloudreach-peaks exists but is staged content — nothing unlocks it.
+            // (highland-crags held this role until its trail map landed, and
+            // the-hollows before that.)
             sources.RitesJson = sources.RitesJson.Replace(
                 "\"zone\": \"silverrun-river\"",
-                "\"zone\": \"highland-crags\"");
-            Assert.That(sources.RitesJson, Does.Contain("highland-crags"), "the corruption must land, or this test proves nothing");
+                "\"zone\": \"cloudreach-peaks\"");
+            Assert.That(sources.RitesJson, Does.Contain("cloudreach-peaks"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("highland-crags") && i.Contains("never unlockable")),
+            Assert.That(issues.Any(i => i.Contains("cloudreach-peaks") && i.Contains("never unlockable")),
                 Is.True, string.Join("\n", issues));
         }
 
@@ -833,14 +845,16 @@ namespace Wildgrove.Data.Tests
         public void Validate_RecipeOnNeverGrantedSkill_IsReported()
         {
             var sources = LoadSources();
-            // husbandry is a known skill, but nothing unlocks it at runtime —
-            // it arrives with Highland Crags (v1.2). (This was apothecary until
-            // the Mistfen map started granting it; pick a skill from a zone
-            // that hasn't been built yet, or the premise quietly evaporates.)
+            // excavation is a known skill, but nothing unlocks it at runtime —
+            // it was retired when observation replaced digging, and only the
+            // validator whitelist still carries it. (This was apothecary until
+            // the Mistfen map granted it, then husbandry until the Crags map
+            // did. Every zone skill is granted now, so the retired skill is the
+            // one example left that cannot quietly evaporate.)
             sources.RecipesJson = sources.RecipesJson.Replace(
                 "\"skill\": \"firecraft\",  \"inputs\": { \"fish\": 2 }",
-                "\"skill\": \"husbandry\", \"inputs\": { \"fish\": 2 }");
-            Assert.That(sources.RecipesJson, Does.Contain("husbandry"), "the corruption must land, or this test proves nothing");
+                "\"skill\": \"excavation\", \"inputs\": { \"fish\": 2 }");
+            Assert.That(sources.RecipesJson, Does.Contain("excavation"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -1319,7 +1333,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.5d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
-            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(6), "one verse per zone through the Hollows");
+            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(7), "one verse per zone through the Crags");
             Assert.That(asset.dialogue.verses.Single(v => v.key == "sunfield-meadow").text, Is.Not.Empty);
             Assert.That(asset.deepAmber.zoneId, Is.EqualTo("the-hollows"));
             Assert.That(asset.deepAmber.pieces, Has.Count.EqualTo(data.DeepAmber.Pieces.Count));

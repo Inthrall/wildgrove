@@ -26,9 +26,9 @@
     { "id": "crystals",     "sellValue": 120, "skill": "delving" },
     { "id": "ashglass",     "sellValue": 80,  "skill": "delving" },
 
-    { "id": "eggs",         "sellValue": 40,  "skill": "husbandry" },
-    { "id": "wool",         "sellValue": 50,  "skill": "husbandry" },
-    { "id": "lichen",       "sellValue": 30,  "skill": "foraging" },
+    { "id": "eggs",         "sellValue": 90,  "skill": "husbandry" },
+    { "id": "wool",         "sellValue": 140, "skill": "husbandry" },
+    { "id": "lichen",       "sellValue": 70,  "skill": "foraging" },
 
     { "id": "sky-blossoms", "sellValue": 200, "skill": "foraging" },
     { "id": "glacier-ice",  "sellValue": 150, "skill": "mining" }
