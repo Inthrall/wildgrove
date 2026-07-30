@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 3b9137a81aecb9f830ed17f354be277ce0df315b7dfd09288fc5eba4bb46dcc3
+  sourceHash: 47863b77306f53bc2caa15395a72047261598bd73b999ae4b8348fb396f12e99
   economy:
     costGrowth:
       building: 1.25
@@ -1308,9 +1308,9 @@ MonoBehaviour:
     skill: apothecary
     inputs:
     - id: herbs
-      amount: 40
+      amount: 120
     - id: mushrooms
-      amount: 20
+      amount: 60
     output: wardens-tonic
     valueMult: 1
     kind: material
@@ -1322,9 +1322,9 @@ MonoBehaviour:
     skill: apothecary
     inputs:
     - id: glow-moss
-      amount: 30
+      amount: 90
     - id: fish-oil
-      amount: 4
+      amount: 12
     output: glow-salve
     valueMult: 1
     kind: material
@@ -1336,9 +1336,9 @@ MonoBehaviour:
     skill: apothecary
     inputs:
     - id: peat
-      amount: 25
+      amount: 75
     - id: rare-herbs
-      amount: 15
+      amount: 45
     output: peat-smoke-draught
     valueMult: 1
     kind: material
@@ -2373,6 +2373,14 @@ MonoBehaviour:
     - type: 0
       skill: 
       zone: 
+      resource: glow-moss
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
+    - type: 0
+      skill: 
+      zone: 
       resource: wildflowers
       recipe: 
       species: 
@@ -2391,6 +2399,14 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 1.5
+    - type: 0
+      skill: 
+      zone: 
+      resource: ashglass
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.5
   - id: windswept
     displayName: a windswept region
     sign: The trail lies swept and the going is quick. Nothing about that is a kindness.
@@ -2403,11 +2419,19 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 1.25
+    - type: 0
+      skill: 
+      zone: 
+      resource: peat
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
   tinctures:
   - id: wardens-tonic
     displayName: Warden's Tonic
     description: 'steadies the hands: +25% gathering while it lasts'
-    durationSec: 600
+    durationSec: 1200
     effects:
     - type: 1
       skill: all-gathering
@@ -2420,7 +2444,7 @@ MonoBehaviour:
   - id: glow-salve
     displayName: Glow Salve
     description: 'lights the watching: observation sites half again as quick'
-    durationSec: 600
+    durationSec: 1200
     effects:
     - type: 5
       skill: 
@@ -2433,7 +2457,7 @@ MonoBehaviour:
   - id: peat-smoke-draught
     displayName: Peat-Smoke Draught
     description: 'slows the breath: every craft half again as quick'
-    durationSec: 600
+    durationSec: 1200
     effects:
     - type: 4
       skill: 
@@ -2445,7 +2469,7 @@ MonoBehaviour:
       value: 1.5
   deepAmber:
     zoneId: the-hollows
-    findsPerHour: 0.05
+    findsPerHour: 0.1
     pityHoursWatched: 12
     plateName: The Deep Amber
     completedLore: An insect no one living has seen, held in resin. The world it
@@ -2685,7 +2709,7 @@ MonoBehaviour:
           deed: 
           count: 0
           quality: 
-          renownGrant: 2000
+          renownGrant: 6000
         - type: 2
           resource: 
           amount: 0

@@ -1,25 +1,25 @@
 {
-  "$comment": "Tinctures (design §5, Apothecary — v1.1): buff consumables brewed at the fire from marsh goods. Drinking one spends a single unit of camp stock and grants its effects for durationSec of played time (live or offline catch-up — the clock is sim time, not wall time); drinking again while active ADDS the full duration on top of what's left — the clock stacks, the effect never does. Effects use the shared effect vocabulary and join the run's active-effect union while live. id must match a recipe output (the brew is the acquisition path; tinctures are materials — never sold, never traded); description is the bottle's own line in the HUD. All values first guesses (todo.md).",
+  "$comment": "Tinctures (design §5, Apothecary — v1.1): buff consumables brewed at the fire from marsh goods. Drinking one spends a single unit of camp stock and grants its effects for durationSec of played time (live or offline catch-up — the clock is sim time, not wall time); drinking again while active ADDS the full duration on top of what's left — the clock stacks, the effect never does. Effects use the shared effect vocabulary and join the run's active-effect union while live. id must match a recipe output (the brew is the acquisition path; tinctures are materials — never sold, never traded); description is the bottle's own line in the HUD. Durations and brew costs set by the zones 4-6 balance pass: 1200 s is one drink per sitting rather than a ten-minute nag, and the tripled inputs (recipes.json) make a bottle read as a real brew in the stock ledger without ever gating it — at marsh-era gather rates even the tripled bundle is under a minute of a posted familiar. Effect sizes are still first guesses (todo.md).",
   "tinctures": [
     {
       "id": "wardens-tonic",
       "name": "Warden's Tonic",
       "description": "steadies the hands: +25% gathering while it lasts",
-      "durationSec": 600,
+      "durationSec": 1200,
       "effects": [ { "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 } ]
     },
     {
       "id": "glow-salve",
       "name": "Glow Salve",
       "description": "lights the watching: observation sites half again as quick",
-      "durationSec": 600,
+      "durationSec": 1200,
       "effects": [ { "type": "digSpeedMult", "value": 1.5 } ]
     },
     {
       "id": "peat-smoke-draught",
       "name": "Peat-Smoke Draught",
       "description": "slows the breath: every craft half again as quick",
-      "durationSec": 600,
+      "durationSec": 1200,
       "effects": [ { "type": "craftSpeedMult", "value": 1.5 } ]
     }
   ]

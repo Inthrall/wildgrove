@@ -367,8 +367,11 @@ Interpretations shipped (tune/confirm):
   wardens-tonic slot needs its explicit `renownGrant` (2000), like ingots.
 - Buff time is sim time, not wall time: a tonic drunk before closing the app
   burns down during the offline catch-up rather than waiting.
-- Mistfen quantities, tincture durations/effects, and the map's provisions
-  bundle are all first guesses — the zone has had no balance pass.
+- ~~Mistfen quantities, tincture durations/effects, and the map's provisions
+  bundle are all first guesses — the zone has had no balance pass.~~ ✅ Balanced
+  2026-07-30 (the zones 4–6 pass below): tincture durations 1200 s + inputs ×3,
+  tonic grant 6000; quantities and the map bundle CONFIRMED as shipped — the
+  bundle's real gate is smoked-trout's firecraft-28 recipe, not the amounts.
 - Zone 5's nodes have their three plates as of 2026-07-30 (glow-moss got its
   own; peat and rare-herbs already had theirs).
 
@@ -407,15 +410,19 @@ Interpretations shipped (tune/confirm):
   renownGrant 10000), waystone + verse lines in the §7 register (draft).
 
 Interpretations shipped (tune/confirm):
-- Deep amber timing: findsPerHour 0.05 per watcher before digSpeedMult
-  stacking (~3–7 h a piece well-modified, 12 h pity worst case) — first
-  guesses; the four pieces are meant to be a run-spanning chase, not a
+- Deep amber timing: ~~findsPerHour 0.05 per watcher~~ **0.1 as of the zones
+  4–6 pass (2026-07-30)** — at 0.05 the mean (20 h) sat above the 12 h pity, so
+  pity metronomed every piece; at 0.1 the roll is live (mean 10 h, ~2–4 h a
+  piece well-modified, pity the backstop). Still a run-spanning chase, not a
   session.
 - The deep pieces grant NO premium Amber — the channels stay separate
   (ordinary finds keep paying; pieces pay in words and, at the end, the
   plate).
-- The verse-6 numbers and the Hollows quantities have had **no balance
-  pass**, same as Mistfen — the zones 4–6 sweep is the next-but-one slice.
+- ~~The verse-6 numbers and the Hollows quantities have had **no balance
+  pass**, same as Mistfen — the zones 4–6 sweep is the next-but-one slice.~~
+  ✅ Swept 2026-07-30: quantities/anchor CONFIRMED as shipped (the model puts
+  the real Hollows walls at forgecraft 40 and the fold gate, where they
+  belong); the zone gained its season (ashen +ashglass).
 - Ermine's pair reaches into v1.2 (glacier-ice), matching the bramble-hare
   precedent (herbs + rare-herbs before the marsh existed).
 - The old `Validate_VerseZoneNoTrailMapOpens` pin used the-hollows as its
@@ -582,12 +589,50 @@ that — only starting further up can. Two new effect types, both Almanac-only
   Tuned so the line opens around folds 2–4; wants the same run-3-to-run-6
   sitting as the rest of the pacing pass.
 
+**IMPLEMENTED 2026-07-30 — the zones 4–6 balance pass.** The spreadsheet
+treatment (scratch model mirroring `RiteGenerator` anchors + `YieldPerSecond`
+against the shipping JSON), measured at each zone's debut fold under the fold
+gate (Silverrun m=1, Mistfen m=2, Hollows m=3).
+
+**The model's headline: goods quantities are not where zone 4–6 pacing
+lives.** At debut-fold production (tool re-climb, Verdure global, mastery,
+richness, specialist traits) every generated goods slot fills in seconds-to-
+minutes of a posted node — the anchors (silverrun 3225 → mistfen ~8100 →
+hollows 18000) ramp each zone's ask ~3.2× over the one before, coherently. The
+levers that actually pace these zones are the craft-XP gates (firecraft 28 =
+~540 batches feeds both late trail-map bundles via smoked-trout; forgecraft 40
+= ~1770 batches is the real deepsteel wall, auto-resumed by The Fire
+Remembers), pristine-specimen luck, the haul lane, offline caps, and the fold
+gate itself. All left alone deliberately — they're the right walls in the
+right places.
+
+What moved (all data-only, no sim change):
+- **Regions now touch every gatherable zone** — the marsh and the Hollows were
+  season-blind (no region weighted any of their finds, so the generator's
+  seasonal demand variation was dead there): misted +glow-moss 1.25, ashen
+  +ashglass 1.5 (the burned land gives up its own glass — and its digSpeed
+  already suited the Hollows watch), windswept +peat 1.25 (wind dries the turf).
+- **Deep amber `findsPerHour` 0.05 → 0.1** — the old mean (20 h) sat ABOVE the
+  12 h pity clock, so every piece arrived by pity at exactly 12 h: a metronome
+  pretending to be a roll. Mean 10 h puts the roll back in charge with pity as
+  the backstop; undecorated set ~40 watched hours, well-modified ~2–4 h a piece.
+- **Tinctures: durations 600 → 1200 s, brew inputs ×3** — 20 min is one drink
+  per sitting instead of a ten-minute nag; the tripled bundles (120 herbs /
+  90 glow-moss / 75 peat…) make a bottle read as a real brew without gating
+  anything. Effect sizes unchanged.
+- **verse-mistfen tonic grant 2000 → 6000** — tracks the tripled brew's
+  notional worth (6 × 960), same convention as the ingot slots; also lifts the
+  mistfen anchor ~14% (the softest step in the ramp).
+- The `Validate_DeepAmberWithDeadRates` pin was tightened while its literal
+  moved — its old contains-guard passed even when the corruption no-oped
+  (`"findsPerHour": 0` is a substring of the healthy value).
+
+Numbers are model-derived, NOT playtested — same caveat as the fold-pacing
+pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
+
 **NEXT SLICES (the mid/late plan, in order):**
-1. **A balance pass over zones 4–6** — the marsh and the Hollows both landed
-   unbalanced by design; they want the spreadsheet treatment alongside the
-   tincture numbers and the deep-amber timing. The fold gate changes what this
-   pass is even measuring: those zones are now first seen on runs 3 and 4, by a
-   warden with two or three folds of Verdure behind them.
+1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
+   demandGrowth, Almanac costs, this pass) is model-derived and waiting on it.
 
 ## Phase 1 — Core loop slice (current)
 

@@ -270,10 +270,11 @@ namespace Wildgrove.Data.Tests
         public void Validate_DeepAmberWithDeadRates_IsCaught()
         {
             var sources = LoadSources();
+            var before = sources.AmbersJson;
             sources.AmbersJson = sources.AmbersJson.Replace(
-                "\"findsPerHour\": 0.05",
-                "\"findsPerHour\": 0");
-            Assert.That(sources.AmbersJson, Does.Contain("\"findsPerHour\": 0"), "the corruption must land, or this test proves nothing");
+                "\"findsPerHour\": 0.1,",
+                "\"findsPerHour\": 0,");
+            Assert.That(sources.AmbersJson, Is.Not.EqualTo(before), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
