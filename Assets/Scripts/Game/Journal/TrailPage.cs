@@ -468,7 +468,8 @@ namespace Wildgrove.Game
                              + (basketFull
                                  ? " <color=" + OchreInkHex + ">· basket is full! By carrying it themselves, much is lost</color>"
                                  : string.Empty)
-                             + "</size>";
+                             + "</size>"
+                             + MasteryLine(captured);
 
                 SetButtonLabel(post, occupant != null || wardenHere ? "Change post" : "Post here");
                 SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId
@@ -480,25 +481,59 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The node's mastery, said on its own plate (design §4's long-tail
+        /// chase). It silently compounded to +495% yield and worth at cap
+        /// without the page ever mentioning it — the one climbing number a
+        /// collector chases, kept off the card it climbs on. Empty when the
+        /// curve is unconfigured (hand-built test data), the sim's own gate.
+        /// </summary>
+        private string MasteryLine(NodeState node)
+        {
+            var economy = _loop.Data.economy;
+            if (!Mastery.Configured(economy))
+            {
+                return string.Empty;
+            }
+
+            var level = Mastery.Level(node, economy);
+            var toNext = Mathf.RoundToInt((float)(Mastery.ProgressToNext(node, economy) * 100.0));
+            string reading;
+            if (level <= 0)
+            {
+                reading = "mastery: " + toNext + "% to the first level";
+            }
+            else
+            {
+                var bonus = "+" + Percent(level * economy.mastery.yieldBonusPerLevel) + " yield & worth";
+                reading = level >= economy.mastery.maxLevel
+                    ? "mastery " + Roman(level) + " · " + bonus + " · <color=" + MossDeepHex + ">the hand knows this ground</color>"
+                    : "mastery " + Roman(level) + " · " + bonus + " · " + toNext + "% to next";
+            }
+
+            return "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + reading + "</color></size>";
+        }
+
+        /// <summary>
         /// The watch is not a post any more — the wanderer passes each site
-        /// as it roams. The card survives only as the home of the site's
-        /// planters, with a one-line note on whether anyone wanders.
+        /// as it roams. The card carries the site's own clocks — how often a
+        /// sketch comes and the pity timer that guarantees one (both were
+        /// load-bearing and invisible) — plus the site's planters, with a
+        /// one-line note on whether anyone wanders.
         /// </summary>
         private void BuildWatchPlate(DigSiteState site)
         {
-            if (!_loop.PlantersUnlocked() || _loop.DigSitePlanters().Count == 0)
-            {
-                return;
-            }
-
             var captured = site;
             var card = Card("THE WATCH · " + ZoneName(site.zoneId).ToUpperInvariant());
             var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
+            var clocks = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
 
-            var actions = ActionRow(card);
-            foreach (var planter in _loop.DigSitePlanters())
+            if (_loop.PlantersUnlocked() && _loop.DigSitePlanters().Count > 0)
             {
-                AddPlanterAction(actions, planter, captured.zoneId);
+                var actions = ActionRow(card);
+                foreach (var planter in _loop.DigSitePlanters())
+                {
+                    AddPlanterAction(actions, planter, captured.zoneId);
+                }
             }
 
             _liveUpdaters.Add(() =>
@@ -507,10 +542,70 @@ namespace Wildgrove.Game
                 // Stationing.Wandering: the warden may hold the wander post
                 // too, and counting only familiars told a warden who WAS
                 // wandering that nobody was.
-                line.text = Stationing.WanderAgents(_loop.State, _loop.Data) > 0.0
+                var watching = Stationing.WanderAgents(_loop.State, _loop.Data) > 0.0;
+                line.text = watching
                     ? "the wanderer passes through, watching where the small lives cross"
                     : "<color=" + OchreInkHex + ">no one wanders, and the small lives go unrecorded. post someone to the wander plate at the end of the strip.</color>";
+
+                // The clocks only run while someone watches — quoting a rate
+                // to an empty site would contradict the line above it.
+                var text = watching ? WatchClocks(captured) : string.Empty;
+                clocks.gameObject.SetActive(text.Length > 0);
+                clocks.text = text;
             });
+        }
+
+        /// <summary>
+        /// The site's watched-hour clocks: how often a sketch comes at the
+        /// current rates, and the pity timer's guarantee with the hours
+        /// already banked toward it — the anti-starvation maths that used to
+        /// run unseen. The deep amber's own slower clock joins it at the one
+        /// site that surfaces the pieces.
+        /// </summary>
+        private string WatchClocks(DigSiteState site)
+        {
+            var observation = _loop.Data.economy?.observation;
+            if (observation == null || observation.baseSketchesPerHour <= 0.0)
+            {
+                return string.Empty;
+            }
+
+            var parts = new List<string>();
+            var eligible = Observation.EligibleInsects(_loop.State, _loop.Data, site.zoneId);
+            if (eligible.Count > 0)
+            {
+                var watchers = Stationing.WanderAgents(_loop.State, _loop.Data);
+                var siteMult = Upgrades.DigSpeedMultiplier(_loop.State, _loop.Data)
+                               * Planters.DigSpeedMultiplier(_loop.State, _loop.Data, site.zoneId);
+                var totalRarity = 0.0;
+                foreach (var insect in eligible)
+                {
+                    totalRarity += insect.rarity;
+                }
+
+                var perHour = watchers * observation.baseSketchesPerHour * siteMult * totalRarity;
+                var mean = perHour > 0.0 ? "a sketch comes about every " + NumberFormat.Duration(3600.0 / perHour) + " watched" : "the sketching is stalled";
+                parts.Add(mean + (observation.pityTimerHoursWatched > 0.0
+                    ? ", and is certain by " + NumberFormat.Duration(observation.pityTimerHoursWatched * 3600.0)
+                      + " · " + NumberFormat.Duration(site.pityHours * 3600.0) + " watched so far"
+                    : string.Empty));
+            }
+            else
+            {
+                parts.Add("every plate here is recorded; the small lives go on unwatched");
+            }
+
+            var amber = _loop.Data.deepAmber;
+            if (Sim.DeepAmber.Configured(_loop.Data) && amber.zoneId == site.zoneId
+                && amber.pityHoursWatched > 0.0
+                && !Sim.DeepAmber.IsComplete(_loop.State, _loop.Data))
+            {
+                parts.Add("the old resin gives up a piece by "
+                          + NumberFormat.Duration(amber.pityHoursWatched * 3600.0) + " watched at the longest · "
+                          + NumberFormat.Duration(_loop.State.deepAmberPityHours * 3600.0) + " banked toward it");
+            }
+
+            return string.Join("\n", parts);
         }
 
         private void AddPlanterAction(Transform actions, PlanterData planter, string targetId)
@@ -794,7 +889,13 @@ namespace Wildgrove.Game
                 }
                 else
                 {
-                    label.text = name + "  <color=" + Ink2Hex + ">" + Mathf.FloorToInt((float)delivered) + " / " + Mathf.FloorToInt((float)target) + "</color>";
+                    // A deed slot has no button — it is earned at the nodes,
+                    // never pressed — and nothing on the row used to say so,
+                    // so its count read as a delivery the player couldn't make.
+                    var deedTail = slot.type == RiteSlotType.Deed
+                        ? "  <color=" + Ink2Hex + "><i>counted as the work is done</i></color>"
+                        : string.Empty;
+                    label.text = name + "  <color=" + Ink2Hex + ">" + Mathf.FloorToInt((float)delivered) + " / " + Mathf.FloorToInt((float)target) + "</color>" + deedTail;
                 }
 
                 if (offer != null)

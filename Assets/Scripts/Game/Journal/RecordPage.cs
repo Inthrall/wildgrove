@@ -193,7 +193,14 @@ namespace Wildgrove.Game
                     var stock = held > BigDouble.Zero
                         ? "<b>" + NumberFormat.Short(held) + "</b> held  ·  "
                         : string.Empty;
-                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + "lifetime "
+                    // Fine finds are banked apart from the camp stock — 3.5%
+                    // of every haul landed where no page counted it, so the
+                    // pool read as goods quietly going missing.
+                    var fine = _loop.State.GetFine(captured.id);
+                    var fineHeld = fine > BigDouble.Zero
+                        ? "<b>" + NumberFormat.Short(fine) + "</b> fine  ·  "
+                        : string.Empty;
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + fineHeld + "lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id)) + "</color></size>";
                 });
             }
@@ -202,6 +209,26 @@ namespace Wildgrove.Game
             {
                 MakeText(card, "<i>…and " + beyondTheTrail + " more beyond the trail.</i>", 18, TextAnchor.MiddleLeft, Ink2);
             }
+
+            // What "fine" is for, said once at the card's foot — the pool's
+            // only exit is a verse asking for a fine find, and without the
+            // note the tally above is a number with no door.
+            var fineNote = MakeText(card, "<i>fine finds are kept apart from the stores; a verse sometimes asks for one</i>",
+                16, TextAnchor.MiddleLeft, Ink2, _serif);
+            _liveUpdaters.Add(() =>
+            {
+                var anyFine = false;
+                foreach (var pair in _loop.State.fineResources)
+                {
+                    if (pair.Value > BigDouble.Zero)
+                    {
+                        anyFine = true;
+                        break;
+                    }
+                }
+
+                fineNote.gameObject.SetActive(anyFine);
+            });
         }
 
         private void BuildFolioCard()

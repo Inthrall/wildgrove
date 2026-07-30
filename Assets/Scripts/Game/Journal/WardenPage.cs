@@ -25,8 +25,102 @@ namespace Wildgrove.Game
             BuildKitCard();
             BuildCraftsCard();
             BuildBrewsCard();
+            BuildFavoursCard();
             BuildKithCard();
             BuildRunCard();
+        }
+
+        /// <summary>
+        /// Every standing bonus, counted together (design §8's modifier
+        /// union). The sources each label their own effect — a gear line, a
+        /// plate's grant, an Almanac node — but nothing ever showed the sum,
+        /// so "why is this node at 4.2/s" had no page to answer it. The card
+        /// hides itself while the warden is still bare-handed.
+        /// </summary>
+        private void BuildFavoursCard()
+        {
+            var card = Card("THE FAVOURS");
+            MakeText(card, "<i>gear, plates, spreads, the Almanac, the season and any live tincture, folded into one reckoning</i>",
+                15, TextAnchor.MiddleCenter, Ink2, _serif);
+            var lines = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+            _liveUpdaters.Add(() =>
+            {
+                var text = FavourLines();
+                card.gameObject.SetActive(text.Length > 0);
+                lines.text = text;
+            });
+        }
+
+        /// <summary>One line per favour standing off its baseline — multipliers as ×, additive bonuses as +%.</summary>
+        private string FavourLines()
+        {
+            var state = _loop.State;
+            var data = _loop.Data;
+            var parts = new List<string>();
+
+            var verdure = data.economy?.verdure;
+            if (verdure != null && verdure.yieldBonusPerPoint > 0.0 && state.verdurePoints > 0.0)
+            {
+                parts.Add("+" + PlainNumber(verdure.yieldBonusPerPoint * state.verdurePoints * 100.0)
+                          + "% all gathering  ·  the Verdure, " + Mathf.FloorToInt((float)state.verdurePoints) + " points");
+            }
+
+            var snapshot = Modifiers.Of(state, data);
+            if (snapshot.haulCapacityMultiplier != 1.0)
+            {
+                parts.Add("×" + PlainNumber(snapshot.haulCapacityMultiplier) + " carried each trip on the trail");
+            }
+
+            if (snapshot.basketCapacityMultiplier != 1.0)
+            {
+                parts.Add("×" + PlainNumber(snapshot.basketCapacityMultiplier) + " the baskets hold");
+            }
+
+            if (snapshot.craftSpeedGlobal != 1.0)
+            {
+                parts.Add("×" + PlainNumber(snapshot.craftSpeedGlobal) + " craft speed at every station");
+            }
+
+            foreach (var pair in snapshot.craftSpeedBySkill)
+            {
+                if (pair.Value != 1.0)
+                {
+                    parts.Add("×" + PlainNumber(pair.Value) + " " + pair.Key + " speed");
+                }
+            }
+
+            if (snapshot.digSpeedMultiplier != 1.0)
+            {
+                parts.Add("×" + PlainNumber(snapshot.digSpeedMultiplier) + " watching at the sites");
+            }
+
+            if (snapshot.pristineChanceBonus > 0.0)
+            {
+                parts.Add("+" + PlainNumber(snapshot.pristineChanceBonus * 100.0) + "% to a pristine find");
+            }
+
+            if (snapshot.tendingBurstBonus > 0.0)
+            {
+                parts.Add("+" + PlainNumber(snapshot.tendingBurstBonus * 100.0) + "% to the tending burst");
+            }
+
+            var comfort = Buildings.ComfortXpMultiplier(state, data);
+            if (comfort > 1.0)
+            {
+                parts.Add("+" + PlainNumber((comfort - 1.0) * 100.0) + "% familiar XP while posted  ·  the roosts");
+            }
+
+            if (snapshot.offlineCapRaiseTo > 0.0)
+            {
+                parts.Add("the camp works " + PlainNumber(snapshot.offlineCapRaiseTo) + "h of a night away, at the least");
+            }
+
+            if (snapshot.offlineCapBonusHours > 0.0)
+            {
+                parts.Add("+" + PlainNumber(snapshot.offlineCapBonusHours) + "h on the night's work");
+            }
+
+            return string.Join("\n", parts);
         }
 
         /// <summary>
@@ -348,9 +442,12 @@ namespace Wildgrove.Game
                     var kin = _loop.FamiliarKinship(captured) > 0
                         ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color></size>"
                         : string.Empty;
+                    // "% to next" matches the crafts card above — the levels
+                    // climb on the same idiom, so they read on it too.
+                    var toNext = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
                     label.text = captured.name + bonded + kin
                                  + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
-                                 + " · " + StationLabel(captured.stationId) + "</color></size>";
+                                 + " · " + toNext + "% to next · " + StationLabel(captured.stationId) + "</color></size>";
                 });
 
                 // The plate's newest margin line (design §7) — earned at
