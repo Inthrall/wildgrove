@@ -1202,7 +1202,7 @@ namespace Wildgrove.Game
 
             if (unranked)
             {
-                MakeText(sheet, "<i>a dash means Play holds the score but has not yet placed it.</i>",
+                MakeText(sheet, "<i>Unranked</i>",
                     16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
         }

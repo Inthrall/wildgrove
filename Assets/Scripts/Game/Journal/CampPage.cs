@@ -499,7 +499,7 @@ namespace Wildgrove.Game
                     string inputsLine;
                     if (_loop.CanCraft(captured))
                     {
-                        inputsLine = BundleLabel(captured.inputs) + " in hand";
+                        inputsLine = "needs " + BundleLabel(captured.inputs);
                     }
                     else
                     {
