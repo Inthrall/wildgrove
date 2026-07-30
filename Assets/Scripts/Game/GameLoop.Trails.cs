@@ -12,26 +12,38 @@ namespace Wildgrove.Game
     {
         // ─────────────────────────── The Exchange (design §9) ────────────────
 
+        /// <summary>The caravan's standing deal right now — null while it has too few known goods to name one.</summary>
+        public ExchangeOffer CurrentExchangeOffer()
+        {
+            return Exchange.OfferAt(State, Data, NowUnixMs());
+        }
+
+        /// <summary>Seconds until the caravan names a new deal.</summary>
+        public double ExchangeOfferSecondsRemaining()
+        {
+            return Exchange.OfferSecondsRemaining(Data, NowUnixMs());
+        }
+
         /// <summary>Units of <paramref name="to"/> per one unit of <paramref name="from"/> at the Exchange.</summary>
         public BigDouble ExchangeRate(string from, string to)
         {
             return Exchange.Rate(State, Data, from, to);
         }
 
-        /// <summary>Units of <paramref name="to"/> received for spending <paramref name="amount"/> of <paramref name="from"/> (player-favourable rounding).</summary>
-        public BigDouble ExchangeQuote(string from, string to, BigDouble amount)
+        /// <summary>Units of <paramref name="to"/> received for a tier's <paramref name="amount"/> of <paramref name="from"/> — Fine and Pristine pay their value multipliers.</summary>
+        public BigDouble ExchangeQuote(string from, string to, BigDouble amount, QualityTier quality)
         {
-            return Exchange.Quote(State, Data, from, to, amount);
+            return Exchange.Quote(State, Data, from, to, amount, quality);
         }
 
-        /// <summary>Barter goods for goods at the Exchange. Returns units received (0 = refused).</summary>
-        public BigDouble TradeAtExchange(string from, string to, BigDouble amount)
+        /// <summary>Barter one tier's goods for plain goods at the Exchange. Returns units received (0 = refused).</summary>
+        public BigDouble TradeAtExchange(string from, string to, BigDouble amount, QualityTier quality)
         {
-            var received = Exchange.TryTrade(State, Data, from, to, amount);
+            var received = Exchange.TryTrade(State, Data, from, to, amount, quality);
             if (received > BigDouble.Zero)
             {
                 Telemetry.LogEvent("exchange_trade",
-                    ("from", from), ("to", to),
+                    ("from", from), ("to", to), ("quality", quality.ToString()),
                     ("spent", amount.ToDouble()), ("received", received.ToDouble()));
             }
 

@@ -1471,7 +1471,34 @@ Interpretations shipped (tune/confirm):
   channel adds a margin line to a familiar's plate at Kinship milestones (the only
   channel about individuals), which lands with the Kinship system.
 
-## UI surfacing gaps (audit 2026-07-30)
+## The Exchange rework (2026-07-31)
+
+**IMPLEMENTED 2026-07-31 — the caravan names the deal (Mo's call).** The
+Exchange stops being a free two-sided picker: the caravan offers **one
+from-good for one to-good**, the pair drawn deterministically from the
+wall-clock five-minute window (`exchange.offerMinutes`, validator-required
+positive), and every **quality tier** of the asked good trades in — Fine at
+×`fineValueMult` (1.5), Pristine at ×`pristineValueMult` (10) — always paid
+out in **plain** camp stock, so excess windfalls become higher counts of an
+ordinary good. `Exchange.OfferAt/TradeableGoods/Held/QualityValueMultiplier`
++ quality overloads of `Quote`/`TryTrade`; the Camp card shows the deal, its
+rate/spread/countdown, the amount chips, and one trade row per tier held
+(pristine "trade all" warns that the folio and rite want them too). The
+give/take pickers, `OpenGoodPickSheet` and the UI-side `TradeableResources`
+went with it. Interpretations shipped (tune/confirm):
+- **Wall-clock windows, nothing persisted** — the generator's idiom: a
+  reload can't reroll the caravan; the deal also turns while away.
+- The offer draws from **discovered goods only** (gathered raw finds /
+  crafted trade goods with positive trade value), so far-zone names can't
+  leak; fewer than two known goods → no deal ("gather more…").
+- A discovery mid-window can re-shuffle that window's pick (the candidate
+  list feeds the draw) — accepted; it's deterministic given the same state.
+- The sim's `TryTrade` stays pair-agnostic — the offer gate lives in the
+  UI, like every other button gate; nothing else calls it.
+- offerMinutes 5 is a first guess; so is keeping the spread flat across
+  quality tiers (the multiplier already rewards the trade-in).
+
+
 
 A sim-vs-journal diff: every `Sim/*` system and `GameState` field checked
 against every reader in `Assets/Scripts/Game/**`. These are systems that
@@ -1485,11 +1512,11 @@ kit-effects item.)
   2026-07-31: each node plate carries a mastery line — level, its standing
   "+X% yield & worth", and % to next (level 0 shows the way to the first;
   cap says "the hand knows this ground"). (`TrailPage.MasteryLine`)
-- **The Fine pool is a black hole.** ✅ SURFACED 2026-07-31: the Compendium
-  rows show "N fine" beside held stock, with a foot-note saying what the
-  pool is for (a verse's fine find). STILL OPEN: whether the Exchange
-  should take Fine — a sim/design call, not a display one.
-  (`Sim/Quality.cs`, `RecordPage.BuildCompendiumCard`)
+- ~~**The Fine pool is a black hole.**~~ ✅ RESOLVED 2026-07-31: the
+  Compendium rows show "N fine" beside held stock with a foot-note, and the
+  Exchange rework (same day, below) gives both windfall pools their exit —
+  the caravan's deal takes every quality tier of the asked good.
+  (`Sim/Quality.cs`, `RecordPage.BuildCompendiumCard`, `Sim/Exchange.cs`)
 - ~~**Rite deed slots render no progress and no action**~~ ✅ RESOLVED
   2026-07-31 — mostly stale: `BuildSlotRow` already built a progress row
   for every slot type (the audit line predated re-checking). What was

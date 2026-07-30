@@ -9,5 +9,8 @@ namespace Wildgrove.Data
     {
         /// <summary>The caravan's cut, subtracted from every derived rate (0–1).</summary>
         public double Spread { get; set; }
+
+        /// <summary>Minutes each standing deal lasts before the caravan names a new pair.</summary>
+        public double OfferMinutes { get; set; }
     }
 }

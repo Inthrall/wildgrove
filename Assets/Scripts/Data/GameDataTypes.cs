@@ -270,6 +270,7 @@ namespace Wildgrove.Data
     public sealed class ExchangeData
     {
         public double spread;
+        public double offerMinutes;
     }
 
     /// <summary>

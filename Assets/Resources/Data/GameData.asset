@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 41a2e7462473e5953b59cfbc7f011fc5b908d4a80a92ed22bf2fbb4438b17351
+  sourceHash: 0eaac558b14b3c6cbbe9ba389edead50f48f4cf5612af1f54b7985144647c9f8
   economy:
     costGrowth:
       building: 1.25
@@ -2644,6 +2644,7 @@ MonoBehaviour:
         it set. Their hands would have fit my gloves.
   exchange:
     spread: 0.15
+    offerMinutes: 5
   rites:
     chooseCount: 3
     generator:

@@ -1173,6 +1173,13 @@ namespace Wildgrove.Data
                 // A spread ≥ 1 makes every trade return nothing; negative mints goods.
                 issues.Add("Exchange spread must be in [0, 1)");
             }
+
+            if (data.Exchange.OfferMinutes <= 0.0)
+            {
+                // The caravan names the deal now — with no rotation there is no
+                // deal, and the whole card falls silent.
+                issues.Add("Exchange offerMinutes must be positive");
+            }
         }
 
         private static void ValidateFolio(GameData data, HashSet<string> resourceIds, List<string> issues)

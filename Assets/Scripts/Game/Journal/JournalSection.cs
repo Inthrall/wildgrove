@@ -66,7 +66,6 @@ namespace Wildgrove.Game
         protected ZoneData LatestZone() => _hud.Labels.LatestZone();
         protected string ZoneName(string zoneId) => _hud.Labels.ZoneName(zoneId);
         protected UpgradeData SkillSource(string skill) => _hud.Labels.SkillSource(skill);
-        protected List<string> TradeableResources() => _hud.Labels.TradeableResources();
         protected string EffectsLabel(List<EffectData> effects) => _hud.Labels.EffectsLabel(effects);
         protected string StationLabel(string stationId) => _hud.Labels.StationLabel(stationId);
         protected string SpeciesName(string speciesId) => _hud.Labels.SpeciesName(speciesId);

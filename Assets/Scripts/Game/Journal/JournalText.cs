@@ -76,42 +76,6 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// What the caravan will speak of: DISCOVERED goods only — a raw find
-        /// the camp has gathered, or a trade good it has crafted. The full
-        /// catalogue used to leak zone-4 names into a day-one cycle button
-        /// (and made the picker maximum length from minute one).
-        /// </summary>
-        internal List<string> TradeableResources()
-        {
-            var state = _loop.State;
-            var list = new List<string>();
-            if (_loop.Data.resources != null)
-            {
-                foreach (var resource in _loop.Data.resources)
-                {
-                    if (Compendium.IsResourceDiscovered(state, resource.id))
-                    {
-                        list.Add(resource.id);
-                    }
-                }
-            }
-
-            if (_loop.Data.recipes != null)
-            {
-                foreach (var recipe in _loop.Data.recipes)
-                {
-                    if (recipe.kind == "trade" && recipe.output != null && !list.Contains(recipe.output)
-                        && Compendium.IsRecipeDiscovered(state, recipe.id))
-                    {
-                        list.Add(recipe.output);
-                    }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
         /// What a rung or kit piece actually does, in journal ink — effects
         /// are machine-readable, so this is where they turn into words.
         /// </summary>

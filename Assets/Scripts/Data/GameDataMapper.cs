@@ -26,7 +26,8 @@ namespace Wildgrove.Data
             asset.deepAmber = MapDeepAmber(data.DeepAmber);
             asset.exchange = data.Exchange == null ? null : new ExchangeData
             {
-                spread = data.Exchange.Spread
+                spread = data.Exchange.Spread,
+                offerMinutes = data.Exchange.OfferMinutes
             };
             asset.rites = MapRites(data.Rites);
             asset.dialogue = MapDialogue(data.Dialogue);

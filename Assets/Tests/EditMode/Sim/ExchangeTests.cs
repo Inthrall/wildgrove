@@ -167,5 +167,165 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0)).ToDouble(),
                 Is.EqualTo(0.0).Within(Tolerance));
         }
+
+        // ─────────────── The quality tiers (excess windfalls trade down) ─────
+
+        private void GiveQualityConfig()
+        {
+            _data.economy.quality = new EconomyData.QualityData
+            {
+                fineChance = 0.035,
+                fineValueMult = 1.5,
+                pristineBaseChance = 0.005,
+                pristineValueMult = 10.0,
+            };
+        }
+
+        [Test]
+        public void Quote_FineTier_PaysTheValueMultiplier()
+        {
+            GiveQualityConfig();
+            Assert.That(Exchange.Quote(new GameState(), _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine).ToDouble(),
+                Is.EqualTo(10.0 * (2.0 / 3.0 * 0.85) * 1.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void QualityValueMultiplier_NoQualityConfig_IsOne()
+        {
+            // Hand-built fixtures without a quality section trade at par.
+            Assert.That(Exchange.QualityValueMultiplier(_data, QualityTier.Pristine), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryTrade_FineTier_SpendsTheFinePool_AndPaysPlainGoods()
+        {
+            GiveQualityConfig();
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(100.0));
+            state.AddFine("berries", new BigDouble(10.0));
+
+            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine);
+            var expected = 10.0 * (2.0 / 3.0 * 0.85) * 1.5;
+
+            Assert.That(received.ToDouble(), Is.EqualTo(expected).Within(Tolerance));
+            // The fine pool paid; the plain stock never moved; the payout is plain.
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(expected).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryTrade_PristineTier_PaysTenfold_IntoPlainStock()
+        {
+            GiveQualityConfig();
+            var state = new GameState();
+            state.AddPristine("berries", new BigDouble(2.0));
+
+            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(2.0), QualityTier.Pristine);
+
+            Assert.That(received.ToDouble(), Is.EqualTo(2.0 * (2.0 / 3.0 * 0.85) * 10.0).Within(Tolerance));
+            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryTrade_TierShortStock_NeverBorrowsFromAnotherPool()
+        {
+            GiveQualityConfig();
+            var state = new GameState();
+            // Plenty of plain berries, no fine ones — a fine trade must refuse
+            // rather than quietly spending the camp stock at the fine rate.
+            state.AddResource("berries", new BigDouble(100.0));
+
+            Assert.That(Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine).ToDouble(),
+                Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
+        }
+
+        // ──────────────────── The rotating offer (the caravan's deal) ────────
+
+        private GameState DiscoveredState()
+        {
+            var state = new GameState();
+            Compendium.RecordGather(state, "berries", new BigDouble(1.0));
+            Compendium.RecordGather(state, "nuts", new BigDouble(1.0));
+            return state;
+        }
+
+        [Test]
+        public void OfferAt_SameWindow_IsTheSameDeal()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            var state = DiscoveredState();
+
+            // The third window runs [900000, 1200000) — first and last ms of it.
+            var early = Exchange.OfferAt(state, _data, 900_000L);
+            var late = Exchange.OfferAt(state, _data, 1_199_999L);
+
+            Assert.That(early, Is.Not.Null);
+            Assert.That(late.from, Is.EqualTo(early.from));
+            Assert.That(late.to, Is.EqualTo(early.to));
+        }
+
+        [Test]
+        public void OfferAt_NeverTradesAGoodForItself()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            var state = DiscoveredState();
+
+            // Walk a day of windows — every deal must pair two goods.
+            for (var window = 0; window < 288; window++)
+            {
+                var offer = Exchange.OfferAt(state, _data, window * 5 * 60_000L);
+                Assert.That(offer.from, Is.Not.EqualTo(offer.to), "window " + window);
+            }
+        }
+
+        [Test]
+        public void OfferAt_TheDealTurns()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            var state = DiscoveredState();
+            Compendium.RecordGather(state, "fibres", new BigDouble(1.0));
+            _data.resources.Add(new ResourceData { id = "fibres", sellValue = 5 });
+
+            // With three goods, some later window must name a different deal —
+            // a caravan that never changes its ask is the bug this pins.
+            var first = Exchange.OfferAt(state, _data, 0L);
+            var changed = false;
+            for (var window = 1; window < 48 && !changed; window++)
+            {
+                var offer = Exchange.OfferAt(state, _data, window * 5 * 60_000L);
+                changed = offer.from != first.from || offer.to != first.to;
+            }
+
+            Assert.That(changed, Is.True);
+        }
+
+        [Test]
+        public void OfferAt_UndiscoveredGoods_NeverNamed()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            var state = new GameState();
+            Compendium.RecordGather(state, "berries", new BigDouble(1.0));
+
+            // One known good is no deal at all — far-zone names must not leak.
+            Assert.That(Exchange.OfferAt(state, _data, 0L), Is.Null);
+        }
+
+        [Test]
+        public void OfferAt_NoRotationConfigured_IsNoDeal()
+        {
+            // offerMinutes 0 (pre-rotation fixtures): the caravan names nothing.
+            Assert.That(Exchange.OfferAt(DiscoveredState(), _data, 0L), Is.Null);
+        }
+
+        [Test]
+        public void OfferSecondsRemaining_CountsDownTheWindow()
+        {
+            _data.exchange.offerMinutes = 5.0;
+
+            // One minute into a five-minute window: four minutes left.
+            Assert.That(Exchange.OfferSecondsRemaining(_data, 60_000L), Is.EqualTo(240.0).Within(Tolerance));
+        }
     }
 }
