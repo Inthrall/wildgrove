@@ -44,7 +44,7 @@ namespace Wildgrove.Game
             }
 
             var card = Card("TINCTURES · brewed at the fire");
-            MakeText(card, "one at a time each — a second bottle buys time, not depth",
+            MakeText(card, "one at a time each: a second bottle buys time, not depth",
                 15, TextAnchor.MiddleCenter, Ink2);
 
             foreach (var tincture in _loop.Data.tinctures)
@@ -95,7 +95,7 @@ namespace Wildgrove.Game
             // collect rather than one slot's two contenders, and a player could
             // swap between them for a while without noticing they were the same
             // decision. Group by slot, and say the arithmetic out loud.
-            MakeText(card, slots.Count + " slots — " + string.Join(" · ", slots), 16, TextAnchor.MiddleCenter, Ink2);
+            MakeText(card, slots.Count + " slots: " + string.Join(" · ", slots), 16, TextAnchor.MiddleCenter, Ink2);
             MakeText(card, "one piece worn in each; the rest keep in the bag, and go back on for nothing",
                 21, TextAnchor.MiddleCenter, Ink2, _hand);
             MakeText(card, "Worn for the run, folded at Migration", 15, TextAnchor.MiddleCenter, Ink2);
@@ -164,7 +164,7 @@ namespace Wildgrove.Game
                 // the missing skill AND the Ladder rung that grants it.
                 var source = SkillSource(captured.skill);
                 skillHint = "  <color=" + OchreInkHex + "><b>needs " + captured.skill
-                            + (source != null ? " — take up " + source.displayName : string.Empty)
+                            + (source != null ? ", take up " + source.displayName : string.Empty)
                             + "</b></color>";
             }
 
@@ -196,7 +196,7 @@ namespace Wildgrove.Game
                     {
                         Flash(action, "on the warden", true);
                         SetNote("took the " + captured.displayName.ToLowerInvariant()
-                                + " out of the bag. what it replaced keeps — nothing is lost.");
+                                + " out of the bag. what it replaced keeps, and nothing is lost.");
                         _dirty = true;
                     }
 
@@ -282,7 +282,7 @@ namespace Wildgrove.Game
                 _liveUpdaters.Add(() =>
                 {
                     var progress = Mathf.RoundToInt((float)_loop.SkillProgress(captured) * 100f);
-                    line.text = captured + " — level " + _loop.SkillLevel(captured)
+                    line.text = captured + ", level " + _loop.SkillLevel(captured)
                                 + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + progress + "% to next</color></size>";
                 });
             }
@@ -309,7 +309,7 @@ namespace Wildgrove.Game
                 lonelyLine.gameObject.SetActive(alone);
                 if (alone)
                 {
-                    lonelyLine.text = "the work is lonely. a pile of berries might tempt company — see the Ladder, at camp.";
+                    lonelyLine.text = "the work is lonely. a pile of berries might tempt company. see the Ladder, at camp.";
                 }
             });
 
@@ -389,7 +389,7 @@ namespace Wildgrove.Game
                 verseLine.gameObject.SetActive(next > 0);
                 if (next > 0)
                 {
-                    verseLine.text = "<i>a slot opens when " + next + " verses are sung — "
+                    verseLine.text = "<i>a slot opens when " + next + " verses are sung: "
                                      + _loop.TotalVersesSung() + " so far</i>";
                 }
             });
@@ -417,7 +417,7 @@ namespace Wildgrove.Game
                     // Real money says its price on the line — the Play dialog
                     // must never be where the player first learns it. Moss:
                     // it's an invitation, not a warning.
-                    bundleLine.text = "<color=" + MossDeepHex + ">+  open a slot — the starter bundle (a slot, and a pile of amber)</color>"
+                    bundleLine.text = "<color=" + MossDeepHex + ">+  open a slot: the starter bundle (a slot, and a pile of amber)</color>"
                                       + PriceTail(StoreProductIds.StarterBundle);
                 }
 
@@ -443,7 +443,7 @@ namespace Wildgrove.Game
                         _dirty = true;
                         break;
                     case StoreResult.Failed:
-                        SetNote("that didn't go through — nothing was charged.");
+                        SetNote("that didn't go through. nothing was charged.");
                         break;
                 }
             });
@@ -471,7 +471,7 @@ namespace Wildgrove.Game
                 var next = new BigDouble(_loop.RenownForNextVerdure());
                 var toNext = next > state.renown
                     ? "\n" + SizeOpen(15) + "the next Verdure asks " + NumberFormat.Short(next)
-                      + " lifetime renown — " + NumberFormat.Short(next - state.renown) + " more</size>"
+                      + " lifetime renown, " + NumberFormat.Short(next - state.renown) + " more</size>"
                     : string.Empty;
                 line.text = "camp " + (state.migrationCount + 1)
                             + " · renown " + NumberFormat.Short(state.renown)

@@ -94,7 +94,7 @@
       "name": "Fell pony",
       "roleLean": "carrier",
       "suggestedNames": ["Moss", "Bracken", "Tor", "Gale", "Pennine"],
-      "trait": { "name": "Half-broke", "description": "Walks her own lane and carries half a load — never fully broken to harness", "kind": "trailCarryFactor", "value": 0.50 },
+      "trait": { "name": "Half-broke", "description": "Walks her own lane and carries half a load, never fully broken to harness", "kind": "trailCarryFactor", "value": 0.50 },
       "inscriptions": ["Came down off the fell on her own account and has stayed on it.", "Will take the panniers. Will not take the halter twice.", "Ten winters of her own weather in her. I lead her nowhere; we go the same way."]
     }
   ]

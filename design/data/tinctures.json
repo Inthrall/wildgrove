@@ -4,21 +4,21 @@
     {
       "id": "wardens-tonic",
       "name": "Warden's Tonic",
-      "description": "steadies the hands — +25% gathering while it lasts",
+      "description": "steadies the hands: +25% gathering while it lasts",
       "durationSec": 600,
       "effects": [ { "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 } ]
     },
     {
       "id": "glow-salve",
       "name": "Glow Salve",
-      "description": "lights the watching — observation sites half again as quick",
+      "description": "lights the watching: observation sites half again as quick",
       "durationSec": 600,
       "effects": [ { "type": "digSpeedMult", "value": 1.5 } ]
     },
     {
       "id": "peat-smoke-draught",
       "name": "Peat-Smoke Draught",
-      "description": "slows the breath — every craft half again as quick",
+      "description": "slows the breath: every craft half again as quick",
       "durationSec": 600,
       "effects": [ { "type": "craftSpeedMult", "value": 1.5 } ]
     }

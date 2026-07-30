@@ -125,7 +125,7 @@ namespace Wildgrove.Game
                     {
                         if (_loop.TimeSkip() > 0.0)
                         {
-                            SetNote("amber spent — " + NumberFormat.Duration(hours * 3600.0) + " of gathering, in a breath.");
+                            SetNote("amber spent: " + NumberFormat.Duration(hours * 3600.0) + " of gathering, in a breath.");
                             _dirty = true;
                         }
                     });
@@ -165,8 +165,8 @@ namespace Wildgrove.Game
                 {
                     Flash(look, "asking Play Games", true);
                     _loop.GameServices.SignInInteractive(signedIn => SetNote(signedIn
-                        ? "signed in — Play Games can set the cache out now."
-                        : "Play Games didn't answer — the cache keeps for now."));
+                        ? "signed in, so Play Games can set the cache out now."
+                        : "Play Games didn't answer, so the cache keeps for now."));
                     return;
                 }
 
@@ -406,11 +406,11 @@ namespace Wildgrove.Game
 
             if (others.Count == 1)
             {
-                return "one work at a time — " + others[0] + " keeps its own.";
+                return "one work at a time: " + others[0] + " keeps its own.";
             }
 
             var last = others.Count - 1;
-            return "one work at a time — " + string.Join(", ", others.GetRange(0, last))
+            return "one work at a time: " + string.Join(", ", others.GetRange(0, last))
                    + " and " + others[last] + " keep their own.";
         }
 
@@ -468,7 +468,7 @@ namespace Wildgrove.Game
                         // it plainly, and name the good that stopped it.
                         var missing = _loop.MissingCraftInput(captured);
                         progress = "  <color=" + AlarmHex + "><b>Crafting halted</b>"
-                                   + (missing != null ? " — out of " + missing : string.Empty) + "</color>";
+                                   + (missing != null ? ", out of " + missing : string.Empty) + "</color>";
                     }
                     else if (crafting)
                     {
@@ -913,7 +913,7 @@ namespace Wildgrove.Game
                     if (_loop.PurchaseUpgrade(captured))
                     {
                         Flash(buy, "taken up", true);
-                        SetNote(captured.displayName.ToLowerInvariant() + " — the work changes shape.");
+                        SetNote(captured.displayName.ToLowerInvariant() + ": the work changes shape.");
                         _dirty = true;
                     }
                 });

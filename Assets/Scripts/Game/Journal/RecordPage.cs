@@ -116,7 +116,7 @@ namespace Wildgrove.Game
             {
                 if (entries == null)
                 {
-                    SetNote("the board wouldn't be read — Play Games kept it shut.");
+                    SetNote("the board wouldn't be read. Play Games kept it shut.");
                 }
 
                 // A null set still opens the sheet, which says so itself: a tap
@@ -149,7 +149,7 @@ namespace Wildgrove.Game
                 {
                     if (onTheTrail.Contains(resource.id))
                     {
-                        MakeText(card, "<i>— something on the trail, not yet gathered —</i>", 18, TextAnchor.MiddleLeft, Ink2);
+                        MakeText(card, "<i>… something on the trail, not yet gathered …</i>", 18, TextAnchor.MiddleLeft, Ink2);
                     }
                     else
                     {
@@ -244,7 +244,7 @@ namespace Wildgrove.Game
                     // A dead Fix button explains nothing — say why the page
                     // won't take it, and only offer the button when it might.
                     var hint = isFixed
-                        ? "  ·  <color=" + MossDeepHex + ">pressed — the page keeps it</color>"
+                        ? "  ·  <color=" + MossDeepHex + ">pressed: the page keeps it</color>"
                         : !wanted ? "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>" : string.Empty;
                     label.text = "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
                                  + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + hint + "</size>";
@@ -292,12 +292,12 @@ namespace Wildgrove.Game
                     // and even then the name waits for the full record.
                     var sketches = Insects.SketchCount(_loop.State, captured.id);
                     line.text = sketches > 0
-                        ? "<i>a shape half-caught — " + sketches + " of " + captured.sketches + " sketched</i>"
-                        : "<i>— something not yet caught —</i>";
+                        ? "<i>a shape half-caught, " + sketches + " of " + captured.sketches + " sketched</i>"
+                        : "<i>… something not yet caught …</i>";
                 });
             }
 
-            MakeText(card, "<i>nothing you sketch is ever taken — the creature is let go, and only these pages remain.</i>",
+            MakeText(card, "<i>nothing you sketch is ever taken: the creature is let go, and only these pages remain.</i>",
                 16, TextAnchor.MiddleCenter, Ink2, _serif);
 
             BuildDeepAmberEntries(card);
@@ -347,19 +347,19 @@ namespace Wildgrove.Game
                 var complete = Sim.DeepAmber.IsComplete(_loop.State, _loop.Data);
                 title.text = amber.plateName + "  " + SizeOpen(15)
                              + (complete
-                                 ? "<color=" + MossDeepHex + ">recorded — it outlives every Migration</color>"
+                                 ? "<color=" + MossDeepHex + ">recorded: it outlives every Migration</color>"
                                  : "<color=" + Ink2Hex + ">" + found + " of " + amber.pieces.Count + " surfaced</color>")
                              + "</size>";
 
                 var lines = new List<string>();
                 foreach (var piece in Sim.DeepAmber.FoundPieces(_loop.State, _loop.Data))
                 {
-                    lines.Add("<b>" + piece.displayName + "</b> — <i>" + piece.lore + "</i>");
+                    lines.Add("<b>" + piece.displayName + "</b>: <i>" + piece.lore + "</i>");
                 }
 
                 lines.Add(complete
                     ? "<i>" + amber.completedLore + "</i>"
-                    : "<i>— the resin holds more —</i>");
+                    : "<i>… the resin holds more …</i>");
                 body.text = string.Join("\n", lines);
             });
         }
@@ -498,7 +498,7 @@ namespace Wildgrove.Game
             if (bond != null)
             {
                 parts.Add(bond.displayName + " the " + SpeciesName(bond.species)
-                          + " bonds — a companion who walks every fold with you");
+                          + " bonds, a companion who walks every fold with you");
             }
 
             return string.Join(" · ", parts);

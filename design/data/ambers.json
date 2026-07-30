@@ -5,7 +5,7 @@
     "findsPerHour": 0.05,
     "pityHoursWatched": 12,
     "plateName": "The Deep Amber",
-    "completedLore": "An insect no one living has seen, held in resin. The world it flew through has ended. It is in the book now — the one thing the land let me keep.",
+    "completedLore": "An insect no one living has seen, held in resin. The world it flew through has ended. It is in the book now, the one thing the land let me keep.",
     "effects": [ { "type": "yieldBonus", "skill": "all", "value": 0.25 } ],
     "pieces": [
       { "id": "the-wing", "name": "The Wing",         "lore": "A wing in the resin, veined like nothing the trail knows. Whatever sky it flew, that sky has ended." },

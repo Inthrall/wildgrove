@@ -82,7 +82,7 @@ namespace Wildgrove.Game
                 return;
             }
 
-            MakeText(_body, "<i>the season: " + region.displayName + " — " + region.sign + "</i>",
+            MakeText(_body, "<i>the season: " + region.displayName + ". " + region.sign + "</i>",
                 17, TextAnchor.MiddleCenter, Ink2, _hand);
         }
 
@@ -215,7 +215,7 @@ namespace Wildgrove.Game
                 }
                 else if (pony != null)
                 {
-                    status.text = pony.name + " carrying alone — " + invitation;
+                    status.text = pony.name + " carrying alone · " + invitation;
                 }
                 else
                 {
@@ -232,7 +232,7 @@ namespace Wildgrove.Game
                 var carrying = _loop.HaulPerSecond();
                 if (gathering > carrying)
                 {
-                    shortfall.text = "<color=" + OchreInkHex + ">the trail is behind — gathering "
+                    shortfall.text = "<color=" + OchreInkHex + ">the trail is behind: gathering "
                                      + NumberFormat.Rate(gathering) + "/s, carrying "
                                      + NumberFormat.Rate(carrying) + "/s</color>";
                     shortfall.gameObject.SetActive(true);
@@ -273,7 +273,7 @@ namespace Wildgrove.Game
                 if (arrived != null)
                 {
                     SetNote(arrived.IsResting
-                        ? "you left a pile of " + target.resourceId + " and stepped back. something said yes — it rests at camp until you give it a post."
+                        ? "you left a pile of " + target.resourceId + " and stepped back. something said yes. it rests at camp until you give it a post."
                         : "you left a pile of " + target.resourceId + " and stepped back. something said yes.");
                     _dirty = true;
                 }
@@ -297,16 +297,16 @@ namespace Wildgrove.Game
                 }
 
                 intro.text = "<i>a " + species.displayName + " is drawn to the " + target.resourceId
-                             + " — leave a pile and it stays.</i>";
+                             + ". leave a pile and it stays.</i>";
                 var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + target.resourceId;
                 if (_loop.CanLeaveGift(target))
                 {
                     // Moss — an invitation; ochre stays with costs and halts.
-                    line.text = "<color=" + MossDeepHex + ">+  leave a pile — " + pile + "</color>";
+                    line.text = "<color=" + MossDeepHex + ">+  leave a pile: " + pile + "</color>";
                 }
                 else
                 {
-                    line.text = "leave a pile — " + pile + " (not enough yet)";
+                    line.text = "leave a pile: " + pile + " (not enough yet)";
                 }
             });
         }
@@ -455,7 +455,7 @@ namespace Wildgrove.Game
                     ? "<color=" + MossDeepHex + ">" + occupant.name + " posted</color>"
                     : wardenHere
                         ? "<color=" + MossDeepHex + ">the warden posted</color>"
-                        : "<color=" + OchreInkHex + ">fallow — no one posted</color>";
+                        : "<color=" + OchreInkHex + ">fallow: no one posted</color>";
 
                 var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
@@ -509,7 +509,7 @@ namespace Wildgrove.Game
                 // wandering that nobody was.
                 line.text = Stationing.WanderAgents(_loop.State, _loop.Data) > 0.0
                     ? "the wanderer passes through, watching where the small lives cross"
-                    : "<color=" + OchreInkHex + ">no one wanders — the small lives go unrecorded. post someone to the wander plate at the end of the strip.</color>";
+                    : "<color=" + OchreInkHex + ">no one wanders, and the small lives go unrecorded. post someone to the wander plate at the end of the strip.</color>";
             });
         }
 
@@ -527,7 +527,7 @@ namespace Wildgrove.Game
             var givesTail = gives.Length > 0 ? gives + " · " : string.Empty;
             if (_loop.PlanterBuilt(capturedPlanter, capturedTarget))
             {
-                var built = MakeText(actions, name + " — raised"
+                var built = MakeText(actions, name + ": raised"
                                               + (gives.Length > 0 ? " · " + gives : string.Empty),
                     16, TextAnchor.MiddleLeft, MossDeep);
                 built.gameObject.name = "PlanterBuilt";
@@ -627,7 +627,7 @@ namespace Wildgrove.Game
                 var zone = _loop.Data.ZonesById.TryGetValue(verse.zone ?? string.Empty, out var z) ? z : null;
                 var site = zone != null && !string.IsNullOrEmpty(zone.verseSite) ? zone.verseSite : ZoneName(verse.zone);
                 MakeText(card, Roman(rite.verses.IndexOf(verse) + 1) + " · " + ZoneName(verse.zone) + "  " + SizeOpen(15) + "<color=" + MossDeepHex
-                               + ">" + site + " — sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
+                               + ">" + site + ", sung</color></size>", 18, TextAnchor.MiddleLeft, Ink);
             }
         }
 
@@ -662,7 +662,7 @@ namespace Wildgrove.Game
                     // the trail: buying that zone's map IS the rite's next step,
                     // so the card says so rather than leaving the gate mute.
                     : "the trail has not reached " + ZoneName(verse.zone);
-            MakeText(card, "<i>the cairn keeps its silence — " + line + "</i>",
+            MakeText(card, "<i>the cairn keeps its silence: " + line + "</i>",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
             if (_firstVerseCard == null)
             {
@@ -699,7 +699,7 @@ namespace Wildgrove.Game
                 var need = Rite.RequiredSlots(_loop.State, _loop.Data, capturedVerse);
                 var answered = Mathf.Min(Rite.CompletedSlotCount(_loop.State, capturedVerse), need);
                 progress.text = Rite.IsVerseComplete(_loop.State, _loop.Data, capturedVerse)
-                    ? "<color=" + MossDeepHex + ">answered — the verse is sung</color>"
+                    ? "<color=" + MossDeepHex + ">answered: the verse is sung</color>"
                     : "answered " + answered + " of " + need;
             });
 
@@ -778,13 +778,13 @@ namespace Wildgrove.Game
                 var name = SlotName(slot);
                 if (done)
                 {
-                    label.text = "<color=" + MossDeepHex + ">" + name + " — set down</color>";
+                    label.text = "<color=" + MossDeepHex + ">" + name + ", set down</color>";
                 }
                 else if (expired)
                 {
                     // Any three answer the verse; the rest expire (§8) — the
                     // spirits stopped listening to this one.
-                    label.text = "<color=" + Ink2Hex + "><i>" + name + " — unasked now</i></color>";
+                    label.text = "<color=" + Ink2Hex + "><i>" + name + ", unasked now</i></color>";
                 }
                 else
                 {

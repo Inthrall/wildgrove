@@ -252,7 +252,7 @@ namespace Wildgrove.Game
                 if (!string.IsNullOrWhiteSpace(typed) && typed.Trim() != familiar.name
                     && !_loop.RenameFamiliar(familiar, typed))
                 {
-                    SetNote("not enough amber for a chosen name — the suggestion holds.");
+                    SetNote("not enough amber for a chosen name, so the suggestion holds.");
                 }
 
                 _loop.TakePendingArrival();
@@ -337,7 +337,7 @@ namespace Wildgrove.Game
             var resting = _loop.KithCount() - _loop.KithWalking();
             MakeText(sheet, resting > 0
                     ? "<i>" + (resting == 1 ? "one of the kith rests" : resting + " of the kith rest")
-                      + " at camp — the Warden page will station them.</i>"
+                      + " at camp, and the Warden page will station them.</i>"
                     : "<i>the next to arrive can walk straight out.</i>",
                 18, TextAnchor.MiddleCenter, Ink2, _hand);
             Button(sheet, "Good", 320, CloseSheet);
@@ -399,7 +399,7 @@ namespace Wildgrove.Game
                             foreach (var gain in gainLines)
                             {
                                 gain.line.text = "<color=" + MossDeepHex + ">+" + NumberFormat.Short(gain.amount * 2)
-                                                 + " " + gain.id + " — doubled</color>";
+                                                 + " " + gain.id + " (doubled)</color>";
                             }
 
                             // The offer is spent — so it stops being a button.
@@ -443,7 +443,7 @@ namespace Wildgrove.Game
             // Say plainly what a fold IS before saying what it costs. "They were
             // never yours" is the right voice but it isn't an explanation, and a
             // player who has never met a prestige reset can't infer one.
-            MakeText(sheet, "<b>Start this camp over — on purpose.</b>\nYou begin again in the first meadow with nothing built,"
+            MakeText(sheet, "<b>Start this camp over, on purpose.</b>\nYou begin again in the first meadow with nothing built,"
                             + " and every run after this one runs richer.",
                 20, TextAnchor.MiddleCenter, Ink, _serif);
 
@@ -473,12 +473,12 @@ namespace Wildgrove.Game
                 }
 
                 MakeText(sheet, "<color=" + MossDeepHex + "><i>" + names + (sharpenings.Count > 1 ? " deepen" : " deepens")
-                                + " at this fold — the plate takes a new line.</i></color>",
+                                + " at this fold, and the plate takes a new line.</i></color>",
                     19, TextAnchor.MiddleCenter, Ink, _serif);
             }
 
             MakeText(sheet, "<b>You leave behind:</b> coin and stores, the camp buildings, tools and gear,"
-                            + " the trails you opened, and every skill level — <i>they were never yours</i>.",
+                            + " the trails you opened, and every skill level. <i>They were never yours</i>.",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
 
             // The §8 forecast's region preview — the fold names where it leads.
@@ -490,7 +490,7 @@ namespace Wildgrove.Game
 
             // Where Verdure comes from. The "how close is the next point"
             // question is answered by the fold banner's percentage, not here.
-            MakeText(sheet, "<i>Verdure is drawn from LIFETIME Renown — " + NumberFormat.Short(_loop.State.renown)
+            MakeText(sheet, "<i>Verdure is drawn from LIFETIME Renown: " + NumberFormat.Short(_loop.State.renown)
                             + " earned so far, and never spent. Renown comes from every level the kith and the"
                             + " crafts earn, and from what the Rite is given.</i>",
                 17, TextAnchor.MiddleCenter, Ink2, _serif);
@@ -624,13 +624,13 @@ namespace Wildgrove.Game
                 // Amber is premium and hard-won — refuse rather than part-charge.
                 if (!_loop.CanRenameFamiliar())
                 {
-                    error.text = "<color=" + OchreInkHex + "><i>not enough amber — resin is dear. the old name holds.</i></color>";
+                    error.text = "<color=" + OchreInkHex + "><i>not enough amber. resin is dear, and the old name holds.</i></color>";
                     return;
                 }
 
                 if (_loop.RenameFamiliar(familiar, typed))
                 {
-                    SetNote(cost > 0 ? "a name, paid in resin — set in the journal." : "a new name, set in the journal.");
+                    SetNote(cost > 0 ? "a name, paid in resin, set in the journal." : "a new name, set in the journal.");
                     _dirty = true;
                 }
 
@@ -759,11 +759,11 @@ namespace Wildgrove.Game
                 }
                 else if (!anyResting)
                 {
-                    notice = "everyone is already posted. move one here and the post they leave falls idle — or open a slot on the Ladder to walk with one more.";
+                    notice = "everyone is already posted. move one here and the post they leave falls idle, or open a slot on the Ladder to walk with one more.";
                 }
                 else if (!hasRoom)
                 {
-                    notice = "someone waits at camp, but every slot is walked. open a slot on the Ladder to put them to work — or move a walker here from a post you need less.";
+                    notice = "someone waits at camp, but every slot is walked. open a slot on the Ladder to put them to work, or move a walker here from a post you need less.";
                 }
 
                 if (notice != null)
@@ -893,7 +893,7 @@ namespace Wildgrove.Game
             var trait = _loop.FamiliarTrait(familiar);
             if (trait != null)
             {
-                MakeText(sheet, "<i>" + trait.displayName.ToLowerInvariant() + " — " + trait.description + "</i>",
+                MakeText(sheet, "<i>" + trait.displayName.ToLowerInvariant() + ": " + trait.description + "</i>",
                     17, TextAnchor.UpperCenter, MossDeep, _serif);
             }
 
@@ -903,7 +903,7 @@ namespace Wildgrove.Game
             if (familiar.IsPony)
             {
                 var untamed = MakeText(sheet,
-                    "<i>this wild pony can't be fully tamed. she comes to the panniers and no further — she walks her own lane, takes no slot from the kith, and will not be posted elsewhere or sent back to camp.</i>",
+                    "<i>this wild pony can't be fully tamed. she comes to the panniers and no further. she walks her own lane, takes no slot from the kith, and will not be posted elsewhere or sent back to camp.</i>",
                     16, TextAnchor.UpperCenter, Ink2);
                 var untamedElement = untamed.gameObject.AddComponent<LayoutElement>();
                 untamedElement.minWidth = 740;
@@ -917,7 +917,7 @@ namespace Wildgrove.Game
             if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
             {
                 var notice = MakeText(sheet,
-                    "<i>every slot is walked, so the empty posts stay shut — open one on the Ladder to walk with one more. stepping in for someone already posted still works: they go back to camp.</i>",
+                    "<i>every slot is walked, so the empty posts stay shut. open one on the Ladder to walk with one more. stepping in for someone already posted still works: they go back to camp.</i>",
                     16, TextAnchor.UpperCenter, Ink2);
                 var element = notice.gameObject.AddComponent<LayoutElement>();
                 element.minWidth = 740;
@@ -1134,7 +1134,7 @@ namespace Wildgrove.Game
             SetButtonTint(_timeSkipButton, ready, true);
             SetButtonLabel(_timeSkipButton, ready
                 ? TimeSkipLabel()
-                : "Pass the time — ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining));
+                : "Pass the time (ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining) + ")");
 
             if (_removeAdsButton != null)
             {
@@ -1174,7 +1174,7 @@ namespace Wildgrove.Game
             if (entries == null || entries.Length == 0)
             {
                 MakeText(sheet, entries == null
-                        ? "<i>the board would not be read — Play Games kept it shut.</i>"
+                        ? "<i>the board would not be read. Play Games kept it shut.</i>"
                         : "<i>no one has yet been recorded here.</i>",
                     20, TextAnchor.MiddleCenter, Ink2, _serif);
                 return;
@@ -1190,7 +1190,7 @@ namespace Wildgrove.Game
                 // Play hands back rank -1 for a score it holds but has not placed,
                 // and "-1." read as a position. A dash says the same thing honestly.
                 unranked |= entry.rank <= 0;
-                var place = entry.rank > 0 ? entry.rank + "." : "—";
+                var place = entry.rank > 0 ? entry.rank + "." : "-";
 
                 // Scores come off the board log-scaled (see Leaderboards.RenownScore),
                 // so they are decoded back to Renown before anyone reads them.
@@ -1280,7 +1280,7 @@ namespace Wildgrove.Game
 
                     _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
                     SetNote(NumberFormat.Duration(TimeSkipHours * 3600.0)
-                            + " pass in a breath — the kith kept to the work.");
+                            + " pass in a breath, and the kith kept to the work.");
                     _dirty = true;
                 });
         }
@@ -1320,7 +1320,7 @@ namespace Wildgrove.Game
                         break;
                     case StoreResult.Failed:
                         RestoreRemoveAdsButton();
-                        SetNote("That didn't go through — nothing was charged.");
+                        SetNote("That didn't go through. Nothing was charged.");
                         break;
                 }
             });

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: d685e739adff1e2c6eeb600b1f351b05cd31774ad05e096fc3cf80c47ad817c7
+  sourceHash: fce6b2bd6a83b03f5f933b3adc15e039677b80bcd84cbdd7c065d5169b20ff3c
   economy:
     costGrowth:
       building: 1.25
@@ -2074,8 +2074,8 @@ MonoBehaviour:
     - Pennine
     trait:
       displayName: Half-broke
-      description: "Walks her own lane and carries half a load \u2014 never fully
-        broken to harness"
+      description: Walks her own lane and carries half a load, never fully broken
+        to harness
       kind: trailCarryFactor
       value: 0.5
       resources: []
@@ -2185,7 +2185,7 @@ MonoBehaviour:
   tinctures:
   - id: wardens-tonic
     displayName: Warden's Tonic
-    description: "steadies the hands \u2014 +25% gathering while it lasts"
+    description: 'steadies the hands: +25% gathering while it lasts'
     durationSec: 600
     effects:
     - type: 1
@@ -2197,7 +2197,7 @@ MonoBehaviour:
       value: 0.25
   - id: glow-salve
     displayName: Glow Salve
-    description: "lights the watching \u2014 observation sites half again as quick"
+    description: 'lights the watching: observation sites half again as quick'
     durationSec: 600
     effects:
     - type: 5
@@ -2209,7 +2209,7 @@ MonoBehaviour:
       value: 1.5
   - id: peat-smoke-draught
     displayName: Peat-Smoke Draught
-    description: "slows the breath \u2014 every craft half again as quick"
+    description: 'slows the breath: every craft half again as quick'
     durationSec: 600
     effects:
     - type: 4
@@ -2224,9 +2224,9 @@ MonoBehaviour:
     findsPerHour: 0.05
     pityHoursWatched: 12
     plateName: The Deep Amber
-    completedLore: "An insect no one living has seen, held in resin. The world it
-      flew through has ended. It is in the book now \u2014 the one thing the land
-      let me keep."
+    completedLore: An insect no one living has seen, held in resin. The world it
+      flew through has ended. It is in the book now, the one thing the land let me
+      keep.
     effects:
     - type: 1
       skill: all
@@ -2527,8 +2527,8 @@ MonoBehaviour:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.
     - key: bramble-hedgerows
-      text: "Sweetness kept, stone made bright \u2014 show the hedge what the taking
-        taught you."
+      text: Sweetness kept, stone made bright. Show the hedge what the taking taught
+        you.
     - key: old-growth-wood
       text: Wood made useful, and one bone of what came before. The grove would hold
         it again.
@@ -2539,8 +2539,8 @@ MonoBehaviour:
       text: Brew what the still water grew, and pour a little back where the lights
         gather.
     - key: the-hollows
-      text: "Ore made bright, and the glass the burning left \u2014 carry the deep's
-        own wealth back down."
+      text: Ore made bright, and the glass the burning left. Carry the deep's own
+        wealth back down.
     provisioner:
     - id: prov-01
       trigger: first-visit
