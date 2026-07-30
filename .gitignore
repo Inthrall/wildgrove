@@ -69,3 +69,8 @@ Thumbs.db
 # Google/Firebase Unity packages — fetched by tools/fetch-google-packages.sh, not committed (61 MB blobs)
 Packages/GooglePackages/*.tgz
 Packages/GooglePackages/*.tgz.part
+
+# Play Console bulk-import archive — rebuilt by tools/pgs-import-zip.py from
+# store/play-games/achievements.json and the cards beside it, so the ZIP itself
+# is a build artifact rather than a source.
+store/play-games/import/

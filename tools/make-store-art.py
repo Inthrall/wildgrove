@@ -23,6 +23,7 @@ Play's rules for these cards, worth not breaking:
 The parchment is deliberately off-white for that last reason.
 """
 import argparse
+import json
 import random
 import sys
 from pathlib import Path
@@ -81,6 +82,107 @@ CARDS = [
     Card("play-games/achievement-first-kith-512.png", "Familiars/familiar-vole",
          size=512, plate_fraction=0.50, inset=0.08, vignette=True),
 ]
+
+# One plate per achievement, because the Play Console refuses to publish a
+# configuration in which two achievements share an icon — a generic card for all
+# of them is not an option, whatever the bulk-import docs imply about icons being
+# optional. Keyed by the slug in store/play-games/achievements.json; every slug
+# there must appear here or the run fails, so the ladder can't grow an
+# achievement that has nothing to wear. Plates are chosen for what the
+# achievement is about rather than assigned in order — the resource you first
+# gather, the building you first light, the bone-beds you find in The Hollows.
+ACHIEVEMENT_PLATES = {
+    # First hour
+    "first-harvest": "Resources/res-berries",
+    "first-friends": "Familiars/familiar-squirrel",
+    "off-the-beaten-path": "Resources/res-nuts",
+    "fire-and-fruit": "Buildings/building-fire",
+    "green-hands": "Goods/goods-seedling",
+    # Gathering
+    "a-full-basket": "Goods/goods-basket",
+    "the-long-haul": "Gear/gear-pack",
+    "laden-trails": "Familiars/familiar-raven",
+    "the-grove-gives": "Resources/res-wildflowers",
+    # Crafting
+    "the-whole-camp-working": "Buildings/building-bench",
+    "steady-hands": "Goods/goods-tools",
+    "stores-overflowing": "Buildings/building-store",
+    # Kith — first-kith keeps the vole card made by hand before this table
+    "first-kith": "Familiars/familiar-vole",
+    "a-second-bond": "Familiars/familiar-hedgehog",
+    "six-at-post": "Buildings/building-roosts",
+    "well-known": "Familiars/familiar-hare",
+    "inseparable": "Familiars/familiar-owl",
+    "the-whole-wood": "Familiars/familiar-weasel",
+    # Compendium and Folio
+    "pristine": "Resources/res-crystals",
+    "fixed-in-ink": "Resources/res-rare-herbs",
+    "a-spread-complete": "Resources/res-herbs",
+    "half-the-folio": "Resources/res-mushrooms",
+    "the-whole-folio": "Zones/keystone-aurora-bloom",
+    "the-full-cabinet": "Resources/res-eggs",
+    # Observation
+    "first-sketch": "Insects/insect-silver-skimmer",
+    "a-plate-recorded": "Insects/insect-stags-herald",
+    "all-five-plates": "Insects/insect-those-who-sow",
+    "something-older": "Resources/res-amber",
+    "the-deep-pages": "Insects/insect-deep-amber",
+    # The Rite
+    "first-verse": "Zones/keystone-lantern-firefly",
+    "the-rite-complete": "Zones/keystone-echo-geode",
+    "five-verses": "Resources/res-reeds",
+    "twenty-five-verses": "Resources/res-sky-blossoms",
+    # Migration — the tarp because folding the camp is what a fold is
+    "the-first-fold": "Gear/gear-tarp",
+    "three-folds": "Familiars/familiar-songbird",
+    "ten-folds": "Zones/keystone-cloudfleece-ram",
+    "verdant": "Goods/goods-trellis",
+    # Trails and waystones
+    "reader-of-stones": "Resources/res-flint",
+    "every-stone-read": "Zones/keystone-amber-snail",
+    "into-the-hollows": "Resources/res-bone",
+    "cloudreach": "Resources/res-glacier-ice",
+    # Camp and Almanac
+    "steel-in-hand": "Goods/goods-ingot",
+    "the-almanac-opens": "Goods/goods-planks",
+    "the-almanac-complete": "Zones/keystone-moonscale-trout",
+    "a-fuller-grove": "Resources/res-timber",
+}
+
+
+def achievement_cards():
+    """A card per achievement in the manifest, in its order."""
+    manifest = json.loads(
+        (ROOT / "store" / "play-games" / "achievements.json").read_text(encoding="utf-8")
+    )
+    slugs = [entry["slug"] for entry in manifest["achievements"]]
+
+    missing = [s for s in slugs if s not in ACHIEVEMENT_PLATES]
+    if missing:
+        raise SystemExit(
+            "No plate assigned for: " + ", ".join(missing)
+            + "\nAdd them to ACHIEVEMENT_PLATES — Play will not publish a duplicate icon."
+        )
+    plates = [ACHIEVEMENT_PLATES[s] for s in slugs]
+    clashes = {p for p in plates if plates.count(p) > 1}
+    if clashes:
+        raise SystemExit(
+            "Plate used by more than one achievement: " + ", ".join(sorted(clashes))
+            + "\nPlay rejects a configuration where two achievements share an icon."
+        )
+
+    cards = []
+    for slug in slugs:
+        # "First kith" was drawn by hand before this table existed and is already
+        # uploaded; regenerating it would only churn the file.
+        if slug == "first-kith":
+            continue
+        cards.append(Card(f"play-games/achievement-{slug}-512.png", ACHIEVEMENT_PLATES[slug],
+                          size=512, plate_fraction=0.50, inset=0.08, vignette=True))
+    return cards
+
+
+CARDS += achievement_cards()
 
 
 def foxing(size, rng):

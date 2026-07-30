@@ -1,0 +1,443 @@
+{
+  "$comment": "The achievement ladder, authored here rather than typed into the Play Console, so it is reviewable in a diff and the encoded ids can be generated instead of copied. Pushed by tools/pgs-achievements.py through the Play Games Services Publishing API; that script also writes Assets/Scripts/Game/Services/AchievementIds.g.cs from the console's own reply, so the ids in code always come from the console rather than a paste. The Level Up bar is a minimum of 10 with 40+ recommended and four reachable within an hour of play (Quest eligibility) — the five marked firstHour are those four plus a spare, in case play-testing pushes one of them past the hour. 'anchor' is the state this is decided from, and is documentation for the reader: the evaluation itself lives in Achievements.Reassert, and a test pins every id here to a branch there. Point values are multiples of 5, none above 200, and the total is kept under 1000 — the current doc says 2000 but older ones say 1000, and Google asks that headroom be left for achievements not yet written either way.",
+  "applicationId": "17679484071",
+  "locale": "en-US",
+  "achievements": [
+    {
+      "slug": "first-harvest",
+      "name": "First Harvest",
+      "description": "Bring your first load of gathered goods home to camp.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "firstHour": true,
+      "anchor": "first entry in lifetimeGathered"
+    },
+    {
+      "slug": "first-friends",
+      "name": "First Friends",
+      "description": "Befriend three familiars so the trails are not walked alone.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "firstHour": true,
+      "anchor": "roster.Count >= 3"
+    },
+    {
+      "slug": "off-the-beaten-path",
+      "name": "Off the Beaten Path",
+      "description": "Map a trail to a second zone and open it.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "firstHour": true,
+      "anchor": "Upgrades.UnlockedZoneIds count >= 2"
+    },
+    {
+      "slug": "fire-and-fruit",
+      "name": "Fire and Fruit",
+      "description": "Finish a first batch of goods at a camp station.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "firstHour": true,
+      "anchor": "first entry in lifetimeCrafted"
+    },
+    {
+      "slug": "green-hands",
+      "name": "Green Hands",
+      "description": "Replant a node's own resource and raise its richness.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "firstHour": true,
+      "anchor": "any NodeState replant level >= 1"
+    },
+
+    {
+      "slug": "a-full-basket",
+      "name": "A Full Basket",
+      "description": "Gather a thousand units of the grove's goods.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "anchor": "GameStats.TotalGathered >= 1e3"
+    },
+    {
+      "slug": "the-long-haul",
+      "name": "The Long Haul",
+      "description": "Gather a hundred thousand units.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "GameStats.TotalGathered >= 1e5"
+    },
+    {
+      "slug": "laden-trails",
+      "name": "Laden Trails",
+      "description": "Gather ten million units.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "GameStats.TotalGathered >= 1e7"
+    },
+    {
+      "slug": "the-grove-gives",
+      "name": "The Grove Gives",
+      "description": "Gather a thousand million units.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 30,
+      "anchor": "GameStats.TotalGathered >= 1e9"
+    },
+
+    {
+      "slug": "the-whole-camp-working",
+      "name": "The Whole Camp Working",
+      "description": "Finish a batch at every station in the camp.",
+      "type": "INCREMENTAL",
+      "steps": 3,
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "distinct stationIds with a completed batch this run (high-water)"
+    },
+    {
+      "slug": "steady-hands",
+      "name": "Steady Hands",
+      "description": "Craft ten thousand goods.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "GameStats.TotalCrafted >= 1e4"
+    },
+    {
+      "slug": "stores-overflowing",
+      "name": "Stores Overflowing",
+      "description": "Craft a million goods.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 25,
+      "anchor": "GameStats.TotalCrafted >= 1e6"
+    },
+
+    {
+      "slug": "first-kith",
+      "name": "First kith",
+      "description": "Get your first bonded familiar!",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "existing": true,
+      "id": "CggIp4me7kEQAhAC",
+      "anchor": "Bonds.Earned non-empty"
+    },
+    {
+      "slug": "a-second-bond",
+      "name": "A Second Bond",
+      "description": "Earn both of the grove's bonded familiars.",
+      "type": "INCREMENTAL",
+      "steps": 2,
+      "state": "REVEALED",
+      "points": 15,
+      "anchor": "count of Bonds.Earned"
+    },
+    {
+      "slug": "six-at-post",
+      "name": "Six at Post",
+      "description": "Hold six of the kith at their posts at once.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 15,
+      "anchor": "posted familiars == kith.slotsMax"
+    },
+    {
+      "slug": "well-known",
+      "name": "Well Known",
+      "description": "Raise a familiar to the fifth level of Kinship.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "any familiar Kinship.Level >= 5"
+    },
+    {
+      "slug": "inseparable",
+      "name": "Inseparable",
+      "description": "Carry one familiar past every milestone of Kinship.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 25,
+      "anchor": "any familiar Kinship.SignatureMilestonesPassed == all milestones"
+    },
+    {
+      "slug": "the-whole-wood",
+      "name": "The Whole Wood",
+      "description": "Befriend every species that walks the grove.",
+      "type": "INCREMENTAL",
+      "steps": 12,
+      "state": "REVEALED",
+      "points": 40,
+      "anchor": "distinct species ids ever befriended (needs a saved set — see notes)"
+    },
+
+    {
+      "slug": "pristine",
+      "name": "Pristine",
+      "description": "Find your first Pristine specimen.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "anchor": "first entry in lifetimePristine"
+    },
+    {
+      "slug": "fixed-in-ink",
+      "name": "Fixed in Ink",
+      "description": "Fix a Pristine specimen into the Folio.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "anchor": "fixedResources.Count >= 1"
+    },
+    {
+      "slug": "a-spread-complete",
+      "name": "A Spread Complete",
+      "description": "Fill every entry of one Folio spread.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "any Folio.IsSpreadComplete"
+    },
+    {
+      "slug": "half-the-folio",
+      "name": "Half the Folio",
+      "description": "Complete five of the Folio's spreads.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "complete spreads >= 5"
+    },
+    {
+      "slug": "the-whole-folio",
+      "name": "The Whole Folio",
+      "description": "Complete every spread in the Folio.",
+      "type": "INCREMENTAL",
+      "steps": 9,
+      "state": "REVEALED",
+      "points": 40,
+      "anchor": "count of complete spreads"
+    },
+    {
+      "slug": "the-full-cabinet",
+      "name": "The Full Cabinet",
+      "description": "Fix a specimen of every resource the grove yields.",
+      "type": "INCREMENTAL",
+      "steps": 24,
+      "state": "REVEALED",
+      "points": 45,
+      "anchor": "fixedResources.Count"
+    },
+
+    {
+      "slug": "first-sketch",
+      "name": "First Sketch",
+      "description": "Draw a first line at an observation site.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "anchor": "insectSketches non-empty"
+    },
+    {
+      "slug": "a-plate-recorded",
+      "name": "A Plate Recorded",
+      "description": "Finish an insect plate and record it.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "any insect at its sketches target"
+    },
+    {
+      "slug": "all-five-plates",
+      "name": "Every Plate Drawn",
+      "description": "Record a plate for every insect of the grove.",
+      "type": "INCREMENTAL",
+      "steps": 5,
+      "state": "REVEALED",
+      "points": 25,
+      "anchor": "count of recorded plates"
+    },
+    {
+      "slug": "something-older",
+      "name": "Something Older",
+      "description": "Surface a first piece of deep amber.",
+      "type": "STANDARD",
+      "state": "HIDDEN",
+      "points": 10,
+      "anchor": "deepAmberFound >= 1"
+    },
+    {
+      "slug": "the-deep-pages",
+      "name": "The Deep Pages",
+      "description": "Surface every piece of deep amber the grove is keeping.",
+      "type": "INCREMENTAL",
+      "steps": 4,
+      "state": "HIDDEN",
+      "points": 30,
+      "anchor": "deepAmberFound"
+    },
+
+    {
+      "slug": "first-verse",
+      "name": "First Verse",
+      "description": "Complete a verse of the Rite.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 5,
+      "anchor": "any verseProgress verse complete"
+    },
+    {
+      "slug": "the-rite-complete",
+      "name": "The Rite Complete",
+      "description": "Complete every revealed verse of a Rite.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "Rite complete for the current migration"
+    },
+    {
+      "slug": "five-verses",
+      "name": "Five Verses Sung",
+      "description": "Sing five verses across all your runs.",
+      "type": "INCREMENTAL",
+      "steps": 5,
+      "state": "REVEALED",
+      "points": 25,
+      "anchor": "Kith.TotalVersesSung"
+    },
+    {
+      "slug": "twenty-five-verses",
+      "name": "Twenty-Five Verses Sung",
+      "description": "Sing twenty-five verses across all your runs.",
+      "type": "INCREMENTAL",
+      "steps": 25,
+      "state": "REVEALED",
+      "points": 45,
+      "anchor": "Kith.TotalVersesSung"
+    },
+
+    {
+      "slug": "the-first-fold",
+      "name": "The First Fold",
+      "description": "Fold the camp and follow the migration.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "migrationCount >= 1"
+    },
+    {
+      "slug": "three-folds",
+      "name": "Three Folds",
+      "description": "Follow the migration three times.",
+      "type": "INCREMENTAL",
+      "steps": 3,
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "migrationCount"
+    },
+    {
+      "slug": "ten-folds",
+      "name": "Ten Folds",
+      "description": "Follow the migration ten times.",
+      "type": "INCREMENTAL",
+      "steps": 10,
+      "state": "REVEALED",
+      "points": 40,
+      "anchor": "migrationCount"
+    },
+    {
+      "slug": "verdant",
+      "name": "Verdant",
+      "description": "Hold a thousand Verdure at once.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "verdurePoints >= 1000 (balance guess — confirm against a real run)"
+    },
+
+    {
+      "slug": "reader-of-stones",
+      "name": "Reader of Stones",
+      "description": "Read the inscriptions on four waystones.",
+      "type": "INCREMENTAL",
+      "steps": 4,
+      "state": "REVEALED",
+      "points": 10,
+      "anchor": "seenWaystoneZoneIds.Count"
+    },
+    {
+      "slug": "every-stone-read",
+      "name": "Every Stone Read",
+      "description": "Read the inscription on every waystone in the grove.",
+      "type": "INCREMENTAL",
+      "steps": 8,
+      "state": "REVEALED",
+      "points": 30,
+      "anchor": "seenWaystoneZoneIds.Count"
+    },
+    {
+      "slug": "into-the-hollows",
+      "name": "Into the Hollows",
+      "description": "Walk the trail down into The Hollows.",
+      "type": "STANDARD",
+      "state": "HIDDEN",
+      "points": 20,
+      "anchor": "the-hollows in Upgrades.UnlockedZoneIds"
+    },
+    {
+      "slug": "cloudreach",
+      "name": "Cloudreach",
+      "description": "Stand on the Cloudreach Peaks: the last ground the grove has.",
+      "type": "STANDARD",
+      "state": "HIDDEN",
+      "points": 35,
+      "anchor": "cloudreach-peaks in Upgrades.UnlockedZoneIds"
+    },
+
+    {
+      "slug": "steel-in-hand",
+      "name": "Steel in Hand",
+      "description": "Carry a full steel toolset.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 15,
+      "anchor": "Upgrades.ToolTierIndex at steel"
+    },
+    {
+      "slug": "the-almanac-opens",
+      "name": "The Almanac Opens",
+      "description": "Buy five nodes of the Almanac.",
+      "type": "STANDARD",
+      "state": "REVEALED",
+      "points": 15,
+      "anchor": "almanacNodeIds.Count >= 5"
+    },
+    {
+      "slug": "the-almanac-complete",
+      "name": "The Almanac Complete",
+      "description": "Buy every node the Almanac holds.",
+      "type": "INCREMENTAL",
+      "steps": 14,
+      "state": "REVEALED",
+      "points": 40,
+      "anchor": "almanacNodeIds.Count"
+    },
+    {
+      "slug": "a-fuller-grove",
+      "name": "A Fuller Grove",
+      "description": "Raise all five lines of the camp past their debut.",
+      "type": "INCREMENTAL",
+      "steps": 5,
+      "state": "REVEALED",
+      "points": 20,
+      "anchor": "building lines with buildingLevels >= 1"
+    }
+  ]
+}
