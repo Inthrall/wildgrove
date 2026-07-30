@@ -78,7 +78,7 @@ namespace Wildgrove.Game
                         return;
                     }
 
-                    SetNote("Play Games didn't answer — the board stays shut for now.");
+                    SetNote("Play Games didn't answer, so the board stays shut for now.");
                 });
             });
 
@@ -190,6 +190,8 @@ namespace Wildgrove.Game
             }
 
             var card = Card("THE FOLIO");
+            MakeText(card, "<i>Press finds to keep a permanent record</i>", 16, TextAnchor.MiddleCenter, Ink2, _serif);
+
             foreach (var spread in _loop.Data.folioSpreads)
             {
                 var captured = spread;
@@ -198,13 +200,12 @@ namespace Wildgrove.Game
                 {
                     var done = Folio.IsSpreadComplete(_loop.State, captured);
                     var progress = done
-                        ? "<color=" + MossDeepHex + ">complete — it outlives every Migration</color>"
+                        ? "<color=" + MossDeepHex + ">complete</color>"
                         : Folio.FixedEntryCount(_loop.State, captured) + " of " + captured.entries.Count + " pressed";
                     line.text = captured.displayName + "  " + SizeOpen(15) + progress + "</size>";
                 });
             }
 
-            var anyPristine = false;
             foreach (var pair in _loop.State.pristineResources)
             {
                 if (pair.Value <= BigDouble.Zero)
@@ -212,7 +213,6 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                anyPristine = true;
                 var resourceId = pair.Key;
                 var row = Row(card);
                 var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
@@ -253,11 +253,6 @@ namespace Wildgrove.Game
                     fix.interactable = ok;
                     SetButtonTint(fix, ok);
                 });
-            }
-
-            if (anyPristine)
-            {
-                MakeText(card, "<i>pressing consumes the find — the page keeps it instead of you.</i>", 16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
         }
 
