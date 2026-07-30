@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using Wildgrove.Game;
 
@@ -55,6 +56,25 @@ namespace Wildgrove.Game.Tests
         {
             Assert.That(ArtCredits.Preamble, Is.Not.Null.And.Not.Empty);
             Assert.That(ArtCredits.PublicDomainNote, Is.Not.Null.And.Not.Empty);
+        }
+
+        [Test]
+        public void EveryColophonLine_IsFreeOfHtmlEntities()
+        {
+            // Unity's Text draws rich-text tags but decodes no entities, so an
+            // escaped ampersand reached the page as the five characters
+            // "&amp;" — visible nonsense in the middle of a credit.
+            var shown = new List<string> { ArtCredits.Preamble, ArtCredits.PublicDomainNote };
+            foreach (var work in ArtCredits.Licensed)
+            {
+                shown.Add(ArtCredits.Line(work));
+            }
+
+            foreach (var line in shown)
+            {
+                Assert.That(line, Does.Not.Match("&[A-Za-z]+;|&#[0-9]+;"),
+                    "the colophon would draw the entity itself: " + line);
+            }
         }
     }
 }

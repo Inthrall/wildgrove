@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Wildgrove.Data;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
+using static Wildgrove.Game.JournalFormat;
 using static Wildgrove.Game.JournalWidgets;
 
 namespace Wildgrove.Game
@@ -20,12 +21,33 @@ namespace Wildgrove.Game
 
         internal void BuildRecordPage()
         {
+            BuildWrittenCard();
             BuildCompendiumCard();
             BuildFolioCard();
             BuildDeepPagesCard();
             BuildAlmanacCard();
             BuildStandingCard();
             BuildColophonCard();
+        }
+
+        /// <summary>
+        /// How much of the book is written — one figure for the whole pane,
+        /// first thing on it. Every card below counts its own kind (entries
+        /// recorded, specimens pressed, plates drawn), so the page could say how
+        /// each collection was going without ever answering the question a
+        /// collector actually asks.
+        /// </summary>
+        private void BuildWrittenCard()
+        {
+            var card = Card(null);
+            var reading = MakeText(card, string.Empty, 20, TextAnchor.MiddleCenter, Ink, _serif);
+            var detail = MakeText(card, string.Empty, 15, TextAnchor.MiddleCenter, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                var (recorded, total) = Compendium.RecordProgress(_loop.State, _loop.Data);
+                reading.text = "This book is " + (total > 0 ? Percent(recorded / (double)total) : "0%") + " written";
+                detail.text = recorded + " of " + total + " across these pages";
+            });
         }
 
         /// <summary>
@@ -213,47 +235,75 @@ namespace Wildgrove.Game
                     continue;
                 }
 
-                var resourceId = pair.Key;
-                var row = Row(card);
-                var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
-                FlexibleWidth(label.gameObject, 1f);
-                Button fix = null;
-                fix = Button(row.transform, "Press", 140, () =>
-                {
-                    if (_loop.FixSpecimen(resourceId))
-                    {
-                        Flash(fix, "pressed to the page", true);
-                        SetNote("pressed it between these pages, where it will outlast the camp.");
-                        _dirty = true;
-                    }
-                });
-
-                _liveUpdaters.Add(() =>
-                {
-                    var isFixed = Folio.IsFixed(_loop.State, resourceId);
-                    var wanted = false;
-                    foreach (var spread in _loop.Data.folioSpreads)
-                    {
-                        if (spread.entries.Contains(resourceId))
-                        {
-                            wanted = true;
-                            break;
-                        }
-                    }
-
-                    // A dead Fix button explains nothing — say why the page
-                    // won't take it, and only offer the button when it might.
-                    var hint = isFixed
-                        ? "  ·  <color=" + MossDeepHex + ">pressed: the page keeps it</color>"
-                        : !wanted ? "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>" : string.Empty;
-                    label.text = "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
-                                 + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + hint + "</size>";
-                    fix.gameObject.SetActive(!isFixed && wanted);
-                    var ok = Folio.CanFix(_loop.State, _loop.Data, resourceId);
-                    fix.interactable = ok;
-                    SetButtonTint(fix, ok);
-                });
+                BuildPristineEntry(card, pair.Key);
             }
+        }
+
+        /// <summary>
+        /// One held Pristine specimen. A specimen the page will take gets a row
+        /// with the Press button on it; one it won't — already pressed, or no
+        /// spread asks for it — is a line of text like the spreads above. It used
+        /// to be a row either way, and a row is built around a 48dp button: with
+        /// the button switched off, every settled specimen sat in a fingertip of
+        /// blank paper, which read as an empty line between the entries.
+        ///
+        /// Which of the two it is settles at build time. Both a press and a
+        /// newly-held specimen move the structure signature, so the page is
+        /// rebuilt on either.
+        /// </summary>
+        private void BuildPristineEntry(RectTransform card, string resourceId)
+        {
+            var isFixed = Folio.IsFixed(_loop.State, resourceId);
+            var wanted = false;
+            foreach (var spread in _loop.Data.folioSpreads)
+            {
+                if (spread.entries.Contains(resourceId))
+                {
+                    wanted = true;
+                    break;
+                }
+            }
+
+            if (isFixed || !wanted)
+            {
+                // A dead Press button explains nothing, so there isn't one —
+                // the line says instead why the page is done with it.
+                var note = isFixed
+                    ? "  ·  <color=" + MossDeepHex + ">pressed</color>"
+                    : "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>";
+                var settled = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+                _liveUpdaters.Add(() => settled.text = PristineLine(resourceId, note));
+                return;
+            }
+
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            Button fix = null;
+            fix = Button(row.transform, "Press", 140, () =>
+            {
+                if (_loop.FixSpecimen(resourceId))
+                {
+                    Flash(fix, "pressed to the page", true);
+                    SetNote("pressed it between these pages, where it will outlast the camp.");
+                    _dirty = true;
+                }
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                label.text = PristineLine(resourceId, string.Empty);
+                var ok = Folio.CanFix(_loop.State, _loop.Data, resourceId);
+                fix.interactable = ok;
+                SetButtonTint(fix, ok);
+            });
+        }
+
+        /// <summary>"Pristine glow-moss  3 held", plus whatever the page has to say about it.</summary>
+        private string PristineLine(string resourceId, string note)
+        {
+            return "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
+                   + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + note + "</size>";
         }
 
         private void BuildDeepPagesCard()
@@ -264,43 +314,90 @@ namespace Wildgrove.Game
             }
 
             var card = Card("THE DEEP PAGES");
+            // A newly recorded plate moves the structure signature, so the
+            // tally is settled here rather than recounted on the cadence.
+            var recorded = 0;
             foreach (var insect in _loop.Data.insects)
             {
-                var captured = insect;
-                if (Insects.IsRecorded(_loop.State, captured))
+                if (Insects.IsRecorded(_loop.State, insect))
                 {
-                    // A recorded specimen shows its deep-page plate; unrecorded
-                    // ones stay a mystery (text only), per the design.
-                    var art = ArtLibrary.ForInsect(captured.id);
-                    if (art != null)
-                    {
-                        PlateImage(card, art, 260f);
-                    }
+                    recorded++;
+                }
+            }
 
-                    var plate = Narrative.InsectPlate(_loop.Data, captured.id);
-                    MakeText(card, captured.displayName + "  <color=" + MossDeepHex + ">recorded</color>"
-                                   + (string.IsNullOrEmpty(plate) ? string.Empty : "\n" + SizeOpen(15) + "<i>" + plate + "</i></size>"),
-                        18, TextAnchor.MiddleLeft, Ink);
+            MakeText(card, recorded + " of " + _loop.Data.insects.Count + " recorded",
+                18, TextAnchor.MiddleCenter, Ink2);
+
+            // What sketching is for goes at the head of the card, the way the
+            // Folio's does. At the foot it sat between the last plate and the
+            // deep amber, where it read as the amber's caption.
+            MakeText(card, "<i>Nothing you sketch is ever taken: the creature is let go, and only these pages remain</i>",
+                16, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            // Recorded plates first, still-out-there after. In data order the
+            // two kinds interleaved, so a full-width plate could land between
+            // two mystery lines and each entry's picture ran straight into the
+            // next entry's name — the card had no rhythm to read by.
+            foreach (var insect in _loop.Data.insects)
+            {
+                if (!Insects.IsRecorded(_loop.State, insect))
+                {
                     continue;
                 }
 
+                MakeHairline(card);
+                var art = ArtLibrary.ForInsect(insect.id);
+                if (art != null)
+                {
+                    PlateImage(card, art, 260f);
+                }
+
+                var plate = Narrative.InsectPlate(_loop.Data, insect.id);
+                MakeText(card, insect.displayName + "  " + SizeOpen(15) + "<color=" + MossDeepHex + ">recorded</color></size>"
+                               + (string.IsNullOrEmpty(plate) ? string.Empty : "\n" + SizeOpen(15) + "<i>" + plate + "</i></size>"),
+                    18, TextAnchor.MiddleLeft, Ink);
+            }
+
+            BuildUncaughtEntries(card);
+            BuildDeepAmberEntries(card);
+        }
+
+        /// <summary>
+        /// What the book hasn't caught yet, gathered below the plates rather
+        /// than shuffled in among them. A page not yet earned keeps its secret —
+        /// no name, no haunt, just the sense of something. Only sketching
+        /// resolves it, and even then the name waits for the full record.
+        /// </summary>
+        private void BuildUncaughtEntries(RectTransform card)
+        {
+            var uncaught = new List<InsectData>();
+            foreach (var insect in _loop.Data.insects)
+            {
+                if (!Insects.IsRecorded(_loop.State, insect))
+                {
+                    uncaught.Add(insect);
+                }
+            }
+
+            if (uncaught.Count == 0)
+            {
+                return;
+            }
+
+            MakeHairline(card);
+            MakeText(card, "STILL OUT THERE", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
+            foreach (var insect in uncaught)
+            {
+                var captured = insect;
                 var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
                 _liveUpdaters.Add(() =>
                 {
-                    // A page not yet earned keeps its secret — no name, no haunt,
-                    // just the sense of something. Only sketching resolves it,
-                    // and even then the name waits for the full record.
                     var sketches = Insects.SketchCount(_loop.State, captured.id);
                     line.text = sketches > 0
                         ? "<i>a shape half-caught, " + sketches + " of " + captured.sketches + " sketched</i>"
                         : "<i>… something not yet caught …</i>";
                 });
             }
-
-            MakeText(card, "<i>nothing you sketch is ever taken: the creature is let go, and only these pages remain.</i>",
-                16, TextAnchor.MiddleCenter, Ink2, _serif);
-
-            BuildDeepAmberEntries(card);
         }
 
         /// <summary>
@@ -333,6 +430,10 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // Ruled off the insect plates above: without the line, its own
+            // plate and title read as a seventh insect. The title carries the
+            // plate's name, so the rule is all the head it needs.
+            MakeHairline(card);
             var art = ArtLibrary.ForLine("deep-amber");
             if (art != null)
             {

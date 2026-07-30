@@ -33,10 +33,17 @@ namespace Wildgrove.Game
             + "gathered from the naturalists and engravers who drew them first. Five are "
             + "still under licence, and are named here with thanks.";
 
-        /// <summary>The public-domain remainder, acknowledged without obligation.</summary>
+        /// <summary>
+        /// The public-domain remainder, acknowledged without obligation.
+        /// <para>
+        /// Written with bare ampersands: Unity's Text draws rich-text tags
+        /// (the italics here are real) but decodes no HTML entities, so an
+        /// escaped "&amp;" reaches the colophon as its own five characters.
+        /// </para>
+        /// </summary>
         public const string PublicDomainNote =
             "Every other plate is public domain or CC0, chiefly Ernest Protheroe's "
-            + "<i>The handy natural history</i> (1910), Kirby &amp; Schubert's <i>Natural history "
+            + "<i>The handy natural history</i> (1910), Kirby & Schubert's <i>Natural history "
             + "of the animal kingdom</i> (1889), J. G. Kurr's mineral atlas (1859), Sturm's and "
             + "Köhler's botanical plates, Audubon, and the Pearson Scott Foresman drawings.";
 

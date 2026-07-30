@@ -160,5 +160,60 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(Compendium.DiscoveredCount(state, _data), Is.EqualTo(3));
         }
+
+        [Test]
+        public void RecordProgress_SpansTheBackPages_AndChargesEachPressOnce()
+        {
+            _data.folioSpreads = new List<FolioSpreadData>
+            {
+                new FolioSpreadData { id = "meadow-blooms", entries = new List<string> { "berries", "nuts" } },
+                // The gallery re-lists a specimen the first spread asks for.
+                new FolioSpreadData { id = "wardens-gallery", entries = new List<string> { "berries" } },
+            };
+            _data.insects = new List<InsectData> { new InsectData { id = "silver-skimmer", sketches = 2 } };
+            _data.almanac = new List<AlmanacNodeData>
+            {
+                new AlmanacNodeData { id = "old-songs-i", costVerdure = 2 },
+                new AlmanacNodeData { id = "the-long-song", costVerdure = 8, repeatable = true },
+            };
+            _data.deepAmber = new DeepAmberData
+            {
+                zoneId = GameStateFactory.StartingZoneId, findsPerHour = 1, plateName = "The Deep Amber",
+                pieces = new List<AmberPieceData>
+                {
+                    new AmberPieceData { id = "the-wing" },
+                    new AmberPieceData { id = "the-seed" },
+                },
+            };
+            var state = GameStateFactory.NewGame(_data);
+
+            var empty = Compendium.RecordProgress(state, _data);
+
+            // 2 gatherables + 1 recipe + 2 DISTINCT folio entries + 1 plate
+            // + 2 amber pieces + 1 authored Almanac line. The gallery's second
+            // ask for berries and the endless line count for nothing.
+            Assert.That(empty.total, Is.EqualTo(9));
+            Assert.That(empty.recorded, Is.EqualTo(0), "a new camp has written nothing");
+
+            Compendium.RecordGather(state, "berries", BigDouble.One);
+            state.AddPristine("berries", 1);
+            Assert.That(Folio.TryFix(state, _data, "berries"), Is.True);
+            state.insectSketches["silver-skimmer"] = 2;
+            state.deepAmberFound = 1;
+            state.almanacNodeIds.Add("old-songs-i");
+
+            var written = Compendium.RecordProgress(state, _data);
+
+            Assert.That(written.recorded, Is.EqualTo(5),
+                "the gathered berry, its press, the plate, one amber piece, one line");
+            Assert.That(written.total, Is.EqualTo(empty.total), "the ceiling never moves");
+        }
+
+        [Test]
+        public void RecordProgress_OnNothing_IsEmptyRatherThanThrowing()
+        {
+            Assert.That(Compendium.RecordProgress(null, _data), Is.EqualTo((0, 0)));
+            Assert.That(Compendium.RecordProgress(GameStateFactory.NewGame(_data), null), Is.EqualTo((0, 0)));
+        }
     }
 }

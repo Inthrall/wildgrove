@@ -140,5 +140,94 @@ namespace Wildgrove.Sim
         {
             return (data.resources?.Count ?? 0) + (data.recipes?.Count ?? 0) + (data.bonds?.Count ?? 0);
         }
+
+        /// <summary>
+        /// How much of the journal's back pages are written, across every
+        /// collection the Record page holds: Compendium entries, Folio presses,
+        /// insect plates, the deep amber, and the Almanac's authored lines. Each
+        /// card counts its own kind, so the page could say how every collection
+        /// was going except the collection itself.
+        ///
+        /// Folio entries are counted DISTINCT: the Warden's Gallery re-lists
+        /// eight specimens the earlier spreads already ask for, and one press
+        /// fills the entry everywhere, so counting per spread would charge the
+        /// same specimen twice. The Almanac's endless line is left out of both
+        /// halves — a verse count with no last verse would hang a ceiling on
+        /// the page that isn't there.
+        /// </summary>
+        public static (int recorded, int total) RecordProgress(GameState state, GameDataAsset data)
+        {
+            if (state == null || data == null)
+            {
+                return (0, 0);
+            }
+
+            var recorded = DiscoveredCount(state, data);
+            var total = TotalEntries(data);
+
+            if (data.folioSpreads != null)
+            {
+                var wanted = new HashSet<string>();
+                foreach (var spread in data.folioSpreads)
+                {
+                    if (spread.entries == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var entry in spread.entries)
+                    {
+                        wanted.Add(entry);
+                    }
+                }
+
+                total += wanted.Count;
+                foreach (var entry in wanted)
+                {
+                    if (Folio.IsFixed(state, entry))
+                    {
+                        recorded++;
+                    }
+                }
+            }
+
+            if (data.insects != null)
+            {
+                total += data.insects.Count;
+                foreach (var insect in data.insects)
+                {
+                    if (Insects.IsRecorded(state, insect))
+                    {
+                        recorded++;
+                    }
+                }
+            }
+
+            if (DeepAmber.Configured(data))
+            {
+                var pieces = data.deepAmber.pieces.Count;
+                total += pieces;
+                recorded += System.Math.Min(DeepAmber.FoundCount(state), pieces);
+            }
+
+            if (data.almanac != null)
+            {
+                foreach (var node in data.almanac)
+                {
+                    if (node.repeatable)
+                    {
+                        continue;
+                    }
+
+                    total++;
+                    if (state.almanacNodeIds.Contains(node.id))
+                    {
+                        recorded++;
+                    }
+                }
+            }
+
+            return (recorded, total);
+        }
     }
 }
