@@ -1257,6 +1257,14 @@ namespace Wildgrove.Data
                     issues.Add("Rites generator chooseCountPerMigrations cannot be negative — it is folds per extra required slot, or 0 for no ramp");
                 }
 
+                // Above one would EXAGGERATE the split it exists to soften,
+                // asking millions of the cheapest good; below zero inverts it,
+                // asking most of whatever is dearest. Zero reads as absent.
+                if (generator.ValueSpread < 0.0 || generator.ValueSpread > 1.0)
+                {
+                    issues.Add("Rites generator valueSpread must be in (0, 1] — 1 is a pure value split, below it pulls dear and cheap asks together, and 0 or absent means the same as 1");
+                }
+
                 // A ceiling under the floor would ramp the gate DOWNWARDS.
                 if (generator.ChooseCountMax > 0 && generator.ChooseCountMax < data.Rites.ChooseCount)
                 {

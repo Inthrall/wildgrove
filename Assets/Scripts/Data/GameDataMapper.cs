@@ -294,7 +294,8 @@ namespace Wildgrove.Data
                     spotlightDiscount = r.Generator.SpotlightDiscount,
                     offSpotlightPremium = r.Generator.OffSpotlightPremium,
                     chooseCountPerMigrations = r.Generator.ChooseCountPerMigrations,
-                    chooseCountMax = r.Generator.ChooseCountMax
+                    chooseCountMax = r.Generator.ChooseCountMax,
+                    valueSpread = r.Generator.ValueSpread
                 },
                 rites = r.Rites.Select(rite => new RiteData
                 {

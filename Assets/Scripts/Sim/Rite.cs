@@ -9,13 +9,14 @@ namespace Wildgrove.Sim
     /// five offering slots, any chooseCount of which complete it — verses
     /// are sung strictly in order (each sealed until the one before it is
     /// answered), and the Rite completes when every verse is sung, granting Migration
-    /// eligibility (Migration itself is the prestige build). Offerings are
-    /// delivered incrementally, consumed from camp stock (or the quality
-    /// pools, or recorded sketches), and credit Renown as they land: plain
+    /// eligibility (Migration itself is the prestige build). An offering is
+    /// WHOLE: a slot takes its entire ask in one act, from camp stock (or the
+    /// quality pools, or recorded sketches), and nothing less — holding part
+    /// of an ask is not progress, so no part-answer is banked for the verses
+    /// behind it to inherit. Offerings credit Renown as they land: plain
     /// resources at their trade value, everything else via the slot's
-    /// authored renownGrant (pro-rata for partial deliveries; deeds grant
-    /// once, on completion). Amber can never fill a slot — the gate is not
-    /// for sale.
+    /// authored renownGrant (deeds grant once, on completion). Amber can
+    /// never fill a slot — the gate is not for sale.
     /// </summary>
     public static class Rite
     {
@@ -180,6 +181,54 @@ namespace Wildgrove.Sim
                 : 0.0;
         }
 
+        /// <summary>
+        /// What the slot still asks for. In play that is always its whole
+        /// target — an offering is whole, so a slot is either untouched or
+        /// answered — but a save written while offerings were incremental can
+        /// hold a part-filled slot, and that one owes only the rest.
+        /// </summary>
+        public static double SlotRemaining(GameState state, RiteVerseData verse, int slotIndex)
+        {
+            var remaining = SlotTarget(verse.slots[slotIndex]) - SlotDelivered(state, verse, slotIndex);
+            return remaining > 0.0 ? remaining : 0.0;
+        }
+
+        /// <summary>
+        /// What the camp could hand into this slot right now: stock for a
+        /// resource slot, whole specimens across the matching quality pool,
+        /// loose pages from plates still being assembled. Zero for a deed slot
+        /// — a deed is counted as the work is done, never handed over.
+        /// </summary>
+        public static double SlotHeld(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
+        {
+            var slot = verse.slots[slotIndex];
+            switch (slot.type)
+            {
+                case RiteSlotType.Resource:
+                    return state.GetResource(slot.resource).ToDouble();
+                case RiteSlotType.Specimen:
+                    return PoolTotal(slot.quality == "pristine" ? state.pristineResources : state.fineResources);
+                case RiteSlotType.Sketch:
+                    return LooseSketchCount(state, data);
+                default:
+                    return 0.0;
+            }
+        }
+
+        /// <summary>
+        /// What the journal shows against a slot's target — its "have / asked"
+        /// pair. With a whole ask there is no partial delivery to report, so the
+        /// honest number is what the camp is holding towards it (plus a deed's
+        /// counted work, or whatever an older save part-filled). Clamped to the
+        /// target: a full store reads "300 / 300", never "9000 / 300".
+        /// </summary>
+        public static double SlotInHand(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
+        {
+            var target = SlotTarget(verse.slots[slotIndex]);
+            var inHand = SlotDelivered(state, verse, slotIndex) + SlotHeld(state, data, verse, slotIndex);
+            return inHand < target ? inHand : target;
+        }
+
         public static bool IsSlotComplete(GameState state, RiteVerseData verse, int slotIndex)
         {
             return SlotDelivered(state, verse, slotIndex) >= SlotTarget(verse.slots[slotIndex]);
@@ -289,42 +338,38 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Deliver camp stock into a resource slot: consumes up to the slot's
-        /// remaining need, credits Renown as it lands (trade value per unit,
-        /// or the authored grant pro-rata for material slots), and returns the
-        /// units delivered. Zero when the verse isn't revealed or already
-        /// answered (any three finish it — the unchosen slots expire, §8, and
-        /// must never keep eating stock), the slot is complete or the wrong
-        /// type, or the camp holds none.
+        /// Set the whole ask down at once: consumes the slot's outstanding
+        /// amount from camp stock, credits Renown as it lands (trade value per
+        /// unit, or the authored grant for material slots), and returns the
+        /// units delivered. Zero unless the camp holds the entire ask — the
+        /// site takes a whole offering or none, so a store half the size of the
+        /// ask is not half a verse — and zero when the verse isn't revealed or
+        /// is already answered (any three finish it — the unchosen slots
+        /// expire, §8, and must never keep eating stock), or the slot is
+        /// complete or the wrong type.
         /// </summary>
         public static BigDouble DeliverResource(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
             var slot = verse.slots[slotIndex];
-            if (slot.type != RiteSlotType.Resource || !IsVerseRevealed(state, data, verse)
-                || IsVerseComplete(state, data, verse))
+            if (slot.type != RiteSlotType.Resource || !CanDeliver(state, data, verse, slotIndex))
             {
                 return BigDouble.Zero;
             }
 
-            var progress = SlotProgress(state, verse, slotIndex);
-            var remaining = slot.amount - progress.delivered;
-            var held = state.GetResource(slot.resource);
-            var giving = BigDouble.Min(held, new BigDouble(remaining));
-            if (giving <= BigDouble.Zero)
-            {
-                return BigDouble.Zero;
-            }
-
-            var units = giving.ToDouble();
-            state.resources[slot.resource] = held - giving;
-            progress.delivered += units;
+            var units = SlotRemaining(state, verse, slotIndex);
+            var giving = new BigDouble(units);
+            state.resources[slot.resource] = state.GetResource(slot.resource) - giving;
+            SlotProgress(state, verse, slotIndex).delivered += units;
 
             // Renown at full trade value (no double-tax, design §7); material
-            // slots (trade value zero) carry an authored grant instead,
-            // credited pro-rata so partial offerings aren't a renown dead-zone.
+            // slots (trade value zero) carry an authored grant instead. The
+            // grant is still pro-rated against the ask, which is the whole
+            // grant in play — it only bites for a save that part-filled a slot
+            // before offerings became whole, so such a slot pays out once over
+            // rather than twice.
             if (slot.renownGrant > 0)
             {
-                state.renown += slot.renownGrant * (units / slot.amount);
+                state.renown += slot.renownGrant * (units / SlotTarget(slot));
             }
             else
             {
@@ -336,91 +381,89 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Offer one specimen into a Fine/Pristine specimen slot, consumed
-        /// from the largest matching-quality pool. Returns the resource id
-        /// offered, or null when nothing qualifies (verse unrevealed, slot
-        /// complete, pools empty).
+        /// Offer the slot's whole count of specimens into a Fine/Pristine
+        /// specimen slot, each taken from the largest matching-quality pool.
+        /// Returns the resource id of the last one given, or null when the camp
+        /// can't answer the whole ask (verse unrevealed, slot complete, too few
+        /// of that quality held).
         /// </summary>
         public static string DeliverSpecimen(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
             var slot = verse.slots[slotIndex];
-            if (slot.type != RiteSlotType.Specimen || !IsVerseRevealed(state, data, verse)
-                || IsSlotComplete(state, verse, slotIndex) || IsVerseComplete(state, data, verse))
+            if (slot.type != RiteSlotType.Specimen || !CanDeliver(state, data, verse, slotIndex))
             {
                 return null;
             }
 
             var pool = slot.quality == "pristine" ? state.pristineResources : state.fineResources;
-            var resourceId = LargestHolding(pool);
-            if (resourceId == null)
-            {
-                return null;
-            }
-
-            pool[resourceId] -= BigDouble.One;
             var progress = SlotProgress(state, verse, slotIndex);
-            progress.delivered += 1.0;
-            if (slot.count > 0)
+            var wanted = WholeUnitsAsked(state, verse, slotIndex);
+            string offered = null;
+            for (var given = 0; given < wanted; given++)
             {
-                state.renown += slot.renownGrant / (double)slot.count;
+                var resourceId = LargestHolding(pool);
+                if (resourceId == null)
+                {
+                    break;
+                }
+
+                pool[resourceId] -= BigDouble.One;
+                progress.delivered += 1.0;
+                offered = resourceId;
+                if (slot.count > 0)
+                {
+                    state.renown += slot.renownGrant / (double)slot.count;
+                }
             }
 
             SyncIfVerseJustSung(state, data, verse);
-            return resourceId;
+            return offered;
         }
 
         /// <summary>
-        /// Offer one field sketch — torn from the richest insect plate still
-        /// being recorded, so a completed plate is never broken up. A real
-        /// sacrifice: the page leaves the record and that portion must be
-        /// re-observed. Returns the insect id it came from, or null when
-        /// nothing can be offered.
+        /// Offer the slot's whole count of field sketches — each torn from the
+        /// richest insect plate still being recorded, so a completed plate is
+        /// never broken up. A real sacrifice: the pages leave the record and
+        /// those portions must be re-observed. Returns the insect id the last
+        /// page came from, or null when the camp can't answer the whole ask.
         /// </summary>
         public static string DeliverSketch(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
             var slot = verse.slots[slotIndex];
-            if (slot.type != RiteSlotType.Sketch || !IsVerseRevealed(state, data, verse)
-                || IsSlotComplete(state, verse, slotIndex) || IsVerseComplete(state, data, verse))
+            if (slot.type != RiteSlotType.Sketch || !CanDeliver(state, data, verse, slotIndex))
             {
                 return null;
             }
 
-            string richest = null;
-            var most = 0;
-            if (data.insects != null)
+            var progress = SlotProgress(state, verse, slotIndex);
+            var wanted = WholeUnitsAsked(state, verse, slotIndex);
+            string offeredFrom = null;
+            for (var given = 0; given < wanted; given++)
             {
-                foreach (var insect in data.insects)
+                var richest = RichestUnrecordedPlate(state, data);
+                if (richest == null)
                 {
-                    var held = Insects.SketchCount(state, insect.id);
-                    if (held > most && !Insects.IsRecorded(state, insect))
-                    {
-                        richest = insect.id;
-                        most = held;
-                    }
+                    break;
+                }
+
+                state.insectSketches[richest] = Insects.SketchCount(state, richest) - 1;
+                progress.delivered += 1.0;
+                offeredFrom = richest;
+                if (slot.count > 0)
+                {
+                    state.renown += slot.renownGrant / (double)slot.count;
                 }
             }
 
-            if (richest == null)
-            {
-                return null;
-            }
-
-            state.insectSketches[richest] = most - 1;
-            var progress = SlotProgress(state, verse, slotIndex);
-            progress.delivered += 1.0;
-            if (slot.count > 0)
-            {
-                state.renown += slot.renownGrant / (double)slot.count;
-            }
-
             SyncIfVerseJustSung(state, data, verse);
-            return richest;
+            return offeredFrom;
         }
 
         /// <summary>
-        /// True when offering into this slot right now could land something:
-        /// the verse is revealed and unanswered, the slot is open, and the
-        /// camp holds whatever the slot asks for — the HUD's button gate.
+        /// True when offering into this slot right now would answer it: the
+        /// verse is revealed and unanswered, the slot is open, and the camp
+        /// holds the WHOLE outstanding ask — the HUD's button gate. Holding
+        /// part of an ask buys nothing; the site takes a whole offering.
         /// </summary>
         public static bool CanDeliver(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
@@ -430,30 +473,14 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            var slot = verse.slots[slotIndex];
-            switch (slot.type)
+            // Deeds are earned at the nodes, never pressed by a button.
+            if (verse.slots[slotIndex].type == RiteSlotType.Deed)
             {
-                case RiteSlotType.Resource:
-                    return state.GetResource(slot.resource) > BigDouble.Zero;
-                case RiteSlotType.Specimen:
-                    return LargestHolding(slot.quality == "pristine" ? state.pristineResources : state.fineResources) != null;
-                case RiteSlotType.Sketch:
-                    if (data.insects != null)
-                    {
-                        foreach (var insect in data.insects)
-                        {
-                            if (Insects.SketchCount(state, insect.id) > 0 && !Insects.IsRecorded(state, insect))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-
-                    return false;
-                default:
-                    // Deeds are earned at the nodes, never pressed by a button.
-                    return false;
+                return false;
             }
+
+            var asked = SlotRemaining(state, verse, slotIndex);
+            return asked > 0.0 && SlotHeld(state, data, verse, slotIndex) >= asked;
         }
 
         /// <summary>
@@ -463,19 +490,26 @@ namespace Wildgrove.Sim
         /// </summary>
         public static void RecordDeed(GameState state, GameDataAsset data, string deed)
         {
+            // Baseline first, against the count BEFORE this deed lands. Run 1's
+            // opening verse is revealed from the off, with no zone unlock or
+            // restore to baseline it, so without this its first deed would set
+            // the baseline and then go uncounted.
+            BaselineDeedSlots(state, data);
             state.deedCounts.TryGetValue(deed, out var count);
             state.deedCounts[deed] = count + 1;
             SyncDeedSlots(state, data);
         }
 
         /// <summary>
-        /// Mirror the run's lifetime deed counts into every revealed verse's
-        /// deed slots. Called on each deed, and when a verse reveals (zone
-        /// unlock, restore) — deeds done before the reveal still count toward
-        /// the slot rather than waiting for the next deed to sync them.
+        /// Bring every revealed verse's deed slots up to date with the work
+        /// done SINCE that verse revealed. Called on each deed, and when a
+        /// verse reveals (zone unlock, restore, the verse before it being
+        /// sung) — a slot's baseline is taken on that first sync, so no verse
+        /// inherits the deeds an earlier verse of the same fold was paid for.
         /// </summary>
         public static void SyncDeedSlots(GameState state, GameDataAsset data)
         {
+            BaselineDeedSlots(state, data);
             var rite = CurrentRite(state, data);
             if (rite == null)
             {
@@ -505,19 +539,62 @@ namespace Wildgrove.Sim
                         continue;
                     }
 
+                    var progress = SlotProgress(state, verse, i);
                     state.deedCounts.TryGetValue(slot.deed ?? string.Empty, out var count);
-                    if (count <= 0)
+                    var since = count - progress.deedBaseline;
+                    if (since <= 0.0)
                     {
                         continue;
                     }
 
-                    var progress = SlotProgress(state, verse, i);
-                    progress.delivered = System.Math.Max(progress.delivered, System.Math.Min(count, slot.count));
+                    progress.delivered = System.Math.Min(since, slot.count);
                     if (!progress.granted && progress.delivered >= slot.count)
                     {
                         progress.granted = true;
                         state.renown += slot.renownGrant;
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Stamp each revealed verse's deed slots with the run's deed count as
+        /// it stands now — the line its own tally is measured from. Idempotent:
+        /// a slot is baselined once, on the first sync after its verse reveals,
+        /// and never re-stamped.
+        /// </summary>
+        private static void BaselineDeedSlots(GameState state, GameDataAsset data)
+        {
+            var rite = CurrentRite(state, data);
+            if (rite == null)
+            {
+                return;
+            }
+
+            foreach (var verse in rite.verses)
+            {
+                if (!IsVerseRevealed(state, data, verse))
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < verse.slots.Count; i++)
+                {
+                    var slot = verse.slots[i];
+                    if (slot.type != RiteSlotType.Deed)
+                    {
+                        continue;
+                    }
+
+                    var progress = SlotProgress(state, verse, i);
+                    if (progress.deedBaselineSet)
+                    {
+                        continue;
+                    }
+
+                    state.deedCounts.TryGetValue(slot.deed ?? string.Empty, out var count);
+                    progress.deedBaseline = count;
+                    progress.deedBaselineSet = true;
                 }
             }
         }
@@ -564,6 +641,70 @@ namespace Wildgrove.Sim
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// A count slot's outstanding ask as whole units — what the offering
+        /// loops hand over. Rounded because the ask is a count, and a double
+        /// subtraction of two whole numbers can land a hair under.
+        /// </summary>
+        private static int WholeUnitsAsked(GameState state, RiteVerseData verse, int slotIndex)
+        {
+            return (int)System.Math.Round(SlotRemaining(state, verse, slotIndex));
+        }
+
+        /// <summary>The unrecorded insect plate holding the most loose pages — where a torn sketch comes from.</summary>
+        private static string RichestUnrecordedPlate(GameState state, GameDataAsset data)
+        {
+            string richest = null;
+            var most = 0;
+            if (data.insects != null)
+            {
+                foreach (var insect in data.insects)
+                {
+                    var held = Insects.SketchCount(state, insect.id);
+                    if (held > most && !Insects.IsRecorded(state, insect))
+                    {
+                        richest = insect.id;
+                        most = held;
+                    }
+                }
+            }
+
+            return richest;
+        }
+
+        /// <summary>Pages the record can spare: those on plates still being assembled — a finished plate is never broken up.</summary>
+        private static double LooseSketchCount(GameState state, GameDataAsset data)
+        {
+            var loose = 0.0;
+            if (data?.insects != null)
+            {
+                foreach (var insect in data.insects)
+                {
+                    if (!Insects.IsRecorded(state, insect))
+                    {
+                        loose += Insects.SketchCount(state, insect.id);
+                    }
+                }
+            }
+
+            return loose;
+        }
+
+        /// <summary>Whole specimens a quality pool can offer, across every find in it.</summary>
+        private static double PoolTotal(Dictionary<string, BigDouble> pool)
+        {
+            var total = 0.0;
+            foreach (var pair in pool)
+            {
+                if (pair.Value >= BigDouble.One)
+                {
+                    total += System.Math.Floor(pair.Value.ToDouble());
+                }
+            }
+
+            return total;
         }
 
         private static string LargestHolding(Dictionary<string, BigDouble> pool)

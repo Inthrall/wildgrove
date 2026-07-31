@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 39;
+        public const int CurrentVersion = 40;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -187,7 +187,13 @@ namespace Wildgrove.Sim.Saves
                 var savedVerse = new SavedVerseProgress { verseId = verse.verseId };
                 foreach (var slot in verse.slots)
                 {
-                    savedVerse.slots.Add(new SavedSlotProgress { delivered = slot.delivered, granted = slot.granted });
+                    savedVerse.slots.Add(new SavedSlotProgress
+                    {
+                        delivered = slot.delivered,
+                        granted = slot.granted,
+                        deedBaseline = slot.deedBaseline,
+                        deedBaselineSet = slot.deedBaselineSet,
+                    });
                 }
 
                 save.verseProgress.Add(savedVerse);
@@ -558,6 +564,8 @@ namespace Wildgrove.Sim.Saves
                             {
                                 delivered = slot?.delivered ?? 0.0,
                                 granted = slot?.granted ?? false,
+                                deedBaseline = slot?.deedBaseline ?? 0.0,
+                                deedBaselineSet = slot?.deedBaselineSet ?? false,
                             });
                         }
                     }
@@ -1226,6 +1234,32 @@ namespace Wildgrove.Sim.Saves
                         }
 
                         save.version = 39;
+                        break;
+
+                    case 39:
+                        // v39 counted a deed slot against the run's LIFETIME
+                        // deed count; from v40 each slot counts only the work
+                        // done since its own verse revealed. Baselining these
+                        // rows at zero keeps the old reading — a save mid-way
+                        // through a deed slot must not have that work taken
+                        // back. Verses that reveal from here on baseline
+                        // themselves at their reveal, the new way.
+                        if (save.verseProgress != null)
+                        {
+                            foreach (var verse in save.verseProgress)
+                            {
+                                foreach (var slot in verse?.slots ?? new List<SavedSlotProgress>())
+                                {
+                                    if (slot != null)
+                                    {
+                                        slot.deedBaseline = 0.0;
+                                        slot.deedBaselineSet = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        save.version = 40;
                         break;
 
                     default:

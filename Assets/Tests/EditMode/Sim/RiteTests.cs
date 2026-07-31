@@ -8,11 +8,12 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins the Rite runtime (design §7): verses reveal with their zones,
-    /// offerings consume goods (or specimens, or dug fragments) and credit
-    /// Renown — trade value for plain resources, authored grants (pro-rata)
-    /// for everything else, deeds granting once — a verse completes at
-    /// chooseCount slots, and the Rite completes only when every verse is
-    /// sung.
+    /// offerings are WHOLE — a slot takes its entire ask in one act or refuses,
+    /// and nothing part-answered is banked for the next verse — consuming goods
+    /// (or specimens, or torn sketches) and crediting Renown at trade value for
+    /// plain resources, authored grants for everything else, deeds granting
+    /// once. A verse completes at chooseCount slots, and the Rite completes only
+    /// when every verse is sung.
     /// </summary>
     public class RiteTests
     {
@@ -210,7 +211,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CompletingAVerse_UnsealsTheNext_AndSyncsItsDeeds()
+        public void CompletingAVerse_UnsealsTheNext_WhoseDeedSlotStartsFromItsReveal()
         {
             var state = GameStateFactory.NewGame(_data);
             state.purchasedUpgradeIds.Add("map-bramble");
@@ -228,8 +229,13 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
             Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.True);
-            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(5.0).Within(Tolerance),
-                "deeds done while the verse was sealed count the moment it unseals");
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(0.0).Within(Tolerance),
+                "the bramble verse is baselined where it reveals — the sunfield's tending was answered once already");
+
+            Simulation.Tend(state, _data, node);
+
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(1.0).Within(Tolerance),
+                "tending after the reveal counts towards the verse that asked for it");
         }
 
         [Test]
@@ -277,39 +283,102 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CanDeliver_TracksStockAndVerseState()
+        public void CanDeliver_NeedsTheWholeAskInHand()
         {
             var state = GameStateFactory.NewGame(_data);
 
             Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.False, "nothing held — nothing to set down");
 
-            state.AddResource("berries", 10);
-            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.True);
+            state.AddResource("berries", 99);
+            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.False,
+                "one berry short of the ask is not an offering");
 
-            state.AddResource("berries", 90);
+            state.AddResource("berries", 1);
+            Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.True, "the whole ask is in the stores");
+
             state.AddResource("copper-ingot", 5);
             Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
             Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
-            state.AddResource("berries", 10);
+            state.AddResource("berries", 100);
 
             Assert.That(Rite.CanDeliver(state, _data, _sunfieldVerse, 0), Is.False, "the answered verse asks nothing more");
         }
 
         [Test]
-        public void DeliverResource_ConsumesStockAndCreditsTradeValue()
+        public void DeliverResource_ConsumesTheWholeAskAndCreditsTradeValue()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.AddResource("berries", 40);
+            state.AddResource("berries", 100);
 
             var given = Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
 
-            // 40 of the 100 asked: consumed, tracked, worth 40 · 2 Renown
+            // All 100 asked, in one act: consumed, tracked, worth 100 · 2 Renown
             // (full trade value — no double-tax, design §7).
-            Assert.That(given.ToDouble(), Is.EqualTo(40.0).Within(Tolerance));
+            Assert.That(given.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(Rite.SlotDelivered(state, _sunfieldVerse, 0), Is.EqualTo(40.0).Within(Tolerance));
-            Assert.That(state.renown.ToDouble(), Is.EqualTo(80.0).Within(Tolerance));
-            Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 0), Is.False);
+            Assert.That(Rite.SlotDelivered(state, _sunfieldVerse, 0), Is.EqualTo(100.0).Within(Tolerance));
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(200.0).Within(Tolerance));
+            Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 0), Is.True);
+        }
+
+        [Test]
+        public void DeliverResource_ShortOfTheWholeAsk_TakesNothing()
+        {
+            // The site takes a whole offering or none: a store short of the ask
+            // buys no progress, so nothing is consumed and nothing is banked for
+            // a later top-up (or for the verses behind this one) to inherit.
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 99);
+
+            var given = Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+
+            Assert.That(given.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(99.0).Within(Tolerance));
+            Assert.That(Rite.SlotDelivered(state, _sunfieldVerse, 0), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(Rite.SlotRemaining(state, _sunfieldVerse, 0), Is.EqualTo(100.0).Within(Tolerance));
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void SlotInHand_IsWhatTheCampHolds_ClampedToTheAsk()
+        {
+            // The journal row reads "have / asked" — a fuller store must not
+            // read "150 / 100", and a deed row still shows the work counted.
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 0), Is.EqualTo(0.0).Within(Tolerance));
+
+            state.AddResource("berries", 40);
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 0), Is.EqualTo(40.0).Within(Tolerance));
+
+            state.AddResource("berries", 110);
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 0), Is.EqualTo(100.0).Within(Tolerance));
+
+            Simulation.Tend(state, _data, state.nodes[0]);
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 2), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void AnsweringAVerse_LeavesTheNextOneAskingInFull()
+        {
+            // No progress passes over: the bramble verse's own ask stands
+            // untouched however much was set down in the sunfield's.
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+            GameStateFactory.SyncUnlockedZones(state, _data);
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 0), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(Rite.SlotRemaining(state, _brambleVerse, 0), Is.EqualTo(10.0).Within(Tolerance));
+
+            state.AddResource("nuts", 9);
+
+            Assert.That(Rite.CanDeliver(state, _data, _brambleVerse, 0), Is.False,
+                "nine of the ten asked answers nothing here either");
         }
 
         [Test]
@@ -340,21 +409,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void DeliverResource_MaterialSlot_CreditsTheGrantProRata()
+        public void DeliverResource_MaterialSlot_CreditsTheWholeGrantAtOnce()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddResource("copper-ingot", 2);
 
             Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
 
-            // Materials have no trade value — the authored 375 grant pays out
-            // 2/5 now…
-            Assert.That(state.renown.ToDouble(), Is.EqualTo(150.0).Within(Tolerance));
+            // Two of the five asked: refused outright, so no share of the grant.
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetResource("copper-ingot").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
 
             state.AddResource("copper-ingot", 3);
             Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
 
-            // …and the rest with the rest.
+            // Materials have no trade value — the authored 375 grant pays whole,
+            // once the whole offering is made.
             Assert.That(state.renown.ToDouble(), Is.EqualTo(375.0).Within(Tolerance));
             Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 1), Is.True);
         }
@@ -371,6 +441,28 @@ namespace Wildgrove.Sim.Tests
             Assert.That(offered, Is.EqualTo("nuts"));
             Assert.That(state.GetFine("nuts").ToDouble(), Is.EqualTo(4.0).Within(Tolerance));
             Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 3), Is.True);
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void DeliverSpecimen_ShortOfTheWholeCount_Refuses()
+        {
+            // A count slot is whole too: one perfect find answers nothing where
+            // two are asked, and when both go the grant pays exactly once over.
+            _sunfieldVerse.slots[3].count = 2;
+            var state = GameStateFactory.NewGame(_data);
+            state.AddFine("berries", 1);
+
+            Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Null);
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+
+            state.AddFine("nuts", 1);
+
+            Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Not.Null);
+            Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 3), Is.True);
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetFine("nuts").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.renown.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
 

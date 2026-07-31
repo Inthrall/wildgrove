@@ -74,6 +74,13 @@ namespace Wildgrove.Data
 
         /// <summary>Ceiling on the ramped chooseCount.</summary>
         public int ChooseCountMax { get; set; }
+
+        /// <summary>
+        /// Exponent on a good's own worth when a slot's value is divided into a
+        /// unit count (1 = a pure value split; below 1 pulls the counts of dear
+        /// and cheap goods towards each other). Outside (0, 1] means absent.
+        /// </summary>
+        public double ValueSpread { get; set; }
     }
 
     /// <summary>Top-level shape of rites.json.</summary>

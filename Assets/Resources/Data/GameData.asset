@@ -2514,6 +2514,7 @@ MonoBehaviour:
       offSpotlightPremium: 1.5
       chooseCountPerMigrations: 2
       chooseCountMax: 5
+      valueSpread: 0.7
     rites:
     - id: first-rite
       migration: 0
@@ -2566,28 +2567,28 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: berry-preserve
-          amount: 8
+          amount: 13
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: nuts
-          amount: 400
+          amount: 300
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: copper-ingot
-          amount: 5
+          amount: 10
           deed: 
           count: 0
           quality: 
-          renownGrant: 375
+          renownGrant: 750
         - type: 0
           resource: herbs
-          amount: 300
+          amount: 250
           deed: 
           count: 0
           quality: 
@@ -2607,32 +2608,32 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: planks
-          amount: 50
+          amount: 60
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: cordage
-          amount: 30
+          amount: 25
           deed: 
           count: 0
           quality: 
-          renownGrant: 500
+          renownGrant: 400
         - type: 0
           resource: mushroom-skewer
-          amount: 30
+          amount: 50
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: bronze-ingot
-          amount: 10
+          amount: 16
           deed: 
           count: 0
           quality: 
-          renownGrant: 1375
+          renownGrant: 2240
         - type: 3
           resource: 
           amount: 0
@@ -2647,32 +2648,32 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: fish
-          amount: 3000
+          amount: 3500
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: smoked-trout
-          amount: 120
+          amount: 300
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: clay
-          amount: 1800
+          amount: 1600
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: iron-ingot
-          amount: 36
+          amount: 125
           deed: 
           count: 0
           quality: 
-          renownGrant: 18000
+          renownGrant: 65000
         - type: 2
           resource: 
           amount: 0
@@ -2687,32 +2688,32 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: peat
-          amount: 9000
+          amount: 16000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: rare-herbs
-          amount: 3750
+          amount: 8000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: glow-moss
-          amount: 6000
+          amount: 12000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: wardens-tonic
-          amount: 90
+          amount: 600
           deed: 
           count: 0
           quality: 
-          renownGrant: 90000
+          renownGrant: 576000
         - type: 2
           resource: 
           amount: 0
@@ -2728,32 +2729,32 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: deep-ores
-          amount: 16000
+          amount: 47000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: crystals
-          amount: 6000
+          amount: 22000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: ashglass
-          amount: 10000
+          amount: 32000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: deep-ingot
-          amount: 240
+          amount: 1900
           deed: 
           count: 0
           quality: 
-          renownGrant: 400000
+          renownGrant: 3150000
         - type: 2
           resource: 
           amount: 0
@@ -2769,28 +2770,28 @@ MonoBehaviour:
         slots:
         - type: 0
           resource: eggs
-          amount: 35000
+          amount: 122000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: wool
-          amount: 25000
+          amount: 100000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: lichen
-          amount: 30000
+          amount: 97000
           deed: 
           count: 0
           quality: 
           renownGrant: 0
         - type: 0
           resource: felted-cloak
-          amount: 600
+          amount: 7000
           deed: 
           count: 0
           quality: 

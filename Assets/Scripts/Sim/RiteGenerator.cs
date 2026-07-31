@@ -14,8 +14,13 @@ namespace Wildgrove.Sim
     /// migration count (spotlight(m) = rotate(skills, m)), and scales demand
     /// by demandGrowth^migration (verseDemand(m) = baseQty · d^m). Spotlight
     /// slots price at a discount, off-spotlight at a premium — the spotlight
-    /// stays the cheapest path. Deterministic: the same migration count
-    /// always generates the same Rite, so a reload can never reroll it.
+    /// stays the cheapest path. Picks lean to the goods that debuted LATEST,
+    /// so a deep verse asks for the country it has just opened rather than
+    /// something the camp has stockpiled since the first hour, and the value
+    /// each pick is priced at is softened towards the set's middle
+    /// (valueSpread) so the counts are readable side by side. Deterministic:
+    /// the same migration count always generates the same Rite, so a reload
+    /// can never reroll it.
     /// </summary>
     public static class RiteGenerator
     {
@@ -199,7 +204,11 @@ namespace Wildgrove.Sim
             goodsCount = Math.Min(goodsCount + Math.Max(0, extraSlots), candidates.Count);
             var spotlightSlots = Math.Min(Math.Min(2, goodsCount), inSpotlight.Count);
 
-            var picks = new List<RiteSlotData>();
+            // Pick the whole set first, price it second: the counts are pulled
+            // towards the picked goods' own middle, which can't be known until
+            // every pick is in (see PriceGoods).
+            var chosen = new List<string>();
+            var targets = new List<double>();
             for (var i = 0; i < goodsCount; i++)
             {
                 var fromSpotlight = i < spotlightSlots;
@@ -210,12 +219,14 @@ namespace Wildgrove.Sim
                     fromSpotlight = !fromSpotlight;
                 }
 
-                var goods = TakeRandom(source, ref seed);
-                picks.Add(GoodsSlot(data, goods,
-                    anchor * scale
+                var goods = TakeFreshestRandom(data, source, ref seed);
+                chosen.Add(goods);
+                targets.Add(anchor * scale
                     * (fromSpotlight ? config.spotlightDiscount : config.offSpotlightPremium)
-                    * Regions.DemandWeight(region, goods)));
+                    * Regions.DemandWeight(region, goods));
             }
+
+            var picks = PriceGoods(data, config, chosen, targets);
 
             // Rebuild in template order: goods slots take the picks, the
             // special slots (deed/specimen/sketch) keep their authored
@@ -267,22 +278,84 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// A goods slot asking for `target` worth of the picked goods —
-        /// materials (trade value zero) carry the equivalent renownGrant so
-        /// offering them never taxes prestige.
+        /// Turn each pick's target VALUE into a unit count. Dividing straight
+        /// through by a good's own worth is what makes 260 of a rich salve and
+        /// 20000 of a cheap preserve the same offering: honest about value,
+        /// unreadable on the page, and a slot the size of the ask says nothing
+        /// about. valueSpread softens that division towards the picked set's
+        /// own middle — their geometric mean — so the counts sit nearer each
+        /// other, and the set is then rescaled so the softening only ever
+        /// REDISTRIBUTES value between slots rather than quietly raising what
+        /// the verse costs (that lever is the zone ramp, and it stays separate).
+        /// At spread 1 both steps are identities and this is the plain split.
         /// </summary>
-        private static RiteSlotData GoodsSlot(GameDataAsset data, string goodsId, double target)
+        private static List<RiteSlotData> PriceGoods(GameDataAsset data, RiteGeneratorConfigData config,
+            List<string> chosen, List<double> targets)
         {
-            var unit = Economy.NotionalUnitValue(data, goodsId).ToDouble();
-            var amount = Math.Max(1L, ToLongSaturating(target / unit));
+            var units = new List<double>();
+            foreach (var goods in chosen)
+            {
+                var unit = Economy.NotionalUnitValue(data, goods).ToDouble();
+                units.Add(unit > 0.0 ? unit : 1.0);
+            }
+
+            var spread = config.valueSpread > 0.0 && config.valueSpread < 1.0 ? config.valueSpread : 1.0;
+            var pivot = GeometricMean(units);
+            var divisors = new List<double>();
+            var softened = 0.0;
+            var asked = 0.0;
+            for (var i = 0; i < chosen.Count; i++)
+            {
+                divisors.Add(spread < 1.0
+                    ? Math.Pow(units[i], spread) * Math.Pow(pivot, 1.0 - spread)
+                    : units[i]);
+                softened += targets[i] * units[i] / divisors[i];
+                asked += targets[i];
+            }
+
+            var normalise = softened > 0.0 ? asked / softened : 1.0;
+            var slots = new List<RiteSlotData>();
+            for (var i = 0; i < chosen.Count; i++)
+            {
+                slots.Add(GoodsSlot(data, chosen[i], units[i], targets[i] * normalise / divisors[i]));
+            }
+
+            return slots;
+        }
+
+        /// <summary>The middle of a set of worths on a multiplying scale — where the softened counts pull towards.</summary>
+        private static double GeometricMean(List<double> values)
+        {
+            if (values.Count == 0)
+            {
+                return 1.0;
+            }
+
+            var logs = 0.0;
+            foreach (var value in values)
+            {
+                logs += Math.Log(value);
+            }
+
+            return Math.Exp(logs / values.Count);
+        }
+
+        /// <summary>
+        /// A goods slot asking for `amount` of the picked goods — materials
+        /// (trade value zero) carry the equivalent renownGrant so offering them
+        /// never taxes prestige.
+        /// </summary>
+        private static RiteSlotData GoodsSlot(GameDataAsset data, string goodsId, double unit, double amount)
+        {
+            var asked = Math.Max(1L, ToLongSaturating(amount));
             return new RiteSlotData
             {
                 type = RiteSlotType.Resource,
                 resource = goodsId,
-                amount = amount,
+                amount = asked,
                 renownGrant = Economy.TradeUnitValue(data, goodsId) > BigDouble.Zero
                     ? 0L
-                    : ToLongSaturating(amount * unit)
+                    : ToLongSaturating(asked * unit)
             };
         }
 
@@ -530,6 +603,89 @@ namespace Wildgrove.Sim
             }
 
             return slots > 0 ? total / slots : 0.0;
+        }
+
+        /// <summary>
+        /// Take a random good from the LATEST-debuting tier of the list. A verse
+        /// asks first for what the trail has only just opened, and reaches back
+        /// to older goods only once the new ones are used up.
+        ///
+        /// This is what stops a deep verse being sung the moment it appears. The
+        /// candidate pool is everything obtainable by that zone's point in the
+        /// run, so a Crags verse could ask for berry preserves — a good the camp
+        /// has been making by the tonne since the first hour, sitting in stock in
+        /// numbers no late-run ask can exceed. Freshness costs nothing in
+        /// reachability, since the pool itself is unchanged: it only reorders
+        /// which of its goods get asked for first.
+        /// </summary>
+        private static string TakeFreshestRandom(GameDataAsset data, List<string> list, ref ulong seed)
+        {
+            var freshest = int.MinValue;
+            foreach (var goods in list)
+            {
+                var debut = GoodsDebutOrder(data, goods, null);
+                if (debut > freshest)
+                {
+                    freshest = debut;
+                }
+            }
+
+            var fresh = new List<string>();
+            foreach (var goods in list)
+            {
+                if (GoodsDebutOrder(data, goods, null) == freshest)
+                {
+                    fresh.Add(goods);
+                }
+            }
+
+            var taken = TakeRandom(fresh, ref seed);
+            list.Remove(taken);
+            return taken;
+        }
+
+        /// <summary>
+        /// The zone order a good first becomes obtainable at: a raw find's
+        /// earliest zone, or — for a crafted good — the later of its skill's
+        /// debut and its own inputs' debuts, since nothing can be made before
+        /// its last ingredient exists.
+        /// </summary>
+        private static int GoodsDebutOrder(GameDataAsset data, string goodsId, HashSet<string> visiting)
+        {
+            var earliest = int.MaxValue;
+            foreach (var zone in data.zones)
+            {
+                if (zone.resources.Contains(goodsId) && zone.order < earliest)
+                {
+                    earliest = zone.order;
+                }
+            }
+
+            if (earliest < int.MaxValue)
+            {
+                return earliest;
+            }
+
+            var recipe = FindRecipeProducing(data, goodsId);
+            if (recipe == null)
+            {
+                return int.MaxValue;
+            }
+
+            visiting = visiting ?? new HashSet<string>();
+            if (!visiting.Add(goodsId))
+            {
+                return int.MaxValue;
+            }
+
+            var debut = SkillDebutOrder(data, recipe.skill);
+            foreach (var input in recipe.inputs)
+            {
+                debut = Math.Max(debut, GoodsDebutOrder(data, input.id, visiting));
+            }
+
+            visiting.Remove(goodsId);
+            return debut;
         }
 
         private static string TakeRandom(List<string> list, ref ulong seed)

@@ -96,7 +96,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.AlmanacById["old-songs-ii"].Requires, Is.EqualTo("old-songs-i"));
             Assert.That(data.AlmanacById["long-watch-i"].CostVerdure, Is.EqualTo(2.0));
             Assert.That(data.SpreadsById["river-catch"].Entries, Has.Count.EqualTo(4));
-            Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(375), "material offerings carry an explicit grant");
+            Assert.That(data.Rites.Rites.Single().Verses[1].Slots[2].RenownGrant, Is.EqualTo(750), "material offerings carry an explicit grant");
             Assert.That(data.Rites.Generator.DemandGrowth, Is.EqualTo(1.45), "the run-2+ generator's d in baseQty · d^m");
             Assert.That(data.Rites.Generator.ChooseCountPerMigrations, Is.EqualTo(2), "folds per extra required slot — the breadth ramp");
             Assert.That(data.Rites.Generator.ChooseCountMax, Is.EqualTo(5));
@@ -1276,8 +1276,8 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.RitesJson = sources.RitesJson.Replace(
-                "\"resource\": \"copper-ingot\",   \"amount\": 5,   \"renownGrant\": 375",
-                "\"resource\": \"copper-ingot\",   \"amount\": 5");
+                "\"resource\": \"copper-ingot\",   \"amount\": 10,  \"renownGrant\": 750",
+                "\"resource\": \"copper-ingot\",   \"amount\": 10");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 

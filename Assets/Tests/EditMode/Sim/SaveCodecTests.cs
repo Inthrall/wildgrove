@@ -385,7 +385,7 @@ namespace Wildgrove.Sim.Tests
                 slots =
                 {
                     new SlotProgressState { delivered = 40.0, granted = false },
-                    new SlotProgressState { delivered = 3.0, granted = true },
+                    new SlotProgressState { delivered = 3.0, granted = true, deedBaseline = 4.0, deedBaselineSet = true },
                 },
             });
 
@@ -398,6 +398,11 @@ namespace Wildgrove.Sim.Tests
             Assert.That(verse.slots[0].granted, Is.False);
             // The one-shot deed grant must never re-pay after a reload.
             Assert.That(verse.slots[1].granted, Is.True);
+            // Nor may a reload re-stamp the baseline: at 7 lifetime tends against
+            // a baseline of 4, the slot has answered 3 — losing the line would
+            // hand the verse all seven.
+            Assert.That(verse.slots[1].deedBaseline, Is.EqualTo(4.0).Within(Tolerance));
+            Assert.That(verse.slots[1].deedBaselineSet, Is.True);
         }
 
         [Test]
@@ -828,6 +833,33 @@ namespace Wildgrove.Sim.Tests
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
             Assert.That(save.fixedResources, Is.EqualTo(new[] { "berries", "nuts" }));
+        }
+
+        [Test]
+        public void TryMigrate_V39Save_KeepsItsDeedProgressByBaseliningAtZero()
+        {
+            // v39 counted deed slots against the run's LIFETIME tally. Baselining
+            // an existing row at zero reads exactly as it did before, so a save
+            // part-way through a deed slot doesn't have that work taken back;
+            // verses that reveal after the load baseline themselves the new way.
+            var save = new SaveData
+            {
+                version = 39,
+                verseProgress =
+                {
+                    new SavedVerseProgress
+                    {
+                        verseId = "verse-sunfield",
+                        slots = { new SavedSlotProgress { delivered = 20.0 } },
+                    },
+                },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.verseProgress[0].slots[0].deedBaselineSet, Is.True);
+            Assert.That(save.verseProgress[0].slots[0].deedBaseline, Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(save.verseProgress[0].slots[0].delivered, Is.EqualTo(20.0).Within(Tolerance));
         }
 
         [Test]

@@ -759,13 +759,14 @@ namespace Wildgrove.Game
                         var given = _loop.OfferResource(verse, slotIndex);
                         if (given > BigDouble.Zero)
                         {
-                            Flash(offer, "set down " + Mathf.FloorToInt((float)given.ToDouble()) + " " + slot.resource, true);
-                            SetNote("set down " + Mathf.FloorToInt((float)given.ToDouble()) + " " + slot.resource + ". no answer. not yet.");
+                            var units = PlainNumber(System.Math.Floor(given.ToDouble()));
+                            Flash(offer, "set down " + units + " " + slot.resource, true);
+                            SetNote("set down " + units + " " + slot.resource + " — all of it. no answer. not yet.");
                         }
                         else
                         {
-                            Flash(offer, "the stores are empty", false);
-                            SetNote("nothing in the stores to set down.");
+                            Flash(offer, "not the whole offering", false);
+                            SetNote("the whole offering, or none at all. the stores are short.");
                         }
                     });
                     break;
@@ -826,7 +827,15 @@ namespace Wildgrove.Game
                     var deedTail = slot.type == RiteSlotType.Deed
                         ? "  <color=" + Ink2Hex + "><i>counted as the work is done</i></color>"
                         : string.Empty;
-                    label.text = name + "  <color=" + Ink2Hex + ">" + Mathf.FloorToInt((float)delivered) + " / " + Mathf.FloorToInt((float)target) + "</color>" + deedTail;
+                    // Have against asked, not delivered against asked: the ask is
+                    // whole, so there is no part-delivery left to report and the
+                    // only useful number is how close the stores are to answering
+                    // it. Exact digits rather than a K/M abbreviation — the button
+                    // opens on the last unit, so an abbreviated "20.0K / 20.0K"
+                    // beside a dead button would read as a bug.
+                    var inHand = Rite.SlotInHand(_loop.State, _loop.Data, verse, slotIndex);
+                    label.text = name + "  <color=" + Ink2Hex + ">" + PlainNumber(System.Math.Floor(inHand))
+                                 + " / " + PlainNumber(target) + "</color>" + deedTail;
                 }
 
                 if (offer != null)

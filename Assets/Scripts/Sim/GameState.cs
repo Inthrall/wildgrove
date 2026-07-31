@@ -360,6 +360,20 @@ namespace Wildgrove.Sim
 
         /// <summary>True once a completion-granted slot (deeds) has credited its renownGrant — keeps the grant one-shot.</summary>
         public bool granted;
+
+        /// <summary>
+        /// The run's lifetime count of this slot's deed at the moment its verse
+        /// revealed. A deed slot counts only the work done since, so no verse
+        /// arrives part-answered by the deeds its predecessors were paid for.
+        /// </summary>
+        public double deedBaseline;
+
+        /// <summary>
+        /// True once <see cref="deedBaseline"/> has been taken. A separate flag
+        /// because zero is a real baseline — a verse revealed before its deed
+        /// was ever done — and must not read as "not yet revealed".
+        /// </summary>
+        public bool deedBaselineSet;
     }
 
     /// <summary>One live tincture buff (design §5) — ticks down in sim time; see <see cref="Tinctures"/>.</summary>

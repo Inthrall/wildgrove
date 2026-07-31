@@ -216,6 +216,12 @@ namespace Wildgrove.Sim.Saves
     {
         public double delivered;
         public bool granted;
+
+        /// <summary>v40+: the run's deed count when this slot's verse revealed — a deed slot counts only the work done since.</summary>
+        public double deedBaseline;
+
+        /// <summary>v40+: whether <see cref="deedBaseline"/> has been taken (zero is a real baseline, so it needs its own flag).</summary>
+        public bool deedBaselineSet;
     }
 
     /// <summary>One dig site's diggers and pity progress (identity resyncs from owned unlockDigSite upgrades on restore).</summary>

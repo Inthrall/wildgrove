@@ -412,6 +412,16 @@ namespace Wildgrove.Data
 
         /// <summary>Ceiling on the ramped chooseCount; zero or less leaves the ramp bounded only by each verse's slot count.</summary>
         public int chooseCountMax;
+
+        /// <summary>
+        /// How hard a good's own worth divides its slot's value into a unit
+        /// count: amount = target / (unit^spread · pivot^(1-spread)). One is a
+        /// pure value split — dear goods asked in tiny counts, cheap ones in
+        /// tens of thousands. Below one those counts pull towards each other.
+        /// Zero or less (or above one) reads as absent and leaves the pure
+        /// split.
+        /// </summary>
+        public double valueSpread;
     }
 
     [Serializable]

@@ -1392,8 +1392,10 @@ Missing parts (zone-ramp pass):
   pattern). Older Rite interpretations still flagged:
   plain-resource offerings credit Renown at the CURRENT sell value (incl.
   owned bonuses), specimen offerings auto-pick the largest matching pool,
-  fragment offerings take from the richest incomplete fossil, deeds before a
-  verse's reveal still count (lifetime, no per-verse baseline), and partial
+  fragment offerings take from the richest incomplete fossil, deeds are
+  counted per verse from its own reveal (**changed 2026-07-31** — it was
+  lifetime, which handed a later verse the tending an earlier one was already
+  paid for; `SlotProgressState.deedBaseline`, save v40), and partial
   fossil FRAGMENTS survive Migration alongside completed fossils ("every
   fossil"). (`Wildgrove.Sim/Rite.cs`, `RiteGenerator.cs`, `Migration.cs`)
   **v0.11 (§6, §8):** the `Fragment` offering slot becomes a **field-sketch** slot —

@@ -338,6 +338,67 @@ namespace Wildgrove.Sim.Tests
             }
         }
 
+        [Test]
+        public void Generate_ValueSpread_PullsTheAskCountsTogether()
+        {
+            // Copper trades at 2 and its ingot at 30, so a pure value split asks
+            // fifteen times as much of the one as the other — honest, and two
+            // numbers that say nothing to each other on the page.
+            var pure = AskSpread(RiteGenerator.Generate(_data, 1).verses[1]);
+
+            _data.rites.generator.valueSpread = 0.6;
+            var softened = AskSpread(RiteGenerator.Generate(_data, 1).verses[1]);
+
+            Assert.That(softened, Is.LessThan(pure * 0.75), "softening must visibly close the gap");
+            Assert.That(softened, Is.GreaterThan(1.0),
+                "softening is not flattening — the dearer good is still asked for in smaller numbers");
+        }
+
+        [Test]
+        public void Generate_LeansToTheGoodsTheTrailHasJustOpened()
+        {
+            // A relish the camp has been making since the meadow is a candidate
+            // for the bramble verse and always will be — and the stock is
+            // already there, so asking for it is a verse sung on sight. The
+            // generator must reach for what the new trail opened instead.
+            _data.recipes.Add(new RecipeData
+            {
+                id = "berry-mash", output = "berry-mash", kind = "good", skill = "foraging",
+                valueMult = 2, defaultKnown = true,
+                inputs = new List<ItemAmount> { new ItemAmount { id = "berries", amount = 2 } },
+            });
+            _data.recipes.Add(new RecipeData
+            {
+                id = "copper-relish", output = "copper-relish", kind = "good", skill = "foraging",
+                valueMult = 2, defaultKnown = true,
+                inputs = new List<ItemAmount> { new ItemAmount { id = "copper", amount = 2 } },
+            });
+            _data.recipes.Add(new RecipeData
+            {
+                id = "copper-jam", output = "copper-jam", kind = "good", skill = "foraging",
+                valueMult = 2, defaultKnown = true,
+                inputs = new List<ItemAmount> { new ItemAmount { id = "copper", amount = 3 } },
+            });
+
+            for (var migration = 1; migration <= 9; migration++)
+            {
+                var bramble = RiteGenerator.Generate(_data, migration).verses[1];
+
+                Assert.That(bramble.slots.Any(slot => slot.resource == "berry-mash"), Is.False,
+                    $"run {migration + 1}: the bramble verse reached back for a meadow good "
+                    + "while its own country still had something to ask for");
+            }
+        }
+
+        private static double AskSpread(RiteVerseData verse)
+        {
+            var amounts = verse.slots
+                .Where(slot => slot.type == RiteSlotType.Resource)
+                .Select(slot => (double)slot.amount)
+                .ToList();
+            return amounts.Max() / amounts.Min();
+        }
+
         // ---- The breadth ramp (design §8): the fold gate grows in how many
         // slots a verse asks for, which is bounded, rather than in quantity,
         // which is not.
