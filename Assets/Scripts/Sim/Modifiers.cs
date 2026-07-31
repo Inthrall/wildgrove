@@ -26,6 +26,7 @@ namespace Wildgrove.Sim
         public double offlineCapRaiseTo;
         public double offlineCapBonusHours;
         public double wardenYieldBonus;
+        public double bubbleRewardBonus;
         public double craftSpeedGlobal = 1.0;
         public readonly Dictionary<string, double> craftSpeedBySkill = new Dictionary<string, double>();
         public readonly Dictionary<string, double> sellValueBonusByResource = new Dictionary<string, double>();
@@ -101,6 +102,9 @@ namespace Wildgrove.Sim
                 {
                     case EffectType.WardenYieldBonus:
                         snapshot.wardenYieldBonus += effect.value;
+                        break;
+                    case EffectType.BubbleRewardBonus:
+                        snapshot.bubbleRewardBonus += effect.value;
                         break;
                     case EffectType.TendingBurstBonus:
                         snapshot.tendingBurstBonus += effect.value;

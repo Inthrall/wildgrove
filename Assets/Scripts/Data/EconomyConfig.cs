@@ -155,6 +155,9 @@ namespace Wildgrove.Data
             public double LifetimeSec { get; set; }
             public int MaxLive { get; set; }
             public double RewardSeconds { get; set; }
+
+            /// <summary>The notional gatherer's hands behind a windfall — fixed, so every node pays the same haul.</summary>
+            public double RewardRatePerSecond { get; set; }
         }
 
         public sealed class FamiliarXpSection

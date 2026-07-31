@@ -867,13 +867,22 @@ Missing parts (zone-ramp pass):
 
 - **Windfall bubbles replaced tap-to-tend (2026-07-24).** A worked node drifts a
   bubble up the strip (`economy.bubbles`: spawn interval / lifetime / max live /
-  rewardSeconds — all first guesses); catching it pays rewardSeconds of that
-  node's current output straight to camp AND tends the node (burst + Pristine
+  rewardSeconds / rewardRatePerSecond — all first guesses); catching it pays a
+  FLAT `rewardRatePerSecond x rewardSeconds` of that node's resource
+  straight to camp AND tends the node (burst + Pristine
   window + Rite tend deed — so the tend deed slots and the Cordage Wraps gear
   stay reachable, `Sim/Bubbles.cs`). Tapping a node plate now opens the posting
   sheet (the node IS the assign gesture); the vacant "+" badge is gone (occupied
   badges still show who holds the post). A "N / M POSTED" slots-in-use counter
-  is pinned to the page's top-right corner. Interpretations shipped (tune/confirm):
+  is pinned to the page's top-right corner. **The haul went flat 2026-07-31** —
+  it was `rewardSeconds` of the node's OWN live output, which paid 1-2 units at
+  every node the wandering warden only half-works (their rate is
+  `warden.gatherPerSecond / node count`, so it shrank with each zone opened) and
+  took another 10x from the `kith.gatherPerSecond` cut. A flat haul rides none of
+  the yield multipliers, so **The Long Reach** (`almanac.json`) is the Almanac's
+  second endless line: `bubbleRewardBonus` +15%/level, additive with the pack
+  raven's trait, the meta that keeps a windfall worth catching in the late zones.
+  Interpretations shipped (tune/confirm):
   - Bubbles **spawn only in live play** (world layer, `Time.time`) — nothing
     persists, no offline accrual, and time paused under a sheet still ages them.
   - Spawn is **round-robin over eligible (worked) nodes**; a camp with no one

@@ -728,6 +728,7 @@ namespace Wildgrove.Data
                     if (effect.Type != EffectType.YieldBonus
                         && effect.Type != EffectType.TendingBurstBonus
                         && effect.Type != EffectType.WardenYieldBonus
+                        && effect.Type != EffectType.BubbleRewardBonus
                         && effect.Type != EffectType.OfflineCapBonusHours)
                     {
                         issues.Add($"Almanac node '{node.Id}' is repeatable but grants '{effect.Type}' — a repeatable line may only grant additive effects (levels scale the value linearly)");
@@ -1733,7 +1734,8 @@ namespace Wildgrove.Data
 
             if (economy.Bubbles != null
                 && (economy.Bubbles.SpawnIntervalSec <= 0 || economy.Bubbles.LifetimeSec <= 0
-                    || economy.Bubbles.MaxLive <= 0 || economy.Bubbles.RewardSeconds <= 0))
+                    || economy.Bubbles.MaxLive <= 0 || economy.Bubbles.RewardSeconds <= 0
+                    || economy.Bubbles.RewardRatePerSecond <= 0))
             {
                 // A present-but-zeroed section either never spawns a bubble or
                 // spawns ones worth nothing — configure it whole or not at all.
@@ -1746,19 +1748,19 @@ namespace Wildgrove.Data
             {
                 // Zero rate AND zero pity means an observation site can never
                 // surface a field sketch — every insect plate becomes unreachable.
-                issues.Add("Economy observation values must all be positive");
-            }
                 // A zeroed watchXpPerHour is the same shape of dead end one level
                 // up: the observation craft earns XP nowhere else, so its level
                 // gates would never open.
+                issues.Add("Economy observation values must all be positive");
+            }
 
-            if (economy.Amber != null
-                && (economy.Amber.DigFindsPerHour <= 0 || economy.Amber.PerFind <= 0
             if (economy.Observation?.Skill != null && !KnownSkills.Contains(economy.Observation.Skill))
             {
                 issues.Add($"Economy observation skill '{economy.Observation.Skill}' is unknown");
             }
 
+            if (economy.Amber != null
+                && (economy.Amber.DigFindsPerHour <= 0 || economy.Amber.PerFind <= 0
                     || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0
                     || economy.Amber.AdDripAmber <= 0 || economy.Amber.WeeklyCacheAmber <= 0
                     || economy.Amber.RenameCostAmber <= 0))
@@ -1832,6 +1834,7 @@ namespace Wildgrove.Data
                 case EffectType.OfflineCapBonusHours:
                 case EffectType.TendingBurstBonus:
                 case EffectType.WardenYieldBonus:
+                case EffectType.BubbleRewardBonus:
                     RequirePositiveValue(owner, effect, issues);
                     break;
 

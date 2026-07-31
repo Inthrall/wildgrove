@@ -124,6 +124,8 @@ namespace Wildgrove.Game
                     return "tending burst +" + Percent(effect.value);
                 case EffectType.WardenYieldBonus:
                     return "the warden's own hands +" + Percent(effect.value);
+                case EffectType.BubbleRewardBonus:
+                    return "windfalls +" + Percent(effect.value);
                 case EffectType.UnlockZone:
                     return "opens " + ZoneName(effect.zone);
                 case EffectType.UnlockSkill:

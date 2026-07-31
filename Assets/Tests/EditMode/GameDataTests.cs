@@ -102,6 +102,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Rites.Generator.ChooseCountMax, Is.EqualTo(5));
             Assert.That(data.Economy.CostGrowth.Almanac, Is.EqualTo(1.25), "the geometric step on the endless Almanac line");
             Assert.That(data.AlmanacById["the-long-song"].Repeatable, Is.True, "Verdure's endless sink");
+            Assert.That(data.AlmanacById["the-long-reach"].Repeatable, Is.True, "the second endless sink");
+            Assert.That(data.AlmanacById["the-long-reach"].Effects.Single().Type, Is.EqualTo(EffectType.BubbleRewardBonus),
+                "the windfall line is what keeps a flat haul worth catching late");
             Assert.That(data.AlmanacById["known-way-i"].Effects.Single().Upgrade, Is.EqualTo("map-bramble"),
                 "the zone skip grants the trail's own rung, never a second unlock path");
             Assert.That(data.AlmanacById["the-fire-remembers"].Effects.Single().Type, Is.EqualTo(EffectType.KeepCraftOrders));
@@ -564,9 +567,6 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_NonPositiveCraftSeconds_IsReported()
-        {
-        [Test]
         public void Observation_TrainsTheCraftItsOwnGatesAskFor()
         {
             var data = GameData.Parse(LoadSources());
@@ -614,6 +614,9 @@ namespace Wildgrove.Data.Tests
             Assert.That(issues.Any(i => i.Contains("lepidoptery")), Is.True, string.Join("\n", issues));
         }
 
+        [Test]
+        public void Validate_NonPositiveCraftSeconds_IsReported()
+        {
             var sources = LoadSources();
             sources.EconomyJson = sources.EconomyJson.Replace(
                 "\"baseCraftSeconds\": 5",

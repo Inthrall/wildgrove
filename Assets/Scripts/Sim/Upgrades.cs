@@ -321,6 +321,12 @@ namespace Wildgrove.Sim
             return Modifiers.Of(state, data).wardenYieldBonus;
         }
 
+        /// <summary>Summed bubbleRewardBonus band from effect sources (the Almanac's Long Reach) — fattens the flat windfall alongside the pack raven's trait.</summary>
+        public static double BubbleRewardBonus(GameState state, GameDataAsset data)
+        {
+            return Modifiers.Of(state, data).bubbleRewardBonus;
+        }
+
         /// <summary>Extra Tending burst strength from worn gear (the Cordage Wraps' +50%), summed — multiplies the burst's yield multiplier.</summary>
         public static double TendingBurstBonus(GameState state, GameDataAsset data)
         {

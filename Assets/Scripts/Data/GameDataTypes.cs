@@ -639,7 +639,7 @@ namespace Wildgrove.Data
             public double gatherPerSecond;
         }
 
-        /// <summary>Windfall bubbles: a worked node drifts one up every spawnIntervalSec; catching it grants rewardSeconds of that node's output and tends the node.</summary>
+        /// <summary>Windfall bubbles: a worked node drifts one up every spawnIntervalSec; catching it grants a flat rewardRatePerSecond x rewardSeconds of that node's resource and tends the node.</summary>
         [Serializable]
         public sealed class BubblesData
         {
@@ -647,6 +647,9 @@ namespace Wildgrove.Data
             public double lifetimeSec;
             public int maxLive;
             public double rewardSeconds;
+
+            /// <summary>The notional gatherer's hands behind a windfall — fixed, so every node pays the same haul.</summary>
+            public double rewardRatePerSecond;
         }
 
         [Serializable]

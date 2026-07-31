@@ -15,6 +15,9 @@ namespace Wildgrove.Data
 
         /// <summary>Quickens the warden's own hands: summed with the fell pony's wardenYieldBonus trait into one additive band on the warden's gather rate.</summary>
         WardenYieldBonus,
+
+        /// <summary>Fattens every caught windfall: summed with the pack raven's bubbleRewardBonus trait into one additive band on the flat bubble haul.</summary>
+        BubbleRewardBonus,
         UnlockZone,
         UnlockSkill,
         UnlockRecipe,

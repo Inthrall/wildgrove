@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 437f474396fa8d651d3090db95f5f63fc2188de501bb6461842aacb46465856f
+  sourceHash: ef392a523a199f8a57b7e7f96d7f40f320f4748dd3e2b399ac5fcb602e7648f5
   economy:
     costGrowth:
       building: 1.25
@@ -66,6 +66,8 @@ MonoBehaviour:
     observation:
       pityTimerHoursWatched: 4
       baseSketchesPerHour: 0.25
+      skill: entomology
+      watchXpPerHour: 50
     tending:
       burstYieldMult: 3
       burstDurationSec: 5
@@ -78,6 +80,7 @@ MonoBehaviour:
       lifetimeSec: 55
       maxLive: 3
       rewardSeconds: 60
+      rewardRatePerSecond: 0.5
     familiarXp:
       baseXp: 60
       growth: 1.12
@@ -316,7 +319,7 @@ MonoBehaviour:
     - id: berries
       amount: 100
     effects:
-    - type: 15
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -336,7 +339,7 @@ MonoBehaviour:
     - id: berries
       amount: 250
     effects:
-    - type: 15
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -394,7 +397,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 11
+    - type: 12
       skill: 
       zone: bramble-hedgerows
       resource: 
@@ -402,7 +405,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: mining
       zone: 
       resource: 
@@ -442,7 +445,7 @@ MonoBehaviour:
     - id: berries
       amount: 40
     effects:
-    - type: 12
+    - type: 13
       skill: firecraft
       zone: 
       resource: 
@@ -450,7 +453,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: forgecraft
       zone: 
       resource: 
@@ -458,7 +461,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -466,7 +469,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -544,7 +547,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 11
+    - type: 12
       skill: 
       zone: old-growth-wood
       resource: 
@@ -552,7 +555,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: logging
       zone: 
       resource: 
@@ -560,7 +563,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: entomology
       zone: 
       resource: 
@@ -568,7 +571,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 15
       skill: 
       zone: old-growth-wood
       resource: 
@@ -610,7 +613,7 @@ MonoBehaviour:
     - id: fibres
       amount: 40
     effects:
-    - type: 12
+    - type: 13
       skill: bushcraft
       zone: 
       resource: 
@@ -618,7 +621,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -626,7 +629,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -662,7 +665,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -710,7 +713,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -750,7 +753,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 11
+    - type: 12
       skill: 
       zone: silverrun-river
       resource: 
@@ -758,7 +761,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: fishing
       zone: 
       resource: 
@@ -766,7 +769,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 15
       skill: 
       zone: silverrun-river
       resource: 
@@ -838,7 +841,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -864,7 +867,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -932,7 +935,7 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 4
     effects:
-    - type: 11
+    - type: 12
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -940,7 +943,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: apothecary
       zone: 
       resource: 
@@ -948,7 +951,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 15
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -972,23 +975,7 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 10
     effects:
-    - type: 11
-      skill: 
-      zone: the-hollows
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
     - type: 12
-      skill: delving
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
-    - type: 14
       skill: 
       zone: the-hollows
       resource: 
@@ -997,6 +984,22 @@ MonoBehaviour:
       upgrade: 
       value: 0
     - type: 13
+      skill: delving
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+    - type: 15
+      skill: 
+      zone: the-hollows
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -1040,7 +1043,7 @@ MonoBehaviour:
     - id: deep-ingot
       amount: 6
     effects:
-    - type: 11
+    - type: 12
       skill: 
       zone: highland-crags
       resource: 
@@ -1048,7 +1051,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 12
+    - type: 13
       skill: husbandry
       zone: 
       resource: 
@@ -1056,7 +1059,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 15
       skill: 
       zone: highland-crags
       resource: 
@@ -1074,7 +1077,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 13
+    - type: 14
       skill: 
       zone: 
       resource: 
@@ -1668,7 +1671,7 @@ MonoBehaviour:
     requires: patient-hands
     repeatable: 0
     effects:
-    - type: 17
+    - type: 18
       skill: 
       zone: 
       resource: 
@@ -1724,7 +1727,7 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects:
-    - type: 16
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1738,7 +1741,7 @@ MonoBehaviour:
     requires: remembered-edge-i
     repeatable: 0
     effects:
-    - type: 16
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1752,7 +1755,7 @@ MonoBehaviour:
     requires: known-way-i
     repeatable: 0
     effects:
-    - type: 16
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1766,7 +1769,7 @@ MonoBehaviour:
     requires: remembered-edge-ii
     repeatable: 0
     effects:
-    - type: 16
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1816,6 +1819,20 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.05
+  - id: the-long-reach
+    displayName: The Long Reach
+    costVerdure: 6
+    requires: old-songs-ii
+    repeatable: 1
+    effects:
+    - type: 11
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0.15
   folioSpreads:
   - id: meadow-blooms
     displayName: Meadow Blooms

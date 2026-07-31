@@ -448,7 +448,8 @@ namespace Wildgrove.Data
                     spawnIntervalSec = e.Bubbles.SpawnIntervalSec,
                     lifetimeSec = e.Bubbles.LifetimeSec,
                     maxLive = e.Bubbles.MaxLive,
-                    rewardSeconds = e.Bubbles.RewardSeconds
+                    rewardSeconds = e.Bubbles.RewardSeconds,
+                    rewardRatePerSecond = e.Bubbles.RewardRatePerSecond
                 },
                 familiarXp = e.FamiliarXp == null ? null : new EconomyData.FamiliarXpData
                 {
