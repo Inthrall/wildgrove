@@ -156,5 +156,45 @@ namespace Wildgrove.Game
         {
             return Kinship.Level(familiar);
         }
+
+        /// <summary>
+        /// XP this familiar earns each second at a post right now — base rate,
+        /// roosts comfort and its own Kinship rate perk, as the sim credits it.
+        /// 0 while it rests.
+        /// </summary>
+        public double FamiliarXpPerSecond(Familiar familiar)
+        {
+            return Familiars.XpPerSecond(State, Data, familiar);
+        }
+
+        /// <summary>The base XP rate before any familiar's own perks — the denominator the Post sheet's breakdown reads against.</summary>
+        public double FamiliarBaseXpPerSecond()
+        {
+            return Data.economy?.familiarXp?.xpPerSecond ?? 0.0;
+        }
+
+        /// <summary>The roosts' comfort multiplier on posted familiars' XP (design §4) — 1 while nothing is built.</summary>
+        public double ComfortXpMultiplier()
+        {
+            return Buildings.ComfortXpMultiplier(State, Data);
+        }
+
+        /// <summary>The multiplier this familiar's Kinship adds to its XP rate (design §4).</summary>
+        public double FamiliarKinshipXpRate(Familiar familiar)
+        {
+            return Kinship.XpRateMultiplier(familiar, Data.economy?.familiarXp?.kinshipXpRatePerLevel ?? 0.0);
+        }
+
+        /// <summary>The factor this familiar's passed Kinship signature milestones scale its species trait by (design §4).</summary>
+        public double FamiliarTraitDeepening(Familiar familiar)
+        {
+            return Traits.DeepeningFactor(Data, familiar);
+        }
+
+        /// <summary>The run level this familiar begins each new run at — its Kinship carried forward (design §4).</summary>
+        public int FamiliarStartingLevel(Familiar familiar)
+        {
+            return 1 + Kinship.Level(familiar);
+        }
     }
 }

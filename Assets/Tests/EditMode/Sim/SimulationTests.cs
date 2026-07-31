@@ -532,5 +532,50 @@ namespace Wildgrove.Sim.Tests
             // 4 familiars * 2.0 tool/gear mult = 8
             Assert.That(perSec.ToDouble(), Is.EqualTo(8.0).Within(Tolerance));
         }
+
+        [Test]
+        public void TotalYieldPerSecond_WardenAlone_IsNotZero()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+            state.roster.Clear();
+            Warden.Post(state, state.nodes[1]);
+
+            // The basket lane is empty — this is the reading that made a posted
+            // warden look inert on the node's own plate.
+            Assert.That(Simulation.YieldPerSecond(state.nodes[1], state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(Simulation.TotalYieldPerSecond(state.nodes[1], state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(0.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void TotalYieldPerSecond_AddsTheWanderingWardensShareToTheKithsLane()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+            state.roster.Clear();
+            TestKith.Station(state, state.nodes[0].id, 1);
+            // One body per post, so a familiar and the warden can never share a
+            // node — the wander post is where both lanes land on the same one.
+            Warden.Wander(state);
+
+            var node = state.nodes[0];
+            var kith = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
+            Assert.That(Simulation.TotalYieldPerSecond(node, state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(kith + 0.5 / state.nodes.Count).Within(Tolerance));
+        }
+
+        [Test]
+        public void TotalYieldPerSecond_WardenAtCamp_MatchesTheKithsLane()
+        {
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+            Warden.Rest(state);
+
+            var node = state.nodes[0];
+            Assert.That(Simulation.TotalYieldPerSecond(node, state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble()).Within(Tolerance));
+        }
     }
 }

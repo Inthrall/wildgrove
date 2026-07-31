@@ -84,6 +84,18 @@ namespace Wildgrove.Game
 
             MakeText(_body, "<i>the season: " + region.displayName + ". " + region.sign + "</i>",
                 17, TextAnchor.MiddleCenter, Ink2, _hand);
+
+            // What the season actually does — and the half of it that reads as
+            // a tax unless it's said out loud: the Rite weights its asks by the
+            // very same number (Regions.DemandWeight, §9's modifierWeight), so
+            // a generous season also asks for more of what it gives. Without
+            // this line a misted run just looks like a more expensive verse.
+            var gives = EffectsLabel(region.effects);
+            if (gives.Length > 0)
+            {
+                MakeText(_body, gives + " · the verse asks in the same measure, so a season changes what the work is, not how long it takes",
+                    15, TextAnchor.MiddleCenter, Ink2);
+            }
         }
 
         /// <summary>
@@ -385,16 +397,25 @@ namespace Wildgrove.Game
                 var rich = captured.richnessLevel > 0 ? " · richness " + Roman(captured.richnessLevel) : string.Empty;
 
                 // Who stands here — the card must say fallow when it is, or
-                // "0.0/s" is a riddle with the answer hidden on the strip.
+                // "0.0/s" is a riddle with the answer hidden on the strip. An
+                // unheld node is not necessarily idle: whoever holds the wander
+                // post passes every node, so "fallow" is reserved for ground
+                // nobody so much as walks over.
                 var occupant = Stationing.OccupantOf(state, captured.id);
                 var wardenHere = Warden.PostNodeId(state) == captured.id;
+                var roamed = Stationing.Wandering(state) > 0 || Warden.IsWandering(state);
                 var standing = occupant != null
                     ? "<color=" + MossDeepHex + ">" + occupant.name + " posted</color>"
                     : wardenHere
                         ? "<color=" + MossDeepHex + ">the warden posted</color>"
-                        : "<color=" + OchreInkHex + ">fallow: no one posted</color>";
+                        : roamed
+                            ? "<color=" + Ink2Hex + ">no one posted · a wanderer passes</color>"
+                            : "<color=" + OchreInkHex + ">fallow: no one posted</color>";
 
-                var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
+                // The warden's own hands are part of this ground's rate — they
+                // pocket theirs straight to camp rather than into the basket,
+                // which is bookkeeping, not something the plate should hide.
+                var rate = Simulation.TotalYieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
                 label.text = captured.resourceId + rich
                              + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "
@@ -593,6 +614,16 @@ namespace Wildgrove.Game
             if (verses.Count == 0)
             {
                 return;
+            }
+
+            // Every fold past the first re-casts the Rite (RiteGenerator), and
+            // rotates which crafts stand in its light — those ask for less,
+            // the ones out of it for more. Unsaid, a warden who remembers last
+            // run's verse reads the new numbers as the grove moving the mark.
+            if (_loop.State.migrationCount > 0)
+            {
+                MakeText(_body, "<i>each fold re-casts the Rite: the crafts in this fold's light are asked less of, those out of it more</i>",
+                    15, TextAnchor.MiddleCenter, Ink2);
             }
 
             // Open verses keep their full cards; verses already sung collapse

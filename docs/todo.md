@@ -734,11 +734,17 @@ Missing parts (zone-ramp pass):
   sitting judges it. If it plays too slow, soften the ratio to ×2
   (2/4/8/16/32, ~a week FTP); ×3 risks walling the crags verse behind the
   deepsteel door it already waits on.
-- **Warden's Sigil is design-doc-only** (§IAP: permanent ×2 yields + craft
-  speed, ~US$7) — it is NOT in the built store catalogue. Shipping it would
-  halve the paid floor to ~2–3 days for the whole map. Decide deliberately
-  whether it ships and at what effect size; don't let it drift in as-designed
-  without re-running the pacing math.
+- **Warden's Sigil is design-doc-only** (§11 IAP, ~US$7) — it is NOT in the
+  built store catalogue. **Effect size DECIDED 2026-08-01: +20% yields and
+  craft speed, down from ×2** — at ×2 it halved the paid floor to ~2–3 days
+  for the whole map and became a second pace stacked on the skip budget's
+  already-deliberate ×2; at +20% it takes ~a sixth off a run and moves no
+  wall (craft-XP gates, fold gate, skip budget all unchanged). Still open:
+  whether it ships at all, and whether ~US$7 is the right price for a perk
+  this quiet — the honest answer may be a cheaper Sigil or one folded into a
+  bundle with Amber and cosmetics. If it does ship, it needs a permanent
+  `yieldMult` + craft-speed entitlement path (there is none today: nothing in
+  `KithPurchases.Apply`/`StoreProductIds` grants a sim modifier).
 
 **NEXT SLICES (the mid/late plan, in order):**
 1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
@@ -1577,25 +1583,42 @@ kit-effects item.)
 - ~~Familiar rows show a Roman level with no progress readout~~ ✅ RESOLVED
   2026-07-31: roster rows show "% to next" on the crafts card's idiom, via
   the previously-orphaned `GameLoop.FamiliarLevelProgress`. (`WardenPage`)
-- Kinship's actual perks (+2% XP rate/level, trait deepening ×1.25 per
-  milestone, starting-level carry) are never stated as numbers — only the
-  level and inscriptions show. (`Sim/Kinship.cs`, `Sim/Traits.cs`)
-- The warden's own hands (0.5/s straight to camp) are excluded from the node
-  plates' "X/s" (`Simulation.YieldPerSecond`), so posting the warden looks
-  like it does nothing. (`Sim/Warden.cs`)
-- Roosts comfort (`Buildings.ComfortXpMultiplier`) is computed every tick but
-  never shown as a live rate on the roster. (Partially covered 2026-07-31:
-  THE FAVOURS card shows the aggregate "+X% familiar XP while posted"; a
-  per-roster-row rate is still open.)
-- `Regions.DemandWeight` is invisible — a modified season's verse just costs
-  more with no explanation; and nothing explains that runs 2+ re-pick verse
-  contents on a rotating spotlight (discount/premium). (`Sim/Regions.cs`,
-  `Sim/RiteGenerator.cs`)
-- The Compendium shows lifetime *gathered* but never lifetime *crafted*
-  (`lifetimeCrafted` feeds only achievements/Game Stats); `lifetimePristine`
-  likewise. Cross-run collection (`speciesEverBefriended`,
-  `stationsEverWorked`) has no page — the roster is this-run only and there
-  is no in-game achievements screen. (`RecordPage`, `Sim/Compendium.cs`)
+- ~~Kinship's actual perks are never stated as numbers~~ ✅ RESOLVED
+  2026-08-01: the Post sheet now carries a **Kinship reckoning** under the
+  trait — the xp/s this one earns with its bands named, the level it begins
+  every run at, and its trait's deepened value against its base ("+70%, from
+  +40%"). Each clause appears only once it says something.
+  (`JournalSheets.KinshipReckoning`)
+- ~~The warden's own hands are excluded from the node plates' "X/s"~~
+  ✅ RESOLVED 2026-08-01: new `Simulation.TotalYieldPerSecond` (kith lane +
+  the warden's hands) is what the plate reads, so a posted warden no longer
+  reads "0.0/s" on the ground they're standing on. `YieldPerSecond` stays the
+  basket lane — an accounting seam the sim needs and the page shouldn't show.
+  `Bubbles.IsWorked` now reads the same union, so "worked" and the rate on the
+  plate cannot drift. Also: an unheld node that a **wanderer passes** says so
+  instead of claiming to be fallow. (`Sim/Simulation.cs`, `TrailPage`)
+- ~~Roosts comfort is never shown as a live rate on the roster~~ ✅ RESOLVED
+  2026-08-01 with the Kinship reckoning above: the xp/s line names the roosts'
+  band on the familiar it applies to. `Familiars.XpPerSecond` is now the one
+  formula, and `AddPostXp` credits through it — a page cannot quote a rate the
+  sim doesn't pay. (THE FAVOURS card keeps the camp-wide aggregate.)
+- ~~`Regions.DemandWeight` is invisible~~ ✅ RESOLVED 2026-08-01: the season
+  line on the Trail now states the region's effects and the half that reads as
+  a tax unless said — "the verse asks in the same measure, so a season changes
+  what the work is, not how long it takes". The verse cards head runs 2+ with
+  one line on the re-cast and its rotating spotlight.
+  (`TrailPage.BuildSeasonLine`, `BuildVerseCards`)
+- ~~The Compendium shows lifetime *gathered* but never lifetime *crafted* /
+  *pristine*~~ ✅ RESOLVED 2026-08-01: the resource lines gained held-pristine
+  and "N of them pristine" beside the lifetime figure, and the card grew a
+  **THE CRAFTS** half listing every discovered recipe's lifetime batch count
+  (unmade ones fold into one count, the finds' own idiom). The card's head
+  always counted recipes among its entries and listed none of them, so a third
+  of the tally had no page. (`RecordPage.BuildCompendiumCrafts`)
+  **Still open from this bullet:** cross-run collection
+  (`speciesEverBefriended`, `stationsEverWorked`) has no page — the roster is
+  this-run only and there is no in-game achievements screen; and bonds are the
+  third kind of Compendium entry still unlisted. (`Sim/Compendium.cs`)
 - The Ladder card windows to the next 3 rungs; the shape of the 34-rung tree
   is never visible (the Almanac, by contrast, lists revealed tiers).
   (`CampPage`)

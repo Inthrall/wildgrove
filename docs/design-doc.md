@@ -552,7 +552,9 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 
 **Rewarded video:** ×2 yields and XP rates for 4 min (stackable to 1 h) · double offline earnings on return (the single highest-value placement) · instant-finish a craft queue · small Amber drip. *(Time-boxed boosts may touch XP; permanent multipliers never do — next line.)*
 
-**IAP:** **Warden's Sigil** — permanent ×2 yields and craft speed (~US$7); **permanent XP multipliers are never sold** — familiar growth, Kinship, and Renown pacing stay money-clean · remove ads · Amber packs · starter bundle · cosmetic camp, gear & familiar skins (skins never touch Kinship or builds).
+**IAP:** **Warden's Sigil** — a permanent **+20% to yields and craft speed** (~US$7); **permanent XP multipliers are never sold** — familiar growth, Kinship, and Renown pacing stay money-clean · remove ads · Amber packs · starter bundle · cosmetic camp, gear & familiar skins (skins never touch Kinship or builds).
+
+**DECIDED 2026-08-01 — the Sigil shrank from ×2 (Mo's call).** Sim-time is the only thing money buys here, and §10's paid-skip budget already caps that at ×2 a free player's day. A permanent ×2 on yields *and* craft speed stacked on top of that ceiling forever — it halved the whole map's walk (~9–12 FTP days to ~2–3) and turned one purchase into a second pace. At +20% the Sigil takes a sixth or so off a run and changes no wall's character: the craft-XP gates (firecraft 28, forgecraft 40), the fold gate and the skip budget stay exactly where they were placed. It is a thank-you that tilts the grove, not a tier of the game. If it ever needs to feel bigger, the lever is **breadth** — another cosmetic line, more Amber in the bundle — not a fatter multiplier.
 
 **Never sold: the Rite — and never sold: a creature or a Kinship level.** Amber accelerates production; it cannot fill a verse slot, recruit a familiar, or level one. (The last two *slots* are sold — the right to field more, never the friends themselves.)
 

@@ -38,6 +38,39 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// XP a familiar earns per second at its post: the authored base rate,
+        /// the roosts' comfort (§4) and its own Kinship rate perk, folded
+        /// together. Zero while it rests — no post, no work, no lesson. The
+        /// caller passes comfort in because the sim settles it once a tick
+        /// (it cannot change mid-loop); <see cref="XpPerSecond(GameState,
+        /// GameDataAsset, Familiar)"/> is the reading overload.
+        /// </summary>
+        public static double XpPerSecond(GameState state, GameDataAsset data, Familiar familiar, double perSecond, double comfortMultiplier)
+        {
+            var xp = data?.economy?.familiarXp;
+            if (xp == null || familiar == null || familiar.IsResting || perSecond <= 0.0)
+            {
+                return 0.0;
+            }
+
+            return perSecond * comfortMultiplier * Kinship.XpRateMultiplier(familiar, xp.kinshipXpRatePerLevel);
+        }
+
+        /// <summary>
+        /// The rate the journal states — the same arithmetic the sim credits,
+        /// reading the base rate and the comfort multiplier off the data rather
+        /// than being handed them. Kept as one formula so a page can never
+        /// quote a rate the sim doesn't pay.
+        /// </summary>
+        public static double XpPerSecond(GameState state, GameDataAsset data, Familiar familiar)
+        {
+            var xp = data?.economy?.familiarXp;
+            return xp == null
+                ? 0.0
+                : XpPerSecond(state, data, familiar, xp.xpPerSecond, Buildings.ComfortXpMultiplier(state, data));
+        }
+
+        /// <summary>
         /// Credit run XP to a familiar at its post (design §4), clamped at the
         /// max level's total, and mirror the gain into Renown (§9 — money becomes
         /// XP). A resting familiar earns nothing — no post, no work, no lesson.
@@ -53,9 +86,7 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            var amount = perSecond * seconds
-                         * comfortMultiplier
-                         * Kinship.XpRateMultiplier(familiar, xp.kinshipXpRatePerLevel);
+            var amount = seconds * XpPerSecond(state, data, familiar, perSecond, comfortMultiplier);
             if (amount <= 0.0)
             {
                 return;

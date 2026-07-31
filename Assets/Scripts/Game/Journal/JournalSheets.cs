@@ -6,6 +6,7 @@ using Wildgrove.Data;
 using Wildgrove.Game.Services;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
+using static Wildgrove.Game.JournalFormat;
 using static Wildgrove.Game.JournalWidgets;
 
 namespace Wildgrove.Game
@@ -897,6 +898,19 @@ namespace Wildgrove.Game
                     17, TextAnchor.UpperCenter, MossDeep, _serif);
             }
 
+            // What walking with this one for a long time has actually bought.
+            // Kinship's three perks all compounded silently: the plate showed a
+            // Roman numeral and the inscriptions it earned, and never once a
+            // number — so the deepest bond in the grove read as a badge.
+            var reckoning = KinshipReckoning(familiar);
+            if (reckoning.Length > 0)
+            {
+                var lines = MakeText(sheet, reckoning, 16, TextAnchor.UpperCenter, Ink2);
+                var element = lines.gameObject.AddComponent<LayoutElement>();
+                element.minWidth = 740;
+                element.preferredWidth = 740;
+            }
+
             // The pony's page is the one page in the journal with nothing to
             // decide — say why, and stop. Renaming her stays available above,
             // because the name is the player's.
@@ -939,6 +953,66 @@ namespace Wildgrove.Game
             }
 
             AddStationChoice(sheet, familiar, Familiar.WanderStation);
+        }
+
+        /// <summary>
+        /// Kinship's perks in numbers (design §4) — the XP rate this one earns
+        /// at a post, how far its signature has deepened, and the level it
+        /// begins every run at. All three compounded invisibly: the roster
+        /// showed a Roman numeral and the lines the bond had earned, so the
+        /// deepest friendship in the grove read as a badge rather than a
+        /// reckoning. Each clause appears only once it has something to say, and
+        /// the whole thing is empty on unconfigured data (fixtures).
+        /// </summary>
+        private string KinshipReckoning(Familiar familiar)
+        {
+            var parts = new List<string>();
+            var baseRate = _loop.FamiliarBaseXpPerSecond();
+            if (baseRate > 0.0)
+            {
+                if (familiar.IsResting)
+                {
+                    // The clearest statement of what a slot buys: resting is
+                    // fully idle, and that is a decision, not an oversight.
+                    parts.Add("resting at camp: learns nothing, and works nothing");
+                }
+                else
+                {
+                    var bands = new List<string>();
+                    var comfort = _loop.ComfortXpMultiplier();
+                    if (comfort > 1.0)
+                    {
+                        bands.Add("+" + Percent(comfort - 1.0) + " the roosts");
+                    }
+
+                    var kinshipRate = _loop.FamiliarKinshipXpRate(familiar);
+                    if (kinshipRate > 1.0)
+                    {
+                        bands.Add("+" + Percent(kinshipRate - 1.0) + " kinship");
+                    }
+
+                    parts.Add("learns " + PlainNumber(_loop.FamiliarXpPerSecond(familiar)) + " xp/s at a post"
+                              + (bands.Count > 0 ? "  (" + string.Join(" · ", bands) + ")" : string.Empty));
+                }
+            }
+
+            if (_loop.FamiliarKinship(familiar) > 0)
+            {
+                parts.Add("begins every run at level " + Roman(_loop.FamiliarStartingLevel(familiar))
+                          + ", whatever the fold takes");
+
+                // The trait's own numbers, deepened — the one perk whose size
+                // is authored per species, so it can only be said here.
+                var trait = _loop.FamiliarTrait(familiar);
+                var deepening = _loop.FamiliarTraitDeepening(familiar);
+                if (trait != null && deepening > 1.0 && trait.value > 0.0)
+                {
+                    parts.Add(trait.displayName.ToLowerInvariant() + " has deepened to +"
+                              + Percent(trait.value * deepening) + ", from +" + Percent(trait.value));
+                }
+            }
+
+            return string.Join("\n", parts);
         }
 
         /// <summary>One destination line of the station-pick sheet — skipped when the familiar already holds it.</summary>

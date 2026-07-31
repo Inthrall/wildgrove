@@ -421,6 +421,27 @@ namespace Wildgrove.Sim
 
             return new BigDouble(agents * baseRate) * node.yieldMultiplier * masteryBonus * richness * planters * global;
         }
+
+        /// <summary>
+        /// Everything the node yields per second right now — the stationed
+        /// kith's lane plus the warden's own hands. <see cref="YieldPerSecond"/>
+        /// is deliberately the basket lane alone (the warden pockets theirs
+        /// straight to camp, so it never pools in a basket), but that is an
+        /// accounting seam and not something a reader of the node's plate
+        /// cares about: a posted warden read as "0.0/s" on the very node they
+        /// were standing on. Anything asking "how fast is this ground worked"
+        /// wants this one.
+        /// </summary>
+        public static BigDouble TotalYieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
+        {
+            if (node == null || state == null)
+            {
+                return BigDouble.Zero;
+            }
+
+            return YieldPerSecond(node, state, data, economy)
+                   + new BigDouble(Warden.GatherPerSecond(state, data, economy, node));
+        }
     }
 
     /// <summary>What one offline catch-up credited — the welcome-back sheet's data.</summary>

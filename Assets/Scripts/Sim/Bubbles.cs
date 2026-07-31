@@ -45,9 +45,9 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            var economy = data.economy;
-            return Simulation.YieldPerSecond(node, state, data, economy) > BigDouble.Zero
-                || Warden.GatherPerSecond(state, data, economy, node) > 0.0;
+            // The same union the node's own plate reads — both lanes in one
+            // number, so "worked" and the rate the plate shows can't drift.
+            return Simulation.TotalYieldPerSecond(node, state, data, data.economy) > BigDouble.Zero;
         }
 
         /// <summary>

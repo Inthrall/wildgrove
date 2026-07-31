@@ -200,8 +200,20 @@ namespace Wildgrove.Game
                     var fineHeld = fine > BigDouble.Zero
                         ? "<b>" + NumberFormat.Short(fine) + "</b> fine  ·  "
                         : string.Empty;
-                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + fineHeld + "lifetime "
-                                + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id)) + "</color></size>";
+                    // Pristine's own pool, on the same footing as fine — it was
+                    // counted for a lifetime and shown nowhere, so the rarest
+                    // thing the ground gives had no tally of its own.
+                    var pristine = _loop.State.GetPristine(captured.id);
+                    var pristineHeld = pristine > BigDouble.Zero
+                        ? "<b>" + NumberFormat.Short(pristine) + "</b> pristine  ·  "
+                        : string.Empty;
+                    var everPristine = Compendium.LifetimePristine(_loop.State, captured.id);
+                    var pristineEver = everPristine > BigDouble.Zero
+                        ? ", " + NumberFormat.Short(everPristine) + " of them pristine"
+                        : string.Empty;
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + fineHeld + pristineHeld + "lifetime "
+                                + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id))
+                                + pristineEver + "</color></size>";
                 });
             }
 
@@ -229,6 +241,56 @@ namespace Wildgrove.Game
 
                 fineNote.gameObject.SetActive(anyFine);
             });
+
+            BuildCompendiumCrafts(card);
+        }
+
+        /// <summary>
+        /// The Compendium's second page — what the warden has ever made. The
+        /// card's head counts recipes among its entries (see
+        /// <see cref="Compendium.TotalEntries"/>), but only the gatherables were
+        /// ever listed, so a third of the tally had no page: lifetimeCrafted
+        /// climbed for the whole life of a save and fed nothing but achievements
+        /// and Game Stats. Undiscovered recipes fold into one count, the same
+        /// way the finds above do, so a far-zone recipe name can't leak.
+        /// </summary>
+        private void BuildCompendiumCrafts(RectTransform card)
+        {
+            if (_loop.Data.recipes == null || _loop.Data.recipes.Count == 0)
+            {
+                return;
+            }
+
+            MakeHairline(card);
+            MakeText(card, "THE CRAFTS", 15, TextAnchor.MiddleLeft, Ink2, _smallCaps);
+
+            var unmade = 0;
+            foreach (var recipe in _loop.Data.recipes)
+            {
+                if (!Compendium.IsRecipeDiscovered(_loop.State, recipe.id))
+                {
+                    unmade++;
+                    continue;
+                }
+
+                var captured = recipe;
+                var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+                _liveUpdaters.Add(() =>
+                {
+                    // Batches, not units — a batch is the thing the station
+                    // finishes, and it's what the skill gates are counted in
+                    // (forgecraft 40 is ~1770 of them).
+                    var batches = Compendium.LifetimeCrafted(_loop.State, captured.id);
+                    line.text = GoodName(captured.id) + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
+                                + NumberFormat.Short(new BigDouble(batches))
+                                + (batches == 1.0 ? " batch made" : " batches made") + "</color></size>";
+                });
+            }
+
+            if (unmade > 0)
+            {
+                MakeText(card, "<i>…and " + unmade + " never yet made.</i>", 18, TextAnchor.MiddleLeft, Ink2);
+            }
         }
 
         private void BuildFolioCard()
