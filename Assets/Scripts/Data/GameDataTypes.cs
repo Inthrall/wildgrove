@@ -619,6 +619,8 @@ namespace Wildgrove.Data
         {
             public double pityTimerHoursWatched;
             public double baseSketchesPerHour;
+            public string skill;
+            public double watchXpPerHour;
         }
 
         [Serializable]

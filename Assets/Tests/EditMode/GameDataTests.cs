@@ -566,6 +566,54 @@ namespace Wildgrove.Data.Tests
         [Test]
         public void Validate_NonPositiveCraftSeconds_IsReported()
         {
+        [Test]
+        public void Observation_TrainsTheCraftItsOwnGatesAskFor()
+        {
+            var data = GameData.Parse(LoadSources());
+
+            // Watching an observation site is the only thing that awards this
+            // craft's XP — no resource is gathered with it and no recipe is
+            // crafted with it. Brush Screens gates on entomology 8, so if this
+            // ever goes back to zero that rung silently becomes unbuyable.
+            Assert.That(data.Economy.Observation.Skill, Is.EqualTo("entomology"),
+                "design §5 names the craft Observation; the data has always called it entomology");
+            Assert.That(data.Economy.Observation.WatchXpPerHour, Is.GreaterThan(0));
+            Assert.That(data.Resources.Any(r => r.Skill == "entomology"), Is.False,
+                "entomology gathers nothing — if that changes, the watch-XP reasoning needs revisiting");
+            Assert.That(data.Recipes.Any(r => r.Skill == "entomology"), Is.False,
+                "entomology crafts nothing either");
+        }
+
+        [Test]
+        public void Validate_SkillGateNothingCanEarn_IsReported()
+        {
+            // The Brush Screens bug in miniature: a level gate naming a skill no
+            // action awards XP in. Nothing at runtime complains — the rung just
+            // never becomes buyable — so the validator has to be the one to say it.
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"watchXpPerHour\": 50",
+                "\"watchXpPerHour\": 0");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("brush-screens") && i.Contains("could never be bought")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_UnknownObservationSkill_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"skill\": \"entomology\"",
+                "\"skill\": \"lepidoptery\"");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("lepidoptery")), Is.True, string.Join("\n", issues));
+        }
+
             var sources = LoadSources();
             sources.EconomyJson = sources.EconomyJson.Replace(
                 "\"baseCraftSeconds\": 5",

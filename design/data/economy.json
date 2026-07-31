@@ -82,7 +82,9 @@
   "observation": {
     "pityTimerHoursWatched": 4,
     "baseSketchesPerHour": 0.25,
-    "$note": "design §6 (observe · sketch · release). sketch rate = watchers * baseSketchesPerHour * digSpeedMult upgrades * the site's summed unrecorded rarity, rolled per tick; a field sketch is guaranteed once pityTimerHoursWatched hours of watching pass without one. baseSketchesPerHour is a first guess — tune so the first insect plate completes inside the MVP playtest."
+    "skill": "entomology",
+    "watchXpPerHour": 50,
+    "$note": "design §6 (observe · sketch · release). sketch rate = watchers * baseSketchesPerHour * digSpeedMult upgrades * the site's summed unrecorded rarity, rolled per tick; a field sketch is guaranteed once pityTimerHoursWatched hours of watching pass without one. baseSketchesPerHour is a first guess — tune so the first insect plate completes inside the MVP playtest. `skill` is the craft the watching trains — Observation in the design doc (§5), `entomology` in the data — and watchXpPerHour credits it per watcher per site-hour, scaled by the site's dig-speed multiplier. The XP is paid for the WATCHING, not the sketch: sketches are a finite lifetime pool (25 across every plate) that rides the fold in insectSketches while skillXp resets, so a per-sketch award would leave a fully-recorded run unable to level this skill at all — and Brush Screens (entomology 8) unbuyable forever. At 50 a lone wanderer clears the level-8 gate in ~19 site-hours (~10 with two sites open), so the screens arrive while there are still plates left to be worth doubling."
   },
   "tending": {
     "burstYieldMult": 3.0,

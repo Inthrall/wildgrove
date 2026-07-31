@@ -173,6 +173,96 @@ namespace Wildgrove.Sim.Tests
             Assert.That(state.rngState, Is.EqualTo(seedBefore));
         }
 
+        /// <summary>
+        /// Turns on the XP economy and the watch-XP award, both of which the
+        /// shared fixture leaves absent — most tests here care about sketches,
+        /// and an always-on XP economy would put renown in every one of them.
+        /// </summary>
+        private void EnableWatchXp(double perHour = 50.0)
+        {
+            _data.economy.xp = new EconomyData.XpData
+            {
+                baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 3, craftPerBatch = 25,
+            };
+            _data.economy.observation.skill = "entomology";
+            _data.economy.observation.watchXpPerHour = perHour;
+        }
+
+        [Test]
+        public void Advance_Watching_TrainsTheObservationCraft()
+        {
+            EnableWatchXp();
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WanderStation, 1);
+
+            Simulation.Advance(state, _data, 3600.0);
+
+            // One watcher · one site · one hour · dig speed ×1 = watchXpPerHour.
+            Assert.That(Skills.Xp(state, "entomology"), Is.EqualTo(50.0).Within(1e-6));
+        }
+
+        [Test]
+        public void Advance_WatchXp_ScalesWithTheSitesDigSpeed()
+        {
+            EnableWatchXp();
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WanderStation, 1);
+            state.purchasedUpgradeIds.Add("brush-screens"); // dig speed ×2
+
+            Simulation.Advance(state, _data, 3600.0);
+
+            Assert.That(Skills.Xp(state, "entomology"), Is.EqualTo(100.0).Within(1e-6));
+        }
+
+        [Test]
+        public void Advance_NoWatchers_TrainsNothing()
+        {
+            EnableWatchXp();
+            var state = NewGameWithDigSite();
+
+            Simulation.Advance(state, _data, 3600.0);
+
+            Assert.That(Skills.Xp(state, "entomology"), Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void Advance_FullyRecordedSite_StillTrainsTheCraft()
+        {
+            // The quiet-site case is the whole reason this XP is paid per hour
+            // watched rather than per sketch. Sketches are a finite lifetime pool
+            // that rides the fold in insectSketches while skillXp resets, so a
+            // per-sketch award would leave a later run with every plate already
+            // recorded unable to train the craft at all — and Brush Screens
+            // (entomology 8) unbuyable for the rest of the game.
+            EnableWatchXp();
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WanderStation, 1);
+            state.insectSketches["stags-herald"] = 3; // every plate here recorded
+
+            Simulation.Advance(state, _data, 3600.0);
+
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(3), "nothing left to sketch");
+            Assert.That(Skills.Xp(state, "entomology"), Is.EqualTo(50.0).Within(1e-6), "but the watching still counts");
+        }
+
+        [Test]
+        public void MeetsSkillGate_EnoughWatching_OpensAnEntomologyGate()
+        {
+            // What shipped broken: brush-screens gates on entomology 8, nothing
+            // awarded entomology XP, so the rung drew on the ladder and sat at
+            // level 1 forever with no error anywhere to say why.
+            EnableWatchXp(1000.0); // a level-8 hour, so the test needn't watch twenty
+            _data.upgrades[1].gateSkill = "entomology";
+            _data.upgrades[1].gateLevel = 8;
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WanderStation, 1);
+            Assert.That(Upgrades.MeetsSkillGate(state, _data, _data.upgrades[1]), Is.False);
+
+            Simulation.Advance(state, _data, 3600.0);
+
+            Assert.That(Upgrades.MeetsSkillGate(state, _data, _data.upgrades[1]), Is.True);
+        }
+
         [Test]
         public void Advance_SketchesGoOnlyToUnrecordedPlates()
         {

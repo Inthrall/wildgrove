@@ -411,7 +411,9 @@ namespace Wildgrove.Data
                 observation = new EconomyData.ObservationData
                 {
                     pityTimerHoursWatched = e.Observation.PityTimerHoursWatched,
-                    baseSketchesPerHour = e.Observation.BaseSketchesPerHour
+                    baseSketchesPerHour = e.Observation.BaseSketchesPerHour,
+                    skill = e.Observation.Skill,
+                    watchXpPerHour = e.Observation.WatchXpPerHour
                 },
                 amber = e.Amber == null ? null : new EconomyData.AmberData
                 {

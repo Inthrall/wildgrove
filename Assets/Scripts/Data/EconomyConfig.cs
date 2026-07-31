@@ -106,6 +106,12 @@ namespace Wildgrove.Data
         {
             public double PityTimerHoursWatched { get; set; }
             public double BaseSketchesPerHour { get; set; }
+
+            /// <summary>The craft the watching trains — "Observation" in design §5, `entomology` in the data.</summary>
+            public string Skill { get; set; }
+
+            /// <summary>Skill XP per watcher per site-hour, scaled by the site's dig-speed multiplier.</summary>
+            public double WatchXpPerHour { get; set; }
         }
 
         /// <summary>Amber (design §10): the free dig-find earn rate, the time-skip sink, the rewarded-ad drip, and the weekly cache. Optional — absent means the system is inert.</summary>

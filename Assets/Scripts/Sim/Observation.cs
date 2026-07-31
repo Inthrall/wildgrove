@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BreakInfinity;
 using Wildgrove.Data;
 
 namespace Wildgrove.Sim
@@ -14,7 +15,10 @@ namespace Wildgrove.Sim
     /// — a recorded plate stops appearing, and a site with nothing left to
     /// record falls quiet. Nothing is taken: the insect is released. Rolls draw
     /// from the run's saved rng like quality does. (digSpeedMult is the shared
-    /// "site speed" modifier — planters/gear/almanac all feed it.)
+    /// "site speed" modifier — planters/gear/almanac all feed it.) Watching also
+    /// trains the observation craft (economy.observation.skill), which is the
+    /// only thing that earns that skill's XP — it is a watched-hours trickle, not
+    /// a per-sketch award, so it keeps paying at a fully-recorded site.
     /// </summary>
     public static class Observation
     {
@@ -36,11 +40,27 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            var hoursWatched = deltaSeconds / 3600.0;
             var digMult = Upgrades.DigSpeedMultiplier(state, data);
             foreach (var site in state.digSites)
             {
                 // Reed-screen planters (design §3) steady this site's sketching.
                 var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
+
+                // The watching itself trains the craft (design §4: XP from every
+                // action) — credited per watcher per site-hour, before any of the
+                // three find channels roll, so a site with every plate already
+                // recorded still teaches. That ordering is the whole point: the
+                // sketch pool is finite (25 portions across every plate) and
+                // rides the fold in insectSketches while skillXp resets, so
+                // paying XP per sketch instead would strand a fully-recorded run
+                // at level 1 and put Brush Screens (entomology 8) out of reach
+                // for good.
+                if (observation.watchXpPerHour > 0.0)
+                {
+                    Skills.AddXp(state, data, observation.skill,
+                        new BigDouble(watchers * observation.watchXpPerHour * siteDigMult * hoursWatched));
+                }
 
                 // Amber (design §10) is the site's renewable find — old resin
                 // with an ancient insect kept in it, the one thing takeable. A
@@ -79,7 +99,6 @@ namespace Wildgrove.Sim
                     continue;
                 }
 
-                var hoursWatched = deltaSeconds / 3600.0;
                 site.pityHours += hoursWatched;
 
                 var totalRarity = 0.0;

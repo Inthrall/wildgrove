@@ -68,6 +68,7 @@ namespace Wildgrove.Data
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
             ValidateEconomy(data.Economy, issues);
+            ValidateSkillGatesAreEarnable(data, issues);
 
             return issues;
         }
@@ -85,6 +86,42 @@ namespace Wildgrove.Data
                 {
                     issues.Add($"Duplicate {kind} id '{id}'");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Every level gate must name a skill the run can actually earn XP in.
+        /// Brush Screens shipped gated on entomology 8 while nothing in the game
+        /// awarded entomology XP at all — the rung was simply unbuyable, and
+        /// nothing said so: the ladder drew it, the gate label read sensibly, and
+        /// the level behind it sat at 1 forever. XP has exactly three sources
+        /// (Skills.AddGatherXp from a resource's skill, Skills.AddCraftXp from a
+        /// recipe's, and the observation craft's watched hours), so the earnable
+        /// set is computable here.
+        /// </summary>
+        private static void ValidateSkillGatesAreEarnable(GameData data, List<string> issues)
+        {
+            // Gathering and watching are never level-gated, so those skills earn
+            // from a standing start. A craft skill only does if it has at least
+            // one recipe openable at level 1 — otherwise its first rung sits
+            // behind a level only that rung could have paid for.
+            var earnable = new HashSet<string>(data.Resources.Select(r => r.Skill).Where(s => s != null));
+            earnable.UnionWith(data.Recipes.Where(r => r.SkillLevel <= 1 && r.Skill != null).Select(r => r.Skill));
+            if (data.Economy?.Observation?.Skill != null && data.Economy.Observation.WatchXpPerHour > 0)
+            {
+                earnable.Add(data.Economy.Observation.Skill);
+            }
+
+            foreach (var upgrade in data.Upgrades
+                .Where(u => u.GateLevel > 1 && !string.IsNullOrEmpty(u.GateSkill) && !earnable.Contains(u.GateSkill)))
+            {
+                issues.Add($"Upgrade '{upgrade.Id}' gates on {upgrade.GateSkill} {upgrade.GateLevel}, but nothing awards '{upgrade.GateSkill}' XP — the rung could never be bought");
+            }
+
+            foreach (var recipe in data.Recipes
+                .Where(r => r.SkillLevel > 1 && r.Skill != null && !earnable.Contains(r.Skill)))
+            {
+                issues.Add($"Recipe '{recipe.Id}' needs {recipe.Skill} {recipe.SkillLevel}, but nothing awards '{recipe.Skill}' XP from level 1 — the recipe could never be crafted");
             }
         }
 
@@ -1704,15 +1741,24 @@ namespace Wildgrove.Data
             }
 
             if (economy.Observation != null
-                && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0))
+                && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0
+                    || economy.Observation.WatchXpPerHour <= 0))
             {
                 // Zero rate AND zero pity means an observation site can never
                 // surface a field sketch — every insect plate becomes unreachable.
                 issues.Add("Economy observation values must all be positive");
             }
+                // A zeroed watchXpPerHour is the same shape of dead end one level
+                // up: the observation craft earns XP nowhere else, so its level
+                // gates would never open.
 
             if (economy.Amber != null
                 && (economy.Amber.DigFindsPerHour <= 0 || economy.Amber.PerFind <= 0
+            if (economy.Observation?.Skill != null && !KnownSkills.Contains(economy.Observation.Skill))
+            {
+                issues.Add($"Economy observation skill '{economy.Observation.Skill}' is unknown");
+            }
+
                     || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0
                     || economy.Amber.AdDripAmber <= 0 || economy.Amber.WeeklyCacheAmber <= 0
                     || economy.Amber.RenameCostAmber <= 0))
