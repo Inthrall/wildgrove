@@ -250,7 +250,7 @@ namespace Wildgrove.Sim.Tests
         public void Migrate_CarriesTheKithFolded()
         {
             var state = StateWithTheRiteSung();
-            Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.WanderStation);
             state.roster[0].xp = 5000.0;
             var count = state.roster.Count;
 

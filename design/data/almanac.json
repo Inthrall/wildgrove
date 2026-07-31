@@ -4,12 +4,10 @@
     { "id": "old-songs-i",    "name": "Old Songs I",    "costVerdure": 2,                                 "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.10 }] },
     { "id": "long-watch-i",   "name": "The Long Watch I",  "costVerdure": 2,                              "effects": [{ "type": "offlineCapHours", "value": 6 }] },
     { "id": "verdant-eye-i",  "name": "Verdant Eye I",  "costVerdure": 3,                                 "effects": [{ "type": "pristineChanceBonus", "value": 0.005 }] },
-    { "id": "sure-paths-i",   "name": "Sure Paths I",   "costVerdure": 3,                                 "effects": [{ "type": "haulMult", "value": 1.25 }] },
     { "id": "patient-hands",  "name": "Patient Hands",  "costVerdure": 4,                                 "effects": [{ "type": "craftSpeedMult", "value": 1.25 }] },
     { "id": "deep-sight-i",   "name": "Deep Sight I",   "costVerdure": 4,                                 "effects": [{ "type": "digSpeedMult", "value": 1.5 }] },
     { "id": "old-songs-ii",   "name": "Old Songs II",   "costVerdure": 6,  "requires": "old-songs-i",     "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.15 }] },
     { "id": "long-watch-ii",  "name": "The Long Watch II", "costVerdure": 6,  "requires": "long-watch-i", "effects": [{ "type": "offlineCapHours", "value": 8 }] },
-    { "id": "sure-paths-ii",  "name": "Sure Paths II",  "costVerdure": 9,  "requires": "sure-paths-i",    "effects": [{ "type": "haulMult", "value": 1.5 }] },
     { "id": "verdant-eye-ii", "name": "Verdant Eye II", "costVerdure": 12, "requires": "verdant-eye-i",   "effects": [{ "type": "pristineChanceBonus", "value": 0.01 }] },
     { "id": "old-friend",     "name": "The Old Friend", "costVerdure": 12,                                 "effects": [] },
     { "id": "the-fire-remembers", "name": "The Fire Remembers", "costVerdure": 8, "requires": "patient-hands", "effects": [{ "type": "keepCraftOrders" }] },
@@ -23,7 +21,7 @@
     { "id": "long-watch-iii", "name": "The Long Watch III", "costVerdure": 16, "requires": "long-watch-ii", "effects": [{ "type": "offlineCapHours", "value": 12 }] },
     { "id": "old-songs-iii",  "name": "Old Songs III",  "costVerdure": 20, "requires": "old-songs-ii",    "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.25 }] },
     { "id": "the-long-song",  "name": "The Long Song",  "costVerdure": 8,  "requires": "old-songs-iii", "repeatable": true,
-      "$note": "The endless line — the Almanac's only repeatable node, and the reason Verdure never dead-ends. The rest of the tree totals 178 points (99 before the exotic lines and the kept things), which a steady warden passes within a handful of folds; after that the currency kept arriving with nothing to spend it on, which is what made a late fold feel like it had nothing in it. Level L costs costVerdure · costGrowth.almanac^L forever. It grants the SAME additive value to gathering and to carrying on purpose: yieldBonus and carrierCapacityBonus are both summed bands (yield is mult·(1+bonus), haul is haulMult·(1+carrierBonus)), so every level moves the two by the same proportion and the gather-vs-haul ratio cannot drift. Granting the gathering half alone would re-open the full-basket jam that the self-haul floor was built to catch.",
-      "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.05 }, { "type": "carrierCapacityBonus", "value": 0.05 }] }
+      "$note": "The endless line — the Almanac's only repeatable node, and the reason Verdure never dead-ends. The rest of the tree totals 166 points (87 before the exotic lines and the kept things — Sure Paths left with the hauling system), which a steady warden passes within a handful of folds; after that the currency kept arriving with nothing to spend it on, which is what made a late fold feel like it had nothing in it. Level L costs costVerdure · costGrowth.almanac^L forever. Its carrying half went with hauling: deliveries are automatic and lossless now, so the line is purely the gathering band (yieldBonus sums into mult·(1+bonus)).",
+      "effects": [{ "type": "yieldBonus", "skill": "all-gathering", "value": 0.05 }] }
   ]
 }

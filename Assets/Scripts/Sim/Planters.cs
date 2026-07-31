@@ -8,9 +8,9 @@ namespace Wildgrove.Sim
     /// dig site, paid in another zone's goods (the backward flow — a later zone's
     /// timber has a job improving an early node). Bushcraft-gated: the Carving
     /// Bench opens the skill and with it the planter recipes. Each planter type
-    /// gives one effect at its target — basketCapacityMult (a bigger basket),
-    /// nodeYieldMult (a second yield lane), or digSpeedMult (steady a dig site's
-    /// sketching). One planter of each type per target; planters reset at
+    /// gives one effect at its target — nodeYieldMult (a second yield lane) or
+    /// digSpeedMult (steady a dig site's sketching). One planter of each type
+    /// per target; planters reset at
     /// Migration. Costs are flat (a planter is a one-off, not a levelled line).
     /// No-ops when nothing is built (fixtures).
     /// </summary>
@@ -29,12 +29,6 @@ namespace Wildgrove.Sim
         public static double NodeYieldMultiplier(GameState state, GameDataAsset data, NodeState node)
         {
             return node == null ? 1.0 : MultiplierAt(state, data, node.id, "nodeYieldMult");
-        }
-
-        /// <summary>Basket-capacity multiplier from a node's basketCapacityMult planters: 1 + Σ value.</summary>
-        public static double BasketCapacityMultiplier(GameState state, GameDataAsset data, NodeState node)
-        {
-            return node == null ? 1.0 : MultiplierAt(state, data, node.id, "basketCapacityMult");
         }
 
         /// <summary>Dig-speed multiplier from a dig site's digSpeedMult planters: 1 + Σ value.</summary>

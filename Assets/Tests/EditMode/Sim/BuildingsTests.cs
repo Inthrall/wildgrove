@@ -44,7 +44,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "store", displayName = "The Store",
                     materials = new List<ItemAmount> { new ItemAmount { id = "fibres", amount = 3000 } },
-                    perLevel = new BuildingPerLevelData { type = "basketCapacityBonus", value = 0.1 },
+                    perLevel = new BuildingPerLevelData { type = "offlineCapBonusHours", value = 0.25 },
                 },
                 new BuildingData
                 {
@@ -161,13 +161,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void BasketCapacityMultiplier_GrowsWithStoreLevels()
+        public void OfflineCapBonusHours_GrowsWithStoreLevels()
         {
             var state = new GameState();
-            Assert.That(Buildings.BasketCapacityMultiplier(state, _data), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(Modifiers.Of(state, _data).offlineCapBonusHours, Is.EqualTo(0.0).Within(Tolerance));
 
             state.buildingLevels["store"] = 3;
-            Assert.That(Buildings.BasketCapacityMultiplier(state, _data), Is.EqualTo(1.3).Within(Tolerance));
+            state.BumpModifiers();
+            Assert.That(Modifiers.Of(state, _data).offlineCapBonusHours, Is.EqualTo(0.75).Within(Tolerance));
         }
 
         [Test]

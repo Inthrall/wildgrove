@@ -27,12 +27,10 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 crafting = new EconomyData.CraftingData { baseCraftSeconds = 5.0 },
-                // Effectively unbounded so gathered goods reach camp the same
-                // tick — the crafting timeline stays exact.
-                // Two slots so the factory stations both seeds (vole + raven) —
-                // these fixtures exercise the gather→haul pipeline, not the ladder.
+                // A 1 s cadence so gathered goods reach camp on the next tick
+                // — the crafting timeline stays exact.
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
-                hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
+                delivery = new EconomyData.DeliveryData { batchSeconds = 1.0 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -433,7 +431,6 @@ namespace Wildgrove.Sim.Tests
                 resourceId = "berries", skill = "foraging",
             });
             TestKith.Station(state, "sunfield-meadow:berries", 1); // a gatherer
-            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier
             Crafting.Assign(state, _data, Recipe("berry-jam"));
 
             Simulation.Advance(state, _data, 30.0);

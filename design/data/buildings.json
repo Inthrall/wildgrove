@@ -8,7 +8,7 @@
     { "id": "bench",  "name": "The Bench",         "materials": { "timber": 40, "fibres": 30 }, "milestoneUpgradeIds": ["carving-bench"],
       "perLevel": { "type": "stationSpeedBonus", "station": "bench", "value": 0.05 } },
     { "id": "store",  "name": "The Store",         "materials": { "fibres": 40, "timber": 20 }, "milestoneUpgradeIds": ["root-cellar", "smokehouse"],
-      "perLevel": { "type": "basketCapacityBonus", "value": 0.05 } },
+      "perLevel": { "type": "offlineCapBonusHours", "value": 0.25 } },
     { "id": "roosts", "name": "Roosts & Burrows",  "materials": { "fibres": 30, "berries": 20 }, "milestoneUpgradeIds": [],
       "perLevel": { "type": "comfort", "value": 0.1 } }
   ]

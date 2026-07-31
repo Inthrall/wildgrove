@@ -35,7 +35,7 @@ namespace Wildgrove.Game.Tests
                 {
                     id = Familiar.PonySpecies, displayName = "fell pony", roleLean = "carrier",
                     suggestedNames = new List<string> { "Moss" },
-                    trait = new TraitData { displayName = "Half-broke", kind = "trailCarryFactor", value = 0.5 },
+                    trait = new TraitData { displayName = "Half-broke", kind = "wardenYieldBonus", value = 0.5 },
                 },
             };
             _data.insects = new List<InsectData>

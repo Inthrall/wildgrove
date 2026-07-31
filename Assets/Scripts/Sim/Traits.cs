@@ -5,10 +5,11 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Applies a species' single fixed trait (design §4) where its familiar is
     /// stationed. Kinds: nodeYieldBonus (a node of the trait's resource),
-    /// trailThroughputBonus (holding the trail), pristineBonus (points at its
-    /// node), digSpeedBonus (watching the sites while wandering). Resting
-    /// familiars contribute nothing, and everything no-ops when species data
-    /// is absent (fixtures).
+    /// pristineBonus (points at its node), digSpeedBonus (watching the sites
+    /// while wandering), bubbleRewardBonus (windfall bubbles pay more while it
+    /// walks), wardenYieldBonus (the warden's own hands work faster while it
+    /// walks). Resting familiars contribute nothing, and everything no-ops
+    /// when species data is absent (fixtures).
     /// </summary>
     public static class Traits
     {
@@ -55,31 +56,50 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Trail-lane factor a familiar holding a haul lane contributes: 1, plus
-        /// a (Kinship-deepened) trailThroughputBonus trait.
-        ///
-        /// A trailCarryFactor trait REPLACES the lane instead of adding to it —
-        /// it is the fraction of a carrier's load the animal walks, and it never
-        /// deepens. Kinship cannot tame what was never broken to harness (§11:
-        /// the fell pony's lane is free and always manned, so its half load is
-        /// what keeps two lanes from doubling the trail).
+        /// Summed windfall-bubble bonus from the walking kith: any non-resting
+        /// familiar with a (Kinship-deepened) bubbleRewardBonus trait fattens
+        /// every caught bubble — the raven fetches the windfalls home, wherever
+        /// it happens to be posted.
         /// </summary>
-        public static double TrailThroughputFactor(Familiar familiar, GameDataAsset data)
+        public static double BubbleRewardBonus(GameState state, GameDataAsset data)
         {
-            var trait = Of(data, familiar);
-            if (trait == null)
+            return WalkingBonus(state, data, "bubbleRewardBonus");
+        }
+
+        /// <summary>
+        /// Summed warden-yield bonus from the walking kith: a non-resting
+        /// familiar with a (Kinship-deepened) wardenYieldBonus trait quickens
+        /// the warden's own hands — the fell pony carries what the warden
+        /// picks, so their hands never leave the work (§11).
+        /// </summary>
+        public static double WardenYieldBonus(GameState state, GameDataAsset data)
+        {
+            return WalkingBonus(state, data, "wardenYieldBonus");
+        }
+
+        private static double WalkingBonus(GameState state, GameDataAsset data, string kind)
+        {
+            if (state == null)
             {
-                return 1.0;
+                return 0.0;
             }
 
-            if (trait.kind == "trailCarryFactor")
+            var bonus = 0.0;
+            foreach (var familiar in state.roster)
             {
-                return trait.value;
+                if (familiar.IsResting)
+                {
+                    continue;
+                }
+
+                var trait = Of(data, familiar);
+                if (trait != null && trait.kind == kind)
+                {
+                    bonus += trait.value * DeepeningFactor(data, familiar);
+                }
             }
 
-            return trait.kind == "trailThroughputBonus"
-                ? 1.0 + trait.value * DeepeningFactor(data, familiar)
-                : 1.0;
+            return bonus;
         }
 
         /// <summary>Watch-speed factor a familiar at an observation site contributes: 1, plus a (Kinship-deepened) digSpeedBonus trait.</summary>

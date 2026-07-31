@@ -296,16 +296,16 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresHaulTripProgress()
+        public void RoundTrip_RestoresDeliveryProgress()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.haulTripProgress = 1.25;
+            state.deliveryProgress = 1.25;
 
             var restored = RoundTrip(state);
 
-            // A save mid-trip resumes mid-trip — the next delivery isn't
+            // A save mid-cadence resumes mid-cadence — the next delivery isn't
             // pushed back (or brought forward) by quitting and reloading.
-            Assert.That(restored.haulTripProgress, Is.EqualTo(1.25).Within(Tolerance));
+            Assert.That(restored.deliveryProgress, Is.EqualTo(1.25).Within(Tolerance));
         }
 
         [Test]
@@ -628,7 +628,30 @@ namespace Wildgrove.Sim.Tests
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.roster[0].stationId, Is.EqualTo(Familiar.WanderStation));
             Assert.That(save.roster[1].stationId, Is.Null, "one body per post — the second watcher rests");
-            Assert.That(save.roster[2].stationId, Is.EqualTo("trail"), "the carrier is untouched");
+            Assert.That(save.roster[2].stationId, Is.Null, "the trail post retired at v39 — the carrier rests");
+        }
+
+        [Test]
+        public void TryMigrate_V38Save_RestsTheTrailCarrier_AndKeepsEveryoneElse()
+        {
+            // v38 still had the trail post; v39 retired hauling. Whoever held
+            // the trail steps back to camp (their slot frees for a real post);
+            // node posts and the wander post ride through untouched.
+            var save = new SaveData
+            {
+                version = 38,
+                roster = new List<SavedFamiliar>
+                {
+                    new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "sunfield-meadow:berries" },
+                    new SavedFamiliar { id = "fam-2", speciesId = "b", stationId = Familiar.LegacyTrailStation },
+                    new SavedFamiliar { id = "fam-3", speciesId = "c", stationId = Familiar.WanderStation },
+                },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.roster[0].stationId, Is.EqualTo("sunfield-meadow:berries"));
+            Assert.That(save.roster[1].stationId, Is.Null, "the carrier rests — the post no longer exists");
+            Assert.That(save.roster[2].stationId, Is.EqualTo(Familiar.WanderStation));
         }
 
         [Test]
@@ -855,14 +878,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V6Save_StartsAFreshTrip()
+        public void TryMigrate_V6Save_StartsAFreshDeliveryCadence()
         {
-            // v6 predates discrete hauling — no trip was in progress.
+            // v6 predates delivery batching — no cadence was in progress.
             var save = new SaveData { version = 6 };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.haulTripProgress, Is.EqualTo(0.0));
+            Assert.That(save.deliveryProgress, Is.EqualTo(0.0));
         }
 
         [Test]
@@ -948,7 +971,8 @@ namespace Wildgrove.Sim.Tests
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
             Assert.That(save.roster.Count, Is.EqualTo(3), "2 gatherers + 1 carrier become three roster familiars");
             Assert.That(save.roster.FindAll(f => f.stationId == "sunfield-meadow:berries").Count, Is.EqualTo(2));
-            Assert.That(save.roster.FindAll(f => f.stationId == "trail").Count, Is.EqualTo(1));
+            Assert.That(save.roster.FindAll(f => f.stationId == null).Count, Is.EqualTo(1),
+                "the carrier seeds resting — the trail post retired at v39");
         }
 
         [Test]
@@ -996,7 +1020,7 @@ namespace Wildgrove.Sim.Tests
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
             save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "meadow-vole", stationId = "sunfield-meadow:berries" });
-            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "pack-raven", stationId = "trail", bonded = true, bondId = "sootwing" });
+            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "pack-raven", stationId = Familiar.WanderStation, bonded = true, bondId = "sootwing" });
             save.nextFamiliarSeq = 3;
 
             var restored = SaveCodec.Restore(save, _data);
@@ -1004,7 +1028,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Kith.Slots(restored, _data), Is.EqualTo(1), "no verses sung, nothing purchased");
             Assert.That(Kith.Walking(restored), Is.EqualTo(1), "the extras rest at camp");
             var raven = restored.roster.Single(f => f.speciesId == "pack-raven");
-            Assert.That(raven.stationId, Is.EqualTo("trail"), "the bonded companion keeps its post");
+            Assert.That(raven.stationId, Is.EqualTo(Familiar.WanderStation), "the bonded companion keeps its post");
             Assert.That(restored.roster.Single(f => f.speciesId == "meadow-vole").IsResting, Is.True);
         }
 

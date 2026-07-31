@@ -53,7 +53,7 @@ namespace Wildgrove.Sim.Tests
             {
                 new PlanterData
                 {
-                    id = "timber-frame", displayName = "Timber Frame", kind = "basketCapacityMult",
+                    id = "timber-frame", displayName = "Timber Frame", kind = "nodeYieldMult",
                     value = 0.5, target = "node",
                     materials = new List<ItemAmount> { new ItemAmount { id = "timber", amount = 20 } },
                 },
@@ -162,18 +162,8 @@ namespace Wildgrove.Sim.Tests
             state.builtPlanters.Add(new BuiltPlanter { planterId = "cordage-trellis", targetId = "n" });
 
             Assert.That(Planters.NodeYieldMultiplier(state, _data, node), Is.EqualTo(1.25).Within(Tolerance));
-            // A timber frame is capacity, not yield — it must not leak here.
+            // Planters are per-target — another node feels nothing.
             Assert.That(Planters.NodeYieldMultiplier(state, _data, new NodeState { id = "other" }), Is.EqualTo(1.0).Within(Tolerance));
-        }
-
-        [Test]
-        public void BasketCapacityMultiplier_AddsTheFrame_PerNode()
-        {
-            var state = new GameState();
-            state.builtPlanters.Add(new BuiltPlanter { planterId = "timber-frame", targetId = "n" });
-
-            Assert.That(Planters.BasketCapacityMultiplier(state, _data, new NodeState { id = "n" }), Is.EqualTo(1.5).Within(Tolerance));
-            Assert.That(Planters.BasketCapacityMultiplier(state, _data, new NodeState { id = "other" }), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]

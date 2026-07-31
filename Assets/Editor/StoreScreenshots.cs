@@ -143,7 +143,7 @@ namespace Wildgrove.EditorTools
             {
                 ("harvest-mouse", state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id),
                 ("red-squirrel", state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id),
-                ("dray-stag", Familiar.TrailStation),
+                ("dray-stag", Familiar.WanderStation),
                 ("tawny-owl", state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id),
             };
             for (var i = 0; i < staged.Length; i++)

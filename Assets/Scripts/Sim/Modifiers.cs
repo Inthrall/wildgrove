@@ -20,13 +20,12 @@ namespace Wildgrove.Sim
         public GameDataAsset data;
         public long fingerprint = -1;
 
-        public double haulCapacityMultiplier = 1.0;
         public double tendingBurstBonus;
         public double pristineChanceBonus;
         public double digSpeedMultiplier = 1.0;
         public double offlineCapRaiseTo;
         public double offlineCapBonusHours;
-        public double basketCapacityMultiplier = 1.0;
+        public double wardenYieldBonus;
         public double craftSpeedGlobal = 1.0;
         public readonly Dictionary<string, double> craftSpeedBySkill = new Dictionary<string, double>();
         public readonly Dictionary<string, double> sellValueBonusByResource = new Dictionary<string, double>();
@@ -96,17 +95,12 @@ namespace Wildgrove.Sim
         {
             var snapshot = new ModifierSnapshot();
 
-            var haulMult = 1.0;
-            var carrierBonus = 0.0;
             foreach (var effect in Upgrades.ActiveEffects(state, data))
             {
                 switch (effect.type)
                 {
-                    case EffectType.HaulMult:
-                        haulMult *= effect.value;
-                        break;
-                    case EffectType.CarrierCapacityBonus:
-                        carrierBonus += effect.value;
+                    case EffectType.WardenYieldBonus:
+                        snapshot.wardenYieldBonus += effect.value;
                         break;
                     case EffectType.TendingBurstBonus:
                         snapshot.tendingBurstBonus += effect.value;
@@ -138,8 +132,6 @@ namespace Wildgrove.Sim
                 }
             }
 
-            snapshot.haulCapacityMultiplier = haulMult * (1.0 + carrierBonus);
-
             // Sell-value bonuses are purchased-only (a design decision — set
             // and insect bonuses never inflate the Provisioner).
             foreach (var effect in Upgrades.PurchasedEffects(state, data))
@@ -153,11 +145,13 @@ namespace Wildgrove.Sim
 
             Upgrades.BuildUnlockedSkills(state, data, snapshot.unlockedSkills);
             Upgrades.BuildUnlockedRecipeIds(state, data, snapshot.unlockedRecipeIds);
-            snapshot.basketCapacityMultiplier = Buildings.ComputeBasketCapacityMultiplier(state, data);
+            // The Store's bought levels keep goods longer — an additive band
+            // alongside gear's offlineCapBonusHours effects.
+            snapshot.offlineCapBonusHours += Buildings.ComputeOfflineCapBonusHours(state, data);
 
             // Bonded familiars are ordinary roster members now (materialised by
-            // Roster.SyncBonded) — they gather and haul through Stationing like
-            // any other, so there's no separate bonded accumulator here.
+            // Roster.SyncBonded) — they gather through Stationing like any
+            // other, so there's no separate bonded accumulator here.
 
             return snapshot;
         }

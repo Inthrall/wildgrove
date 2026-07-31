@@ -86,7 +86,7 @@ namespace Wildgrove.Game
             switch (perLevel.type)
             {
                 case "stationSpeedBonus": return "each level: " + pct + " craft speed at this station";
-                case "basketCapacityBonus": return "each level: " + pct + " basket capacity";
+                case "offlineCapBonusHours": return "each level: the away credit runs +" + perLevel.value.ToString("0.##") + "h longer";
                 case "comfort": return "each level: " + pct + " familiar XP while posted";
                 default: return null;
             }

@@ -34,7 +34,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "pack-raven", displayName = "pack raven", roleLean = "carrier",
                     suggestedNames = new List<string> { "Sootwing" },
-                    trait = new TraitData { displayName = "Deep pockets", kind = "trailThroughputBonus", value = 0.25 },
+                    trait = new TraitData { displayName = "Deep pockets", kind = "bubbleRewardBonus", value = 0.25 },
                 },
                 new SpeciesData
                 {
@@ -82,18 +82,29 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Traits.NodeYieldFactor(At("meadow-vole", "n1"), nuts, _data),
                 Is.EqualTo(1.0).Within(Tolerance), "the berry specialist is ordinary at a nut grove");
             Assert.That(Traits.NodeYieldFactor(At("pack-raven", "n1"), nuts, _data),
-                Is.EqualTo(1.0).Within(Tolerance), "a trail trait never touches gathering");
+                Is.EqualTo(1.0).Within(Tolerance), "a bubble trait never touches gathering");
         }
 
         [Test]
-        public void TrailAndWatchFactors_ApplyTheirKinds()
+        public void BubbleAndWatchFactors_ApplyTheirKinds()
         {
-            Assert.That(Traits.TrailThroughputFactor(At("pack-raven", Familiar.TrailStation), _data),
-                Is.EqualTo(1.25).Within(Tolerance));
-            Assert.That(Traits.TrailThroughputFactor(At("meadow-vole", Familiar.TrailStation), _data),
-                Is.EqualTo(1.0).Within(Tolerance), "any familiar can hold the trail, plainly");
+            var state = new GameState();
+            state.roster.Add(At("pack-raven", "n1"));
+            state.roster.Add(At("meadow-vole", "n2"));
+
+            Assert.That(Traits.BubbleRewardBonus(state, _data),
+                Is.EqualTo(0.25).Within(Tolerance), "the raven fattens windfalls from any post");
             Assert.That(Traits.DigSpeedFactor(At("tawny-owl", Familiar.WanderStation), _data),
                 Is.EqualTo(1.4).Within(Tolerance));
+        }
+
+        [Test]
+        public void BubbleRewardBonus_ARestingRaven_ContributesNothing()
+        {
+            var state = new GameState();
+            state.roster.Add(At("pack-raven", null));
+
+            Assert.That(Traits.BubbleRewardBonus(state, _data), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
@@ -164,12 +175,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TrailAndPristine_DeepenTheSameWay()
+        public void BubbleAndPristine_DeepenTheSameWay()
         {
             ConfigureSignatures();
 
-            Assert.That(Traits.TrailThroughputFactor(WithKinship("pack-raven", Familiar.TrailStation, 7), _data),
-                Is.EqualTo(1.0 + 0.25 * 1.75).Within(Tolerance), "all three milestones on the trail");
+            var ravenState = new GameState();
+            ravenState.roster.Add(WithKinship("pack-raven", "n1", 7));
+            Assert.That(Traits.BubbleRewardBonus(ravenState, _data),
+                Is.EqualTo(0.25 * 1.75).Within(Tolerance), "all three milestones deepen the windfall bonus");
 
             var node = new NodeState { id = "n1", resourceId = "berries" };
             var state = new GameState();

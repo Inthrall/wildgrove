@@ -2,7 +2,7 @@
   "$comment": "Survival gear — the warden's kit (slots: hands, pack, camp). Persists for the run; reset by Migration.",
   "gear": [
     { "id": "cordage-wraps",    "name": "Cordage Wraps",    "slot": "hands", "skill": "bushcraft", "materials": { "fibres": 40 },                 "effects": [{ "type": "tendingBurstBonus", "value": 0.5 }] },
-    { "id": "birch-frame-pack", "name": "Birch Frame Pack", "slot": "pack",  "skill": "bushcraft", "materials": { "timber": 25, "cordage": 5 },   "effects": [{ "type": "carrierCapacityBonus", "value": 0.25 }] },
+    { "id": "birch-frame-pack", "name": "Birch Frame Pack", "slot": "pack",  "skill": "bushcraft", "materials": { "timber": 25, "cordage": 5 },   "effects": [{ "type": "wardenYieldBonus", "value": 0.5 }] },
     { "id": "oilskin-tarp",     "name": "Oilskin Tarp",     "slot": "camp",  "skill": "bushcraft", "materials": { "reeds": 30, "fish-oil": 5 },   "effects": [{ "type": "offlineCapBonusHours", "value": 2 }] }
   ]
 }

@@ -35,7 +35,7 @@ namespace Wildgrove.Sim.Tests
                 // A wide ladder — these fixtures exercise the gather→haul
                 // pipeline, not the slots (staged crowds bypass them anyway).
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
-                hauling = new EconomyData.HaulingData { baseCarryCapacity = 1e9, tripSeconds = 1.0, basketCapacity = 1e18 },
+                delivery = new EconomyData.DeliveryData { batchSeconds = 1.0 },
             };
             _data.zones = new List<ZoneData>
             {
@@ -59,7 +59,7 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.xp = new EconomyData.XpData { baseXp = 100, growth = 1.1, maxLevel = 99, gatherPerUnit = 1 };
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -106,7 +106,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_OneFamiliarNoBonuses_AccruesOnePerSecond()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -117,7 +117,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_ZeroFamiliarNode_AccruesNothing()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 10.0);
 
@@ -170,7 +170,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_Accumulates_AcrossTicks()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 3.0);
             Simulation.Advance(state, _data, 2.0);
@@ -192,7 +192,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_WithActiveBurst_MultipliesYieldForBurstSeconds()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 2.0);
@@ -206,7 +206,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_BurstExpiresMidTick_SplitsBurstedAndNormalYield()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 8.0);
@@ -275,15 +275,16 @@ namespace Wildgrove.Sim.Tests
         public void Advance_WardenGather_BypassesTheBasketTheFamiliarFills()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            _data.economy.delivery.batchSeconds = 60.0; // longer than the tick: the pool can't land
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, state.nodes[0].id, 1); // a gatherer, no carrier: basket can't drain
+            TestKith.Station(state, state.nodes[0].id, 1);
             Warden.Post(state, state.nodes[1]);
             Simulation.Tend(state.nodes[0], _data.economy);
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The gatherer's bursted yield (2s · 3×) waits in the basket with
-            // no carriers, but the warden — at their own post next door —
+            // The gatherer's bursted yield (2s · 3×) still waits on the next
+            // delivery, but the warden — at their own post next door —
             // pockets 0.5 · 2 wildflowers straight to camp regardless.
             Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
@@ -385,11 +386,10 @@ namespace Wildgrove.Sim.Tests
             Simulation.Advance(state, _data, 9.0);
 
             // One wanderer roams three nodes — a third of a gatherer at each,
-            // hauled home by nothing (this fixture's carriers are removed with
-            // the stations), so the shares sit in the baskets.
+            // landed at camp by the delivery cadence.
             foreach (var node in state.nodes)
             {
-                Assert.That(node.basket.ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
+                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
             }
         }
 
@@ -397,7 +397,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_ReportsCreditAndGains()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 100.0);
 
@@ -412,7 +412,7 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_CappedAbsence_ReportsBothTimes()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
             var fiveHours = 5.0 * 3600.0;
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, fiveHours);
@@ -424,14 +424,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void AdvanceOfflineWithSummary_CountsGoodsStillInBaskets()
+        public void AdvanceOfflineWithSummary_CountsGoodsStillAwaitingDelivery()
         {
+            _data.economy.delivery.batchSeconds = 60.0; // longer than the absence — nothing lands
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, state.nodes[0].id, 1); // a gatherer, no carrier: goods stay in the basket
+            TestKith.Station(state, state.nodes[0].id, 1);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 
-            // With no carriers nothing reaches camp, but the basketful the
+            // Mid-cadence nothing has reached camp yet, but the pool the
             // familiar gathered is still a gain — the welcome-back sheet
             // shouldn't under-report the absence.
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
@@ -475,12 +476,36 @@ namespace Wildgrove.Sim.Tests
                 yieldBonusPerLevel = 0.05, baseXp = 50, growth = 1.15, maxLevel = 99, xpPerUnit = 0.5,
             };
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 10.0);
 
             // One familiar gathering 1/s for 10 s, at 0.5 mastery XP per unit.
             Assert.That(state.nodes[0].masteryXp, Is.EqualTo(5.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void YieldPerSecond_AppliesTheKithBaseRate()
+        {
+            _data.economy.kith.gatherPerSecond = 0.1;
+            var node = new NodeState { id = "n" };
+            var state = TestKith.WithGatherers("n", 1);
+
+            var perSec = Simulation.YieldPerSecond(node, state, _data.economy);
+
+            // The authored base rate replaces the historical implicit 1/s —
+            // cut to 0.1 when hauling retired and deliveries became lossless.
+            Assert.That(perSec.ToDouble(), Is.EqualTo(0.1).Within(Tolerance));
+        }
+
+        [Test]
+        public void YieldPerSecond_NoBaseRateConfigured_KeepsTheHistoricalOnePerSecond()
+        {
+            var node = new NodeState { id = "n" };
+            var state = TestKith.WithGatherers("n", 1);
+
+            Assert.That(Simulation.YieldPerSecond(node, state, _data.economy).ToDouble(),
+                Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]

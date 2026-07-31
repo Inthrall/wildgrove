@@ -461,7 +461,7 @@ namespace Wildgrove.Data
 
         private static readonly HashSet<string> KnownBuildingPerLevelTypes = new HashSet<string>
         {
-            "stationSpeedBonus", "basketCapacityBonus", "comfort"
+            "stationSpeedBonus", "offlineCapBonusHours", "comfort"
         };
 
         private static void ValidateBuildings(GameData data, HashSet<string> resourceIds, List<string> issues)
@@ -689,8 +689,8 @@ namespace Wildgrove.Data
                 foreach (var effect in node.Effects)
                 {
                     if (effect.Type != EffectType.YieldBonus
-                        && effect.Type != EffectType.CarrierCapacityBonus
                         && effect.Type != EffectType.TendingBurstBonus
+                        && effect.Type != EffectType.WardenYieldBonus
                         && effect.Type != EffectType.OfflineCapBonusHours)
                     {
                         issues.Add($"Almanac node '{node.Id}' is repeatable but grants '{effect.Type}' — a repeatable line may only grant additive effects (levels scale the value linearly)");
@@ -856,7 +856,7 @@ namespace Wildgrove.Data
         // kind would sit on a species and do nothing.
         private static readonly HashSet<string> KnownTraitKinds = new HashSet<string>
         {
-            "nodeYieldBonus", "trailThroughputBonus", "pristineBonus", "digSpeedBonus", "trailCarryFactor"
+            "nodeYieldBonus", "pristineBonus", "digSpeedBonus", "bubbleRewardBonus", "wardenYieldBonus"
         };
 
         // The trait's authored resource pair, falling back to the legacy single
@@ -956,7 +956,7 @@ namespace Wildgrove.Data
         // kind would build a planter that does nothing.
         private static readonly HashSet<string> KnownPlanterKinds = new HashSet<string>
         {
-            "basketCapacityMult", "nodeYieldMult", "digSpeedMult"
+            "nodeYieldMult", "digSpeedMult"
         };
 
         private static readonly HashSet<string> KnownPlanterTargets = new HashSet<string> { "node", "digSite" };
@@ -1452,7 +1452,7 @@ namespace Wildgrove.Data
 
             RequireSection(economy.CostGrowth, "costGrowth", issues);
             RequireSection(economy.Gifts, "gifts", issues);
-            RequireSection(economy.Hauling, "hauling", issues);
+            RequireSection(economy.Delivery, "delivery", issues);
             RequireSection(economy.Kith, "kith", issues);
             RequireSection(economy.Crafting, "crafting", issues);
             RequireSection(economy.Tools, "tools", issues);
@@ -1495,10 +1495,9 @@ namespace Wildgrove.Data
                 issues.Add("Economy amber.timeSkipDailyCapHours must be 0 (uncapped) or at least timeSkipHours — a cap below one skip can never be spent");
             }
 
-            if (economy.Hauling != null
-                && (economy.Hauling.BaseCarryCapacity <= 0 || economy.Hauling.TripSeconds <= 0 || economy.Hauling.BasketCapacity <= 0))
+            if (economy.Delivery != null && economy.Delivery.BatchSeconds <= 0)
             {
-                issues.Add("Economy hauling values must all be positive");
+                issues.Add("Economy delivery batchSeconds must be positive");
             }
 
             if (economy.Kith != null
@@ -1772,14 +1771,13 @@ namespace Wildgrove.Data
 
                     break;
 
-                case EffectType.HaulMult:
                 case EffectType.DigSpeedMult:
                 case EffectType.FolioSpreadBonusMult:
                 case EffectType.PristineChanceBonus:
                 case EffectType.OfflineCapHours:
                 case EffectType.OfflineCapBonusHours:
                 case EffectType.TendingBurstBonus:
-                case EffectType.CarrierCapacityBonus:
+                case EffectType.WardenYieldBonus:
                     RequirePositiveValue(owner, effect, issues);
                     break;
 

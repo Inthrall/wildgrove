@@ -66,14 +66,9 @@ namespace Wildgrove.Game
             }
 
             var snapshot = Modifiers.Of(state, data);
-            if (snapshot.haulCapacityMultiplier != 1.0)
+            if (snapshot.wardenYieldBonus > 0.0)
             {
-                parts.Add("×" + PlainNumber(snapshot.haulCapacityMultiplier) + " carried each trip on the trail");
-            }
-
-            if (snapshot.basketCapacityMultiplier != 1.0)
-            {
-                parts.Add("×" + PlainNumber(snapshot.basketCapacityMultiplier) + " the baskets hold");
+                parts.Add("+" + PlainNumber(snapshot.wardenYieldBonus * 100.0) + "% the warden's own hands");
             }
 
             if (snapshot.craftSpeedGlobal != 1.0)

@@ -10,21 +10,20 @@ namespace Wildgrove.Sim
     /// trait (<see cref="Traits"/>) — there is no per-familiar build.
     ///
     /// Levels never scale output — a familiar's level only paces its XP and
-    /// Kinship; throughput and yield come from tools, hauling equipment,
-    /// traits and richness (§4).
+    /// Kinship; yield comes from tools, traits and richness (§4).
     /// </summary>
     [Serializable]
     public sealed class Familiar
     {
-        /// <summary>The trail-post station id — hauling is a post, not a species (§2).</summary>
-        public const string TrailStation = "trail";
+        /// <summary>Legacy trail-post station id — the haul lane retired when deliveries became automatic. Read only by save migration.</summary>
+        public const string LegacyTrailStation = "trail";
 
         /// <summary>
-        /// The second haul lane, walked by the fell pony of The Drover's Halter
-        /// (§11). Bijective with the pony: nothing else may stand here, and the
-        /// pony may stand nowhere else — which is what makes its slot exemption
-        /// safe (<see cref="Kith.Walking"/>), since it can never carry a free
-        /// slot off to a node.
+        /// The fell pony's own station, at the warden's side (§11 — The
+        /// Drover's Halter). Bijective with the pony: nothing else may stand
+        /// here, and the pony may stand nowhere else — which is what makes its
+        /// slot exemption safe (<see cref="Kith.Walking"/>), since it can never
+        /// carry a free slot off to a node.
         /// </summary>
         public const string PonyStation = "pony-lane";
 
@@ -58,7 +57,7 @@ namespace Wildgrove.Sim
         public double kinshipXp;
 
         /// <summary>
-        /// Where this familiar is stationed: a node id, <see cref="TrailStation"/>,
+        /// Where this familiar is stationed: a node id,
         /// <see cref="WanderStation"/>, or null/empty when it rests at camp.
         /// Every post holds at most ONE body — warden or familiar (§2). A
         /// stationed familiar holds one of the kith's slots (§4 ladder); a
@@ -77,9 +76,6 @@ namespace Wildgrove.Sim
 
         /// <summary>An unstationed familiar rests at camp — no post, no slot, no output (§4).</summary>
         public bool IsResting => string.IsNullOrEmpty(stationId);
-
-        /// <summary>True when stationed on either haul lane (the trail post or the pony's lane) — carrying, gathering nothing.</summary>
-        public bool IsOnTrail => stationId == TrailStation || stationId == PonyStation;
 
         /// <summary>
         /// True for the fell pony (§11): it holds no slot, is always at its lane

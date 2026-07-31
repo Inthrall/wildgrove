@@ -123,7 +123,7 @@ namespace Wildgrove.Data
     [Serializable]
     public sealed class BuildingPerLevelData
     {
-        /// <summary>"stationSpeedBonus" | "basketCapacityBonus" | "comfort".</summary>
+        /// <summary>"stationSpeedBonus" | "offlineCapBonusHours" | "comfort".</summary>
         public string type;
         public string station;
         public double value;
@@ -246,7 +246,7 @@ namespace Wildgrove.Data
         public string displayName;
         public string description;
 
-        /// <summary>nodeYieldBonus / trailThroughputBonus / pristineBonus / digSpeedBonus.</summary>
+        /// <summary>nodeYieldBonus / pristineBonus / digSpeedBonus / bubbleRewardBonus / wardenYieldBonus.</summary>
         public string kind;
 
         public double value;
@@ -385,7 +385,7 @@ namespace Wildgrove.Data
         public string id;
         public string displayName;
 
-        /// <summary>"basketCapacityMult" | "nodeYieldMult" | "digSpeedMult".</summary>
+        /// <summary>"nodeYieldMult" | "digSpeedMult".</summary>
         public string kind;
 
         /// <summary>The fractional bonus added to the target (0.5 = +50%).</summary>
@@ -459,7 +459,7 @@ namespace Wildgrove.Data
     {
         public CostGrowthData costGrowth;
         public GiftsData gifts;
-        public HaulingData hauling;
+        public DeliveryData delivery;
         public KithData kith;
         public CraftingData crafting;
         public ToolsData tools;
@@ -499,19 +499,15 @@ namespace Wildgrove.Data
             public BigDouble pileGoods;
         }
 
+        /// <summary>
+        /// The delivery cadence (design §5): each node's pooled pickings land
+        /// at camp as one quality-rolled batch every batchSeconds. A cadence,
+        /// not a throughput cap — nothing gathered is ever lost.
+        /// </summary>
         [Serializable]
-        public sealed class HaulingData
+        public sealed class DeliveryData
         {
-            public double baseCarryCapacity;
-            public double tripSeconds;
-            public double basketCapacity;
-
-            /// <summary>
-            /// How much longer a gatherer's own trip takes than a carrier's,
-            /// when it shoulders what its full basket cannot hold. 1 = the same
-            /// walk; the cost is the gathering it stops to make it.
-            /// </summary>
-            public double selfHaulTripMultiplier;
+            public double batchSeconds;
         }
 
         [Serializable]
@@ -525,6 +521,9 @@ namespace Wildgrove.Data
 
             /// <summary>Gather posts the Rite generator assumes a plausible kith holds at once (run-2+ reachability).</summary>
             public int generatorGatherPosts;
+
+            /// <summary>A familiar's base gather rate at its post, units/second. Absent or non-positive (hand-built fixtures) reads as the historical 1.0.</summary>
+            public double gatherPerSecond;
         }
 
         [Serializable]

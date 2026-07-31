@@ -166,10 +166,10 @@ namespace Wildgrove.Sim
         /// <summary>Offering progress per revealed verse of the Rite, created on first touch.</summary>
         public List<VerseProgressState> verseProgress = new List<VerseProgressState>();
 
-        /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp by carrier haul from the nodes' baskets.</summary>
+        /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp in periodic deliveries from the nodes.</summary>
         public Dictionary<string, BigDouble> resources = new Dictionary<string, BigDouble>();
 
-        /// <summary>Fine-quality finds at camp, keyed by resource id (design §5: a Fine haul batch, sold at the quality bonus alongside the common stock).</summary>
+        /// <summary>Fine-quality finds at camp, keyed by resource id (design §5: a Fine delivery batch, sold at the quality bonus alongside the common stock).</summary>
         public Dictionary<string, BigDouble> fineResources = new Dictionary<string, BigDouble>();
 
         /// <summary>Pristine specimens at camp, keyed by resource id (design §5). Never sold automatically — the windfall sale (and later donation or offering) is the player's explicit choice.</summary>
@@ -183,7 +183,7 @@ namespace Wildgrove.Sim
         /// each an individual with a name, species, level (derived from xp),
         /// Kinship, powerups, and a stationing post. Replaces the anonymous
         /// per-node/per-camp counts — stationed roster members do the gathering
-        /// and hauling now (see <see cref="Stationing"/>). Bonded familiars
+        /// now (see <see cref="Stationing"/>). Bonded familiars
         /// (design §4) live here too, materialised each run from their source.
         /// </summary>
         public List<Familiar> roster = new List<Familiar>();
@@ -192,12 +192,12 @@ namespace Wildgrove.Sim
         public int nextFamiliarSeq = 1;
 
         /// <summary>
-        /// Seconds accrued toward the fleet's next delivery (design §5: hauling
-        /// lands in discrete batches, one every tripSeconds / carriers). Only
-        /// accrues while a basket has goods waiting; reset when the trail runs
-        /// out of work.
+        /// Seconds accrued toward the next delivery (design §5: goods land at
+        /// camp in discrete batches, one per node every
+        /// economy.delivery.batchSeconds, so quality rolls stay per-batch).
+        /// Only accrues while a node has pickings waiting.
         /// </summary>
-        public double haulTripProgress;
+        public double deliveryProgress;
 
         /// <summary>Every gathering node the player has access to this run.</summary>
         public List<NodeState> nodes = new List<NodeState>();
@@ -207,8 +207,8 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Planters built this run (design §3), each attached to one gather node
-        /// or dig site by target id. Each improves that target's basket capacity,
-        /// yield, or dig speed (see <see cref="Planters"/>). One planter of each
+        /// or dig site by target id. Each improves that target's yield or dig
+        /// speed (see <see cref="Planters"/>). One planter of each
         /// type per target. Reset at Migration — cheap to rebuild each run.
         /// </summary>
         public List<BuiltPlanter> builtPlanters = new List<BuiltPlanter>();
@@ -443,7 +443,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Seconds left on the post-tend Pristine window (design §5: Tending
-        /// "briefly raised Pristine chance"). While positive, haul batches from
+        /// "briefly raised Pristine chance"). While positive, delivery batches from
         /// this node multiply their Pristine chance by
         /// (1 + economy.tending.pristineChanceBonus). Refreshed by Tend
         /// alongside the yield burst, on its own (longer) duration.
@@ -451,10 +451,10 @@ namespace Wildgrove.Sim
         public double pristineBonusRemaining;
 
         /// <summary>
-        /// Goods gathered but not yet hauled to camp — the basket at the node.
-        /// Capped at economy.hauling.basketCapacity; gathering into a full
-        /// basket is lost (design §2: "under-invest in carriers and baskets
-        /// overflow at the node").
+        /// The day's pickings pooled at the node, awaiting the next delivery —
+        /// landed at camp as one quality-rolled batch every
+        /// economy.delivery.batchSeconds. Uncapped: a pool is a cadence, not a
+        /// bottleneck, and nothing gathered is ever lost.
         /// </summary>
         public BigDouble basket;
 

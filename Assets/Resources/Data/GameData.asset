@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 09db13f6570d188c3144092c509c92768527309760620d7785341ca61f322a4c
+  sourceHash: 437f474396fa8d651d3090db95f5f63fc2188de501bb6461842aacb46465856f
   economy:
     costGrowth:
       building: 1.25
@@ -21,16 +21,14 @@ MonoBehaviour:
       pileGoods:
         mantissa: 1
         exponent: 1
-    hauling:
-      baseCarryCapacity: 15
-      tripSeconds: 10
-      basketCapacity: 60
-      selfHaulTripMultiplier: 1
+    delivery:
+      batchSeconds: 10
     kith:
       slotsBase: 1
       slotsMax: 6
       verseMilestones: 02000000050000000a000000
       generatorGatherPosts: 2
+      gatherPerSecond: 0.1
     crafting:
       baseCraftSeconds: 5
     tools:
@@ -318,7 +316,7 @@ MonoBehaviour:
     - id: berries
       amount: 100
     effects:
-    - type: 16
+    - type: 15
       skill: 
       zone: 
       resource: 
@@ -338,7 +336,7 @@ MonoBehaviour:
     - id: berries
       amount: 250
     effects:
-    - type: 16
+    - type: 15
       skill: 
       zone: 
       resource: 
@@ -364,24 +362,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - order: 4
-    id: waxed-satchel
-    displayName: Waxed Satchel
-    track: hauling
-    toolTier: 
-    gateSkill: foraging
-    gateLevel: 4
-    minMigration: 0
-    materials: []
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
   - order: 5
     id: drying-rack
     displayName: Drying Rack
@@ -396,7 +376,7 @@ MonoBehaviour:
     - id: wildflowers
       amount: 30
     effects:
-    - type: 3
+    - type: 2
       skill: 
       zone: 
       resource: berries
@@ -414,7 +394,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: bramble-hedgerows
       resource: 
@@ -422,7 +402,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: mining
       zone: 
       resource: 
@@ -448,28 +428,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - order: 8
-    id: handcart
-    displayName: Handcart
-    track: hauling
-    toolTier: 
-    gateSkill: 
-    gateLevel: 0
-    minMigration: 0
-    materials:
-    - id: fibres
-      amount: 150
-    - id: berries
-      amount: 40
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 2
   - order: 9
     id: camp-fire-ring
     displayName: Camp Fire Ring
@@ -484,7 +442,7 @@ MonoBehaviour:
     - id: berries
       amount: 40
     effects:
-    - type: 13
+    - type: 12
       skill: firecraft
       zone: 
       resource: 
@@ -492,7 +450,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: forgecraft
       zone: 
       resource: 
@@ -500,7 +458,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -508,7 +466,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -550,7 +508,7 @@ MonoBehaviour:
     - id: wildflowers
       amount: 60
     effects:
-    - type: 8
+    - type: 7
       skill: 
       zone: 
       resource: 
@@ -568,7 +526,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 3
+    - type: 2
       skill: 
       zone: 
       resource: berry-preserve
@@ -586,7 +544,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: old-growth-wood
       resource: 
@@ -594,7 +552,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: logging
       zone: 
       resource: 
@@ -602,7 +560,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: entomology
       zone: 
       resource: 
@@ -610,7 +568,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 14
       skill: 
       zone: old-growth-wood
       resource: 
@@ -638,24 +596,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - order: 15
-    id: stag-harness
-    displayName: Stag Harness
-    track: hauling
-    toolTier: 
-    gateSkill: bushcraft
-    gateLevel: 8
-    minMigration: 0
-    materials: []
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 2
   - order: 16
     id: carving-bench
     displayName: Carving Bench
@@ -670,7 +610,7 @@ MonoBehaviour:
     - id: fibres
       amount: 40
     effects:
-    - type: 13
+    - type: 12
       skill: bushcraft
       zone: 
       resource: 
@@ -678,7 +618,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -686,7 +626,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -722,7 +662,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -744,7 +684,7 @@ MonoBehaviour:
     - id: cordage
       amount: 6
     effects:
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -762,7 +702,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 4
+    - type: 3
       skill: forgecraft
       zone: 
       resource: 
@@ -770,7 +710,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -778,24 +718,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-  - order: 21
-    id: wagon
-    displayName: Wagon
-    track: hauling
-    toolTier: 
-    gateSkill: bushcraft
-    gateLevel: 14
-    minMigration: 0
-    materials: []
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 2
   - order: 22
     id: smokehouse
     displayName: Smokehouse
@@ -810,7 +732,7 @@ MonoBehaviour:
     - id: timber
       amount: 60
     effects:
-    - type: 8
+    - type: 7
       skill: 
       zone: 
       resource: 
@@ -828,7 +750,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: silverrun-river
       resource: 
@@ -836,7 +758,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: fishing
       zone: 
       resource: 
@@ -844,7 +766,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 14
       skill: 
       zone: silverrun-river
       resource: 
@@ -898,7 +820,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -916,7 +838,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -942,7 +864,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -964,7 +886,7 @@ MonoBehaviour:
     - id: timber
       amount: 60
     effects:
-    - type: 7
+    - type: 6
       skill: 
       zone: 
       resource: 
@@ -994,24 +916,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
-  - order: 30
-    id: raven-panniers
-    displayName: Raven Panniers
-    track: hauling
-    toolTier: 
-    gateSkill: bushcraft
-    gateLevel: 35
-    minMigration: 0
-    materials: []
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 2
   - order: 32
     id: map-mistfen
     displayName: 'Trail Map: Mistfen Marsh'
@@ -1028,7 +932,7 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 4
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -1036,7 +940,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: apothecary
       zone: 
       resource: 
@@ -1044,7 +948,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 14
       skill: 
       zone: mistfen-marsh
       resource: 
@@ -1068,7 +972,23 @@ MonoBehaviour:
     - id: iron-ingot
       amount: 10
     effects:
+    - type: 11
+      skill: 
+      zone: the-hollows
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
     - type: 12
+      skill: delving
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+    - type: 14
       skill: 
       zone: the-hollows
       resource: 
@@ -1077,22 +997,6 @@ MonoBehaviour:
       upgrade: 
       value: 0
     - type: 13
-      skill: delving
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
-    - type: 15
-      skill: 
-      zone: the-hollows
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0
-    - type: 14
       skill: 
       zone: 
       resource: 
@@ -1136,7 +1040,7 @@ MonoBehaviour:
     - id: deep-ingot
       amount: 6
     effects:
-    - type: 12
+    - type: 11
       skill: 
       zone: highland-crags
       resource: 
@@ -1144,7 +1048,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 13
+    - type: 12
       skill: husbandry
       zone: 
       resource: 
@@ -1152,7 +1056,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0
-    - type: 15
+    - type: 14
       skill: 
       zone: highland-crags
       resource: 
@@ -1170,7 +1074,7 @@ MonoBehaviour:
     minMigration: 0
     materials: []
     effects:
-    - type: 14
+    - type: 13
       skill: 
       zone: 
       resource: 
@@ -1450,9 +1354,9 @@ MonoBehaviour:
     - root-cellar
     - smokehouse
     perLevel:
-      type: basketCapacityBonus
+      type: offlineCapBonusHours
       station: 
-      value: 0.05
+      value: 0.25
   - id: roosts
     displayName: Roosts & Burrows
     materials:
@@ -1474,7 +1378,7 @@ MonoBehaviour:
     - id: fibres
       amount: 40
     effects:
-    - type: 10
+    - type: 9
       skill: 
       zone: 
       resource: 
@@ -1492,14 +1396,14 @@ MonoBehaviour:
     - id: cordage
       amount: 5
     effects:
-    - type: 11
+    - type: 10
       skill: 
       zone: 
       resource: 
       recipe: 
       species: 
       upgrade: 
-      value: 0.25
+      value: 0.5
   - id: oilskin-tarp
     displayName: Oilskin Tarp
     slot: camp
@@ -1510,7 +1414,7 @@ MonoBehaviour:
     - id: fish-oil
       amount: 5
     effects:
-    - type: 9
+    - type: 8
       skill: 
       zone: 
       resource: 
@@ -1551,7 +1455,7 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.15
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -1584,7 +1488,7 @@ MonoBehaviour:
     rarity: 0.6
     rewarded: 0
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -1631,7 +1535,7 @@ MonoBehaviour:
     rarity: 0
     rewarded: 1
     effects:
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -1660,7 +1564,7 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects:
-    - type: 8
+    - type: 7
       skill: 
       zone: 
       resource: 
@@ -1674,7 +1578,7 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects:
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -1682,27 +1586,13 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.005
-  - id: sure-paths-i
-    displayName: Sure Paths I
-    costVerdure: 3
-    requires: 
-    repeatable: 0
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
   - id: patient-hands
     displayName: Patient Hands
     costVerdure: 4
     requires: 
     repeatable: 0
     effects:
-    - type: 4
+    - type: 3
       skill: 
       zone: 
       resource: 
@@ -1716,7 +1606,7 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -1744,7 +1634,7 @@ MonoBehaviour:
     requires: long-watch-i
     repeatable: 0
     effects:
-    - type: 8
+    - type: 7
       skill: 
       zone: 
       resource: 
@@ -1752,27 +1642,13 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 8
-  - id: sure-paths-ii
-    displayName: Sure Paths II
-    costVerdure: 9
-    requires: sure-paths-i
-    repeatable: 0
-    effects:
-    - type: 2
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
   - id: verdant-eye-ii
     displayName: Verdant Eye II
     costVerdure: 12
     requires: verdant-eye-i
     repeatable: 0
     effects:
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -1792,7 +1668,7 @@ MonoBehaviour:
     requires: patient-hands
     repeatable: 0
     effects:
-    - type: 18
+    - type: 17
       skill: 
       zone: 
       resource: 
@@ -1806,7 +1682,7 @@ MonoBehaviour:
     requires: patient-hands
     repeatable: 0
     effects:
-    - type: 4
+    - type: 3
       skill: firecraft
       zone: 
       resource: 
@@ -1834,7 +1710,7 @@ MonoBehaviour:
     requires: long-watch-ii
     repeatable: 0
     effects:
-    - type: 9
+    - type: 8
       skill: 
       zone: 
       resource: 
@@ -1848,7 +1724,7 @@ MonoBehaviour:
     requires: 
     repeatable: 0
     effects:
-    - type: 17
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -1862,7 +1738,7 @@ MonoBehaviour:
     requires: remembered-edge-i
     repeatable: 0
     effects:
-    - type: 17
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -1876,7 +1752,7 @@ MonoBehaviour:
     requires: known-way-i
     repeatable: 0
     effects:
-    - type: 17
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -1890,7 +1766,7 @@ MonoBehaviour:
     requires: remembered-edge-ii
     repeatable: 0
     effects:
-    - type: 17
+    - type: 16
       skill: 
       zone: 
       resource: 
@@ -1904,7 +1780,7 @@ MonoBehaviour:
     requires: long-watch-ii
     repeatable: 0
     effects:
-    - type: 8
+    - type: 7
       skill: 
       zone: 
       resource: 
@@ -1940,14 +1816,6 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.05
-    - type: 11
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0.05
   folioSpreads:
   - id: meadow-blooms
     displayName: Meadow Blooms
@@ -1971,7 +1839,7 @@ MonoBehaviour:
     - herbs
     - copper-scree
     effects:
-    - type: 6
+    - type: 5
       skill: 
       zone: 
       resource: 
@@ -1986,7 +1854,7 @@ MonoBehaviour:
     - mushrooms
     - tin-seam
     effects:
-    - type: 9
+    - type: 8
       skill: 
       zone: 
       resource: 
@@ -2017,7 +1885,7 @@ MonoBehaviour:
     - rare-herbs
     - glow-moss
     effects:
-    - type: 4
+    - type: 3
       skill: 
       zone: 
       resource: 
@@ -2032,7 +1900,7 @@ MonoBehaviour:
     - crystals
     - ashglass
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -2047,7 +1915,7 @@ MonoBehaviour:
     - wool
     - lichen
     effects:
-    - type: 11
+    - type: 10
       skill: 
       zone: 
       resource: 
@@ -2061,7 +1929,7 @@ MonoBehaviour:
     - sky-blossoms
     - glacier-ice
     effects:
-    - type: 10
+    - type: 9
       skill: 
       zone: 
       resource: 
@@ -2391,8 +2259,9 @@ MonoBehaviour:
     - Onyx
     trait:
       displayName: Deep pockets
-      description: +25% throughput when it holds the trail post
-      kind: trailThroughputBonus
+      description: "Windfall bubbles pay +25% more while she walks \u2014 she fetches
+        them home"
+      kind: bubbleRewardBonus
       value: 0.25
       resources: []
     minMigration: 0
@@ -2411,9 +2280,9 @@ MonoBehaviour:
     - Pennine
     trait:
       displayName: Half-broke
-      description: Walks her own lane and carries half a load, never fully broken
-        to harness
-      kind: trailCarryFactor
+      description: "Carries what the warden picks, so their hands never leave the
+        work \u2014 the warden's own gathering +50%"
+      kind: wardenYieldBonus
       value: 0.5
       resources: []
     minMigration: 0
@@ -2422,14 +2291,6 @@ MonoBehaviour:
     - Will take the panniers. Will not take the halter twice.
     - Ten winters of her own weather in her. I lead her nowhere; we go the same way.
   planters:
-  - id: timber-frame
-    displayName: Timber Frame
-    kind: basketCapacityMult
-    value: 0.5
-    target: node
-    materials:
-    - id: timber
-      amount: 20
   - id: cordage-trellis
     displayName: Cordage Trellis
     kind: nodeYieldMult
@@ -2516,7 +2377,7 @@ MonoBehaviour:
     sign: Something burned here, long before you. What lives now holds still, and
       lets itself be seen.
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -2544,14 +2405,14 @@ MonoBehaviour:
     displayName: a windswept region
     sign: The trail lies swept and the going is quick. Nothing about that is a kindness.
     effects:
-    - type: 2
+    - type: 10
       skill: 
       zone: 
       resource: 
       recipe: 
       species: 
       upgrade: 
-      value: 1.25
+      value: 0.25
     - type: 0
       skill: 
       zone: 
@@ -2587,7 +2448,7 @@ MonoBehaviour:
     description: 'lights the watching: observation sites half again as quick'
     durationSec: 1200
     effects:
-    - type: 5
+    - type: 4
       skill: 
       zone: 
       resource: 
@@ -2600,7 +2461,7 @@ MonoBehaviour:
     description: 'slows the breath: every craft half again as quick'
     durationSec: 1200
     effects:
-    - type: 4
+    - type: 3
       skill: 
       zone: 
       resource: 

@@ -28,10 +28,8 @@ namespace Wildgrove.Sim.Tests
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
                 offline = new EconomyData.OfflineData { baseCapHours = 4, rateMultiplier = 1.0 },
-                // Two slots so the factory stations both seeds (vole + raven) —
-                // these fixtures exercise the gather→haul pipeline, not the ladder.
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
-                hauling = new EconomyData.HaulingData { baseCarryCapacity = 1.0, tripSeconds = 2.0, basketCapacity = 10.0 },
+                delivery = new EconomyData.DeliveryData { batchSeconds = 2.0 },
                 // Chances start at 0 — each test dials up the tier it pins.
                 quality = new EconomyData.QualityData
                 {
@@ -73,13 +71,13 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.quality.fineChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The t=2 delivery of 1 unit rolled Fine — nothing reaches the
+            // The t=2 batch of 2 units rolled Fine — nothing reaches the
             // common stock.
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
@@ -88,11 +86,11 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.quality.pristineBaseChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 2.0);
 
-            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
@@ -103,12 +101,12 @@ namespace Wildgrove.Sim.Tests
             // Both chances 0 (the fixture default) — the system is off, the
             // way every pre-quality fixture in the suite runs.
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
             var seedBefore = state.rngState;
 
             Simulation.Advance(state, _data, 2.0);
 
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.rngState, Is.EqualTo(seedBefore), "an unconfigured roll must not consume rng");
         }
 
@@ -185,9 +183,8 @@ namespace Wildgrove.Sim.Tests
         public void AdvanceOfflineWithSummary_CountsQualityPoolsAsGains()
         {
             _data.economy.quality.fineChance = 1.0;
-            _data.economy.hauling.baseCarryCapacity = 1e9;
             var state = GameStateFactory.NewGame(_data);
-            TestKith.StageGathererAndCarrier(state);
+            TestKith.StageGatherer(state);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 

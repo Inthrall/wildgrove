@@ -56,7 +56,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "birch-frame-pack", displayName = "Birch Frame Pack", slot = "pack", skill = "bushcraft",
                     materials = { new ItemAmount { id = "timber", amount = 25 } },
-                    effects = { new EffectData { type = EffectType.CarrierCapacityBonus, value = 0.25 } },
+                    effects = { new EffectData { type = EffectType.WardenYieldBonus, value = 0.5 } },
                 },
                 new GearData
                 {
@@ -224,13 +224,13 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CarrierCapacityBonus_WidensTheHaulLoad()
+        public void WardenYieldBonus_QuickensTheWardensOwnHands()
         {
             var state = GameStateFactory.NewGame(_data);
             state.AddResource("timber", 25);
             Gear.TryCraft(state, _data, _data.gear[1]);
 
-            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.25).Within(Tolerance));
+            Assert.That(Upgrades.WardenYieldBonus(state, _data), Is.EqualTo(0.5).Within(Tolerance));
         }
 
         [Test]

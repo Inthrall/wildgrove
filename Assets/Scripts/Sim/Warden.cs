@@ -104,5 +104,22 @@ namespace Wildgrove.Sim
 
             return 0.0;
         }
+
+        /// <summary>
+        /// Data-aware overload: the base rate, quickened by whatever carries
+        /// for the warden — the fell pony's wardenYieldBonus trait (§11) and
+        /// worn-gear wardenYieldBonus effects (the Birch Frame Pack) sum into
+        /// one additive band.
+        /// </summary>
+        public static double GatherPerSecond(GameState state, GameDataAsset data, EconomyData economy, NodeState node)
+        {
+            var rate = GatherPerSecond(state, economy, node);
+            if (rate <= 0.0 || data == null)
+            {
+                return rate;
+            }
+
+            return rate * (1.0 + Traits.WardenYieldBonus(state, data) + Upgrades.WardenYieldBonus(state, data));
+        }
     }
 }

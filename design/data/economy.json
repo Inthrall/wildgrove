@@ -9,19 +9,17 @@
     "pileGoods": 10,
     "$note": "design §4: gift piles — one pile earned per verse sung (lifetime, across Migrations), one yes each. pileGoods units of the node's OWN resource (§13: you leave a pile of what the flock likes), spent from camp stock at the node the player chooses; the arrival is that resource's specialist species (derived from species.json traits — no per-event species config) and takes the node as its post. A pile is refused where the specialist already walks or no specialist exists. pileGoods is a first guess."
   },
-  "hauling": {
-    "baseCarryCapacity": 15,
-    "tripSeconds": 10,
-    "basketCapacity": 60,
-    "selfHaulTripMultiplier": 1.0,
-    "$note": "first-guess Phase-1 numbers, not in design doc. A carrier's throughput is baseCarryCapacity/tripSeconds x carry-capacity upgrades x the Verdure global (so hauling rides the same smooth growth as gathering, instead of being flat between the hauling track's five big rungs). Gathered goods wait in a per-node basket of basketCapacity. When the basket is full the node's own gatherers shoulder the excess themselves: they walk a carrier's trip (x selfHaulTripMultiplier) and gather nothing while they do, so the share that survives is the share of the time they were still gathering - overflow/(1 + gatherRate x trip/load). At selfHaulTripMultiplier 1 a stalled node keeps 60% of a 1/s gatherer and 13% of a 10/s one, ceiling load/trip: enough that a node never dies waiting, never enough to beat posting a carrier who loses no gathering and serves every node. Basket capacity buys TIME, not throughput - it is not the fix for a bottleneck. Tune with the loop playtest."
+  "delivery": {
+    "batchSeconds": 10,
+    "$note": "hauling as a throughput system is retired (it raced two absolute rates - gather vs carry - whose growth lanes could never be kept level, and any tuning was wrong for either a 4- or a 6-slot kith). Goods now reach camp automatically and losslessly: each node's pickings pool up and land as one batch every batchSeconds. The cadence exists ONLY so design S5 quality rolls stay per-batch (never per unit) and Pristine keeps landing as a discrete windfall - it is not a cap, and nothing gathered is ever lost."
   },
   "kith": {
     "slotsBase": 1,
     "slotsMax": 6,
     "verseMilestones": [2, 5, 10],
     "generatorGatherPosts": 2,
-    "$note": "design §4 ladder: a slot is the right to hold a post; companions past the slots rest at camp. One slot from minute one; one more as lifetime verses sung (across Migrations) cross each verseMilestones entry (first guesses); the last two are store purchases (the starter bundle, then the plain slot product) — slotsBase + milestones + 2 purchasable must equal slotsMax. generatorGatherPosts is what the Rite generator assumes a plausible kith can hold at gather nodes at once (run-2+ rites; earned and purchased slots are never assumed beyond it)."
+    "gatherPerSecond": 0.1,
+    "$note": "design §4 ladder: a slot is the right to hold a post; companions past the slots rest at camp. One slot from minute one; one more as lifetime verses sung (across Migrations) cross each verseMilestones entry (first guesses); the last two are store purchases (the starter bundle, then the plain slot product) — slotsBase + milestones + 2 purchasable must equal slotsMax. generatorGatherPosts is what the Rite generator assumes a plausible kith can hold at gather nodes at once (run-2+ rites; earned and purchased slots are never assumed beyond it). gatherPerSecond is a familiar's base gather rate at its post (was an implicit 1.0) — cut to 0.1 on 2026-07-31 when hauling retired, because lossless deliveries roughly x4-5'd effective camp income; absent or 0 in hand-built data means 1.0."
   },
   "crafting": {
     "baseCraftSeconds": 5,
@@ -62,7 +60,7 @@
     "fineValueMult": 1.5,
     "pristineBaseChance": 0.005,
     "pristineValueMult": 10,
-    "$note": "design §5: quality rolls per haul batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
+    "$note": "design §5: quality rolls per delivery batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
   },
   "amber": {
     "$note": "Amber (design §10): the premium currency's free earn + soft sink. Site finds roll per tick at watchers * digFindsPerHour * digSpeedMult (a separate channel from field sketches — a fully-recorded site keeps surfacing amber; it's old resin with an ancient insect in it, the one thing takeable); a time-skip instantly credits timeSkipHours of full live production for timeSkipCostAmber. timeSkipDailyCapHours bounds PAID skips to that many skipped hours per real day (a leaky budget refilling at cap/24 per wall hour, so it holds on every timescale, no midnight cliff; 0/absent = uncapped). At 24 it pins a heavy spender to at most x2 a free player's pace: a day holds 24 natural sim-hours and skips may add at most 24 more — sim-time is the only thing money buys here, so this one number IS the whale throttle. The rewarded-ad skip sits OUTSIDE the budget (free players get it too — it's part of the baseline both sides share). adDripAmber is the small pile a rewarded ad gives; weeklyCacheAmber is the once-a-week Play Games cache (design §11). renameCostAmber is the small resin a familiar's rename asks — the arrival naming too, unless you keep the suggested name. All first guesses against the ~40/week-free lean.",

@@ -9,7 +9,7 @@ namespace Wildgrove.Sim
     /// line's level is its bought levels plus the §9 milestone upgrades the
     /// run owns; the next bought level always costs the line's bundle ·
     /// costGrowth.building^level, forever. Bought levels each grant the
-    /// line's perLevel effect: station craft speed, basket capacity, or the
+    /// line's perLevel effect: station craft speed, away-cap hours, or the
     /// Roosts line's comfort (+familiar XP rate while stationed, design §4 —
     /// kith headcount is the §4 slot ladder, never a roost formula).
     /// Station lines (fire / forge / bench) also gate recipes: a recipe needs
@@ -99,7 +99,7 @@ namespace Wildgrove.Sim
             }
 
             state.buildingLevels[building.id] = BoughtLevels(state, building.id) + 1;
-            // Basket capacity is snapshot-cached — a bought level changes it.
+            // Per-level effects are snapshot-cached — a bought level changes them.
             state.BumpModifiers();
             return true;
         }
@@ -125,25 +125,19 @@ namespace Wildgrove.Sim
             return mult;
         }
 
-        /// <summary>Basket-capacity multiplier from Store-style lines: 1 + perLevel value per bought level.</summary>
-        public static double BasketCapacityMultiplier(GameState state, GameDataAsset data)
+        /// <summary>Extra away-cap hours from Store-style lines (the Store keeps what the day brought): perLevel value per bought level, summed into the offlineCapBonusHours band. The raw derivation — the snapshot builder's path.</summary>
+        internal static double ComputeOfflineCapBonusHours(GameState state, GameDataAsset data)
         {
-            return Modifiers.Of(state, data).basketCapacityMultiplier;
-        }
-
-        /// <summary>The raw derivation — the snapshot builder's path.</summary>
-        internal static double ComputeBasketCapacityMultiplier(GameState state, GameDataAsset data)
-        {
-            var mult = 1.0;
+            var hours = 0.0;
             foreach (var building in data.buildings)
             {
-                if (building.perLevel != null && building.perLevel.type == "basketCapacityBonus")
+                if (building.perLevel != null && building.perLevel.type == "offlineCapBonusHours")
                 {
-                    mult += building.perLevel.value * BoughtLevels(state, building.id);
+                    hours += building.perLevel.value * BoughtLevels(state, building.id);
                 }
             }
 
-            return mult;
+            return hours;
         }
 
         /// <summary>

@@ -4,7 +4,6 @@ namespace Wildgrove.Data
     {
         YieldMult,
         YieldBonus,
-        HaulMult,
         SellValueBonus,
         CraftSpeedMult,
         DigSpeedMult,
@@ -13,7 +12,9 @@ namespace Wildgrove.Data
         OfflineCapHours,
         OfflineCapBonusHours,
         TendingBurstBonus,
-        CarrierCapacityBonus,
+
+        /// <summary>Quickens the warden's own hands: summed with the fell pony's wardenYieldBonus trait into one additive band on the warden's gather rate.</summary>
+        WardenYieldBonus,
         UnlockZone,
         UnlockSkill,
         UnlockRecipe,

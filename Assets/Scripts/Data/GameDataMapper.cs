@@ -351,16 +351,9 @@ namespace Wildgrove.Data
                 {
                     pileGoods = e.Gifts.PileGoods
                 },
-                hauling = new EconomyData.HaulingData
+                delivery = new EconomyData.DeliveryData
                 {
-                    baseCarryCapacity = e.Hauling.BaseCarryCapacity,
-                    tripSeconds = e.Hauling.TripSeconds,
-                    basketCapacity = e.Hauling.BasketCapacity,
-                    // Absent from older content: a carrier's own walk, so
-                    // self-hauling costs only the gathering it interrupts.
-                    selfHaulTripMultiplier = e.Hauling.SelfHaulTripMultiplier > 0.0
-                        ? e.Hauling.SelfHaulTripMultiplier
-                        : 1.0
+                    batchSeconds = e.Delivery.BatchSeconds
                 },
                 kith = new EconomyData.KithData
                 {
@@ -369,7 +362,8 @@ namespace Wildgrove.Data
                     verseMilestones = e.Kith.VerseMilestones != null
                         ? new List<int>(e.Kith.VerseMilestones)
                         : new List<int>(),
-                    generatorGatherPosts = e.Kith.GeneratorGatherPosts
+                    generatorGatherPosts = e.Kith.GeneratorGatherPosts,
+                    gatherPerSecond = e.Kith.GatherPerSecond
                 },
                 crafting = new EconomyData.CraftingData
                 {
@@ -493,7 +487,7 @@ namespace Wildgrove.Data
             var missing = new List<string>();
             if (e.CostGrowth == null) { missing.Add("costGrowth"); }
             if (e.Gifts == null) { missing.Add("gifts"); }
-            if (e.Hauling == null) { missing.Add("hauling"); }
+            if (e.Delivery == null) { missing.Add("delivery"); }
             if (e.Kith == null) { missing.Add("kith"); }
             if (e.Crafting == null) { missing.Add("crafting"); }
             if (e.Tools == null) { missing.Add("tools"); }

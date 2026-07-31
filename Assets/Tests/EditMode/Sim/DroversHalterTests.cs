@@ -7,10 +7,10 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins The Drover's Halter (design §11): the reward grants a fell pony who
-    /// walks a second haul lane, always, for no slot — and carries half a load
-    /// so a free lane doesn't double the trail. The pony is the reason the
-    /// exemption is safe: she can stand nowhere else, so it cannot follow her to
-    /// a node.
+    /// walks at the warden's side, always, for no slot — carrying what the
+    /// warden picks, so their own gathering runs +50% while she's owned. The
+    /// pony is the reason the exemption is safe: she can stand nowhere else,
+    /// so it cannot follow her to a node.
     /// </summary>
     public class DroversHalterTests
     {
@@ -37,13 +37,13 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "pack-raven", displayName = "pack raven", roleLean = "carrier",
                     suggestedNames = new List<string> { "Sootwing" },
-                    trait = new TraitData { displayName = "Deep pockets", kind = "trailThroughputBonus", value = 0.25 },
+                    trait = new TraitData { displayName = "Deep pockets", kind = "bubbleRewardBonus", value = 0.25 },
                 },
                 new SpeciesData
                 {
                     id = Familiar.PonySpecies, displayName = "fell pony", roleLean = "carrier",
                     suggestedNames = new List<string> { "Moss" },
-                    trait = new TraitData { displayName = "Half-broke", kind = "trailCarryFactor", value = 0.5 },
+                    trait = new TraitData { displayName = "Half-broke", kind = "wardenYieldBonus", value = 0.5 },
                 },
             };
         }
@@ -62,55 +62,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TrailThroughputFactor_ForThePony_IsHerCarryFactorNotABonus()
-        {
-            var pony = new Familiar { id = "fam-1", speciesId = Familiar.PonySpecies, stationId = Familiar.PonyStation };
-
-            // A trailCarryFactor REPLACES the lane rather than adding to it: half
-            // a carrier's load, not 150% of one.
-            Assert.That(Traits.TrailThroughputFactor(pony, _data), Is.EqualTo(0.5).Within(Tolerance));
-        }
-
-        [Test]
-        public void TrailThroughputFactor_ForThePony_NeverDeepensWithKinship()
-        {
-            _data.economy.familiarXp = new EconomyData.FamiliarXpData
-            {
-                baseXp = 10.0,
-                growth = 1.0,
-                maxLevel = 99,
-                signatureDeepening = 0.5,
-                signatureMilestones = new List<int> { 1 },
-            };
-
-            var pony = new Familiar
-            {
-                id = "fam-1",
-                speciesId = Familiar.PonySpecies,
-                stationId = Familiar.PonyStation,
-                kinshipXp = 10_000.0,
-            };
-
-            // She cannot be fully tamed (§11) — Kinship never buys a deeper
-            // signature from her, which is what the info page says in words.
-            Assert.That(Traits.TrailThroughputFactor(pony, _data), Is.EqualTo(0.5).Within(Tolerance));
-        }
-
-        [Test]
-        public void TrailCarriers_WithACarrierAndThePony_IsALaneAndAHalf()
+        public void WardenYieldBonus_WhileSheWalks_QuickensTheWardensHands()
         {
             var state = Owned();
-            state.roster.Add(new Familiar { id = "fam-9", speciesId = "pack-raven", stationId = Familiar.TrailStation });
 
-            // The raven's own trait still applies to its lane; the pony adds
-            // half of one. Two lanes, not a doubling.
-            Assert.That(Stationing.TrailCarriers(state, _data), Is.EqualTo(1.75).Within(Tolerance));
+            Assert.That(Traits.WardenYieldBonus(state, _data), Is.EqualTo(0.5).Within(Tolerance));
         }
 
         [Test]
-        public void TrailCarriers_WithThePonyAlone_IsHalfALane()
+        public void GatherPerSecond_WithThePonyOwned_RunsHalfAgain()
         {
-            Assert.That(Stationing.TrailCarriers(Owned(), _data), Is.EqualTo(0.5).Within(Tolerance));
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 1.0 };
+            var state = Owned();
+            state.nodes.Add(new NodeState { id = "n1", resourceId = "berries" });
+            state.wardenPostNodeId = "n1";
+
+            Assert.That(Warden.GatherPerSecond(state, _data, _data.economy, state.nodes[0]),
+                Is.EqualTo(1.5).Within(Tolerance));
         }
 
         [Test]
@@ -158,7 +126,6 @@ namespace Wildgrove.Sim.Tests
             var pony = Roster.OfSpecies(state, Familiar.PonySpecies);
             Assert.That(state.roster.Count, Is.EqualTo(1), "one pony, however many times the entitlement resolves");
             Assert.That(pony.stationId, Is.EqualTo(Familiar.PonyStation));
-            Assert.That(pony.IsOnTrail, Is.True, "her lane is a haul lane");
             Assert.That(pony.name, Is.EqualTo("Moss"));
         }
 

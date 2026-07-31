@@ -315,15 +315,10 @@ namespace Wildgrove.Sim
             }
         }
 
-        /// <summary>
-        /// Carry-capacity multiplier: haulMult effects (Waxed Satchel ×1.5,
-        /// Handcart ×2, Almanac Sure Paths) multiply together, then the
-        /// additive carrierCapacityBonus band (the Birch Frame Pack's +25%)
-        /// scales the product.
-        /// </summary>
-        public static double HaulCapacityMultiplier(GameState state, GameDataAsset data)
+        /// <summary>Summed wardenYieldBonus band from effect sources (the Birch Frame Pack's +50%) — quickens the warden's own hands alongside the pony's trait.</summary>
+        public static double WardenYieldBonus(GameState state, GameDataAsset data)
         {
-            return Modifiers.Of(state, data).haulCapacityMultiplier;
+            return Modifiers.Of(state, data).wardenYieldBonus;
         }
 
         /// <summary>Extra Tending burst strength from worn gear (the Cordage Wraps' +50%), summed — multiplies the burst's yield multiplier.</summary>
@@ -548,10 +543,10 @@ namespace Wildgrove.Sim
             // Repeatable lines (design §7's endless sink) pay per level held.
             // Scaling the VALUE by the level count is the same as yielding the
             // effect that many times — but ONLY for the additive bands
-            // (yieldBonus sums into mult·(1+bonus), carrierCapacityBonus into
-            // haulMult·(1+bonus)). A multiplicative type would want value^level
-            // instead, so the validator refuses one on a repeatable line rather
-            // than let this silently compute the wrong curve.
+            // (yieldBonus sums into mult·(1+bonus)). A multiplicative type
+            // would want value^level instead, so the validator refuses one on
+            // a repeatable line rather than let this silently compute the
+            // wrong curve.
             foreach (var pair in state.almanacLevels)
             {
                 if (pair.Value <= 0 || !data.AlmanacById.TryGetValue(pair.Key, out var node) || !node.repeatable)

@@ -65,8 +65,8 @@ namespace Wildgrove.Sim.Tests
                 },
                 new UpgradeData
                 {
-                    order = 2, id = "waxed-satchel",
-                    effects = { new EffectData { type = EffectType.HaulMult, value = 1.5 } },
+                    order = 2, id = "birch-frame-pack-rung",
+                    effects = { new EffectData { type = EffectType.WardenYieldBonus, value = 0.5 } },
                 },
                 new UpgradeData
                 {
@@ -298,11 +298,11 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryPurchase_HaulMultUpgrade_LeavesYieldMultipliersAlone()
+        public void TryPurchase_WardenBonusUpgrade_LeavesYieldMultipliersAlone()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            var bought = Upgrades.TryPurchase(state, _data, Upgrade("waxed-satchel"));
+            var bought = Upgrades.TryPurchase(state, _data, Upgrade("birch-frame-pack-rung"));
 
             Assert.That(bought, Is.True);
             foreach (var node in state.nodes)
@@ -394,15 +394,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void HaulCapacityMultiplier_ReflectsOwnedHaulMultUpgrades()
+        public void WardenYieldBonus_ReflectsOwnedUpgrades()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(Upgrades.WardenYieldBonus(state, _data), Is.EqualTo(0.0).Within(Tolerance));
 
-            state.purchasedUpgradeIds.Add("waxed-satchel");
+            state.purchasedUpgradeIds.Add("birch-frame-pack-rung");
 
-            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(1.5).Within(Tolerance));
+            Assert.That(Upgrades.WardenYieldBonus(state, _data), Is.EqualTo(0.5).Within(Tolerance));
         }
 
         /// <summary>Turn on the design §3 tool gate: Bramble demands copper tools.</summary>

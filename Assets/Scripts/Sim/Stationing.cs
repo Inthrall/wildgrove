@@ -72,11 +72,6 @@ namespace Wildgrove.Sim
             return count;
         }
 
-        public static int OnTrail(GameState state)
-        {
-            return CountAssignedTo(state, Familiar.TrailStation);
-        }
-
         /// <summary>Familiars holding the wander post (0 or 1 — one body per post).</summary>
         public static int Wandering(GameState state)
         {
@@ -111,25 +106,6 @@ namespace Wildgrove.Sim
             }
 
             return sum;
-        }
-
-        /// <summary>
-        /// Effective carrier lanes on the trail: the familiar holding the trail
-        /// post, scaled by its throughput trait. An unheld trail hauls
-        /// nothing — the lane is a post like any other.
-        /// </summary>
-        public static double TrailCarriers(GameState state, GameDataAsset data)
-        {
-            var held = 0.0;
-            foreach (var familiar in state.roster)
-            {
-                if (!familiar.IsResting && familiar.IsOnTrail)
-                {
-                    held += Traits.TrailThroughputFactor(familiar, data);
-                }
-            }
-
-            return held;
         }
 
         /// <summary>

@@ -106,8 +106,8 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v20+: sequence for minting roster ids.</summary>
         public int nextFamiliarSeq;
 
-        /// <summary>v7+: seconds toward the fleet's next delivery (absent before discrete hauling — defaults to a fresh trip).</summary>
-        public double haulTripProgress;
+        /// <summary>v39+: seconds toward the next delivery batch (formerly haulTripProgress; renamed on the v39 hauling retirement — an old timer is dropped, costing at most one batch's wait).</summary>
+        public double deliveryProgress;
 
         public List<SavedResource> resources = new List<SavedResource>();
 
@@ -320,7 +320,7 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v8+: seconds left on the post-tend Pristine window (absent before quality rolls — defaults to zero).</summary>
         public double pristineBonusRemaining;
 
-        /// <summary>v2+: goods gathered but not yet hauled to camp (absent in v1 — defaults to zero).</summary>
+        /// <summary>v2+: the pickings pooled at the node awaiting the next delivery (absent in v1 — defaults to zero).</summary>
         [JsonConverter(typeof(BigDoubleJsonConverter))]
         public BigDouble basket;
     }

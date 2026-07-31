@@ -102,6 +102,28 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RewardFor_AWalkingRaven_FattensTheWindfall()
+        {
+            _data.species = new List<SpeciesData>
+            {
+                new SpeciesData
+                {
+                    id = "pack-raven", displayName = "pack raven", roleLean = "carrier",
+                    suggestedNames = new List<string> { "Sootwing" },
+                    trait = new TraitData { displayName = "Deep pockets", kind = "bubbleRewardBonus", value = 0.25 },
+                },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+            state.roster.Add(new Familiar { id = "fam-raven", speciesId = "pack-raven", stationId = state.nodes[1].id });
+
+            // 1/s × 60 s × (1 + the raven's 0.25) — she fetches the windfalls
+            // home from wherever she happens to be posted.
+            Assert.That(Bubbles.RewardFor(state, _data, state.nodes[0]).ToDouble(),
+                Is.EqualTo(75.0).Within(Tolerance));
+        }
+
+        [Test]
         public void Pop_GrantsTheRewardAsCampStock()
         {
             var state = GameStateFactory.NewGame(_data);

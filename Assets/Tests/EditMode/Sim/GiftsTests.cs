@@ -58,7 +58,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "pack-raven", displayName = "pack raven", roleLean = "carrier",
                     suggestedNames = new List<string> { "Sootwing" },
-                    trait = new TraitData { displayName = "Deep pockets", kind = "trailThroughputBonus", value = 0.25 },
+                    trait = new TraitData { displayName = "Deep pockets", kind = "bubbleRewardBonus", value = 0.25 },
                 },
                 new SpeciesData
                 {
@@ -162,7 +162,7 @@ namespace Wildgrove.Sim.Tests
         public void CanLeavePile_WithNoSlotOpen_StillAllowsAnArrivalThatRests()
         {
             var state = GameStateFactory.NewGame(_data);
-            Roster.Recruit(state, _data, "meadow-vole", Familiar.TrailStation);
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.WanderStation);
             AnswerFirstVerse(state);
             state.resources["nuts"] = 25;
             Assert.That(Kith.HasRoom(state, _data), Is.False, "the one slot is walked");

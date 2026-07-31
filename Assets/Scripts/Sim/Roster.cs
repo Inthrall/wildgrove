@@ -109,7 +109,7 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Station a familiar at a post — a node id, <see cref="Familiar.TrailStation"/>,
+        /// Station a familiar at a post — a node id,
         /// <see cref="Familiar.WanderStation"/>, or null to rest at camp
         /// (design §2: reassignment is always allowed and never costs goods).
         /// One body per post: whoever holds the post steps back — a familiar

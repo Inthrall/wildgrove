@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 38;
+        public const int CurrentVersion = 39;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -52,7 +52,7 @@ namespace Wildgrove.Sim.Saves
                 speciesEverBefriended = new List<string>(state.speciesEverBefriended),
                 stationsEverWorked = new List<string>(state.stationsEverWorked),
                 nextFamiliarSeq = state.nextFamiliarSeq,
-                haulTripProgress = state.haulTripProgress,
+                deliveryProgress = state.deliveryProgress,
                 rngState = state.rngState,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
@@ -347,7 +347,7 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            state.haulTripProgress = save.haulTripProgress;
+            state.deliveryProgress = save.deliveryProgress;
 
             foreach (var node in state.nodes)
             {
@@ -720,7 +720,6 @@ namespace Wildgrove.Sim.Saves
         private static bool StationValid(GameState state, string stationId)
         {
             if (string.IsNullOrEmpty(stationId)
-                || stationId == Familiar.TrailStation
                 || stationId == Familiar.WanderStation
                 || stationId == Familiar.PonyStation)
             {
@@ -792,7 +791,9 @@ namespace Wildgrove.Sim.Saves
 
             for (var i = 0; i < save.carrierCount; i++)
             {
-                roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "pack-raven", stationId = Familiar.TrailStation });
+                // The trail post no longer exists (v39 retired hauling) — the
+                // seed raven arrives resting and the player posts it anywhere.
+                roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "pack-raven", stationId = null });
             }
 
             return roster;
@@ -1202,6 +1203,29 @@ namespace Wildgrove.Sim.Saves
                         // charged against it, so the absent stamp (0) is right
                         // and the budget simply reads full.
                         save.version = 38;
+                        break;
+
+                    case 38:
+                        // v38 still had the trail post and carrier hauling.
+                        // Deliveries are automatic now: whoever held the trail
+                        // steps back to camp (their slot frees, the player
+                        // reposts them where they like), and any pending
+                        // basket contents ride through node.basket unchanged —
+                        // the first delivery tick lands them at camp. The old
+                        // haulTripProgress timer is dropped (the new delivery
+                        // timer starts fresh, costing at most one batch's wait).
+                        if (save.roster != null)
+                        {
+                            foreach (var familiar in save.roster)
+                            {
+                                if (familiar != null && familiar.stationId == Familiar.LegacyTrailStation)
+                                {
+                                    familiar.stationId = null;
+                                }
+                            }
+                        }
+
+                        save.version = 39;
                         break;
 
                     default:

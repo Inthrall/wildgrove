@@ -51,7 +51,7 @@ Implementation + interpretations:
   then deepest Kinship kept) and rests stationed familiars past the ladder.
   ⚠️ Existing test saves restore to a 1-slot ladder — most of the roster wakes up
   resting; wipe or re-station.
-- **Early-game pacing watch:** with 1 slot the seed raven rests, so nothing hauls —
+- ~~**Early-game pacing watch:**~~ RESOLVED 2026-07-31: hauling retired — deliveries are automatic and lossless, so nothing overflows whatever the slot count. Was: with 1 slot the seed raven rests, so nothing hauls —
   a stationed gatherer's basket overflows (lost) until slot 2 (2 verses) unless the
   player fields the raven instead; warden hand-gather (straight to camp) is the
   bridge. Deliberate scarcity, but tune `verseMilestones[0]` down to 1 if the first

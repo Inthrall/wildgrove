@@ -28,8 +28,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(35),
-                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, the Almanac Desk moved into the Verdure tree, and the Crags brought its map plus the fleece shears");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(30),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, the Almanac Desk moved into the Verdure tree, and the Crags brought its map plus the fleece shears, and the five hauling rungs left when hauling retired (2026-07-31)");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -61,13 +61,14 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
             Assert.That(data.Economy.Kith.VerseMilestones, Is.EqualTo(new[] { 2, 5, 10 }), "verses sung earn the middle rungs");
             Assert.That(data.Economy.Kith.GeneratorGatherPosts, Is.EqualTo(2), "the run-2+ generator's stationing assumption");
+            Assert.That(data.Economy.Kith.GatherPerSecond, Is.EqualTo(0.1), "a familiar's base hands — cut to a tenth when hauling retired (2026-07-31)");
             Assert.That(data.Economy.Store.StarterBundleAmber, Is.GreaterThan(0), "the starter bundle's one-time Amber pile");
             Assert.That(data.SpeciesById["meadow-vole"].Trait.Kind, Is.EqualTo("nodeYieldBonus"));
             Assert.That(data.SpeciesById["meadow-vole"].Trait.Resources,
                 Is.EquivalentTo(new[] { "berries", "wildflowers" }), "the vole works a related pair of meadow nodes");
             Assert.That(data.SpeciesById["warren-weasel"].Trait.Resources,
                 Is.EquivalentTo(new[] { "copper-scree", "tin-seam" }), "the weasel works the ore pair (copper + tin)");
-            Assert.That(data.SpeciesById["pack-raven"].Trait.Kind, Is.EqualTo("trailThroughputBonus"));
+            Assert.That(data.SpeciesById["pack-raven"].Trait.Kind, Is.EqualTo("bubbleRewardBonus"));
             Assert.That(data.BuildingsById["forge"].Materials.ContainsKey("copper-scree"), Is.True, "buildings cost a material bundle now (money→XP)");
             Assert.That(data.BuildingsById["forge"].MilestoneUpgradeIds, Is.EqualTo(new[] { "bellows-forge" }));
             Assert.That(data.BuildingsById["roosts"].PerLevel.Type, Is.EqualTo("comfort"), "Roosts levels familiar comfort (design §4)");
@@ -191,7 +192,7 @@ namespace Wildgrove.Data.Tests
         {
             var data = GameData.Parse(LoadSources());
 
-            Assert.That(data.UpgradesById["waxed-satchel"].Materials, Is.Empty);
+            Assert.That(data.UpgradesById["map-bramble"].Materials, Is.Empty);
         }
 
         [Test]
@@ -541,7 +542,7 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.BuildingsJson = sources.BuildingsJson.Replace(
-                "\"type\": \"basketCapacityBonus\"",
+                "\"type\": \"offlineCapBonusHours\"",
                 "\"type\": \"frobnicateBonus\"");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
@@ -711,16 +712,16 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_NonPositiveHaulingValue_IsReported()
+        public void Validate_NonPositiveDeliveryCadence_IsReported()
         {
             var sources = LoadSources();
             sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"tripSeconds\": 10",
-                "\"tripSeconds\": 0");
+                "\"batchSeconds\": 10",
+                "\"batchSeconds\": 0");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("hauling values must all be positive")), Is.True, string.Join("\n", issues));
+            Assert.That(issues.Any(i => i.Contains("delivery batchSeconds must be positive")), Is.True, string.Join("\n", issues));
         }
 
         [Test]
@@ -741,7 +742,7 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.UpgradesJson = sources.UpgradesJson.Replace(
-                "\"id\": \"waxed-satchel\"",
+                "\"id\": \"drying-rack\"",
                 "\"id\": \"flint-sickle\"");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
@@ -1054,8 +1055,8 @@ namespace Wildgrove.Data.Tests
             var sources = LoadSources();
             var before = sources.AlmanacJson;
             sources.AlmanacJson = sources.AlmanacJson.Replace(
-                "{ \"type\": \"carrierCapacityBonus\", \"value\": 0.05 }",
-                "{ \"type\": \"haulMult\", \"value\": 1.05 }");
+                "{ \"type\": \"yieldBonus\", \"skill\": \"all-gathering\", \"value\": 0.05 }",
+                "{ \"type\": \"craftSpeedMult\", \"value\": 1.05 }");
             Assert.That(sources.AlmanacJson, Is.Not.EqualTo(before), "the corruption must land");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));

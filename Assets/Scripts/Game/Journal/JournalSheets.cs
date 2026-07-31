@@ -938,7 +938,6 @@ namespace Wildgrove.Game
                 AddStationChoice(sheet, familiar, node.id);
             }
 
-            AddStationChoice(sheet, familiar, Familiar.TrailStation);
             AddStationChoice(sheet, familiar, Familiar.WanderStation);
         }
 

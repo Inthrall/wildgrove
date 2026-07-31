@@ -27,8 +27,9 @@ namespace Wildgrove.Sim
         /// <summary>
         /// What catching a bubble at <paramref name="node"/> pays: rewardSeconds
         /// of the node's current output — the stationed familiar's rate plus the
-        /// warden's own hands. Zero at a fallow node (nothing works it, so
-        /// nothing drifts up).
+        /// warden's own hands — fattened by any bubbleRewardBonus trait walking
+        /// the kith (the pack raven fetches the windfalls home). Zero at a
+        /// fallow node (nothing works it, so nothing drifts up).
         /// </summary>
         public static BigDouble RewardFor(GameState state, GameDataAsset data, NodeState node)
         {
@@ -39,8 +40,9 @@ namespace Wildgrove.Sim
 
             var economy = data.economy;
             var rate = Simulation.YieldPerSecond(node, state, data, economy)
-                + new BigDouble(Warden.GatherPerSecond(state, economy, node));
-            return rate * economy.bubbles.rewardSeconds;
+                + new BigDouble(Warden.GatherPerSecond(state, data, economy, node));
+            return rate * economy.bubbles.rewardSeconds
+                * (1.0 + Traits.BubbleRewardBonus(state, data));
         }
 
         /// <summary>True when a bubble can rise here — someone (kith or warden) is working the node.</summary>
@@ -51,7 +53,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Catch a bubble at <paramref name="node"/>: the reward lands as camp
-        /// stock (the warden's own catch — no basket, no carrier), credits
+        /// stock (the warden's own catch — no waiting on a delivery), credits
         /// gather XP, mastery and the Compendium like any handled goods, and
         /// tends the node (burst + Pristine window + Rite deed). Returns the
         /// amount granted, zero when nothing was due.

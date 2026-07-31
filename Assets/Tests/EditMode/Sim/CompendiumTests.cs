@@ -65,18 +65,18 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Gathering_RecordsTheGross_EvenWhenTheBasketOverflows()
+        public void Gathering_RecordsTheGross_WhichNowAllReachesCamp()
         {
             _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
-            _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 5 };
+            _data.economy.delivery = new EconomyData.DeliveryData { batchSeconds = 10 };
             var state = GameStateFactory.NewGame(_data);
             TestKith.Station(state, state.nodes[0].id, 10);
 
             Simulation.Advance(state, _data, 10.0);
 
-            Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(5.0).Within(Tolerance), "the basket clamps");
-            Assert.That(Compendium.LifetimeGathered(state, "berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance),
-                "the record never loses what the basket did");
+            // Deliveries are lossless: the record and the camp agree.
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance), "nothing gathered is ever lost");
+            Assert.That(Compendium.LifetimeGathered(state, "berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
 
         [Test]
@@ -110,16 +110,15 @@ namespace Wildgrove.Sim.Tests
         public void PristineFinds_CountUnitByUnit()
         {
             _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
-            _data.economy.hauling = new EconomyData.HaulingData { baseCarryCapacity = 15, tripSeconds = 10, basketCapacity = 60 };
+            _data.economy.delivery = new EconomyData.DeliveryData { batchSeconds = 10 };
             _data.economy.quality = new EconomyData.QualityData { pristineBaseChance = 1.0, fineChance = 0.0, fineValueMult = 1.5, pristineValueMult = 10 };
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, Familiar.TrailStation, 1); // a carrier hauls the manual basket
             state.nodes[0].basket = new BigDouble(30);
 
             Simulation.Advance(state, _data, 10.0);
 
-            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(15.0).Within(Tolerance), "the whole batch rolled Pristine");
-            Assert.That(Compendium.LifetimePristine(state, "berries").ToDouble(), Is.EqualTo(15.0).Within(Tolerance));
+            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance), "the whole batch rolled Pristine");
+            Assert.That(Compendium.LifetimePristine(state, "berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance));
         }
 
         [Test]

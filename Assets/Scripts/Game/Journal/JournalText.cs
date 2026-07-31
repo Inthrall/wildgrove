@@ -107,8 +107,6 @@ namespace Wildgrove.Game
                     return YieldTarget(effect) + " ×" + PlainNumber(effect.value);
                 case EffectType.YieldBonus:
                     return YieldTarget(effect) + " +" + Percent(effect.value);
-                case EffectType.HaulMult:
-                    return "hauling ×" + PlainNumber(effect.value);
                 case EffectType.SellValueBonus:
                     return effect.resource + " sells +" + Percent(effect.value);
                 case EffectType.CraftSpeedMult:
@@ -124,8 +122,8 @@ namespace Wildgrove.Game
                     return AwayCreditLabel(effect);
                 case EffectType.TendingBurstBonus:
                     return "tending burst +" + Percent(effect.value);
-                case EffectType.CarrierCapacityBonus:
-                    return "carriers hold +" + Percent(effect.value);
+                case EffectType.WardenYieldBonus:
+                    return "the warden's own hands +" + Percent(effect.value);
                 case EffectType.UnlockZone:
                     return "opens " + ZoneName(effect.zone);
                 case EffectType.UnlockSkill:
@@ -187,11 +185,6 @@ namespace Wildgrove.Game
             if (string.IsNullOrEmpty(stationId))
             {
                 return "resting at camp";
-            }
-
-            if (stationId == Familiar.TrailStation)
-            {
-                return "the trail";
             }
 
             if (stationId == Familiar.WanderStation)
@@ -283,18 +276,6 @@ namespace Wildgrove.Game
             return BundleHaveLabel(Costs(bundle));
         }
 
-        internal BigDouble NodeBasketCapacity(NodeState node)
-        {
-            var hauling = _loop.Data.economy?.hauling;
-            if (hauling == null)
-            {
-                return BigDouble.Zero;
-            }
-
-            return new BigDouble(hauling.basketCapacity * Buildings.BasketCapacityMultiplier(_loop.State, _loop.Data))
-                   * Planters.BasketCapacityMultiplier(_loop.State, _loop.Data, node);
-        }
-
         /// <summary>
         /// A planter's name in the language of the node it serves. Foraging nodes
         /// keep the garden names (frame, trellis); mining, delving, logging,
@@ -311,17 +292,6 @@ namespace Wildgrove.Game
 
             switch (planter.kind)
             {
-                case "basketCapacityMult":
-                    switch (skill)
-                    {
-                        case "mining": return "Mineshaft Beams";
-                        case "delving": return "Pit Props";
-                        case "logging": return "Log Cradle";
-                        case "fishing": return "Fish Baskets";
-                        case "husbandry": return "Feed Racks";
-                        case "entomology": return "Netting Frames";
-                        default: return planter.displayName;
-                    }
                 case "nodeYieldMult":
                     switch (skill)
                     {
@@ -355,8 +325,6 @@ namespace Wildgrove.Game
             var percent = UnityEngine.Mathf.RoundToInt((float)(planter.value * 100.0));
             switch (planter.kind)
             {
-                case "basketCapacityMult":
-                    return "+" + percent + "% basket";
                 case "nodeYieldMult":
                     return "+" + percent + "% yield";
                 case "digSpeedMult":

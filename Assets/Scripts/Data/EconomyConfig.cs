@@ -7,7 +7,7 @@ namespace Wildgrove.Data
     {
         public CostGrowthSection CostGrowth { get; set; }
         public GiftsSection Gifts { get; set; }
-        public HaulingSection Hauling { get; set; }
+        public DeliverySection Delivery { get; set; }
         public KithSection Kith { get; set; }
         public CraftingSection Crafting { get; set; }
         public ToolsSection Tools { get; set; }
@@ -39,12 +39,9 @@ namespace Wildgrove.Data
             public long PileGoods { get; set; }
         }
 
-        public sealed class HaulingSection
+        public sealed class DeliverySection
         {
-            public double BaseCarryCapacity { get; set; }
-            public double TripSeconds { get; set; }
-            public double BasketCapacity { get; set; }
-            public double SelfHaulTripMultiplier { get; set; }
+            public double BatchSeconds { get; set; }
         }
 
         public sealed class KithSection
@@ -53,6 +50,7 @@ namespace Wildgrove.Data
             public int SlotsMax { get; set; }
             public List<int> VerseMilestones { get; set; }
             public int GeneratorGatherPosts { get; set; }
+            public double GatherPerSecond { get; set; }
         }
 
         public sealed class CraftingSection

@@ -22,7 +22,7 @@ namespace Wildgrove.Data
     /// <summary>What each bought level of a building line grants.</summary>
     public sealed class BuildingPerLevelDef
     {
-        /// <summary>"stationSpeedBonus" (needs Station + Value) | "basketCapacityBonus" (needs Value) | "comfort" (needs Value — +familiar XP rate per level for stationed familiars, design §4 Roosts).</summary>
+        /// <summary>"stationSpeedBonus" (needs Station + Value) | "offlineCapBonusHours" (needs Value — extra away-cap hours per level, design: the Store keeps what the day brought) | "comfort" (needs Value — +familiar XP rate per level for stationed familiars, design §4 Roosts).</summary>
         public string Type { get; set; }
 
         public string Station { get; set; }

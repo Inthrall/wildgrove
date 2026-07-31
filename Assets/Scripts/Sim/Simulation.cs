@@ -12,21 +12,22 @@ namespace Wildgrove.Sim
     public static class Simulation
     {
         /// <summary>
-        /// Longest slice a single tick is integrated over. Basket caps make big
-        /// deltas path-dependent — gather and haul run concurrently in real
-        /// time, so a 4-hour offline tick evaluated in one step would clamp a
-        /// whole absence's gathering into one basketful. Sub-stepping keeps the
-        /// catch-up honest: baskets fill, drain and overflow the way they
-        /// would have live.
+        /// Longest slice a single tick is integrated over. Timed processes
+        /// (tincture buffs, tend bursts, crafting batches) make big deltas
+        /// path-dependent, so a 4-hour offline tick evaluated in one step
+        /// would mis-clock them. Sub-stepping keeps the catch-up honest:
+        /// buffs lapse and batches land the way they would have live.
         /// </summary>
         private const double MaxStepSeconds = 1.0;
 
         /// <summary>
         /// Advance the run by <paramref name="deltaSeconds"/>: familiars gather
-        /// into their node's basket, then carriers haul basket contents to the
-        /// camp inventory (design §2 gather → haul → camp; only camp stock is
-        /// spendable). Non-positive deltas are a no-op so a paused or
-        /// clock-skewed tick can't rewind progress.
+        /// at their posts and the day's pickings land at camp in periodic
+        /// deliveries (design §2 gather → camp; only camp stock is spendable).
+        /// Nothing is ever lost on the way — the delivery cadence exists so
+        /// quality rolls attach to discrete batches, not to keep score.
+        /// Non-positive deltas are a no-op so a paused or clock-skewed tick
+        /// can't rewind progress.
         /// </summary>
         public static void Advance(GameState state, GameDataAsset data, double deltaSeconds)
         {
@@ -55,11 +56,7 @@ namespace Wildgrove.Sim
             var burstMult = economy?.tending != null
                 ? economy.tending.burstYieldMult * (1.0 + Upgrades.TendingBurstBonus(state, data))
                 : 1.0;
-            var hauling = economy?.hauling;
-            // The Store line's bought levels stretch every basket.
-            var basketCapacity = hauling != null
-                ? new BigDouble(hauling.basketCapacity * Buildings.BasketCapacityMultiplier(state, data))
-                : BigDouble.Zero;
+            var delivery = economy?.delivery;
 
             foreach (var node in state.nodes)
             {
@@ -78,39 +75,24 @@ namespace Wildgrove.Sim
                     var normalSeconds = deltaSeconds - burstSeconds;
                     var gained = baseRate * (normalSeconds + burstSeconds * burstMult);
 
-                    // XP from every action (design §4) — credited on the gross
-                    // gather, so a full basket loses the goods but not the
-                    // practice. Mastery and the Compendium's lifetime record
-                    // accrue alongside.
+                    // XP from every action (design §4) — Mastery and the
+                    // Compendium's lifetime record accrue alongside.
                     Skills.AddGatherXp(state, data, node.skill, gained);
                     Mastery.AddGatherXp(node, economy, gained);
                     Compendium.RecordGather(state, node.resourceId, gained);
 
-                    if (hauling != null)
+                    if (delivery != null)
                     {
-                        // Into the basket, clamped at capacity (the §2
-                        // bottleneck). Timber-frame planters (design §3) stretch
-                        // this node's basket beyond the global Store line.
-                        var nodeCapacity = basketCapacity * Planters.BasketCapacityMultiplier(state, data, node);
-                        var room = BigDouble.Max(nodeCapacity - node.basket, BigDouble.Zero);
-                        if (gained <= room)
-                        {
-                            node.basket += gained;
-                        }
-                        else
-                        {
-                            // What the basket can't hold used to be lost outright,
-                            // which made every new gather slot a way to destroy
-                            // goods until the trail was rebalanced. The node's own
-                            // gatherers now shoulder the excess instead.
-                            node.basket = nodeCapacity;
-                            SelfHaul(state, data, hauling, node, gained - room, baseRate);
-                        }
+                        // The day's pickings pool at the node until the next
+                        // delivery lands them at camp as one quality-rolled
+                        // batch — a cadence, not a cap. Nothing overflows and
+                        // nothing is lost.
+                        node.basket += gained;
                     }
                     else
                     {
-                        // Hauling not configured (hand-built test data): goods
-                        // go straight to camp, the pre-carrier behaviour.
+                        // Deliveries not configured (hand-built test data):
+                        // goods go straight to camp, un-batched.
                         state.AddResource(node.resourceId, gained);
                     }
                 }
@@ -120,7 +102,7 @@ namespace Wildgrove.Sim
                 // a burst is live, and straight to camp with no carrier (they
                 // pocket what they pick). This is how a bare node earns its
                 // first own-resource gift (design §13 decision).
-                var wardenRate = Warden.GatherPerSecond(state, economy, node);
+                var wardenRate = Warden.GatherPerSecond(state, data, economy, node);
                 if (wardenRate > 0.0)
                 {
                     var wardenGathered = new BigDouble(wardenRate *
@@ -142,12 +124,12 @@ namespace Wildgrove.Sim
                 }
             }
 
-            if (hauling != null)
+            if (delivery != null)
             {
-                Haul(state, data, hauling, deltaSeconds);
+                DeliverPending(state, data, delivery, deltaSeconds);
             }
 
-            // After the haul so goods that just reached camp can feed a batch —
+            // After the deliveries so goods that just reached camp can feed a batch —
             // sub-stepping keeps offline crafting batch-by-batch, like live play.
             Crafting.Advance(state, data, deltaSeconds);
 
@@ -177,119 +159,49 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Move basket contents to camp in discrete deliveries — the "haul
-        /// batch" design §5's quality rolls attach to (the roll itself arrives
-        /// with the quality system). The fleet lands one delivery every
-        /// tripSeconds / carrierCount (carriers evenly staggered on the trail);
-        /// each delivery takes up to one load (carryCapacity · upgradeMult)
-        /// from the fullest basket, so a batch is always a single resource.
-        /// Average throughput matches the old continuous drain:
-        /// carriers · carryCapacity · upgradeMult / tripSeconds. Trip progress
-        /// only accrues while something is waiting — idle carriers sit at camp
-        /// rather than banking trips against future goods.
+        /// Land every node's pooled pickings at camp on a fixed cadence — the
+        /// "delivery batch" design §5's quality rolls attach to. Each node's
+        /// pool arrives as one batch (a batch is always a single resource), so
+        /// rolls stay per-batch, never per unit, and Pristine keeps landing as
+        /// a discrete windfall. Progress only accrues while something is
+        /// waiting, so an idle grove doesn't bank deliveries against future
+        /// goods.
         /// </summary>
-        private static void Haul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling, double deltaSeconds)
+        private static void DeliverPending(GameState state, GameDataAsset data, EconomyData.DeliveryData delivery, double deltaSeconds)
         {
-            // Hauling is a post (design §2): the familiars holding the trail
-            // carry, at their throughput traits; an unheld trail hauls nothing.
-            // Bonded familiars are just roster members that persist, so they
-            // count here when stationed.
-            var carriers = Stationing.TrailCarriers(state, data);
-            if (carriers <= 0.0)
-            {
-                return;
-            }
-
-            if (FullestBasket(state) == null)
-            {
-                state.haulTripProgress = 0.0;
-                return;
-            }
-
-            var load = HaulLoad(state, data, hauling);
-            var interval = hauling.tripSeconds / carriers;
-            if (interval <= 0.0 || load <= BigDouble.Zero)
+            if (delivery.batchSeconds <= 0.0)
             {
                 // Degenerate hand-built data (the validator rejects real
                 // content like this) — don't spin the delivery loop.
                 return;
             }
 
-            state.haulTripProgress += deltaSeconds;
-            while (state.haulTripProgress >= interval)
+            if (!AnythingPending(state))
             {
-                var node = FullestBasket(state);
-                if (node == null)
+                state.deliveryProgress = 0.0;
+                return;
+            }
+
+            state.deliveryProgress += deltaSeconds;
+            while (state.deliveryProgress >= delivery.batchSeconds)
+            {
+                state.deliveryProgress -= delivery.batchSeconds;
+                foreach (var node in state.nodes)
                 {
-                    // Everything delivered mid-step; what's left of the
-                    // progress is idle time at camp, not a banked trip.
-                    state.haulTripProgress = 0.0;
-                    return;
+                    if (node.basket <= BigDouble.Zero)
+                    {
+                        continue;
+                    }
+
+                    var moved = node.basket;
+                    node.basket = BigDouble.Zero;
+                    Deliver(state, data, node, moved);
                 }
-
-                state.haulTripProgress -= interval;
-                var moved = BigDouble.Min(node.basket, load);
-                node.basket -= moved;
-                Deliver(state, data, node, moved);
             }
         }
 
         /// <summary>
-        /// One carrier's load. Carry capacity is bought in five big multiplicative
-        /// rungs (the hauling upgrade track), but those gate on crafting skill
-        /// while the pressure on them comes from gather slots, which arrive on the
-        /// verse clock — so between rungs hauling sat flat while gathering grew
-        /// smoothly, and the grove drowned in its own baskets. The Verdure global
-        /// is the same smooth term that lifts every gather rate, so applying it
-        /// here holds the gather:haul ratio steady between rungs instead of
-        /// letting it drift toward "everyone carries".
-        /// </summary>
-        public static BigDouble HaulLoad(GameState state, GameDataAsset data, EconomyData.HaulingData hauling)
-        {
-            var verdure = data?.economy?.verdure;
-            var global = verdure != null ? 1.0 + verdure.yieldBonusPerPoint * state.verdurePoints : 1.0;
-            return new BigDouble(hauling.baseCarryCapacity) * Upgrades.HaulCapacityMultiplier(state, data) * global;
-        }
-
-        /// <summary>
-        /// What a node's own gatherers rescue when the basket is full: they
-        /// shoulder the excess themselves rather than tipping it out. They walk a
-        /// carrier's trip and gather nothing while they walk, so the share that
-        /// survives is the share of the time they were still gathering —
-        /// <c>overflow / (1 + gatherRate · trip / load)</c>, which is exactly the
-        /// steady state of "fill a load, carry a load".
-        /// <para>
-        /// This is a floor, not a lane. A posted carrier loses no gathering and
-        /// serves every node from one trail, so delegating always beats
-        /// self-hauling; what this removes is the cliff, where a node that
-        /// out-gathered the trail quietly destroyed everything it picked.
-        /// </para>
-        /// </summary>
-        private static void SelfHaul(GameState state, GameDataAsset data, EconomyData.HaulingData hauling,
-            NodeState node, BigDouble overflow, BigDouble gatherRate)
-        {
-            if (overflow <= BigDouble.Zero || gatherRate <= BigDouble.Zero)
-            {
-                return;
-            }
-
-            var load = HaulLoad(state, data, hauling);
-            var trip = hauling.tripSeconds * (hauling.selfHaulTripMultiplier > 0.0
-                ? hauling.selfHaulTripMultiplier
-                : 1.0);
-            if (load <= BigDouble.Zero || trip <= 0.0)
-            {
-                // Degenerate hand-built data (the validator rejects real content
-                // like this) — the excess is simply lost, as it was before.
-                return;
-            }
-
-            var carried = overflow / (BigDouble.One + gatherRate * (new BigDouble(trip) / load));
-            Deliver(state, data, node, carried);
-        }
-
-        /// <summary>
-        /// Land one haul batch at camp with its design §5 quality roll: the
+        /// Land one delivery batch at camp with its design §5 quality roll: the
         /// whole delivery takes the rolled tier. Common goes to plain stock,
         /// Fine to the fine pool (sold at the bonus alongside plain stock),
         /// Pristine to the specimen pool (held for an explicit windfall sale —
@@ -314,19 +226,18 @@ namespace Wildgrove.Sim
             }
         }
 
-        /// <summary>The node with the most waiting in its basket (where the next carrier heads), or null when every basket is empty.</summary>
-        private static NodeState FullestBasket(GameState state)
+        /// <summary>True when any node has pickings waiting for the next delivery.</summary>
+        private static bool AnythingPending(GameState state)
         {
-            NodeState fullest = null;
             foreach (var node in state.nodes)
             {
-                if (node.basket > BigDouble.Zero && (fullest == null || node.basket > fullest.basket))
+                if (node.basket > BigDouble.Zero)
                 {
-                    fullest = node;
+                    return true;
                 }
             }
 
-            return fullest;
+            return false;
         }
 
         /// <summary>
@@ -395,8 +306,8 @@ namespace Wildgrove.Sim
         /// <summary>
         /// <see cref="AdvanceOffline"/> plus a report of what it paid out — the
         /// welcome-back sheet's data. Snapshots the holdings (camp stock plus
-        /// what's waiting in node baskets, so goods the carriers hadn't hauled
-        /// yet still count as gained), runs the catch-up, and diffs — the gains
+        /// what's pooled at the nodes awaiting the next delivery, so those
+        /// still count as gained), runs the catch-up, and diffs — the gains
         /// stay correct however the tick evolves.
         /// </summary>
         public static OfflineSummary AdvanceOfflineWithSummary(GameState state, GameDataAsset data, double realElapsedSeconds)
@@ -500,8 +411,15 @@ namespace Wildgrove.Sim
             // Cordage-trellis planters (design §3): a second yield lane at the node.
             var planters = Planters.NodeYieldMultiplier(state, data, node);
             var agents = Stationing.GatherAgentsAt(state, data, node);
+            // A familiar's base hands. Cut to 0.1 when hauling retired
+            // (2026-07-31) — lossless deliveries multiplied effective camp
+            // income, so the base rate absorbs the correction. Absent or 0
+            // (hand-built fixtures) keeps the historical 1/s.
+            var baseRate = economy.kith != null && economy.kith.gatherPerSecond > 0.0
+                ? economy.kith.gatherPerSecond
+                : 1.0;
 
-            return new BigDouble(agents) * node.yieldMultiplier * masteryBonus * richness * planters * global;
+            return new BigDouble(agents * baseRate) * node.yieldMultiplier * masteryBonus * richness * planters * global;
         }
     }
 

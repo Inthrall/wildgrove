@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     {
         /// <summary>
         /// Add <paramref name="count"/> familiars stationed at <paramref name="stationId"/>
-        /// (a node id, "trail", or "wander"). Each gets its own made-up species —
+        /// (a node id or "wander"). Each gets its own made-up species —
         /// the collection rule is one familiar per species, and a save round trip
         /// dedupes duplicates, so staged crowds must not share one. Bypasses
         /// Roster.Station, so a hand-built crowd CAN share a post — the sim's
@@ -39,14 +39,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         /// <summary>
-        /// Station one gatherer on the first node and one carrier on the trail
-        /// — the shape the old seed kith gave every fresh run, staged
-        /// explicitly now that a new game opens with the warden alone.
+        /// Station one gatherer on the first node — the smallest working
+        /// grove, staged explicitly now that a new game opens with the warden
+        /// alone. (The carrier half left with the hauling system: deliveries
+        /// are automatic.)
         /// </summary>
-        public static void StageGathererAndCarrier(GameState state)
+        public static void StageGatherer(GameState state)
         {
             Station(state, state.nodes[0].id, 1);
-            Station(state, Familiar.TrailStation, 1);
         }
 
         /// <summary>Un-station every familiar (all rest at camp) — the "no one working" setup.</summary>

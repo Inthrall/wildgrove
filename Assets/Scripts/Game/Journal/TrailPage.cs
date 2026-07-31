@@ -17,7 +17,7 @@ namespace Wildgrove.Game
     /// and the Rite's verse cards and waystone footer. Posting lives on the
     /// world strip's badges and on the trail-home line at the head of this page
     /// (one body per post), so the plates here carry only the land's own
-    /// business: yields, baskets, replanting, planters. The kith roster now
+    /// business: yields, replanting, planters. The kith roster now
     /// lives on the Warden page.
     /// </summary>
     internal sealed class TrailPage : JournalSection
@@ -88,16 +88,13 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The trail home — "the trail home" on the left, a dotted rule with
-        /// the carrier walking it, and the carrier's status on the right. The
-        /// whole box is the assign gesture: tap it to open the trail posting
-        /// sheet (design: one body per post).
-        /// <para>
-        /// It was pinned in the chrome under the world strip, where it was read
-        /// on the Camp, Warden and Record pages that have no use for it and
-        /// cost the open page ~100 units on every one of them. The carrier
-        /// walking home is the Trail's own business, so it heads the Trail
-        /// page — one tap away from anywhere, like everything else on it.
-        /// </para>
+        /// the day's deliveries walking it, and a line of status on the right.
+        /// Pure presentation now: deliveries are automatic and lossless, so
+        /// the dot is the delivery batch walking to camp (one per
+        /// economy.delivery.batchSeconds while anything is pooled), and the
+        /// fell pony keeps her half-step alongside while she's owned. Nothing
+        /// here is postable any more — the carrier post left with the hauling
+        /// system.
         /// </summary>
         private void BuildTrailHomeLine()
         {
@@ -112,12 +109,8 @@ namespace Wildgrove.Game
             layout.spacing = 10;
             var element = bar.AddComponent<LayoutElement>();
             element.flexibleHeight = 0;
-            // The one affordance for posting a carrier was a ~16dp strip —
-            // 100 units brings it near the 48dp touch floor.
             element.minHeight = 100f;
             AddBorder(bar, Ink2);
-            var button = bar.AddComponent<Button>();
-            button.onClick.AddListener(() => _hud.Sheets.OpenPostingSheet(Familiar.TrailStation));
 
             MakeText(bar.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
 
@@ -160,31 +153,35 @@ namespace Wildgrove.Game
 
             var status = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
 
-            // Under the bar, not in it: the bar is a fixed-height touch target
-            // and this line only exists while the trail is losing goods.
-            var shortfall = MakeText(_body, string.Empty, 16, TextAnchor.MiddleCenter, Ink2, _hand);
-            shortfall.gameObject.SetActive(false);
-
-            // The dot walks per frame; who's carrying only changes on the
+            // The dot walks per frame; the status only changes on the
             // cadence, like every other label on the page.
             _frameUpdaters.Add(() =>
             {
-                var carriers = Stationing.TrailCarriers(_loop.State, _loop.Data);
-                var tripSeconds = _loop.Data.economy?.hauling?.tripSeconds ?? 0.0;
-                var show = carriers > 0.0 && tripSeconds > 0.0;
-                var showPony = show && Stationing.OccupantOf(_loop.State, Familiar.PonyStation) != null;
-                carrierDot.gameObject.SetActive(show && Stationing.OccupantOf(_loop.State, Familiar.TrailStation) != null);
-                ponyDot.gameObject.SetActive(showPony);
-                if (!show)
+                var batchSeconds = _loop.Data.economy?.delivery?.batchSeconds ?? 0.0;
+                var pending = false;
+                foreach (var node in _loop.State.nodes)
                 {
-                    return;
+                    if (node.basket > BigDouble.Zero)
+                    {
+                        pending = true;
+                        break;
+                    }
                 }
 
-                var interval = tripSeconds / carriers;
-                var fraction = Mathf.Clamp01((float)(_loop.State.haulTripProgress / interval));
-                carrierDot.anchorMin = new Vector2(fraction, 0.5f);
-                carrierDot.anchorMax = new Vector2(fraction, 0.5f);
-                carrierDot.anchoredPosition = Vector2.zero;
+                var show = pending && batchSeconds > 0.0;
+                var showPony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation) != null;
+                carrierDot.gameObject.SetActive(show);
+                ponyDot.gameObject.SetActive(showPony);
+
+                var fraction = show
+                    ? Mathf.Clamp01((float)(_loop.State.deliveryProgress / batchSeconds))
+                    : 0f;
+                if (show)
+                {
+                    carrierDot.anchorMin = new Vector2(fraction, 0.5f);
+                    carrierDot.anchorMax = new Vector2(fraction, 0.5f);
+                    carrierDot.anchoredPosition = Vector2.zero;
+                }
 
                 if (showPony)
                 {
@@ -197,50 +194,10 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                var carrier = Stationing.OccupantOf(_loop.State, Familiar.TrailStation);
                 var pony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation);
-                var invitation = "<color=" + MossDeepHex + ">tap to post a carrier</color>";
-
-                // With no roster the invitation opens a sheet nobody can
-                // answer — mute it until there is someone to post. Moss, not
-                // ochre: this is an invitation, and ochre is reserved for
-                // costs, shortfalls and halted work. The pony is never the
-                // invitation's answer — her lane isn't postable (§11) — so an
-                // unheld trail still asks, even while she walks.
-                if (carrier != null)
-                {
-                    status.text = pony != null
-                        ? carrier.name + " and " + pony.name + " carrying"
-                        : carrier.name + " carrying";
-                }
-                else if (pony != null)
-                {
-                    status.text = pony.name + " carrying alone · " + invitation;
-                }
-                else
-                {
-                    status.text = _loop.State.roster.Count == 0
-                        ? "no one to carry yet"
-                        : invitation;
-                }
-
-                // The shortfall, said out loud. Gathering above what the trail
-                // can carry is being lost, and nothing on the page used to
-                // report it — the baskets just quietly overflowed while the
-                // skills kept climbing. Ochre, because it is a cost.
-                var gathering = _loop.BasketGatherPerSecond();
-                var carrying = _loop.HaulPerSecond();
-                if (gathering > carrying)
-                {
-                    shortfall.text = "<color=" + OchreInkHex + ">the trail is behind: gathering "
-                                     + NumberFormat.Rate(gathering) + "/s, carrying "
-                                     + NumberFormat.Rate(carrying) + "/s</color>";
-                    shortfall.gameObject.SetActive(true);
-                }
-                else
-                {
-                    shortfall.gameObject.SetActive(false);
-                }
+                status.text = pony != null
+                    ? pony.name + " walks at the warden's side"
+                    : "the day's pickings walk themselves home";
             });
         }
 
@@ -402,21 +359,6 @@ namespace Wildgrove.Game
                 flashRect.anchoredPosition = new Vector2(-210f, -4f + 20f * t);
             });
 
-            // The basket bar — a thin fill driven by the live updater.
-            var barGo = MakePanel("Basket", card, PagePaper);
-            FixedHeight(barGo, 10);
-            var fillGo = new GameObject("Fill", typeof(Image));
-            fillGo.transform.SetParent(barGo.transform, false);
-            var fill = fillGo.GetComponent<Image>();
-            fill.color = MossWash;
-            fill.raycastTarget = false;
-            var fillRect = (RectTransform)fillGo.transform;
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = new Vector2(0f, 1f);
-            fillRect.offsetMin = Vector2.zero;
-            fillRect.offsetMax = Vector2.zero;
-            AddBorder(barGo, Ink2);
-
             if (_loop.PlantersUnlocked())
             {
                 var actions = ActionRow(card);
@@ -441,11 +383,6 @@ namespace Wildgrove.Game
             {
                 var state = _loop.State;
                 var rich = captured.richnessLevel > 0 ? " · richness " + Roman(captured.richnessLevel) : string.Empty;
-                var cap = NodeBasketCapacity(captured);
-                var fraction = cap > BigDouble.Zero ? Mathf.Clamp01((float)(captured.basket / cap).ToDouble()) : 0f;
-                fillRect.anchorMax = new Vector2(fraction, 1f);
-                var basketFull = fraction >= 0.999f;
-                fill.color = basketFull ? OchreWash : MossWash;
 
                 // Who stands here — the card must say fallow when it is, or
                 // "0.0/s" is a riddle with the answer hidden on the strip.
@@ -462,12 +399,6 @@ namespace Wildgrove.Game
                 label.text = captured.resourceId + rich
                              + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "
                              + NumberFormat.Short(stock) + " at camp · </color>" + standing
-                             // A full basket is no longer a dead stop — whoever
-                             // is posted here shoulders what it can't hold — but
-                             // it is still a loss, so say so in the ink of costs.
-                             + (basketFull
-                                 ? " <color=" + OchreInkHex + ">· basket is full! By carrying it themselves, much is lost</color>"
-                                 : string.Empty)
                              + "</size>"
                              + MasteryLine(captured);
 

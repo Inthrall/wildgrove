@@ -60,7 +60,7 @@ namespace Wildgrove.Sim.Tests
                     effects =
                     {
                         new EffectData { type = EffectType.YieldBonus, skill = "all-gathering", value = 0.05 },
-                        new EffectData { type = EffectType.CarrierCapacityBonus, value = 0.05 },
+                        new EffectData { type = EffectType.WardenYieldBonus, value = 0.05 },
                     },
                 },
             };
@@ -219,24 +219,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RepeatableLine_MovesGatheringAndCarryingTogether()
+        public void RepeatableLine_ScalesEveryAdditiveBandByLevelsHeld()
         {
             var state = GameStateFactory.NewGame(_data);
             state.verdurePoints = 100.0;
 
             var yieldBefore = state.nodes[0].yieldMultiplier;
-            var haulBefore = Upgrades.HaulCapacityMultiplier(state, _data);
 
             Almanac.TryBuy(state, _data, LongSong);
             Almanac.TryBuy(state, _data, LongSong);
             Almanac.TryBuy(state, _data, LongSong);
             Almanac.TryBuy(state, _data, LongSong);
 
-            // Four levels of +5% on both additive bands. They must move by the
-            // SAME proportion: a line that lifted gathering alone would re-open
-            // the full-basket jam the self-haul floor exists to catch.
+            // Four levels of +5% on each additive band the line carries —
+            // levels scale the value linearly, the same as holding the effect
+            // four times.
             Assert.That(state.nodes[0].yieldMultiplier, Is.EqualTo(yieldBefore * 1.2).Within(Tolerance));
-            Assert.That(Upgrades.HaulCapacityMultiplier(state, _data), Is.EqualTo(haulBefore * 1.2).Within(Tolerance));
+            Assert.That(Upgrades.WardenYieldBonus(state, _data), Is.EqualTo(0.2).Within(Tolerance));
         }
     }
 }

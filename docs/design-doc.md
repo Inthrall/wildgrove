@@ -58,14 +58,30 @@ Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, 
 
 ## 2 · Core loop
 
-### Gather → haul → craft → give back
+### Gather → craft → give back
+
+> **DECIDED 2026-07-31 — hauling is retired as a throughput system.** Carrying
+> raced two absolute rates (gather vs. haul) whose growth lanes could never be
+> kept level — tools/mastery/richness/slots all multiplied gathering while the
+> trail sat flat between rungs — and any tuning was wrong for either a 4- or a
+> 6-slot kith. Goods now travel home automatically and losslessly, landing at
+> camp as one batch per node every few seconds (the batch survives purely so
+> §5 quality rolls stay per-batch and Pristine lands as a discrete windfall).
+> With it went: the trail post and its lane maths, per-node basket caps and
+> overflow, the five hauling upgrade rungs, Sure Paths, the Store's basket
+> line (now: the away credit runs longer per level), the Timber Frame planter,
+> and the Long Song's carrying half. The pack raven's trait is now a windfall-
+> bubble bonus; the fell pony (§11) carries what the warden picks (+50% to the
+> warden's own hands); the Birch Frame Pack quickens the warden the same way.
+> Mentions of the trail post / haul rate / baskets below this line are
+> historical record, kept for the DECIDED trail.
 
 ```
-[WILDS]                      [TRAIL]              [CAMP]
-Warden + familiars      ──►  Trail post     ──►  Fire, forge & bench  ──►  goods
-gather at their posts        hauls home          │
-(stationing = the            (a job, not         ├─► GEAR (the warden's kit)
- allocation decision)         a species)         ├─► TRADE GOODS ──► the Exchange (barter)
+[WILDS]                                           [CAMP]
+Warden + familiars      ──►  deliveries      ──►  Fire, forge & bench  ──►  goods
+gather at their posts        walk themselves      │
+(stationing = the            home, losslessly     ├─► GEAR (the warden's kit)
+ allocation decision)                             ├─► TRADE GOODS ──► the Exchange (barter)
      ▲                                            ├─► OFFERINGS ──► the current verse of the Rite
      │                                            └─► REPLANTING & PLANTERS ──► richer nodes
      └───────── tools, gear, provisions, planter materials ◄─────────┘
@@ -73,21 +89,21 @@ gather at their posts        hauls home          │
 
 1. **Agents at posts.** The warden and each slotted familiar can be **stationed** at a post; a familiar without a post **rests at camp** — no output (a slot is the right to hold a post, §4). Up to six slots by endgame (one to start — §4 ladder), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
 2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Pristine chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
-3. Harvest travels home by whoever holds the **trail post** — hauling is a post like any node, not a species (DECIDED 2026-07-18). The pack raven arrives at minute one and takes it first. Under-invest in the post and baskets overflow at the node: the visible bottleneck.
+3. Harvest travels home on its own — deliveries are automatic and lossless (DECIDED 2026-07-31, superseding the 2026-07-18 trail post). The pack raven still arrives at minute one, now fattening every windfall bubble instead of walking a lane.
 4. The **fire and benches** turn raw finds into four kinds of output: **survival gear** (the kit — permanent-for-the-run buffs), **trade goods** (dense barter weight at the Exchange), **offerings** (consumed by the Rite, §8), and **planter materials** (given back to the nodes, §3).
 5. The **Exchange** — the silent caravan — barters goods for goods. Deeper zones demand better tools *and* better gear → invest → advance. Repeat.
 
-> **Design tension to preserve:** gather rate (stationing + richness) vs. haul rate (the trail post + powerups) vs. craft rate (queues + materials) stays slightly out of balance — upgrading one always exposes the next bottleneck. And the craft split is a **four-way dilemma**: craft for the kit, for the caravan, for the spirits, or for the land itself? Tuning rule: no lane may starve.
+> **Design tension to preserve:** gather rate (stationing + richness) vs. craft rate (queues + materials) stays slightly out of balance — upgrading one always exposes the next bottleneck. And the craft split is a **four-way dilemma**: craft for the kit, for the caravan, for the spirits, or for the land itself? Tuning rule: no lane may starve.
 
 ### Stationing rules (DECIDED 2026-07-18)
 
 The single most load-bearing rule set in the game — written down so every system builds on the same one:
 
 - **Assigned or wandering (DECIDED 2026-07-18).** An assigned agent works its post deliberately. An **unassigned familiar wanders** — it drifts to work on its own, a random unlocked node, or the trail when baskets back up and no one holds the post — at **×0.5 rate and ×0.5 XP**, with no powerup effects. Help, never zero: deliberate assignment is optimization, not a chore. The warden can be **assigned to the wander post** like any familiar — roaming every node and watch site — but never *drifts*: an unassigned warden simply stands at camp (or wherever they last tended), gathering nothing until posted again.
-- **Unattended nodes.** A node with no assigned agent keeps its richness, planters, and basket; only wanderers touch it, glancingly.
+- **Unattended nodes.** A node with no assigned agent keeps its richness and planters; only wanderers touch it, glancingly.
 - **Transit.** Reassignment is always allowed and never costs goods; the agent *walks* — seconds, scaled by trail distance, producing nothing en route and visible on the trail. The map is honest.
-- **The trail post.** Hauling is a stationing assignment: one trail post at MVP, plus a second lane walked by the fell pony of **The Drover's Halter** (§11) — always at its lane, holding no slot, carrying half a load. The familiar holding it gathers nothing — haul rate is bought with a gatherer, which is the real price. The warden never takes the trail post: the warden tends, the kith carries. An unheld trail is covered badly by wanderers — half of one lane at best — so the trap is never a silent zero, only a visible half.
-- **Offline.** Per node: `earn = min(gather rate, trail-post throughput) · min(t, cap)`, with wanderers counting at ×0.5 and an unheld trail moving ×0.5 of one lane. The welcome-back sheet always names what limited the night (the haul cap, or wanderers covering the trail). Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet).
+- **The trail post — RETIRED (DECIDED 2026-07-31).** Deliveries are automatic; no body is spent carrying. The fell pony of **The Drover's Halter** (§11) keeps her lane as a station — at the warden's side, holding no slot — but her job is the warden's hands (+50%), not a load.
+- **Offline.** Per node: `earn = gather rate · min(t, cap)`, with wanderers counting at ×0.5. Nothing caps the trip home any more; the welcome-back sheet reports the absence's full harvest. Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet).
 - **Reachability.** Anywhere the design says "reachable" — most importantly the Rite validator (§8) — it means *satisfiable under plausible stationing with the current kith size*, not merely unlocked.
 
 ---
@@ -114,7 +130,7 @@ Each zone is a screen: 2–3 nodes, the trail home, one keystone specimen, one *
 Nodes are not fixed faucets; they can be **made richer**, and the making costs goods.
 
 - **Replanting** (node's own resource → richness): each node has a richness level, raised by replanting its own resource back into it — `replantCost(L) = base · r^L`, per node, per run. Richness raises the node's **base yield**. The lever split that keeps the UI legible: *replant the node, level the familiar* (§4) — one improves the place, the other the worker.
-- **Planters** (cross-resource → infrastructure): built structures costing *other zones'* goods. Timber frames raise a meadow node's **capacity** (basket size); clay beds speed **regrowth** after a Tend burst; cordage trellises open a **second yield lane** at flower nodes; reed screens steady a observation site's sketch progress. The backward flow that keeps old zones alive forever: Zone 3 timber has a job in Zone 1.
+- **Planters** (cross-resource → infrastructure): built structures costing *other zones'* goods. Clay beds speed **regrowth** after a Tend burst; cordage trellises open a **second yield lane** at flower nodes; reed screens steady a observation site's sketch progress. (The timber frame left with the baskets — DECIDED 2026-07-31.) The backward flow that keeps old zones alive forever: Zone 3 timber has a job in Zone 1.
 - **Bootstrap:** the warden's trickle at their post self-funds a virgin node's first replant. Presence, not currency (decided 2026-07-17).
 - **No Renown.** Replanting pays you back in yield; the land's memory (§9) is reserved for what you gave *up*. Dev-facing: replanting is the most on-theme verb in the game — the wardens are the land's experiment in trying again, and this is the trying. It earns tone, not numbers.
 - Richness and planters **reset at Migration**. One Almanac node — *The First Planting* — lets a single planter survive the fold: the land keeping something you built, for once.
@@ -129,7 +145,7 @@ Familiars are not a count; they are a **kith**. Each is an individual: a name, a
 
 **Active slots** — the ladder (decided 2026-07-23: **six slots — one to start, three sung, two bought**):
 
-There is no carrier type — carrying is a **post** (the trail), and any familiar can hold it. A slot is *the right to hold a post*: companions past the slots stay in the kith but **rest at camp** — no post, no output, no run XP. Slots never cap the collection, only who's out working.
+There is no carrier type — and since 2026-07-31 no carrying at all: deliveries are automatic. A slot is *the right to hold a post*: companions past the slots stay in the kith but **rest at camp** — no post, no output, no run XP. Slots never cap the collection, only who's out working.
 
 | Slot        | When                        | How                                                                    |
 | ----------- | --------------------------- | ----------------------------------------------------------------------- |
@@ -137,7 +153,7 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 | 2–4         | Early / mid / late          | **Lifetime verses sung** cross the milestones (`economy.kith.verseMilestones`, first guess 2 / 5 / 10 — counted across Migrations; a verse sung is never unsung). |
 | 5           | Store                       | The **starter bundle** (the initial purchase offer, Play Level Up): a slot and a one-time pile of Amber. |
 | 6           | Store                       | The plain **kith slot** product — the ladder's last rung. |
-| Trail posts | 1 at MVP · a 2nd lane via **The Drover's Halter** (§11) | The pony walks the second lane always, holds no slot, and carries **half** a carrier's load — a standing +50% on a manned trail, not a doubling. Hauling equipment (§10) is tuned assuming two lanes eventually exist (§14). |
+| Trail posts | RETIRED (2026-07-31) | Deliveries are automatic. The pony of **The Drover's Halter** (§11) keeps her slot-free station at the warden's side; her job is the warden's own hands (+50%), not a lane. |
 
 **Gift piles** (reworked 2026-07-23): every verse sung earns the warden **one pile, one yes** — counted for life, across Migrations. Leave a pile of a node's own resource and *that resource's specialist* answers, taking the node as its post: **where the pile is left is who comes.** A pile is refused where the specialist already walks (one familiar per species, ever) or when no slot is open for the arrival. The first verse is answered by the warden's own hands. Nothing repeatedly buys a creature; nothing ever has. Bonds honour the companion of their species — or bring it, resting, if it has never come.
 
@@ -146,7 +162,7 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 **Traits** — one per species, fixed for life (reworked 2026-07-23; replaces the level-5 powerup picks):
 
 - Each species carries a **single fixed trait** — what makes it the specialist of one post. A familiar *comes with* its ability; there is no per-familiar build, no respec because there is nothing to respec. Species is identity: unique plate art, one trait, and **at most one familiar of each species, ever**.
-- A familiar still earns **XP at its post**, from its own work. **Levels never scale output** — they pace XP and Kinship only; throughput and yield come from tools and hauling equipment (the post's levers), the species trait (the holder's), and richness.
+- A familiar still earns **XP at its post**, from its own work. **Levels never scale output** — they pace XP and Kinship only; yield comes from tools (the post's levers), the species trait (the holder's), and richness.
 - Trait kinds the sim reads: `nodeYieldBonus` (with a **pair** of related resources — the specialist works either node), `trailThroughputBonus`, `digSpeedBonus` (the watch), `pristineBonus`.
 - **A node specialist works a related pair of nodes** (reworked 2026-07-24), so one familiar answers either node's gift pile and boosts both wherever it's posted or as it wanders. The starting kith is sized to the gatherable nodes — seven pair-specialists cover zones 1–4 (plus rare-herbs) — and each species' animal is chosen to match the powerup it gives. Names each start with a distinct letter.
 
@@ -159,7 +175,7 @@ There is no carrier type — carrying is a **post** (the trail), and any familia
 | warren weasel  | Ore-tunneler · +40% at copper scree & tin seam  | follows the seam like a burrow       |
 | furrow hedgehog | Earth-rooter · +40% at clay & iron gravel nodes | roots the wet ground for what it holds |
 | tawny owl      | Grove-and-river hunter · +40% at timber & fish  | works the wood's edge and the shallows |
-| pack raven     | Deep pockets · +25% on the trail post           | cheeks like saddlebags (the carrier) |
+| pack raven     | Deep pockets · windfall bubbles pay +25%        | cheeks like saddlebags (she fetches the windfalls home) |
 
 **Collection > slots.** The **roster** is every familiar ever befriended — the seeds, the gift piles, the bonds — each its own species with its own plate. Only slotted familiars work; the rest rest at camp. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play* — the berry specialist walks when berries are the plan.
 
@@ -248,7 +264,7 @@ There is no museum. There was never anywhere to put one. Everything the collecti
 
 **The Compendium** records every gatherable, creature, and recipe on first meeting — a plate, a line or two, lifetime counters. **Roster familiars each get a plate**, growing over seasons: name, species, Kinship level, and (at 1.1) an inscribed signature trait — the game's warmest pages, and its most-consulted, because the roster is fielded from here.
 
-Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **Pristine** (~0.5% base, upgradeable). Quality rolls happen per **haul batch**, not per unit — at idle rates a per-unit roll would shower Pristines and cheapen the windfall. A Pristine find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
+Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **Pristine** (~0.5% base, upgradeable). Quality rolls happen per **delivery batch**, not per unit — at idle rates a per-unit roll would shower Pristines and cheapen the windfall. A Pristine find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
 
 **The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — the Warden's Gallery is the capstone spread (its slot grant moved to the store ladder, §4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
 
@@ -436,7 +452,7 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 **What may scale with the fold count, and what may not.** Because Verdure is a √ of lifetime Renown and pays +2%/pt, player power grows asymptotically **linearly** in the fold count — the fold-to-fold power ratio starts near 3× and settles at 1.10–1.15× by fold 7. Anything exponential therefore beats it eventually, so:
 
 - **Gates** (the Rite) may grow at most linearly. `d` sits just above the settled power ratio; the real growth is `verseSlots(m)` — **breadth**, which costs stationing, kith slots and map coverage rather than wait-time, and which is hard-bounded by how many slots a verse has. The generator widens each verse in step so the choice margin never narrows, and a per-verse clamp guarantees at least one slot of choice even where a lean zone can't be widened.
-- **Sinks** (the Almanac) may grow exponentially, precisely because they gate nothing. *The Long Song* is the one repeatable line: level `L` costs `baseCost · 1.25^L` forever and pays an additive +5% to gathering **and** carrying — the same additive bands, so every level moves the two by the same proportion and the gather-vs-haul ratio cannot drift. Without it the 99-point tree finishes around the third fold and Verdure stops buying anything, which is what makes a late fold feel empty.
+- **Sinks** (the Almanac) may grow exponentially, precisely because they gate nothing. *The Long Song* is the one repeatable line: level `L` costs `baseCost · 1.25^L` forever and pays an additive +5% to gathering (its carrying half left with the hauling system, 2026-07-31). Without it the tree finishes around the third fold and Verdure stops buying anything, which is what makes a late fold feel empty.
 
 ### Run 1 Rite — paper prototype (placeholder quantities; structure is the shipped run-1 tutorial)
 
@@ -537,17 +553,17 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 
 **Never sold: the Rite — and never sold: a creature or a Kinship level.** Amber accelerates production; it cannot fill a verse slot, recruit a familiar, or level one. (The last two *slots* are sold — the right to field more, never the friends themselves.)
 
-**Play Games Rewards (Level Up requirement, not IAP):** **The Drover's Halter** (a fell pony that walks a second haul lane) + **The Wayfarer's Plate** (a plate drawn by another hand, arriving already recorded) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
+**Play Games Rewards (Level Up requirement, not IAP):** **The Drover's Halter** (a fell pony that carries for the warden — their own gathering +50%) + **The Wayfarer's Plate** (a plate drawn by another hand, arriving already recorded) single-use by Sep 30 2026 · Weekly Amber Cache (20, max 1/wk) repeatable by Mar 1 2027.
 
 **BUILT 2026-07-29 — how a reward reaches the grove.** A reward is an ordinary one-time product with a Play Games Reward offer attached: Google awards it for a Quest (single-use) or a Social Challenge (repeatable) and delivers it through the **out-of-app purchase flow**, so the game receives it like any other purchase. The order the game owes the player is **grant → tell them → acknowledge**; an unacknowledged order is refunded by Play after three days, which makes refusing to acknowledge the *safe* failure and acknowledging-before-granting the unsafe one. The confirmation is a compliance artifact and outranks the journal's usual reticence: the item is named plainly, Play Games is said out loud, there is no way to decline, and it stays up until the player acknowledges it. All three land through this. **The cosmetic cloak that used to stand here was retired unbuilt (2026-07-30):** it needed a cosmetic substrate the game has never had, and building one to justify a single reward is the tail wagging the dog. **The Wayfarer's Plate** replaced it and meets the Sep 30 2026 bar of two single-use items. The plate is the one page no observation site can offer — it arrives already recorded, drawn by a hand that walked here first, which is also the only shape that makes an out-of-app arrival diegetic: the game's whole narrative register is marks left by others. It is deliberately the **weakest plate in the Folio**, because its value is that no one walked for it. It needs no Migration handling of its own — recorded plates already cross the fold, so writing it into the Folio rather than deriving it from the entitlement is what makes it permanent for free. The wayfarer survives as the figure who drew it.
 
 **The weekly cache is no longer the game's to give.** It was a free weekly tap; it is now granted only by a Play delivery, and the grant is deliberately unconditional — Play owns the once-a-week cadence, and refusing an early delivery would drop a reward the player can never be offered again. The seven days survive only as the page's countdown.
 
-**DECIDED 2026-07-29 — the second haul lane is an animal, not a post.** The Drover's Halter (renamed from "Spare Wing") grants a **fell pony** — a real semi-feral Pennine pack breed, in register with the rest of the kith, and its historical job was carrying ore in panniers. The pony:
+**DECIDED 2026-07-29 — the second haul lane is an animal, not a post.** *(Amended 2026-07-31: hauling retired; the pony now carries what the warden picks — +50% to the warden's own hands — keeping her slot-free, unmovable station.)* The Drover's Halter (renamed from "Spare Wing") grants a **fell pony** — a real semi-feral Pennine pack breed, in register with the rest of the kith, and its historical job was carrying ore in panniers. The pony:
 - **is always at its lane** while owned. There is no posting choice, it cannot rest, and it cannot be moved; its station is derived from the entitlement and re-asserted on load, so a reinstall or a Migration resolves to the same state.
 - **holds no slot.** The lane costs nothing from the §4 ladder, so the reward lands the moment it is redeemed rather than waiting for a slot the player may not have. Because the pony can stand nowhere else, the exemption cannot leak into gathering — the reason it is an animal and not an abstract free post.
 - **carries half a load.** Her trait ("Half-broke", kind `trailCarryFactor` 0.5) *is* the half load rather than a bonus on top of a lane, and unlike every other trait it **never deepens** — she cannot be fully tamed, so Kinship buys no sharper signature from her. That is what keeps a free, always-manned lane from doubling throughput, and it is the same fact her info page states in words.
-- **is never offered anywhere a familiar is assigned to a node.** It is a hauler only.
+- **is never offered anywhere a familiar is assigned to a node.** She walks with the warden only.
 
 ---
 
@@ -596,7 +612,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 ### Phase 1 — Core loop slice (3–4 wks)
 
 - Sunfield only: two nodes, stationing (warden + the first two familiars, one holding the trail post), Tending, replanting, familiar XP with the first powerup choice, the Exchange with two tradeable goods
-- Offline progress (4 h cap, stationing rules §2) + a welcome-back summary that names what limited the night (haul cap; wanderers covering an unheld trail)
+- Offline progress (4 h cap, stationing rules §2) + a welcome-back summary of the absence's harvest
 - Sunfield-reachable upgrades wired to data; placeholder art, real numbers; input abstraction (touch now, K&M/pad later); Crashlytics + basic analytics
 
 **Gate (two questions):** *is 20 minutes fun?* — hand it to 3–5 people, watch where they stall — and *can a new player say what anything is worth without Coin?* If either fails with placeholder art, stop and fix; content won't save it.
@@ -618,8 +634,8 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **The Exchange in full:** derived rate table, spread, player-favour rounding; provisions bundles
 - **Familiar system in full:** XP at post, deterministic species pools (content-filtered), powerup choice UI, roster & fielding
 - **The Rite, authored run 1:** verse sites, offering delivery, the pinned tracker; reachability made stationing-aware — a slot counts only if its good's raw-input footprint fits the kith's gather posts (per-slot; `RiteGenerator.StationingFootprint` ≤ `KithGatherPosts`), enforced in the generator's candidate picks and the runs-2–10 ≥3-reachable proof
-- Observation as **observe · sketch · release**: two observation sites, portion pity timer, three insect plates, the release beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per haul batch; Folio spreads
-- Familiar world-sprites (static + light bob is fine) — creatures at posts, the trail post's runner on the trail, baskets overflowing
+- Observation as **observe · sketch · release**: two observation sites, portion pity timer, three insect plates, the release beat (sign-style, no words); Compendium v1 incl. roster plates; quality rolls per delivery batch; Folio spreads
+- Familiar world-sprites (static + light bob is fine) — creatures at posts, the delivery walking the trail home
 - Waystones 1–4, verse lines, caravan lines + the **teaching pass** (each system's first margin note is its instruction, §7)
 - Upgrades 4–30 recosted; balance spreadsheet vs. §9 pacing targets — including Rite demands, **offline magnitude for a small kith**, and the **hour-six spend proof** (a run's sixth hour must always have a meaningful next purchase). Seed model shipped with this revision (`economy-model.xlsx`): the proof **passes on defaults**, with the building lines holding the 10–90 min purchase band all run; per-level replants go trivial after H2, so raise `r` toward ~1.5 or sell replants in batches before this becomes the late-run lever. Solved starting constants: K ≈ 425, K_f ≈ 650 (derived from the pacing targets, recomputed automatically as inputs move)
 
@@ -668,7 +684,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 - **Planter caps:** per-run richness cap, and whether the self-funding loop (berries→berries) needs a clamp beyond the cost curve. Spreadsheet proof alongside the generator's.
 - **Exchange spread value:** ~15% starting point — big enough to stop arbitrage hoarding, small enough to feel generous.
 - **Offline magnitude:** per-agent base rates and caps for a ≤6-agent kith — a night away must still feel generous.
-- **Drover's Halter verification:** hauling equipment (#2, #6, #13, #19, #28) tuned assuming two trail lanes eventually exist; verify the bottleneck triangle survives the reward. Sharper now that the second lane is free and always manned — the half-load pony is the balancing term, so it is the number to move if two lanes over-deliver.
+- **Drover's Halter verification:** RESOLVED 2026-07-31 by retiring hauling — there are no lanes to balance. Her +50% on the warden's hands is the number to tune instead.
 - **Amber earn rate:** lean generous — ~40/week free between dig finds and the weekly cache.
 
 **Before Phase 4**
