@@ -21,6 +21,13 @@
       "description": "slows the breath: every craft half again as quick",
       "durationSec": 1200,
       "effects": [ { "type": "craftSpeedMult", "value": 1.5 } ]
+    },
+    {
+      "id": "aurora-cordial",
+      "name": "Aurora Cordial",
+      "description": "sharpens the eye: +1% to a pristine find while it lasts",
+      "durationSec": 1200,
+      "effects": [ { "type": "pristineChanceBonus", "value": 0.01 } ]
     }
   ]
 }

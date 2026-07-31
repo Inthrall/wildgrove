@@ -234,6 +234,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_RestoresTheFinalWaystonesAndTheirFold()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.finalWaystonesRead = 2;
+            state.finalWaystoneLastFold = 6;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.finalWaystonesRead, Is.EqualTo(2));
+            Assert.That(restored.finalWaystoneLastFold, Is.EqualTo(6),
+                "without the fold the chain would hand over another stone the moment the save reloaded");
+        }
+
+        [Test]
+        public void Restore_WithNoFinalWaystoneRead_HasNeverTakenOne()
+        {
+            var restored = RoundTrip(GameStateFactory.NewGame(_data));
+
+            Assert.That(restored.finalWaystonesRead, Is.EqualTo(0));
+            Assert.That(restored.finalWaystoneLastFold, Is.EqualTo(-1),
+                "a zeroed stamp would read as 'one was taken on fold 0' and hold the first stone back a whole fold");
+        }
+
+        [Test]
         public void Restore_KeepsResourceAmounts_TheDataDoesNotKnow()
         {
             var state = GameStateFactory.NewGame(_data);
@@ -860,6 +884,20 @@ namespace Wildgrove.Sim.Tests
             Assert.That(save.verseProgress[0].slots[0].deedBaselineSet, Is.True);
             Assert.That(save.verseProgress[0].slots[0].deedBaseline, Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(save.verseProgress[0].slots[0].delivered, Is.EqualTo(20.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void TryMigrate_V40Save_HasTakenNoFinalWaystone()
+        {
+            // The stamp goes to "never" rather than 0: a v40 warden already
+            // standing on the peaks must get the first stone on the run in hand,
+            // not wait out a fold for a stone they were never offered.
+            var save = new SaveData { version = 40 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.finalWaystonesRead, Is.EqualTo(0));
+            Assert.That(save.finalWaystoneLastFold, Is.EqualTo(-1));
         }
 
         [Test]

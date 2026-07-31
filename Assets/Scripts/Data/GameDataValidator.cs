@@ -1486,6 +1486,73 @@ namespace Wildgrove.Data
                     issues.Add($"MVP zone '{zone.Id}' has no verse text");
                 }
             }
+
+            ValidateFinalWaystones(data, issues);
+        }
+
+        /// <summary>
+        /// The final waystones (design §7). Nothing gates on the chain, so none
+        /// of this can soft-lock a save — but the chain carries the one reveal
+        /// the game has, one stone per fold, and a chain keyed to ground the
+        /// warden can never stand on is a story that simply never gets told.
+        /// </summary>
+        private static void ValidateFinalWaystones(GameData data, List<string> issues)
+        {
+            var chain = data.Dialogue.FinalWaystones;
+            if (chain == null)
+            {
+                return;
+            }
+
+            var stones = chain.Stones ?? new List<DialogueData.FinalWaystoneStone>();
+            if (string.IsNullOrWhiteSpace(chain.Zone))
+            {
+                if (stones.Count > 0)
+                {
+                    issues.Add("The final waystones name no zone — the chain would stand nowhere");
+                }
+
+                return;
+            }
+
+            if (!data.ZonesById.ContainsKey(chain.Zone))
+            {
+                issues.Add($"The final waystones reference unknown zone '{chain.Zone}'");
+                return;
+            }
+
+            // Mirrors the verse-zone and deep-amber rules: only the starting zone
+            // and upgrade unlockZone effects open ground at runtime.
+            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
+            unlockableZones.UnionWith(data.Upgrades
+                .SelectMany(u => u.Effects)
+                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
+                .Select(e => e.Zone));
+            if (!unlockableZones.Contains(chain.Zone))
+            {
+                issues.Add($"The final waystones stand in '{chain.Zone}', which is never unlockable — the §7 reveal could never be read");
+            }
+
+            if (stones.Count == 0)
+            {
+                issues.Add($"The final waystones name zone '{chain.Zone}' but hold no stones");
+            }
+
+            CheckIds(stones.Select(s => s.Id), "final waystone", issues);
+
+            foreach (var stone in stones.Where(s => string.IsNullOrWhiteSpace(s.Text)))
+            {
+                issues.Add($"Final waystone '{stone.Id}' has no text — a blank stone reads as a bug");
+            }
+
+            // The arrival stone is where the chain's cadence is taught (§7's
+            // teaching pass), so a chain on a zone with no ordinary waystone
+            // would hand the player a stone a season with nothing saying so.
+            if (!data.Dialogue.Waystones.TryGetValue(chain.Zone, out var arrival)
+                || string.IsNullOrWhiteSpace(arrival))
+            {
+                issues.Add($"Zone '{chain.Zone}' carries the final waystones but has no waystone text of its own — nothing would tell the player more stones are coming");
+            }
         }
 
         private static void ValidateEconomy(EconomyConfig economy, List<string> issues)

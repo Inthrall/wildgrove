@@ -308,6 +308,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheFinalWaystonesAndTheFoldTheyWereReadOn()
+        {
+            var state = StateWithTheRiteSung();
+            state.finalWaystonesRead = 2;
+            state.finalWaystoneLastFold = state.migrationCount;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.finalWaystonesRead, Is.EqualTo(2), "the §7 reveal is lore — it stays read");
+            Assert.That(next.finalWaystoneLastFold, Is.EqualTo(state.migrationCount),
+                "and the stamp crosses with the count, so the pair never disagree about whether one was ever taken");
+            Assert.That(next.migrationCount, Is.GreaterThan(next.finalWaystoneLastFold),
+                "folding is what earns the next stone: the new run opens with one waiting");
+        }
+
+        [Test]
         public void Migrate_BanksTheRunsVersesAndKeepsThePurchasedSlots()
         {
             var state = StateWithTheRiteSung();

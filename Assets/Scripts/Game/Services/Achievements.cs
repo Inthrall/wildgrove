@@ -201,6 +201,27 @@ namespace Wildgrove.Game.Services
             }
         }
 
+        /// <summary>
+        /// An incremental rule's step target, or 0 for a standard one. These
+        /// numbers have to be hardcoded because the Play Console holds the same
+        /// figure and the two must agree — which is exactly why the ones counting
+        /// authored content are worth pinning against the data in a test. "Every
+        /// Stone Read" sat at 8 while only seven zones had trail maps, so it could
+        /// not fire on any device, and nothing anywhere said so.
+        /// </summary>
+        public static int StepTarget(string id)
+        {
+            foreach (var rule in Rules)
+            {
+                if (rule.Id == id)
+                {
+                    return rule.Steps;
+                }
+            }
+
+            return 0;
+        }
+
         private static bool AnyNodeReplanted(GameState state)
         {
             foreach (var node in state.nodes)

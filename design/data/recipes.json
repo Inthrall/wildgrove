@@ -18,6 +18,7 @@
 
     { "id": "wardens-tonic",   "station": "fire",  "skill": "apothecary", "inputs": { "herbs": 120, "mushrooms": 60 },       "output": "wardens-tonic",   "valueMult": 1, "kind": "material", "defaultKnown": true },
     { "id": "glow-salve",      "station": "fire",  "skill": "apothecary", "inputs": { "glow-moss": 90, "fish-oil": 12 },     "output": "glow-salve",      "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 3 },
-    { "id": "peat-smoke-draught", "station": "fire", "skill": "apothecary", "inputs": { "peat": 75, "rare-herbs": 45 },     "output": "peat-smoke-draught", "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 5 }
+    { "id": "peat-smoke-draught", "station": "fire", "skill": "apothecary", "inputs": { "peat": 75, "rare-herbs": 45 },     "output": "peat-smoke-draught", "valueMult": 1, "kind": "material", "defaultKnown": true, "skillLevel": 5 },
+    { "id": "aurora-cordial",  "station": "fire",  "skill": "apothecary", "inputs": { "sky-blossoms": 90, "glacier-ice": 60 }, "output": "aurora-cordial", "valueMult": 1, "kind": "material", "skillLevel": 15 }
   ]
 }

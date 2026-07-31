@@ -121,7 +121,7 @@ The single most load-bearing rule set in the game — written down so every syst
 | 5 | **Mistfen Marsh**     | Peat, rare herbs, glow-moss           | Apothecary; marsh observation site                     | Lantern Firefly     | v1.1 (**built 2026-07-28**) |
 | 6 | **The Hollows**       | Deep ores, crystals, ashglass         | Delving; the rarest insects; **the deep amber** | Echo Geode          | v1.1 (**built 2026-07-29** — bone beds stopped being a crop for the reason fireflies did: the buried past is watched, never gathered (§6); the third find is ashglass, the glass the burning left) |
 | 7 | **Highland Crags**    | Eggs, wool, lichen                    | Husbandry; crag observation site                       | Cloudfleece Ram     | v1.2 (**built 2026-07-31** — the first zone behind the deepsteel gate and the fold-4 trail; the kea and the pika answer its gift piles) |
-| 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2  |
+| 8 | **Cloudreach Peaks**  | Sky-blossoms, glacier ice             | The final waystones (endgame)                          | Aurora Bloom        | v1.2 (**built 2026-08-01** — the last ground, behind the same deepsteel gate and the fold-5 trail. The one trail map that teaches **no skill**: its two finds are worked with foraging and mining as they have been since zone 2, and what the zone adds instead is the §7 reveal. Its craft is a fourth tincture, the Aurora Cordial, not a fourth system) |
 
 Each zone is a screen: 2–3 nodes, the trail home, one keystone specimen, one **waystone** (the past speaking, §7), and one **verse site** (the present, §8). From Zone 3, a **observation site**. Zone entry costs **provisions** (a goods bundle — you pack for the walk, §9) *and* a tool tier, so Trail progress is paced by economy and craft investment.
 
@@ -211,7 +211,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Observation** | Collection       | Observation sites (Zones 3+)     | Field sketches (insect-plate portions), amber | MVP |
 | **Curation**   | Collection        | Pristine specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
-| **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss    | **Tinctures** (buff consumables — built 2026-07-28) | v1.1 |
+| **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss, summit bloom and glacier ice | **Tinctures** (buff consumables — built 2026-07-28; a fourth, the Aurora Cordial, arrived with zone 8 on 2026-08-01 and is the only one gated behind a rung, the Rime Still) | v1.1 |
 | **Delving**    | Gathering         | Hollows nodes                    | Deep ores, crystals, ashglass (built 2026-07-29; deep ingots feed the deepsteel tier) | v1.1 |
 | **Husbandry**  | Gathering         | Crag nodes                       | Eggs, wool (built 2026-07-31; wool feeds the felted cloak, the crags' bushcraft trade good) | v1.2 |
 
@@ -285,6 +285,7 @@ The one system that used to take. It doesn't anymore: **nothing is kept.** From 
 | **The Lantern Bearers**  | 4        | Mistfen Marsh          | +20% observation speed     | They light the drowned paths every night, for no one. Fireflies are **watched, never gathered** — the marsh's third *find* is glow-moss (corrected 2026-07-28; a firefly in a basket contradicted §6 outright). |
 | **The Quiet Court** (v1.1) | 5      | Hollows                | +25% delving               | Pale singers in the galleries no light has reached. The rarest plate (built 2026-07-29). |
 | **The Parchment Wings** (v1.2) | 4  | Highland Crags         | +20% husbandry             | The mountain white, wings worn thin as the pages it is drawn on. It flies only while the sun holds (built 2026-07-31). |
+| **The Windborne** (v1.2) | 4        | Cloudreach Peaks       | +25% foraging              | Nothing hatches at the summit. The wind carries them up and sets them down, and what lives on the rock lives on that (built 2026-08-01). |
 | **The Deep Amber** (v1.1) | 4 pieces | Hollows               | +25% all yields            | An insect no one living has seen, held in resin. The world it flew through has ended. **Built 2026-07-29:** not observe-sketch-release — the one find that is *kept* (§6's exception). Four authored pieces surface **strictly in order** at the Hollows' watch site (`ambers.json`; pity clock so the lore can't starve); each carries a field note, and the finished set is a plate that crosses every fold. The §7 deep-past implication lives in these four notes plus the final waystones. |
 
 Target: ~6 plates at MVP, ~30 by 1.2 — each a multiplier *and* a chapter.
@@ -301,7 +302,7 @@ No cutscenes, no quest log, no exposition. Story arrives through inscriptions, t
 
 Six delivery channels:
 
-- **Waystones** — one per zone, an inscription revealed on arrival. Two lines, never more. Weathered, second-person, addressed to wardens in general — the *past* speaking.
+- **Waystones** — one per zone, an inscription revealed on arrival. Two lines, never more. Weathered, second-person, addressed to wardens in general — the *past* speaking. **The final waystones (built 2026-08-01)** are the exception that proves the channel: the last zone holds *four* stones as well as its arrival one, surfacing strictly in authored order and **at most one per fold**, so the reveal below is paced across the seasons that follow the climb rather than handed over in one sitting. The arrival stone is what teaches that cadence — it says more are coming — which is the teaching pass doing the work a tutorial would. Nothing gates on them and nothing gates behind them: a warden who never climbs simply never learns what the walking was for. They are re-read in the Deep Pages, directly under the deep amber, because that is the other half of the same reveal.
 - **Verses** — the living land's asks, the *present* speaking. A single line naming its offerings. **No spirit is ever seen.** A completed verse is answered with a sign — the wind turns, the fireflies gather — never with words.
 - **Insect plates** — the load-bearing lore: the completed rubbing and its field note, trailing off. The Long Winter is only ever visible as an absence.
 - **The Exchange** — the caravan speaks one line per visit, maybe. Dry, oblique, faintly amused. Never answers a question the game lets you ask.
@@ -332,7 +333,7 @@ Six delivery channels:
 
 ### The authorial truth (dev-facing — never stated in game)
 
-Long before the game begins, a civilization — *Those Who Planted* — worked this land the way the player does, and did not stop. Their taking outran the land's giving, and the Long Winter answered: the ash line the deepest amber is sealed beneath. The wilderness that regrew is not wilderness; it is a survivor, and it is watching. The wardens are its long experiment in trying again — Verdure is the land's memory of careful hands, **Kinship is a creature's** (the experiment watching back, up close, and deciding it likes you), and Migration happens on the land's terms: that is what the Rite is. The late-game implication, assembled only from the deepest amber and the final waystones: the warden order descends from Those Who Planted. You are the apology. Replanting is the apology *practiced*.
+Long before the game begins, a civilization — *Those Who Planted* — worked this land the way the player does, and did not stop. Their taking outran the land's giving, and the Long Winter answered: the ash line the deepest amber is sealed beneath. The wilderness that regrew is not wilderness; it is a survivor, and it is watching. The wardens are its long experiment in trying again — Verdure is the land's memory of careful hands, **Kinship is a creature's** (the experiment watching back, up close, and deciding it likes you), and Migration happens on the land's terms: that is what the Rite is. The late-game implication, assembled only from the deepest amber and the final waystones: the warden order descends from Those Who Planted. You are the apology. Replanting is the apology *practiced*. **Both halves are now written (2026-08-01)** — four amber notes at the Hollows, four stones at the peaks, answering each other in order: the rows still visible from the summit, the debt the sky settled, the few who came down after and planted nothing they would live to sit under, and the instruction that is the whole of it. Draft wording, to re-voice with the narrative pass; nothing in either channel ever states the descent outright.
 
 ### Writing rules
 

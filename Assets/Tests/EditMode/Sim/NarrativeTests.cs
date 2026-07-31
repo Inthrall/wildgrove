@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using Wildgrove.Data;
@@ -72,6 +73,16 @@ namespace Wildgrove.Sim.Tests
                 {
                     new StringEntry { key = "stags-herald", text = "The meadow remembers." },
                 },
+                finalWaystones = new FinalWaystonesData
+                {
+                    zoneId = "bramble",
+                    stones =
+                    {
+                        new StringEntry { key = "first", text = "The fields were in rows." },
+                        new StringEntry { key = "second", text = "We did not stop." },
+                        new StringEntry { key = "third", text = "You have their hands." },
+                    },
+                },
             };
         }
 
@@ -125,6 +136,90 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Narrative.WaystoneText(_data, "bramble"), Is.EqualTo("The stone does not grow back."));
             Assert.That(Narrative.InsectPlate(_data, "stags-herald"), Is.EqualTo("The meadow remembers."));
             Assert.That(Narrative.InsectPlate(_data, "silver-skimmer"), Is.Null);
+        }
+
+        [Test]
+        public void NextFinalWaystone_WaitsForTheChainsOwnGround()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Narrative.NextFinalWaystone(state, _data), Is.Null,
+                "the chain stands in bramble — there is nothing to read from the meadow");
+
+            state.purchasedUpgradeIds.Add("map-bramble");
+
+            Assert.That(Narrative.NextFinalWaystone(state, _data)?.text,
+                Is.EqualTo("The fields were in rows."), "and the first stone is the first one authored");
+        }
+
+        [Test]
+        public void NextFinalWaystone_GivesUpOneStonePerFold()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+
+            Narrative.MarkFinalWaystoneRead(state, _data);
+
+            Assert.That(state.finalWaystonesRead, Is.EqualTo(1));
+            Assert.That(Narrative.NextFinalWaystone(state, _data), Is.Null,
+                "this fold has given what it had — four beats must not arrive as one wall of text");
+
+            state.migrationCount++;
+
+            Assert.That(Narrative.NextFinalWaystone(state, _data)?.text, Is.EqualTo("We did not stop."),
+                "the next season brings the next stone");
+        }
+
+        [Test]
+        public void NextFinalWaystone_ArrivingLate_StillPacesOneAFold()
+        {
+            // The pacing is anchored on the fold the last stone was READ on, not
+            // on the fold the zone opened, so a warden who climbs at fold nine
+            // does not collect the whole reveal in one sitting.
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+            state.migrationCount = 9;
+
+            Narrative.MarkFinalWaystoneRead(state, _data);
+
+            Assert.That(state.finalWaystonesRead, Is.EqualTo(1), "one stone, however late the climb");
+            Assert.That(Narrative.NextFinalWaystone(state, _data), Is.Null);
+        }
+
+        [Test]
+        public void MarkFinalWaystoneRead_RunsOutAtTheLastStone()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+
+            for (var fold = 0; fold < 5; fold++)
+            {
+                state.migrationCount = fold;
+                Narrative.MarkFinalWaystoneRead(state, _data);
+            }
+
+            Assert.That(state.finalWaystonesRead, Is.EqualTo(3), "three authored stones, and no fourth");
+            Assert.That(Narrative.AreFinalWaystonesComplete(state, _data), Is.True);
+            Assert.That(Narrative.NextFinalWaystone(state, _data), Is.Null);
+            Assert.That(Narrative.ReadFinalWaystones(state, _data).Select(s => s.key),
+                Is.EqualTo(new[] { "first", "second", "third" }), "and they re-read in the authored order");
+        }
+
+        [Test]
+        public void FinalWaystones_WithNoChainAuthored_AreSimplyAbsent()
+        {
+            // Unity serializes an authored-empty section as a zeroed object, so
+            // "no chain" has to read as absence rather than as a broken one.
+            _data.dialogue.finalWaystones = new FinalWaystonesData();
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+
+            Assert.That(Narrative.FinalWaystonesConfigured(_data), Is.False);
+            Assert.That(Narrative.FinalWaystoneCount(_data), Is.EqualTo(0));
+            Assert.That(Narrative.NextFinalWaystone(state, _data), Is.Null);
+            Assert.That(Narrative.AreFinalWaystonesComplete(state, _data), Is.False,
+                "nothing to read is not the same as having read it all");
+            Assert.That(Narrative.ReadFinalWaystones(state, _data), Is.Empty);
         }
     }
 }

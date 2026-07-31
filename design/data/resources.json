@@ -30,7 +30,7 @@
     { "id": "wool",         "sellValue": 140, "skill": "husbandry" },
     { "id": "lichen",       "sellValue": 70,  "skill": "foraging" },
 
-    { "id": "sky-blossoms", "sellValue": 200, "skill": "foraging" },
-    { "id": "glacier-ice",  "sellValue": 150, "skill": "mining" }
+    { "id": "sky-blossoms", "sellValue": 300, "skill": "foraging" },
+    { "id": "glacier-ice",  "sellValue": 220, "skill": "mining" }
   ]
 }

@@ -88,6 +88,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v18+: zones whose waystone has been read (absent before — every unlocked stone shows once).</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 
+        /// <summary>v41+: final waystones read, a count into the authored order (absent before — none read).</summary>
+        public int finalWaystonesRead;
+
+        /// <summary>v41+: the fold the last final waystone was read on; -1 is "none yet", and only meaningful when finalWaystonesRead > 0.</summary>
+        public int finalWaystoneLastFold = -1;
+
         /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
         public List<SavedResource> lifetimeGathered = new List<SavedResource>();
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();

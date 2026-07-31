@@ -7,6 +7,7 @@
     { "id": "lantern-bearers", "name": "The Lantern Bearers", "sketches": 4, "habitats": ["mistfen-marsh"],                    "rarity": 0.6,  "effects": [{ "type": "digSpeedMult", "value": 1.2 }] },
     { "id": "quiet-court",     "name": "The Quiet Court",     "sketches": 5, "habitats": ["the-hollows"],                      "rarity": 0.2,  "effects": [{ "type": "yieldBonus", "skill": "delving", "value": 0.25 }] },
     { "id": "parchment-wings", "name": "The Parchment Wings", "sketches": 4, "habitats": ["highland-crags"],                   "rarity": 0.4,  "effects": [{ "type": "yieldBonus", "skill": "husbandry", "value": 0.20 }] },
+    { "id": "windborne",       "name": "The Windborne",       "sketches": 4, "habitats": ["cloudreach-peaks"],                 "rarity": 0.25, "effects": [{ "type": "yieldBonus", "skill": "foraging", "value": 0.25 }] },
     { "id": "wayfarers-plate", "name": "The Wayfarer's Plate", "sketches": 1, "habitats": [], "rarity": 0, "rewarded": true, "effects": [{ "type": "pristineChanceBonus", "value": 0.005 }] }
   ]
 }

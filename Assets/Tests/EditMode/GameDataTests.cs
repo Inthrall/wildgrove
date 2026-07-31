@@ -28,8 +28,8 @@ namespace Wildgrove.Data.Tests
 
             Assert.That(data.Economy, Is.Not.Null);
             Assert.That(data.Zones, Is.Not.Empty);
-            Assert.That(data.Upgrades, Has.Count.EqualTo(30),
-                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, the Almanac Desk moved into the Verdure tree, and the Crags brought its map plus the fleece shears, and the five hauling rungs left when hauling retired (2026-07-31)");
+            Assert.That(data.Upgrades, Has.Count.EqualTo(32),
+                "design doc §9 defines 30 named upgrades; the kith track adds the two recruit rungs, Mistfen's trail map landed with the zone (apothecary), the Hollows brought its map plus the deepsteel toolset, the Almanac Desk moved into the Verdure tree, the Crags brought its map plus the fleece shears, the Peaks brought its map plus the rime still (2026-08-01), and the five hauling rungs left when hauling retired (2026-07-31)");
             Assert.That(data.Recipes, Is.Not.Empty);
             Assert.That(data.Buildings, Has.Count.EqualTo(5), "design §9 defines the five camp building lines");
             Assert.That(data.Gear, Is.Not.Empty);
@@ -178,8 +178,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.InsectsById["quiet-court"].Rarity,
                 Is.EqualTo(data.Insects.Where(i => !i.Rewarded).Min(i => i.Rarity)),
                 "the Hollows hosts the rarest plate anyone can draw");
-            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("highland-crags"),
-                "the Rite grew a seventh verse with the zone");
+            Assert.That(data.Rites.Rites.Single().Verses.Last().Zone, Is.EqualTo("cloudreach-peaks"),
+                "the Rite grew an eighth verse with the last zone");
             Assert.That(data.SpeciesById["kea"].Trait.Resources,
                 Is.EquivalentTo(new[] { "eggs", "wool" }), "the flock-rider works the flock's two gifts");
             Assert.That(data.SpeciesById["pika"].Trait.Resources,
@@ -188,6 +188,32 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.DeepAmber.Pieces, Has.Count.EqualTo(4), "the four authored deep-past pieces");
             Assert.That(data.DeepAmber.Pieces.First().Id, Is.EqualTo("the-wing"), "the sequence is the story");
             Assert.That(data.DeepAmber.Effects, Is.Not.Empty, "the finished set is a plate — a multiplier as well as a chapter");
+
+            // Zone 8, the last ground: the peaks teach no skill, which is the
+            // one thing that makes this trail map different from every other.
+            Assert.That(data.ZonesById["cloudreach-peaks"].VerseSite, Is.EqualTo("the last cairn"));
+            Assert.That(data.ZonesById["cloudreach-peaks"].RequiredTool, Is.EqualTo("deepsteel"),
+                "the endgame door is the same one the crags opened");
+            Assert.That(data.UpgradesById["map-cloudreach"].Effects.Any(e => e.Type == EffectType.UnlockZone && e.Zone == "cloudreach-peaks"),
+                Is.True, "the peaks' map opens the peaks");
+            Assert.That(data.UpgradesById["map-cloudreach"].Effects.Any(e => e.Type == EffectType.UnlockSkill),
+                Is.False, "and teaches nothing — the last ground only tells the warden what the walking was for");
+            Assert.That(data.UpgradesById["rime-still"].Effects.Any(e => e.Type == EffectType.UnlockRecipe && e.Recipe == "aurora-cordial"),
+                Is.True, "the still is what the peaks add to the craft ladder");
+            Assert.That(data.Tinctures.Any(t => t.Id == "aurora-cordial"),
+                Is.True, "and the cordial is a fourth bottle, not a fourth system");
+            Assert.That(data.InsectsById["windborne"].Habitats,
+                Is.EquivalentTo(new[] { "cloudreach-peaks" }), "the summit's blown-in plate");
+
+            // The §7 reveal's own half of the channel.
+            Assert.That(data.Dialogue.FinalWaystones.Zone, Is.EqualTo("cloudreach-peaks"),
+                "the final waystones stand on the last ground");
+            Assert.That(data.Dialogue.FinalWaystones.Stones, Has.Count.EqualTo(4),
+                "four stones against the deep amber's four notes");
+            Assert.That(data.Dialogue.FinalWaystones.Stones.First().Id, Is.EqualTo("the-rows"),
+                "and like the amber, the sequence is the story");
+            Assert.That(data.Dialogue.Waystones.ContainsKey("cloudreach-peaks"),
+                Is.True, "the arrival stone is what teaches the chain's cadence");
         }
 
         [Test]
@@ -329,9 +355,9 @@ namespace Wildgrove.Data.Tests
             // run-1 trail and one new zone arrives per fold. Pins the shape (a
             // non-decreasing gate in zone order, reachable one fold at a time),
             // not the exact folds — those are first guesses and meant to be
-            // tuned. The ladder is every zone a trail map can open; a staged
-            // zone with no map yet (cloudreach-peaks) stands aside until its
-            // rung lands, and then this test covers it with no edit.
+            // tuned. The ladder is every zone a trail map can open; every zone
+            // in the data is on it now that the peaks' map has landed, so a
+            // ninth zone would be covered here the moment its rung arrives.
             var data = GameData.Parse(LoadSources());
             var unlockable = new HashSet<string> { GameData.StartingZoneId };
             unlockable.UnionWith(data.Upgrades
@@ -353,8 +379,10 @@ namespace Wildgrove.Data.Tests
             }
 
             Assert.That(ladder.Count(z => z.MinMigration == 0), Is.EqualTo(3), "run 1 walks three zones");
-            Assert.That(data.Zones.Single(z => z.Id == "highland-crags").MinMigration, Is.EqualTo(4),
-                "the deepest trail waits for the fifth run");
+            Assert.That(data.Zones.Single(z => z.Id == "cloudreach-peaks").MinMigration, Is.EqualTo(5),
+                "the last ground waits for the sixth run");
+            Assert.That(ladder.Last().Id, Is.EqualTo("cloudreach-peaks"),
+                "and it is the end of the ladder — the map is walked out");
         }
 
         [Test]
@@ -428,7 +456,11 @@ namespace Wildgrove.Data.Tests
                     $"\"minMigration\": 5, \"verseSite\": \"{site}\",");
             }
 
-            Assert.That(sources.ZonesJson.Split(new[] { "\"minMigration\": 5" }, System.StringSplitOptions.None).Length - 1,
+            // Counts the INJECTED gates only. A bare "minMigration": 5 would now
+            // also match the peaks, which carry that fold in the shipped data;
+            // the injected form always puts the gate immediately before the
+            // verse site, and no authored zone is written that way round.
+            Assert.That(sources.ZonesJson.Split(new[] { "\"minMigration\": 5, \"verseSite\"" }, System.StringSplitOptions.None).Length - 1,
                 Is.EqualTo(3), "the corruption must land on all three, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
@@ -486,17 +518,86 @@ namespace Wildgrove.Data.Tests
         public void Validate_VerseZoneNoTrailMapOpens_IsReported()
         {
             var sources = LoadSources();
-            // cloudreach-peaks exists but is staged content — nothing unlocks it.
-            // (highland-crags held this role until its trail map landed, and
-            // the-hollows before that.)
-            sources.RitesJson = sources.RitesJson.Replace(
-                "\"zone\": \"silverrun-river\"",
-                "\"zone\": \"cloudreach-peaks\"");
-            Assert.That(sources.RitesJson, Does.Contain("cloudreach-peaks"), "the corruption must land, or this test proves nothing");
+            // Every zone in the data now has a trail map (the peaks' rung was
+            // the last one owed), so there is no staged zone left to point a
+            // verse at — the corruption has to take a map away instead. Sending
+            // map-cloudreach's grants to a zone that is already unlockable
+            // leaves the peaks with a verse and no way in, which is exactly the
+            // shape this rule exists to catch. Rebasing on the LAST zone's own
+            // rung is what keeps it from rotting again: it needs no unbuilt
+            // content to point at. (highland-crags and the-hollows each held
+            // the old staged-zone role in turn.)
+            sources.UpgradesJson = sources.UpgradesJson.Replace(
+                "\"zone\": \"cloudreach-peaks\"",
+                "\"zone\": \"the-hollows\"");
+            Assert.That(sources.UpgradesJson, Does.Not.Contain("cloudreach-peaks"),
+                "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues.Any(i => i.Contains("cloudreach-peaks") && i.Contains("never unlockable")),
+            // Named on the VERSE, not just the zone: the final waystones stand
+            // in the same zone and report their own "never unlockable" against
+            // it, so a zone-only match would pass on the wrong rule.
+            Assert.That(issues.Any(i => i.Contains("verse-cloudreach") && i.Contains("never unlockable")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_FinalWaystonesOnUnknownZone_IsReported()
+        {
+            var sources = LoadSources();
+            // Only the chain's own zone key looks like this in dialogue.json —
+            // the waystone and verse sections key by zone id, not by a "zone"
+            // property — so this corruption cannot land anywhere else.
+            sources.DialogueJson = sources.DialogueJson.Replace(
+                "\"zone\": \"cloudreach-peaks\"",
+                "\"zone\": \"no-such-place\"");
+            Assert.That(sources.DialogueJson, Does.Contain("no-such-place"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("final waystones") && i.Contains("no-such-place")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_DuplicateFinalWaystoneId_IsReported()
+        {
+            var sources = LoadSources();
+            sources.DialogueJson = sources.DialogueJson.Replace(
+                "\"id\": \"the-debt\"",
+                "\"id\": \"the-rows\"");
+            Assert.That(sources.DialogueJson, Does.Not.Contain("the-debt"),
+                "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("Duplicate final waystone id")),
+                Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_FinalWaystonesOnZoneWithNoArrivalStone_IsReported()
+        {
+            var sources = LoadSources();
+            // The arrival stone is the whole teaching pass for the chain: it is
+            // the only thing that tells the player another stone is coming next
+            // season. Move the chain onto ground whose own stone has been
+            // silenced and the cadence goes unexplained. (the-hollows is v1.1
+            // scope, so blanking its line trips no mvp-words rule and this test
+            // keeps proving one thing.)
+            sources.DialogueJson = sources.DialogueJson
+                .Replace("\"zone\": \"cloudreach-peaks\"", "\"zone\": \"the-hollows\"")
+                .Replace("\"The dark below was not always empty. Leave it the quiet it paid for.\"", "\"\"");
+            Assert.That(sources.DialogueJson, Does.Contain("\"zone\": \"the-hollows\""),
+                "the chain must have moved, or this test proves nothing");
+            Assert.That(sources.DialogueJson, Does.Not.Contain("Leave it the quiet it paid for"),
+                "and the stone must have been silenced");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("the-hollows") && i.Contains("no waystone text of its own")),
                 Is.True, string.Join("\n", issues));
         }
 
@@ -1385,7 +1486,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.5d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
-            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(7), "one verse per zone through the Crags");
+            Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(8), "one verse per zone, the whole map");
             Assert.That(asset.dialogue.verses.Single(v => v.key == "sunfield-meadow").text, Is.Not.Empty);
             Assert.That(asset.deepAmber.zoneId, Is.EqualTo("the-hollows"));
             Assert.That(asset.deepAmber.pieces, Has.Count.EqualTo(data.DeepAmber.Pieces.Count));

@@ -1,5 +1,5 @@
 {
-  "$comment": "Region modifiers (design §8): every run after the first wakes in a flavoured region, drawn deterministically from the migration count (Regions.ForMigration) — nothing persists and a reload can never reroll it. Run 1 is home ground, unmodified: the authored tutorial Rite assumes it. Effects use the shared effect vocabulary and stay live for the whole run: a resource-targeted yieldMult flavours one find (values below 1 are a lean season — still positive), digSpeedMult steadies the observation sites, wardenYieldBonus quickens the warden's own hands. The Rite generator scales its goods demands by the region's yieldMult on each pick (§9 modifierWeight) — the land asks more of what the season gives freely, and less of what it withholds. 'name' completes the fold forecast's 'ahead: …' line; 'sign' is the land's one line about the season, spoken with the Migration vignette. Values are first guesses (todo.md). Every gatherable zone must be touched by at least one season or the region system is dead to it — the zones 4-6 balance pass gave the marsh and the Hollows theirs (misted lights the glow-moss, ashen gives up its own glass, the wind dries the peat) after they landed season-blind, and the crags arrived with theirs (the wind thickens the fleece, lichen is the first life back on burned rock).",
+  "$comment": "Region modifiers (design §8): every run after the first wakes in a flavoured region, drawn deterministically from the migration count (Regions.ForMigration) — nothing persists and a reload can never reroll it. Run 1 is home ground, unmodified: the authored tutorial Rite assumes it. Effects use the shared effect vocabulary and stay live for the whole run: a resource-targeted yieldMult flavours one find (values below 1 are a lean season — still positive), digSpeedMult steadies the observation sites, wardenYieldBonus quickens the warden's own hands. The Rite generator scales its goods demands by the region's yieldMult on each pick (§9 modifierWeight) — the land asks more of what the season gives freely, and less of what it withholds. 'name' completes the fold forecast's 'ahead: …' line; 'sign' is the land's one line about the season, spoken with the Migration vignette. Values are first guesses (todo.md). Every gatherable zone must be touched by at least one season or the region system is dead to it — the zones 4-6 balance pass gave the marsh and the Hollows theirs (misted lights the glow-moss, ashen gives up its own glass, the wind dries the peat) after they landed season-blind, and the crags arrived with theirs (the wind thickens the fleece, lichen is the first life back on burned rock), and the peaks with theirs (a lush year pushes the bloom even that high, and cloud sitting on the summit is ice that never gives).",
   "regions": [
     {
       "id": "lush",
@@ -8,7 +8,8 @@
       "effects": [
         { "type": "yieldMult", "resource": "herbs", "value": 1.5 },
         { "type": "yieldMult", "resource": "rare-herbs", "value": 1.5 },
-        { "type": "yieldMult", "resource": "berries", "value": 1.25 }
+        { "type": "yieldMult", "resource": "berries", "value": 1.25 },
+        { "type": "yieldMult", "resource": "sky-blossoms", "value": 1.25 }
       ]
     },
     {
@@ -19,6 +20,7 @@
         { "type": "yieldMult", "resource": "fish", "value": 1.5 },
         { "type": "yieldMult", "resource": "reeds", "value": 1.25 },
         { "type": "yieldMult", "resource": "glow-moss", "value": 1.25 },
+        { "type": "yieldMult", "resource": "glacier-ice", "value": 1.25 },
         { "type": "yieldMult", "resource": "wildflowers", "value": 0.75 }
       ]
     },

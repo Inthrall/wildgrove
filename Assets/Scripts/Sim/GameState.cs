@@ -140,6 +140,18 @@ namespace Wildgrove.Sim
         /// <summary>Zones whose waystone inscription has been read (design §6) — lore stays read across Migration.</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 
+        /// <summary>Final waystones read (design §7), a count into the authored order — like the deep amber, the journal keeps it across Migration.</summary>
+        public int finalWaystonesRead;
+
+        /// <summary>
+        /// The fold on which the last final waystone was read, so the chain can
+        /// hand over at most one stone per fold no matter which fold the warden
+        /// first arrives on. -1 is "none yet", which is why it is not a plain
+        /// count of folds since arrival: a warden who climbs late must still get
+        /// the reveal a stone at a time rather than all of it at once.
+        /// </summary>
+        public int finalWaystoneLastFold = -1;
+
         /// <summary>Compendium lifetime counters (design §5) — never reset, never decremented; they survive Migration.</summary>
         public Dictionary<string, BigDouble> lifetimeGathered = new Dictionary<string, BigDouble>();
         public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 40;
+        public const int CurrentVersion = 41;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -49,6 +49,8 @@ namespace Wildgrove.Sim.Saves
                 deepAmberFound = state.deepAmberFound,
                 deepAmberPityHours = state.deepAmberPityHours,
                 seenWaystoneZoneIds = new List<string>(state.seenWaystoneZoneIds),
+                finalWaystonesRead = state.finalWaystonesRead,
+                finalWaystoneLastFold = state.finalWaystoneLastFold,
                 speciesEverBefriended = new List<string>(state.speciesEverBefriended),
                 stationsEverWorked = new List<string>(state.stationsEverWorked),
                 nextFamiliarSeq = state.nextFamiliarSeq,
@@ -297,6 +299,11 @@ namespace Wildgrove.Sim.Saves
             state.seenWaystoneZoneIds = save.seenWaystoneZoneIds != null
                 ? new List<string>(save.seenWaystoneZoneIds)
                 : new List<string>();
+            state.finalWaystonesRead = save.finalWaystonesRead > 0 ? save.finalWaystonesRead : 0;
+            // -1 is "no stone yet", and it is the floor rather than 0: a save
+            // written before the chain existed must not read as "one was taken
+            // on fold 0", which would hold the first stone back until fold 1.
+            state.finalWaystoneLastFold = save.finalWaystonesRead > 0 ? save.finalWaystoneLastFold : -1;
             state.speciesEverBefriended = save.speciesEverBefriended != null
                 ? new List<string>(save.speciesEverBefriended)
                 : new List<string>();
@@ -1260,6 +1267,16 @@ namespace Wildgrove.Sim.Saves
                         }
 
                         save.version = 40;
+                        break;
+
+                    case 40:
+                        // v40 predates the final waystones. None read, and the
+                        // fold stamp goes to "never" rather than 0 so a warden
+                        // already standing on the peaks gets the first stone on
+                        // the run in hand instead of waiting out a fold for it.
+                        save.finalWaystonesRead = 0;
+                        save.finalWaystoneLastFold = -1;
+                        save.version = 41;
                         break;
 
                     default:

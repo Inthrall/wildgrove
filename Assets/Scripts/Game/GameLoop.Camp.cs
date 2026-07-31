@@ -187,5 +187,21 @@ namespace Wildgrove.Game
             // progress event on change, not only at launch.
             Stats.ReportProgress(State);
         }
+
+        /// <summary>Take the next final waystone (design §7 — one a fold at the last zone, re-readable in the Deep Pages).</summary>
+        public void MarkFinalWaystoneRead()
+        {
+            var stone = Narrative.NextFinalWaystone(State, Data);
+            if (stone == null)
+            {
+                return;
+            }
+
+            Narrative.MarkFinalWaystoneRead(State, Data);
+            Telemetry.LogEvent("final_waystone_read",
+                ("stone", stone.key),
+                ("read", State.finalWaystonesRead),
+                ("fold", State.migrationCount));
+        }
     }
 }

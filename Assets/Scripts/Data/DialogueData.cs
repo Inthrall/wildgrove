@@ -13,11 +13,30 @@ namespace Wildgrove.Data
         public List<string> MigrationVignette { get; set; } = new List<string>();
         public Dictionary<string, string> InsectPlates { get; set; } = new Dictionary<string, string>();
 
+        /// <summary>
+        /// The final waystones (design §7): the last zone's ordered chain, one
+        /// stone per fold, carrying the reveal the deep amber's notes point at.
+        /// Absent in data means no chain — never a broken one.
+        /// </summary>
+        public FinalWaystoneChain FinalWaystones { get; set; }
+
         public sealed class ProvisionerLine
         {
             public string Id { get; set; }
             public string Trigger { get; set; }
             public string Line { get; set; }
+        }
+
+        public sealed class FinalWaystoneChain
+        {
+            public string Zone { get; set; }
+            public List<FinalWaystoneStone> Stones { get; set; } = new List<FinalWaystoneStone>();
+        }
+
+        public sealed class FinalWaystoneStone
+        {
+            public string Id { get; set; }
+            public string Text { get; set; }
         }
     }
 }

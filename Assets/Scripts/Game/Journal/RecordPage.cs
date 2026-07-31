@@ -449,6 +449,7 @@ namespace Wildgrove.Game
 
             BuildUncaughtEntries(card);
             BuildDeepAmberEntries(card);
+            BuildFinalWaystoneEntries(card);
         }
 
         /// <summary>
@@ -550,6 +551,57 @@ namespace Wildgrove.Game
                 lines.Add(complete
                     ? "<i>" + amber.completedLore + "</i>"
                     : "<i>… the resin holds more …</i>");
+                body.text = string.Join("\n", lines);
+            });
+        }
+
+        /// <summary>
+        /// The final waystones, kept directly under the deep amber (design §7):
+        /// the reveal is assembled from those four notes and these four stones
+        /// and nowhere else, so the two halves belong on one page where they can
+        /// be read against each other. Hidden until the first stone is taken —
+        /// an empty heading here would advertise the ending.
+        /// </summary>
+        private void BuildFinalWaystoneEntries(RectTransform card)
+        {
+            if (!Narrative.FinalWaystonesConfigured(_loop.Data) || _loop.State.finalWaystonesRead == 0)
+            {
+                return;
+            }
+
+            MakeHairline(card);
+            var stone = ArtLibrary.ForJournal("waystone");
+            if (stone != null)
+            {
+                PlateImage(card, stone, 200f);
+            }
+
+            var title = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+            var body = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2, _serif);
+            _liveUpdaters.Add(() =>
+            {
+                var read = _loop.State.finalWaystonesRead;
+                var total = Narrative.FinalWaystoneCount(_loop.Data);
+                var complete = Narrative.AreFinalWaystonesComplete(_loop.State, _loop.Data);
+                title.text = "The Final Waystones  " + SizeOpen(15)
+                             + (complete
+                                 ? "<color=" + MossDeepHex + ">read: all of it, and it does not unsay</color>"
+                                 : "<color=" + Ink2Hex + ">" + read + " of " + total + " read</color>")
+                             + "</size>";
+
+                var lines = new List<string>();
+                foreach (var entry in Narrative.ReadFinalWaystones(_loop.State, _loop.Data))
+                {
+                    lines.Add("<i>“" + entry.text + "”</i>");
+                }
+
+                if (!complete)
+                {
+                    // Says the cadence, not the count of seasons left: the stone
+                    // arrives on a fold, and the player should climb expecting it.
+                    lines.Add("<i>… the next one waits for the next season …</i>");
+                }
+
                 body.text = string.Join("\n", lines);
             });
         }

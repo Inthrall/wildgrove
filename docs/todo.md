@@ -746,14 +746,80 @@ Missing parts (zone-ramp pass):
   `yieldMult` + craft-speed entitlement path (there is none today: nothing in
   `KithPurchases.Apply`/`StoreProductIds` grants a sim modifier).
 
+**Cloudreach Peaks (zone 8) + THE FINAL WAYSTONES — built 2026-08-01, 809/809
+EditMode green on both targets (Win64 + Android).** The last ground, and the
+first slice since the crags to add a system rather than only content.
+
+- Data: `map-cloudreach` #37 (felted-cloak 12 / deep-ingot 15 / wardens-tonic 6;
+  grants zone + dig site) + `rime-still` #38 (apothecary 20; grants the
+  `aurora-cordial` recipe + craftSpeedMult apothecary ×2). zones.json peaks
+  gained verseSite "the last cairn", requiredTool **deepsteel** (same door the
+  crags opened — no ninth tool tier) and **minMigration 5**. sky-blossoms /
+  glacier-ice repriced 300/220 (the stub 200/150 sat barely above the crags'
+  wool at 140). Regions: lush + sky-blossoms 1.25, misted + glacier-ice 1.25.
+  Insect **The Windborne** (Camberwell Beauty, rarity 0.25, +25% foraging) —
+  above quiet-court's 0.2 deliberately, so the Hollows keeps the rarest-drawable
+  pin. verse-cloudreach + waystone + verse lines authored (draft).
+- **The one trail map that teaches no skill.** The peaks' two finds are worked
+  with foraging and mining, as they have been since zone 2; what the zone adds
+  instead is the §7 reveal. Written into upgrades.json's $comment so it reads as
+  a decision rather than an omission.
+- **No new species, and that is the roster principle holding**: the ermine
+  (ashglass + glacier-ice) and the pika (lichen + sky-blossoms) already reach
+  into the peaks, so every priced find on the map has a pair specialist at
+  twelve. A thirteenth familiar would have no find of its own.
+- **The craft is a fourth tincture, not a fourth system** — Aurora Cordial
+  (sky-blossoms 90 + glacier-ice 60, 1200 s, +1 point of pristine chance). It is
+  the only tincture gated behind a rung; the other three are defaultKnown.
+- **NEW: the final waystones.** dialogue.json gained a `finalWaystones` chain
+  (zone + 4 ordered stones) beside the existing per-zone waystones;
+  `Narrative.NextFinalWaystone` / `MarkFinalWaystoneRead`; **save v40→v41**
+  (`finalWaystonesRead` + `finalWaystoneLastFold`). Both cross the fold with the
+  rest of the lore. Presented through the ordinary waystone sheet (same
+  furniture on purpose — the reveal lands harder in the form the warden has read
+  seven times) plus the read count, and re-read on the Record page's Deep Pages
+  card directly under the amber, which is the other half of the same reveal.
+  Validator: the chain's zone must exist, be unlockable, and carry its own
+  arrival stone; stone ids unique; no blank stones.
+- Tests: the never-unlockable-zone example had run out of staged zones, so it
+  now **strips a map instead of pointing at unbuilt content** — repointing
+  map-cloudreach's grants at an already-open zone leaves the peaks with a verse
+  and no way in. That rebasing is what stops it rotting a fourth time. Pins
+  moved: 32 rungs, 8 verses, peaks minMigration 5 as the end of the ladder. The
+  run-1-open-verses guard counted a bare `"minMigration": 5`, which the shipped
+  peaks now carry — tightened to count only the injected form.
+- Art: two PD plates sourced from Commons (Decanter (PSF) → `goods-cordial`,
+  re-baked to sepia ink on transparency; Nemos' Nymphalis antiopa →
+  `insect-windborne`, natural colour). Both public domain with no attribution
+  required, so **no ArtCredits.cs change**; CREDITS.md rows added and
+  `FixArtImportSettings` re-run (512 / crunch). ⚠️ `Phial (PSF)` was the obvious
+  first pick and is **wrong** — it is a modern child-proof pill vial with a
+  printed label. `Retort (PSF)` is CC BY-SA, i.e. copyleft on a game asset —
+  avoid.
+
+Interpretations shipped (tune/confirm):
+- Every peaks number is model-derived, not playtested: prices 300/220, the verse
+  row, the apothecary 20 gate, cordial inputs, specimen 10000 / sketch 8000,
+  Windborne rarity 0.25, the cordial's +1 pristine point.
+- The zone-8 verse row was derived from **zone 7's** rather than re-spread from
+  scratch: both raw slots sit at zone 7's raw geometric mean ×3.5 (~35.5M Coin
+  worth each) and the craft slot at ×3.0 of that mean, which is exactly the
+  ratio felted-cloak carries at zone 7. So the valueSpread texture rides across
+  the ramp step instead of being recomputed against a different pivot.
+- **The peaks stack no new wall**: same deepsteel door as the crags, one more
+  fold. If the run-3-to-run-6 sitting says the endgame is two zones behind one
+  gate, the lever is the crags' requiredTool back to steel (already logged
+  above), not a ninth tier.
+- **The reveal's pacing is one stone per fold, anchored on the fold the last
+  stone was READ on** — not on the fold the peaks opened. A warden who climbs
+  late still gets it a stone at a time. Whether four folds is the right span for
+  the ending is a playtest question, and the knob is the stone count.
+
 **NEXT SLICES (the mid/late plan, in order):**
 1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
-   demandGrowth, Almanac costs, the crags pass, the zone-demand ramp) is
-   model-derived and waiting on it.
-2. **Cloudreach Peaks (zone 8) + the final waystones** — the endgame proper,
-   last on the trail: the deep-past chain the amber notes point at (§7), the
-   Aurora Bloom, sky-blossoms/glacier-ice (already specialist-covered by pika
-   and ermine), minMigration 5.
+   demandGrowth, Almanac costs, the crags pass, the peaks pass, the zone-demand
+   ramp) is model-derived and waiting on it. With the peaks built, the map is
+   walked out and there is no content slice left in front of it.
 
 ## Phase 1 — Core loop slice (current)
 
@@ -1289,9 +1355,29 @@ Missing parts (zone-ramp pass):
     kea and the pika take the roster to **14** species. Unlocks two early
     against its "every species" description until re-stepped.
   - **"All Five Plates"** counts recorded drawable plates to **5 steps**; The
-    Parchment Wings makes **6** drawable. (The name itself rots — "All Five" —
-    so this one likely wants a rename in the console too, or the step count
-    left alone and the description re-worded to "the first five".)
+    Parchment Wings made **6** drawable and The Windborne makes **7**
+    (2026-08-01). (The name itself rots — "All Five" — so this one likely wants
+    a rename in the console too, or the step count left alone and the
+    description re-worded to "the first five".)
+- **"Cloudreach" is now actually winnable (2026-08-01)** — the achievement was
+  configured and published before the zone had a trail map, so
+  `Upgrades.UnlockedZoneIds(...).Contains("cloudreach-peaks")` could never be
+  true. No console change needed; noting it because an unwinnable published
+  achievement looked identical to a broken one, and this one fixed itself by the
+  zone landing. The two waystone incrementals ("four waystones", "every
+  waystone in the grove") were already written to 8 and are unaffected — the
+  final waystones are a separate channel and deliberately count for nothing.
+  **"Every Stone Read" was in the same boat and is also now winnable**: it is an
+  incremental hardcoded to 8 steps (`Achievements.cs`, and 8 in the console) while
+  only 7 zones had trail maps, so its progress could only ever reach 7 of 8 and it
+  could not fire on any device. The peaks make the count exactly right — but that
+  was luck, not design, so it is now **pinned to the data**
+  (`AchievementsTests.EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas`,
+  reading the target through the new `Achievements.StepTarget`): a ninth zone fails
+  that test instead of silently firing "every stone" a zone early. The constant
+  still has to be hardcoded because the console holds the same figure — move both.
+  Worth doing the same for "Reader of Stones" (4) if that number ever means
+  something other than "some of them".
 - **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
   run's tool tier derives from owned upgrades tagged `toolTier`
   (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on

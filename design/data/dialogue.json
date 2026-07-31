@@ -7,7 +7,18 @@
     "silverrun-river":   "The river keeps no ledger. Count what you take, for it will not.",
     "mistfen-marsh":     "The fen remembers every weight it has carried. Step lightly; it is counting.",
     "the-hollows":       "The dark below was not always empty. Leave it the quiet it paid for.",
-    "highland-crags":    "Others folded flocks on this height, and the wind has their names. Count yours home each night."
+    "highland-crags":    "Others folded flocks on this height, and the wind has their names. Count yours home each night.",
+    "cloudreach-peaks":  "You have come to the end of the walking. What is left we said a stone at a time — come back each season, and hear it out."
+  },
+  "$finalWaystonesNote": "The §7 reveal, and the only place it is ever stated: assembled from these four stones and the four deep-amber notes, nowhere else. They stand at ONE zone (the last), surface strictly in authored order, and at most one arrives per fold — the arrival stone above says so, which is the teaching pass doing the work a tutorial would. Nothing gates on them and nothing gates behind them: they are lore, so a warden who never climbs simply never learns what the walking was for. Draft wording, to re-voice with the narrative pass; each keeps the waystone register (two sentences, weathered, second person, the past addressing wardens in general).",
+  "finalWaystones": {
+    "zone": "cloudreach-peaks",
+    "stones": [
+      { "id": "the-rows",   "text": "From this height the old fields are still in rows. We cut them straight, and we called it tending." },
+      { "id": "the-debt",   "text": "The giving slowed and we did not stop, because we had been careful, and careful felt like credit. The sky closed for a hundred years and settled it." },
+      { "id": "the-few",    "text": "The few who came down after planted nothing they would live to sit under. You keep their rule, and you have their hands." },
+      { "id": "the-ground", "text": "Nothing is kept up here for you to collect, and no one is waiting to forgive it. Go down and put something in the ground." }
+    ]
   },
   "verses": {
     "sunfield-meadow":   "What you carry is borrowed. Set some down, and see what follows you home.",
@@ -16,7 +27,8 @@
     "silverrun-river":   "Of all you pulled from the water, the river asks the finest back. It knows you have it.",
     "mistfen-marsh":     "Brew what the still water grew, and pour a little back where the lights gather.",
     "the-hollows":       "Ore made bright, and the glass the burning left. Carry the deep's own wealth back down.",
-    "highland-crags":    "What the flock gives freely, give on. The warmth was never yours to keep."
+    "highland-crags":    "What the flock gives freely, give on. The warmth was never yours to keep.",
+    "cloudreach-peaks":  "Flower and ice, and the cordial that holds them both. Pour it out on ground that grows nothing, and ask for nothing back."
   },
   "provisioner": [
     { "id": "prov-01", "trigger": "first-visit",     "line": "Sell me nothing you would weep to lose. I do not give refunds, and the land does not either." },
@@ -33,6 +45,7 @@
     "lantern-bearers": "They light the drowned paths every night, for no one. I was never the reason, and I may still be grateful. Four evenings of drawing, and not one lantern paused for me.",
     "quiet-court": "They sing in galleries no light has ever reached, to no audience at all. Five evenings by lamplight, drawing what has never been seen. They did not stop singing once.",
     "parchment-wings": "Wings thin as the pages I draw them on, and they fly only while the sun holds. Four afternoons of sun, this high, in this wind. I owed the mountain every one.",
+    "windborne": "Nothing hatched up here. The wind carries them to the summit and sets them down, and what lives on the rock lives on that. Four days drawing the ones still whole. They were going somewhere else.",
     "wayfarers-plate": "A loose leaf, folded twice, left in a place I would pass. Another hand drew it, steadier than mine and long gone. I did not walk for this one. It is in the book now, and I am still walking."
   }
 }

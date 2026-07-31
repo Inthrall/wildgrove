@@ -145,6 +145,17 @@ namespace Wildgrove.Game
             {
                 OpenWaystoneSheet(waystoneZone);
                 AddTapGuard(PumpedSheetGuardSeconds);
+                return;
+            }
+
+            // Behind the ordinary stones deliberately: the peaks' arrival stone
+            // is what says more are coming, so it must never be queued after
+            // the first of the ones it announces.
+            var finalStone = Narrative.NextFinalWaystone(_loop.State, _loop.Data);
+            if (finalStone != null)
+            {
+                OpenFinalWaystoneSheet(finalStone);
+                AddTapGuard(PumpedSheetGuardSeconds);
             }
         }
 
@@ -211,6 +222,38 @@ namespace Wildgrove.Game
                     OpenWaystoneSheet(next);
                     AddTapGuard(PumpedSheetGuardSeconds);
                 }
+            });
+        }
+
+        /// <summary>
+        /// One of the final waystones (design §7). The same furniture as any
+        /// stone — it is the same kind of object, and the reveal lands harder
+        /// for arriving in the form the warden has read seven times already.
+        /// The only addition is the count: the chain has an end, and a player
+        /// who cannot see one has no reason to come back up next season.
+        /// There is no page-through here, unlike the ordinary stones — the
+        /// chain hands over one a fold on purpose, so there is never a second
+        /// one waiting behind this one.
+        /// </summary>
+        private void OpenFinalWaystoneSheet(StringEntry stone)
+        {
+            var zoneId = _loop.Data.dialogue.finalWaystones.zoneId;
+            _loop.Data.ZonesById.TryGetValue(zoneId ?? string.Empty, out var zone);
+            var read = _loop.State.finalWaystonesRead + 1;
+            var total = Narrative.FinalWaystoneCount(_loop.Data);
+            var sheet = BeginSheet(() =>
+            {
+                _loop.MarkFinalWaystoneRead();
+                CloseSheet();
+            });
+            MakeText(sheet, "A waystone", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, (zone != null ? zone.displayName.ToUpperInvariant() + " · " : string.Empty)
+                            + read + " OF " + total, 18, TextAnchor.UpperCenter, Ink2, _smallCaps);
+            MakeText(sheet, "<i>“" + stone.text + "”</i>", 24, TextAnchor.MiddleCenter, Ink, _serif);
+            Button(sheet, read >= total ? "Go down" : "Walk on", 320, () =>
+            {
+                _loop.MarkFinalWaystoneRead();
+                CloseSheet();
             });
         }
 

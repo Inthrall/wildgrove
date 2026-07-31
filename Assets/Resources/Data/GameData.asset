@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: ef392a523a199f8a57b7e7f96d7f40f320f4748dd3e2b399ac5fcb602e7648f5
+  sourceHash: 6096a3c19366c171a0dcc9572f2fcfa59c3d13bd435819485687d7c5ed4815b1
   economy:
     costGrowth:
       building: 1.25
@@ -177,10 +177,10 @@ MonoBehaviour:
     sellValue: 70
     skill: foraging
   - id: sky-blossoms
-    sellValue: 200
+    sellValue: 300
     skill: foraging
   - id: glacier-ice
-    sellValue: 150
+    sellValue: 220
     skill: mining
   zones:
   - id: sunfield-meadow
@@ -302,9 +302,9 @@ MonoBehaviour:
     - final-waystones
     keystone: aurora-bloom
     digSite: 1
-    verseSite: 
-    requiredTool: steel
-    minMigration: 0
+    verseSite: the last cairn
+    requiredTool: deepsteel
+    minMigration: 5
     scope: v1.2
   upgrades:
   - order: 1
@@ -1093,6 +1093,64 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 2
+  - order: 37
+    id: map-cloudreach
+    displayName: 'Trail Map: Cloudreach Peaks'
+    track: trail
+    toolTier: 
+    gateSkill: 
+    gateLevel: 0
+    minMigration: 0
+    materials:
+    - id: felted-cloak
+      amount: 12
+    - id: deep-ingot
+      amount: 15
+    - id: wardens-tonic
+      amount: 6
+    effects:
+    - type: 12
+      skill: 
+      zone: cloudreach-peaks
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+    - type: 15
+      skill: 
+      zone: cloudreach-peaks
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0
+  - order: 38
+    id: rime-still
+    displayName: Rime Still
+    track: apothecary
+    toolTier: 
+    gateSkill: apothecary
+    gateLevel: 20
+    minMigration: 0
+    materials: []
+    effects:
+    - type: 14
+      skill: 
+      zone: 
+      resource: 
+      recipe: aurora-cordial
+      species: 
+      upgrade: 
+      value: 0
+    - type: 3
+      skill: apothecary
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 2
   recipes:
   - id: berry-preserve
     station: fire
@@ -1306,6 +1364,20 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 5
+  - id: aurora-cordial
+    station: fire
+    skill: apothecary
+    inputs:
+    - id: sky-blossoms
+      amount: 90
+    - id: glacier-ice
+      amount: 60
+    output: aurora-cordial
+    valueMult: 1
+    kind: material
+    defaultKnown: 0
+    stationLevel: 1
+    skillLevel: 15
   buildings:
   - id: fire
     displayName: The Fire
@@ -1531,6 +1603,22 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 0.2
+  - id: windborne
+    displayName: The Windborne
+    sketches: 4
+    habitats:
+    - cloudreach-peaks
+    rarity: 0.25
+    rewarded: 0
+    effects:
+    - type: 1
+      skill: foraging
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0.25
   - id: wayfarers-plate
     displayName: The Wayfarer's Plate
     sketches: 1
@@ -2353,6 +2441,14 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 1.25
+    - type: 0
+      skill: 
+      zone: 
+      resource: sky-blossoms
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
   - id: misted
     displayName: a misted region
     sign: The river speaks under the fog. The flowers keep their heads down.
@@ -2377,6 +2473,14 @@ MonoBehaviour:
       skill: 
       zone: 
       resource: glow-moss
+      recipe: 
+      species: 
+      upgrade: 
+      value: 1.25
+    - type: 0
+      skill: 
+      zone: 
+      resource: glacier-ice
       recipe: 
       species: 
       upgrade: 
@@ -2486,6 +2590,19 @@ MonoBehaviour:
       species: 
       upgrade: 
       value: 1.5
+  - id: aurora-cordial
+    displayName: Aurora Cordial
+    description: 'sharpens the eye: +1% to a pristine find while it lasts'
+    durationSec: 1200
+    effects:
+    - type: 5
+      skill: 
+      zone: 
+      resource: 
+      recipe: 
+      species: 
+      upgrade: 
+      value: 0.01
   deepAmber:
     zoneId: the-hollows
     findsPerHour: 0.1
@@ -2820,6 +2937,47 @@ MonoBehaviour:
           count: 1
           quality: pristine
           renownGrant: 7000
+      - id: verse-cloudreach
+        zone: cloudreach-peaks
+        spotlight:
+        - apothecary
+        - foraging
+        slots:
+        - type: 0
+          resource: sky-blossoms
+          amount: 120000
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: glacier-ice
+          amount: 160000
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 0
+        - type: 0
+          resource: aurora-cordial
+          amount: 2600
+          deed: 
+          count: 0
+          quality: 
+          renownGrant: 104500000
+        - type: 2
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: pristine
+          renownGrant: 10000
+        - type: 3
+          resource: 
+          amount: 0
+          deed: 
+          count: 1
+          quality: 
+          renownGrant: 8000
   dialogue:
     waystones:
     - key: sunfield-meadow
@@ -2837,6 +2995,9 @@ MonoBehaviour:
     - key: highland-crags
       text: Others folded flocks on this height, and the wind has their names. Count
         yours home each night.
+    - key: cloudreach-peaks
+      text: "You have come to the end of the walking. What is left we said a stone
+        at a time \u2014 come back each season, and hear it out."
     verses:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.
@@ -2857,6 +3018,9 @@ MonoBehaviour:
         wealth back down.
     - key: highland-crags
       text: What the flock gives freely, give on. The warmth was never yours to keep.
+    - key: cloudreach-peaks
+      text: Flower and ice, and the cordial that holds them both. Pour it out on
+        ground that grows nothing, and ask for nothing back.
     provisioner:
     - id: prov-01
       trigger: first-visit
@@ -2892,7 +3056,27 @@ MonoBehaviour:
       text: Wings thin as the pages I draw them on, and they fly only while the sun
         holds. Four afternoons of sun, this high, in this wind. I owed the mountain
         every one.
+    - key: windborne
+      text: Nothing hatched up here. The wind carries them to the summit and sets
+        them down, and what lives on the rock lives on that. Four days drawing the
+        ones still whole. They were going somewhere else.
     - key: wayfarers-plate
       text: A loose leaf, folded twice, left in a place I would pass. Another hand
         drew it, steadier than mine and long gone. I did not walk for this one. It
         is in the book now, and I am still walking.
+    finalWaystones:
+      zoneId: cloudreach-peaks
+      stones:
+      - key: the-rows
+        text: From this height the old fields are still in rows. We cut them straight,
+          and we called it tending.
+      - key: the-debt
+        text: The giving slowed and we did not stop, because we had been careful,
+          and careful felt like credit. The sky closed for a hundred years and settled
+          it.
+      - key: the-few
+        text: The few who came down after planted nothing they would live to sit
+          under. You keep their rule, and you have their hands.
+      - key: the-ground
+        text: Nothing is kept up here for you to collect, and no one is waiting to
+          forgive it. Go down and put something in the ground.

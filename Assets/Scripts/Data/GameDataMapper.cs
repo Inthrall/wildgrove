@@ -329,7 +329,13 @@ namespace Wildgrove.Data
                 verses = d.Verses.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
                 provisioner = d.Provisioner.Select(p => new ProvisionerEntry { id = p.Id, trigger = p.Trigger, line = p.Line }).ToList(),
                 migrationVignette = new List<string>(d.MigrationVignette),
-                insectPlates = d.InsectPlates.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList()
+                insectPlates = d.InsectPlates.Select(kv => new StringEntry { key = kv.Key, text = kv.Value }).ToList(),
+                finalWaystones = new FinalWaystonesData
+                {
+                    zoneId = d.FinalWaystones?.Zone,
+                    stones = (d.FinalWaystones?.Stones ?? new List<DialogueData.FinalWaystoneStone>())
+                        .Select(s => new StringEntry { key = s.Id, text = s.Text }).ToList()
+                }
             };
         }
 

@@ -462,6 +462,16 @@ namespace Wildgrove.Data
         public List<ProvisionerEntry> provisioner = new List<ProvisionerEntry>();
         public List<string> migrationVignette = new List<string>();
         public List<StringEntry> insectPlates = new List<StringEntry>();
+
+        /// <summary>The last zone's ordered chain of stones (§7). Zone-less or stone-less reads as no chain.</summary>
+        public FinalWaystonesData finalWaystones = new FinalWaystonesData();
+    }
+
+    [Serializable]
+    public sealed class FinalWaystonesData
+    {
+        public string zoneId;
+        public List<StringEntry> stones = new List<StringEntry>();
     }
 
     [Serializable]

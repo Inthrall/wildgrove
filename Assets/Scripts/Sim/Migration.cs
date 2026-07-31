@@ -167,6 +167,14 @@ namespace Wildgrove.Sim
                 Narrative.MarkWaystoneRead(next, zoneId);
             }
 
+            // The final waystones cross with the rest of the lore, and the fold
+            // stamp crosses with them to keep the pair coherent — a stamp reset
+            // to "never" beside a count of three would claim no stone had ever
+            // been read. Folding is what earns the next one: migrationCount has
+            // just moved past the stamp, so the new run opens with one waiting.
+            next.finalWaystonesRead = state.finalWaystonesRead;
+            next.finalWaystoneLastFold = state.finalWaystoneLastFold;
+
             // The Almanac is the permanent tree — bought once, kept forever,
             // and the repeatable line's levels cross with the rest of it.
             next.almanacNodeIds.AddRange(state.almanacNodeIds);

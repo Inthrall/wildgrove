@@ -153,6 +153,41 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas()
+        {
+            // The threshold is a hardcoded 8 because the console has to agree
+            // with it, so it cannot be derived at runtime — but it CAN be pinned,
+            // and it needs to be: for seven zones' worth of the ladder's life it
+            // stood at 8 against 7 reachable stones and could never fire, which
+            // is indistinguishable from a broken achievement. The peaks made it
+            // exactly right by luck. Asserting both sides of the boundary means
+            // a ninth zone fails here instead of quietly unlocking "every stone"
+            // one zone early.
+            var dataDir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "design", "data"));
+            var design = GameData.Parse(GameData.ReadSourcesFromFiles(dataDir));
+            var stones = design.Zones
+                .Count(zone => design.Dialogue.Waystones.TryGetValue(zone.Id, out var text)
+                               && !string.IsNullOrWhiteSpace(text));
+            Assert.That(stones, Is.GreaterThan(1), "the data must have stones for this to prove anything");
+
+            // It is incremental, so the code reports absolute progress and Play
+            // turns it over at the target — the target is the thing to pin, and
+            // it must be exactly the number of stones the data holds.
+            Assert.That(Achievements.StepTarget(AchievementIds.EveryStoneRead), Is.EqualTo(stones),
+                "\"every stone\" must ask for exactly the stones the data has: fewer and it fires a zone early, "
+                + "more and it can never fire at all (which is where it sat until the peaks landed). "
+                + "The Play Console holds the same figure — move both.");
+
+            var allOfThem = GameStateFactory.NewGame(_data);
+            allOfThem.seenWaystoneZoneIds = Enumerable.Range(0, stones).Select(i => "zone-" + i).ToList();
+            Achievements.Reassert(_services, allOfThem, _data);
+
+            Assert.That(_services.Steps, Does.ContainKey(AchievementIds.EveryStoneRead));
+            Assert.That(_services.Steps[AchievementIds.EveryStoneRead], Is.EqualTo(stones),
+                "and reading every stone must report every step");
+        }
+
+        [Test]
         public void Reassert_WhenSignedOut_ReportsNothing()
         {
             var state = GameStateFactory.NewGame(_data);

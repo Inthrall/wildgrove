@@ -67,12 +67,13 @@ namespace Wildgrove.Game
             { "iron-ingot", Plates + "Goods/goods-ingot" },
             { "deep-ingot", Plates + "Goods/goods-ingot" },
             { "cordage", Plates + "Gear/gear-cordage" },
-            // The tinctures (§5, Apothecary). Each is its own vessel so the three
-            // read apart on a shelf of three rows: a carried flask, a salve pot,
-            // a wicker-bound jug of something smoked.
+            // The tinctures (§5, Apothecary). Each is its own vessel so the four
+            // read apart on a shelf of four rows: a carried flask, a salve pot,
+            // a wicker-bound jug of something smoked, a stoppered summit phial.
             { "wardens-tonic", Plates + "Goods/goods-tonic" },
             { "glow-salve", Plates + "Goods/goods-salve" },
             { "peat-smoke-draught", Plates + "Goods/goods-draught" },
+            { "aurora-cordial", Plates + "Goods/goods-cordial" },
             { "felted-cloak", Plates + "Goods/goods-cloak" },
         };
 
@@ -170,6 +171,10 @@ namespace Wildgrove.Game
             // Parnassius apollo — the mountain white whose worn wings scale
             // like the pages it is drawn on.
             { "parchment-wings", Plates + "Insects/insect-parchment-wings" },
+            // An alpine butterfly for the summit's blown-in insects — the plate
+            // is one specimen, though the name is plural, because what reaches
+            // the peaks arrives one at a time.
+            { "windborne", Plates + "Insects/insect-windborne" },
             { "wayfarers-plate", Plates + "Insects/insect-wayfarers-plate" },
         };
 
