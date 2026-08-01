@@ -213,6 +213,14 @@ namespace Wildgrove.Game
             // will not acknowledge it until this has granted it.
             Store.RewardRedeemed = OnRewardRedeemed;
 
+            // The regional consent answer binds the analytics sink as well as
+            // the ads that ask for it. Only Google's form knows what an EEA
+            // player said, and until this the sink never heard: a player who
+            // chose "Do not consent" stopped seeing ads and went on being
+            // counted. Subscribed before Initialise, which can resolve a cached
+            // answer on the spot.
+            Ads.ConsentResolved += Telemetry.SetConsent;
+
             Ads.Initialise();
             // The billing connection must not run *at* startup — on some devices it
             // launches ProxyBillingActivity before Unity loads and crashes the app —

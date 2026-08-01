@@ -25,10 +25,22 @@ never `double` or `long`.
 
 | Assembly | Rule |
 |---|---|
-| `Wildgrove.Sim` | `noEngineReferences: true`. Pure C# — the whole game's state and rules. **Do not add a `UnityEngine` dependency here**; it's what makes the sim testable without the editor. |
+| `Wildgrove.Sim` | Pure C# — the whole game's state and rules. **Do not add a `UnityEngine` dependency here**; it's what makes the sim testable without the editor. |
 | `Wildgrove.Data` | Content defs + the `GameData` ScriptableObject. Sim depends on it; it depends on nothing of ours. |
 | `Wildgrove.Game` | MonoBehaviours, UI, services (store, ads, PGS, saves). Depends on Sim + Data. |
 | `Wildgrove.BuildTools` | Build-time helpers; `Assets/Editor/` holds the editor-only tooling. |
+
+**That first rule is kept by hand — nothing enforces it.** `Wildgrove.Sim`'s own
+files are clean, but its asmdef says `noEngineReferences: false` and cannot say
+otherwise: the sim takes `GameDataAsset` in nearly every signature, that derives
+from `ScriptableObject`, and the compiler needs `UnityEngine.CoreModule` to
+resolve the base type. Setting the flag true fails with `CS0012` across
+`Exchange`, `Folio`, `Almanac` and more (tried 2026-08-02). So a stray
+`Time.deltaTime` or `UnityEngine.Random` in the sim would compile and ship, and
+the determinism every file header claims would be quietly gone — read the rule
+as one to uphold in review, not one the build will catch. Closing it properly
+means lifting a plain-C# `GameData` out of the ScriptableObject; see
+`todo.md` § Sim purity is a convention, not a constraint.
 
 **If logic is hard to test because it lives in a MonoBehaviour, lift it into a plain
 class** — that is the pattern the codebase already follows (`RunPersistence`,

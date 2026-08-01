@@ -12,11 +12,18 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public sealed class StubAds : IAds
     {
+        public event Action<bool> ConsentResolved;
+
         public bool IsRewardedReady(RewardedPlacement placement) => true;
 
         public void Initialise()
         {
             Debug.Log("[ads] stub initialised");
+
+            // No consent layer in the editor, and nowhere for the answer to be
+            // withheld — granted, so the fold path downstream is exercised
+            // rather than skipped.
+            ConsentResolved?.Invoke(true);
         }
 
         /// <summary>No SDK, so no form to re-open — the inside cover draws no row.</summary>

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using BreakInfinity;
 using UnityEngine;
 using Wildgrove.Data;
@@ -48,7 +49,12 @@ namespace Wildgrove.Game
 
         internal static string PlainNumber(double value)
         {
-            return value % 1.0 == 0.0 ? ((long)value).ToString() : value.ToString("0.##");
+            // Invariant, like every NumberFormat path. A comma-decimal locale
+            // otherwise puts "2,4" beside an invariant "2.4" in the same line of
+            // copy — the journal has one voice, and that includes its numerals.
+            return value % 1.0 == 0.0
+                ? ((long)value).ToString(CultureInfo.InvariantCulture)
+                : value.ToString("0.##", CultureInfo.InvariantCulture);
         }
 
         internal static string Percent(double value)
@@ -86,7 +92,7 @@ namespace Wildgrove.Game
             switch (perLevel.type)
             {
                 case "stationSpeedBonus": return "each level: " + pct + " craft speed at this station";
-                case "offlineCapBonusHours": return "each level: the away credit runs +" + perLevel.value.ToString("0.##") + "h longer";
+                case "offlineCapBonusHours": return "each level: the away credit runs +" + perLevel.value.ToString("0.##", CultureInfo.InvariantCulture) + "h longer";
                 case "comfort": return "each level: " + pct + " familiar XP while posted";
                 default: return null;
             }

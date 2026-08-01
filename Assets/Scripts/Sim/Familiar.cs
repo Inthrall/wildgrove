@@ -74,6 +74,18 @@ namespace Wildgrove.Sim
         /// <summary>The bond id this familiar was earned or honoured by (design §4), or null — keeps <see cref="Roster.SyncBonded"/> idempotent.</summary>
         public string bondId;
 
+        /// <summary>
+        /// A field-for-field copy. MemberwiseClone rather than an assignment
+        /// list so a field added above can never be forgotten here; every field
+        /// is a value or an immutable string, so the shallow copy is a whole
+        /// one. Used where a familiar must be changed without the roster it
+        /// came from changing under its holder — <see cref="Migration.Migrate"/>.
+        /// </summary>
+        public Familiar Copy()
+        {
+            return (Familiar)MemberwiseClone();
+        }
+
         /// <summary>An unstationed familiar rests at camp — no post, no slot, no output (§4).</summary>
         public bool IsResting => string.IsNullOrEmpty(stationId);
 

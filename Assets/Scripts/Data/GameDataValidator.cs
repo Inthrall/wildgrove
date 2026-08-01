@@ -1841,6 +1841,20 @@ namespace Wildgrove.Data
                 issues.Add("Economy bubbles values must all be positive");
             }
 
+            // The windfall's notional gatherer IS the warden's own hands — that
+            // is the whole justification for a flat haul (economy.json's bubbles
+            // note: a catch should read as "a minute of picking at that node").
+            // The two numbers were equal only because someone kept them so, and
+            // warden.gatherPerSecond is still labelled a first guess: retune it
+            // alone and the windfall quietly stops meaning what it says. If they
+            // are ever meant to part, delete this rule and the note together.
+            if (economy.Bubbles != null && economy.Warden != null
+                && System.Math.Abs(economy.Bubbles.RewardRatePerSecond - economy.Warden.GatherPerSecond) > 1e-9)
+            {
+                issues.Add($"Economy bubbles.rewardRatePerSecond {economy.Bubbles.RewardRatePerSecond} must match "
+                           + $"warden.gatherPerSecond {economy.Warden.GatherPerSecond} — the windfall is a minute of the warden's own picking");
+            }
+
             if (economy.Observation != null
                 && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0
                     || economy.Observation.WatchXpPerHour <= 0))

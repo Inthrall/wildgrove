@@ -71,6 +71,11 @@ namespace Wildgrove.EditorTools
             if (existing == null)
             {
                 Directory.CreateDirectory(Path.Combine(projectRoot, Path.GetDirectoryName(AssetPath)));
+                // The folder was just made behind the asset database's back, and
+                // CreateAsset writes into a parent it has to already know about.
+                // Only ever reached on a clone whose committed asset is missing —
+                // which is the one time this path has to work.
+                AssetDatabase.Refresh();
                 AssetDatabase.CreateAsset(asset, AssetPath);
             }
             else

@@ -33,6 +33,8 @@ namespace Wildgrove.Game.Services
         private bool _adsStarted;
         private bool _sdkReady;
 
+        public event Action<bool> ConsentResolved;
+
         /// <summary>
         /// A placement's preload state between attempts: whether one is in
         /// flight, the earliest the next may start, and how long to wait after
@@ -80,6 +82,7 @@ namespace Wildgrove.Game.Services
             // effect on the requests that follow it.
             if (ConsentInformation.CanRequestAds())
             {
+                PublishConsent();
                 StartAds();
             }
 
@@ -115,6 +118,9 @@ namespace Wildgrove.Game.Services
                         Debug.LogWarning("[ads] consent form failed: " + formError.Message);
                     }
 
+                    // Published either way — a refusal is an answer, and the
+                    // sink it also binds has no other way to hear it.
+                    PublishConsent();
                     if (ConsentInformation.CanRequestAds())
                     {
                         StartAds();
@@ -125,6 +131,12 @@ namespace Wildgrove.Game.Services
                     }
                 });
             });
+        }
+
+        /// <summary>Hand the current regional verdict to whoever is listening (see <see cref="IAds.ConsentResolved"/>).</summary>
+        private void PublishConsent()
+        {
+            ConsentResolved?.Invoke(ConsentInformation.CanRequestAds());
         }
 
         /// <summary>
@@ -164,6 +176,9 @@ namespace Wildgrove.Game.Services
                     Debug.LogWarning("[ads] privacy options form failed: " + error.Message);
                 }
 
+                // The player may have just changed their mind — the whole point
+                // of re-opening the form — so the new answer goes out too.
+                PublishConsent();
                 onClosed?.Invoke();
             });
         }

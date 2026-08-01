@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BreakInfinity;
 using Wildgrove.Data;
 
 namespace Wildgrove.Sim
@@ -33,11 +34,23 @@ namespace Wildgrove.Sim
                 return state.verdurePoints;
             }
 
-            var banked = System.Math.Floor(
-                System.Math.Pow((state.renown / verdure.renownDivisor).ToDouble(), verdure.exponent));
+            // The power is taken in BigDouble and only its RESULT converted.
+            // Renown is a BigDouble for a reason, and collapsing it to a double
+            // first put the whole lifetime total through a type it can outgrow —
+            // the exponent (0.5) then brings the answer back into easy range, so
+            // the only value that ever needed the wider type was the one being
+            // narrowed.
+            var banked = BigDouble.Pow(state.renown / verdure.renownDivisor, verdure.exponent).ToDouble();
+            if (double.IsNaN(banked) || double.IsInfinity(banked))
+            {
+                // Past what a double holds even after the exponent. Keep what is
+                // banked rather than let the Max below lock in an infinity that
+                // nothing could walk back — a verdure total never shrinks.
+                return state.verdurePoints;
+            }
 
             // The land never forgets: an already-banked total can't shrink.
-            return System.Math.Max(state.verdurePoints, banked);
+            return System.Math.Max(state.verdurePoints, System.Math.Floor(banked));
         }
 
         /// <summary>
@@ -116,12 +129,21 @@ namespace Wildgrove.Sim
             // This replaces the fresh run's seed kith with the carried one.
             // (Presence-lapse — benching non-bonded familiars to re-meet — is
             // a v1.1 refinement; at MVP the whole roster stays present.)
+            // Folded into COPIES, and the copies are what cross. Folding the
+            // roster in place emptied every station and reset every run level on
+            // the state the caller still holds, so the run being retired was
+            // quietly wrecked by the act of reading what it was worth — and the
+            // two states then shared one roster, so a later edit to either
+            // reached both. Nothing depends on that today only because the
+            // caller swaps states in the next breath.
+            next.roster = new List<Familiar>(state.roster.Count);
             foreach (var familiar in state.roster)
             {
-                Kinship.Fold(familiar, data);
+                var carried = familiar.Copy();
+                Kinship.Fold(carried, data);
+                next.roster.Add(carried);
             }
 
-            next.roster = state.roster;
             next.nextFamiliarSeq = state.nextFamiliarSeq;
 
             // The ladder's currency and the store's slots both survive the

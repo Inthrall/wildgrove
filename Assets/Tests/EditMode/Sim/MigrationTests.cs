@@ -265,6 +265,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_LeavesTheRetiringRunAlone()
+        {
+            // Folding read the old run's worth and wrecked it in the process:
+            // the fold ran over the roster in place, so the state the caller
+            // still holds had every station emptied and every run level reset,
+            // and the two states then shared one roster list. Nothing depended
+            // on it only because the caller swaps states immediately.
+            var state = StateWithTheRiteSung();
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.WanderStation);
+            state.roster[0].xp = 5000.0;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(state.roster[0].xp, Is.EqualTo(5000.0).Within(Tolerance),
+                "the retiring run keeps the run XP it was read for");
+            Assert.That(state.roster[0].stationId, Is.EqualTo(Familiar.WanderStation),
+                "and keeps its posts");
+            Assert.That(next.roster[0], Is.Not.SameAs(state.roster[0]),
+                "the fold carries copies, so an edit to either run can't reach the other");
+            Assert.That(next.roster[0].kinshipXp, Is.GreaterThan(state.roster[0].kinshipXp),
+                "and the copy is the one that was folded");
+        }
+
+        [Test]
         public void Migrate_BondedFamiliarsCross_ButThePostResets()
         {
             _data.folioSpreads = new List<FolioSpreadData>

@@ -34,6 +34,10 @@ namespace Wildgrove.Game.Telemetry
         private bool _ready;
         private bool _failed;
         private bool _collecting = true;
+        // Null until Google's consent layer has an answer. Held rather than
+        // applied when it arrives before Firebase has woken — the same problem
+        // _collecting has, and the same solution.
+        private bool? _consentGranted;
 
         public FirebaseTelemetry(ITelemetry fallback)
         {
@@ -65,6 +69,10 @@ namespace Wildgrove.Game.Telemetry
                 // (it is read at launch, and this callback lands seconds later),
                 // so it is applied here rather than lost.
                 FirebaseAnalytics.SetAnalyticsCollectionEnabled(_collecting);
+                if (_consentGranted.HasValue)
+                {
+                    ApplyConsent(_consentGranted.Value);
+                }
 
                 // Snapshot and clear under the lock, then send outside it so a
                 // worker-thread LogException can't race the drain and Firebase
@@ -171,6 +179,35 @@ namespace Wildgrove.Game.Telemetry
             {
                 FirebaseAnalytics.SetAnalyticsCollectionEnabled(enabled);
             }
+        }
+
+        public void SetConsent(bool granted)
+        {
+            _consentGranted = granted;
+            _fallback.SetConsent(granted);
+            if (_ready)
+            {
+                ApplyConsent(granted);
+            }
+        }
+
+        /// <summary>
+        /// Consent Mode, all four signals off the one answer Google's form gives
+        /// us. UMP reports a single verdict rather than a signal each, and the
+        /// form's third button is "Do not consent" — a refusal there is a refusal
+        /// of the lot, so splitting the verdict would be inventing detail the
+        /// player never gave. Denied is the honest reading of "no".
+        /// </summary>
+        private static void ApplyConsent(bool granted)
+        {
+            var status = granted ? ConsentStatus.Granted : ConsentStatus.Denied;
+            FirebaseAnalytics.SetConsent(new Dictionary<ConsentType, ConsentStatus>
+            {
+                { ConsentType.AnalyticsStorage, status },
+                { ConsentType.AdStorage, status },
+                { ConsentType.AdUserData, status },
+                { ConsentType.AdPersonalization, status },
+            });
         }
 
         private static void Send(string name, (string key, object value)[] parameters)

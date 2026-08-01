@@ -31,6 +31,20 @@ namespace Wildgrove.Game.Services
     /// </summary>
     public interface IAds
     {
+        /// <summary>
+        /// Raised with the verdict from Google's regional consent layer, each
+        /// time it is known: on the launch that shows the form, on later
+        /// launches from the cached answer, and again whenever the form is
+        /// re-opened from the inside cover. True means storage may be used.
+        /// <para>
+        /// The ads layer is only where the question gets asked; the answer binds
+        /// analytics too, so it is published rather than kept. Without this the
+        /// consent form governed ad requests alone, and a player who chose "Do
+        /// not consent" went on being counted.
+        /// </para>
+        /// </summary>
+        event Action<bool> ConsentResolved;
+
         /// <summary>True once a rewarded ad for this specific placement has loaded and can be shown right now. Per-placement: a button must ask about its own placement, not whether any ad is ready.</summary>
         bool IsRewardedReady(RewardedPlacement placement);
 

@@ -16,8 +16,9 @@ namespace Wildgrove.Data
 
         /// <summary>
         /// What the planter does — interpreted by the sim (Planters.cs):
-        /// basketCapacityMult (a bigger basket at a node), nodeYieldMult (a
-        /// second yield lane), digSpeedMult (steady a dig site's sketching).
+        /// nodeYieldMult (a second yield lane) or digSpeedMult (steady a dig
+        /// site's sketching). These two are the whole vocabulary the validator
+        /// accepts; basketCapacityMult went with the hauling retirement.
         /// </summary>
         public string Kind { get; set; }
 

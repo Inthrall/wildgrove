@@ -37,6 +37,14 @@ namespace Wildgrove.Game.Telemetry
             _collecting = enabled;
         }
 
+        public void SetConsent(bool granted)
+        {
+            // Nothing leaves the device from here, so there is no storage to
+            // govern — but say it, because a consent answer that never arrives
+            // and one that arrives as "no" look identical in a log otherwise.
+            Debug.Log("[telemetry] consent " + (granted ? "granted" : "denied"));
+        }
+
         /// <summary>One log line per event: "[telemetry] name key=value key=value".</summary>
         public static string Format(string name, params (string key, object value)[] parameters)
         {

@@ -106,6 +106,15 @@ namespace Wildgrove.Game
                 Flash(signIn, "asking Play Games", true);
                 _loop.GameServices.SignInInteractive(signedIn =>
                 {
+                    // Play Games can take its time, and the player can shut the
+                    // cover while it does — everything below writes to widgets
+                    // this sheet owns, so a closed sheet means there is nothing
+                    // left to tell. The sign-in itself has already taken effect.
+                    if (signIn == null)
+                    {
+                        return;
+                    }
+
                     Reread();
                     if (signedIn)
                     {
@@ -246,6 +255,11 @@ namespace Wildgrove.Game
                     {
                         _loop.StartAgain();
                         _hud.ForgetTeaching();
+                        // Which zones the player had folded shut is a reading
+                        // position in the old book, not a setting. Left standing,
+                        // a zone folded away last run opens the new book already
+                        // shut — in a book that is meant to have nothing in it.
+                        _zoneOpen.Clear();
                         _dirty = true;
                         SetNote("the first camp, and nothing in it but the morning.");
                     });

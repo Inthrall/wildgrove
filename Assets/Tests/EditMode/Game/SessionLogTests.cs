@@ -168,6 +168,10 @@ namespace Wildgrove.Game.Tests
             public void SetCollectionEnabled(bool enabled)
             {
             }
+
+            public void SetConsent(bool granted)
+            {
+            }
         }
     }
 }

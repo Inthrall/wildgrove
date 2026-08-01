@@ -241,9 +241,15 @@ namespace Wildgrove.Game
             _loop.Data.ZonesById.TryGetValue(zoneId ?? string.Empty, out var zone);
             var read = _loop.State.finalWaystonesRead + 1;
             var total = Narrative.FinalWaystoneCount(_loop.Data);
+            // Reading the first of these is what brings the Record page's Final
+            // Waystones entry into being, and that section is decided when the
+            // page is BUILT — the count is in no rebuild signature, so without
+            // saying the page is dirty here the entry simply doesn't appear until
+            // some unrelated change rebuilds the page.
             var sheet = BeginSheet(() =>
             {
                 _loop.MarkFinalWaystoneRead();
+                _dirty = true;
                 CloseSheet();
             });
             MakeText(sheet, "A waystone", 32, TextAnchor.UpperCenter, Ink, _serif);
@@ -253,6 +259,7 @@ namespace Wildgrove.Game
             Button(sheet, read >= total ? "Go down" : "Walk on", 320, () =>
             {
                 _loop.MarkFinalWaystoneRead();
+                _dirty = true;
                 CloseSheet();
             });
         }
@@ -452,10 +459,25 @@ namespace Wildgrove.Game
                             }
 
                             _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "offline_boost"));
+
+                            // The grant has landed and is safe; what follows only
+                            // rewrites the sheet, and the sheet may not be there.
+                            // A reward arrives after the ad, and the sheet can
+                            // have closed under it in the meantime — writing to a
+                            // destroyed widget throws inside the ads SDK's own
+                            // callback, which is a bad place to raise anything.
+                            if (doubleIt == null)
+                            {
+                                return;
+                            }
+
                             foreach (var gain in gainLines)
                             {
-                                gain.line.text = "<color=" + MossDeepHex + ">+" + NumberFormat.Short(gain.amount * 2)
-                                                 + " " + gain.id + " (doubled)</color>";
+                                if (gain.line != null)
+                                {
+                                    gain.line.text = "<color=" + MossDeepHex + ">+" + NumberFormat.Short(gain.amount * 2)
+                                                     + " " + gain.id + " (doubled)</color>";
+                                }
                             }
 
                             // The offer is spent — so it stops being a button.
@@ -473,8 +495,10 @@ namespace Wildgrove.Game
                         {
                             // Ad closed without the reward — re-arm the offer.
                             // (On the rewarded path the button is gone, so the
-                            // flag guards a destroyed reference as well.)
-                            if (!doubled)
+                            // flag guards a destroyed reference as well — and the
+                            // null check covers the sheet being closed under a
+                            // still-open ad.)
+                            if (!doubled && doubleIt != null)
                             {
                                 doubleIt.interactable = true;
                                 SetButtonTint(doubleIt, true, true);
@@ -556,6 +580,11 @@ namespace Wildgrove.Game
                 CloseSheet();
                 if (_loop.Migrate())
                 {
+                    // Same reason as starting the book again: which zones were
+                    // folded shut is where the last run had got to, not a
+                    // setting, and the new run's trail should open as the first
+                    // one did.
+                    _zoneOpen.Clear();
                     _dirty = true;
                     OpenVignette(gain);
                 }
@@ -1220,12 +1249,24 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var ready = _loop.CanTimeSkipReward;
+            // Off cooldown AND something to show. Gating on the cooldown alone
+            // lit the button whenever the placement was empty, and ShowRewarded
+            // reports that case through onClosed — which this caller doesn't
+            // pass. So the tap did nothing and said nothing, the one thing the
+            // camp strip must never do. (The drip row already asks both.)
+            // RewardedReady is true outright for a Remove Ads owner, so the
+            // stricter gate can't shut the button on the player who paid.
+            var offCooldown = _loop.CanTimeSkipReward;
+            var ready = offCooldown && _loop.RewardedReady(RewardedPlacement.TimeSkip);
             _timeSkipButton.interactable = ready;
             SetButtonTint(_timeSkipButton, ready, true);
             SetButtonLabel(_timeSkipButton, ready
                 ? TimeSkipLabel()
-                : "Pass the time (ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining) + ")");
+                : offCooldown
+                    // Waiting on fill, not on the clock — saying "ready in 0s"
+                    // here would be a countdown that never ends.
+                    ? "Pass the time (no ad to hand)"
+                    : "Pass the time (ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining) + ")");
 
             if (_removeAdsButton != null)
             {
@@ -1315,8 +1356,21 @@ namespace Wildgrove.Game
             }
 
             Button(sheet, "Never mind", 320, CloseSheet);
+
+            // Latched, because CloseSheet's Destroy only takes effect at the end
+            // of the frame: two pointers released on this button in the same
+            // frame both dispatch, and the answer would be given twice. The
+            // things behind a confirm are the expensive ones — amber spent, a
+            // pile traded away, a book started again.
+            var answered = false;
             var confirm = Button(sheet, confirmLabel, 320, () =>
             {
+                if (answered)
+                {
+                    return;
+                }
+
+                answered = true;
                 CloseSheet();
                 onConfirm?.Invoke();
             });
@@ -1327,7 +1381,8 @@ namespace Wildgrove.Game
         private string TimeSkipLabel()
         {
             var unit = System.Math.Abs(TimeSkipHours - 1.0) < 0.0001 ? "hour" : "hours";
-            return "Pass the time, +" + TimeSkipHours.ToString("0.##") + " " + unit + _loop.RewardedActionSuffix;
+            return "Pass the time, +" + TimeSkipHours.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                   + " " + unit + _loop.RewardedActionSuffix;
         }
 
         private void OnTimeSkip()
