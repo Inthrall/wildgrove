@@ -1985,12 +1985,21 @@ Still open here:
 
 ## Release blockers — the console half (2026-08-01)
 
-The code side of the release blockers is closed (see the IAP item in
-`todo-from-memory.md` and the privacy row above). What is left cannot be done
-from the repo at all: two AdMob console visits. Both are inert-until-done in a
-way that gives no error — the game runs, the logs are clean, and the thing
-simply doesn't work — so they are written out step by step rather than left as
-a line saying "console visit".
+The code side of the release blockers is closed — the last of it was the silent
+store-connect failure, resolved 2026-08-01 (both silent paths now release
+everyone queued behind the connection via `StoreConnection`, lifted out of
+`UnityIapStore` so the state machine is testable off-device; `StoreResult.Unavailable`
+distinguishes "the store was never reached" from "the purchase was refused" at
+all three buy sites, and `IStore.RestorePurchases` reports whether it asked, so
+the inside cover and the weekly-cache Look button stop answering for a store
+that was never reached. A failed attempt is deliberately **not** remembered:
+the next press reconnects from the top. `StoreConnectionTests`, 8) — plus the
+privacy row above.
+
+What is left cannot be done from the repo at all: two AdMob console visits. Both
+are inert-until-done in a way that gives no error — the game runs, the logs are
+clean, and the thing simply doesn't work — so they are written out step by step
+rather than left as a line saying "console visit".
 
 **1. The Amber-drip rewarded unit.** `AdUnitIds.AmberDrip` is an alias of
 `TimeSkip`, so the drip and the skip currently share one unit: one fill pool,
@@ -2038,6 +2047,63 @@ error anywhere; it looks exactly like a player outside the EEA.
    launch, no ad request precedes it, and **Ad privacy choices** then appears on
    the inside cover.
 
+## Release blockers — the device half
+
+Not repo work either, but nothing else is tracking these and none of them can be
+closed from a desk. The build is not proven until they are.
+
+- **Cloud Snapshots cross-device.** Single-device is confirmed (2026-07-28).
+  The most-played-wins reconcile has never been exercised against a *second*
+  device, which is the only place it differs from newest-wins — i.e. the whole
+  of what `AdoptCloudRun` exists for is untested.
+- **Ad serving for the newer placements** — the amber drip and the offline
+  boost — on a real device. Dev builds serve Google's test unit regardless, so
+  a placement that never fills in production looks fine everywhere else.
+- **The IAP purchase flow since the v5 API rewrite.** The rewrite and the R8
+  billing keeps have not been re-tested together on a device; either alone
+  passing says nothing about the pair.
+- **Add Mo as a Play Console license tester** (Settings → License testing) so
+  test purchases aren't charged, and install from the **internal track** rather
+  than sideloading — billing is unreliable sideloaded, and a sideloaded failure
+  is indistinguishable from a real one.
+
+## Test coverage
+
+From the 2026-07-18 whole-codebase review: `GameLoop` and `SaveFile` had no
+fixtures at all — the two seams where load/resume/autosave/offline-credit
+ordering lives, and where every bug that has bitten (pause→resume never
+crediting, the corrupt-save crash loop, the cloud reconcile baseline) was found
+on a device rather than in the suite.
+
+- ~~`SaveFile`~~ ✅ RESOLVED 2026-08-02 — `SaveFileTests`, 7 tests over the disk
+  half that `RunPersistence`'s fake store deliberately doesn't reach: the round
+  trip, the atomic replace (the branch only a *second* write takes, which is the
+  one an autosave takes for the rest of the run), the `.corrupt` and `.newer`
+  set-asides landing in their own slots with their bytes intact, and a failed
+  write staying a logged error instead of taking the session down. They need a
+  real disk, so `SaveFile.DirectoryOverride` was added to point them at a scratch
+  directory — without it the fixture writes over the developer's own editor run,
+  which is presumably why this never got written.
+- **`GameLoop` still has no fixture, and the shape of the gap has changed.**
+  Most of what the review worried about has since been extracted into classes
+  that *are* tested — `RunPersistence`, `Announcements`, `SessionLog`,
+  `Achievements`, `Leaderboards`, `GameStats`, and now `SaveFile`. What is left
+  in the MonoBehaviour is the **ordering between them**, and that is where the
+  remaining risk sits: `AdoptCloudRun` is eight steps that must happen in one
+  breath (rebase stats, mark arrivals seen, drop the stale offline summary,
+  credit the new absence, re-fold entitlements, save, notice), and `StartAgain`
+  is four with the same property. Both are commented as sequences precisely
+  because getting one out of order is silent. Testing them means either a
+  PlayMode fixture or lifting the sequence into a plain class the way the others
+  were lifted — the second is the pattern the file already follows.
+
+Recorded closed so they don't get re-raised (all checked 2026-08-01): the
+dangling-warden-post test exists (`SaveCodecTests.Restore_DanglingWardenPost_ClearsToCamp`),
+a `Modifiers` fixture exists (`Assets/Tests/EditMode/Sim/ModifiersTests.cs`), the
+amber-pack consumable icons exist (`store/iap/amber_pack_{small,large}-icon.png`),
+and the unplated species (osier-otter, horseshoe-bat, ermine) were closed by the
+Round 7 art pass (`0687b1f`).
+
 ## Narrative authoring
 
 - **MVP dialogue is drafted, not final.** All four waystones, all four verse
@@ -2067,6 +2133,26 @@ error anywhere; it looks exactly like a player outside the EEA.
   2026-07-28 with the Mistfen build: the map now carries `unlockSkill
   apothecary` and `unlockDigSite mistfen-marsh` (see the Mid/late-game
   content section).
+
+## Sim purity is a convention, not a constraint (2026-08-02)
+
+`CLAUDE.md` states the rule as `Wildgrove.Sim` = `noEngineReferences: true`, and
+the sim's own files honour it — there is not one `UnityEngine` reference among
+them. **The asmdef flag is `false`, and setting it to `true` does not compile.**
+Sim takes `GameDataAsset` in nearly every signature, `GameDataAsset` derives from
+`ScriptableObject`, and the compiler needs `UnityEngine.CoreModule` to resolve
+that base type: `error CS0012` in `Exchange`, `Folio`, `Almanac` and the rest.
+Tried on 2026-08-02, reverted.
+
+So the layer is engine-free by discipline, and nothing enforces it — a
+`UnityEngine.Random` or a `Time.deltaTime` added to the sim would compile and
+ship, and the property every file header claims would be quietly gone.
+
+Closing it for real means separating the content data from its Unity container:
+a plain-C# `GameData` runtime type that Sim depends on, with the ScriptableObject
+reduced to a wrapper the Game layer unwraps at load. That is a signature change
+across most of the sim, so it wants its own pass — not a flag flip. Until then,
+`CLAUDE.md`'s table describes the intent rather than the build.
 
 ## Number formatting
 
