@@ -1063,6 +1063,45 @@ Interpretations shipped (tune/confirm):
   ✅ RESOLVED 2026-07-29 — see the keyboard/controller item below.
   (`GameHud`, `Assets/Scripts/Game/Journal/JournalLayout.cs`)
 
+- **Folding grounds on the Trail page (2026-08-01).** Eight zones of gathering
+  plates had made the Trail a very long scroll to walk past to reach the
+  newest ground. Each zone now folds shut behind its name and only one stands
+  open. `Assets/Scripts/Game/Journal/JournalZones.cs` (public, tested — 9
+  tests, same reason `JournalNav` is public: the tests are another assembly).
+  - **The rule, and why it isn't just a set of open ids:** a zone the player
+    has never pressed is open *only while it is the newest*. So the page stays
+    short **without maintenance** — when a trail map opens the next ground, the
+    one before it folds shut on its own, because it was only ever open by
+    being new. A ground opened by hand stays open; a newest ground closed by
+    hand stays closed. That unlock case is the one nobody would press, so it's
+    the one the tests lead on.
+  - **A folded ground still names what grows there** (its nodes' resources, in
+    page order), so the page reads as an index of the trail rather than a row
+    of shut drawers — the warden can see where the fibres are without opening
+    anything. Folding is presentation only: the land keeps working, the strip
+    keeps showing it, and the sim never hears about it.
+  - **One ground never folds.** Run 1 draws no headings at all (there is
+    nothing to distinguish), so a fold there could shut the page with nothing
+    left to open it with.
+  - **The heading is the journal's own button plate**, not new furniture — so
+    focus reaches it, the pad presses it, and it answers a touch like every
+    other plate. Its label is set smaller than a button's usual voice: it
+    heads a section, it doesn't ask for anything.
+  - **Folding scrolls back to the heading** (`GameHud.FoldZone` + the existing
+    `_pendingScroll` landmark seam, alongside "verse"). Without it, opening a
+    ground near the bottom flings the reader elsewhere: a rebuild keeps the
+    scroll's *normalised* position, which is a different place once the page
+    has changed height, and the ground just opened would be off-screen.
+  - Fold state lives on `GameHud` (survives the rebuild a press causes) and is
+    **deliberately not saved** — how the page was left folded is a reading
+    position, not progress, so no save bump.
+  - Interpretation to confirm in playtest: the moment the **second** zone
+    unlocks, the meadow's plates disappear behind a heading for the first
+    time. The plate looks pressable and names its resources, but that is the
+    one beat where a player could think their nodes are gone.
+  (`Assets/Scripts/Game/Journal/JournalZones.cs`, `TrailPage.BuildZoneHeading`,
+  `GameHud.FoldZone`/`ZoneOpen`)
+
 - **Keyboard / controller navigation (2026-07-29) — the other half of the
   Phase 2 gate.** uGUI's EventSystem already moves focus geometrically once
   something is selected, so the build supplies what it doesn't:

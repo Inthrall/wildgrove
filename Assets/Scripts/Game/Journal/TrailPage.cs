@@ -32,15 +32,26 @@ namespace Wildgrove.Game
 
             var unlockedZones = ZonesInOrder();
             // Newest zone first — the page header names it, so the page must
-            // open on it; older zones keep farming further down the scroll.
+            // open on it; the older grounds follow, folded shut behind their
+            // names so eight zones of plates stay one readable page. Every one
+            // of them is still worked whether or not its plates are drawn:
+            // folding shortens the page, it doesn't rest the land.
             unlockedZones.Reverse();
+            var newest = NewestZoneId();
             var figure = 1;
             foreach (var zone in unlockedZones)
             {
+                // One ground and no heading to press: it must never fold, or
+                // the page could be shut with nothing left to open it with.
+                var open = unlockedZones.Count == 1 || JournalZones.IsOpen(_zoneOpen, zone.id, newest);
                 if (unlockedZones.Count > 1)
                 {
-                    var heading = MakeText(_body, zone.displayName.ToUpperInvariant(), 12, TextAnchor.MiddleCenter, Ink2, _smallCaps);
-                    heading.gameObject.name = "ZoneHeading";
+                    BuildZoneHeading(zone, open);
+                }
+
+                if (!open)
+                {
+                    continue;
                 }
 
                 // The zone's keystone specimen heads its section (design §3) —
@@ -67,6 +78,68 @@ namespace Wildgrove.Game
 
             BuildVerseCards();
             BuildWaystoneFooter();
+        }
+
+        /// <summary>
+        /// A ground's name, and the fold that opens or shuts it. Closed, the
+        /// name carries what grows there — the page still reads as an index of
+        /// the trail rather than a row of shut drawers, and the warden can see
+        /// where the fibres are without opening anything.
+        /// <para>
+        /// It's the journal's button plate rather than furniture of its own so
+        /// that it is a real control: focus reaches it, the pad presses it, and
+        /// it answers a touch the way every other plate does. The name is set
+        /// smaller than a button's usual voice — it heads a section, it doesn't
+        /// ask for anything.
+        /// </para>
+        /// </summary>
+        private void BuildZoneHeading(ZoneData zone, bool open)
+        {
+            var captured = zone.id;
+            var name = zone.displayName.ToUpperInvariant();
+            var label = open
+                ? SizeOpen(15) + name + "</size>"
+                : SizeOpen(15) + name + "</size>" + SizeOpen(13) + "\n<color=" + Ink2Hex + ">"
+                  + ZoneGrowth(zone) + "</color></size>";
+
+            var heading = Button(_body, label, 400, () => _hud.FoldZone(captured));
+            heading.gameObject.name = "ZoneHeading";
+
+            // The heading the page is being rebuilt around: the scroll comes
+            // back to it once the fresh page has a height, so the ground the
+            // player opened is still under the finger that opened it.
+            if (captured == _hud.PendingZoneFold)
+            {
+                _hud.FoldedHeading = (RectTransform)heading.transform;
+            }
+        }
+
+        /// <summary>
+        /// The newest unlocked ground — the one the page opens on, and the
+        /// default every unpressed fold is measured against.
+        /// </summary>
+        internal string NewestZoneId()
+        {
+            var zones = ZonesInOrder();
+            return zones.Count > 0 ? zones[zones.Count - 1].id : null;
+        }
+
+        /// <summary>
+        /// What a folded ground is still growing, named in its own words —
+        /// the nodes' resources, in the order the page would have drawn them.
+        /// </summary>
+        private string ZoneGrowth(ZoneData zone)
+        {
+            var growing = new List<string>();
+            foreach (var node in _loop.State.nodes)
+            {
+                if (node.zoneId == zone.id && !growing.Contains(node.resourceId))
+                {
+                    growing.Add(node.resourceId);
+                }
+            }
+
+            return growing.Count == 0 ? "folded" : string.Join(" · ", growing.ToArray());
         }
 
         /// <summary>

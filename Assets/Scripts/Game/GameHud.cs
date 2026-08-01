@@ -176,6 +176,25 @@ namespace Wildgrove.Game
         internal List<Action> FrameUpdaters => _frameUpdaters;
         internal Dictionary<string, float> FlashAges => _flashAges;
         internal Dictionary<string, Text> TendFlashes => _tendFlashes;
+
+        /// <summary>
+        /// The zones the player has folded open or shut on the Trail page, by
+        /// id — only the ones pressed by hand; the rest follow
+        /// <see cref="JournalZones.IsOpen"/>'s newest-only default. Held here
+        /// rather than in the page so it survives the rebuild a press causes,
+        /// and deliberately not saved: how the page was left folded is a
+        /// reading position, not progress.
+        /// </summary>
+        internal Dictionary<string, bool> ZoneOpen { get; } = new Dictionary<string, bool>();
+
+        /// <summary>
+        /// The zone heading the page is being rebuilt around, and the heading
+        /// itself once the page has drawn it — the landmark that keeps a fold
+        /// under the finger that pressed it (see <see cref="FoldZone"/>).
+        /// </summary>
+        internal string PendingZoneFold { get; private set; }
+
+        internal RectTransform FoldedHeading { get; set; }
         internal JournalText Labels => _labels;
         internal JournalSheets Sheets => _sheets;
 
@@ -1612,6 +1631,7 @@ namespace Wildgrove.Game
             var landmark = _pendingScroll;
             _pendingScroll = null;
             _firstVerseCard = null;
+            FoldedHeading = null;
 
             // Where the focus mark stood, before the page under it is destroyed.
             // Only the page's own mark goes: a rebuild can happen under an open
@@ -1653,6 +1673,9 @@ namespace Wildgrove.Game
             }
 
             SetPageColumn(null);
+            // The page has drawn its headings, so the fold has found its
+            // landmark (or the zone is gone) — the id has done its job.
+            PendingZoneFold = null;
             StartCoroutine(SettleScroll(keepPosition, landmark));
         }
 
@@ -1677,6 +1700,25 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// Fold a zone open or shut, and rebuild the page around its heading.
+        /// <para>
+        /// The landmark is the point. A rebuild otherwise keeps the scroll's
+        /// <em>normalised</em> position, which is a different place on the page
+        /// once the page has changed height — so opening a ground near the
+        /// bottom would fling the reader somewhere else entirely, and the
+        /// ground they just opened would be off-screen. Scrolling back to the
+        /// heading leaves it under the finger that pressed it.
+        /// </para>
+        /// </summary>
+        internal void FoldZone(string zoneId)
+        {
+            JournalZones.Toggle(ZoneOpen, zoneId, _trail.NewestZoneId());
+            PendingZoneFold = zoneId;
+            _pendingScroll = ZoneLandmark;
+            _dirty = true;
+        }
+
+        /// <summary>
         /// Open the Trail tab and bring a landmark card ("verse") into view —
         /// the tracker deep-links into a page that is otherwise a long scroll.
         /// </summary>
@@ -1692,12 +1734,17 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>The landmark name a zone fold scrolls back to.</summary>
+        private const string ZoneLandmark = "zone";
+
         private RectTransform LandmarkCard(string landmark)
         {
             switch (landmark)
             {
                 case "verse":
                     return _firstVerseCard;
+                case ZoneLandmark:
+                    return FoldedHeading;
                 default:
                     return null;
             }
