@@ -1107,18 +1107,130 @@ Interpretations shipped (tune/confirm):
   - Scroll stitches and the sheets' half-second tap guard are taken out of
     navigation (`NoNavigation`) — draggable furniture and a click-eater are
     not places to stand.
-  - **Known edge:** the Input System's default UI actions bind Navigate to
+  - ~~**Known edge:** the Input System's default UI actions bind Navigate to
     WASD as well as the arrows, so typing a familiar's name in the rename
     field can also move focus. Fixing it properly means shipping a custom
-    actions asset; revisit if it bites in the pad/K&M gate pass.
+    actions asset; revisit if it bites in the pad/K&M gate pass.~~
+    ✅ RESOLVED 2026-08-01 — no actions asset needed: a lit field owns the
+    keyboard (`GameHud.TextEntryActive`), and one flag hands navigation over
+    (`sendNavigationEvents`, the same shape as the modal trap). The field
+    reads keys through the selected-object update, which that flag doesn't
+    gate, so typing, Enter and Escape all still land. It turned out to be
+    wider than WASD: the **arrows** navigated out of the field too, and Q / E
+    / C were live inside a name. Back while typing only *leaves* the field
+    now — a pad player has no Escape key, and with Cancel suppressed along
+    with the rest of navigation, East was their only way out of a field they
+    opened with South. See the input-declarations item below.
   - The margin note's teaching tail still says "space / (A) catches one",
     which is true in the teaching moment (nothing is focused yet) — the full
     binding set is documented here and in §12 rather than in a margin note,
     which is flavour and not a manual.
-  Still open for the Phase 2 gate: the **gamepad manifest**, and playing it
-  through on real 4:3 / 16:10 / 21:9 / foldable hardware.
+  Still open for the Phase 2 gate: playing it through on real 4:3 / 16:10 /
+  21:9 / foldable hardware, with a pad in hand.
   (`GameHud`, `Assets/Scripts/Game/Journal/JournalNav.cs`,
   `Assets/Scripts/Game/Input/`)
+
+- **Android input declarations (2026-08-01) — the manifest half of the pad
+  gate.** None of the controller work reaches a player unless the manifest
+  says so: Play reads the manifest, not the build. Unity composes the app
+  manifest from Player Settings and the plugins' library manifests and has no
+  setting for either declaration, so a build hook patches its output
+  (`Assets/Editor/AndroidManifestSetup.cs`) and the pure transform sits apart
+  from the hook so it can be pinned by tests
+  (`Assets/Scripts/BuildTools/AndroidInputManifest.cs`, 12 tests).
+  - `android.hardware.gamepad` `required="false"` — what Play reads to tell
+    players the game takes a controller, and what lets it be served to a TV
+    with a pad attached. Never required: plenty of devices that can pair a
+    controller don't report the feature.
+  - `android.hardware.touchscreen` `required="false"` — **undeclared, Play
+    assumes a touchscreen is required** and withholds the game from every
+    device without one. This is the line that makes the pad and keyboard work
+    worth having.
+  - Both carry `tools:replace="android:required"`. The app manifest is only
+    the highest-priority *input* to the merger — a library manifest (Firebase,
+    AdMob, Play Games) declaring one of these as required would otherwise win,
+    and a required touchscreen is invisible until Play quietly stops offering
+    the game to a Chromebook.
+  - **Patched, not replaced.** A hand-kept `Assets/Plugins/Android/AndroidManifest.xml`
+    would own the launcher manifest and silently stop tracking the activity,
+    theme, orientation and splash that Player Settings decides. The hook runs
+    at `callbackOrder` 100 so the plugin resolvers have written theirs first,
+    and a missing manifest **fails the build** rather than warning —
+    compliance that quietly didn't get written looks exactly like compliance
+    nobody asked for (same stance as `GameDataImporter` on invalid data).
+  - `android.hardware.type.pc` `required="false"` — added in the PC pass below.
+    Turns off the mouse-to-touch compatibility layer on Play Games on PC so a
+    click arrives as a click.
+  - **Plus Google's 17 "not on a PC" features** (wifi, bluetooth, camera,
+    location, telephony, nfc, the five sensors, usb ×2, midi, audio.pro,
+    consumerir), all not-required. Wildgrove asks for none of them, which is
+    exactly why they can't be skipped: **a permission implies a required
+    feature** — `ACCESS_WIFI_STATE` implies `android.hardware.wifi`,
+    `READ_PHONE_STATE` implies telephony. The permissions in the shipped
+    manifest come from AdMob, Firebase, Play Games and androidx.work, whose
+    library manifests move under us between versions. Declaring the set means
+    an ad SDK bumping a permission can never quietly cost the PC audience.
+  - **Unity *does* have a gamepad Player Setting** (`androidGamepadSupportLevel`,
+    currently `SupportsDPad`) — but the editor only applies it under **Android
+    TV Compatibility**, which is off and which Wildgrove doesn't claim. For a
+    non-TV build it writes nothing, so the hook is the mechanism left.
+  - Still open: **verify in the built AAB**, not just here — the tests pin the
+    transform, not the Gradle merge. `aapt2 dump badging` on the next release
+    AAB should list every feature and none as required.
+  (`Assets/Editor/AndroidManifestSetup.cs`,
+  `Assets/Scripts/BuildTools/AndroidInputManifest.cs`)
+
+- **Play Games on PC pass (2026-08-01).** Done alongside the manifest work
+  rather than waiting for Phase 6, because two of the findings were live bugs
+  on ordinary large-screen Android, not PC-only concerns.
+  - **`resizeableActivity` was OFF.** A fresh 6000.5.5f1 project has it **on**,
+    so this was flipped somewhere — most likely the 6000.5.3f1 upgrade churn.
+    Off means the OS runs the game in **compatibility mode**: letterboxed on a
+    large screen, and a foldable may prompt the player to **restart the app**
+    on unfold. It also meant **the wide journal spread could never appear** —
+    `JournalLayout` only opens the spread if the OS hands over a wide window,
+    and a non-resizable activity never gets one. Now `true` in `ProjectSetup`
+    and in the checked-in `ProjectSettings.asset`. This is the single most
+    valuable line in the pass and it is worth re-checking after any editor
+    upgrade.
+  - **Play Games on PC was being treated as a phone.** `Application.isMobilePlatform`
+    is **true** in a PGoPC build (it is an Android build), which meant the
+    keyboard hint was hidden from the only player who has nothing but a
+    keyboard, and **Escape on the home page quit the app outright** — a thing
+    no desktop window does, and indistinguishable from a crash. New
+    `Assets/Scripts/Game/Input/DeviceForm.cs` asks Google's documented
+    question instead (`PackageManager.hasSystemFeature("android.hardware.type.pc")`,
+    cached once, JNI failure falls back to handheld rather than taking the HUD
+    down). Back now exits only on a handheld, the key tail shows on a PC, and
+    the press verb follows the hardware — "tap a plate" becomes "click a
+    plate", "tap to catch" becomes "click to catch".
+  - **`chromeosInputEmulation` is a dead end.** It looked like the paired
+    Player Setting for `type.pc`, but in 6000.5 it is
+    `[Obsolete("ChromeOS is no longer supported.")]` and serialises nothing.
+    The manifest declaration is the only live lever. ChromeOS is no longer a
+    Unity target at all; Play Games on PC is, and is what reports the feature.
+  - **Supported Aspect Ratio — looked at, deliberately left alone.** Wildgrove
+    stores mode `1` / max `2.1`; a fresh project stores mode `1` / max `2.4`,
+    and 21:9 is 2.33. But the mode is an **internal property with no public
+    API**, and setting the public `maxAspectRatio` flips the mode `1 -> 2` as a
+    side effect — off what is almost certainly Native and onto a Custom cap,
+    the opposite of what's wanted. It is moot regardless: `android:maxAspectRatio`
+    only applies to a **non-resizable** activity, and the activity is now
+    resizable. Left as found. If a 21:9 device ever shows bars, the check is
+    ten seconds in Player Settings → Resolution and Presentation → Supported
+    Aspect Ratio.
+  - **x86-64 stays off, deliberately.** Play Games on PC runs ARM64 through
+    translation, which is ample for an idle game with a 2D URP surface; native
+    x86-64 is a performance *recommendation*, and a third ABI would cost the
+    same IL2CPP build-time doubling that got ARMv7 dropped. Revisit only if PC
+    vitals show it.
+  - Owed, and **manual — Mo's call**: play it through in the Google Play Games
+    on PC developer emulator (mouse-only, keyboard-only, pad, and a window
+    resize / maximise). I have **not** installed the emulator: it wants
+    virtualisation on a work machine, which is exactly the kind of thing to
+    hand over rather than do.
+  (`Assets/Editor/ProjectSetup.cs`, `Assets/Scripts/Game/Input/DeviceForm.cs`,
+  `GameHud.HintText`/`HandleBack`, `BubbleWorldView`)
 - **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
   GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
   Replace with a real bootstrap scene when there's content to lay out.

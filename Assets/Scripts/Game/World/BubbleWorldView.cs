@@ -100,8 +100,9 @@ namespace Wildgrove.Game.World
             if (hintFont != null)
             {
                 // First-run only: nothing else marks the drifting plate as the
-                // game's most valuable tap target.
-                view._hint = PlaceholderArt.CreateLabel(go.transform, "tap to catch", hintFont,
+                // game's most valuable target.
+                view._hint = PlaceholderArt.CreateLabel(go.transform,
+                    Wildgrove.Game.Input.DeviceForm.PressVerb + " to catch", hintFont,
                     new Color(0.431f, 0.376f, 0.278f, 1f));
                 view._hint.transform.localPosition = new Vector3(0f, -0.62f, 0f);
                 view._hint.characterSize = 0.06f;

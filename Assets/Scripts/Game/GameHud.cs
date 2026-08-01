@@ -216,12 +216,16 @@ namespace Wildgrove.Game
         /// </summary>
         private string HintText()
         {
-            var catchTail = Application.isMobilePlatform ? string.Empty : " · space / (A) catches one";
+            // Play Games on PC is an Android build, so isMobilePlatform reports
+            // true there and hid the key hint from the one player with nothing
+            // but keys — DeviceForm asks the question that actually matters.
+            var catchTail = DeviceForm.IsDesktopLike ? " · space / (A) catches one" : string.Empty;
+            var press = DeviceForm.PressVerb;
             if (!_hintPostDone)
             {
                 return _hintCatchDone
-                    ? "tap a plate to post someone · the land only gives to the posted."
-                    : "tap a plate to post someone · catch the windfalls drifting up the strip" + catchTail;
+                    ? press + " a plate to post someone · the land only gives to the posted."
+                    : press + " a plate to post someone · catch the windfalls drifting up the strip" + catchTail;
             }
 
             return _hintCatchDone
@@ -238,10 +242,25 @@ namespace Wildgrove.Game
 
             FitLayoutToScreen();
             ReportWorldStrip();
-            HandleBack();
-            HandleTabStep();
-            HandleWorldTap();
-            HandleFocus();
+
+            // A lit text field owns the keyboard, and the journal stands down.
+            var typing = TextEntryActive;
+            SendNavigationEvents(!typing);
+            if (typing)
+            {
+                LeaveFieldOnBack();
+            }
+            else
+            {
+                HandleBack();
+                HandleTabStep();
+            }
+
+            HandleWorldTap(typing);
+            if (!typing)
+            {
+                HandleFocus();
+            }
 
             for (var i = 0; i < _frameUpdaters.Count; i++)
             {
@@ -1032,8 +1051,12 @@ namespace Wildgrove.Game
             {
                 OpenTab(TabTrail);
             }
-            else if (Application.isMobilePlatform)
+            else if (!DeviceForm.IsDesktopLike)
             {
+                // Only a handheld exits on Back — that's its platform
+                // convention. A window has its own way of closing, and Escape
+                // killing the app on Play Games on PC reads as a crash
+                // (isMobilePlatform is true there, so it used to).
                 Application.Quit();
             }
         }
@@ -1055,6 +1078,61 @@ namespace Wildgrove.Game
         /// than to the world strip.
         /// </summary>
         private bool FocusHasTarget => _focusEngaged && _focused != null;
+
+        /// <summary>
+        /// True while a text field has the keyboard — the rename field, when a
+        /// familiar arrives or is renamed from the roster, is the journal's only
+        /// one. Everything the journal binds to a key stands down while it is
+        /// lit: Q and E turn the page, C catches a windfall, Space tends, and
+        /// every one of them belongs inside a familiar's name instead.
+        /// </summary>
+        private static bool TextEntryActive
+        {
+            get
+            {
+                var events = EventSystem.current;
+                var selected = events != null ? events.currentSelectedGameObject : null;
+                if (selected == null)
+                {
+                    return false;
+                }
+
+                var field = selected.GetComponent<InputField>();
+                return field != null && field.isFocused;
+            }
+        }
+
+        /// <summary>
+        /// Hand navigation to the field, or take it back. One flag, the same
+        /// shape as the modal trap: uGUI's default UI actions bind Navigate to
+        /// WASD <em>and</em> the arrows, so without this, moving the caret also
+        /// walks focus off the field mid-word. The field keeps reading keys
+        /// through the selected-object update, which this doesn't touch, so
+        /// typing, Enter and Escape all still reach it.
+        /// </summary>
+        private static void SendNavigationEvents(bool send)
+        {
+            var events = EventSystem.current;
+            if (events != null && events.sendNavigationEvents != send)
+            {
+                events.sendNavigationEvents = send;
+            }
+        }
+
+        /// <summary>
+        /// Back, while a field is lit, only leaves the field — it must not also
+        /// close the sheet the field is standing in. A pad player has no Escape
+        /// key, and with Cancel suppressed along with the rest of navigation,
+        /// East is the only way out of a field they opened with South. The typed
+        /// text is kept: nothing reads the field until its own button is pressed.
+        /// </summary>
+        private void LeaveFieldOnBack()
+        {
+            if (_input.BackTriggered)
+            {
+                Select(null);
+            }
+        }
 
         private void HandleFocus()
         {
@@ -1337,7 +1415,13 @@ namespace Wildgrove.Game
             _world.StripScreenRect = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         }
 
-        private void HandleWorldTap()
+        /// <param name="typing">
+        /// True while a field has the keyboard (<see cref="TextEntryActive"/>).
+        /// The strip's key bindings stand down — a C in a familiar's name is a
+        /// letter, not a catch — but the finger and the mouse are still the
+        /// player's, so the pointer paths below run either way.
+        /// </param>
+        private void HandleWorldTap(bool typing)
         {
             if (_sheet != null)
             {
@@ -1349,7 +1433,7 @@ namespace Wildgrove.Game
             // there they are Submit, and belong to the marked control. Without
             // this binding the windfall, the game's one active-play reward,
             // would be out of reach for a pad player reading the journal.
-            if (_input.CatchTriggered && TryCatchOldest())
+            if (!typing && _input.CatchTriggered && TryCatchOldest())
             {
                 return;
             }
@@ -1384,7 +1468,7 @@ namespace Wildgrove.Game
                         _sheets.OpenPostingSheet(station);
                     }
                 }
-                else if (!FocusHasTarget)
+                else if (!typing && !FocusHasTarget)
                 {
                     // Space / pad-A with nothing marked: catch the longest-adrift
                     // bubble. With a control marked these are Submit instead —
