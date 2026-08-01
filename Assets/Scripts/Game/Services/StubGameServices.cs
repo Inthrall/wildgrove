@@ -95,10 +95,13 @@ namespace Wildgrove.Game.Services
             onLoaded?.Invoke(null);
         }
 
-        public void SaveCloud(string data, long playedMs, Action onComplete = null)
+        public void SaveCloud(string data, long playedMs, Action<bool> onComplete = null)
         {
             Debug.Log("[play-games] stub cloud save");
-            onComplete?.Invoke();
+            // Answers true to stay inside its own fiction: the stub reports
+            // signed in, so a false here would have the editor's inside cover
+            // claim Play Games refused a copy it was never asked for.
+            onComplete?.Invoke(true);
         }
     }
 }

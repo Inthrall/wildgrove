@@ -1,5 +1,6 @@
 using System;
 using GoogleMobileAds.Api;
+using GoogleMobileAds.Ump.Api;
 using UnityEngine;
 
 namespace Wildgrove.Game.Services
@@ -19,6 +20,7 @@ namespace Wildgrove.Game.Services
         private RewardedAd _timeSkip;
         private RewardedAd _amberDrip;
         private bool _initialised;
+        private bool _adsStarted;
 
         public bool IsRewardedReady(RewardedPlacement placement)
         {
@@ -37,11 +39,94 @@ namespace Wildgrove.Game.Services
             // Marshal SDK callbacks to the main thread so reward handlers can
             // touch the simulation and UI safely.
             MobileAds.RaiseAdEventsOnUnityMainThread = true;
+
+            // A consent answer given on an earlier launch is already held by the
+            // SDK, so ads start now rather than waiting on the network round
+            // trip below — the refresh still runs, and a changed answer takes
+            // effect on the requests that follow it.
+            if (ConsentInformation.CanRequestAds())
+            {
+                StartAds();
+            }
+
+            GatherConsent();
+        }
+
+        /// <summary>
+        /// Ask Google's UMP layer what this player's region requires, and show
+        /// the consent form when one is required and unanswered. Consent is
+        /// gathered before ads are requested (Google's stated order); where no
+        /// form is required — most of the world — every step here resolves
+        /// immediately and <see cref="StartAds"/> runs on the same launch.
+        /// <para>
+        /// A failure at either step is logged and then ignored on purpose:
+        /// an offline first launch must still reach <see cref="StartAds"/> if
+        /// the SDK says ads may be requested, or a player with no signal would
+        /// lose the rewarded ads that pay for their skips.
+        /// </para>
+        /// </summary>
+        private void GatherConsent()
+        {
+            ConsentInformation.Update(new ConsentRequestParameters(), updateError =>
+            {
+                if (updateError != null)
+                {
+                    Debug.LogWarning("[ads] consent update failed: " + updateError.Message);
+                }
+
+                ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
+                {
+                    if (formError != null)
+                    {
+                        Debug.LogWarning("[ads] consent form failed: " + formError.Message);
+                    }
+
+                    if (ConsentInformation.CanRequestAds())
+                    {
+                        StartAds();
+                    }
+                    else
+                    {
+                        Debug.Log("[ads] consent withheld — no ads requested");
+                    }
+                });
+            });
+        }
+
+        /// <summary>
+        /// Wake the ads SDK and preload each placement. Guarded because both the
+        /// cached-consent path and the freshly-gathered one can reach it on the
+        /// same launch.
+        /// </summary>
+        private void StartAds()
+        {
+            if (_adsStarted)
+            {
+                return;
+            }
+
+            _adsStarted = true;
             MobileAds.Initialize(_ =>
             {
                 Load(RewardedPlacement.OfflineBoost);
                 Load(RewardedPlacement.TimeSkip);
                 Load(RewardedPlacement.AmberDrip);
+            });
+        }
+
+        public bool PrivacyOptionsAvailable =>
+            ConsentInformation.PrivacyOptionsRequirementStatus == PrivacyOptionsRequirementStatus.Required;
+
+        public void ShowPrivacyOptions(Action onClosed = null)
+        {
+            ConsentForm.ShowPrivacyOptionsForm(error =>
+            {
+                if (error != null)
+                {
+                    Debug.LogWarning("[ads] privacy options form failed: " + error.Message);
+                }
+
+                onClosed?.Invoke();
             });
         }
 

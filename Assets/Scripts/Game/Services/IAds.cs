@@ -38,6 +38,21 @@ namespace Wildgrove.Game.Services
         void Initialise();
 
         /// <summary>
+        /// True when this player can be shown the ad-privacy form again — i.e.
+        /// they are somewhere that requires the choice to stay changeable
+        /// (the EEA and UK). Elsewhere no form was ever asked for and the
+        /// inside cover draws no row rather than a button that does nothing.
+        /// </summary>
+        bool PrivacyOptionsAvailable { get; }
+
+        /// <summary>
+        /// Re-open Google's own ad-privacy form so the player can change the
+        /// answer they gave at first launch. <paramref name="onClosed"/> always
+        /// fires — after the form closes or immediately when there is none.
+        /// </summary>
+        void ShowPrivacyOptions(Action onClosed = null);
+
+        /// <summary>
         /// Show a rewarded ad for <paramref name="placement"/>. <paramref name="onReward"/>
         /// fires only when the player earns the reward (watches to the reward point);
         /// <paramref name="onClosed"/> always fires when the ad is dismissed — after a

@@ -19,6 +19,15 @@ namespace Wildgrove.Game.Services
             Debug.Log("[ads] stub initialised");
         }
 
+        /// <summary>No SDK, so no form to re-open — the inside cover draws no row.</summary>
+        public bool PrivacyOptionsAvailable => false;
+
+        public void ShowPrivacyOptions(Action onClosed = null)
+        {
+            Debug.Log("[ads] stub privacy options (nothing to show)");
+            onClosed?.Invoke();
+        }
+
         public void ShowRewarded(RewardedPlacement placement, Action onReward, Action onClosed = null)
         {
             Debug.Log("[ads] stub rewarded shown placement=" + placement + " (granting immediately)");

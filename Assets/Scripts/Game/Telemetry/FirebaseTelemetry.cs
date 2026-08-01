@@ -33,6 +33,7 @@ namespace Wildgrove.Game.Telemetry
 
         private bool _ready;
         private bool _failed;
+        private bool _collecting = true;
 
         public FirebaseTelemetry(ITelemetry fallback)
         {
@@ -59,6 +60,11 @@ namespace Wildgrove.Game.Telemetry
                 // non-fatals — the stability metric must see them.
                 Crashlytics.ReportUncaughtExceptionsAsFatal = true;
                 _ready = true;
+
+                // The player's choice was made before Firebase finished waking
+                // (it is read at launch, and this callback lands seconds later),
+                // so it is applied here rather than lost.
+                FirebaseAnalytics.SetAnalyticsCollectionEnabled(_collecting);
 
                 // Snapshot and clear under the lock, then send outside it so a
                 // worker-thread LogException can't race the drain and Firebase
@@ -99,6 +105,13 @@ namespace Wildgrove.Game.Telemetry
 
         public void LogEvent(string name, params (string key, object value)[] parameters)
         {
+            if (!_collecting)
+            {
+                // Refused before the buffer, not at the send: an event held
+                // while opted out would go up the moment Firebase woke.
+                return;
+            }
+
             _fallback.LogEvent(name, parameters);
 
             if (_ready)
@@ -135,6 +148,28 @@ namespace Wildgrove.Game.Telemetry
                         _exceptionBuffer.Enqueue(exception);
                     }
                 }
+            }
+        }
+
+        public void SetCollectionEnabled(bool enabled)
+        {
+            _collecting = enabled;
+            _fallback.SetCollectionEnabled(enabled);
+
+            if (!enabled)
+            {
+                // Anything already waiting for the flush was gathered before the
+                // player said no, and saying no has to reach backwards that far
+                // — the buffer is the only place it could still be sent from.
+                lock (_gate)
+                {
+                    _buffer.Clear();
+                }
+            }
+
+            if (_ready)
+            {
+                FirebaseAnalytics.SetAnalyticsCollectionEnabled(enabled);
             }
         }
 

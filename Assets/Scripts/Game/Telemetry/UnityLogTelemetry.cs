@@ -13,14 +13,28 @@ namespace Wildgrove.Game.Telemetry
     /// </summary>
     public sealed class UnityLogTelemetry : ITelemetry
     {
+        private bool _collecting = true;
+
         public void LogEvent(string name, params (string key, object value)[] parameters)
         {
+            if (!_collecting)
+            {
+                return;
+            }
+
             Debug.Log(Format(name, parameters));
         }
 
         public void LogException(Exception exception)
         {
+            // Exceptions are not play data — they follow the crash-reporting
+            // rule, not the analytics one, and are logged whatever the choice.
             Debug.LogException(exception);
+        }
+
+        public void SetCollectionEnabled(bool enabled)
+        {
+            _collecting = enabled;
         }
 
         /// <summary>One log line per event: "[telemetry] name key=value key=value".</summary>

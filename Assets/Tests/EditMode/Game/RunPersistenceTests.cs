@@ -209,6 +209,73 @@ namespace Wildgrove.Game.Tests
             Assert.That(adopted, Is.False);
         }
 
+        [Test]
+        public void Save_WhenTheCloudTakesIt_ReportsNoFailure()
+        {
+            var run = _sut.Load();
+
+            _sut.Save(run.State);
+
+            Assert.That(_sut.LastCloudWriteFailed, Is.False);
+        }
+
+        [Test]
+        public void Save_WhenTheCloudRefusesIt_SaysSoRatherThanNothing()
+        {
+            // The whole point of the inside cover's cloud line: a run that is
+            // only on this device, while the player believes Play Games holds
+            // it, used to be indistinguishable from one safely copied up.
+            var run = _sut.Load();
+            _cloud.RefuseWrites = true;
+
+            _sut.Save(run.State);
+
+            Assert.That(_sut.LastCloudWriteFailed, Is.True);
+        }
+
+        [Test]
+        public void Reconcile_AfterAdopting_RemembersWhereTheRunCameFrom()
+        {
+            _sut.Load();
+            _cloud.Stored = SaveCodec.ToJson(Saved(playedMs: 900_000L, savedAtUnixMs: Now - 60_000L));
+
+            _sut.Reconcile(_ => { });
+
+            Assert.That(_sut.AdoptedFromCloud, Is.True);
+        }
+
+        [Test]
+        public void StartOver_WritesTheFreshRunDownBeforeAnythingCanBeatIt()
+        {
+            // A fresh run has 0 played time, which every other copy in existence
+            // beats — so it has to reach both slots immediately, not at the next
+            // autosave.
+            _store.Saved = Saved(playedMs: 600_000L, savedAtUnixMs: Now - 30_000L);
+            _sut.Load();
+
+            var run = _sut.StartOver();
+
+            Assert.That(run.State.playedMs, Is.Zero);
+            Assert.That(_store.Saved.playedMs, Is.Zero, "the device slot still held the old run");
+            Assert.That(_cloud.SavedPlayedMs, Is.Zero, "the cloud still held the old run");
+        }
+
+        [Test]
+        public void Reconcile_AfterStartingOver_RefusesToHandTheOldRunBack()
+        {
+            // Sign-in resolves seconds after launch, so a player who starts again
+            // in that window would otherwise have the cloud's further-along run
+            // adopted straight over the blank book they just asked for.
+            _sut.Load();
+            _sut.StartOver();
+            _cloud.Stored = SaveCodec.ToJson(Saved(playedMs: 900_000L, savedAtUnixMs: Now - 60_000L));
+
+            var adopted = false;
+            _sut.Reconcile(_ => adopted = true);
+
+            Assert.That(adopted, Is.False);
+        }
+
         private sealed class FakeClock : IClock
         {
             public long Now;
@@ -242,6 +309,9 @@ namespace Wildgrove.Game.Tests
             public string SavedJson;
             public long SavedPlayedMs;
 
+            /// <summary>Set to have the cloud refuse the write, as a signed-out or failed Snapshot commit does.</summary>
+            public bool RefuseWrites;
+
             public bool IsSignedIn => true;
 
             public void LoadCloud(Action<string> onLoaded)
@@ -249,12 +319,18 @@ namespace Wildgrove.Game.Tests
                 onLoaded?.Invoke(Stored);
             }
 
-            public void SaveCloud(string data, long playedMs, Action onComplete = null)
+            public void SaveCloud(string data, long playedMs, Action<bool> onComplete = null)
             {
+                if (RefuseWrites)
+                {
+                    onComplete?.Invoke(false);
+                    return;
+                }
+
                 SavedJson = data;
                 SavedPlayedMs = playedMs;
                 Stored = data;
-                onComplete?.Invoke();
+                onComplete?.Invoke(true);
             }
 
             public void SignIn(Action<bool> onComplete = null)

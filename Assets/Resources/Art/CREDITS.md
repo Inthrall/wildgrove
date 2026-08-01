@@ -4,7 +4,7 @@ All source works are public domain (original artworks out of copyright) or openl
 
 **Attribution required (CC BY):** craft-entomology.png, craft-mining.png, insect-deep-amber.jpg, res-amber.jpg, res-peat.jpg. Everything else is public-domain equivalent (PD / CC0 / "no known restrictions").
 
-These five are credited **in the shipped build**, in the journal's colophon — Record page → THE COLOPHON → Read. The strings live in `Assets/Scripts/Game/ArtCredits.cs`, which is the only copy the build carries; the section at the foot of this file reproduces them so a reviewer can check the two agree. **Add a line to `ArtCredits.Licensed` the same day a CC-licensed work joins the art** — a credit that exists only in this file is not carried by the game.
+These five are credited **in the shipped build**, in the journal's colophon — Record page → THE INSIDE COVER → Open → THE COLOPHON. The strings live in `Assets/Scripts/Game/ArtCredits.cs`, which is the only copy the build carries; the section at the foot of this file reproduces them so a reviewer can check the two agree. **Add a line to `ArtCredits.Licensed` the same day a CC-licensed work joins the art** — a credit that exists only in this file is not carried by the game.
 
 *Craft glyphs have been re-baked to a two-tone sepia (HUD ink #3A3126 / #6E6047) for a coherent journal look; the rows below name the original source works.*
 

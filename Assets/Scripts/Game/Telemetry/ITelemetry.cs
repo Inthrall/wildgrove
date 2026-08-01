@@ -18,5 +18,14 @@ namespace Wildgrove.Game.Telemetry
 
         /// <summary>Record a caught-but-notable exception (a crash reporter's non-fatal).</summary>
         void LogException(Exception exception);
+
+        /// <summary>
+        /// Turn product-event collection on or off — the inside cover's "what
+        /// this book tells us" choice, applied at launch and whenever it is
+        /// changed. Crash reporting is deliberately outside this: it carries no
+        /// play data, and a build that stops reporting its own crashes cannot
+        /// be fixed.
+        /// </summary>
+        void SetCollectionEnabled(bool enabled);
     }
 }

@@ -361,11 +361,11 @@ namespace Wildgrove.Game.Services
             });
         }
 
-        public void SaveCloud(string data, long playedMs, Action onComplete = null)
+        public void SaveCloud(string data, long playedMs, Action<bool> onComplete = null)
         {
             if (!IsSignedIn || string.IsNullOrEmpty(data))
             {
-                onComplete?.Invoke();
+                onComplete?.Invoke(false);
                 return;
             }
 
@@ -374,7 +374,7 @@ namespace Wildgrove.Game.Services
                 if (status != SavedGameRequestStatus.Success || game == null)
                 {
                     Log("cloud save: open FAILED — " + status);
-                    onComplete?.Invoke();
+                    onComplete?.Invoke(false);
                     return;
                 }
 
@@ -389,7 +389,7 @@ namespace Wildgrove.Game.Services
                 PlayGamesPlatform.Instance.SavedGame.CommitUpdate(game, update, bytes, (commitStatus, __) =>
                 {
                     Log("cloud save: commit " + commitStatus + ", " + bytes.Length + " bytes");
-                    onComplete?.Invoke();
+                    onComplete?.Invoke(commitStatus == SavedGameRequestStatus.Success);
                 });
             });
         }

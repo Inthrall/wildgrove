@@ -40,6 +40,27 @@ namespace Wildgrove.Game
         /// </summary>
         public long LoadedPlayedMs { get; private set; }
 
+        /// <summary>
+        /// True when the last mirror to the cloud did not land. Reported on the
+        /// inside cover: a run that is only on this device, while the player
+        /// believes Play Games is holding it, is the failure worth saying out
+        /// loud. False before the first write of a session.
+        /// </summary>
+        public bool LastCloudWriteFailed { get; private set; }
+
+        /// <summary>True once a cloud run has been taken up in place of the local one this session.</summary>
+        public bool AdoptedFromCloud { get; private set; }
+
+        /// <summary>
+        /// Set when the player deliberately starts the book again, and the only
+        /// thing that can refuse an adoption. Sign-in — and so
+        /// <see cref="Reconcile"/> — resolves seconds after launch, which is
+        /// exactly when a fresh run has 0 played time and the old cloud save
+        /// would win: without this, starting again could be undone by the
+        /// device's own copy landing a moment later.
+        /// </summary>
+        public bool StartedOver { get; private set; }
+
         /// <summary>A run in hand, and how long it had been left when we picked it up.</summary>
         public sealed class Run
         {
@@ -99,7 +120,25 @@ namespace Wildgrove.Game
             // Mirror to cloud; Reconcile pulls it back on the next signed-in
             // launch, adopting it when it is further along than the local slot. Play
             // time is also the snapshot's played-time for the Snapshots conflict tiebreak.
-            _services.SaveCloud(SaveCodec.ToJson(save), state.playedMs);
+            _services.SaveCloud(SaveCodec.ToJson(save), state.playedMs,
+                landed => LastCloudWriteFailed = !landed);
+        }
+
+        /// <summary>
+        /// Wipe the run and begin a fresh one: the device slot is overwritten
+        /// immediately and the cloud copy with it, so the book the player just
+        /// closed cannot come back on the next launch. From here on this session
+        /// refuses to adopt a cloud run (see <see cref="StartedOver"/>).
+        /// </summary>
+        public Run StartOver()
+        {
+            StartedOver = true;
+            AdoptedFromCloud = false;
+            var run = new Run { State = GameStateFactory.NewGame(_data) };
+            // Written before anything else can: the fresh run has 0 played time,
+            // which every other copy in existence beats.
+            Save(run.State);
+            return run;
         }
 
         /// <summary>
@@ -117,7 +156,7 @@ namespace Wildgrove.Game
         {
             _services.LoadCloud(json =>
             {
-                if (string.IsNullOrEmpty(json))
+                if (string.IsNullOrEmpty(json) || StartedOver)
                 {
                     return;
                 }
@@ -152,6 +191,7 @@ namespace Wildgrove.Game
                 };
 
                 LoadedPlayedMs = adopted.State.playedMs;
+                AdoptedFromCloud = true;
                 onAdopt(adopted);
             });
         }

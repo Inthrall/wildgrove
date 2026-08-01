@@ -117,7 +117,14 @@ namespace Wildgrove.Game.Services
         /// resolution picks the further-along save — matching GameLoop's own
         /// most-played-wins reconcile — on a device-clock-independent basis
         /// instead of comparing zeros.
+        /// <para>
+        /// <paramref name="onComplete"/> reports whether the blob actually
+        /// reached the cloud. It has to answer rather than merely fire: the
+        /// inside cover tells the player where their run is kept, and a write
+        /// that failed silently is exactly the case that has to be sayable.
+        /// Signed out counts as false — nothing was written.
+        /// </para>
         /// </summary>
-        void SaveCloud(string data, long playedMs, Action onComplete = null);
+        void SaveCloud(string data, long playedMs, Action<bool> onComplete = null);
     }
 }

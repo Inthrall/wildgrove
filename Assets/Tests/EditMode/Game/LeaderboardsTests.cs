@@ -145,9 +145,9 @@ namespace Wildgrove.Game.Tests
                 onLoaded?.Invoke(null);
             }
 
-            public void SaveCloud(string data, long playedMs, Action onComplete = null)
+            public void SaveCloud(string data, long playedMs, Action<bool> onComplete = null)
             {
-                onComplete?.Invoke();
+                onComplete?.Invoke(true);
             }
         }
     }

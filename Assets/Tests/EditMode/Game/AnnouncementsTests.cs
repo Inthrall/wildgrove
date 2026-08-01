@@ -170,6 +170,37 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Forget_ClearsEveryMomentOwedByTheRunItBelongedTo()
+        {
+            // Starting the book again: the old run's moments would otherwise be
+            // paid out over a camp that has never seen any of them.
+            _announce.NoticeArrivals(new List<Familiar> { Familiar("a") });
+            _announce.CelebrateBond(new BondData { id = "burr" });
+            _announce.QueueReward(new RewardGrant { rewardId = "drovers-halter" });
+
+            _announce.Forget();
+
+            Assert.That(_announce.PeekArrival(), Is.Null);
+            Assert.That(_announce.PendingBondCelebration, Is.Null);
+            Assert.That(_announce.TakeReward(), Is.Null);
+            Assert.That(_announce.PendingOfflineSummary, Is.Null);
+        }
+
+        [Test]
+        public void Forget_UnmeetsTheKith_SoAFreshSeedIsAskedForItsNames()
+        {
+            // Familiar ids are minted per run and can repeat across one, so the
+            // met-list is what would silently swallow a new game's first sheet.
+            _announce.NoticeArrivals(new List<Familiar> { Familiar("a") });
+            _announce.TakeArrival();
+
+            _announce.Forget();
+            _announce.NoticeArrivals(new List<Familiar> { Familiar("a") });
+
+            Assert.That(_announce.PeekArrival(), Is.Not.Null);
+        }
+
+        [Test]
         public void CelebrateBond_ShowsTheBondOnce()
         {
             var bond = new BondData { id = "burr", displayName = "Burr" };

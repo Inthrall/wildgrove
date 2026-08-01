@@ -44,8 +44,8 @@ Implementation + interpretations:
   NonConsumable, catalogue in `StoreProductIds.All`; `KithPurchases.Apply` folds
   entitlements in (never downgrades — a billing hiccup can't shrink the ladder);
   synced on purchase only (billing stays lazy per the startup-crash fix — a
-  reinstall shows purchased slots after the first store touch; no restore-purchases
-  affordance yet, matching remove_ads). **Play Console: create both products.**
+  reinstall shows purchased slots after the first store touch; a restore-purchases
+  button landed 2026-08-01 on the inside cover). **Play Console: create both products.**
 - **Save v26:** `powerupIds` dropped; `foldedVersesSung`/`purchasedKithSlots`/
   `starterBundleAmberGranted` added; Restore dedupes duplicate species (bonded,
   then deepest Kinship kept) and rests stationed familiars past the ladder.
@@ -1825,13 +1825,100 @@ kit-effects item.)
 
 **Structural absences:**
 
-- **No settings surface at all** — no audio, no save management, no
-  cloud-save status (the most-played-wins reconcile in `RunPersistence` is
-  completely silent), no privacy/consent access beyond the SDK's own UMP
-  dialog.
+- ~~**No settings surface at all**~~ ✅ RESOLVED 2026-08-01 — the inside
+  cover (its own section below) carries the keeping of the book, the
+  analytics choice, the ad-privacy form, restoring purchases, the colophon
+  and starting again. **Sound is the one part deliberately not built**: there
+  is no audio anywhere in the project (no `AudioSource`, no clip, not one
+  file), so a volume slider would be a control wired to nothing. It arrives
+  with the audio pass, in the section it belongs to.
 - **No aggregate camp production view** — per-resource rates exist only on
   individual node cards; the only rollup is the trail's gather-vs-carry
   shortfall line.
+
+## The inside cover — the settings surface (2026-08-01)
+
+**IMPLEMENTED 2026-08-01 — 845/845 EditMode green on both targets (Win64 +
+Android).** The last structural absence in the audit above, and a release
+blocker rather than a tuning question: every one of these was a real
+behaviour with no way to see it or change it. It is a **sheet off the last
+card of the last page**, not a fifth tab — the chrome budget rule applies
+twice over to a tab, and a settings screen is read about once a month. The
+colophon, which held that card alone, is now a section inside it.
+
+- **THE KEEPING.** When the run was last written, and where the copy goes
+  (`SaveStanding`, pure and pinned). `IGameServices.SaveCloud` now answers
+  `Action<bool>` instead of firing regardless, so `RunPersistence` can tell
+  a mirror that landed from one that didn't — **a run living only on this
+  device while the player believes Play Games holds it was previously
+  indistinguishable from a copy safely made.** Signed out offers the sign-in
+  and outranks the failure line (it is the reason for it). A "write it down
+  now" button re-reads both lines in place.
+- **The silent reconcile answered.** Adopting a further-along run from
+  another device changed everything under the player's hands and said
+  nothing but a telemetry event. It now leaves a margin note ("another
+  device had walked further. the book opens there.") and the cloud line says
+  so for the rest of the session (`GameLoop.TakeCloudNotice`,
+  `RunPersistence.AdoptedFromCloud`).
+- **WHAT THIS BOOK TELLS US.** `PlayerPreferences.ShareAnalytics` behind an
+  `IPreferenceStore` seam, applied at launch and on every change through the
+  new `ITelemetry.SetCollectionEnabled`. `FirebaseTelemetry` refuses opted-out
+  events **before the buffer**, not at the send — a held event would
+  otherwise go up the moment Firebase woke — and clears anything already
+  waiting, so saying no reaches backwards as far as it can.
+- **Ad consent was never gathered at all.** `AdMobAds` initialised the SDK
+  with no UMP call anywhere in the project, so an EEA player was served ads
+  having been asked nothing — this file's own line about "the SDK's own UMP
+  dialog" described something that did not exist. `Initialise` now runs
+  `ConsentInformation.Update` → `LoadAndShowConsentFormIfRequired` before
+  requesting ads, and the inside cover re-opens the form
+  (`IAds.PrivacyOptionsAvailable` / `ShowPrivacyOptions`). ⚠️ **This does
+  nothing until a GDPR message is published in the AdMob console** — the SDK
+  has no form to load otherwise. That is a console visit, not code.
+- **WHAT WAS BOUGHT.** `RestorePurchases` finally has a button. Entitlements
+  were already asked of the store rather than trusted to the save, but the
+  only thing that asked was the launch, so a player whose slot didn't come
+  back had nothing to press.
+- **STARTING AGAIN.** Wipes the run on the device *and* in the cloud, behind
+  a worded confirm. Three things that would each have made it not work:
+  `RunPersistence.StartedOver` refuses adoption for the rest of the session
+  (sign-in resolves seconds after launch, which is exactly when a 0-played
+  fresh run loses to the old cloud save); `Announcements.Forget` un-meets the
+  kith (familiar ids are minted per run, so the new seed would never have
+  been asked for its names); and `SyncStoreEntitlements` re-folds paid slots
+  immediately rather than at the next launch.
+- **The colophon moved, unchanged.** Same preamble, same five CC BY works in
+  full, same public-domain note — one level deeper, and no longer with a
+  sheet of its own (`OpenColophonSheet` is gone; `ArtCreditsTests` still
+  pins every field the licence requires).
+
+Interpretations shipped (tune/confirm):
+- **Analytics defaults to shared.** A default of false would silently opt
+  out every existing player on the update that ships this — invisible until
+  the analytics went quiet. Pinned by a test.
+- **Crash reports are outside the choice** and the sheet says so: they carry
+  nothing of the run, and a build that cannot report its own faults cannot
+  be mended. If that reads as a dodge, the lever is folding Crashlytics in
+  — but then a crash-looping device becomes undiagnosable by design.
+- **The sheet is a snapshot, like every other sheet** — no live updaters
+  (the page's are cleared with the body they belong to and would outlive a
+  closed sheet), so the "written 12s ago" line is re-read by the buttons
+  that change it rather than ticking.
+- **Discoverability is the open question.** Settings live at the bottom of
+  the Record page with no gear anywhere in the chrome, which is right for
+  the book and unusual for a phone game. If a playtester cannot find it,
+  the answer is a corner mark on the Record tab, not a pinned bar.
+- **`StartAgain` leaves the wipe unbackuped by design** — the confirm says
+  it reaches Play Games, because a second device would otherwise hand the
+  old run straight back and read as the wipe having failed.
+- Wording throughout is §7-register draft, like the rest of the narrative.
+
+Still open here:
+- **No privacy-policy link.** Play's listing has one; the repo does not
+  record the URL, and an in-app link is expected once ads and consent are in
+  play. One constant and one row when the URL is to hand.
+- The inside cover has had **no device pass** — it is the newest sheet and
+  the longest, and the scroll clamp is what keeps it on a phone screen.
 
 ## Narrative authoring
 

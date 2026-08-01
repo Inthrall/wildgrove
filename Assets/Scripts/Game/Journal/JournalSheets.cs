@@ -17,7 +17,7 @@ namespace Wildgrove.Game
     /// the pending-sheet pump, the posting sheet, and the rewarded/purchase
     /// buttons at the head of the Camp page.
     /// </summary>
-    internal sealed class JournalSheets : JournalSection
+    internal sealed partial class JournalSheets : JournalSection
     {
         // The time-skip ad credits this many hours of gathering.
         private const double TimeSkipHours = 2.0;
@@ -1284,28 +1284,6 @@ namespace Wildgrove.Game
                 MakeText(sheet, "<i>Unranked</i>",
                     16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
-        }
-
-        /// <summary>
-        /// The colophon — the plates and the hands that drew them. The five CC BY
-        /// works are named in full with their licence and the change made to
-        /// them, because that is what the licence asks of a shipped build; the
-        /// public-domain remainder is thanked without obligation.
-        /// </summary>
-        internal void OpenColophonSheet()
-        {
-            var sheet = BeginSheet();
-            MakeText(sheet, "The Colophon", 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, ArtCredits.Preamble, 17, TextAnchor.UpperLeft, Ink2, _serif);
-
-            foreach (var work in ArtCredits.Licensed)
-            {
-                MakeText(sheet, ArtCredits.Line(work), 15, TextAnchor.UpperLeft, Ink, _serif);
-            }
-
-            MakeText(sheet, ArtCredits.PublicDomainNote, 15, TextAnchor.UpperLeft, Ink2, _serif);
-            var done = Button(sheet, "Close the book", 320, CloseSheet);
-            KeyAction(done);
         }
 
         /// <summary>

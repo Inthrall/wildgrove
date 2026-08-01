@@ -27,7 +27,7 @@ namespace Wildgrove.Game
             BuildDeepPagesCard();
             BuildAlmanacCard();
             BuildStandingCard();
-            BuildColophonCard();
+            BuildInsideCoverCard();
         }
 
         /// <summary>
@@ -51,21 +51,26 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The colophon — who drew the plates. Last card on the last page, where
-        /// a book puts it. It exists because five of the source works are CC BY
-        /// and the licence obliges the *shipped* game to name them; a credit
-        /// sitting in a repo file is not carried by the build.
+        /// The way in to the inside cover: the keeping of the book, what it
+        /// tells anyone, what was bought, the colophon, and starting again.
+        /// Last card on the last page, where a book puts its practical matter —
+        /// the colophon held this spot alone until the rest of it arrived, and
+        /// it is still the licence's reason for the card existing at all (five
+        /// source works are CC BY, and a credit sitting in a repo file is not
+        /// carried by the build).
         /// </summary>
-        private void BuildColophonCard()
+        private void BuildInsideCoverCard()
         {
-            var card = Card("THE COLOPHON");
-            MakeText(card, ArtCredits.Preamble, 16, TextAnchor.UpperLeft, Ink2, _serif);
+            var card = Card("THE INSIDE COVER");
+            MakeText(card, "Where the book is kept, what it tells us, what was bought, "
+                           + "and the hands that drew its plates.",
+                16, TextAnchor.UpperLeft, Ink2, _serif);
 
             var row = Row(card);
-            var label = MakeText(row.transform, "the plates, and the hands that drew them",
+            var label = MakeText(row.transform, "the keeping of the book",
                 17, TextAnchor.MiddleLeft, Ink);
             FlexibleWidth(label.gameObject, 1f);
-            Button(row.transform, "Read", 160, () => _hud.Sheets.OpenColophonSheet());
+            Button(row.transform, "Open", 160, () => _hud.Sheets.OpenInsideCoverSheet());
         }
 
         private void BuildStandingCard()

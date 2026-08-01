@@ -182,5 +182,23 @@ namespace Wildgrove.Game
         {
             PendingOfflineSummary = null;
         }
+
+        /// <summary>
+        /// Forget every moment owed and everyone met — for a book started again,
+        /// where none of it belongs to the run now in hand. The met-list matters
+        /// most: familiar ids are minted per run, so a fresh seed kith could
+        /// otherwise be taken for one already introduced and never ask for its
+        /// names.
+        /// </summary>
+        public void Forget()
+        {
+            _arrivals.Clear();
+            _announced.Clear();
+            _rewards.Clear();
+            _seenKithSlots = -1;
+            PendingOfflineSummary = null;
+            PendingBondCelebration = null;
+            PendingSlotCelebration = 0;
+        }
     }
 }

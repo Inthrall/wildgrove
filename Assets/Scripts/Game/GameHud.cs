@@ -233,6 +233,25 @@ namespace Wildgrove.Game
                 : "catch the windfalls drifting up the strip · each pays a burst of goods" + catchTail;
         }
 
+        /// <summary>
+        /// Un-learn the teaching, for a book started again. The catch flag is a
+        /// PlayerPref rather than run state, so without this a fresh camp would
+        /// open with no instruction at all — the one place in the game where
+        /// there is any.
+        /// </summary>
+        internal void ForgetTeaching()
+        {
+            _hintCatchDone = false;
+            _hintPostDone = false;
+            PlayerPrefs.DeleteKey(HintCaughtKey);
+            var hint = HintText();
+            if (hint != null && _note != null)
+            {
+                _note.text = hint;
+                _noteRevert = 0f;
+            }
+        }
+
         private void Update()
         {
             if (_loop == null || _loop.State == null)
@@ -291,6 +310,15 @@ namespace Wildgrove.Game
                 // the next unread waystone — a quarter-second delay to raise a
                 // sheet is imperceptible and keeps that scan off the hot path.
                 _sheets.PumpSheets();
+
+                // A run adopted from another device changed everything under
+                // the page; the note is the quiet way to say so.
+                var cloudNotice = _loop.TakeCloudNotice();
+                if (cloudNotice != null)
+                {
+                    SetNote(cloudNotice);
+                }
+
                 RefreshChrome(); // cadence, not per-frame — avoids string allocs every frame
                 var signature = StructureSignature();
                 if (_dirty || signature != _structureSignature)

@@ -164,6 +164,10 @@ namespace Wildgrove.Game.Tests
             public void LogException(Exception exception)
             {
             }
+
+            public void SetCollectionEnabled(bool enabled)
+            {
+            }
         }
     }
 }

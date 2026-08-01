@@ -59,6 +59,22 @@ namespace Wildgrove.Game
         /// <summary>The Game Stats recorder (Level Up): what the gamer profile is told, and when.</summary>
         public GameStats Stats { get; private set; }
 
+        /// <summary>
+        /// The player's own choices about the app (the inside cover), kept on the
+        /// device rather than in the run so starting the book again doesn't
+        /// silently re-consent them to anything.
+        /// </summary>
+        public PlayerPreferences Preferences { get; private set; }
+
+        /// <summary>When the run was last written down — the inside cover's first line.</summary>
+        public long LastSavedUnixMs => _persistence?.LastSavedUnixMs ?? 0L;
+
+        /// <summary>True when the last mirror to Play Games did not land (see <see cref="RunPersistence"/>).</summary>
+        public bool CloudWriteFailed => _persistence != null && _persistence.LastCloudWriteFailed;
+
+        /// <summary>True when this session took up a further-along run from another device.</summary>
+        public bool AdoptedFromCloud => _persistence != null && _persistence.AdoptedFromCloud;
+
         private double _autosaveCountdown = AutosaveIntervalSeconds;
 
         // The run's own bookkeeping, split out of this MonoBehaviour so each part
@@ -69,6 +85,7 @@ namespace Wildgrove.Game
         private readonly Announcements _announce = new Announcements();
         private RunPersistence _persistence;
         private SessionLog _session;
+        private string _cloudNotice;
 
         private void Awake()
         {
@@ -152,6 +169,12 @@ namespace Wildgrove.Game
             Telemetry = new FirebaseTelemetry(new UnityLogTelemetry());
 #endif
             _session = new SessionLog(Telemetry);
+
+            // Read and applied before the first event can fire: a player who
+            // turned analytics off last session must not have this launch
+            // reported before their answer is looked up.
+            Preferences = new PlayerPreferences(new PlayerPrefsStore());
+            Telemetry.SetCollectionEnabled(Preferences.ShareAnalytics);
 
             // The monetization/services seams. On device the SDK-backed impls
             // run (AdMob, Unity IAP, Play Games); the editor keeps the stubs so
@@ -292,6 +315,10 @@ namespace Wildgrove.Game
             // Converge the device and cloud on the adopted save now rather than
             // waiting for the autosave interval to write it back down locally.
             SaveNow();
+            // Say it. The run just changed under the player's hands — silently,
+            // until now — and the margin note is where the journal tells them
+            // something happened without stopping the game to do it.
+            _cloudNotice = "another device had walked further. the book opens there.";
             Telemetry.LogEvent("cloud_save_adopted",
                 ("saved_at_ms", adopted.SavedAtUnixMs), ("played_ms", State.playedMs));
         }
@@ -344,9 +371,48 @@ namespace Wildgrove.Game
             return _announce.TakeOfflineSummary();
         }
 
-        private long NowUnixMs()
+        /// <summary>
+        /// Collect (and clear) the margin note owed for a cloud run taken up
+        /// mid-session, or null. The HUD asks on its refresh cadence — the pull
+        /// lands whenever sign-in resolves, which is no frame in particular.
+        /// </summary>
+        public string TakeCloudNotice()
+        {
+            var notice = _cloudNotice;
+            _cloudNotice = null;
+            return notice;
+        }
+
+        /// <summary>Now, by the same clock the save stamps carry — what the inside cover measures its "ago" against.</summary>
+        public long NowUnixMs()
         {
             return _clock.NowUnixMs();
+        }
+
+        /// <summary>
+        /// Close this book and open a blank one: the run is wiped from the
+        /// device and from Play Games, and a fresh camp takes its place without
+        /// a relaunch. Everything that was reading the old run is told in the
+        /// same breath, exactly as <see cref="AdoptCloudRun"/> has to.
+        /// </summary>
+        public void StartAgain()
+        {
+            if (State == null)
+            {
+                return;
+            }
+
+            var run = _persistence.StartOver();
+            State = run.State;
+            Stats.Rebase(State);
+            // Nothing owed by the old run belongs to this one — including who
+            // has been met, so the new seed kith is asked for its names.
+            _announce.Forget();
+            // A wiped run has no bought slots in it. They were paid for, so they
+            // are folded straight back rather than waiting for the next launch
+            // to notice — the same reason an adopted cloud save re-syncs.
+            SyncStoreEntitlements();
+            Telemetry.LogEvent("run_started_over");
         }
 
         /// <summary>
