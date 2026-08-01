@@ -982,6 +982,33 @@ Interpretations shipped (tune/confirm):
     `BubbleWorldView`'s class name and `economy.bubbles` still say "bubble" —
     rename to windfall if the object sticks.
 
+- **The strip carries only the posts with a body on them (2026-08-02).** The band
+  is on screen at every tab, so it was spending the page's height on plates nobody
+  was working — fifteen by the fourth zone, and the two the warden and the kith
+  actually stood at lost among them. `WorldView` still builds a view per node, but
+  lays out only `_onStrip`, the subset a body stands at, so posting or resting
+  moves a plate in or out with no rebuild. The test is `Stationing.HasBodyAt`
+  ("who is standing here") and deliberately **not** `Bubbles.IsWorked`: a
+  wandering body pays a share into every node at once, so the yield question
+  answers true everywhere the moment anyone roams. Interpretations shipped
+  (tune/confirm):
+  - **A camp with nobody anywhere keeps the whole board.** Hiding every plate
+    would take the assignment surface away at exactly the moment the first
+    posting has to happen, and an empty band under the page head reads as a
+    rendering fault. It collapses to the worked posts on that first posting.
+  - **The wander post always draws**, held or not — it closes the strip, and its
+    plate is where "send the warden wandering" is reached.
+  - Fallow nodes are not stranded: each keeps its own card, with its own
+    "Post here", on the Trail page.
+  - A windfall whose post loses its body is **retired**, rather than left rising
+    from a plate that is no longer on the strip.
+- **The warden wears their own mark (2026-08-02).** The assign badge drew
+  `PlaceholderArt.Triangle` for the warden while every familiar beside them showed
+  a portrait. It now draws `ui-warden.png` (`ArtLibrary.ForWarden`) — a PSF
+  silhouette bust, cut off its scan and re-baked to sepia — at a familiar's fit,
+  so the bodies along the strip read as peers. The triangle stays the fallback for
+  a missing file, and `ArtLibraryTests` is the only thing that would notice.
+
 - **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
   code.** `GameHud` now lays out the mock's structure — paper palette, title
   head, currency ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs

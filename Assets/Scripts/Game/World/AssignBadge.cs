@@ -5,15 +5,16 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// The small assignment badge pinned under every strip post (node, trail,
-    /// wander): a tiny icon of whoever holds the post — the warden's tent, a
-    /// familiar's portrait, or a tinted disc with the familiar's initial when
-    /// its species has no plate yet — and a dashed-feeling "+" mark while the
-    /// post stands empty. Tapping the badge is the assign/unassign gesture
+    /// wander): a tiny icon of whoever holds the post — the warden's own
+    /// silhouette, a familiar's portrait, or a tinted disc with the familiar's
+    /// initial when its species has no plate yet — and a dashed-feeling "+" mark
+    /// while the post stands empty. Tapping the badge is the assign/unassign gesture
     /// (<see cref="WorldView.StationAtScreenPoint"/> does the hit test; this
     /// is just the visuals).
     /// </summary>
     public sealed class AssignBadge
     {
+        // Tints the fallback mark only — the warden's plate is inked already.
         private static readonly Color WardenColour = new Color(0.95f, 0.92f, 0.83f, 1f);
         private static readonly Color VacantBack = new Color(0.9f, 0.86f, 0.76f, 0.45f);
         private static readonly Color OccupiedBack = new Color(0.98f, 0.95f, 0.88f, 1f);
@@ -25,6 +26,7 @@ namespace Wildgrove.Game.World
         private readonly SpriteRenderer _icon;
         private readonly SpriteRenderer _bondedPip;
         private readonly TextMesh _mark;
+        private readonly Sprite _wardenPlate;
 
         /// <summary>Local-units offset of the badge centre below the post sprite (the parent is scaled to one diameter).</summary>
         public const float OffsetY = WorldStrip.BadgeOffsetFactor;
@@ -35,6 +37,8 @@ namespace Wildgrove.Game.World
             root.transform.SetParent(parent, false);
             root.transform.localPosition = new Vector3(0f, OffsetY, 0f);
             _root = root.transform;
+
+            _wardenPlate = ArtLibrary.ForWarden();
 
             _back = CreateSprite(root.transform, "Back", PlaceholderArt.Disc, VacantBack, 3);
             _back.transform.localScale = Vector3.one * (WorldStrip.BadgeRadiusFactor * 2f);
@@ -85,7 +89,19 @@ namespace Wildgrove.Game.World
             {
                 _back.enabled = true;
                 _back.color = OccupiedBack;
-                ShowIcon(PlaceholderArt.Triangle, WardenColour, 0.36f);
+                // The warden's silhouette at a familiar's fit, so the bodies
+                // along the strip read as peers. The placeholder triangle is
+                // still the fallback — ArtLibrary answers null for a missing
+                // file, and a post with someone on it must never draw empty.
+                if (_wardenPlate != null)
+                {
+                    ShowIcon(_wardenPlate, Color.white, WorldStrip.BadgeRadiusFactor * 2f * 0.92f);
+                }
+                else
+                {
+                    ShowIcon(PlaceholderArt.Triangle, WardenColour, 0.36f);
+                }
+
                 SetMark(string.Empty);
                 _bondedPip.enabled = false;
                 return;

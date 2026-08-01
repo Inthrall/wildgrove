@@ -171,6 +171,19 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void TheWarden_HasTheirOwnMark()
+        {
+            // Keyed off no data id at all — there is one warden — so nothing in
+            // the game would report the file missing. The badge falls back to
+            // the placeholder triangle it wore before the plate landed, which
+            // is a silent regression rather than a visible one.
+            var plate = UnityEngine.Resources.Load<Sprite>("Art/UI/ui-warden");
+
+            Assert.That(plate, Is.Not.Null, "no plate at Art/UI/ui-warden");
+            Assert.That(ArtLibrary.ForWarden(), Is.SameAs(plate));
+        }
+
+        [Test]
         public void EveryLineMotif_DrawsItsOwnPlateRatherThanABorrowedOne()
         {
             // Loading is not enough for these four. A key pointed at the wrong

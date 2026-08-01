@@ -5,7 +5,8 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// Maps game ids (resource / zone / species / skill / gear / good / building /
-    /// insect / journal-furniture / manufactured line motif) to the hand-picked
+    /// insect / journal-furniture / manufactured line motif / the warden's own
+    /// mark) to the hand-picked
     /// public-domain naturalist plates and PSF ink drawings under
     /// <c>Assets/Resources/Art/</c>, loading each sprite lazily
     /// via <see cref="Resources"/> and caching it. Every lookup returns
@@ -202,6 +203,10 @@ namespace Wildgrove.Game
             { "almanac", Ui + "Journal/ui-almanac-tree" },
         };
 
+        // The warden's own mark. Keyed off nothing because there is exactly one
+        // warden — a map of one id would only invite a second.
+        private const string WardenMark = Ui + "ui-warden";
+
         private static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
 
         /// <summary>The plate for a gatherable resource, or null when there's no art.</summary>
@@ -233,6 +238,9 @@ namespace Wildgrove.Game
 
         /// <summary>A journal-furniture sprite by plain name ("paper", "waystone", …), or null.</summary>
         public static Sprite ForJournal(string name) => Load(Lookup(Journal, name));
+
+        /// <summary>The warden's mark — the player's own figure, worn on the badge of whichever post they stand at. Null when the plate is missing.</summary>
+        public static Sprite ForWarden() => Load(WardenMark);
 
         private static string Lookup(Dictionary<string, string> map, string id)
         {

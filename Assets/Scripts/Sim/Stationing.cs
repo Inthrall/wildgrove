@@ -43,6 +43,26 @@ namespace Wildgrove.Sim
             return null;
         }
 
+        /// <summary>
+        /// True when a body stands at <paramref name="stationId"/> — the warden
+        /// or a stationed familiar (a node id, or <see cref="Familiar.WanderStation"/>).
+        ///
+        /// This asks who is STANDING here, not whether the ground earns. A
+        /// wandering body pays a share into every node at once, so a yield test
+        /// (<see cref="Bubbles.IsWorked"/>) answers true everywhere the moment
+        /// anyone roams — the right question for a windfall, the wrong one for
+        /// the strip, which draws one post per body.
+        /// </summary>
+        public static bool HasBodyAt(GameState state, string stationId)
+        {
+            if (state == null || string.IsNullOrEmpty(stationId))
+            {
+                return false;
+            }
+
+            return Warden.PostNodeId(state) == stationId || OccupantOf(state, stationId) != null;
+        }
+
         public static int CountAssignedTo(GameState state, string stationId)
         {
             var count = 0;

@@ -16,6 +16,15 @@ namespace Wildgrove.Game.World
     /// node a tap tends, and which post's badge a tap assigns. Placeholder
     /// tier: shapes in a strip now; a real region scene replaces the layout
     /// when the art lands, but the camera/world seam and hit-testing stay.
+    ///
+    /// Only the posts with a body on them are drawn. The band is on screen at
+    /// every tab, so it used to spend the page's whole height on plates nobody
+    /// was working — fifteen by the fourth zone, and the two the warden and the
+    /// kith actually stood at lost among them. A view is built for every node
+    /// regardless (<see cref="_views"/>); <see cref="_onStrip"/> is the subset
+    /// laid out this frame, and posting or resting a body moves a plate in or
+    /// out without a rebuild. Fallow nodes are not stranded: every one of them
+    /// keeps its own card, with its own "Post here", on the Trail page.
     /// </summary>
     [RequireComponent(typeof(GameLoop))]
     public sealed class WorldView : MonoBehaviour
@@ -52,7 +61,10 @@ namespace Wildgrove.Game.World
         private GameState _builtFor;
         private Transform _container;
         private Font _labelFont;
+        // Every node's view, in the land's own order — built once per state.
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
+        // The subset actually on the strip this frame, in the same order.
+        private readonly List<NodeWorldView> _onStrip = new List<NodeWorldView>();
         private readonly List<BubbleWorldView> _bubbles = new List<BubbleWorldView>();
         // Caught windfalls play out a short burst before being destroyed —
         // out of _bubbles, so they can't be caught twice or block a spawn.
@@ -112,9 +124,9 @@ namespace Wildgrove.Game.World
                 return null;
             }
 
-            if (index < _views.Count)
+            if (index < _onStrip.Count)
             {
-                node = _views[index].Node;
+                node = _onStrip[index].Node;
                 return node.id;
             }
 
@@ -145,10 +157,14 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            Layout();
-
             var state = _loop.State;
             var postNodeId = Warden.PostNodeId(state);
+
+            // Which plates the strip carries has to be settled before the
+            // layout maths runs — the spread, the plate size and the row count
+            // are all read off the count.
+            GatherStrip(state);
+            Layout();
 
             // A fresh camp with nothing posted anywhere used to render the
             // whole strip at idle-dim — reading as "disabled" exactly when the
@@ -171,25 +187,88 @@ namespace Wildgrove.Game.World
                 _badgeVisible = new bool[_centres.Length];
             }
 
-            for (var i = 0; i < _views.Count; i++)
+            for (var i = 0; i < _onStrip.Count; i++)
             {
-                var view = _views[i];
+                var view = _onStrip[i];
                 var occupant = Stationing.OccupantOf(state, view.Node.id);
                 var wardenHere = view.Node.id == postNodeId;
-                // A vacant badge draws nothing, so it must hit nothing.
+                // A vacant badge draws nothing, so it must hit nothing. Only
+                // the empty-camp fallback puts a vacant plate on the strip at
+                // all; every other frame each of these is someone's post.
                 _badgeVisible[i] = wardenHere || occupant != null;
                 view.Refresh(Time.time, wardenHere, occupant, IconFor(occupant), anyPosted);
             }
 
             var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
-            if (_badgeVisible.Length > _views.Count)
+            if (_badgeVisible.Length > _onStrip.Count)
             {
-                _badgeVisible[_views.Count] = Warden.IsWandering(state) || wanderer != null;
+                _badgeVisible[_onStrip.Count] = Warden.IsWandering(state) || wanderer != null;
             }
 
             _wanderView.Refresh(Warden.IsWandering(state), wanderer, IconFor(wanderer));
 
             UpdateBubbles(state);
+        }
+
+        /// <summary>
+        /// Choose the plates the strip carries this frame — the posts with a
+        /// body standing on them — and switch the rest off.
+        ///
+        /// "A body is here" rather than "this ground earns": a wandering body
+        /// pays a share into every node at once, so a yield test would put the
+        /// whole land back on the strip the moment anyone roams (see
+        /// <see cref="Stationing.HasBodyAt"/>).
+        /// </summary>
+        private void GatherStrip(GameState state)
+        {
+            _onStrip.Clear();
+            foreach (var view in _views)
+            {
+                if (Stationing.HasBodyAt(state, view.Node.id))
+                {
+                    _onStrip.Add(view);
+                }
+            }
+
+            // A camp with nobody anywhere keeps the whole board. Hiding every
+            // plate would take the assignment surface away at exactly the
+            // moment the first posting has to happen — and an empty band under
+            // the page head reads as a rendering fault, not as "nothing to do".
+            // The strip collapses to the worked posts on the first posting.
+            if (_onStrip.Count == 0 && !Stationing.HasBodyAt(state, Familiar.WanderStation))
+            {
+                _onStrip.AddRange(_views);
+            }
+
+            // _onStrip holds _views' own order, so one cursor walks both.
+            var cursor = 0;
+            foreach (var view in _views)
+            {
+                var shown = cursor < _onStrip.Count && _onStrip[cursor] == view;
+                if (shown)
+                {
+                    cursor++;
+                }
+
+                if (view.gameObject.activeSelf != shown)
+                {
+                    view.gameObject.SetActive(shown);
+                }
+            }
+        }
+
+        /// <summary>True while <paramref name="node"/>'s plate is one of the strip's.</summary>
+        private bool OnStrip(NodeState node)
+        {
+            foreach (var view in _onStrip)
+            {
+                if (view.Node == node)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // ─────────────────────── Windfall bubbles ────────────────────────
@@ -290,7 +369,7 @@ namespace Wildgrove.Game.World
             // CreateLabel sizes for a diameter-scaled parent; this one hangs
             // off the unscaled container, so size it to the strip instead.
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var diameter = WorldStrip.BubbleDiameter(StripScreenRect, _views.Count + 1) * worldPerPixel;
+            var diameter = WorldStrip.BubbleDiameter(StripScreenRect, _onStrip.Count + 1) * worldPerPixel;
             label.characterSize = diameter * 0.055f;
             label.GetComponent<MeshRenderer>().sortingOrder = 9;
             StartCoroutine(RiseAndFadeLabel(label, diameter));
@@ -374,10 +453,12 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            // Expired bubbles drift off the top and go.
+            // Expired bubbles drift off the top and go — and so do any whose
+            // post has since lost its body: the plate they rise from is off
+            // the strip, so there is nowhere left for them to rise from.
             for (var i = _bubbles.Count - 1; i >= 0; i--)
             {
-                if (now - _bubbles[i].SpawnTime >= config.lifetimeSec)
+                if (now - _bubbles[i].SpawnTime >= config.lifetimeSec || !OnStrip(_bubbles[i].Node))
                 {
                     Destroy(_bubbles[i].gameObject);
                     _bubbles.RemoveAt(i);
@@ -387,8 +468,8 @@ namespace Wildgrove.Game.World
             MaybeSpawnBubble(state, config, now);
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, _views.Count + 1);
-            var twoRows = WorldStrip.Rows(_views.Count + 1) == 2;
+            var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, _onStrip.Count + 1);
+            var twoRows = WorldStrip.Rows(_onStrip.Count + 1) == 2;
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;
@@ -430,11 +511,11 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            // Round-robin over the nodes so every worked post gets its turn.
-            for (var step = 0; step < _views.Count; step++)
+            // Round-robin over the strip so every worked post gets its turn.
+            for (var step = 0; step < _onStrip.Count; step++)
             {
-                var index = (_bubbleCursor + step) % _views.Count;
-                var node = _views[index].Node;
+                var index = (_bubbleCursor + step) % _onStrip.Count;
+                var node = _onStrip[index].Node;
                 if (!Bubbles.IsEligible(state, _loop.Data, node))
                 {
                     continue;
@@ -458,9 +539,9 @@ namespace Wildgrove.Game.World
 
         private Vector2 NodeCentre(NodeState node)
         {
-            for (var i = 0; i < _views.Count && i < _centres.Length; i++)
+            for (var i = 0; i < _onStrip.Count && i < _centres.Length; i++)
             {
-                if (_views[i].Node == node)
+                if (_onStrip[i].Node == node)
                 {
                     return _centres[i];
                 }
@@ -486,6 +567,7 @@ namespace Wildgrove.Game.World
             }
 
             _views.Clear();
+            _onStrip.Clear();
             // Any bubbles adrift were children of the torn-down container.
             _bubbles.Clear();
             _bursting.Clear();
@@ -520,9 +602,11 @@ namespace Wildgrove.Game.World
         private void Layout()
         {
             // Nodes first, the wander post after — one shared strip, so the hit
-            // test's "first N centres are nodes" convention holds. The buffer is
-            // reused frame to frame — this runs per LateUpdate.
-            var total = _views.Count + 1;
+            // test's "first N centres are nodes" convention holds. Nodes here
+            // means the ones ON the strip (GatherStrip has already run), so the
+            // centres and _onStrip index alike. The buffer is reused frame to
+            // frame — this runs per LateUpdate.
+            var total = _onStrip.Count + 1;
             if (_centres.Length != total)
             {
                 _centres = new Vector2[total];
@@ -541,13 +625,13 @@ namespace Wildgrove.Game.World
                 : WorldStrip.BadgeOffsetFactor;
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            for (var i = 0; i < _views.Count; i++)
+            for (var i = 0; i < _onStrip.Count; i++)
             {
-                _views[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
-                _views[i].SetStripLayout(badgeOffsetLocal, showCaptions);
+                _onStrip[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
+                _onStrip[i].SetStripLayout(badgeOffsetLocal, showCaptions);
             }
 
-            _wanderView.SetPlacement(ScreenToWorld(_centres[_views.Count]), _diameterPx * worldPerPixel);
+            _wanderView.SetPlacement(ScreenToWorld(_centres[_onStrip.Count]), _diameterPx * worldPerPixel);
             _wanderView.SetStripLayout(badgeOffsetLocal, showCaptions);
         }
 
