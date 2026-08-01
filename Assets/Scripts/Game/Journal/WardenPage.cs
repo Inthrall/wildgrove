@@ -535,6 +535,9 @@ namespace Wildgrove.Game
                     case StoreResult.Failed:
                         SetNote("that didn't go through. nothing was charged.");
                         break;
+                    case StoreResult.Unavailable:
+                        SetNote("the store couldn't be reached. nothing was charged — try again shortly.");
+                        break;
                 }
             });
         }

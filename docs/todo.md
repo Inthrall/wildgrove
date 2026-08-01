@@ -1953,11 +1953,81 @@ Interpretations shipped (tune/confirm):
 - Wording throughout is §7-register draft, like the rest of the narrative.
 
 Still open here:
-- **No privacy-policy link.** Play's listing has one; the repo does not
-  record the URL, and an in-app link is expected once ads and consent are in
-  play. One constant and one row when the URL is to hand.
+- ~~**No privacy-policy link.**~~ ✅ RESOLVED 2026-08-01. The policy was
+  already written and hosted — `decryptic.app/wildgrove/privacy`, on the
+  Decryptic static site as neutral ground, and the URL Play's listing gives.
+  What it wasn't was **true**: written 17 July, it still said "Wildgrove
+  currently shows no advertising and includes no advertising networks" after
+  AdMob rewarded ads landed, and "if a future update adds optional Google Play
+  Games sign-in" after Play Games shipped and was confirmed on device. So the
+  link was the small half; the page was rewritten to match what ships (rewarded
+  ads only and how to reach the consent form, Play Games as live and optional,
+  entitlements held by Play rather than by the save, Play Games Rewards, and
+  the analytics opt-out this sheet added). `PrivacyPolicyUrl` +
+  "The privacy policy in full" under WHAT THIS BOOK TELLS US.
+  ⚠️ **The page lives in the Decryptic repo** (`src/Decryptic.App/wwwroot/
+  wildgrove/privacy.html`) and deploys with that site — the rewrite is
+  uncommitted there and reaches the web only on the next Decryptic push. Its
+  header comment now carries the keep-in-step warning, since the page has
+  silently rotted behind the build twice.
 - The inside cover has had **no device pass** — it is the newest sheet and
-  the longest, and the scroll clamp is what keeps it on a phone screen.
+  the longest, and the scroll clamp is what keeps it on a phone screen. The
+  privacy row lands in the middle of it, so it wants the same pass.
+
+## Release blockers — the console half (2026-08-01)
+
+The code side of the release blockers is closed (see the IAP item in
+`todo-from-memory.md` and the privacy row above). What is left cannot be done
+from the repo at all: two AdMob console visits. Both are inert-until-done in a
+way that gives no error — the game runs, the logs are clean, and the thing
+simply doesn't work — so they are written out step by step rather than left as
+a line saying "console visit".
+
+**1. The Amber-drip rewarded unit.** `AdUnitIds.AmberDrip` is an alias of
+`TimeSkip`, so the drip and the skip currently share one unit: one fill pool,
+one frequency cap, one row in reporting. Nothing breaks; the drip's earn rate
+just becomes unmeasurable and each placement quietly caps the other. Dev builds
+serve Google's test unit regardless, which is why this only ever shows up in
+production numbers.
+
+1. AdMob → **Apps** → Wildgrove (`com.inthrall.wildgrove`) → **Ad units** →
+   **Add ad unit**.
+2. Format **Rewarded**. Name it to match the other two — they read as
+   `Wildgrove Time Skip` / `Wildgrove Offline Boost`, so `Wildgrove Amber Drip`.
+3. **Reward amount 1, reward item "amber"**. The value is never read: the game
+   grants the drip from `economy.json`, not from the ad's reward payload. Set it
+   anyway — AdMob requires the fields, and a nonsense value in the console is a
+   thing to misread later.
+4. Leave frequency capping off. The drip's own cooldown is the throttle, and a
+   second one in the console would be invisible from the code.
+5. Copy the unit id (`ca-app-pub-6903871125040514/…`) and replace the
+   `AmberDrip = TimeSkip` alias in `ServiceIds.cs` with the literal, restoring
+   its own XML doc line. That is the whole code change.
+6. New units take **a few hours** to start serving. A fresh unit returning
+   no-fill on the first device test is expected, not a fault.
+
+**2. The GDPR/consent message.** `AdMobAds.GatherConsent` already runs
+`ConsentInformation.Update` → `LoadAndShowConsentFormIfRequired` before any ad
+is requested, and the inside cover re-opens the form. **All of that does
+nothing until a message is published in the console** — the SDK has no form to
+load, `PrivacyOptionsAvailable` stays false, the inside cover's row stays
+hidden, and an EEA player is served ads having been asked nothing. There is no
+error anywhere; it looks exactly like a player outside the EEA.
+
+1. AdMob → **Privacy & messaging** → **GDPR** → **Create message**.
+2. Select the Wildgrove app; leave the default set of regions (EEA + UK).
+3. Consent options: **Consent / Manage options / Do not consent**. The third
+   button matters — a message without it is the "consent or leave" pattern
+   Google has been rejecting.
+4. Set the **privacy policy URL** to `https://decryptic.app/wildgrove/privacy`
+   (the same URL the Play listing and the inside cover use).
+5. Style it and **Publish**. Unpublished messages do not load.
+6. Then do the same under **Privacy & messaging → US states** if the app is
+   listed there — same shape, separate message.
+7. Verify on device with a **debug geography** override
+   (`ConsentDebugSettings`, EEA) or a VPN. Confirm: the form shows on first
+   launch, no ad request precedes it, and **Ad privacy choices** then appears on
+   the inside cover.
 
 ## Narrative authoring
 

@@ -15,11 +15,14 @@ the memories called open that turn out to be done.
 
 ## Verified open — checked against the code on 2026-08-01
 
-- **The Amber-drip rewarded ad unit is still a placeholder.**
-  `AdUnitIds.AmberDrip` (`Assets/Scripts/Game/Services/ServiceIds.cs:21`) is the
-  *same id* as `TimeSkip`. Dev builds serve Google's test unit regardless, so
-  this only bites in production: the two placements share fill, frequency
-  capping and reporting. Needs its own rewarded unit in AdMob before release.
+- **The Amber-drip rewarded ad unit is still a placeholder — CONSOLE STEP
+  ONLY as of 2026-08-01.** `AdUnitIds.AmberDrip` is now an explicit alias of
+  `TimeSkip` (`AmberDrip = TimeSkip`) with the blocker written on it, so the
+  placeholder can't be misread as a unit of its own and there is exactly one
+  constant to repoint. Still needs the unit created in AdMob before release —
+  the two placements otherwise share fill, frequency capping and reporting, so
+  the drip's earn rate is unmeasurable and each placement caps the other. Steps
+  are in the release-blocker section of `todo.md`.
 
 - **The Deep Amber plate draws the wrong picture.** `ArtLibrary`'s `Line` map
   (`Assets/Scripts/Game/ArtLibrary.cs:189`) keys `deep-amber` to
@@ -27,15 +30,19 @@ the memories called open that turn out to be done.
   `insect-deep-amber.png` exists and the Play Console store card already uses
   it; only the in-game key was never repointed.
 
-- **A failed IAP store connect can never report failure.** `ConnectAsync`'s
-  catch (`UnityIapStore.cs:95`) and `OnStoreDisconnected` (`:122`) both only
-  `Debug.LogError`. Neither calls `FinishReady()`, so `_ready` stays false
-  forever and the callback queued by `Initialise(() => Purchase(…))` is
-  orphaned — the buy button silently no-ops with no way to surface the fault.
-  The comment at `:214` already describes the behaviour ("the retry simply
-  never fires"). This is the failure shape that hid the UGS-unlinked bug for
-  days; worth a `FinishReady()` on both paths plus a `StoreResult` the UI can
-  show.
+- ~~**A failed IAP store connect can never report failure.**~~ ✅ RESOLVED
+  2026-08-01. Both silent paths (`ConnectAsync`'s catch and
+  `OnStoreDisconnected`) now release everyone queued behind the connection, via
+  a new `StoreConnection` — the readiness/waiter state machine lifted out of
+  `UnityIapStore` precisely because that class can't be constructed off a
+  device, so the part with the states in it is now the part with the tests
+  (`StoreConnectionTests`, 8). New `StoreResult.Unavailable` distinguishes "the
+  store was never reached" from "the purchase was refused" at all three buy
+  sites, and `IStore.RestorePurchases` gained an `Action<bool>` so the inside
+  cover stops flashing "asked and answered" when Play was never asked, and the
+  weekly-cache Look button stops reporting "nothing set out yet" when it never
+  looked. A failed attempt is deliberately **not** remembered: the next press
+  reconnects from the top.
 
 - **A 21.9 MB `firebase-app-unity-13.13.0.aar` is still committed** under
   `Assets/GeneratedLocalRepo/Firebase/…`. It was left in deliberately when the

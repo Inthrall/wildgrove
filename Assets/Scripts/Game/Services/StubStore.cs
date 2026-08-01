@@ -93,10 +93,13 @@ namespace Wildgrove.Game.Services
             onComplete?.Invoke(StoreResult.Failed);
         }
 
-        public void RestorePurchases(Action onComplete = null)
+        public void RestorePurchases(Action<bool> onComplete = null)
         {
             Debug.Log("[store] stub restore");
-            onComplete?.Invoke();
+
+            // The stub has no store to be out of reach of, so the re-read always
+            // answers — the false path is the real store's alone.
+            onComplete?.Invoke(true);
         }
     }
 }

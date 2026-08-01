@@ -149,14 +149,22 @@ namespace Wildgrove.Game
         /// <summary>
         /// Ask Play whether anything has been set out since the last look, for a
         /// player who redeemed a moment ago and would rather not relaunch. Calls
-        /// back with how many rewards landed. Rewards also arrive unprompted on
-        /// the first purchase fetch of every launch — this is the manual nudge.
+        /// back with how many rewards landed, or <c>null</c> if the store could
+        /// not be reached — which is not the same as none, and must not be shown
+        /// as none. Rewards also arrive unprompted on the first purchase fetch of
+        /// every launch — this is the manual nudge.
         /// </summary>
-        public void CheckPlayRewards(System.Action<int> onComplete)
+        public void CheckPlayRewards(System.Action<int?> onComplete)
         {
             var before = _announce.RewardsReceived;
-            Store.RestorePurchases(() =>
+            Store.RestorePurchases(answered =>
             {
+                if (!answered)
+                {
+                    onComplete?.Invoke(null);
+                    return;
+                }
+
                 SyncRewardEntitlements();
                 onComplete?.Invoke(_announce.RewardsReceived - before);
             });

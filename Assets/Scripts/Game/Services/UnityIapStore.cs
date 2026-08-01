@@ -20,17 +20,17 @@ namespace Wildgrove.Game.Services
         private readonly HashSet<string> _owned = new HashSet<string>();
         private readonly Dictionary<string, Product> _products = new Dictionary<string, Product>();
         private readonly Dictionary<string, Action<StoreResult>> _pending = new Dictionary<string, Action<StoreResult>>();
+        private readonly StoreConnection _connection = new StoreConnection();
 
         private StoreController _controller;
-        private Action _onReady;
-        private Action _onPurchasesFetched;
-        private bool _ready;
+        private Action<bool> _onPurchasesFetched;
+        private bool _catalogueFetched;
 
         public event Action<string> ConsumablePurchased;
 
         public Func<string, bool> RewardRedeemed { get; set; }
 
-        public bool IsInitialised => _ready;
+        public bool IsInitialised => _connection.IsConnected;
 
         public bool RemoveAdsOwned => IsOwned(StoreProductIds.RemoveAds);
 
@@ -48,30 +48,53 @@ namespace Wildgrove.Game.Services
 
         public void Initialise(Action onReady = null)
         {
-            if (_ready)
+            // Only a connection that came up runs the caller's work; a failed one
+            // is reported to the callers who can show it (purchase and restore)
+            // and simply not acted on here.
+            WhenConnected(connected =>
             {
-                onReady?.Invoke();
-                return;
-            }
+                if (connected)
+                {
+                    onReady?.Invoke();
+                }
+            });
+        }
 
-            // Queue the callback: v5 connection is asynchronous and callers
-            // (including lazy purchase/restore retries) may arrive mid-connect.
-            _onReady += onReady;
-            if (_controller != null)
+        /// <summary>
+        /// Queue work behind the billing connection and start one if none is in
+        /// flight. <paramref name="resume"/> is told which way it went — the
+        /// false answer is the whole point: v5 connects asynchronously, so every
+        /// caller arrives mid-connect, and a caller never called back is a
+        /// button that does nothing with nothing to explain it.
+        /// </summary>
+        private void WhenConnected(Action<bool> resume)
+        {
+            if (_connection.Wait(resume))
             {
-                return;
+                BeginConnect();
             }
+        }
 
-            _controller = UnityIAPServices.StoreController();
-            _controller.OnStoreConnected += OnStoreConnected;
-            _controller.OnStoreDisconnected += OnStoreDisconnected;
-            _controller.OnProductsFetched += OnProductsFetched;
-            _controller.OnProductsFetchFailed += OnProductsFetchFailed;
-            _controller.OnPurchasePending += OnPurchasePending;
-            _controller.OnPurchaseConfirmed += OnPurchaseConfirmed;
-            _controller.OnPurchaseFailed += OnPurchaseFailed;
-            _controller.OnPurchasesFetched += OnPurchasesFetched;
-            _controller.OnPurchasesFetchFailed += OnPurchasesFetchFailed;
+        private void BeginConnect()
+        {
+            if (_controller == null)
+            {
+                _controller = UnityIAPServices.StoreController();
+
+                // Subscribed once, for the life of the store. The controller
+                // outlives a failed attempt so a retry reconnects this one
+                // rather than stacking a second set of handlers — which would
+                // deliver every purchase callback twice.
+                _controller.OnStoreConnected += OnStoreConnected;
+                _controller.OnStoreDisconnected += OnStoreDisconnected;
+                _controller.OnProductsFetched += OnProductsFetched;
+                _controller.OnProductsFetchFailed += OnProductsFetchFailed;
+                _controller.OnPurchasePending += OnPurchasePending;
+                _controller.OnPurchaseConfirmed += OnPurchaseConfirmed;
+                _controller.OnPurchaseFailed += OnPurchaseFailed;
+                _controller.OnPurchasesFetched += OnPurchasesFetched;
+                _controller.OnPurchasesFetchFailed += OnPurchasesFetchFailed;
+            }
 
             _ = ConnectAsync();
         }
@@ -89,13 +112,24 @@ namespace Wildgrove.Game.Services
                 }
 
                 // A missing billing connection shouldn't take the game down — the
-                // buy button simply reports failure until a later Initialise succeeds.
+                // buy button reports Unavailable and the next press tries again.
                 await _controller.Connect();
             }
             catch (Exception e)
             {
                 Debug.LogError("[store] IAP connect failed: " + e.Message);
+                ConnectionFailed();
             }
+        }
+
+        /// <summary>
+        /// The connection did not come up. Release everyone queued behind it so
+        /// the fault reaches the page, and leave no state behind — the next buy
+        /// or restore starts a fresh attempt.
+        /// </summary>
+        private void ConnectionFailed()
+        {
+            _connection.Failed();
         }
 
         private void OnStoreConnected()
@@ -122,10 +156,18 @@ namespace Wildgrove.Game.Services
         private void OnStoreDisconnected(StoreConnectionFailureDescription description)
         {
             Debug.LogError("[store] IAP disconnected: " + description?.Message);
+
+            // This fires for a connection that never came up AND for one dropped
+            // mid-session. Only the first has callers waiting, and only the first
+            // is released here — a mid-session drop leaves the entitlements
+            // already read standing (they are still true) and any purchase begun
+            // after it fails through the ordinary OnPurchaseFailed path.
+            ConnectionFailed();
         }
 
         private void OnProductsFetched(List<Product> products)
         {
+            _catalogueFetched = true;
             foreach (var product in products)
             {
                 _products[product.uSku] = product;
@@ -140,7 +182,8 @@ namespace Wildgrove.Game.Services
             Debug.LogError("[store] IAP product fetch failed: " + failure?.FailureReason);
 
             // Entitlements are independent of product metadata, so still resolve
-            // ownership and finish readiness — purchases just can't be started.
+            // ownership and finish readiness — purchases just can't be started,
+            // and say so as Unavailable rather than as a refusal.
             _controller.FetchPurchases();
         }
 
@@ -169,50 +212,52 @@ namespace Wildgrove.Game.Services
                 HandlePending(order);
             }
 
-            FinishFetch();
-            FinishReady();
+            FinishFetch(true);
+            _connection.Succeeded();
         }
 
         private void OnPurchasesFetchFailed(PurchasesFetchFailureDescription description)
         {
             Debug.LogError("[store] IAP purchases fetch failed: " + description?.Message);
-            FinishFetch();
-            FinishReady();
+
+            // The connection itself is up — it is the re-read that failed. So the
+            // store is ready (a purchase can still be started) but the restore
+            // caller is told plainly that nothing was answered.
+            FinishFetch(false);
+            _connection.Succeeded();
         }
 
         /// <summary>
-        /// Release whoever asked for the last purchase re-read. Callers wait on
-        /// the resolved fetch, not the request — a restore that returned the
-        /// moment FetchPurchases was *called* could never report what arrived.
+        /// Release whoever asked for the last purchase re-read, and tell them
+        /// whether it resolved. Callers wait on the resolved fetch, not the
+        /// request — a restore that returned the moment FetchPurchases was
+        /// *called* could never report what arrived.
         /// </summary>
-        private void FinishFetch()
+        private void FinishFetch(bool answered)
         {
             var callback = _onPurchasesFetched;
             _onPurchasesFetched = null;
-            callback?.Invoke();
-        }
-
-        private void FinishReady()
-        {
-            if (_ready)
-            {
-                return;
-            }
-
-            _ready = true;
-            var callback = _onReady;
-            _onReady = null;
-            callback?.Invoke();
+            callback?.Invoke(answered);
         }
 
         public void Purchase(string productId, Action<StoreResult> onComplete)
         {
-            if (!_ready)
+            if (!_connection.IsConnected)
             {
                 // Lazy connect: billing stays off the startup path until the
-                // player actually initiates a purchase. If the connection fails,
-                // ConnectAsync logs it and the retry simply never fires.
-                Initialise(() => Purchase(productId, onComplete));
+                // player actually initiates a purchase. A connection that never
+                // comes up answers Unavailable — it used to answer nothing at
+                // all, which left the button dead with no way to say why.
+                WhenConnected(connected =>
+                {
+                    if (connected)
+                    {
+                        Purchase(productId, onComplete);
+                        return;
+                    }
+
+                    onComplete?.Invoke(StoreResult.Unavailable);
+                });
                 return;
             }
 
@@ -231,6 +276,15 @@ namespace Wildgrove.Game.Services
                 // up. Launching a second Play flow makes Google reject it as
                 // "you already own this item" (non-consumable) or risk a double
                 // charge (consumable). The in-flight callback delivers the result.
+                return;
+            }
+
+            if (!_catalogueFetched)
+            {
+                // Connected, but Play never handed over the catalogue, so there
+                // is no product to start a flow with. Not a refusal — a store
+                // that was never really reached.
+                onComplete?.Invoke(StoreResult.Unavailable);
                 return;
             }
 
@@ -341,11 +395,22 @@ namespace Wildgrove.Game.Services
             }
         }
 
-        public void RestorePurchases(Action onComplete = null)
+        public void RestorePurchases(Action<bool> onComplete = null)
         {
-            if (!_ready)
+            if (!_connection.IsConnected)
             {
-                Initialise(() => RestorePurchases(onComplete));
+                WhenConnected(connected =>
+                {
+                    if (connected)
+                    {
+                        RestorePurchases(onComplete);
+                        return;
+                    }
+
+                    // Nothing was asked of Play. Saying so is the difference
+                    // between "your purchase isn't there" and "we couldn't look".
+                    onComplete?.Invoke(false);
+                });
                 return;
             }
 

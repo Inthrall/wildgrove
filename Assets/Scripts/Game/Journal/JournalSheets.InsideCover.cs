@@ -26,6 +26,15 @@ namespace Wildgrove.Game
     /// </summary>
     internal sealed partial class JournalSheets
     {
+        /// <summary>
+        /// The privacy policy, hosted rather than carried: it is the same URL the
+        /// Play listing gives, so there is one copy to keep true instead of two
+        /// that drift — and a policy shipped inside a build can only be corrected
+        /// by shipping another. Play expects an in-app link once ads and consent
+        /// are in play, which is what the row below is.
+        /// </summary>
+        private const string PrivacyPolicyUrl = "https://decryptic.app/wildgrove/privacy";
+
         internal void OpenInsideCoverSheet()
         {
             var sheet = BeginSheet();
@@ -139,6 +148,15 @@ namespace Wildgrove.Game
                 + "and a build that cannot report its own faults cannot be mended.</i>",
                 14, TextAnchor.UpperLeft, Ink2, _serif);
 
+            // Plainly named rather than written in the grove's voice: it is the
+            // one line here a player might be looking for by its real name.
+            Button policy = null;
+            policy = Button(sheet, "The privacy policy in full", 460, () =>
+            {
+                Application.OpenURL(PrivacyPolicyUrl);
+                Flash(policy, "opening", true);
+            });
+
             if (!_loop.Ads.PrivacyOptionsAvailable)
             {
                 // No form was ever required of this player, so there is nothing
@@ -171,7 +189,12 @@ namespace Wildgrove.Game
             restore = Button(sheet, "Restore what was bought", 320, () =>
             {
                 Flash(restore, "asking Play", true);
-                _loop.Store.RestorePurchases(() => Flash(restore, "asked and answered", true));
+
+                // "Asked and answered" used to flash whether or not Play was
+                // reached — the one reading a player with a missing purchase
+                // must not be given, because it says the store looked.
+                _loop.Store.RestorePurchases(answered => Flash(restore,
+                    answered ? "asked and answered" : "Play didn't answer", answered));
             });
         }
 

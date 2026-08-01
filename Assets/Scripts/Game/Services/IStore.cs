@@ -8,7 +8,18 @@ namespace Wildgrove.Game.Services
         Purchased,
         AlreadyOwned,
         Cancelled,
+
+        /// <summary>The store was reached and the purchase did not go through.</summary>
         Failed,
+
+        /// <summary>
+        /// The store was never reached at all — no billing connection, so the
+        /// purchase was never started and nothing could have been charged. Kept
+        /// apart from <see cref="Failed"/> because it is the one outcome the
+        /// player can act on (signal, Play services, sign-in) and because it is
+        /// the outcome that used to arrive as silence.
+        /// </summary>
+        Unavailable,
     }
 
     /// <summary>
@@ -63,7 +74,11 @@ namespace Wildgrove.Game.Services
         /// </summary>
         string PriceLabel(string productId);
 
-        /// <summary>Connect to the store and resolve owned products. Safe to call once at startup.</summary>
+        /// <summary>
+        /// Connect to the store and resolve owned products. Safe to call once at
+        /// startup. <paramref name="onReady"/> runs only if the connection comes
+        /// up; a failed connection is not remembered, so a later call retries.
+        /// </summary>
         void Initialise(Action onReady = null);
 
         /// <summary>Begin a purchase; the result is delivered to <paramref name="onComplete"/>.</summary>
@@ -74,8 +89,14 @@ namespace Wildgrove.Game.Services
         /// harmless on Android where owned products resolve on Initialise. Also
         /// the "has anything arrived from Play?" re-read: a reward redeemed a
         /// moment ago lands through <see cref="RewardRedeemed"/> during this.
-        /// <paramref name="onComplete"/> runs once the re-read has resolved.
+        /// <para>
+        /// <paramref name="onComplete"/> runs once the re-read has resolved, and
+        /// is told whether the store actually answered. False means nothing was
+        /// asked — which must not be reported as "nothing has arrived", because
+        /// a player whose entitlement is missing would read that as the store
+        /// having looked and found none.
+        /// </para>
         /// </summary>
-        void RestorePurchases(Action onComplete = null);
+        void RestorePurchases(Action<bool> onComplete = null);
     }
 }

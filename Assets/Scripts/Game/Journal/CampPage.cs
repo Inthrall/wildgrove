@@ -183,6 +183,15 @@ namespace Wildgrove.Game
                 _loop.CheckPlayRewards(found =>
                 {
                     checking = false;
+                    if (found == null)
+                    {
+                        // Play was never asked, so "nothing set out" would be a
+                        // guess dressed as an answer — and the cache might well
+                        // be waiting.
+                        SetNote("Play couldn't be reached just now. the cache keeps.");
+                        return;
+                    }
+
                     if (found > 0)
                     {
                         // The reward sheet says what arrived and by whose hand —
@@ -308,6 +317,10 @@ namespace Wildgrove.Game
                     else if (result == StoreResult.Failed)
                     {
                         SetNote("that didn't go through, nothing was charged.");
+                    }
+                    else if (result == StoreResult.Unavailable)
+                    {
+                        SetNote("the caravan couldn't be reached, nothing was charged. try again shortly.");
                     }
                 });
             });

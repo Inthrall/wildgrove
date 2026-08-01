@@ -1379,6 +1379,12 @@ namespace Wildgrove.Game
                         RestoreRemoveAdsButton();
                         SetNote("That didn't go through. Nothing was charged.");
                         break;
+                    case StoreResult.Unavailable:
+                        // The store was never reached, so the button must come
+                        // back — this is the one outcome a second press can fix.
+                        RestoreRemoveAdsButton();
+                        SetNote("The store couldn't be reached. Nothing was charged — try again shortly.");
+                        break;
                 }
             });
         }
