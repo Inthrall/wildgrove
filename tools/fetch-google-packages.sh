@@ -6,6 +6,24 @@
 # official Unity package registry endpoint; versions are pinned here and must
 # match manifest.json.
 #
+# The other half of that arrangement, because it looks like an oversight and
+# isn't: Assets/GeneratedLocalRepo/Firebase IS committed, 22 MB of it. EDM4U
+# generates that maven repo by copying the .srcaar out of the package above,
+# and settingsTemplate.gradle points Gradle straight at the directory — so the
+# committed copy is what every Android build actually resolves against. No CI
+# job runs the resolver (AndroidResolverRunner.ForceResolve exists but nothing
+# calls it; EDM's auto-resolution does not run in batchmode), which means
+# deleting those files does not make the build regenerate them, it makes the
+# build fail to find firebase-app-unity. The bytes are also already in history,
+# so removing them now would not shrink a clone by one byte.
+#
+# What that leaves is drift: the tarball version is pinned here, the generated
+# repo is pinned by whenever someone last resolved, and nothing connects the
+# two. Bump the versions above without re-resolving and the build links the OLD
+# Firebase while every file in the repo says otherwise. So after fetching, the
+# committed aars are checked against the tarballs they are supposed to have
+# come from, and a mismatch stops the build rather than shipping quietly.
+#
 # Usage: tools/fetch-google-packages.sh
 set -euo pipefail
 
@@ -33,3 +51,47 @@ for pkg in "${packages[@]}"; do
 done
 
 echo "All Google packages present in Packages/GooglePackages/."
+
+# --- the committed maven repo still matches the packages above ---------------
+# Only the Firebase artifacts: the Play Games one is generated from a package
+# that is itself committed, so it cannot drift from a version pinned here.
+root="$(cd "$(dirname "$0")/.." && pwd)"
+repo="$root/Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase"
+scratch="$(mktemp -d)"
+trap 'rm -rf "$scratch"' EXIT
+
+drifted=0
+for product in analytics app crashlytics; do
+  version="13.13.0"
+  artifact="firebase-$product-unity-$version"
+  committed="$repo/firebase-$product-unity/$version/$artifact.aar"
+  tarball="$dir/com.google.firebase.$product-$version.tgz"
+
+  if [ ! -f "$committed" ]; then
+    echo "DRIFT: $artifact.aar is missing from Assets/GeneratedLocalRepo — the Android build cannot resolve it." >&2
+    drifted=1
+    continue
+  fi
+
+  tar -xzf "$tarball" -C "$scratch" --wildcards "*/$artifact.srcaar" 2>/dev/null || true
+  extracted="$(find "$scratch" -name "$artifact.srcaar" -print -quit)"
+  if [ -z "$extracted" ]; then
+    echo "DRIFT: $tarball holds no $artifact.srcaar — the pinned version moved." >&2
+    drifted=1
+    continue
+  fi
+
+  if cmp -s "$extracted" "$committed"; then
+    echo "ok: $artifact.aar matches the pinned package"
+  else
+    echo "DRIFT: $artifact.aar differs from the one in $tarball." >&2
+    echo "       Re-resolve and commit the result:" >&2
+    echo "       Unity -batchmode -quit -projectPath . -executeMethod Wildgrove.EditorTools.AndroidResolverRunner.ForceResolve" >&2
+    drifted=1
+  fi
+done
+
+if [ "$drifted" -ne 0 ]; then
+  echo "Assets/GeneratedLocalRepo is out of step with Packages/GooglePackages — see above." >&2
+  exit 1
+fi

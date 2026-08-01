@@ -15,7 +15,22 @@ namespace Wildgrove.Game
     /// </summary>
     public static class SaveFile
     {
-        public static string Path => System.IO.Path.Combine(Application.persistentDataPath, "save.json");
+        /// <summary>
+        /// The directory the slot lives in, or null for the app's persistent
+        /// data path — which is what ships. Tests point it at a scratch
+        /// directory: the awkward parts kept here are exactly the ones that
+        /// can only be exercised against a real disk, and doing that in the
+        /// editor's own persistent path would write over the developer's run.
+        /// <para>
+        /// Public rather than internal for the same reason as
+        /// <see cref="JournalZones"/>: the tests are a separate assembly and
+        /// there is no InternalsVisibleTo anywhere in the project.
+        /// </para>
+        /// </summary>
+        public static string DirectoryOverride;
+
+        public static string Path =>
+            System.IO.Path.Combine(DirectoryOverride ?? Application.persistentDataPath, "save.json");
 
         /// <summary>Load and migrate the save. False when there is no usable save (missing, corrupt, or from a future build).</summary>
         public static bool TryLoad(out SaveData save)

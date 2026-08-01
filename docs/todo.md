@@ -495,11 +495,19 @@ with hand-authored sprite metas, and credited in `CREDITS.md`:
   the 2026-07-29 swap. Run the menu item after adding art.
 
 Still deliberately unwired: `res-flint` (there is no flint resource — a spare
-kept for a tool-tier surface that doesn't exist yet). Cheap future win found
-while sourcing: Kurr's coal plate, fig. 6, is a **public-domain amber with
-insects in it** — swapping `res-amber` to it would drop one of the five CC BY
-attributions the build has to carry, but it also feeds the store's amber icons,
-so it wants a deliberate pass rather than a drive-by.
+kept for a tool-tier surface that doesn't exist yet), and **as of 2026-08-02
+`res-amber` too** — repointing the Deep Amber plate at `insect-deep-amber`
+(where it always belonged) left the resource photograph referenced by nothing.
+It still ships, because everything under Resources/ does, so its CC BY credit
+is still owed while the file is there.
+
+That makes the amber attribution cheaper to drop than this note used to say:
+**deleting `res-amber` now removes one of the five CC BY works outright**, no
+Kurr-coal-plate swap needed. Correction to go with it — the store's amber icons
+derive from the **`insect-deep-amber` source work** (James St. John's fly in
+amber), *not* from `res-amber` (the Dolichoderus specimen tag); the two are
+separate CC BY works and only the first feeds the icons. Still wants a
+deliberate pass rather than a drive-by, because it is a licence change.
 
 **IMPLEMENTED 2026-07-30 — the fold gate: content that arrives over runs
 (design §8).** Nothing in the ladder, the zones or the species read
@@ -1966,10 +1974,11 @@ Still open here:
   the analytics opt-out this sheet added). `PrivacyPolicyUrl` +
   "The privacy policy in full" under WHAT THIS BOOK TELLS US.
   ⚠️ **The page lives in the Decryptic repo** (`src/Decryptic.App/wwwroot/
-  wildgrove/privacy.html`) and deploys with that site — the rewrite is
-  uncommitted there and reaches the web only on the next Decryptic push. Its
-  header comment now carries the keep-in-step warning, since the page has
-  silently rotted behind the build twice.
+  wildgrove/privacy.html`) and deploys with that site. Its header comment
+  carries the keep-in-step warning, since the page has silently rotted behind
+  the build twice. **Shipped: committed there as `a675ded`, pushed, and the
+  live page confirmed rewritten (effective 1 August 2026 — rewarded ads,
+  Play Games, the analytics opt-out) on 2026-08-02.**
 - The inside cover has had **no device pass** — it is the newest sheet and
   the longest, and the scroll clamp is what keeps it on a phone screen. The
   privacy row lands in the middle of it, so it wants the same pass.

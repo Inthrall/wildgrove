@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using Wildgrove.Data;
 
 namespace Wildgrove.Game.Tests
@@ -166,6 +167,31 @@ namespace Wildgrove.Game.Tests
             foreach (var name in new[] { "planter", "seedling", "tools", "deep-amber" })
             {
                 Assert.That(ArtLibrary.ForLine(name), Is.Not.Null, "line motif " + name);
+            }
+        }
+
+        [Test]
+        public void EveryLineMotif_DrawsItsOwnPlateRatherThanABorrowedOne()
+        {
+            // Loading is not enough for these four. A key pointed at the wrong
+            // file still returns a sprite, and the page draws a plausible
+            // picture that nothing would ever question — which is how the deep
+            // amber shipped on the ordinary amber's photograph while its own
+            // plate sat in the build, already good enough for the store card.
+            var expected = new Dictionary<string, string>
+            {
+                { "planter", "Art/Plates/Goods/goods-trellis" },
+                { "seedling", "Art/Plates/Goods/goods-seedling" },
+                { "tools", "Art/Plates/Goods/goods-tools" },
+                { "deep-amber", "Art/Plates/Insects/insect-deep-amber" },
+            };
+
+            foreach (var pair in expected)
+            {
+                var plate = UnityEngine.Resources.Load<Sprite>(pair.Value);
+                Assert.That(plate, Is.Not.Null, "no plate at " + pair.Value);
+                Assert.That(ArtLibrary.ForLine(pair.Key), Is.SameAs(plate),
+                    "line motif " + pair.Key + " does not draw " + pair.Value);
             }
         }
 

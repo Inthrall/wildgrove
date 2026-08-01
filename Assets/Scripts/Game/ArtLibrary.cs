@@ -186,7 +186,10 @@ namespace Wildgrove.Game
             { "planter", Plates + "Goods/goods-trellis" },
             { "seedling", Plates + "Goods/goods-seedling" },
             { "tools", Plates + "Goods/goods-tools" },
-            { "deep-amber", Plates + "Resources/res-amber" },
+            // The deep amber's own plate — a fly held in the resin, which is the
+            // whole of what the set is about. Keyed here rather than in Insect
+            // because the four pieces are ambers.json, not an insect id.
+            { "deep-amber", Plates + "Insects/insect-deep-amber" },
         };
 
         // journal furniture — chrome, keyed by a plain name

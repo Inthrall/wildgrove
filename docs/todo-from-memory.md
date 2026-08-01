@@ -24,11 +24,24 @@ the memories called open that turn out to be done.
   the drip's earn rate is unmeasurable and each placement caps the other. Steps
   are in the release-blocker section of `todo.md`.
 
-- **The Deep Amber plate draws the wrong picture.** `ArtLibrary`'s `Line` map
-  (`Assets/Scripts/Game/ArtLibrary.cs:189`) keys `deep-amber` to
-  `Resources/Art/Plates/Resources/res-amber` — the resource photograph.
-  `insect-deep-amber.png` exists and the Play Console store card already uses
-  it; only the in-game key was never repointed.
+- ~~**The Deep Amber plate draws the wrong picture.**~~ ✅ RESOLVED
+  2026-08-02. `ArtLibrary`'s `Line` map now keys `deep-amber` to
+  `Plates/Insects/insect-deep-amber` — the fly in the resin, which is the whole
+  of what the set is about — instead of the ordinary amber's photograph. The
+  existing coverage passed throughout, because a key pointed at the wrong file
+  still loads a sprite: `EveryLineMotif_DrawsItsOwnPlateRatherThanABorrowedOne`
+  now pins all four motifs to their actual plate, so a borrow fails a test
+  rather than drawing something plausible.
+  **Left as a finding, not a change:** `res-amber` is now referenced by nothing
+  in code — it joins `res-flint` as a plate that ships (everything under
+  Resources/ does) and is never drawn. Its CC BY credit is therefore still
+  required while the file is there. Deleting it would drop one of the five CC BY
+  attributions outright, which is the cheaper version of the Kurr-coal-plate
+  swap noted in `todo.md` — and the same deliberate pass, not a drive-by.
+  ⚠️ Note while doing it: the store's amber icons derive from the
+  *insect-deep-amber* source work (James St. John), **not** from `res-amber`
+  (the Dolichoderus specimen tag) — `todo.md`'s note reads as though one work
+  feeds both, and it doesn't.
 
 - ~~**A failed IAP store connect can never report failure.**~~ ✅ RESOLVED
   2026-08-01. Both silent paths (`ConnectAsync`'s catch and
@@ -44,21 +57,56 @@ the memories called open that turn out to be done.
   looked. A failed attempt is deliberately **not** remembered: the next press
   reconnects from the top.
 
-- **A 21.9 MB `firebase-app-unity-13.13.0.aar` is still committed** under
-  `Assets/GeneratedLocalRepo/Firebase/…`. It was left in deliberately when the
-  61 MB Google tarballs were stripped from history (possibly required for the
-  CI resolve) and flagged as a follow-up that was never revisited. Either
-  confirm CI needs it and note why, or fetch it the way
-  `tools/fetch-google-packages.sh` fetches the rest.
+- ~~**A 21.9 MB `firebase-app-unity-13.13.0.aar` is still committed**~~
+  ✅ RESOLVED 2026-08-02 — **confirmed required, and it stays.** The "possibly"
+  is now settled three ways: `settingsTemplate.gradle:28` points Gradle at
+  `Assets/GeneratedLocalRepo/Firebase/m2repository`, so the committed copy is
+  what every Android build resolves against; **no CI job runs the resolver**
+  (`AndroidResolverRunner.ForceResolve` exists and nothing calls it, and EDM's
+  auto-resolution does not run in batchmode), so deleting the files makes the
+  build fail to find `firebase-app-unity` rather than regenerate them; and the
+  bytes are already in history, so removing them would not shrink a clone by
+  one byte. Fetching it "the way the rest are fetched" isn't available either —
+  it is generated, not downloadable, though it *is* a byte-identical copy of the
+  `.srcaar` inside the pinned tarball (verified: all three match).
+  What the item was really pointing at was **drift** — the tarball version is
+  pinned in `fetch-google-packages.sh`, the generated repo is pinned by whenever
+  someone last resolved, and nothing connected the two, so a version bump
+  without a re-resolve would silently link the OLD Firebase. The fetch script
+  now checks the committed aars against the tarballs they came from and exits
+  non-zero on a mismatch, naming the ForceResolve command to fix it. CI runs
+  that script before every Unity invocation, so the check is already wired in.
+  Both failure branches were exercised.
 
 ## Test coverage gaps
 
-Both from the 2026-07-18 whole-codebase review, skipped as out of scope then
-and still true: **`GameLoop` and `SaveFile` have no fixtures at all.** They are
-the two seams where load/resume/autosave/offline-credit ordering lives, and
-every bug that has bitten there (pause→resume never crediting, the corrupt-save
-crash loop, the cloud reconcile baseline) was found on a device rather than in
-the suite.
+From the 2026-07-18 whole-codebase review: **`GameLoop` and `SaveFile` had no
+fixtures at all** — the two seams where load/resume/autosave/offline-credit
+ordering lives, and where every bug that has bitten (pause→resume never
+crediting, the corrupt-save crash loop, the cloud reconcile baseline) was found
+on a device rather than in the suite.
+
+- ~~`SaveFile`~~ ✅ RESOLVED 2026-08-02 — `SaveFileTests`, 7 tests over the
+  disk half that `RunPersistence`'s fake store deliberately doesn't reach: the
+  round trip, the atomic replace (the branch only a *second* write takes, which
+  is the one an autosave takes for the rest of the run), the `.corrupt` and
+  `.newer` set-asides landing in their own slots with their bytes intact, and a
+  failed write staying a logged error instead of taking the session down. They
+  need a real disk, so `SaveFile.DirectoryOverride` was added to point them at a
+  scratch directory — without it the fixture would write over the developer's
+  own editor run, which is presumably part of why this never got written.
+- **`GameLoop` still has no fixture, and the shape of the gap has changed.**
+  Most of what the review was worried about has since been extracted into
+  classes that *are* tested — `RunPersistence`, `Announcements`, `SessionLog`,
+  `Achievements`, `Leaderboards`, `GameStats`, and now `SaveFile`. What is left
+  in the MonoBehaviour is the **ordering between them**, and that is exactly
+  where the remaining risk sits: `AdoptCloudRun` is eight steps that must happen
+  in one breath (rebase stats, mark arrivals seen, drop the stale offline
+  summary, credit the new absence, re-fold entitlements, save, notice), and
+  `StartAgain` is four with the same property. Both are commented as sequences
+  precisely because getting one out of order is silent. Testing them means
+  either a PlayMode fixture or lifting the sequence into a plain class the way
+  the others were lifted — the second is the pattern the file already follows.
 
 ## Called open in memory, actually already done
 
