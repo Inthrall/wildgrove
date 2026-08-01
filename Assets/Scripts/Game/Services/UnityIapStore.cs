@@ -28,6 +28,8 @@ namespace Wildgrove.Game.Services
 
         public event Action<string> ConsumablePurchased;
 
+        public event Action EntitlementsResolved;
+
         public Func<string, bool> RewardRedeemed { get; set; }
 
         public bool IsInitialised => _connection.IsConnected;
@@ -92,6 +94,7 @@ namespace Wildgrove.Game.Services
                 _controller.OnPurchasePending += OnPurchasePending;
                 _controller.OnPurchaseConfirmed += OnPurchaseConfirmed;
                 _controller.OnPurchaseFailed += OnPurchaseFailed;
+                _controller.OnPurchaseDeferred += OnPurchaseDeferred;
                 _controller.OnPurchasesFetched += OnPurchasesFetched;
                 _controller.OnPurchasesFetchFailed += OnPurchasesFetchFailed;
             }
@@ -214,6 +217,13 @@ namespace Wildgrove.Game.Services
 
             FinishFetch(true);
             _connection.Succeeded();
+
+            // Ownership is now known — say so, whichever attempt got here. The
+            // first successful connect also runs the callback queued behind it,
+            // so the fold happens twice on that one launch; the folds are
+            // additive and idempotent, and the alternative is a late connection
+            // that fills this set and tells nobody.
+            EntitlementsResolved?.Invoke();
         }
 
         private void OnPurchasesFetchFailed(PurchasesFetchFailureDescription description)
@@ -383,6 +393,28 @@ namespace Wildgrove.Game.Services
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
                 Resolve(productId, result);
+            }
+        }
+
+        /// <summary>
+        /// Play took the order but the payment hasn't cleared. Release whoever is
+        /// waiting on it: no Confirmed and no Failed ever follows a deferred
+        /// order, so without this the purchase resolves to nothing at all — the
+        /// buy button stays down on "Opening the store…" and the in-flight guard
+        /// in <see cref="Purchase"/> swallows every retry for the rest of the
+        /// session.
+        /// <para>
+        /// Nothing is granted and nothing is marked owned here. When the payment
+        /// clears, Play delivers the order the ordinary way — through
+        /// <see cref="OnPurchasePending"/> if the game is still up, or the launch
+        /// purchase fetch if it isn't — and the pile lands there.
+        /// </para>
+        /// </summary>
+        private void OnPurchaseDeferred(DeferredOrder order)
+        {
+            foreach (var productId in ProductIdsOf(order.CartOrdered))
+            {
+                Resolve(productId, StoreResult.Deferred);
             }
         }
 

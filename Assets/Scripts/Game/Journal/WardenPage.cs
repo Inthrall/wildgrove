@@ -538,6 +538,9 @@ namespace Wildgrove.Game
                     case StoreResult.Unavailable:
                         SetNote("the store couldn't be reached. nothing was charged — try again shortly.");
                         break;
+                    case StoreResult.Deferred:
+                        SetNote("the payment hasn't cleared yet. the slot opens when Play finishes it.");
+                        break;
                 }
             });
         }

@@ -2052,11 +2052,17 @@ error anywhere; it looks exactly like a player outside the EEA.
 
 - **Skills vocabulary hardcoded** in `GameDataValidator` as a C# `HashSet` rather than
   sourced from data.
-- **`zone.unlocks` is documentation-only and diverges from upgrade effects.**
-  The worst case (excavation never granted) was fixed with the excavation
-  system — `map-oldgrowth` now carries `unlockSkill: excavation` — but the
-  field itself still isn't consumed; the validator only reads the starting
-  zone's.
+- ~~**`zone.unlocks` is documentation-only** and the validator only reads the
+  starting zone's~~ ✅ CORRECTED 2026-08-02 — the note was stale on both
+  counts. `RiteGenerator.SkillDebutOrder` walks **every** zone's `unlocks` to
+  decide how early a generated verse may demand a skill's goods, so a typo in
+  a late zone's list silently moves that skill's debut and re-paces every
+  run-2+ Rite. The validator now checks all zones (`cloudreach-peaks`'
+  non-skill `final-waystones` token is whitelisted in `KnownNonSkillUnlocks`).
+  Still open: the field means two things depending on the zone — the starting
+  zone's list seeds `UnlockedSkills`, the rest only inform pacing — and the
+  sentinel would be cleaner in a field of its own (a data-schema change, so it
+  needs a `GameData.asset` re-import in the same commit).
 - ~~**`map-mistfen` grants a zone but no dig site / skills**~~ ✅ RESOLVED
   2026-07-28 with the Mistfen build: the map now carries `unlockSkill
   apothecary` and `unlockDigSite mistfen-marsh` (see the Mid/late-game

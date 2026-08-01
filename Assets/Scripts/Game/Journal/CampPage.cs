@@ -322,6 +322,10 @@ namespace Wildgrove.Game
                     {
                         SetNote("the caravan couldn't be reached, nothing was charged. try again shortly.");
                     }
+                    else if (result == StoreResult.Deferred)
+                    {
+                        SetNote("the payment hasn't cleared yet. the amber arrives when Play finishes it.");
+                    }
                 });
             });
         }
@@ -835,12 +839,40 @@ namespace Wildgrove.Game
 
         private void CommitTrade(Button trade, ExchangeOffer offer, QualityTier quality, BigDouble spend)
         {
-            var got = _loop.TradeAtExchange(offer.from, offer.to, spend, quality);
+            // Nothing captured when the confirm opened is taken on trust here.
+            // The sheet can sit open while the caravan turns its deal over and the
+            // camp goes on working, and TryTrade checks the pile but never the
+            // standing offer — so an expired pair would still be traded, and a
+            // spend larger than the pile just answers zero, which read as a
+            // confirmed trade that quietly did nothing.
+            var current = _loop.CurrentExchangeOffer();
+            if (current == null || current.from != offer.from || current.to != offer.to)
+            {
+                SetNote("the caravan had already turned that deal over. nothing traded.");
+                _dirty = true;
+                return;
+            }
+
+            // Never more than was quoted (the pile may have grown since), never
+            // nothing merely because it shrank.
+            var held = Exchange.Held(_loop.State, offer.from, quality);
+            if (held < spend)
+            {
+                spend = held;
+            }
+
+            var got = spend > BigDouble.Zero
+                ? _loop.TradeAtExchange(offer.from, offer.to, spend, quality)
+                : BigDouble.Zero;
             if (got > BigDouble.Zero)
             {
                 Flash(trade, "+" + NumberFormat.Rate(got) + " " + GoodName(offer.to), true);
                 SetNote("traded " + TierName(quality) + GoodName(offer.from) + " for " + GoodName(offer.to)
                         + ". a nod. gone before the count.");
+            }
+            else
+            {
+                SetNote("that pile was spoken for before the deal was struck. nothing traded.");
             }
 
             _dirty = true;

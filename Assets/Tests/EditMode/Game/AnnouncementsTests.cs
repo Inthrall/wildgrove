@@ -141,6 +141,37 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void DropOfflineSummary_AlsoRetiresTheOneAlreadyTakenByASheet()
+        {
+            // The hazard the pending-only drop missed: the welcome-back sheet has
+            // already TAKEN the summary, and its "Double it" is still live behind
+            // a rewarded ad. If the run is replaced while that ad plays, the haul
+            // it would grant belongs to the state just set aside.
+            var summary = new OfflineSummary { creditedSeconds = 3600.0 };
+            _announce.OfferOfflineSummary(summary);
+            var taken = _announce.TakeOfflineSummary();
+
+            Assert.That(_announce.IsOfflineSummaryCurrent(taken), Is.True, "still the run in hand");
+
+            _announce.DropOfflineSummary();
+
+            Assert.That(_announce.IsOfflineSummaryCurrent(taken), Is.False,
+                "the run it credited is gone, so the sheet's outstanding offer goes with it");
+        }
+
+        [Test]
+        public void IsOfflineSummaryCurrent_ForNullOrAStrangerSummary_IsFalse()
+        {
+            var summary = new OfflineSummary { creditedSeconds = 3600.0 };
+            _announce.OfferOfflineSummary(summary);
+            _announce.TakeOfflineSummary();
+
+            Assert.That(_announce.IsOfflineSummaryCurrent(null), Is.False);
+            Assert.That(_announce.IsOfflineSummaryCurrent(new OfflineSummary { creditedSeconds = 3600.0 }), Is.False,
+                "an equal-looking summary is not the one that was handed out");
+        }
+
+        [Test]
         public void DropOfflineSummary_ThenANewAbsence_TakesItsPlace()
         {
             // The adopted-cloud-save path: the pending summary credited a run

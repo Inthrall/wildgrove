@@ -18,6 +18,13 @@ namespace Wildgrove.Data
 
         private static readonly HashSet<string> SkillWildcards = new HashSet<string> { "all", "all-gathering" };
 
+        // Tokens a zone's unlocks may carry that name something other than a
+        // skill — the field doubles as documentation of what the zone opens, and
+        // the last zone uses it for the final-waystones chain, which nothing
+        // resolves as a skill. Whitelisted rather than waved through: an unknown
+        // token is still a typo.
+        private static readonly HashSet<string> KnownNonSkillUnlocks = new HashSet<string> { "final-waystones" };
+
         private static readonly HashSet<string> KnownScopes = new HashSet<string> { "mvp", "v1.1", "v1.2" };
 
         // The sim switches on the literal (Economy.cs sell pricing, rite slot
@@ -179,16 +186,32 @@ namespace Wildgrove.Data
                 issues.Add($"Starting zone '{GameData.StartingZoneId}' is not the lowest-order zone ('{lowestOrder.Id}' is)");
             }
 
-            // Only the starting zone's unlocks are mechanically live (they
-            // seed UnlockedSkills); a typo there silently severs everything
-            // hanging off the skill. Later zones' unlocks are documentation —
-            // a known divergence — so they stay unchecked.
+            // Every zone's unlocks are checked, not only the starting zone's. The
+            // starting zone's are live twice over — they seed UnlockedSkills — but
+            // all of them are walked by RiteGenerator.SkillDebutOrder, which reads
+            // the order of the zone that unlocks a skill to decide how early a
+            // generated verse may ask for that skill's goods. So a typo in a late
+            // zone's list moves the skill's debut, and the pacing of every run-2+
+            // Rite with it, while the data still validates green.
             var startingZone = data.Zones.OrderBy(z => z.Order).FirstOrDefault();
-            if (startingZone != null)
+            foreach (var zone in data.Zones)
             {
-                foreach (var skill in startingZone.Unlocks.Where(s => !KnownSkills.Contains(s)))
+                foreach (var unlock in zone.Unlocks)
                 {
-                    issues.Add($"Starting zone '{startingZone.Id}' unlock '{skill}' is not a known skill");
+                    if (KnownSkills.Contains(unlock))
+                    {
+                        continue;
+                    }
+
+                    // A later zone may name something that isn't a skill at all.
+                    // The starting zone's list is read as skills, so nothing else
+                    // belongs in it.
+                    if (zone != startingZone && KnownNonSkillUnlocks.Contains(unlock))
+                    {
+                        continue;
+                    }
+
+                    issues.Add($"Zone '{zone.Id}' unlock '{unlock}' is not a known skill");
                 }
             }
 
@@ -586,6 +609,15 @@ namespace Wildgrove.Data
                 if (upgrade.GateLevel < 0)
                 {
                     issues.Add($"Upgrade '{upgrade.Id}' gateLevel must not be negative");
+                }
+
+                // The XP clamp stops at maxLevel and MeetsSkillGate compares
+                // against the clamped level, so a gate above the cap is an
+                // upgrade that shows its price and can never be bought — the
+                // same permanently-unbuyable shape the recipe rule above catches.
+                if (data.Economy?.Xp != null && upgrade.GateLevel > data.Economy.Xp.MaxLevel)
+                {
+                    issues.Add($"Upgrade '{upgrade.Id}' gateLevel {upgrade.GateLevel} exceeds xp.maxLevel {data.Economy.Xp.MaxLevel} — unreachable forever");
                 }
 
                 foreach (var material in upgrade.Materials.Keys.Where(m => !resourceIds.Contains(m)))

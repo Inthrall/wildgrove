@@ -20,6 +20,22 @@ namespace Wildgrove.Game.Services
         /// the outcome that used to arrive as silence.
         /// </summary>
         Unavailable,
+
+        /// <summary>
+        /// Play took the order but the payment hasn't cleared — a pending-payment
+        /// method (cash at a shop, a parent's approval). Nothing has been granted
+        /// and nothing is owned yet; when the payment clears Play delivers the
+        /// order through the ordinary pending path, this session or a later
+        /// launch, and the pile lands there.
+        /// <para>
+        /// Kept apart from <see cref="Failed"/> so a player is never told their
+        /// money went nowhere, and from <see cref="Purchased"/> so nothing is
+        /// granted twice. A caller that treats this as an ending must not
+        /// re-offer the purchase: Play rejects a second order while one is
+        /// pending.
+        /// </para>
+        /// </summary>
+        Deferred,
     }
 
     /// <summary>
@@ -41,6 +57,22 @@ namespace Wildgrove.Game.Services
         /// entitlements don't need this — their ownership is read from the store.
         /// </summary>
         event Action<string> ConsumablePurchased;
+
+        /// <summary>
+        /// Raised whenever the store has resolved what this player owns: on the
+        /// connection that comes up, and again on every later re-read (a restore,
+        /// a reward check). Fires on the main thread.
+        /// <para>
+        /// This is what makes a late connection count. The launch-time resolve is
+        /// a single attempt, and a failed one leaves nothing queued — so a
+        /// connection that succeeds later, on the player's first purchase or a tap
+        /// on Restore purchases, would fill the owned set while the run itself
+        /// never heard: the buy line hidden because the store says owned, and the
+        /// paid slot missing until the next launch. Handlers must be idempotent —
+        /// ownership is re-read often, and every fold of it is additive.
+        /// </para>
+        /// </summary>
+        event Action EntitlementsResolved;
 
         /// <summary>
         /// Set by the game to receive Play Games Rewards (design §11) — items

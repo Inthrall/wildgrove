@@ -39,6 +39,12 @@ namespace Wildgrove.Game
         /// <summary>The credited absence awaiting its welcome-back sheet, or null.</summary>
         public OfflineSummary PendingOfflineSummary { get; private set; }
 
+        // The summary already handed to a welcome-back sheet and still awaiting
+        // its answer. Kept because that sheet's "Double it" grants the haul a
+        // second time on a reward that lands much later — long enough for the run
+        // underneath to have been replaced by an adopted cloud save.
+        private OfflineSummary _outstandingOfflineSummary;
+
         /// <summary>The most recently earned bond awaiting its celebration, or null.</summary>
         public BondData PendingBondCelebration { get; private set; }
 
@@ -174,13 +180,31 @@ namespace Wildgrove.Game
         {
             var summary = PendingOfflineSummary;
             PendingOfflineSummary = null;
+            _outstandingOfflineSummary = summary;
             return summary;
         }
 
-        /// <summary>Discard the pending summary — it credited a run that has since been replaced.</summary>
+        /// <summary>
+        /// Whether this summary still credits the run in hand. A summary taken by
+        /// a sheet and since dropped answers false: the gains it lists were
+        /// gathered by a state nothing holds any more, so granting them would pay
+        /// out an absence the current run never had.
+        /// </summary>
+        public bool IsOfflineSummaryCurrent(OfflineSummary summary)
+        {
+            return summary != null && ReferenceEquals(summary, _outstandingOfflineSummary);
+        }
+
+        /// <summary>
+        /// Discard the pending summary — it credited a run that has since been
+        /// replaced. The one already taken by an open sheet goes with it: its
+        /// "Double it" is still live, and the haul it would grant belongs to the
+        /// state that was just set aside.
+        /// </summary>
         public void DropOfflineSummary()
         {
             PendingOfflineSummary = null;
+            _outstandingOfflineSummary = null;
         }
 
         /// <summary>
@@ -197,6 +221,7 @@ namespace Wildgrove.Game
             _rewards.Clear();
             _seenKithSlots = -1;
             PendingOfflineSummary = null;
+            _outstandingOfflineSummary = null;
             PendingBondCelebration = null;
             PendingSlotCelebration = 0;
         }

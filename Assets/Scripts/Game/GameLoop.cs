@@ -200,6 +200,13 @@ namespace Wildgrove.Game
             // waiting). The store's fetch is lazy — it runs no earlier than the
             // first purchase, by which point State is loaded.
             Store.ConsumablePurchased += OnConsumableRecovered;
+            // Fold entitlements in whenever the store resolves ownership — not
+            // only on the one delayed attempt below. A launch with no signal
+            // leaves that attempt with nothing queued, and the connection that
+            // comes up later (a first purchase, a tap on Restore purchases) would
+            // otherwise fill the store's owned set while the ladder stayed where
+            // it was: paid for, with no slot to show for it until a relaunch.
+            Store.EntitlementsResolved += SyncStoreEntitlements;
             // Receive Play Games Rewards (design §11). Set before the billing
             // connection is asked for anything: a reward awarded while the game
             // was closed arrives on the very first purchase fetch, and the store

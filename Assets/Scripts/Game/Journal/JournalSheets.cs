@@ -438,7 +438,19 @@ namespace Wildgrove.Game
                         () =>
                         {
                             doubled = true;
-                            _loop.GrantOfflineBonus(summary);
+                            if (!_loop.GrantOfflineBonus(summary))
+                            {
+                                // The run was replaced while the ad played (a
+                                // cloud save adopted from another device), so
+                                // this haul belongs to a book no longer in hand.
+                                // The sheet describes that book — it goes, rather
+                                // than rewrite its lines with numbers that never
+                                // landed.
+                                SetNote("the book moved on while that played. nothing was doubled.");
+                                CloseSheet();
+                                return;
+                            }
+
                             _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "offline_boost"));
                             foreach (var gain in gainLines)
                             {
@@ -1358,7 +1370,11 @@ namespace Wildgrove.Game
 
             _loop.Store.Purchase(StoreProductIds.RemoveAds, result =>
             {
-                _removeAdsPending = false;
+                // A deferred order is still outstanding with Play, so the flow
+                // hasn't actually ended — staying "pending" keeps the live
+                // updater from putting the price back on a button that must
+                // stay down.
+                _removeAdsPending = result == StoreResult.Deferred;
                 switch (result)
                 {
                     case StoreResult.Purchased:
@@ -1384,6 +1400,19 @@ namespace Wildgrove.Game
                         // back — this is the one outcome a second press can fix.
                         RestoreRemoveAdsButton();
                         SetNote("The store couldn't be reached. Nothing was charged — try again shortly.");
+                        break;
+                    case StoreResult.Deferred:
+                        // Play holds the order until the payment clears. A second
+                        // press can't help and Play would reject it, so the button
+                        // says what it's waiting for and stays down; it comes back
+                        // on the next open, and once the payment clears the row
+                        // isn't built at all.
+                        if (_removeAdsButton != null)
+                        {
+                            SetButtonLabel(_removeAdsButton, "Waiting on Play…");
+                        }
+
+                        SetNote("Play is still finishing that payment. The ads step aside when it clears — nothing more to do.");
                         break;
                 }
             });
@@ -1417,6 +1446,18 @@ namespace Wildgrove.Game
         /// </summary>
         private Transform BeginSheet(System.Action dismiss = null, bool scrimDismisses = true)
         {
+            // One sheet at a time is the whole model, and this is where it is
+            // kept. CloseSheet and DismissSheet only ever know about the
+            // current sheet, so a second one opened over the first orphans it:
+            // its scrim goes on covering the journal and nothing left can reach
+            // it — taps route to a sheet that is no longer tracked, Back
+            // returns at the null check, and the book is shut until the app is
+            // killed. Callers mostly do close before they open; an async
+            // callback (a leaderboard read, a sign-in) cannot know what was
+            // raised while it was away, so the invariant is enforced here
+            // rather than remembered at every call site.
+            CloseSheet();
+
             var dim = MakePanel("Sheet", (RectTransform)_modalLayer, DimColor);
             Stretch((RectTransform)dim.transform);
             _sheet = dim;

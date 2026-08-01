@@ -239,6 +239,51 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RecordDeed_CompletingAVerseMidSync_DoesNotHandTheNextOneTheRunsWholeTally()
+        {
+            // The sibling test above completes a verse with an OFFERING, which
+            // re-enters the sync from the top and baselines the verse that opens.
+            // A DEED completing it unseals the next verse *inside* the sync loop,
+            // after the baseline pass has already been and gone — so the newly
+            // opened verse used to be measured against an unset baseline of zero
+            // and inherit every deed the run had ever done.
+            _sunfieldVerse.slots[2].count = 25;
+            var state = GameStateFactory.NewGame(_data);
+            state.purchasedUpgradeIds.Add("map-bramble");
+            GameStateFactory.SyncUnlockedZones(state, _data);
+
+            // One slot answered by offering; the deed slot will be the second.
+            state.AddResource("berries", 100);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            for (var i = 0; i < 24; i++)
+            {
+                Rite.RecordDeed(state, _data, "tend");
+            }
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.False, "one tend short");
+            Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.False, "still sealed, so still unbaselined");
+            var renownBefore = state.renown;
+
+            // The tend that answers the sunfield verse and opens the bramble one
+            // in the same pass. The bramble verse asks for 5 tends; the run has
+            // now done 25.
+            Rite.RecordDeed(state, _data, "tend");
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+            Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.True);
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(0.0).Within(Tolerance),
+                "the verse that just opened counts from its reveal, not from the run's whole tally");
+            Assert.That(state.renown.ToDouble(),
+                Is.EqualTo((renownBefore + _sunfieldVerse.slots[2].renownGrant).ToDouble()).Within(Tolerance),
+                "only the sunfield deed slot's grant — the bramble slot was never filled, so it was never paid");
+
+            Rite.RecordDeed(state, _data, "tend");
+
+            Assert.That(Rite.SlotDelivered(state, _brambleVerse, 1), Is.EqualTo(1.0).Within(Tolerance),
+                "and the tends after the reveal are its own");
+        }
+
+        [Test]
         public void Deliver_VerseAlreadyAnswered_TheUnchosenSlotsAreExpired()
         {
             // Any chooseCount slots answer the verse; the rest expire (§8) —

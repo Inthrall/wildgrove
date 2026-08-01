@@ -20,6 +20,8 @@ namespace Wildgrove.Game.Services
         public event Action<string> ConsumablePurchased;
 #pragma warning restore 67
 
+        public event Action EntitlementsResolved;
+
         public Func<string, bool> RewardRedeemed { get; set; }
 
         public bool IsInitialised { get; private set; }
@@ -66,6 +68,11 @@ namespace Wildgrove.Game.Services
             IsInitialised = true;
             Debug.Log("[store] stub initialised");
             onReady?.Invoke();
+
+            // Nothing here can fail to connect, so this is the stub's one moment
+            // of "ownership is known" — raised so the editor exercises the same
+            // fold path a device takes on a late connection.
+            EntitlementsResolved?.Invoke();
         }
 
         public void Purchase(string productId, Action<StoreResult> onComplete)

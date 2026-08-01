@@ -141,14 +141,25 @@ namespace Wildgrove.EditorTools
             state.purchasedKithSlots = 2;
             var staged = new[]
             {
-                ("harvest-mouse", state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id),
+                ("sedge-linnet", state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id),
                 ("red-squirrel", state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id),
-                ("dray-stag", Familiar.WanderStation),
+                ("bramble-hare", Familiar.WanderStation),
                 ("tawny-owl", state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id),
             };
             for (var i = 0; i < staged.Length; i++)
             {
                 var (species, station) = staged[i];
+
+                // Loud, because the quiet version shipped: a retired species id
+                // resolves to no plate and no name list, so SuggestName falls
+                // back to "Familiar N" and the store screenshots go out with a
+                // blank-faced companion in them. Nothing else here would say so.
+                if (!data.SpeciesById.ContainsKey(species))
+                {
+                    throw new System.InvalidOperationException(
+                        "[store-shots] staged species '" + species + "' is not in species.json");
+                }
+
                 state.roster.Add(new Familiar
                 {
                     id = state.NextFamiliarId(),

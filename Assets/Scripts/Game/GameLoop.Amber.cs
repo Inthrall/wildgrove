@@ -15,15 +15,23 @@ namespace Wildgrove.Game
         /// Grant the OfflineBoost rewarded-ad reward: credit the welcome-back
         /// haul a second time. Called from the welcome sheet's "Double it" button
         /// once the rewarded ad reports the reward earned.
+        /// <para>
+        /// Refused (returns false) when the summary no longer credits the run in
+        /// hand. An adopted cloud save arrives asynchronously and can land while
+        /// the sheet is still open — these gains were gathered by the state that
+        /// adoption set aside, and granting them into the adopted run would pay
+        /// out an absence it never had.
+        /// </para>
         /// </summary>
-        public void GrantOfflineBonus(OfflineSummary summary)
+        public bool GrantOfflineBonus(OfflineSummary summary)
         {
-            if (summary == null)
+            if (summary == null || State == null || !_announce.IsOfflineSummaryCurrent(summary))
             {
-                return;
+                return false;
             }
 
             Simulation.GrantHaul(State, summary.gains);
+            return true;
         }
 
         /// <summary>

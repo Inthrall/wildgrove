@@ -141,6 +141,16 @@ namespace Wildgrove.Game
             Flash(view, "reading the board", true);
             _loop.GameServices.LoadLeaderboard(Services.LeaderboardIds.Renown, StandingRows, entries =>
             {
+                // The read is a network round trip, and the pump can have raised
+                // a sheet while it was away. Opening over it would close it
+                // unread — and the welcome-back sheet offers the offline haul
+                // exactly once — so the board is the thing that gives way.
+                if (_sheet != null)
+                {
+                    SetNote("the board answered while the page was busy. ask again in a moment.");
+                    return;
+                }
+
                 if (entries == null)
                 {
                     SetNote("the board wouldn't be read. Play Games kept it shut.");

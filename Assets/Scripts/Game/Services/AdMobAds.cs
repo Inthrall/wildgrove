@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using GoogleMobileAds.Api;
 using GoogleMobileAds.Ump.Api;
 using UnityEngine;
@@ -16,16 +17,49 @@ namespace Wildgrove.Game.Services
         // Google's official Android rewarded test unit — used in dev builds.
         private const string TestRewardedUnit = "ca-app-pub-3940256099942544/5224354917";
 
+        // A failed preload waits before trying again, doubling to a ceiling —
+        // AdMob's documented backoff. Some wait is required either way: the
+        // retry is issued from a poll, so without one a placement with no fill
+        // would be re-requested several times a second.
+        private const float FirstRetryBackoffSeconds = 8f;
+        private const float MaxRetryBackoffSeconds = 300f;
+
+        private readonly Dictionary<RewardedPlacement, LoadState> _loads = new Dictionary<RewardedPlacement, LoadState>();
+
         private RewardedAd _offlineBoost;
         private RewardedAd _timeSkip;
         private RewardedAd _amberDrip;
         private bool _initialised;
         private bool _adsStarted;
+        private bool _sdkReady;
+
+        /// <summary>
+        /// A placement's preload state between attempts: whether one is in
+        /// flight, the earliest the next may start, and how long to wait after
+        /// the next failure.
+        /// </summary>
+        private sealed class LoadState
+        {
+            internal bool InFlight;
+            internal float NextAttemptAt;
+            internal float Backoff = FirstRetryBackoffSeconds;
+        }
 
         public bool IsRewardedReady(RewardedPlacement placement)
         {
             var ad = AdFor(placement);
-            return ad != null && ad.CanShowAd();
+            if (ad != null && ad.CanShowAd())
+            {
+                return true;
+            }
+
+            // This poll is also the retry clock. Nothing else would re-load a
+            // placement whose load failed: the buttons that ask this question are
+            // the same ones gated on the answer, so ShowRewarded — the only other
+            // caller that loads — is never reached, and a launch that came up
+            // with no signal would cost the whole session its rewarded ads.
+            RequestLoad(placement);
+            return false;
         }
 
         public void Initialise()
@@ -108,9 +142,13 @@ namespace Wildgrove.Game.Services
             _adsStarted = true;
             MobileAds.Initialize(_ =>
             {
-                Load(RewardedPlacement.OfflineBoost);
-                Load(RewardedPlacement.TimeSkip);
-                Load(RewardedPlacement.AmberDrip);
+                // Only now may an ad be requested — and the retry path checks
+                // this too, so a poll arriving between StartAds and here can't
+                // load against an SDK that isn't up.
+                _sdkReady = true;
+                RequestLoad(RewardedPlacement.OfflineBoost);
+                RequestLoad(RewardedPlacement.TimeSkip);
+                RequestLoad(RewardedPlacement.AmberDrip);
             });
         }
 
@@ -136,7 +174,7 @@ namespace Wildgrove.Game.Services
             if (ad == null || !ad.CanShowAd())
             {
                 // Nothing loaded yet — don't reward; kick a fresh load for next time.
-                Load(placement);
+                RequestLoad(placement);
                 onClosed?.Invoke();
                 return;
             }
@@ -154,7 +192,7 @@ namespace Wildgrove.Game.Services
 
                 finished = true;
                 onClosed?.Invoke();
-                Load(placement); // preload the next one
+                RequestLoad(placement); // preload the next one
             }
 
             ad.OnAdFullScreenContentClosed += Finish;
@@ -164,18 +202,55 @@ namespace Wildgrove.Game.Services
             ad.Show(_ => onReward?.Invoke());
         }
 
-        private void Load(RewardedPlacement placement)
+        /// <summary>
+        /// Preload the placement, unless an attempt is already in flight or the
+        /// last one failed and its backoff hasn't run out. Every load goes
+        /// through here, so the throttle can't be walked around.
+        /// </summary>
+        private void RequestLoad(RewardedPlacement placement)
         {
+            if (!_sdkReady)
+            {
+                return;
+            }
+
+            var load = LoadStateFor(placement);
+            if (load.InFlight || Time.realtimeSinceStartup < load.NextAttemptAt)
+            {
+                return;
+            }
+
+            load.InFlight = true;
             var unit = Debug.isDebugBuild ? TestRewardedUnit : UnitFor(placement);
             RewardedAd.Load(unit, new AdRequest(), (ad, error) =>
             {
+                load.InFlight = false;
                 if (error != null || ad == null)
                 {
+                    // No fill, or no network. Back off and let the next poll try
+                    // again — a failed load used to be the end of that placement
+                    // for the session.
+                    load.NextAttemptAt = Time.realtimeSinceStartup + load.Backoff;
+                    Debug.LogWarning("[ads] rewarded load failed (" + placement + "), retrying in "
+                                     + load.Backoff + "s: " + error);
+                    load.Backoff = Mathf.Min(load.Backoff * 2f, MaxRetryBackoffSeconds);
                     return;
                 }
 
+                load.Backoff = FirstRetryBackoffSeconds;
                 Store(placement, ad);
             });
+        }
+
+        private LoadState LoadStateFor(RewardedPlacement placement)
+        {
+            if (!_loads.TryGetValue(placement, out var load))
+            {
+                load = new LoadState();
+                _loads[placement] = load;
+            }
+
+            return load;
         }
 
         private RewardedAd AdFor(RewardedPlacement placement)

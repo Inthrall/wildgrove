@@ -1450,6 +1450,41 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void Validate_TypoInALaterZonesUnlocks_IsReported()
+        {
+            // Later zones' unlocks are not documentation: RiteGenerator's
+            // SkillDebutOrder walks every zone's list to decide how early a
+            // generated verse may ask for a skill's goods, so a typo here
+            // re-paces every run-2+ Rite in silence.
+            var sources = LoadSources();
+            sources.ZonesJson = sources.ZonesJson.Replace(
+                "\"unlocks\": [\"fishing\"],",
+                "\"unlocks\": [\"fihsing\"],");
+            Assert.That(sources.ZonesJson, Does.Contain("fihsing"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("is not a known skill")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Validate_UpgradeGateLevelAboveXpCap_IsReported()
+        {
+            // The same permanently-unbuyable shape the recipe rule catches: the
+            // XP clamp stops at maxLevel, so a gate above it shows a price that
+            // can never be met.
+            var sources = LoadSources();
+            sources.UpgradesJson = sources.UpgradesJson.Replace(
+                "\"gateLevel\": 2,",
+                "\"gateLevel\": 120,");
+            Assert.That(sources.UpgradesJson, Does.Contain("120"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("exceeds xp.maxLevel")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void ImportedAsset_IsUpToDateWithDesignData()
         {
             var asset = GameDataAsset.LoadFromResources();

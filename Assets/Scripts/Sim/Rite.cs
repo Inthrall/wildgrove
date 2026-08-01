@@ -541,6 +541,22 @@ namespace Wildgrove.Sim
 
                     var progress = SlotProgress(state, verse, i);
                     state.deedCounts.TryGetValue(slot.deed ?? string.Empty, out var count);
+
+                    // A verse can unseal inside this very loop — the grant below
+                    // completes the one before it — and the baseline pass at the
+                    // top ran while it was still sealed, so its slots have no
+                    // line to measure from yet. Stamp it here and let it count
+                    // from now. Reading an unset baseline as zero would hand the
+                    // verse the whole run's tally at once: a 25-tend slot filled
+                    // outright on a run that has tended forty times, paying its
+                    // renown for work the earlier verses were already paid for.
+                    if (!progress.deedBaselineSet)
+                    {
+                        progress.deedBaseline = count;
+                        progress.deedBaselineSet = true;
+                        continue;
+                    }
+
                     var since = count - progress.deedBaseline;
                     if (since <= 0.0)
                     {
@@ -600,9 +616,11 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Completing a verse unseals the next one — mirror lifetime deeds
-        /// into its slots now, the same sync a zone unlock or restore does,
-        /// so deeds done while it was sealed count the moment it opens.
+        /// Completing a verse unseals the next one, so sync now — the same sync
+        /// a zone unlock or a restore does. The verse that just opened takes its
+        /// deed baseline in that sync and counts only the work done from here
+        /// on: the deeds gathered while it was sealed belonged to the verses
+        /// that were open at the time, and were paid for there.
         /// </summary>
         private static void SyncIfVerseJustSung(GameState state, GameDataAsset data, RiteVerseData verse)
         {
