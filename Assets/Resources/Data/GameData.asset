@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 6096a3c19366c171a0dcc9572f2fcfa59c3d13bd435819485687d7c5ed4815b1
+  sourceHash: e8c52c50116a733b2087b341f89fcec7c93f16e2245518d733e025ab876b5563
   economy:
     costGrowth:
       building: 1.25
@@ -1166,6 +1166,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 0
   - id: mushroom-skewer
     station: fire
     skill: firecraft
@@ -1180,6 +1181,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 2
+    craftSeconds: 0
   - id: smoked-trout
     station: fire
     skill: firecraft
@@ -1192,6 +1194,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 2
+    craftSeconds: 0
   - id: fish-oil
     station: fire
     skill: firecraft
@@ -1204,6 +1207,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 0
   - id: planks
     station: bench
     skill: bushcraft
@@ -1216,6 +1220,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 15
   - id: reed-baskets
     station: bench
     skill: bushcraft
@@ -1230,6 +1235,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 3
+    craftSeconds: 25
   - id: cordage
     station: bench
     skill: bushcraft
@@ -1242,6 +1248,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 12
   - id: charcoal
     station: fire
     skill: firecraft
@@ -1254,6 +1261,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 0
   - id: copper-ingot
     station: fire
     skill: forgecraft
@@ -1266,6 +1274,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 45
   - id: bronze-ingot
     station: forge
     skill: forgecraft
@@ -1280,6 +1289,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 3
+    craftSeconds: 90
   - id: iron-ingot
     station: forge
     skill: forgecraft
@@ -1294,6 +1304,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 2
     skillLevel: 5
+    craftSeconds: 150
   - id: deep-ingot
     station: forge
     skill: forgecraft
@@ -1308,6 +1319,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 3
     skillLevel: 8
+    craftSeconds: 240
   - id: felted-cloak
     station: bench
     skill: bushcraft
@@ -1322,6 +1334,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 6
+    craftSeconds: 35
   - id: wardens-tonic
     station: fire
     skill: apothecary
@@ -1336,6 +1349,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 1
+    craftSeconds: 0
   - id: glow-salve
     station: fire
     skill: apothecary
@@ -1350,6 +1364,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 3
+    craftSeconds: 0
   - id: peat-smoke-draught
     station: fire
     skill: apothecary
@@ -1364,6 +1379,7 @@ MonoBehaviour:
     defaultKnown: 1
     stationLevel: 1
     skillLevel: 5
+    craftSeconds: 0
   - id: aurora-cordial
     station: fire
     skill: apothecary
@@ -1378,6 +1394,7 @@ MonoBehaviour:
     defaultKnown: 0
     stationLevel: 1
     skillLevel: 15
+    craftSeconds: 0
   buildings:
   - id: fire
     displayName: The Fire

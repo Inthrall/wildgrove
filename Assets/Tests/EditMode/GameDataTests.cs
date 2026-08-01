@@ -77,6 +77,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.RecipesById["copper-ingot"].StationLevel, Is.EqualTo(1), "absent stationLevel defaults to 1");
             Assert.That(data.RecipesById["iron-ingot"].SkillLevel, Is.EqualTo(5), "iron smelting waits for forgecraft 5");
             Assert.That(data.RecipesById["copper-ingot"].SkillLevel, Is.EqualTo(1), "absent skillLevel defaults to 1");
+            Assert.That(data.RecipesById["charcoal"].CraftSeconds, Is.EqualTo(0.0), "absent craftSeconds inherits baseCraftSeconds");
+            Assert.That(data.RecipesById["copper-ingot"].CraftSeconds, Is.EqualTo(45.0), "a smelt is a slow burn, not a five-second cook");
+            Assert.That(data.RecipesById["deep-ingot"].CraftSeconds, Is.EqualTo(240.0), "and the deeper the ore, the longer it sits in the heat");
+            Assert.That(data.RecipesById["cordage"].CraftSeconds, Is.EqualTo(12.0), "bench handwork takes a while, but nothing like a smelt");
             Assert.That(data.Economy.Xp.GatherPerUnit, Is.EqualTo(3.0));
             Assert.That(data.Economy.Xp.CraftPerBatch, Is.EqualTo(25.0));
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
@@ -726,6 +730,40 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues.Any(i => i.Contains("baseCraftSeconds")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
+        public void Parse_RealData_CraftTimeLaddersFireThenBenchThenSmelt()
+        {
+            var data = GameData.Parse(LoadSources());
+            var baseSeconds = data.Economy.Crafting.BaseCraftSeconds;
+            var bench = data.Recipes.Where(r => r.Station == "bench").ToList();
+            var smelts = data.Recipes.Where(r => r.Skill == "forgecraft").ToList();
+
+            // Three stations, three speeds — the fire cooks quickly, the bench
+            // works by hand, the forge burns slowly. Flavour rather than a rule
+            // the sim enforces, so an edit that crosses the bands is a balance
+            // decision worth taking on purpose instead of by accident.
+            Assert.That(bench, Is.Not.Empty);
+            Assert.That(smelts, Is.Not.Empty);
+            Assert.That(bench.Select(r => r.CraftSeconds), Is.All.GreaterThan(baseSeconds),
+                "every bench recipe takes longer than a cook at the fire");
+            Assert.That(bench.Max(r => r.CraftSeconds), Is.LessThan(smelts.Min(r => r.CraftSeconds)),
+                "and the longest of them still finishes before the quickest smelt");
+        }
+
+        [Test]
+        public void Validate_NegativeRecipeCraftSeconds_IsReported()
+        {
+            var sources = LoadSources();
+            sources.RecipesJson = sources.RecipesJson.Replace(
+                "\"craftSeconds\": 45",
+                "\"craftSeconds\": -45");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("copper-ingot") && i.Contains("craftSeconds")),
+                Is.True, string.Join("\n", issues));
         }
 
         [Test]

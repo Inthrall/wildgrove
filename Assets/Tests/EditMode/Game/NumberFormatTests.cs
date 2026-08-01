@@ -54,6 +54,47 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void ShortFloor_JustShortOfTheAsk_NeverRoundsUpIntoIt()
+        {
+            // The verse card abbreviates have-against-asked. Short rounds
+            // 19,995 to "20K", which beside a "20K" ask and a dead Set down
+            // button reads as a bug rather than as five units short.
+            Assert.That(NumberFormat.Short(new BigDouble(19995.0)), Is.EqualTo("20K"));
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(19995.0)), Is.EqualTo("19.99K"));
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(1_249_999.0)), Is.EqualTo("1.24M"));
+        }
+
+        [Test]
+        public void ShortFloor_OnTheAsk_ReadsExactlyLikeShort()
+        {
+            // Nothing to truncate: a full store must not read short either.
+            // 19,990 is the one that catches a missing epsilon — it lands a
+            // hair below 1999 hundredths and floors to "19.98K" without one.
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(20000.0)), Is.EqualTo("20K"));
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(19990.0)), Is.EqualTo("19.99K"));
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(3_450_000.0)), Is.EqualTo("3.45M"));
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(1000.0)), Is.EqualTo("1K"));
+        }
+
+        [Test]
+        public void ShortFloor_JustUnderASuffixBoundary_StaysInTheLowerGroup()
+        {
+            // Short carries 999,996 up to "1M" so it doesn't print "1000K".
+            // ShortFloor must not: a store six short of a million asked for is
+            // exactly the case this method exists to keep honest.
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(999996.0)), Is.EqualTo("999.99K"));
+        }
+
+        [Test]
+        public void ShortFloor_BelowThousand_MatchesShort()
+        {
+            // Under a thousand there is no suffix to round into — whole units,
+            // same as Short, and zero still reads "0" rather than throwing.
+            Assert.That(NumberFormat.ShortFloor(new BigDouble(999.0)), Is.EqualTo("999"));
+            Assert.That(NumberFormat.ShortFloor(BigDouble.Zero), Is.EqualTo("0"));
+        }
+
+        [Test]
         public void Rate_FractionalTrickle_KeepsTheFraction()
         {
             Assert.That(NumberFormat.Rate(new BigDouble(0.5)), Is.EqualTo("0.5"));

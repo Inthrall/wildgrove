@@ -1563,10 +1563,18 @@ Interpretations shipped (tune/confirm):
   **v0.11:** buildings are now a **goods sink**, not a Coin sink (§10) — `baseCostCoin`
   becomes a material bundle; and Roosts & Burrows re-scopes to **familiar comfort**
   (+XP rate per level, roster capacity at late levels), not headcount caps.
-- **`crafting.baseCraftSeconds` (5 s, uniform) is a first guess.** Not in the
-  design doc, and one duration for every recipe is a placeholder — tune against
-  the §2 pacing targets (first recipe cooked ~20 min), and consider per-recipe
-  times with the balance pass. (`design/data/economy.json`)
+- **`crafting.baseCraftSeconds` (5 s) is a first guess.** Not in the design
+  doc — tune against the §2 pacing targets (first recipe cooked ~20 min).
+  Per-recipe times now exist (`craftSeconds`, absent = the base), and they
+  ladder the three stations for flavour: the fire cooks and steeps at the base,
+  the bench works by hand at 12–35 s (cordage, planks, reed baskets, felted
+  cloak), a smelt burns slowly at 45–240 s (copper through deep). Speed
+  upgrades and station levels still divide all of it. Every one of those eight
+  numbers is a first guess and unplaytested — the bench and the ingot chain both
+  feed tools and buildings, so check the balance pass doesn't leave either the
+  run's bottleneck. `GameDataTests.Parse_RealData_CraftTimeLaddersFireThenBenchThenSmelt`
+  pins the banding, so a retune that crosses it fails loudly rather than
+  silently. (`design/data/economy.json`, `design/data/recipes.json`)
 - **Mastery curve and value-bonus interpretation are first guesses.** base 50 /
   growth 1.15 / xpPerUnit 0.25 aren't in the design doc, and §4's "+5%
   yield/value" is implemented as one yieldBonusPerLevel applying to the node's

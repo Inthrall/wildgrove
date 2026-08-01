@@ -285,10 +285,18 @@ namespace Wildgrove.Sim
             return duration > 0.0 ? station.progressSeconds / duration : 0.0;
         }
 
-        /// <summary>One batch's craft time: the base divided by the skill's craftSpeedMult upgrades and the station line's speed levels.</summary>
+        /// <summary>
+        /// One batch's craft time: the recipe's own craftSeconds when it
+        /// authors one (a smelt is a slow burn, and the ingots say so),
+        /// otherwise the uniform base — divided in both cases by the skill's
+        /// craftSpeedMult upgrades and the station line's speed levels.
+        /// </summary>
         private static double BatchSeconds(GameState state, GameDataAsset data, RecipeData recipe)
         {
-            return data.economy.crafting.baseCraftSeconds
+            var authored = recipe.craftSeconds > 0.0
+                ? recipe.craftSeconds
+                : data.economy.crafting.baseCraftSeconds;
+            return authored
                    / Upgrades.CraftSpeedMultiplier(state, data, recipe.skill)
                    / Buildings.StationSpeedMultiplier(state, data, recipe.station);
         }

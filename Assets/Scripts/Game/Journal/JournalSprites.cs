@@ -16,6 +16,63 @@ namespace Wildgrove.Game
         private static Sprite _dashAcrossSprite;
         private static Sprite _quillSprite;
         private static Sprite _crossSprite;
+        private static Sprite _foldArrowSprite;
+
+        /// <summary>
+        /// The fold arrow — a pen-drawn chevron beside a ground's name, down
+        /// when the ground is open and turned a quarter to the right when it is
+        /// shut. Drawn rather than typed for the same reason as the cross and
+        /// the quill: none of the journal's four faces carries a triangle or an
+        /// arrow, so a "▾" would render as a missing glyph on the one heading
+        /// whose whole job is to say which way it opens.
+        /// <para>
+        /// Points DOWN as drawn; callers rotate it +90° on the Z axis for shut.
+        /// </para>
+        /// </summary>
+        internal static Sprite FoldArrowSprite()
+        {
+            if (_foldArrowSprite == null)
+            {
+                const int size = 32;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                // Two strokes meeting at the point, each thickest where the nib
+                // starts and tapering into the join — the same hand as the
+                // cross, so the mark belongs to the page rather than an icon set.
+                var point = new Vector2(size * 0.5f, 9f);
+                var strokes = new[]
+                {
+                    (from: new Vector2(8f, 22f), to: point),
+                    (from: new Vector2(size - 8f, 22f), to: point),
+                };
+
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var pixel = new Vector2(x + 0.5f, y + 0.5f);
+                        var alpha = 0f;
+                        foreach (var stroke in strokes)
+                        {
+                            var along = stroke.to - stroke.from;
+                            var t = Mathf.Clamp01(Vector2.Dot(pixel - stroke.from, along) / along.sqrMagnitude);
+                            var distance = Vector2.Distance(pixel, stroke.from + (along * t));
+                            var halfWidth = Mathf.Lerp(1.7f, 1.0f, t);
+                            alpha = Mathf.Max(alpha, Mathf.Clamp01(halfWidth - distance + 0.5f));
+                        }
+
+                        texture.SetPixel(x, y, alpha <= 0f
+                            ? Color.clear
+                            : new Color(Ink2.r, Ink2.g, Ink2.b, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _foldArrowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _foldArrowSprite;
+        }
 
         /// <summary>
         /// A cross — the sheets' close affordance, in the corner where a hand

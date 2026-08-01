@@ -91,7 +91,8 @@ namespace Wildgrove.Data
                 kind = r.Kind,
                 defaultKnown = r.DefaultKnown,
                 stationLevel = r.StationLevel,
-                skillLevel = r.SkillLevel
+                skillLevel = r.SkillLevel,
+                craftSeconds = r.CraftSeconds
             };
         }
 

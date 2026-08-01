@@ -92,6 +92,13 @@ namespace Wildgrove.Game
         /// smaller than a button's usual voice — it heads a section, it doesn't
         /// ask for anything.
         /// </para>
+        /// <para>
+        /// A chevron in the left margin says which way the ground is folded.
+        /// Which way a plate opens was previously only legible by inference —
+        /// from whether plates followed it, and from the growing-list subtitle a
+        /// shut ground wears — so a ground with nothing under it read as an
+        /// unresponsive button rather than an empty open one.
+        /// </para>
         /// </summary>
         private void BuildZoneHeading(ZoneData zone, bool open)
         {
@@ -104,6 +111,7 @@ namespace Wildgrove.Game
 
             var heading = Button(_body, label, 400, () => _hud.FoldZone(captured));
             heading.gameObject.name = "ZoneHeading";
+            AddFoldArrow(heading, open);
 
             // The heading the page is being rebuilt around: the scroll comes
             // back to it once the fresh page has a height, so the ground the
@@ -112,6 +120,50 @@ namespace Wildgrove.Game
             {
                 _hud.FoldedHeading = (RectTransform)heading.transform;
             }
+        }
+
+        /// <summary>The width of the heading's left margin, and the chevron standing in it.</summary>
+        private const float FoldArrowLane = 56f;
+        private const float FoldArrowGlyph = 34f;
+
+        /// <summary>
+        /// Pin the fold chevron into a heading's left margin — down while the
+        /// ground is open, turned a quarter to the right while it is shut.
+        /// <para>
+        /// The mark ignores the layout and the name is inset by the same lane on
+        /// BOTH sides, so a centred heading stays centred over its plates instead
+        /// of shunting right by half an arrow.
+        /// </para>
+        /// </summary>
+        private void AddFoldArrow(Button heading, bool open)
+        {
+            var label = heading.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                var labelRect = (RectTransform)label.transform;
+                labelRect.offsetMin = new Vector2(FoldArrowLane, labelRect.offsetMin.y);
+                labelRect.offsetMax = new Vector2(-FoldArrowLane, labelRect.offsetMax.y);
+            }
+
+            var go = new GameObject("FoldArrow", typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(heading.transform, false);
+            go.GetComponent<LayoutElement>().ignoreLayout = true;
+            var image = go.GetComponent<Image>();
+            image.sprite = FoldArrowSprite();
+            image.preserveAspect = true;
+            // The plate takes the tap; a chevron that swallowed it would leave a
+            // dead spot in the middle of the control it describes.
+            image.raycastTarget = false;
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(FoldArrowGlyph, FoldArrowGlyph);
+            rect.anchoredPosition = new Vector2(FoldArrowLane * 0.5f, 0f);
+            // Drawn pointing down; a quarter turn anticlockwise points it at the
+            // name, which is where a shut ground's contents have gone.
+            rect.localRotation = Quaternion.Euler(0f, 0f, open ? 0f : 90f);
         }
 
         /// <summary>
@@ -934,12 +986,12 @@ namespace Wildgrove.Game
                     // Have against asked, not delivered against asked: the ask is
                     // whole, so there is no part-delivery left to report and the
                     // only useful number is how close the stores are to answering
-                    // it. Exact digits rather than a K/M abbreviation — the button
-                    // opens on the last unit, so an abbreviated "20.0K / 20.0K"
-                    // beside a dead button would read as a bug.
+                    // it. Abbreviated like every other quantity in the book —
+                    // a late verse asks in five and six figures, and "18437 /
+                    // 20000" is a number nobody reads, only counts the digits of.
                     var inHand = Rite.SlotInHand(_loop.State, _loop.Data, verse, slotIndex);
-                    label.text = name + "  <color=" + Ink2Hex + ">" + PlainNumber(System.Math.Floor(inHand))
-                                 + " / " + PlainNumber(target) + "</color>" + deedTail;
+                    label.text = name + "  <color=" + Ink2Hex + ">" + NumberFormat.ShortFloor(System.Math.Floor(inHand))
+                                 + " / " + NumberFormat.Short(target) + "</color>" + deedTail;
                 }
 
                 if (offer != null)

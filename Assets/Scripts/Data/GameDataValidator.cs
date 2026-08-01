@@ -465,6 +465,13 @@ namespace Wildgrove.Data
                     issues.Add($"Recipe '{recipe.Id}' has skillLevel below 1");
                 }
 
+                // Negative would run the batch backwards; the absent-field 0 is
+                // the "inherit baseCraftSeconds" case and stays legal.
+                if (recipe.CraftSeconds < 0)
+                {
+                    issues.Add($"Recipe '{recipe.Id}' has negative craftSeconds");
+                }
+
                 // The XP clamp stops at maxLevel, so a gate above it is a
                 // "visible goal" that can never be reached.
                 if (data.Economy?.Xp != null && recipe.SkillLevel > data.Economy.Xp.MaxLevel)

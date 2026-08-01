@@ -237,6 +237,43 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Advance_RecipeWithItsOwnCraftSeconds_OverridesTheUniformBase()
+        {
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(5.0));
+            // A smelt authored slow: 40 s, not the fixture's 5 s base.
+            Recipe("berry-jam").craftSeconds = 40.0;
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Crafting.Advance(state, _data, 5.0);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(0.0).Within(Tolerance),
+                "the base's five seconds must no longer finish the batch");
+            Assert.That(Crafting.Progress(state, _data, Recipe("berry-jam")),
+                Is.EqualTo(0.125).Within(Tolerance));
+
+            Crafting.Advance(state, _data, 35.0);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_AuthoredCraftSeconds_StillDividedBySpeedUpgrades()
+        {
+            var state = new GameState();
+            state.purchasedUpgradeIds.Add("quick-hands");
+            state.AddResource("berries", new BigDouble(5.0));
+            // A long smelt is a starting point, not a floor — a forge worth
+            // levelling has to be able to shorten it.
+            Recipe("berry-jam").craftSeconds = 40.0;
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Crafting.Advance(state, _data, 20.0);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
         public void Advance_SpeedUpgradeMidBatch_CompletesWithoutMintingCraftTime()
         {
             var state = new GameState();

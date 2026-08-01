@@ -23,5 +23,10 @@ namespace Wildgrove.Data
         // The skill level the recipe needs (design §4: levels gate recipes).
         // Defaults to 1 — available as soon as the skill exists.
         public int SkillLevel { get; set; } = 1;
+
+        // One batch's craft time before speed upgrades and station levels
+        // divide it. 0 (absent) = economy.crafting.baseCraftSeconds; a smelt
+        // is authored slow on purpose.
+        public double CraftSeconds { get; set; }
     }
 }

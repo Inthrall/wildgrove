@@ -101,6 +101,9 @@ namespace Wildgrove.Data
 
         /// <summary>The skill level the recipe needs (design §4: levels gate recipes). 1 = available from the start.</summary>
         public int skillLevel = 1;
+
+        /// <summary>One batch's craft time before speed multipliers divide it. 0 = economy.crafting.baseCraftSeconds.</summary>
+        public double craftSeconds;
     }
 
     /// <summary>
