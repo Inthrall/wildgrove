@@ -1,2196 +1,441 @@
-# Placeholder & TODO manifest
-
-A living list of the deliberate placeholders and deferred work in the codebase, so
-nothing quietly ships as "done". Grouped by the phase that retires it (see
-`design-doc.md` §13 MVP development plan). Keep entries pointing at the code so
-they're easy to find and delete when resolved.
-
-## v0.11 design realignment
-
-Design doc v0.11 (July 2026) makes several **DECIDED 2026-07-18** reversals. The
-per-item detail below points at the code/data; the phase lists further down are
-annotated **v0.11:** where a decision touches them.
-
-**DECIDED 2026-07-23 — the collection ladder (slots · traits · store).** Mo's calls:
-one slot to start, three earned early/mid/late ("rites, something like 2-5-10"),
-two purchasable (the first inside the initial purchase bundle for Play Level Up,
-bundle = slot + Amber); more familiars obtainable than slots; each familiar has a
-single fixed trait per species ("you only have one vole ever"), replacing powerups.
-Implementation + interpretations:
-- **Slots = the right to hold a post.** `Kith.Slots` = `slotsBase` (1) + verse
-  milestones passed (`economy.kith.verseMilestones` [2,5,10] — first guesses, tune)
-  + `GameState.purchasedKithSlots`, capped at `slotsMax` (6). The roster is the
-  collection — one familiar per species ever (`Roster.Recruit` refuses duplicates),
-  never slot-capped; unstationed familiars **rest at camp**: no output and **no run
-  XP** (interpretation — resting is fully idle; wandering ×0.5 retired because free
-  half-labour would gut the ladder's value).
-- **Ladder currency = lifetime verses sung** (`foldedVersesSung` banked at Migration
-  + current rite's completed verses, derived — self-healing, no event counter).
-- **Traits replace powerups** (`Traits.cs`; `species.json` one `trait` per species;
-  13 species authored — 9 node specialists, 2 trail, 1 watch, 1 pristine).
-  `offlineBonus` powerup kind dropped (was never consumed by the sim). Old Friend
-  and Warden's Gallery lose their `kithSlot` effects (EffectType removed); Old
-  Friend keeps Burr's bond. Species art: all 12 species have plates as of
-  2026-07-30; a 13th added ahead of its art still falls back gracefully.
-- **Gift piles rescoped: one pile per verse sung** (was one-shot). The pile at a
-  node calls *that resource's un-owned specialist* (derived from traits —
-  `gifts.species` config retired; validator enforces one specialist per resource).
-  Interpretation: non-node species (dray-stag, tawny-owl, ermine, cavern-bat)
-  currently have **no acquisition path** beyond bonds — future arrival content.
-- **Bonds honour the existing companion** of their species (keeps the player's
-  name) or bring it resting if never met — Sootwing/Burr no longer mint twins.
-- **Store:** `starter_bundle` (slot + `economy.store.starterBundleAmber` 30, one-time
-  grant flagged by `starterBundleAmberGranted`) and `kith_slot` products; both
-  NonConsumable, catalogue in `StoreProductIds.All`; `KithPurchases.Apply` folds
-  entitlements in (never downgrades — a billing hiccup can't shrink the ladder);
-  synced on purchase only (billing stays lazy per the startup-crash fix — a
-  reinstall shows purchased slots after the first store touch; a restore-purchases
-  button landed 2026-08-01 on the inside cover). **Play Console: create both products.**
-- **Save v26:** `powerupIds` dropped; `foldedVersesSung`/`purchasedKithSlots`/
-  `starterBundleAmberGranted` added; Restore dedupes duplicate species (bonded,
-  then deepest Kinship kept) and rests stationed familiars past the ladder.
-  ⚠️ Existing test saves restore to a 1-slot ladder — most of the roster wakes up
-  resting; wipe or re-station.
-- ~~**Early-game pacing watch:**~~ RESOLVED 2026-07-31: hauling retired — deliveries are automatic and lossless, so nothing overflows whatever the slot count. Was: with 1 slot the seed raven rests, so nothing hauls —
-  a stationed gatherer's basket overflows (lost) until slot 2 (2 verses) unless the
-  player fields the raven instead; warden hand-gather (straight to camp) is the
-  bridge. Deliberate scarcity, but tune `verseMilestones[0]` down to 1 if the first
-  hour drags. Also: the first pile (verse 1) usually needs a rest-someone swap
-  before it can be answered (arrival needs a slot).
-- **RiteGenerator:** `KithGatherPosts` now reads `economy.kith.generatorGatherPosts`
-  (2, conservative run-2 slots) instead of `slotsBase − 1`.
-
-**DECIDED 2026-07-23 — verses are sequential.** Each verse is locked behind
-completion of the one before it (`Rite.IsVerseRevealed` now also requires every
-earlier verse sung; `Rite.IsVerseSealed` distinguishes "site not reached" from
-"not its turn"). Interpretations: (1) the gate is on *reveal*, not just delivery —
-a sealed verse shows one quiet cairn card naming the verse barring it, and only
-the first sealed verse gets a card; (2) "previous one" = every earlier verse in
-rite order (an out-of-order legacy save can't skip ahead past an unsung verse;
-its later-verse progress is preserved and resurfaces when the verse unseals);
-(3) completing a verse re-syncs deed slots immediately so deeds done while
-sealed count the moment the next verse opens.
-
-**IMPLEMENTED 2026-07-21 (kith + money→XP + Exchange + naming; 370/370 EditMode green):**
-- ✅ **Coin is gone — money becomes XP.** `GameState.coin` removed; Renown = lifetime
-  XP (warden skills + familiars) + offering credits; upgrades reprice to skill-gate
-  (`gateSkill`/`gateLevel`) + material bundle; buildings → material bundles; zones drop
-  `mapCostCoin`. New **Exchange** (`Exchange.cs` + `exchange.json`) barters goods↔goods
-  off the trade-value table (`Economy.TradeValuePerUnit`), spread + player-favourable
-  rounding.
-- ✅ **Kith of individuals + stationing.** `NodeState.familiarCount`/`GameState.carrierCount`
-  gone; `GameState.roster` of `Familiar {name, species, xp→level, kinshipXp, powerupIds,
-  stationId, bonded}`. `Stationing.cs` sums stationed agents (wanderers ×0.5). Powerups
-  (`Powerups.cs`, `species.json` pools) chosen every 5 levels. Familiar XP + Kinship
-  (`Familiars.cs`/`Kinship.cs`; run XP → Kinship √ at Migration, +start level +XP rate).
-- ✅ **Bonds → roster.** Bonded familiars materialise into the roster (`Roster.SyncBonded`),
-  stationed like any other; role split retired (carrying is a post).
-- ✅ **Naming.** Player names a familiar on arrival (HUD `InputField` sheet) and can rename;
-  default from `species.json suggestedNames`.
-- ✅ **The Folio (Museum retheme).** Museum→Folio, set→spread, donate→fix throughout
-  (`Folio.cs`/`folio.json`/`FolioSpreadDef`/`FolioSpreadData`/`GameState.fixedResources`,
-  `EffectType.FolioSpreadBonusMult`, bond source `folioSpread`); save migrated v20→v21
-  (`donatedResources`→`fixedResources`); HUD shows a Folio spread-progress section.
-  Mechanic unchanged (fix a Pristine of each entry → complete spread → permanent bonus
-  surviving Migration). Deferred: spreads are still 2–4 entries (design wants 4–8, a balance
-  pass).
-
-**IMPLEMENTED 2026-07-21 (the kith slot ladder — six slots, four free; and "crew"
-is now the kith):**
-- ✅ **Vocabulary: crew → kith** (Mo's call: a better-fitting name; pairs with
-  Kinship — the kith is who walks with you, Kinship is what they remember).
-  Renamed across code, tests (`TestCrew`→`TestKith`), HUD copy, design-doc,
-  journal mock, and this file.
-- ✅ **The ladder (design §4, decided 2026-07-21): six slots total, four free.**
-  `economy.kith {slotsBase 4, slotsMax 6}` (replaces the vestigial `familiarCaps`
-  section); new `EffectType.KithSlot`; `Kith.cs` derives active slots =
-  slotsBase + owned kithSlot effects, ceilinged at slotsMax. Slot 5 = **The Old
-  Friend** Almanac node (now carries `kithSlot` — the node opens the slot AND
-  its bond Burr fills it, one purchase one arrival). Slot 6 = **the Warden's
-  Gallery** spread capstone (`kithSlot` alongside its yield bonus; the Curator's
-  Cabinet multiplier deliberately never scales a slot).
-- ✅ **Capacity enforced.** `Roster.Recruit` returns null with no room (future
-  gift event just works); `Roster.SyncBonded` leaves an earned bond waiting in
-  the grass until a slot opens (GameLoop re-syncs after Almanac buys and
-  specimen fixes so the wait ends the moment it can).
-- ✅ **Legacy-save freeze fixed.** Restore clamps an oversized roster to
-  `slotsMax` (bonded first, then deepest Kinship) — the v19→v20 count rebuild
-  could mint ~96 familiars on a long-lived save and freeze the HUD on open.
-- ✅ **Rite budget derived.** `RiteGenerator.CrewGatherPosts` (const 4) →
-  `KithGatherPosts(data)` = slotsBase − 1 trail post = **3**; conservative by
-  design (earned slots are never assumed). MVP footprints are ≤2, so no
-  behaviour change today.
-- HUD: the Kith card shows "N of M slots walked · the land holds the rest".
-
-**Interpretations / deferred with it (tune/confirm):**
-- "Four are free" = slot *capacity*; arrivals still fill them (2 seeds + gift
-  event + first bond at MVP). Slot 6 is headroom until more sources exist.
-- A bond earned with no room open still fires its celebration sheet
-  (`PendingBondCelebration`) even though the companion waits — unreachable at
-  MVP (sources ≤ slots at every rung), revisit if sources ever outpace slots.
-- Restore clamps to `slotsMax`, not currently-earned slots — a data retune can
-  never quietly drop a companion; excess familiars are dropped, not converted
-  to Renown.
-- ~~Roosts `perLevel: "familiarCaps"` marker string kept~~ ✅ RESOLVED 2026-07-22:
-  Roosts comfort landed — `perLevel` type renamed to `comfort` with a real value
-  (see the comfort section below); the dead `RoostLevel` counter became
-  `Buildings.ComfortXpMultiplier`.
-
-**IMPLEMENTED 2026-07-22 (the gift event — verse 1 answers back):**
-- ✅ **One pile, one yes (design §4, decided 2026-07-18).** New `Gifts.cs`: once any
-  verse of the current rite is complete, every node plate offers a dashed "leave a
-  pile" line — `economy.gifts.pileGoods` (10) units of the node's OWN resource, spent
-  from camp stock; the arrival (`economy.gifts.species`, deterministic: the meadow
-  vole) is stationed at that node and queues for the arrival naming sheet like any
-  recruit. Availability derives from the roster (`Familiar.gifted`), so a clamped
-  save self-heals; save v24→v25 (additive field, no-op migration). Telemetry:
-  `gift_left`.
-- ✅ **The old gift cost curves retired with it.** `gifts.gathererBaseGoods`/
-  `carrierBaseGoods` and `costGrowth.gathererGift`/`carrierGift` dropped from
-  `economy.json` + Def/Types/Mapper/Validator (nothing repeatedly buys a creature);
-  validator now checks `gifts.pileGoods > 0` and that `gifts.species` exists.
-
-**Interpretations shipped with the gift event (tune/confirm):**
-- "Unlocked by verse 1" = ANY verse of the current rite complete (run 1's first
-  verse in practice; regenerated rites keep the gate meaningful on later runs —
-  though at MVP the kith persists, so the gift is usually already answered).
-- The pile line shows on every node while the event is live — where you leave it
-  chooses both the resource spent and the newcomer's post.
-- `pileGoods 10` is a first guess; tune so the third familiar lands ~45–60 min (§2).
-
-**IMPLEMENTED 2026-07-22 (Roosts comfort — the building line finally does something):**
-- ✅ **Comfort XP (design §4).** Roosts & Burrows' `perLevel` renamed
-  `familiarCaps` → `comfort` and given a real value (0.1): each bought level
-  grants **+10% familiar XP rate to stationed familiars** —
-  `Buildings.ComfortXpMultiplier` (replaces the dead `RoostLevel` counter),
-  applied in `Familiars.AddPostXp` via `Simulation.AccrueFamiliarXp` (offline
-  catch-up included). Wanderers sleep rough: ×0.5, no comfort. Validator now
-  requires a positive perLevel value on every type.
-- ✅ **Building rows say what a level gives.** HUD `PerLevelGivesLabel`: "each
-  level: +5% craft speed at this station" / "+5% basket capacity" / "+10%
-  familiar XP while posted".
-
-**Interpretations shipped with Roosts comfort (tune/confirm):**
-- `comfort 0.1`/level is a first guess (not in the doc); design §8's
-  postMatch multiplier is still unbuilt — comfort is the only XP-rate lever
-  besides Kinship for now.
-- "Late levels add roster capacity" (§4) deliberately NOT built — headcount
-  stays the slot ladder's job; revisit only if the ladder ever grows sources.
-
-**Interpretations / placeholders shipped with it (tune/confirm):**
-- Wanderers' ×0.5 help is spread evenly across unlocked gather nodes; an unheld trail is a
-  flat ×0.5 lane when anyone wanders (`Stationing.cs`).
-- Kinship constants (`Divisor` 1000, `XpRatePerLevel` 0.02) are consts in `Kinship.cs` — move
-  to a data section. `economy.familiarXp` {base 60, growth 1.12, xpPerSecond 1} are first guesses.
-- Familiar XP is a flat per-second at any post (no postMatch multiplier yet, design §8;
-  Roosts comfort landed 2026-07-22).
-- Ungated/material-less upgrades are free once their skill gate opens (§10 material bundles are
-  placeholders); building material bundles are placeholders.
-- Kith is fully persisted across Migration (no presence-lapse/benching yet); the slot
-  ladder landed 2026-07-21 (six slots, four free — see below); the verse-1 gift-event
-  and Roosts comfort XP both landed 2026-07-22 (see below).
-- Pristine "sell" dropped — Pristine is offer/donate only for now.
-
-**IMPLEMENTED 2026-07-21 (the deep chase → living insects; headless suite green):**
-- ✅ **Insects replace fossils — observe · sketch · release (§6).** Mo's call: the
-  collectible is now living insects watched at an **observation site**, recorded as
-  **field sketches** (portions), then **released** — nothing is kept; a completed plate
-  is a book of drawings granting the same permanent multiplier + lore. Renames:
-  `Fossils`→`Insects`, `Excavation`→`Observation`, `fragment`→`sketch`,
-  `strataRarity`→`rarity`, the collectible's `digSites`→`habitats`,
-  `fossilCards`→`insectPlates`, Rite `Fragment` slot→`Sketch` (offering tears the page
-  out → re-observe), `GameState.fossilFragments`→`insectSketches`. Save **v23→v24**
-  (old fossil ids don't map — that progress drops). Observation skill is now
-  **entomology** (map-oldgrowth grants it; Brush Screens gates on it). MVP plates:
-  The Stag's Herald / The Silver Skimmer / Those Who Sow. Amber unchanged (still surfaced
-  at the sites, now framed as ancient resin — the one takeable creature and the only
-  deep-past window).
-  Seams left deliberately: the **`digSite`/`DigSpeed` tokens are kept** as the shared
-  site/speed plumbing (zones, planters, species powerups, gear, almanac all feed them),
-  reinterpreted in comments as the observation site; the `GameDataValidator` KnownSkills
-  whitelist still lists a now-unused `"excavation"`. The §6 lore lines + §7 backstory in
-  `design-doc.md` are a **draft to re-voice**.
-
-**STILL TO DO (v0.11 reversals not yet built):** none — all seven reversals
-have landed (Coin/Exchange, the kith + stationing, Kinship, Folio, insects,
-replanting/planters, stationing-aware reachability), plus the slot ladder
-(six slots, four free — 2026-07-21). Remaining v0.11 work is MVP tails /
-balance, tracked in the items below.
-
-- **Coin is gone — "money becomes XP" (§9).** The shipped economy still runs on Coin
-  everywhere: `GameState.coin`, `costCoin` (upgrades), `baseCostCoin` (buildings +
-  `economy.tools.baseCostCoin`), `mapCostCoin` (zones), `resources.json sellValue`,
-  `Economy.SellResource/SellPristine`. The design replaces all of it: tools = skill
-  gate + ingot batch; buildings = material bundles; trail maps = provisions bundles;
-  selling = **the Exchange**, a goods↔goods barter caravan whose rates derive from a
-  single trade-value table (`exchangeRate(a→b)=tradeValue(a)/tradeValue(b)·(1−spread)`,
-  spread ~15%, rounds in the player's favour). **The Exchange does not exist** — the
-  current Provisioner sells stock for Coin. Renown becomes the single always-climbing
-  number, and the Phase 1 gate now asks *"can a new player say what anything is worth
-  without Coin?"* (`Economy.cs`, `GameState.cs`, `upgrades.json`, `buildings.json`,
-  `zones.json`, `resources.json`, `economy.json`)
-- **Flock + carriers → a stationed kith of five (§2, §4).** Shipped model: per-node
-  gatherer counts (`NodeState.familiarCount`), a camp carrier pool
-  (`GameState.carrierCount`), flock/carrier caps (`economy.familiarCaps`), and gift
-  cost curves (`economy.gifts`). Design: up to **6 named roster familiars** (four
-  slots free, two earned — revised from 5 on 2026-07-21), each with
-  a level and an authored **powerup** build (a choice every 5 levels from a
-  deterministic species pool), **stationed** at a post; **carrying is a post (the
-  trail post), not a species** — no carrier type. An unassigned familiar **wanders** at
-  ×0.5 rate/XP with no powerups; the warden never wanders (post = last tended).
-  **Levels never scale output** (throughput comes from tools/hauling/powerups/richness).
-  Stationing, powerups, roster, and kith slots are all absent from code.
-- **Bonds → Kinship two-track (§4).** `Bonds.cs`/`bonds.json` model bonded familiars by
-  `role: "carrier"|"gatherer"`. Design: every roster familiar carries a permanent
-  **Kinship** track (run XP → Kinship XP at Migration via √ conversion; perks = higher
-  starting level + XP rate at MVP, signature traits at 1.1). **Bonding** — crossing the
-  fold — becomes a separate, rarer honour; the carrier/gatherer roles disappear because
-  carrying is a post. Kinship is absent from code.
-- **Museum → the Folio / one journal (§6).** `Museum.cs`/`museum.json` model donation
-  "sets" (`donatedResources`, `curators-cabinet`, `wardens-gallery`). Design: there is
-  no museum — Pristine specimens are **fixed into the Folio** (the journal's back
-  pages) and spreads of 4–8 grant permanent bonuses. Curation is the collection craft
-  producing "Folio fixings"; the Compendium (records) and Deep Pages (fossil rubbings)
-  round out the one journal. No Folio/spread concept exists in code.
-- ✅ **DONE 2026-07-21 — built as living insects (observe · sketch · release), not
-  fossils.** See the IMPLEMENTED note at the top of this section. `Insects.cs`/
-  `Observation.cs`/`insects.json`; `GameState.insectSketches`; the Rite `Sketch` slot
-  (torn out → re-observe); save v24. Amber unchanged. Deep-time lore now rides on amber;
-  the §6/§7 prose is a draft to re-voice.
-- **Replanting & planters — a new fourth output lane (§3).** Entirely absent from
-  code/data. Each node gains a **richness** level raised by replanting its own resource
-  (`replantCost(L)=base·r^L`, per node per run, raising base yield); **planters** are
-  Bushcraft-built structures costing *other* zones' goods that raise a node's capacity /
-  regrowth / second yield lane / dig steadiness. Both reset at Migration except one
-  saved by the Almanac's **The First Planting**. The craft split becomes **four-way**
-  (kit / caravan / spirits / land); the Carving Bench (#14) unlocks Planter recipes.
-- ✅ **DONE 2026-07-21 — reachability is now stationing-aware (§2, §8).** Model
-  (Mo's call): **per-slot footprint**. A slot counts as reachable only if its good's
-  production footprint — the distinct raw-resource gather nodes needed to make it
-  (a raw find = 1; a crafted good = the distinct raw leaves of its input tree) —
-  fits `RiteGenerator.KithGatherPosts(data)` (slot-ladder-derived since 2026-07-21:
-  `economy.kith.slotsBase` − 1 trail post = 3 — conservative, earned slots never assumed).
-  `RiteGenerator.StationingFootprint()` computes it; `CandidateGoods` filters picks
-  by it so the generator never asks for a good the kith can't keep produced; the
-  runs-2–10 proof (`RiteGeneratorTests`) now counts reachable with the footprint gate.
-  Deed/specimen/sketch each need one post, always within budget. MVP content is well
-  under budget (footprints ≤ 2), so this is a guardrail for future content, not a
-  behaviour change today. INTERPRETATIONS/DEFERRED: the
-  three chosen slots are **not** budgeted together (per-slot only, by design choice);
-  the import-time validator's authored-run-1 rite is NOT yet given a stationing-aware
-  ≥chooseCount check (the guarantee lives in the generator + proof, which is where
-  generated rites are checkable) — a cheap follow-up if wanted.
-
-## Mid/late-game content (started 2026-07-28)
-
-**IMPLEMENTED 2026-07-28 — region modifiers (design §8).** New `regions.json`
-(17th data file; lush / misted / ashen / windswept) + `Sim/Regions.cs`. Every
-run after the first wakes in a region drawn **deterministically from the
-migration count** (the generator's idiom — nothing persists, a reload can't
-reroll a season; run 1 is always home ground because the authored tutorial
-Rite assumes it). Region effects join `Upgrades.ActiveEffects` so they flow
-through the existing modifier plumbing — including a new **resource-targeted
-`yieldMult` grain** ("+fish", "−flowers"; `TargetsNode` + the validator now
-accept `resource` on yield effects). The Rite generator scales each generated
-goods demand by `Regions.DemandWeight` (§9's modifierWeight, previously ≡ 1).
-HUD: the fold sheet says "Ahead: a misted region", the Migration vignette
-speaks the arriving region's `sign`, and the Trail page heads with "the
-season: …". Interpretations shipped (tune/confirm):
-- The draw is a **uniform seeded pick per migration** — back-to-back repeats
-  are possible (~1-in-4 with four regions) and read as "another misted
-  season"; add a no-repeat rule only if playtests mind.
-- The demand weight applies to whatever goods id the region targets — in
-  practice raw finds; **crafted goods are unweighted** (their raw leaves are
-  what the season actually speeds).
-- A region below 1.0 (misted −flowers) makes the generator ask for *less* of
-  the lean find — deliberate: demand scales exactly as the gather rate does.
-- Effect values, and four regions, are first guesses. Deed/specimen/sketch
-  slots are never region-scaled (they price in taps and luck).
-
-**IMPLEMENTED 2026-07-28 — Kinship signature deepening + plate inscriptions
-(design §4/§7, the former "1.1 depth lever").** `familiarXp.signatureMilestones`
-[2, 4, 7] + `signatureDeepening` 0.25: each milestone a familiar's Kinship
-passes scales its species trait by +25% of its base value
-(`Traits.DeepeningFactor`, folded into all four trait kinds), and its plate
-earns the next authored **inscription line** (`species.json inscriptions`,
-`Kinship.InscriptionsEarned`) — §7's channel about individuals, shown in the
-warden's hand under the roster row. The fold sheet names familiars whose fold
-would cross a milestone ("Bramble's Meadow-forager deepens at this fold").
-Interpretations shipped (tune/confirm):
-- Milestones [2,4,7] against kinshipDivisor 12000 (~2 Kinship per well-worked
-  fold) put the first sharpening around fold 1–2 — first guesses, tune with
-  fold pacing.
-- Deepening is **multiplicative on the trait's value, additive per milestone**
-  (value × (1 + 0.25·passed)) — at all three milestones a +40% specialist
-  becomes +70%.
-- All 24 inscription lines (8 species × 3) are **draft wording to re-voice**
-  with the narrative pass; they spend ~190 words of the §7 1,200-word budget.
-- The validator refuses inscriptions beyond the milestone count (unreachable
-  words) and a deepening value with no milestones (a lever wired to nothing).
-
-**IMPLEMENTED 2026-07-28 — Zone 5, Mistfen Marsh, and fireflies stop being a
-crop (design §3/§5/§6).** Mo's call: add the next zone and switch fireflies
-out. A firefly in a basket contradicted the observe·sketch·release rework
-outright, so the marsh's third *find* is now **glow-moss** (foraging) and the
-lanterns became **The Lantern Bearers**, a 4-portion insect plate at the
-marsh's watch site. Landed with it:
-- `zones.json` mistfen: resources peat/rare-herbs/glow-moss, `verseSite` "the
-  lantern pool", unlocks apothecary (entomology already arrives with the
-  Old-Growth map, so listing it here was a lie the validator couldn't see).
-  `resources.json` prices glow-moss and drops fireflies; `folio.json`'s Marsh
-  Lights spread and `ArtLibrary` follow (glow-moss borrowed the lichen plate;
-  own plate landed 2026-07-30).
-- `map-mistfen` (upgrade #32) now grants zone + `unlockSkill apothecary` +
-  `unlockDigSite` for a provisions bundle — it previously granted a zone with
-  no skills and no site, the long-standing data-layer review item.
-- **Apothecary + tinctures** = the new sim system: `tinctures.json` (18th data
-  file) + `Sim/Tinctures.cs`. Three fire recipes brew Warden's Tonic (+25%
-  gathering), Glow Salve (×1.5 observation) and Peat-Smoke Draught (×1.5
-  craft speed); drinking spends one bottle and runs the buff for 600 s of
-  **sim time**, so an offline catch-up ages it on the same clock. Effects join
-  `Upgrades.ActiveEffects`; expiry rebuilds the modifiers the same step.
-  **Save v31→v32** (`activeTinctures`; the v31 case starts it empty).
-- Verse 5 (`verse-mistfen`, spotlight apothecary), Mistfen waystone + verse
-  lines, and the Lantern Bearers plate lore — all in the §7 register, draft.
-- HUD: a TINCTURES card on the Warden page, hidden until Apothecary is
-  learned; rows show the bottle's line, stock, live time left, and a Drink
-  button. Telemetry `tincture_drunk`.
-- New species **osier otter** (peat + glow-moss pair specialist) with its
-  three inscriptions, so the marsh's gift piles have someone to call.
-
-Interpretations shipped (tune/confirm):
-- Every tincture is 600 s and each is independently live — **refresh, never
-  stack**; nothing stops all three running at once (deliberate: the cost is
-  three separate brews competing for the same fire).
-- Tinctures are `kind: "material"`, so they're never sold or traded — brewing
-  is the only way in, drinking the only way out. That also means the Rite's
-  wardens-tonic slot needs its explicit `renownGrant` (2000), like ingots.
-- Buff time is sim time, not wall time: a tonic drunk before closing the app
-  burns down during the offline catch-up rather than waiting.
-- ~~Mistfen quantities, tincture durations/effects, and the map's provisions
-  bundle are all first guesses — the zone has had no balance pass.~~ ✅ Balanced
-  2026-07-30 (the zones 4–6 pass below): tincture durations 1200 s + inputs ×3,
-  tonic grant 6000; quantities and the map bundle CONFIRMED as shipped — the
-  bundle's real gate is smoked-trout's firecraft-28 recipe, not the amounts.
-- Zone 5's nodes have their three plates as of 2026-07-30 (glow-moss got its
-  own; peat and rare-herbs already had theirs).
-
-**IMPLEMENTED 2026-07-29 — The Hollows (zone 6) + the deep amber (design
-§3/§5/§6/§7).** The endgame zone, to the pattern Mistfen proved. Landed:
-- **Bone beds stopped being a crop** — the same correction as fireflies: the
-  buried past is borrowed with the eyes only (§6), so a bone bed in a basket
-  contradicted the reframe outright. The third find is **ashglass** (the
-  fused glass the burning left — a Long Winter residue, mineral, takeable),
-  swept through zones/resources/folio (`hollow-relics`) and ArtLibrary
-  (it borrowed the res-amber plate; own plate landed 2026-07-30).
-- `map-hollows` (upgrade #33, glow-moss/smoked-trout/iron-ingot provisions —
-  you pack light to go under) grants zone + `unlockSkill delving` +
-  `unlockDigSite` + `unlockRecipe deep-ingot`. **Deepsteel** = §5's tier past
-  steel: `deep-ingot` (forge 3, forgecraft 8) → `deepsteel-toolset`
-  (upgrade #34, forgecraft 40, all-gathering ×2); economy.tools.tiers gained
-  "deepsteel".
-- **NEW SIM SYSTEM: the deep amber** — `ambers.json` (19th data file) +
-  `Sim/DeepAmber.cs` + `Data/DeepAmberDef.cs`. Four authored pieces (The
-  Wing / The Seed / The Ash / The Maker's Mark, each with its field note —
-  the §7 deep-past channel) surface **strictly in authored order** at the
-  Hollows' watch site, rolled beside the ordinary amber channel in
-  `Observation.Advance`; a pity clock (`pityHoursWatched` 12) guarantees the
-  lore can't starve. The completed set is **The Deep Amber** plate: effects
-  (+25% all yields) join the active-effect union, and the count crosses the
-  fold with the journal (pity clock doesn't). **Save v32→v33**
-  (`deepAmberFound` + `deepAmberPityHours`). Telemetry `deep_amber_found`.
-  Record page: the Deep Pages card ends with the amber's entries — found
-  pieces with their notes, "the resin holds more" until it doesn't.
-- **The Quiet Court** — the rarest plate (rarity 0.2, 5 sketches, +25%
-  delving) at the Hollows site, plus its §7 line. Two new species:
-  **horseshoe bat** (deep-ores + crystals pair, echo-themed inscriptions)
-  and **ermine** (ashglass + glacier-ice — the burning's two residues; the
-  crags pairing lands with v1.2).
-- Verse 6 (`verse-hollows`, spotlight delving + forgecraft; deep-ingot slot
-  renownGrant 10000), waystone + verse lines in the §7 register (draft).
-
-Interpretations shipped (tune/confirm):
-- Deep amber timing: ~~findsPerHour 0.05 per watcher~~ **0.1 as of the zones
-  4–6 pass (2026-07-30)** — at 0.05 the mean (20 h) sat above the 12 h pity, so
-  pity metronomed every piece; at 0.1 the roll is live (mean 10 h, ~2–4 h a
-  piece well-modified, pity the backstop). Still a run-spanning chase, not a
-  session.
-- The deep pieces grant NO premium Amber — the channels stay separate
-  (ordinary finds keep paying; pieces pay in words and, at the end, the
-  plate).
-- ~~The verse-6 numbers and the Hollows quantities have had **no balance
-  pass**, same as Mistfen — the zones 4–6 sweep is the next-but-one slice.~~
-  ✅ Swept 2026-07-30: quantities/anchor CONFIRMED as shipped (the model puts
-  the real Hollows walls at forgecraft 40 and the fold gate, where they
-  belong); the zone gained its season (ashen +ashglass).
-- Ermine's pair reaches into v1.2 (glacier-ice), matching the bramble-hare
-  precedent (herbs + rare-herbs before the marsh existed).
-- The old `Validate_VerseZoneNoTrailMapOpens` pin used the-hollows as its
-  never-unlockable example — premise rot once map-hollows landed; it asks
-  after highland-crags now, with the corruption-must-land guard.
-
-**Fold-pacing pass (2026-07-29)** — Mo reached the end of the content in a
-morning on run 3. Diagnosis: the content ladder is gated by ABSOLUTE numbers
-(34 rungs of fixed materials, skill gates topping out at forgecraft 40, six
-zones) while permanent power compounds every fold, so each fold re-runs the
-same content faster; meanwhile the only thing that *did* scale, `demandGrowth`
-at 2.5, walled by about fold 5. Both halves are now addressed:
-
-- `demandGrowth` **2.5 → 1.45** (see the generator interpretations below).
-- **The breadth ramp** — `chooseCountPerMigrations` / `chooseCountMax` in
-  rites.json, `RiteGenerator.ScaledChooseCount`, `Rite.RequiredSlots`. Every
-  second fold a verse asks for one more filled slot and the generator widens it
-  by one goods slot in step. Bounded by the verse's slot count, so it cannot
-  outrun the power curve the way a quantity multiplier does.
-- **The endless Almanac line** — *The Long Song* in almanac.json
-  (`repeatable`, `costGrowth.almanac` 1.25, `state.almanacLevels`, **save v35**).
-  The one-off tree totals 99 Verdure and finishes around fold 3; the endless
-  line means the currency never dead-ends. It grants the SAME additive value to
-  gathering and carrying so the haul ratio can't drift — the validator refuses a
-  multiplicative effect on a repeatable line, because levels scale the value
-  linearly and a multiplicative type would want value^levels.
-
-**Still open from this pass:** the early folds (2–4) will still shorten,
-because the fold-to-fold power ratio is ~3× there — that's the Verdure curve
-(`verdure.exponent` 0.5 / `renownDivisor` 2800), not the Rite. Deliberately NOT
-retuned: flattening the exponent would make the Almanac last but would also
-flatten the power curve to ~1.03× per fold, and the +2%/pt passive would stop
-feeling like anything. The endless line is the better answer to the same
-symptom. Revisit only if playtests say folds 2–4 feel hollow rather than fast.
-Numbers throughout are model-derived (scratch model against the shipping
-constants), NOT playtested — the whole pass wants a real run-3-to-run-6 sitting.
-
-**IMPLEMENTED 2026-07-30 — the missing plates (every id in the data now has
-one).** The mid/late content landed faster than its art, so five zones' worth of
-new ids were drawing the placeholder disc or borrowing a neighbour's plate. Ten
-new plates, all public domain, sourced and cut to the existing pipeline (rembg
-cut for the naturalist plates, sepia-ink keying for the PSF pen drawings), placed
-with hand-authored sprite metas, and credited in `CREDITS.md`:
-- **Familiars** — `familiar-otter`, `familiar-bat`, `familiar-ermine`
-  (Protheroe's coloured plates, the same book as the hare and the weasel). The
-  three unplated species from the traits rework now have portraits on the kith
-  roster, the world strip and the bond cards.
-- **Insects** — `insect-lantern-bearers` (both sexes of the glow-worm on one
-  page, Jacobson's beetle plate) and `insect-quiet-court` (Curtis's mole
-  cricket — the insect that sings from galleries it digs itself).
-- **Tinctures** — `goods-tonic`, `goods-salve`, `goods-draught`, one vessel
-  each, so the three read apart in the crafts card and on the new icon column
-  of the TINCTURES card (`WardenPage.BuildBrewsCard`).
-- **Borrows retired** — `ashglass` had the amber plate (an insect in resin,
-  standing in for volcanic glass) and now has `res-ashglass`; `glow-moss` had
-  the lichen plate and now has `res-glow-moss`. `deep-ingot` joins copper,
-  bronze and iron on the one ingot plate, which is the deliberate kind of
-  sharing.
-- **`ArtLibraryTests` (8 tests)** walks the real GameData asset and asserts
-  every resource, recipe output, species, insect, zone, gear piece, building,
-  skill, journal furnishing and line motif resolves to a sprite — the coverage
-  this pass establishes, and the only thing that would ever notice a plate
-  being renamed out from under `ArtLibrary` (a missing one is silent by
-  design). 718/718 EditMode green.
-- Rerunning `Wildgrove/Fix Art Import Settings` over the new files also caught
-  three older plates the tool had never seen: `familiar-pony` and
-  `insect-wayfarers-plate` were still importing at 2048 with crunch off, and
-  **`res-timber` had `alphaUsage: 0`** — its transparency was being discarded
-  on import, so the re-baked beech tree had been drawing on a solid block since
-  the 2026-07-29 swap. Run the menu item after adding art.
-
-Still deliberately unwired: `res-flint` (there is no flint resource — a spare
-kept for a tool-tier surface that doesn't exist yet), and **as of 2026-08-02
-`res-amber` too** — repointing the Deep Amber plate at `insect-deep-amber`
-(where it always belonged) left the resource photograph referenced by nothing.
-It still ships, because everything under Resources/ does, so its CC BY credit
-is still owed while the file is there.
-
-That makes the amber attribution cheaper to drop than this note used to say:
-**deleting `res-amber` now removes one of the five CC BY works outright**, no
-Kurr-coal-plate swap needed. Correction to go with it — the store's amber icons
-derive from the **`insect-deep-amber` source work** (James St. John's fly in
-amber), *not* from `res-amber` (the Dolichoderus specimen tag); the two are
-separate CC BY works and only the first feeds the icons. Still wants a
-deliberate pass rather than a drive-by, because it is a licence change.
-
-**IMPLEMENTED 2026-07-30 — the fold gate: content that arrives over runs
-(design §8).** Nothing in the ladder, the zones or the species read
-`migrationCount`, so the generator re-walked the same six zones forever and a
-run-1 warden was expected to reach the Hollows. Zones (and, for tuning,
-upgrades and species) now carry **`minMigration`** — folds that must be behind
-the warden before that content exists. 742/742 EditMode green on both Android
-and Win64.
-
-- **The Rite is the load-bearing part, not the ladder.** A Rite completes only
-  when every verse in it is sung, a verse reveals only once its zone is open,
-  and the Rite is the *only* Migration gate — so a verse for a zone the fold
-  cannot reach would have sealed Migration **permanently**, including the fold
-  that would have opened that zone. `Rite.IsVerseInPlay` is what prevents it,
-  and `Rite.VersesInPlay` is what the journal, the tracker and the counts read.
-  An early run therefore walks a **shorter** Rite, not a slower one.
-- **Authored in one place.** `minMigration` on the zone gates the trail map *and*
-  holds the verse; `Upgrades.FoldGate` reads the zone's fold through the map
-  rung so the number is never written twice, and the validator refuses a map
-  rung that carries its own (two numbers that must agree forever is the typo
-  that would reach the hard-lock above).
-- **Validator rules added** (each guards a save that could never progress):
-  negative folds; a gated starting zone; a map rung with its own fold; a recruit
-  rung earlier than the species it calls (`Roster.Recruit` doesn't consult the
-  species' fold, so the rung would silently win); and any Rite — authored or
-  template — with no verse open on the fold it serves.
-- **HUD:** a gated rung reads "not before the next fold" / "not for another N
-  folds" *instead of* its shopping list, deliberately — a trail that does not
-  exist has no use for one, and "needs iron tools" beside it would send the
-  warden off earning something that changes nothing this run.
-- **Species gating is nearly moot and kept anyway:** a species whose resources
-  live in a gated zone already has no node to leave a pile at, so the field only
-  earns its keep for holding one back inside a zone the run has opened.
-
-Interpretations shipped (tune/confirm):
-- **First guesses: zones 1–3 open run 1, then one new trail per fold** —
-  Silverrun on run 2 (`minMigration` 1), Mistfen on run 3, the Hollows on run 4.
-  Model-derived, NOT playtested; a real run-1-to-run-5 sitting is what should
-  set them. A test pins the *shape* (non-decreasing in zone order, never
-  skipping a fold) rather than the exact numbers, so retuning doesn't fight it.
-- **Fewer verses early means fewer gift piles**, and the kith-slot milestones
-  (§4, verses 2/5/10) come later — the second slot now lands in run 2 rather
-  than run 1. Whether that reads as pacing or as a tax wants the same sitting.
-- Opening a zone is **never taken back**: a save whose data was retuned
-  underneath it keeps a trail it already holds, and keeps that verse in play
-  (the alternative is a zone you can work whose verse doesn't count).
-- The generator still generates every verse and `IsVerseInPlay` filters them, so
-  there is ONE truth about what a run is walking rather than two that can drift.
-  Its reachability sweep is unchanged.
-- No upgrade or species is gated in the shipping data — the zone gate is doing
-  all the work. The fields exist for tuning; don't sprinkle numbers into them
-  without a reason.
-
-**IMPLEMENTED 2026-07-30 — Almanac depth: the exotic lines (design §8).** The
-fold gate paces what a run may *reach*; these pace what it must *repeat*. Each
-fold re-ran the whole ladder from bare hands, and no yield knob can shorten
-that — only starting further up can. Two new effect types, both Almanac-only
-(validator-enforced):
-
-- **`grantUpgrade` — granted rungs.** An owned node puts a named ladder rung on
-  every run free — no materials, no skill gate; the grant IS the head start.
-  Shipping nodes: *The Remembered Edge I/II* (start at flint, then copper
-  tools) and *The Known Way I/II* (start with the Bramble, then Old-Growth
-  trail maps) — one requires chain, edge→way→edge→way, so the tool always
-  precedes the trail that demands it. `Almanac.SyncGrantedUpgrades` is
-  idempotent and re-derived at every fold, on buy (the run that pays gets it
-  NOW, not next fold), and on restore (a save older than the grant picks it
-  up); granted ids simply join `purchasedUpgradeIds`, so the ladder UI, zone
-  sync, and multipliers all follow for free. The **fold gate and tool
-  requirement still hold** — a granted trail behind `minMigration` waits for
-  the run that earns it — and the sweep runs to a fixpoint so a granted tool
-  can satisfy a granted map whatever order the ladder lists them.
-- **`keepCraftOrders` — *The Fire Remembers*.** The stations carry their
-  standing orders across the fold: the assignment only, never the batch (the
-  old camp's in-flight inputs fold with it). No new bookkeeping — `Advance`
-  already re-checks workability every tick, so each station stalls quietly
-  until the new run re-earns its recipe's skill and heat, then takes the order
-  up again unasked.
-- **Validator rules added:** grantUpgrade/keepCraftOrders outside the Almanac;
-  a grant naming an unknown rung; a grant of a recruit rung (§4 — familiar
-  permanence is Kinship's alone, the Almanac never buys creatures, not even
-  sideways); and a map grant whose requires chain doesn't carry the zone's
-  covering tool — that node would be bought and then sit inert forever, which
-  is worse than refused.
-- **Costs are first guesses:** 6/10/14/22 up the granted chain + 8 for the Fire
-  Remembers (~60 Verdure across the five, one-off tree total now 159 from 99).
-  Tuned so the line opens around folds 2–4; wants the same run-3-to-run-6
-  sitting as the rest of the pacing pass.
-
-**IMPLEMENTED 2026-07-30 — the zones 4–6 balance pass.** The spreadsheet
-treatment (scratch model mirroring `RiteGenerator` anchors + `YieldPerSecond`
-against the shipping JSON), measured at each zone's debut fold under the fold
-gate (Silverrun m=1, Mistfen m=2, Hollows m=3).
-
-**The model's headline: goods quantities are not where zone 4–6 pacing
-lives.** At debut-fold production (tool re-climb, Verdure global, mastery,
-richness, specialist traits) every generated goods slot fills in seconds-to-
-minutes of a posted node — the anchors (silverrun 3225 → mistfen ~8100 →
-hollows 18000) ramp each zone's ask ~3.2× over the one before, coherently. The
-levers that actually pace these zones are the craft-XP gates (firecraft 28 =
-~540 batches feeds both late trail-map bundles via smoked-trout; forgecraft 40
-= ~1770 batches is the real deepsteel wall, auto-resumed by The Fire
-Remembers), pristine-specimen luck, the haul lane, offline caps, and the fold
-gate itself. All left alone deliberately — they're the right walls in the
-right places.
-
-What moved (all data-only, no sim change):
-- **Regions now touch every gatherable zone** — the marsh and the Hollows were
-  season-blind (no region weighted any of their finds, so the generator's
-  seasonal demand variation was dead there): misted +glow-moss 1.25, ashen
-  +ashglass 1.5 (the burned land gives up its own glass — and its digSpeed
-  already suited the Hollows watch), windswept +peat 1.25 (wind dries the turf).
-- **Deep amber `findsPerHour` 0.05 → 0.1** — the old mean (20 h) sat ABOVE the
-  12 h pity clock, so every piece arrived by pity at exactly 12 h: a metronome
-  pretending to be a roll. Mean 10 h puts the roll back in charge with pity as
-  the backstop; undecorated set ~40 watched hours, well-modified ~2–4 h a piece.
-- **Tinctures: durations 600 → 1200 s, brew inputs ×3** — 20 min is one drink
-  per sitting instead of a ten-minute nag; the tripled bundles (120 herbs /
-  90 glow-moss / 75 peat…) make a bottle read as a real brew without gating
-  anything. Effect sizes unchanged.
-- **verse-mistfen tonic grant 2000 → 6000** — tracks the tripled brew's
-  notional worth (6 × 960), same convention as the ingot slots; also lifts the
-  mistfen anchor ~14% (the softest step in the ramp).
-- The `Validate_DeepAmberWithDeadRates` pin was tightened while its literal
-  moved — its old contains-guard passed even when the corruption no-oped
-  (`"findsPerHour": 0` is a substring of the healthy value).
-
-Numbers are model-derived, NOT playtested — same caveat as the fold-pacing
-pass; the run-3-to-run-6 sitting is now the gate on ALL of it.
-
-**IMPLEMENTED 2026-07-30 — the paid-skip budget (the whale throttle, design
-§10).** Mo: "cap the amber time skips to ×2 the speed of a FTP." Sim-time is
-the only thing money buys in Wildgrove (a skip runs the whole sim — craft XP,
-watched hours, tincture clocks), so bounding how much of it PAID skips may add
-per real day bounds a heavy spender's pace outright. `timeSkipDailyCapHours`
-(economy.json amber, 24 = a free player's 24 natural sim-hours + at most 24
-skipped = ×2) drives a **leaky-bucket budget**: it refills at cap/24 per
-wall-clock hour and holds at the cap, so the rule is identical on every
-timescale — no midnight counter, no timezone or date-rollover question, and
-unspent days never bank extra hastening. Landed as:
-- `Amber.SkipBudgetHours/SkipBudgetRemainingMs` + the spend inside
-  `TryTimeSkip`; `CanTimeSkip` now takes `nowUnixMs`. **Save v37→v38**
-  (`timeSkipBudgetHours` + `timeSkipBudgetStampUnixMs`; absent = full budget).
-  The budget crosses the fold like the other amber stamps — migrating must not
-  refill the day's hastening.
-- **The REWARDED skip stays outside the budget** — free players get it too, so
-  it's part of the shared baseline, and its own 4 h cooldown already bounds it.
-- Validator: a positive cap below one skip is a sink that can never be spent —
-  refused, not merely slow. 0/absent = uncapped (pre-cap data keeps working).
-- HUD: the hasten row counts down until the budget covers one skip again
-  (the drip row's WaitingTail idiom); being short of amber only greys the
-  button.
-- Cap 24 is the ×2 answer, not a model output — revisit with the same
-  playtest sitting if ×2 still reads too fast (the next lever after this one
-  is fold-gated content, not a tighter cap).
-
-**IMPLEMENTED 2026-07-31 — Highland Crags (zone 7) + Husbandry (design
-§3/§5/§6/§7), the first endgame slice.** The v1.2 trail begins, to the pattern
-Mistfen and the Hollows proved. Pure data + content — no new sim system (§3
-names none for zone 7; the zone's texture is the deepsteel door and the flock)
-and therefore **no save bump**. Landed:
-- `map-crags` (#35: smoked-trout 40 / **wardens-tonic 3** / deep-ingot 6 — you
-  pack food, medicine and metal to go high; the tonics give Apothecary a
-  cross-zone pull) grants zone + `unlockSkill husbandry` + `unlockDigSite`.
-  **The crags are the first zone behind the deepsteel gate** (`requiredTool`
-  flipped from the steel stub): the tool ladder kept stepping one tier per
-  zone through the Hollows and then stopped mattering, so deepsteel was a pure
-  ×2 with no door — now forgecraft 40 IS the road to the endgame, The Fire
-  Remembers auto-resumes the climb across folds, and the fold gate
-  (`minMigration` 4, one trail per fold past the Hollows' 3) means four folds
-  of compounded power arrive with it.
-- `fleece-shears` (#36, gateSkill husbandry 10, mirrors Smoking Racks) grants
-  the **felted-cloak** recipe (bench, bushcraft 6, wool ×6 + cordage ×2,
-  trade ×5 — the crags' crafted good) + husbandry yield ×2.
-- Verse 7 (`verse-crags`, spotlight husbandry + bushcraft): eggs 350 / wool
-  250 / lichen 300 / cloaks 6 / pristine specimen (renownGrant 7000, on the
-  1000→2500→4000 ramp). Verse site "the shieling"; waystone + verse lines in
-  the §7 register (draft — "Count yours home each night" / "The warmth was
-  never yours to keep").
-- Eggs/wool/lichen repriced 90/140/70 (the stub 40/50/30 priced zone 7 *below*
-  the Hollows). Seasons arrived with the zone: windswept thickens the fleece
-  (+wool 1.25), ashen's first life back on burned rock (+lichen 1.25).
-- **Two new species — Mo's steer: more diverse picks, "something like a kea".**
-  The **kea** (Flock-rider, eggs+wool — its real history with highland flocks,
-  down to riding the ewes) and the **pika** (Hay-piler, lichen+sky-blossoms —
-  the alpine harvester whose haypiles ARE the gatherer register; reaches into
-  zone 8 like ermine did). Every priced find on the map now has its
-  specialist. Names/inscriptions are §7-register drafts.
-- **The Parchment Wings** (Parnassius apollo, rarity 0.4, 4 sketches, +20%
-  husbandry) at the crag observation site, with its plate line.
-- **Four real PD plates sourced same-day** (no borrows, no colophon change —
-  all PD/no-restrictions): Keulemans' 1888 Buller kea (a sheep already fleeing
-  in the background), Audubon's 1845 Little Chief Hare (the pika, cropped off
-  its DPLA scan board), an F. Nemos Apollo chromolith, and Cloak (PSF).
-  CREDITS.md rows added; `FixArtImportSettings` re-run headless.
-- Tests: the never-unlockable-zone example moved highland-crags →
-  cloudreach-peaks; the never-granted-skill example moved husbandry →
-  **excavation** (the retired, whitelist-only skill — the LAST stable example;
-  every real zone skill is granted somewhere once the crags land). The fold
-  ladder test now derives its ladder from unlockZone effects instead of the
-  scope label, so the peaks join it automatically when their map lands. Pins:
-  35 rungs, 7 verses, crags minMigration 4 as the deepest trail.
-
-Interpretations shipped (tune/confirm):
-- Every crags number is a first guess measured against the zones 4–6 model
-  logic, not a playtest: prices 90/140/70, verse amounts, husbandry gate 10,
-  cloak inputs/×5, provisions bundle, specimen grant 7000, Apollo rarity 0.4.
-- **Deepsteel-as-door is a design decision to sit with**: zone 7 now waits on
-  forgecraft 40 (~1770 batches, offline-resumed) AND fold 4. If the playtest
-  says the two gates stack too harshly, the lever is the crags' requiredTool
-  back to steel — not the forgecraft curve.
-- The paid-skip budget, breadth ramp and demandGrowth all now stretch over a
-  seven-verse Rite from fold 4 — the run-3-to-run-6 sitting covers it.
-
-**Zone-demand geometric ramp (2026-07-31)** — the verse goods asks were flat
-across zones (300–600 units) while within-run power grows ~×2.5 per zone step
-(stacked tool rungs, banked Verdure, extra kith slots), so a debut verse
-collapsed to seconds by the Hollows (~2 min) and the Crags (~30 s). rites.json
-goods amounts now carry ×2.5 per zone order anchored at zone 2 — z3 ×2.5,
-z4 ×6, z5 ×15, z6 ×40, z7 ×100, rounded clean; the file's $zoneRampNote
-records the rule. Material-slot grants scale WITH their amounts (the no-tax
-promise); deed/specimen/sketch slots stay authored; zones 1–2 stay pinned to
-the hour-one pacing targets. Zones 4–7 rows never play directly (fold-gated) —
-they are the generator's value anchors, so runs 2+ inherit the ramp and
-demandGrowth^m stacks on top. 778/778 EditMode green. Model estimate: a debut
-verse holds at ~20–60 min of its own node's production; FTP walks the full
-map (fold-4 Rite) in ~9–12 days, a committed payer ~4–6 — the 24 h paid-skip
-budget is the deliberate ×2 floor.
-
-Missing parts (zone-ramp pass):
-- **Not playtested** — every multiplier is model-derived; the run-3-to-run-6
-  sitting judges it. If it plays too slow, soften the ratio to ×2
-  (2/4/8/16/32, ~a week FTP); ×3 risks walling the crags verse behind the
-  deepsteel door it already waits on.
-- **Warden's Sigil is design-doc-only** (§11 IAP, ~US$7) — it is NOT in the
-  built store catalogue. **Effect size DECIDED 2026-08-01: +20% yields and
-  craft speed, down from ×2** — at ×2 it halved the paid floor to ~2–3 days
-  for the whole map and became a second pace stacked on the skip budget's
-  already-deliberate ×2; at +20% it takes ~a sixth off a run and moves no
-  wall (craft-XP gates, fold gate, skip budget all unchanged). Still open:
-  whether it ships at all, and whether ~US$7 is the right price for a perk
-  this quiet — the honest answer may be a cheaper Sigil or one folded into a
-  bundle with Amber and cosmetics. If it does ship, it needs a permanent
-  `yieldMult` + craft-speed entitlement path (there is none today: nothing in
-  `KithPurchases.Apply`/`StoreProductIds` grants a sim modifier).
-
-**Cloudreach Peaks (zone 8) + THE FINAL WAYSTONES — built 2026-08-01, 809/809
-EditMode green on both targets (Win64 + Android).** The last ground, and the
-first slice since the crags to add a system rather than only content.
-
-- Data: `map-cloudreach` #37 (felted-cloak 12 / deep-ingot 15 / wardens-tonic 6;
-  grants zone + dig site) + `rime-still` #38 (apothecary 20; grants the
-  `aurora-cordial` recipe + craftSpeedMult apothecary ×2). zones.json peaks
-  gained verseSite "the last cairn", requiredTool **deepsteel** (same door the
-  crags opened — no ninth tool tier) and **minMigration 5**. sky-blossoms /
-  glacier-ice repriced 300/220 (the stub 200/150 sat barely above the crags'
-  wool at 140). Regions: lush + sky-blossoms 1.25, misted + glacier-ice 1.25.
-  Insect **The Windborne** (Camberwell Beauty, rarity 0.25, +25% foraging) —
-  above quiet-court's 0.2 deliberately, so the Hollows keeps the rarest-drawable
-  pin. verse-cloudreach + waystone + verse lines authored (draft).
-- **The one trail map that teaches no skill.** The peaks' two finds are worked
-  with foraging and mining, as they have been since zone 2; what the zone adds
-  instead is the §7 reveal. Written into upgrades.json's $comment so it reads as
-  a decision rather than an omission.
-- **No new species, and that is the roster principle holding**: the ermine
-  (ashglass + glacier-ice) and the pika (lichen + sky-blossoms) already reach
-  into the peaks, so every priced find on the map has a pair specialist at
-  twelve. A thirteenth familiar would have no find of its own.
-- **The craft is a fourth tincture, not a fourth system** — Aurora Cordial
-  (sky-blossoms 90 + glacier-ice 60, 1200 s, +1 point of pristine chance). It is
-  the only tincture gated behind a rung; the other three are defaultKnown.
-- **NEW: the final waystones.** dialogue.json gained a `finalWaystones` chain
-  (zone + 4 ordered stones) beside the existing per-zone waystones;
-  `Narrative.NextFinalWaystone` / `MarkFinalWaystoneRead`; **save v40→v41**
-  (`finalWaystonesRead` + `finalWaystoneLastFold`). Both cross the fold with the
-  rest of the lore. Presented through the ordinary waystone sheet (same
-  furniture on purpose — the reveal lands harder in the form the warden has read
-  seven times) plus the read count, and re-read on the Record page's Deep Pages
-  card directly under the amber, which is the other half of the same reveal.
-  Validator: the chain's zone must exist, be unlockable, and carry its own
-  arrival stone; stone ids unique; no blank stones.
-- Tests: the never-unlockable-zone example had run out of staged zones, so it
-  now **strips a map instead of pointing at unbuilt content** — repointing
-  map-cloudreach's grants at an already-open zone leaves the peaks with a verse
-  and no way in. That rebasing is what stops it rotting a fourth time. Pins
-  moved: 32 rungs, 8 verses, peaks minMigration 5 as the end of the ladder. The
-  run-1-open-verses guard counted a bare `"minMigration": 5`, which the shipped
-  peaks now carry — tightened to count only the injected form.
-- Art: two PD plates sourced from Commons (Decanter (PSF) → `goods-cordial`,
-  re-baked to sepia ink on transparency; Nemos' Nymphalis antiopa →
-  `insect-windborne`, natural colour). Both public domain with no attribution
-  required, so **no ArtCredits.cs change**; CREDITS.md rows added and
-  `FixArtImportSettings` re-run (512 / crunch). ⚠️ `Phial (PSF)` was the obvious
-  first pick and is **wrong** — it is a modern child-proof pill vial with a
-  printed label. `Retort (PSF)` is CC BY-SA, i.e. copyleft on a game asset —
-  avoid.
-
-Interpretations shipped (tune/confirm):
-- Every peaks number is model-derived, not playtested: prices 300/220, the verse
-  row, the apothecary 20 gate, cordial inputs, specimen 10000 / sketch 8000,
-  Windborne rarity 0.25, the cordial's +1 pristine point.
-- The zone-8 verse row was derived from **zone 7's** rather than re-spread from
-  scratch: both raw slots sit at zone 7's raw geometric mean ×3.5 (~35.5M Coin
-  worth each) and the craft slot at ×3.0 of that mean, which is exactly the
-  ratio felted-cloak carries at zone 7. So the valueSpread texture rides across
-  the ramp step instead of being recomputed against a different pivot.
-- **The peaks stack no new wall**: same deepsteel door as the crags, one more
-  fold. If the run-3-to-run-6 sitting says the endgame is two zones behind one
-  gate, the lever is the crags' requiredTool back to steel (already logged
-  above), not a ninth tier.
-- **The reveal's pacing is one stone per fold, anchored on the fold the last
-  stone was READ on** — not on the fold the peaks opened. A warden who climbs
-  late still gets it a stone at a time. Whether four folds is the right span for
-  the ending is a playtest question, and the knob is the stone count.
-
-**NEXT SLICES (the mid/late plan, in order):**
-1. **The run-3-to-run-6 playtest sitting** — every mid/late number (fold gate,
-   demandGrowth, Almanac costs, the crags pass, the peaks pass, the zone-demand
-   ramp) is model-derived and waiting on it. With the peaks built, the map is
-   walked out and there is no content slice left in front of it.
-
-## Phase 1 — Core loop slice (current)
-
-- **Tending burst values are a first guess.** `burstYieldMult` / `burstDurationSec`
-  in `design/data/economy.json` aren't in the design doc — tune once the loop is
-  playable. (`$note` in the file.)
-- ~~**Feeder base amount is a first guess.**~~ **v0.11:** superseded by the kith
-  reversal (§4) — no carrier type; gifts became one-shot *recruitment events*.
-  ✅ RESOLVED 2026-07-22: the gift event landed and
-  `gifts.carrierBaseGoods`/`carrierGift` were retired with it (see the v0.11
-  section above).
-- **Warden gather rate is a first guess.** `warden.gatherPerSecond = 0.5` — the
-  warden's passive trickle at their post (always on, burst-boosted), and the
-  bare-node gift bootstrap. Replaced the old burst-only hand-gather so the
-  early game is assignment, not a tap surge. Tune so the first gift lands in
-  ~20 s of just standing there.
-  **v0.11:** still the mechanism, and §3 confirms it — the warden's post trickle
-  now also **self-funds a virgin node's first replant** (presence, not currency).
-- **The FPS overlay is dev-only now.** `FpsCounter` (top-right: avg fps + worst
-  frame ms) is gated behind `Debug.isDebugBuild` in `Bootstrap` — visible in the
-  editor and development builds, stripped from release/store builds. Flip a
-  development build on when tuning performance on-device.
-- **Play Games is done and confirmed on device (2026-07-28): sign-in,
-  achievements, score submission, cloud Snapshots and the Renown board all work.**
-  The diagnostics scaffolding that got us there (`Diag`, the startup status
-  popup, `OpenInfoSheet`, the Standing card's status row) has been removed now
-  that all of it is confirmed — which is the safe order, and the opposite of the
-  mistake described below. Two things deliberately stayed, because they are what
-  made a run of silent failures findable at all, and they cost nothing: a
-  try/catch on every JNI entry point, and a one-line `[play-games]` log of every
-  status that used to be discarded (`SignInStatus`, `ReportScore` success,
-  `SavedGameRequestStatus`, overlay `UIStatus`, row count + player rank). GPGS's
-  own verbose trace sits behind `Debug.isDebugBuild`; our own lines cover release
-  logcat without Google's spam.
-  **Do not use Play Games' own overlay.** `ShowLeaderboardUI` /
-  `ShowAchievementsUI` route through `com.google.games.bridge.HelperFragment`,
-  which extends the framework `android.app.Fragment` (deprecated since API 28) —
-  read straight out of the shipped AAR with `javap`. On `targetSdk 36` that
-  throws **synchronously** on the JNI class lookup, which is why it presented as
-  a hung callback and cost two builds to pin down. Everything routed to the GMS
-  clients instead is fine, and that working/broken split is the whole diagnosis;
-  it matches upstream issue #3318. **GPGS 2.1.0 is the latest release — there is
-  no upstream fix to upgrade to.** The Standing is therefore read with
-  `IGameServices.LoadLeaderboard` (`LoadScores` + `LoadUsers` for names) and
-  drawn by `JournalSheets.OpenStandingSheet`, which suits the journal better
-  anyway. `ShowLeaderboard` is kept, unused and try/caught, for the day the
-  bridge is fixed.
-  **A leaderboard's top public page can come back empty while Play still ranks
-  the player** — `read 0 rows` with submissions being accepted. So never rely on
-  `LoadScores` alone: fall back to `data.PlayerScore` and show the player's own
-  line. If a board is ever empty *and* the log says `player unranked`, Play is
-  not ranking the game at all — check the PGS **configuration** publish state (a
-  separate thing from an individual leaderboard being "live", and from the app's
-  testing track) and the account's "appear on public leaderboards" setting.
-  **The lesson worth keeping:** the first diagnostics sink was retired in the
-  very same commit as the R8 `gms.tasks` keeps that were meant to fix the sign-in
-  hang. Fix and instrument removed together — so when the symptom returned there
-  was nothing left to read it with, and it cost a full build cycle to get back to
-  where we had been. Confirm on device first, then remove the instrument.
-- **Android target SDK is pinned to API 36 (2026-07-27).** Was
-  `AndroidApiLevelAuto`, which follows whatever platform the installed Android
-  module ships — an editor or module update could move a release's target
-  silently. 36 is the newest platform this editor has (34/35/36) and what Auto
-  already resolved to in shipped AABs, so the pin is a no-op for the built
-  artifact. Raise it deliberately when Play's required level moves.
-  (`ProjectSettings.asset AndroidTargetSdkVersion`, `Assets/Editor/ProjectSetup.cs`)
-- **Play's "androidx.fragment 1.1.0 is outdated" warning is stale — no fix needed
-  (checked 2026-07-27).** 1.1.0 came in transitively via
-  `play-services-basement` back when nothing declared fragment explicitly. The
-  AdMob import (`GoogleMobileAdsDependencies.xml`, first released in **v43**)
-  declares `androidx.fragment:fragment:1.7.1`, and Gradle takes the highest — so
-  every release from v43 on satisfies Play's 1.2.1+ ask. Verified from the
-  uploaded artifacts, not inferred: `v42` bundles 1.1.0, `v62` bundles 1.7.1.
-  The warning persists only while a pre-v43 artifact is still active in a track.
-  To read a bundled transitive version: download the AAB and
-  `unzip -p <aab> base/root/META-INF/<group>_<artifact>.version`.
-- **The haul bottleneck, and what was done about it (2026-07-28).** As slots
-  unlocked, nodes jammed on full baskets and the overflow was silently destroyed.
-  The measured cause: **gathering and hauling grew on different curves.** A
-  gatherer slot multiplies against mastery (+5%/level), richness (+10%/replant),
-  planters and the Verdure global (+2%/point); a carrier slot added a flat
-  `1.5/s × haulMult`. So the carrier share needed to break even *rose* with
-  gather power — 40% of the kith at `g=1`, 67% at `g=3`, i.e. 4 of 6 bodies on
-  the trail. Worse, the five `haulMult` rungs gate on **crafting** skill
-  (bushcraft 12/20/35 ≈ 86/229/1084 batches) while the pressure on them arrives
-  on the **verse** clock, so a slot unlocked mid-gap was pure loss.
-  Three changes:
-  1. **A full basket is no longer a cliff.** The node's own gatherers shoulder the
-     excess: they walk a carrier's trip and gather nothing while walking, so
-     `overflow / (1 + rate · trip / load)` survives (`Simulation.SelfHaul`). At
-     `selfHaulTripMultiplier` 1 that keeps 60% of a 1/s gatherer and 13% of a
-     10/s one. It is a **floor, not a lane** — a posted carrier loses no
-     gathering and serves every node, so delegating always wins, and
-     `Advance_ACarrierBeatsSelfHauling_SoTheTrailPostIsWorthASlot` pins that.
-  2. **Hauling rides the same smooth curve as gathering.** A carrier's load now
-     takes the Verdure global too (`Simulation.HaulLoad`), so the ratio stops
-     drifting between rungs instead of only stepping five times a run.
-  3. **The mid rungs come earlier** — stag-harness bushcraft 12 → 8, wagon 20 → 14
-     (≈46 and ≈112 batches). A first guess, to confirm in playtest.
-  Still true and worth remembering: **basket capacity buys time, not throughput.**
-  Buildings (+5%/level) and the Timber Frame planter (+50%) do nothing for a
-  bottleneck — they only delay it. And overflow still credits XP, Mastery and the
-  Compendium, so skills climb while camp stock doesn't; the Trail page now says
-  "the trail is behind — gathering X/s, carrying Y/s" so the shortfall is visible
-  before it costs anything.
-- **Autosave interval (30 s) and welcome-back threshold (60 s credited) are first
-  guesses.** Tune with the loop playtest. (`GameLoop.AutosaveIntervalSeconds`,
-  `GameHud.WelcomeBackMinSeconds`)
-- **The upgrade shop shows the next 3 unpurchased rungs.** A window over the §9
-  ladder in order; material-costed rungs appear (with their costs shown) before
-  crafting exists to pay them — an honest preview, but they sit unaffordable
-  until the crafting system lands. (`GameHud.UpgradeShopWindow`)
-  **v0.11:** with Coin gone (§9), rungs are priced by **skill gate + material
-  bundle**, not `costCoin` — the shop's cost display changes with the economy rework.
-
-## Phase 2 — Adaptive UI & input
-
-- **Windfall bubbles replaced tap-to-tend (2026-07-24).** A worked node drifts a
-  bubble up the strip (`economy.bubbles`: spawn interval / lifetime / max live /
-  rewardSeconds / rewardRatePerSecond — all first guesses); catching it pays a
-  FLAT `rewardRatePerSecond x rewardSeconds` of that node's resource
-  straight to camp AND tends the node (burst + Pristine
-  window + Rite tend deed — so the tend deed slots and the Cordage Wraps gear
-  stay reachable, `Sim/Bubbles.cs`). Tapping a node plate now opens the posting
-  sheet (the node IS the assign gesture); the vacant "+" badge is gone (occupied
-  badges still show who holds the post). A "N / M POSTED" slots-in-use counter
-  is pinned to the page's top-right corner. **The haul went flat 2026-07-31** —
-  it was `rewardSeconds` of the node's OWN live output, which paid 1-2 units at
-  every node the wandering warden only half-works (their rate is
-  `warden.gatherPerSecond / node count`, so it shrank with each zone opened) and
-  took another 10x from the `kith.gatherPerSecond` cut. A flat haul rides none of
-  the yield multipliers, so **The Long Reach** (`almanac.json`) is the Almanac's
-  second endless line: `bubbleRewardBonus` +15%/level, additive with the pack
-  raven's trait, the meta that keeps a windfall worth catching in the late zones.
-  Interpretations shipped (tune/confirm):
-  - Bubbles **spawn only in live play** (world layer, `Time.time`) — nothing
-    persists, no offline accrual, and time paused under a sheet still ages them.
-  - Spawn is **round-robin over eligible (worked) nodes**; a camp with no one
-    posted anywhere drifts nothing.
-  - Space / pad-(A) **catches the longest-adrift bubble** (it no longer tends
-    the selected node); node selection now only drives the ring highlight.
-  - The bubble reward is computed **at catch time** — a node gone fallow while
-    its bubble drifted pops empty (a quiet margin note, no grant).
-  - design-doc §5/§8 still describe tap-to-tend; re-voice those lines when the
-    mechanic settles.
-  - **The windfall's face (2026-07-27, from Mo's device pass — the tinted disc
-    read as tiny and oddly coloured).** It now drifts as **the resource's own
-    naturalist plate** (`ArtLibrary.ForResource`) on a soft parchment mount,
-    turning slowly as it rises, at **68% of a node plate** (was 45% with a
-    hash-derived resource tint, which is where the strange colour came from).
-    A resource with no plate still falls back to the tinted disc + highlight.
-    `BubbleWorldView`'s class name and `economy.bubbles` still say "bubble" —
-    rename to windfall if the object sticks.
-
-- **The strip carries only the posts with a body on them (2026-08-02).** The band
-  is on screen at every tab, so it was spending the page's height on plates nobody
-  was working — fifteen by the fourth zone, and the two the warden and the kith
-  actually stood at lost among them. `WorldView` still builds a view per node, but
-  lays out only `_onStrip`, the subset a body stands at, so posting or resting
-  moves a plate in or out with no rebuild. The test is `Stationing.HasBodyAt`
-  ("who is standing here") and deliberately **not** `Bubbles.IsWorked`: a
-  wandering body pays a share into every node at once, so the yield question
-  answers true everywhere the moment anyone roams. Interpretations shipped
-  (tune/confirm):
-  - **A camp with nobody anywhere keeps the whole board.** Hiding every plate
-    would take the assignment surface away at exactly the moment the first
-    posting has to happen, and an empty band under the page head reads as a
-    rendering fault. It collapses to the worked posts on that first posting.
-  - **The wander post always draws**, held or not — it closes the strip, and its
-    plate is where "send the warden wandering" is reached.
-  - Fallow nodes are not stranded: each keeps its own card, with its own
-    "Post here", on the Trail page.
-  - A windfall whose post loses its body is **retired**, rather than left rising
-    from a plate that is no longer on the strip.
-- **The warden wears their own mark (2026-08-02).** The assign badge drew
-  `PlaceholderArt.Triangle` for the warden while every familiar beside them showed
-  a portrait. It now draws `ui-warden.png` (`ArtLibrary.ForWarden`) — a PSF
-  silhouette bust, cut off its scan and re-baked to sepia — at a familiar's fit,
-  so the bodies along the strip read as peers. The triangle stays the fallback for
-  a missing file, and `ArtLibraryTests` is the only thing that would notice.
-
-- **The journal HUD (2026-07-21) follows `docs/wildgrove-journal.html`, still built in
-  code.** `GameHud` now lays out the mock's structure — paper palette, title
-  head, currency ledger, margin note, pinned Rite/Fold tracker, and four bottom tabs
-  (Trail · Camp · Warden · Record) — as runtime uGUI, with the reskin pass on top:
-  the four journal typefaces, generated ruled ink borders, paper-grain + stitched-spine
-  overlays, and the tend-flash / trail-carrier motion touches. Still no hand-drawn
-  line art (node plates and the compendium have no naturalist illustrations).
-  Interpretations shipped with it (tune/confirm):
-  - The **world strip stays above the page on every tab**; the mock has no strip
-    (its plates ARE the world). It goes when the real region scene lands.
-  - The **margin note** is a flavour line set by actions (tend/replant/trade/offer/
-    build), hardcoded strings in `GameHud` — not a data-driven dialogue channel.
-  - The **ledger** carried every held resource and grew a wrap per zone; after the
-    device-scale pass that left the open page ~21% of the screen. Resolved
-    (2026-07-28): the ledger is the three meta currencies only (and taps through to
-    the Record page, which now shows "N held" beside each compendium entry), the
-    header's eyebrow is gone (it restated the lit tab; its camp count moved to the
-    Standing card), the trail-home line moved to the Trail page and the camp actions
-    to the Camp page. **Chrome budget rule going forward: a bar is only pinned if it
-    is read on every tab** — the page is the row that pays for it. `UpdateWorldGap`
-    now makes the strip the shock absorber (it takes what's left after the measured
-    chrome and a 32% page floor, clamped to 14–26% of the screen), so the next thing
-    that grows shrinks the strip's whitespace instead of the page.
-  - The Rite verse card now renders **all four slot types** (the old HUD skipped
-    specimen/sketch/deed); spotlight (✳) markers are not shown yet.
-  - Migration runs tracker **Fold button → confirm sheet → full-dark vignette**
-    (lines from `dialogue.migrationVignette`); the vignette shows the Verdure gain
-    only — per-familiar Kinship gains aren't itemised.
-  - The **waystone arrival modal is restored** (it had been dropped in the v0.11
-    HUD rewrite); it queues behind arrival/bond/welcome sheets.
-  - Kith **post buttons are a 4-column grid sized to the page** of
-    node/trail/watch/wander; fine at MVP station counts, revisit when zones
-    multiply. The kith card (roster + posts) lives on the **Trail page**
-    (Mo's call 2026-07-21: assignment belongs with the land) — the design's
-    "roster & slots on Warden" reading is folded into it; if Warden ever
-    needs a roster summary, split the card.
-  - **Craft / Raise / planter / gear / upgrade material lines show camp
-    stock** ("4 berries (have 35.8K)", shortfall inked ochre) and their
-    buttons disable without a full bundle in stock (crafts also gate on a
-    single batch of inputs; Stop is always allowed).
-  - Store capture pages renamed to the four tabs (`StoreCaptureRunner`); legacy
-    page names still map inside `GameHud.OpenTab`.
-  (`Assets/Scripts/Game/GameHud.cs`)
-- **Real typefaces via legacy `Text` (2026-07-21), not TMP.** The mock's four roles
-  ship as OFL TTFs in `Assets/Resources/Fonts/` (licenses in `docs/font-licenses/`):
-  IM Fell English (titles/verses/lore), IM Fell English SC (chrome/buttons — real
-  small caps), Caveat (margin notes/posted lines), Lora (body). Rendering is Unity's
-  dynamic-font path, so bold/italic are synthesized and exotic glyphs fall back to
-  OS fonts (the HUD avoids ✎/★/✓/→ for that reason). A TMP swap (SDF crispness,
-  proper style faces) is still open if the raster look isn't good enough on device.
-  Caveat + Lora are variable fonts — Unity renders their default instance. (`GameHud`)
-- **Node sprites are runtime-generated placeholder discs in a screen strip.**
-  `PlaceholderArt` makes one tinted disc per resource and `WorldView` lays them out
-  in the gap the HUD leaves open; the hand-drawn naturalist plates and a real region
-  scene replace them (the camera/world seam and screen-point hit test stay).
-  (`Assets/Scripts/Game/World/`)
-- ~~**Portrait-only: the mock's wide (≥880px) two-column layout isn't built.**~~
-  ✅ RESOLVED 2026-07-28 — the book opens to a **spread** on a wide canvas: the
-  open page left, the **Trail pinned right**, and the Trail's tab hidden
-  (an open tab you cannot close reads as broken). Asking for the Trail while
-  wide — including the tracker's deep links — lands on the Camp, as the mock
-  does. `JournalLayout.IsWide` is the breakpoint, and it asks an *aspect*
-  question rather than the mock's CSS pixel one: under ScaleWithScreenSize a
-  4:3 tablet in portrait is physically broad but still a column, while a
-  landscape phone is barely wider in canvas units and clearly wants the
-  spread. Rule = width ≥ 1200 canvas units **and** w/h ≥ 1.2, pinned by
-  `JournalLayoutTests` against the shapes real devices produce.
-  Implementation note: every page builder writes through `GameHud.Body` (and
-  `JournalWidgets.Content`), so the spread just repoints both at one column
-  at a time — the pages have no idea they are a column. Interpretations
-  (tune/confirm): the two columns **share one vertical scroll** like the mock,
-  rather than scrolling independently; the right column carries a "THE TRAIL"
-  running head since it has no lit tab to name it; the world strip keeps its
-  existing 14–26% clamp in both layouts, so a short landscape screen squeezes
-  the strip rather than the page.
-  ~~Safe-area insets are also not applied.~~ Stale when written — the
-  device-scale pass had already landed them: `FitLayoutToScreen` offsets the
-  root by `Screen.safeArea` and re-applies on every safe-area or canvas
-  change (now including width, which the spread needs).
-  ~~Still open here: `HeightClampedElement`/`TrackedScrollRect` are no longer
-  used by the HUD (kept compiling — delete or reuse).~~ ✅ RESOLVED 2026-07-30:
-  `HeightClampedElement` came back into use (the sheet scroll clamp,
-  `JournalSheets.BeginSheet`); `TrackedScrollRect` was still referenced by
-  nothing and is deleted.
-  ~~**full keyboard / controller navigation is the other half of the Phase 2
-  gate** — the input abstraction exists but menu focus traversal does not.~~
-  ✅ RESOLVED 2026-07-29 — see the keyboard/controller item below.
-  (`GameHud`, `Assets/Scripts/Game/Journal/JournalLayout.cs`)
-
-- **Folding grounds on the Trail page (2026-08-01).** Eight zones of gathering
-  plates had made the Trail a very long scroll to walk past to reach the
-  newest ground. Each zone now folds shut behind its name and only one stands
-  open. `Assets/Scripts/Game/Journal/JournalZones.cs` (public, tested — 9
-  tests, same reason `JournalNav` is public: the tests are another assembly).
-  - **The rule, and why it isn't just a set of open ids:** a zone the player
-    has never pressed is open *only while it is the newest*. So the page stays
-    short **without maintenance** — when a trail map opens the next ground, the
-    one before it folds shut on its own, because it was only ever open by
-    being new. A ground opened by hand stays open; a newest ground closed by
-    hand stays closed. That unlock case is the one nobody would press, so it's
-    the one the tests lead on.
-  - **A folded ground still names what grows there** (its nodes' resources, in
-    page order), so the page reads as an index of the trail rather than a row
-    of shut drawers — the warden can see where the fibres are without opening
-    anything. Folding is presentation only: the land keeps working, the strip
-    keeps showing it, and the sim never hears about it.
-  - **One ground never folds.** Run 1 draws no headings at all (there is
-    nothing to distinguish), so a fold there could shut the page with nothing
-    left to open it with.
-  - **The heading is the journal's own button plate**, not new furniture — so
-    focus reaches it, the pad presses it, and it answers a touch like every
-    other plate. Its label is set smaller than a button's usual voice: it
-    heads a section, it doesn't ask for anything.
-  - **Folding scrolls back to the heading** (`GameHud.FoldZone` + the existing
-    `_pendingScroll` landmark seam, alongside "verse"). Without it, opening a
-    ground near the bottom flings the reader elsewhere: a rebuild keeps the
-    scroll's *normalised* position, which is a different place once the page
-    has changed height, and the ground just opened would be off-screen.
-  - Fold state lives on `GameHud` (survives the rebuild a press causes) and is
-    **deliberately not saved** — how the page was left folded is a reading
-    position, not progress, so no save bump.
-  - Interpretation to confirm in playtest: the moment the **second** zone
-    unlocks, the meadow's plates disappear behind a heading for the first
-    time. The plate looks pressable and names its resources, but that is the
-    one beat where a player could think their nodes are gone.
-  (`Assets/Scripts/Game/Journal/JournalZones.cs`, `TrailPage.BuildZoneHeading`,
-  `GameHud.FoldZone`/`ZoneOpen`)
-
-- **Keyboard / controller navigation (2026-07-29) — the other half of the
-  Phase 2 gate.** uGUI's EventSystem already moves focus geometrically once
-  something is selected, so the build supplies what it doesn't:
-  `Assets/Scripts/Game/Journal/JournalNav.cs` (public, tested — tab stepping,
-  rebuild-safe focus restore, shortest-distance scroll reveal) plus a focus
-  section on `GameHud`. Bindings: arrows / WASD / d-pad / left stick move,
-  Submit (Enter, Space, pad South) presses, **Esc or pad East** backs out
-  (Back gained the pad button — a controller could open a sheet and not close
-  it), the **shoulders or Q/E** turn the page, and **pad West or C** catches a
-  windfall. The two touch-only interactions both have page-reachable paths
-  already: posting is the Trail page's own "Post here" buttons, and the catch
-  now has a focus-independent binding.
-  Interpretations shipped (tune/confirm):
-  - **Touch-first**: nothing is focused until the player asks to move, and a
-    pointer press puts the mark away again — a focus ring left lit after a tap
-    reads as a cursor a phone doesn't have. The pointer handler deliberately
-    does NOT clear uGUI's own selection (that would cancel the rename field
-    the same frame a tap opened it), so waking focus resumes a live selection
-    rather than jumping to the top of the page.
-  - The mark is a **doubled ochre rule just outside the control**, not a fifth
-    parchment tint — every plate is already one of four paper shades, so a
-    tint would read as another kind of button. It lives inside the control it
-    marks, so it rides the layout, scrolls with the page, and is clipped by
-    the viewport for free.
-  - **The modal trap is one flag**: a sheet switches the page's `CanvasGroup`
-    off, which makes its controls report non-interactable, and uGUI's
-    `FindSelectable` skips exactly those. Nothing dims because every button
-    plate disables to white (`NeverDim` extends that to the tabs, ledger and
-    tracker, which were plain Buttons on the default grey).
-  - Focus-in-context is **self-healing** rather than hooked: whenever the
-    selection is missing or out of context, focus re-seeks. That is why
-    opening a sheet needed no change in `JournalSheets` at all.
-  - **Space / pad South is Submit while a control is marked**, and the
-    windfall catch only when nothing is — which settles the double-fire this
-    file has flagged since Phase 1 (pad South being both Submit and the
-    catch). The pad-West/C binding is what keeps the catch reachable mid-page.
-  - **Rebuild survival is by index**, not identity: the page's controls are
-    counted, the position remembered, and focus clamped back into the rebuilt
-    page (`JournalNav.RestoreIndex`). Flipping between portrait and a spread
-    can land focus somewhere unrelated — a shape change is a deliberate act,
-    so that's accepted.
-  - Scroll stitches and the sheets' half-second tap guard are taken out of
-    navigation (`NoNavigation`) — draggable furniture and a click-eater are
-    not places to stand.
-  - ~~**Known edge:** the Input System's default UI actions bind Navigate to
-    WASD as well as the arrows, so typing a familiar's name in the rename
-    field can also move focus. Fixing it properly means shipping a custom
-    actions asset; revisit if it bites in the pad/K&M gate pass.~~
-    ✅ RESOLVED 2026-08-01 — no actions asset needed: a lit field owns the
-    keyboard (`GameHud.TextEntryActive`), and one flag hands navigation over
-    (`sendNavigationEvents`, the same shape as the modal trap). The field
-    reads keys through the selected-object update, which that flag doesn't
-    gate, so typing, Enter and Escape all still land. It turned out to be
-    wider than WASD: the **arrows** navigated out of the field too, and Q / E
-    / C were live inside a name. Back while typing only *leaves* the field
-    now — a pad player has no Escape key, and with Cancel suppressed along
-    with the rest of navigation, East was their only way out of a field they
-    opened with South. See the input-declarations item below.
-  - The margin note's teaching tail still says "space / (A) catches one",
-    which is true in the teaching moment (nothing is focused yet) — the full
-    binding set is documented here and in §12 rather than in a margin note,
-    which is flavour and not a manual.
-  Still open for the Phase 2 gate: playing it through on real 4:3 / 16:10 /
-  21:9 / foldable hardware, with a pad in hand.
-  (`GameHud`, `Assets/Scripts/Game/Journal/JournalNav.cs`,
-  `Assets/Scripts/Game/Input/`)
-
-- **Android input declarations (2026-08-01) — the manifest half of the pad
-  gate.** None of the controller work reaches a player unless the manifest
-  says so: Play reads the manifest, not the build. Unity composes the app
-  manifest from Player Settings and the plugins' library manifests and has no
-  setting for either declaration, so a build hook patches its output
-  (`Assets/Editor/AndroidManifestSetup.cs`) and the pure transform sits apart
-  from the hook so it can be pinned by tests
-  (`Assets/Scripts/BuildTools/AndroidInputManifest.cs`, 12 tests).
-  - `android.hardware.gamepad` `required="false"` — what Play reads to tell
-    players the game takes a controller, and what lets it be served to a TV
-    with a pad attached. Never required: plenty of devices that can pair a
-    controller don't report the feature.
-  - `android.hardware.touchscreen` `required="false"` — **undeclared, Play
-    assumes a touchscreen is required** and withholds the game from every
-    device without one. This is the line that makes the pad and keyboard work
-    worth having.
-  - Both carry `tools:replace="android:required"`. The app manifest is only
-    the highest-priority *input* to the merger — a library manifest (Firebase,
-    AdMob, Play Games) declaring one of these as required would otherwise win,
-    and a required touchscreen is invisible until Play quietly stops offering
-    the game to a Chromebook.
-  - **Patched, not replaced.** A hand-kept `Assets/Plugins/Android/AndroidManifest.xml`
-    would own the launcher manifest and silently stop tracking the activity,
-    theme, orientation and splash that Player Settings decides. The hook runs
-    at `callbackOrder` 100 so the plugin resolvers have written theirs first,
-    and a missing manifest **fails the build** rather than warning —
-    compliance that quietly didn't get written looks exactly like compliance
-    nobody asked for (same stance as `GameDataImporter` on invalid data).
-  - `android.hardware.type.pc` `required="false"` — added in the PC pass below.
-    Turns off the mouse-to-touch compatibility layer on Play Games on PC so a
-    click arrives as a click.
-  - **Plus Google's 17 "not on a PC" features** (wifi, bluetooth, camera,
-    location, telephony, nfc, the five sensors, usb ×2, midi, audio.pro,
-    consumerir), all not-required. Wildgrove asks for none of them, which is
-    exactly why they can't be skipped: **a permission implies a required
-    feature** — `ACCESS_WIFI_STATE` implies `android.hardware.wifi`,
-    `READ_PHONE_STATE` implies telephony. The permissions in the shipped
-    manifest come from AdMob, Firebase, Play Games and androidx.work, whose
-    library manifests move under us between versions. Declaring the set means
-    an ad SDK bumping a permission can never quietly cost the PC audience.
-  - **Unity *does* have a gamepad Player Setting** (`androidGamepadSupportLevel`,
-    currently `SupportsDPad`) — but the editor only applies it under **Android
-    TV Compatibility**, which is off and which Wildgrove doesn't claim. For a
-    non-TV build it writes nothing, so the hook is the mechanism left.
-  - Still open: **verify in the built AAB**, not just here — the tests pin the
-    transform, not the Gradle merge. `aapt2 dump badging` on the next release
-    AAB should list every feature and none as required.
-  (`Assets/Editor/AndroidManifestSetup.cs`,
-  `Assets/Scripts/BuildTools/AndroidInputManifest.cs`)
-
-- **Play Games on PC pass (2026-08-01).** Done alongside the manifest work
-  rather than waiting for Phase 6, because two of the findings were live bugs
-  on ordinary large-screen Android, not PC-only concerns.
-  - **`resizeableActivity` was OFF.** A fresh 6000.5.5f1 project has it **on**,
-    so this was flipped somewhere — most likely the 6000.5.3f1 upgrade churn.
-    Off means the OS runs the game in **compatibility mode**: letterboxed on a
-    large screen, and a foldable may prompt the player to **restart the app**
-    on unfold. It also meant **the wide journal spread could never appear** —
-    `JournalLayout` only opens the spread if the OS hands over a wide window,
-    and a non-resizable activity never gets one. Now `true` in `ProjectSetup`
-    and in the checked-in `ProjectSettings.asset`. This is the single most
-    valuable line in the pass and it is worth re-checking after any editor
-    upgrade.
-  - **Play Games on PC was being treated as a phone.** `Application.isMobilePlatform`
-    is **true** in a PGoPC build (it is an Android build), which meant the
-    keyboard hint was hidden from the only player who has nothing but a
-    keyboard, and **Escape on the home page quit the app outright** — a thing
-    no desktop window does, and indistinguishable from a crash. New
-    `Assets/Scripts/Game/Input/DeviceForm.cs` asks Google's documented
-    question instead (`PackageManager.hasSystemFeature("android.hardware.type.pc")`,
-    cached once, JNI failure falls back to handheld rather than taking the HUD
-    down). Back now exits only on a handheld, the key tail shows on a PC, and
-    the press verb follows the hardware — "tap a plate" becomes "click a
-    plate", "tap to catch" becomes "click to catch".
-  - **`chromeosInputEmulation` is a dead end.** It looked like the paired
-    Player Setting for `type.pc`, but in 6000.5 it is
-    `[Obsolete("ChromeOS is no longer supported.")]` and serialises nothing.
-    The manifest declaration is the only live lever. ChromeOS is no longer a
-    Unity target at all; Play Games on PC is, and is what reports the feature.
-  - **Supported Aspect Ratio — looked at, deliberately left alone.** Wildgrove
-    stores mode `1` / max `2.1`; a fresh project stores mode `1` / max `2.4`,
-    and 21:9 is 2.33. But the mode is an **internal property with no public
-    API**, and setting the public `maxAspectRatio` flips the mode `1 -> 2` as a
-    side effect — off what is almost certainly Native and onto a Custom cap,
-    the opposite of what's wanted. It is moot regardless: `android:maxAspectRatio`
-    only applies to a **non-resizable** activity, and the activity is now
-    resizable. Left as found. If a 21:9 device ever shows bars, the check is
-    ten seconds in Player Settings → Resolution and Presentation → Supported
-    Aspect Ratio.
-  - **x86-64 stays off, deliberately.** Play Games on PC runs ARM64 through
-    translation, which is ample for an idle game with a 2D URP surface; native
-    x86-64 is a performance *recommendation*, and a third ABI would cost the
-    same IL2CPP build-time doubling that got ARMv7 dropped. Revisit only if PC
-    vitals show it.
-  - Owed, and **manual — Mo's call**: play it through in the Google Play Games
-    on PC developer emulator (mouse-only, keyboard-only, pad, and a window
-    resize / maximise). I have **not** installed the emulator: it wants
-    virtualisation on a work machine, which is exactly the kind of thing to
-    hand over rather than do.
-  (`Assets/Editor/ProjectSetup.cs`, `Assets/Scripts/Game/Input/DeviceForm.cs`,
-  `GameHud.HintText`/`HandleBack`, `BubbleWorldView`)
-- **Runtime bootstrap instead of a bootstrap scene.** `Bootstrap` spawns GameLoop +
-  GameHud via `[RuntimeInitializeOnLoadMethod]` so Play works with zero scene setup.
-  Replace with a real bootstrap scene when there's content to lay out.
-  (`Assets/Scripts/Game/Bootstrap.cs`)
-
-## Phase 3+ — Systems build-out
-
-- **Excavation drops fragments and amber — no excavation XP yet.** Dig sites,
-  diggers, fragment drops (rate + pity), fossil assembly, permanent fossil
-  effects, and the amber channel (design §10 — a separate roll, so fully-dug
-  ground keeps surfacing it; a CURRENCY on GameState, not a resources.json
-  entry) are all live. The amber sink is the time-skip (full live-rate hours,
-  no cap — that's what's paid for); amber numbers (digFindsPerHour 0.06,
-  perFind 2, skip 4h/15) are first guesses against the ~40-free-per-week
-  lean. The earn paths have since landed — amber packs (`amber_pack`), the
-  rewarded-ad drip (`amber_drip`) and amber-find telemetry (`amber_found`) are
-  all live; the weekly cache is now granted only by a Play Games delivery
-  (`play_reward_received`) rather than a free tap — see the Play Games Rewards
-  item below.
-  Still waiting: cosmetics/extra craft queues as further sinks — cosmetics have
-  no substrate at all, which is what retired the cosmetic reward cloak — excavation
-  skill XP ("XP from every action" — fragments are too rare for per-unit XP;
-  decide a grant when tool-tier / level gates need the level), and the fossil
-  card lore (Compendium).
-  Interpretations to confirm: digger gifts cost gathererBaseGoods of EACH of
-  the zone's resources (a dig site has no resource of its own to leave a pile
-  of); diggers share the zone flock cap; `excavation.baseFragmentsPerHour`
-  (0.25) is a first guess not in the doc.
-  (`Wildgrove.Sim/Excavation.cs`, `Fossils.cs`)
-  **v0.11 (§6):** the deep chase is now **uncover · record · rebury** — nothing dug
-  up is kept. `fragments` become **field sketches** of **portions** (3–5/fossil, pity
-  per 4 h), the fossil is **reburied** with a wordless sign, and the completed plate is
-  a book of rubbings keeping the same permanent multiplier + lore. Rename
-  `fragment`→`sketch`/`portion` here and in `fossils.json`; "diggers share the zone
-  flock cap" is superseded by stationing. Amber stays takeable (unchanged).
-- **Play Games Rewards — the delivery path is BUILT (2026-07-29) and all three
-  items land (the third since 2026-07-30).** Three items is the designed set
-  (§11 line 514, §12 row: two single-use + one repeatable). Requirements
-  re-checked against Google's live guidelines the same day, and they hold as the
-  doc has them: **≥2 single-use by Sep 30 2026** (awarded on Quest completion),
-  **≥1 repeatable by Mar 1 2027** (awarded on Social Challenge completion, max 1
-  per player per week). Both belong to base **Level Up**, not the newer Level Up+
-  tier — Level Up+ is the reduced-service-fee tier for games meeting *all* the
-  revamped guidelines, so these are a gate on it rather than an extra of it. The
-  one Level Up+-only thing nearby is **Play Points product promotions**, which
-  ride the very same one-time-product plumbing built here, so that door is open
-  if the tier is ever taken.
-  - **How a reward actually arrives** (worth knowing before touching any of it):
-    a reward is an ordinary **one-time product** in the console with a Play Games
-    Reward offer attached. Google awards it, and it is delivered through the
-    **out-of-app purchase flow** — no promo codes, no separate API. The game
-    queries purchases on launch/resume, finds an unacknowledged order, and owes
-    the player, in this order: **grant → tell them → acknowledge**. Acknowledging
-    first loses the reward outright if anything goes wrong between; leaving it
-    unacknowledged is the safe failure — **Play refunds the offer after three
-    days** and it can be awarded again. Everything below is shaped by that.
-  - **Shared plumbing — DONE.** `RewardProductIds` (three ids named, two
-    catalogued) + `StoreCatalogue` (the union the store fetches, and the single
-    consumable/entitlement answer for both bought and awarded products);
-    `IStore.RewardRedeemed` is a **`Func<string,bool>`, not an event**, precisely
-    so the store can wait for the grant's answer before confirming the order —
-    `UnityIapStore.HandlePending` grants first and only calls `ConfirmPurchase`
-    when every reward in the order landed. `RewardGrants.Apply` maps an id to its
-    grant and the words owed for it; `GameLoop.OnRewardRedeemed` queues the
-    confirmation and saves before answering true. Also fixed on the way past:
-    `RestorePurchases`'s callback used to fire the moment `FetchPurchases` was
-    *called*, so it could never report what arrived — it now waits for the fetch.
-  - **The in-game confirmation — DONE, and it is a compliance artifact, not
-    flavour.** Google's rules for anything granted outside the app: name the item
-    plainly, say the source out loud, no way to decline, and it stays up until
-    the player acknowledges it. `JournalSheets.OpenRewardSheet` does all four —
-    plain statement first and the grove's voice second, one Continue button, inert
-    scrim, and Esc/pad-East takes the same door as Continue. It pumps after
-    welcome-back and **before** the arrivals, because the Halter's pony is herself
-    an arrival and being asked to name her before being told where she came from
-    read backwards.
-  - **Weekly Amber Cache (20 amber, max 1/wk) — RE-GATED.** It was a free weekly
-    tap; it is now only ever granted by a Play delivery. `Amber.ClaimWeeklyCache`
-    is gone, replaced by `Amber.ReceiveWeeklyCache` — **deliberately
-    unconditional**, because Play owns the cadence now and refusing an early
-    delivery would drop a reward the player can never be offered again. The old
-    cooldown survives as `Amber.WeeklyCacheDue` + the countdown, for the page's
-    reading only. The card's row keeps the sign-out behaviour (the button still
-    *is* the sign-in) and becomes **"Look"** when signed in — a manual re-read for
-    someone who redeemed a moment ago and would rather not relaunch. That also
-    closes the ~40-free-per-week leak the free tap was opening.
-  - **The Drover's Halter — GRANTED now.** `PlayRewards.ApplyDroversHalter` sets
-    `droversHalterOwned` and stands the pony in her lane, from both the redemption
-    moment and — the reinstall-proof half — `GameLoop.SyncRewardEntitlements`
-    reading the store's owned set, folded in beside `SyncKithPurchases` at startup
-    and after a cloud-save adoption. Additive only: a store that can't see the
-    entitlement (offline, mid-connect) never takes the pony back.
-    Balance unchanged and still the §14 dial: her `trailCarryFactor` 0.5 makes the
-    free always-manned lane a standing +50% on a manned trail rather than a
-    doubling — verify the bottleneck triangle with two lanes (see the
-    haul-bottleneck item in Phase 1).
-  - **The Wayfarer's Plate — BUILT 2026-07-30, and it closes the Sep 30 bar.**
-    The second single-use reward: an insect plate that arrives already recorded,
-    drawn by a hand that walked the trail first. `rewarded: true` in
-    `insects.json` marks the one plate no observation site can offer — the
-    validator refuses a habitat or a draw weight on such a plate, and
-    `Observation.EligibleInsectsInto` skips them outright rather than relying on
-    "no habitats" as a convention. The grant writes it into the Folio
-    (`Insects.Record`) instead of deriving it from the entitlement, which is why
-    it needs **no Migration handling**: recorded plates already cross the fold.
-    Its effect (`pristineChanceBonus` 0.005) is deliberately the mildest in the
-    book — a test pins that it sits below anything earnable in the same band,
-    because a free permanent that crosses every fold must not out-earn the pages
-    someone walked for. Save **v36** carries `wayfarersPlateOwned`, which only
-    bridges sessions starting before billing resolves.
-    (`design/data/insects.json`, `Sim/Insects.cs`, `Sim/PlayRewards.cs`,
-    `Services/ServiceIds.cs`, `RewardGrants.cs`)
-  - **The cosmetic cloak was RETIRED unbuilt (2026-07-30).** It wanted a cosmetic
-    substrate the game has never had — no skin/wardrobe/appearance system, no
-    warden or familiar sprite, presentation is journal text plus plates — and
-    building one to justify one reward is backwards. Its id is gone from
-    `RewardProductIds`; a test pins that `reward_wayfarers_cloak` is not a
-    catalogued reward, so an award of it could never be acknowledged. **Do not
-    create that console product.** If a cosmetic substrate is ever built for the
-    amber sink, a cosmetic reward can be reconsidered on its own merits.
-    ~~**Still owed for the plate:** its own plate art, and the console product
-    `reward_wayfarers_plate`.~~ ✅ Both landed 2026-07-30 — the moth from Helena
-    Scott's 1864 plate, and the console product is created.
-  - **Play Console — all three products are DONE (2026-07-30).** One-time products
-    `reward_drovers_halter`, `reward_weekly_amber_cache` and
-    `reward_wayfarers_plate` are created and activated. All that remains is to
-    **attach a Play Games Reward offer to each — the association UI and reward
-    testing do not open until Sep 1 2026**, so that is a September job, and the
-    window against the Sep 30 bar is one month wide. Any reward UI must be drawn
-    **in-journal**; Play Games' own overlay is permanently dead on
-    `targetSdk 36` (see the Play Games item in Phase 1).
-  - Still untested on a device, like everything billing: the real out-of-app
-    delivery. `StubStore.DeliverReward` exercises the whole path in the editor
-    (grant → acknowledge, and the refusal branch), and a live Quest award can't
-    be tried before Sep 1. What the active products DO make checkable now: an
-    internal-track build's catalogue fetch should resolve both reward ids with a
-    price. An id coming back unavailable means the console entry and
-    `RewardProductIds` disagree — the one failure that would silently swallow
-    every future award.
-  (`Wildgrove.Sim/Amber.cs`, `PlayRewards.cs`, `Stationing.cs`, `GameLoop.cs`,
-  `Assets/Scripts/Game/Journal/CampPage.cs`, `JournalSheets.cs`,
-  `Assets/Scripts/Game/Services/ServiceIds.cs`, `RewardGrants.cs`,
-  `UnityIapStore.cs`, `StubStore.cs`)
-- **Game Stats — decided and wired 2026-07-29, but it cannot submit yet, and that
-  is Google's side not ours.** The guideline wants 5 repetitive stats (≥1 usable
-  for competitive engagement) + 1 progression stat. Chosen, all on the free path
-  because the guideline forbids stats reachable only by paying or watching an ad:
-  **resources gathered** (SUM, the competitive one — the same quantity the Renown
-  board ranks), **goods crafted** (SUM), **windfalls caught**, **specimens fixed**,
-  **verses sung**, **migrations** (COUNT), and **trails walked** as the
-  progression level. Trails walked is `seenWaystoneZoneIds.Count` deliberately:
-  waystones cross a fold (`Migration.Migrate` carries them) so the level only ever
-  climbs, where zones-open would drop to 1 on every Migration and read as a bug on
-  the profile.
-  - **The two continuous stats go as deltas.** Play aggregates SUM over events
-    received; the game holds lifetime totals. So `GameStats` keeps a baseline and
-    reports the growth — seeded at launch (`Rebase`) so a loaded run's lifetime
-    total isn't posted as one session's work, and re-seeded on cloud-save adoption
-    so the gap between two runs isn't either. A delta is only banked once the event
-    is actually recorded, so a signed-out stretch accumulates instead of vanishing.
-    The baseline is **in-memory, not saved**: a hard kill loses the stretch since
-    the last save. Persisting it would mean a save-version bump for a stat, which
-    isn't worth it — revisit only if the profile numbers read visibly low.
-  - **Cadence is the save cadence** (autosave 30 s / pause / quit), not per event:
-    hauls and crafts land every tick, so "as soon as it occurs" would be an event
-    per frame. The discrete five fire at their own call sites.
-  - **Blocked on Google, twice over.** Client integration "will be made available
-    using Unity, Java and C++ SDKs" — the shipped plugin (GPGS 2.1.0, July 2025,
-    still the newest release) has no `PlayerGameEvent` and no `RecordEvent`, and
-    the Java coordinate is unpublished so there is nothing to reach over JNI
-    either. The API is GA **July 2026** and the **Play Console CSV upload opens
-    August 2026**. So: `PlayGamesServices.RecordStat` counts what it could not send
-    and says so in logcat; when the plugin lands it becomes three lines
-    (`new PlayerGameEvent.Builder(name)` → `.AddProperty` → `RecordEvent`) and
-    nothing else moves. Server-to-server is live now but needs service-account
-    credentials a client can't hold — not a path for a serverless game.
-  - **Console side is authored and waiting** in `store/play-games/gamestats/`
-    (`PlayerGameEvent.csv` + the two config CSVs + a README). Two knowingly-unfinished
-    parts: the **stat icons aren't drawn** (Google has published no size spec — draw
-    them with `tools/make-store-art.py` once the console says what shape), and the
-    column values (`HIGHER`, the free-text units) are the guide's documented
-    spellings, not ones a console has accepted. Expect one correction round.
-    A test (`EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema`) fails if code
-    and CSV drift, because Play drops undeclared events silently.
-  (`Assets/Scripts/Game/Services/GameStats.cs`, `IGameServices.cs`,
-  `PlayGamesServices.cs`, `StubGameServices.cs`, `GameLoop.cs`,
-  `store/play-games/gamestats/`)
-- **Sidekick — ON in Play Console 2026-07-29, CONFIRMED ON DEVICE 2026-07-30. Nothing to build; one setting that bites if missed.** The
-  overlay is added at *upload* time for App Bundle games: Play Console → create an
-  internal/closed release with **"Sidekick is on by default"**, then Testing →
-  Advanced settings → **Play Games Sidekick** → *"Automatically make Sidekick is on
-  by default for new app bundles you upload"*. The SDK dependency route
-  (`com.google.android.play:sidekick`, minSdk 23) is only for APK publishing, which
-  we don't do — our minSdk is 26 either way. **The trap:** every release here is
-  uploaded by `android-release.yml` via `r0adkll/upload-google-play`, so without
-  that "automatically" setting each CI upload lands Sidekick-less and the guideline
-  quietly fails. Testing needs a device on Android 13+ with 4 GB+ RAM, the build
-  installed from Play (not sideloaded), and **Play Store → Settings → About → tap
-  Play Store version ×7 → General → Developer options → Play Games Sidekick** on.
-  **That developer-options toggle is the whole verification** — it was on in the
-  console and still invisible until the toggle was flipped, so an absent overlay
-  means the device, not the build. Verified against v0.1.104 (built from the tip,
-  so the full 45-achievement ladder was there to surface — before 2026-07-30 the
-  panel would have read nearly empty, which is a misleading way to test it).
-- **Level Up milestone dates the compliance table was missing.** From the March
-  2026 Level Up post: **July 2026** — Sidekick integrated *and* achievements
-  implemented with PGS: **both DONE and both confirmed on device 2026-07-30** (45
-  published achievements, unlocking; Sidekick surfacing them);
-  **November 2026** — cloud save (done: Snapshots, single-device confirmed);
-  Rewards **Sep 30 2026** / **Mar 1 2027** as already tracked above. The only
-  Level Up work left is the Rewards offer association, which cannot start before
-  **Sep 1 2026**, and Game Stats, which waits on Google's own client SDK.
-- **"The Almanac Complete" has drifted from the tree it counts.** The published
-  incremental achievement counts owned one-off Almanac nodes to **14 steps** —
-  set when the tree WAS 14 one-offs, left alone when the exotic lines took it to
-  19 (deliberate at the time: already published to Play Console), and now
-  further out at **22** since the torch/creel/desk moved in (`082e896`). Today
-  it unlocks at 14 nodes while its description promises "buy every node the
-  Almanac holds". Fix is a three-place re-step that must land together:
-  1. **Play Console** — edit the achievement's step count to 22 (Play permits
-     raising steps on a published incremental; players past 14 keep the unlock).
-  2. **`store/play-games/achievements.json`** — `steps: 14 → 22` (the console's
-     source-of-truth doc; anchor `almanacNodeIds.Count` is already right).
-  3. **`Achievements.cs`** — `Count(TheAlmanacComplete, 14, …) → 22`.
-  Worth adding with it: a test pinning the constant to the data's one-off node
-  count (`almanac nodes where !repeatable`) so the NEXT node added fails a test
-  instead of drifting silently — the constant itself has to stay hardcoded
-  because the console must agree with it. Re-step deliberately, not drive-by:
-  every future one-off node moves it again, so batch it with the next planned
-  console visit (the Sep 1 Rewards offer association is the natural one).
-- **Two more published incrementals drifted the same way with the Crags
-  (2026-07-31)** — batch into the same console visit, same three-place recipe:
-  - **"The Whole Wood"** counts `speciesEverBefriended` to **12 steps**; the
-    kea and the pika take the roster to **14** species. Unlocks two early
-    against its "every species" description until re-stepped.
-  - **"All Five Plates"** counts recorded drawable plates to **5 steps**; The
-    Parchment Wings made **6** drawable and The Windborne makes **7**
-    (2026-08-01). (The name itself rots — "All Five" — so this one likely wants
-    a rename in the console too, or the step count left alone and the
-    description re-worded to "the first five".)
-- **"Cloudreach" is now actually winnable (2026-08-01)** — the achievement was
-  configured and published before the zone had a trail map, so
-  `Upgrades.UnlockedZoneIds(...).Contains("cloudreach-peaks")` could never be
-  true. No console change needed; noting it because an unwinnable published
-  achievement looked identical to a broken one, and this one fixed itself by the
-  zone landing. The two waystone incrementals ("four waystones", "every
-  waystone in the grove") were already written to 8 and are unaffected — the
-  final waystones are a separate channel and deliberately count for nothing.
-  **"Every Stone Read" was in the same boat and is also now winnable**: it is an
-  incremental hardcoded to 8 steps (`Achievements.cs`, and 8 in the console) while
-  only 7 zones had trail maps, so its progress could only ever reach 7 of 8 and it
-  could not fire on any device. The peaks make the count exactly right — but that
-  was luck, not design, so it is now **pinned to the data**
-  (`AchievementsTests.EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas`,
-  reading the target through the new `Achievements.StepTarget`): a ninth zone fails
-  that test instead of silently firing "every stone" a zone early. The constant
-  still has to be hardcoded because the console holds the same figure — move both.
-  Worth doing the same for "Reader of Stones" (4) if that number ever means
-  something other than "some of them".
-- **Tool tiers are the named ladder rungs, not a separate purchase flow.** The
-  run's tool tier derives from owned upgrades tagged `toolTier`
-  (flint-sickle → flint … steel-toolset → steel), and zone trail maps gate on
-  `zones.requiredTool` (§3: Zone 2 flint … deeper steel+). Interpretations:
-  §8's standalone toolCost formula (100·12^(t−1) + ingot batch) is expressed
-  through the rungs' own Coin+ingot costs rather than computed; the ×2 yield
-  per tier is the rungs' yieldMult effects; a HIGHER tier satisfies a lower
-  requirement. Tool-tier gating of *recipes* (§4 "levels gate recipes and
-  tool tiers") still waits on skill-level design.
-  (`Upgrades.ToolTierIndex/MeetsToolRequirement`)
-  **v0.11 (§9):** with Coin gone, §8's toolCost formula is settled the way this item
-  already leans — a tool tier is purely **skill gate + ingot batch**, no wallet term.
-  Drop the "Coin+ingot" phrasing when the economy rework lands.
-- **Building perLevel values are first guesses, and two are interpretations.**
-  The 5% speed/capacity tapers aren't in the design doc. Interpretive calls to
-  confirm in balance: the §9 Store's "storage capacity" is implemented as
-  basket capacity (camp storage caps don't exist), and the Clay Furnace is
-  simply the forge line's first bought level (its ~8,000 debut price is the
-  line's baseCostCoin). The old Spare Wing is not a building rung and never gets
-  one — it became **The Drover's Halter** (§11 DECIDED 2026-07-29), a Play Games
-  Reward granting a fell pony rather than an abstract post, and it is built and
-  granted; see the Play Games Rewards item above.
-  (`design/data/buildings.json`)
-  **v0.11:** buildings are now a **goods sink**, not a Coin sink (§10) — `baseCostCoin`
-  becomes a material bundle; and Roosts & Burrows re-scopes to **familiar comfort**
-  (+XP rate per level, roster capacity at late levels), not headcount caps.
-- **`crafting.baseCraftSeconds` (5 s) is a first guess.** Not in the design
-  doc — tune against the §2 pacing targets (first recipe cooked ~20 min).
-  Per-recipe times now exist (`craftSeconds`, absent = the base), and they
-  ladder the three stations for flavour: the fire cooks and steeps at the base,
-  the bench works by hand at 12–35 s (cordage, planks, reed baskets, felted
-  cloak), a smelt burns slowly at 45–240 s (copper through deep). Speed
-  upgrades and station levels still divide all of it. Every one of those eight
-  numbers is a first guess and unplaytested — the bench and the ingot chain both
-  feed tools and buildings, so check the balance pass doesn't leave either the
-  run's bottleneck. `GameDataTests.Parse_RealData_CraftTimeLaddersFireThenBenchThenSmelt`
-  pins the banding, so a retune that crosses it fails loudly rather than
-  silently. (`design/data/economy.json`, `design/data/recipes.json`)
-- **Mastery curve and value-bonus interpretation are first guesses.** base 50 /
-  growth 1.15 / xpPerUnit 0.25 aren't in the design doc, and §4's "+5%
-  yield/value" is implemented as one yieldBonusPerLevel applying to the node's
-  yield and to the raw resource's direct sale — never to goods crafted from it
-  (recipe derivation uses base values, same convention as sellValueBonus).
-  (`Wildgrove.Sim/Mastery.cs`, `design/data/economy.json`)
-- **Skill XP gains and recipe skillLevels are first guesses.** xp.gatherPerUnit
-  (1, credited on the gross gather — basket overflow loses the goods but still
-  pays XP) and xp.craftPerBatch (25) aren't in the design doc, nor are the
-  per-recipe skillLevel picks (skewer/trout 2, reed baskets and bronze 3,
-  iron 5). Tool-tier level gating (§4) waits for the tools system, and the
-  Migration skill reset (§8) for the prestige build.
-  (`Wildgrove.Sim/Skills.cs`, `design/data/recipes.json`)
-  **v0.11 (§5):** "levels are the gate, materials are the cost, everywhere" is now
-  decided — the skill-XP spine carries the pacing that Coin used to. Familiar XP joins
-  it as the second track (earned at the post), which the kith rework introduces.
-- **The Pristine three-way choice is complete; the Compendium's plates and
-  lifetime counters are not.** Quality pools now feed all three forks — the
-  Provisioner windfall, Rite specimen slots, and Museum donations (one
-  Pristine per set entry, permanent set bonuses × the Curator's Cabinet).
-  Still waiting: the Compendium's hand-drawn plates and entry text (the art
-  + narrative pass — the system layer with lifetime counters, discovery, and
-  the field-notes HUD section is live in `Wildgrove.Sim/Compendium.cs`;
-  counters record GROSS gathering like skill XP, crafted batches, and
-  Pristine UNITS — units not windfall events, an interpretation), familiar
-  species plates, and a compendium_entry_discovered
-  telemetry event (skipped for now: offline catch-up would burst-fire it).
-  Museum sets now cover all eight zones plus the Warden's Gallery capstone
-  (one donation from every zone) — set/effect sizes still first guesses. Interpretations to
-  confirm in balance: the whole batch takes the rolled tier;
-  pristineValueMult (10×) isn't in the doc; hand-gather and the no-hauling
-  fallback never roll; staggered-fleet cadence and fullest-basket-first
-  routing; museum set/effect sizes are first guesses.
-  (`Wildgrove.Sim/Quality.cs`, `Museum.cs`)
-  **v0.11 (§6):** the Museum is **retired** — the three-way choice survives, but the
-  keep-fork becomes **fixing a Pristine into the Folio** (the journal's back pages),
-  where **spreads** of 4–8 grant the permanent bonus. `Museum.cs`/`museum.json`/
-  `donatedResources` reframe as the Folio; sets → spreads (one MVP spread grants kith
-  slot 5's moment); `wardens-gallery`/`curators-cabinet` become Folio furniture. The
-  buried past is never kept (see the excavation item) — only the *living* land's gifts
-  can be fixed.
-- **Crafting and gifts spend only common stock.** Fine finds can't feed a
-  recipe or a gift — probably right (they're for selling/offering), but it
-  means a run holding only Fine berries can't gift a gatherer. Revisit with
-  balance. (`Crafting`, `Economy`)
-- **Hauling numbers are first guesses.** `baseCarryCapacity` / `tripSeconds` /
-  `basketCapacity` in `design/data/economy.json` aren't in the design doc — tune with
-  the loop playtest.
-- **The Rite, Migration, and the run-2+ generator are all live.**
-  Verses reveal with their zones, offerings consume goods/specimens/fragments
-  and credit Renown, verses complete at chooseCount, the Rite at
-  all-verses-sung, and Migration folds the camp (confirm sheet with the
-  vignette + Verdure forecast; reset per §7, keeping Verdure/Renown/fossils/
-  rng/migration count/Almanac). Runs 2+ generate from the authored template
-  (same zones, slot shape, and value anchor; goods re-picked from the content
-  available by each zone's order, spotlight rotated by migration, demand
-  × demandGrowth^m, spotlight slots discounted / off-spotlight at a premium);
-  the ≥3-slots-reachable proof runs 2–10 lives in RiteGeneratorTests, not
-  the import-time validator (the validator can't see generated rites — it
-  validates the generator's tuning instead). Still open: showing
-  `dialogue.verses` lines at the verse site (generated verses reuse the
-  zone's site but have no authored lines — the narrative pass decides what
-  a run-3 verse *says*). ✅ Region modifiers landed 2026-07-28 (see the
-  Mid/late-game content section) — modifierWeight is live via
-  `Regions.DemandWeight`. Generator interpretations flagged:
-  demandGrowth was **retuned 2.5 → 1.45 on 2026-07-29** after Mo reached the
-  end of the content in a morning on run 3. The exponent has to track the
-  fold's power ratio, and that ratio is not constant: production scales with
-  (1 + 0.02·Verdure), Verdure is √(lifetime Renown), so the ratio runs ~3×
-  across folds 2–3 and settles at 1.10–1.15× from fold 7. At 2.5 fold 12 asked
-  ~1000× the wall-clock of fold 1 (exponential demand always beats an
-  asymptotically-linear power curve); at 1.45 it asks ~2.5×, with folds 2–8
-  still faster than the first. **A single exponent cannot fix both ends** —
-  the early folds shorten because Verdure explodes, which is the
-  `verdure.exponent`/`renownDivisor` curve's problem, not the Rite's (see the
-  Verdure-curve item). spotlightDiscount 0.6 / offSpotlightPremium 1.5 are
-  still first guesses against §8's "similar share of
-  each run's lifetime output" — tune with real run-2 playtests; deed/
-  specimen/fragment COUNTS stay authored (they price in taps and luck —
-  only their renownGrant scales); Coin-bought skills with no home zone
-  (forgecraft via the Fire Ring) debut at zone order 2 for candidate gating;
-  a verse's raw candidates are its OWN zone's resources only (authored
-  pattern). Older Rite interpretations still flagged:
-  plain-resource offerings credit Renown at the CURRENT sell value (incl.
-  owned bonuses), specimen offerings auto-pick the largest matching pool,
-  fragment offerings take from the richest incomplete fossil, deeds are
-  counted per verse from its own reveal (**changed 2026-07-31** — it was
-  lifetime, which handed a later verse the tending an earlier one was already
-  paid for; `SlotProgressState.deedBaseline`, save v40), and partial
-  fossil FRAGMENTS survive Migration alongside completed fossils ("every
-  fossil"). (`Wildgrove.Sim/Rite.cs`, `RiteGenerator.cs`, `Migration.cs`)
-  **v0.11 (§6, §8):** the `Fragment` offering slot becomes a **field-sketch** slot —
-  the page is torn out and that portion must be **re-uncovered** (the pity timer keeps
-  it fair); it stays the steepest offering, priced highest in Renown. The generator's
-  ≥3-reachable-slots guarantee must become **stationing-aware** (satisfiable under
-  plausible stationing with the current kith size, §2), replacing zone-unlock
-  reachability. Migration now also keeps the **roster + every Kinship level** (§4)
-  alongside the journal/Verdure/fossils.
-- **Bonded familiars are live; species abilities are not.** Two MVP bonds
-  (design §7): Sootwing, a pack raven (carrier) bonds when the Meadow Blooms
-  Museum set completes; Burr, a meadow vole (gatherer) crosses with the
-  Old Friend Almanac node (12 Verdure, deliberately effect-less — the
-  companion IS the effect). Earned state is DERIVED from the source — never
-  stored — so bonds survive Migration and stale saves for free. Role rules:
-  the carrier hauls with the fleet outside carrierCount, its slots, and the
-  gift curve; the gatherer works the warden's last-tended node (the first
-  node until the first tend of a run — an interpretation of "work any zone"),
-  outside the flock count and cap. Interpretations to confirm: the follow-
-  the-warden post rule, bond sources chosen (first Museum set + a dedicated
-  Almanac node), 12-Verdure pricing against the "1 bond per 2–3 Migrations"
-  lean. Waiting: species abilities (v1.1), more bonds, a bonding
-  moment/celebration in the HUD (currently just rows changing text), world
-  sprites for companions. (`Wildgrove.Sim/Bonds.cs`, `design/data/bonds.json`)
-  **v0.11 (§4):** bonds are reframed under the **two-track familiar model**. Every
-  roster familiar now carries a permanent **Kinship** track (run XP → Kinship XP at
-  Migration, √ conversion; perks = higher starting level + XP rate at MVP, signature
-  traits at 1.1); **bonding** (crossing the fold, present from minute one) becomes the
-  separate rarer honour this item already describes. The `role: carrier|gatherer`
-  split goes away — carrying is a post, so a bonded familiar is stationed like any
-  other. Final bond counts/rarity still Mo's to settle (§14).
-- ~~**Two kit effects are inert: `offlineNightFullRate` (Pitch Torch) and
-  `noSpoilage` (Clay-Lined Creel).**~~ ✅ RESOLVED 2026-07-30 — Mo's call: don't
-  wait for the mechanics; the dead items **move into the Almanac as
-  Verdure nodes** with effects the sim already consumes. The three dead
-  effect types (`offlineNightFullRate`, `noSpoilage`, and
-  `unlockVerdureForecast` on the Almanac Desk — the forecast was never gated,
-  so that rung was a no-op too) are **removed from the vocabulary** (enum,
-  validator, journal copy); Pitch Torch and Clay-Lined Creel leave the kit
-  (their plates stay on disk as spares, like `res-flint`) and the Almanac
-  Desk leaves the ladder (33 rungs now). The kept things, in the tree:
-  - **The Pitch Torch** (6 Verdure, off Patient Hands) →
-    `craftSpeedMult firecraft ×1.25` — stacks with Patient Hands' global.
-  - **The Clay-Lined Creel** (5 Verdure, off Old Songs I) →
-    `yieldMult fish ×1.25` (the catch comes home whole — the old
-    no-spoilage flavour, via the region modifiers' resource grain).
-  - **The Almanac Desk** (8 Verdure, off The Long Watch II) →
-    `offlineCapBonusHours +2` — additive, deliberately NOT another
-    raise-to so it stacks on the Long Watch line instead of shadowing it.
-  One-off tree total 159 → 178. Costs/values are first guesses — tune with
-  the run-3-to-run-6 sitting. Consequence accepted with the call: the kit is
-  back to one piece per slot, so the kit bag's swap has nothing to reward
-  until new gear ships. If a real night-rate or spoilage mechanic ever
-  lands, re-add its effect type then.
-  (`design/data/almanac.json`, `gear.json`, `upgrades.json`, `EffectDef.cs`,
-  `GameDataValidator.cs`, `JournalText.cs`, `ArtLibrary.cs`)
-- **Crafted gear is worn immediately — there is no separate equip step.** A
-  piece goes straight into its slot when made; the displaced piece keeps in the
-  kit bag (`GameState.gearCrafted`, save v31) and is re-worn free, so nothing is
-  ever destroyed and each piece is paid for once per run. Migration folds the
-  bag with the kit. Old v30 saves seed the bag from what was worn — anything
-  those saves overwrote is unrecoverable and is made again at cost.
-  (`Wildgrove.Sim/Gear.cs`)
-- **Tending's Pristine window is live but invisible.** `Simulation.Tend` opens
-  the 30 s pristineBonusRemaining window (chance × (1 + pristineChanceBonus))
-  alongside the yield burst, but the HUD gives no cue that it's running —
-  surface it with the real art pass. (`GameHud`)
-- **Verdure / almanac / museum / fossil / boost multipliers.** `Simulation.YieldPerSecond`
-  folds in the Verdure global bonus only; the other multipliers arrive with their
-  systems and multiply in there.
-  **v0.11 (§9):** the yield formula gains **`richnessMult(node)` and `planterMult`**
-  (per-node, from replanting/planters) and "museum" becomes **Folio spreads**
-  (`museumSets` → spread bonuses) — fold both in with their systems.
-
-- **The Almanac's costs and the allocation model are interpretations.**
-  Verdure is never destroyed — a node
-  allocates from the banked total (available = verdurePoints − owned costs)
-  so the +2%/pt passive keeps counting the full total and Migration's
-  recompute-from-lifetime-Renown can't refund spent points. The §8 exotic
-  nodes (starting tool tiers, zone skips, auto-craft) landed 2026-07-30 as
-  `grantUpgrade`/`keepCraftOrders`; all costs are first guesses tuned to ~10
-  Verdure from the
-  first Migration. (`design/data/almanac.json`, `Wildgrove.Sim/Almanac.cs`)
-  **v0.11 (§3, §8):** add **The First Planting** — a node that lets one planter survive
-  the fold — once replanting/planters land. The Almanac deliberately gets **no
-  familiar-power nodes** (§4): its kith-adjacent scope is limited to slot access (kith
-  slot 4) and The First Planting.
-
-- **The narrative display layer is live; most of the words are not.**
-  Waystones reveal once per zone on arrival (modal sheet, marks read on
-  "Walk on", re-readable in the Compendium; the read-set survives Migration
-  — lore stays read); verse lines show under revealed verse headings;
-  assembled fossils show their card line in the dig row. Unauthored (empty)
-  dialogue simply never shows, so authoring can land line by line.
-  Pacing DECIDED (2026-07-17): the starting zone's waystone showing at
-  minute 0 is accepted (its unlock IS first launch) — the §8 table's
-  "~10min first waystone" now reads as zone 2's stone. Still waiting:
-  provisioner trigger lines (first-visit / after-migration), waystones as
-  tappable world objects (the modal stands in), and most of the ~1,200-word
-  budget itself. (`Wildgrove.Sim/Narrative.cs`)
-  **v0.11 (§7):** narrative grows to **six channels** — a new **plate-inscription**
-  channel adds a margin line to a familiar's plate at Kinship milestones (the only
-  channel about individuals), which lands with the Kinship system.
-
-## The Exchange rework (2026-07-31)
-
-**IMPLEMENTED 2026-07-31 — the caravan names the deal (Mo's call).** The
-Exchange stops being a free two-sided picker: the caravan offers **one
-from-good for one to-good**, the pair drawn deterministically from the
-wall-clock five-minute window (`exchange.offerMinutes`, validator-required
-positive), and every **quality tier** of the asked good trades in — Fine at
-×`fineValueMult` (1.5), Pristine at ×`pristineValueMult` (10) — always paid
-out in **plain** camp stock, so excess windfalls become higher counts of an
-ordinary good. `Exchange.OfferAt/TradeableGoods/Held/QualityValueMultiplier`
-+ quality overloads of `Quote`/`TryTrade`; the Camp card shows the deal, its
-rate/spread/countdown, the amount chips, and one trade row per tier held
-(pristine "trade all" warns that the folio and rite want them too). The
-give/take pickers, `OpenGoodPickSheet` and the UI-side `TradeableResources`
-went with it. Interpretations shipped (tune/confirm):
-- **Wall-clock windows, nothing persisted** — the generator's idiom: a
-  reload can't reroll the caravan; the deal also turns while away.
-- The offer draws from **discovered goods only** (gathered raw finds /
-  crafted trade goods with positive trade value), so far-zone names can't
-  leak; fewer than two known goods → no deal ("gather more…").
-- A discovery mid-window can re-shuffle that window's pick (the candidate
-  list feeds the draw) — accepted; it's deterministic given the same state.
-- The sim's `TryTrade` stays pair-agnostic — the offer gate lives in the
-  UI, like every other button gate; nothing else calls it.
-- offerMinutes 5 is a first guess; so is keeping the spread flat across
-  quality tiers (the multiplier already rewards the trade-in).
-
-
-
-A sim-vs-journal diff: every `Sim/*` system and `GameState` field checked
-against every reader in `Assets/Scripts/Game/**`. These are systems that
-work — and pay out — without the player ever being shown them. (The three
-dead effects the same audit found are already resolved; see the Phase 3
-kit-effects item.)
-
-**Fully invisible systems (real mechanics, zero UI):**
-
-- ~~**Mastery is entirely invisible — the biggest hole.**~~ ✅ RESOLVED
-  2026-07-31: each node plate carries a mastery line — level, its standing
-  "+X% yield & worth", and % to next (level 0 shows the way to the first;
-  cap says "the hand knows this ground"). (`TrailPage.MasteryLine`)
-- ~~**The Fine pool is a black hole.**~~ ✅ RESOLVED 2026-07-31: the
-  Compendium rows show "N fine" beside held stock with a foot-note, and the
-  Exchange rework (same day, below) gives both windfall pools their exit —
-  the caravan's deal takes every quality tier of the asked good.
-  (`Sim/Quality.cs`, `RecordPage.BuildCompendiumCard`, `Sim/Exchange.cs`)
-- ~~**Rite deed slots render no progress and no action**~~ ✅ RESOLVED
-  2026-07-31 — mostly stale: `BuildSlotRow` already built a progress row
-  for every slot type (the audit line predated re-checking). What was
-  genuinely missing: nothing said a deed has no button on purpose; the
-  in-progress deed row now carries "counted as the work is done".
-  (`TrailPage.BuildSlotRow`)
-- ~~**No "current bonuses" readout anywhere.**~~ ✅ RESOLVED 2026-07-31:
-  THE FAVOURS card on the Warden page — the modifier union folded into one
-  reckoning (Verdure global, haul, baskets, craft speeds, watching,
-  pristine, tending, comfort, offline cap), hidden while everything is
-  baseline. (`WardenPage.BuildFavoursCard`)
-- ~~**Observation rates and pity clocks are never surfaced.**~~ ✅ RESOLVED
-  2026-07-31: the watch card now exists whenever the site does (it used to
-  need planters) and, while someone wanders, says how often a sketch comes
-  at current rates, the pity guarantee and hours banked toward it — plus
-  the deep amber's own clock at its one site. (`TrailPage.WatchClocks`)
-
-**Partially surfaced — the system shows but its key numbers don't:**
-
-- ~~Familiar rows show a Roman level with no progress readout~~ ✅ RESOLVED
-  2026-07-31: roster rows show "% to next" on the crafts card's idiom, via
-  the previously-orphaned `GameLoop.FamiliarLevelProgress`. (`WardenPage`)
-- ~~Kinship's actual perks are never stated as numbers~~ ✅ RESOLVED
-  2026-08-01: the Post sheet now carries a **Kinship reckoning** under the
-  trait — the xp/s this one earns with its bands named, the level it begins
-  every run at, and its trait's deepened value against its base ("+70%, from
-  +40%"). Each clause appears only once it says something.
-  (`JournalSheets.KinshipReckoning`)
-- ~~The warden's own hands are excluded from the node plates' "X/s"~~
-  ✅ RESOLVED 2026-08-01: new `Simulation.TotalYieldPerSecond` (kith lane +
-  the warden's hands) is what the plate reads, so a posted warden no longer
-  reads "0.0/s" on the ground they're standing on. `YieldPerSecond` stays the
-  basket lane — an accounting seam the sim needs and the page shouldn't show.
-  `Bubbles.IsWorked` now reads the same union, so "worked" and the rate on the
-  plate cannot drift. Also: an unheld node that a **wanderer passes** says so
-  instead of claiming to be fallow. (`Sim/Simulation.cs`, `TrailPage`)
-- ~~Roosts comfort is never shown as a live rate on the roster~~ ✅ RESOLVED
-  2026-08-01 with the Kinship reckoning above: the xp/s line names the roosts'
-  band on the familiar it applies to. `Familiars.XpPerSecond` is now the one
-  formula, and `AddPostXp` credits through it — a page cannot quote a rate the
-  sim doesn't pay. (THE FAVOURS card keeps the camp-wide aggregate.)
-- ~~`Regions.DemandWeight` is invisible~~ ✅ RESOLVED 2026-08-01: the season
-  line on the Trail now states the region's effects and the half that reads as
-  a tax unless said — "the verse asks in the same measure, so a season changes
-  what the work is, not how long it takes". The verse cards head runs 2+ with
-  one line on the re-cast and its rotating spotlight.
-  (`TrailPage.BuildSeasonLine`, `BuildVerseCards`)
-- ~~The Compendium shows lifetime *gathered* but never lifetime *crafted* /
-  *pristine*~~ ✅ RESOLVED 2026-08-01: the resource lines gained held-pristine
-  and "N of them pristine" beside the lifetime figure, and the card grew a
-  **THE CRAFTS** half listing every discovered recipe's lifetime batch count
-  (unmade ones fold into one count, the finds' own idiom). The card's head
-  always counted recipes among its entries and listed none of them, so a third
-  of the tally had no page. (`RecordPage.BuildCompendiumCrafts`)
-  **Still open from this bullet:** cross-run collection
-  (`speciesEverBefriended`, `stationsEverWorked`) has no page — the roster is
-  this-run only and there is no in-game achievements screen; and bonds are the
-  third kind of Compendium entry still unlisted. (`Sim/Compendium.cs`)
-- The Ladder card windows to the next 3 rungs; the shape of the 34-rung tree
-  is never visible (the Almanac, by contrast, lists revealed tiers).
-  (`CampPage`)
-- A live tincture is only visible on the Warden tab — no global buff
+# Open work
+
+What is left, and nothing that is done. Trimmed 2026-08-02 from a 2,200-line
+manifest that had become mostly a build log — the history of *what* shipped and
+*why* lives in git and in `design-doc.md`; this file is only the outstanding
+list. Entries point at code so they're easy to find and delete when resolved.
+
+Three lists: **MVP** (in-repo work before release), **Bugs & fixes** (defects and
+drift), **Outside-code** (console, device, manual). Two appendices: deferred
+post-MVP scope, and the standing constraints that are not work items but would
+cost a build cycle each to re-learn.
+
+---
+
+## 1. MVP
+
+### 1.1 The playtest gate — the one blocking item
+
+**A run-3-to-run-6 sitting.** With Cloudreach Peaks built (2026-08-01) the map is
+walked out and there is no content slice in front of it. Every mid/late number is
+**model-derived, never played**: the fold gate, `demandGrowth` 1.45, the breadth
+ramp, Almanac costs, the zones 4–6 pass, the crags and peaks passes, and the
+zone-demand geometric ramp. Model estimate to judge against: a debut verse holds
+at ~20–60 min of its own node's production; FTP walks the fold-4 Rite in ~9–12
+days, a committed payer ~4–6.
+
+Knobs the sitting is allowed to move, by file:
+
+| Area | Knobs |
+|---|---|
+| `economy.json` — kith | `verseMilestones` [2,5,10]; `generatorGatherPosts` 2; `gifts.pileGoods` 10 |
+| `economy.json` — familiars | `familiarXp` {base 60, growth 1.12, xpPerSecond 1}; `signatureMilestones` [2,4,7]; `signatureDeepening` 0.25; Roosts `comfort` 0.1/level |
+| `economy.json` — loop | `burstYieldMult`/`burstDurationSec`; `warden.gatherPerSecond` 0.5; `bubbles.*`; `baseCarryCapacity`/`tripSeconds`/`basketCapacity`; `selfHaulTripMultiplier` |
+| `economy.json` — craft/skill | `baseCraftSeconds` 5 + the eight per-recipe `craftSeconds`; `xp.gatherPerUnit` 1; `xp.craftPerBatch` 25; mastery base 50 / growth 1.15 / xpPerUnit 0.25 |
+| `economy.json` — amber | `digFindsPerHour` 0.06, perFind 2, skip 4h/15; `timeSkipDailyCapHours` 24 (the deliberate ×2 whale throttle) |
+| `zones.json` | every `minMigration` (1/2/3/4/5 — first guesses); zone 7–8 prices 90/140/70 and 300/220 |
+| `rites.json` | the ×2.5-per-zone ramp (soften to ×2 if slow; ×3 walls the crags); `spotlightDiscount` 0.6 / `offSpotlightPremium` 1.5; `chooseCountPerMigrations`/`chooseCountMax` |
+| `almanac.json` | one-off tree total 178; granted-chain costs 6/10/14/22 + 8; `costGrowth.almanac` 1.25; The Long Song / The Long Reach rates |
+| `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
+| `tinctures.json` | four brews at 1200 s; the cordial's +1 pristine point |
+| `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
+| `regions.json` | four regions, all effect values |
+| `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
+| `exchange.json` | `offerMinutes` 5; flat spread across quality tiers |
+| `folio.json` | spread/effect sizes |
+| `GameLoop`/`GameHud` | autosave 30 s; welcome-back 60 s credited |
+
+Three structural questions the sitting also answers:
+
+- **Deepsteel-as-door.** Zones 7 and 8 both wait on forgecraft 40 (~1,770 batches,
+  offline-resumed by The Fire Remembers) *and* the fold gate. If the two gates
+  stack too harshly the lever is the **crags' `requiredTool` back to steel** — not
+  the forgecraft curve, and not a ninth tool tier.
+- **Folds 2–4 still shorten**, because the fold-to-fold power ratio is ~3× there.
+  That is the Verdure curve (`verdure.exponent` 0.5 / `renownDivisor` 2800), not
+  the Rite. Deliberately not retuned — flattening it would kill the +2%/pt
+  passive, and the endless Almanac lines are the better answer to the same
+  symptom. Revisit only if folds 2–4 feel *hollow* rather than fast.
+- **The peaks' four final waystones are one stone per fold.** Whether four folds
+  is the right span for the ending is a playtest question; the knob is the stone
+  count.
+
+### 1.2 UI surfaces still missing
+
+The sim-vs-journal audit is otherwise closed. What still pays out unseen:
+
+- **No page for cross-run collection.** `speciesEverBefriended` and
+  `stationsEverWorked` have no reader — the roster is this-run only and there is
+  no in-game achievements screen. **Bonds** are the third kind of Compendium
+  entry still unlisted. (`Sim/Compendium.cs`)
+- **The Ladder card windows to the next 3 rungs**; the shape of the tree is never
+  visible, where the Almanac lists revealed tiers. (`CampPage`)
+- **A live tincture is only visible on the Warden tab** — no global buff
   indicator. (`Sim/Tinctures.cs`)
+- **No aggregate camp production view** — per-resource rates exist only on node
+  cards; the only rollup is the trail's gather-vs-carry shortfall line.
+- **Tending's Pristine window is invisible.** `Simulation.Tend` opens the 30 s
+  `pristineBonusRemaining` window and the HUD gives no cue. (`GameHud`)
+- **Verse cards don't render the spotlight (✳) marker.**
+- **The Migration vignette shows the Verdure gain only** — per-familiar Kinship
+  gains aren't itemised, and Kinship is legible everywhere else now.
+- **Kith post buttons are a 4-column grid** sized for MVP station counts. Eight
+  zones exist now; this was flagged to revisit "when zones multiply" and they have.
+- **Inside-cover discoverability.** Settings sit at the bottom of the Record page
+  with no gear in the chrome. Right for the book, unusual for a phone game — if a
+  playtester can't find it, the answer is a corner mark on the Record tab, not a
+  pinned bar.
+- **Zone folding, one beat to watch:** the moment the second zone unlocks, the
+  meadow's plates disappear behind a heading for the first time. It names its
+  resources and looks pressable, but that is the one place a player could think
+  their nodes are gone. (`JournalZones.cs`)
 
-**Structural absences:**
+### 1.3 Audio — the whole pass
 
-- ~~**No settings surface at all**~~ ✅ RESOLVED 2026-08-01 — the inside
-  cover (its own section below) carries the keeping of the book, the
-  analytics choice, the ad-privacy form, restoring purchases, the colophon
-  and starting again. **Sound is the one part deliberately not built**: there
-  is no audio anywhere in the project (no `AudioSource`, no clip, not one
-  file), so a volume slider would be a control wired to nothing. It arrives
-  with the audio pass, in the section it belongs to.
-- **No aggregate camp production view** — per-resource rates exist only on
-  individual node cards; the only rollup is the trail's gather-vs-carry
-  shortfall line.
+There is **no audio anywhere in the project**: no `AudioSource`, no clip, not one
+file. That is why the inside cover has no volume control — it would be a slider
+wired to nothing. The settings row lands with the audio pass.
 
-## The inside cover — the settings surface (2026-08-01)
+### 1.4 Narrative & art
 
-**IMPLEMENTED 2026-08-01 — 845/845 EditMode green on both targets (Win64 +
-Android).** The last structural absence in the audit above, and a release
-blocker rather than a tuning question: every one of these was a real
-behaviour with no way to see it or change it. It is a **sheet off the last
-card of the last page**, not a fifth tab — the chrome budget rule applies
-twice over to a tab, and a settings screen is read about once a month. The
-colophon, which held that card alone, is now a section inside it.
+- **Every §7-register line in the game is a first draft.** Waystones, verse lines,
+  plate lore, the 24 Kinship inscriptions (~190 of the 1,200-word budget), the
+  crags/peaks/final-waystone chains, and the inside cover's wording. Re-voice
+  before release.
+- **Most of the ~1,200-word budget is unwritten.** Still absent: Provisioner
+  trigger lines (first-visit / after-migration), and lines for **generated**
+  verses — runs 2+ reuse the zone's site with no authored words, so the narrative
+  pass has to decide what a run-3 verse *says*.
+- **Waystones are a modal, not a world object.** Tappable waystones in the world
+  are still the intent; the sheet stands in.
+- **The Compendium has no plates or entry text** — the system layer with lifetime
+  counters and discovery is live, the art and words aren't.
+- **`design-doc.md` is behind the build in two places:** §5/§8 still describe
+  tap-to-tend (windfall bubbles replaced it 2026-07-24), and the §6 lore / §7
+  backstory written for fossils were only lightly reframed for the
+  observe·sketch·release rework.
 
-- **THE KEEPING.** When the run was last written, and where the copy goes
-  (`SaveStanding`, pure and pinned). `IGameServices.SaveCloud` now answers
-  `Action<bool>` instead of firing regardless, so `RunPersistence` can tell
-  a mirror that landed from one that didn't — **a run living only on this
-  device while the player believes Play Games holds it was previously
-  indistinguishable from a copy safely made.** Signed out offers the sign-in
-  and outranks the failure line (it is the reason for it). A "write it down
-  now" button re-reads both lines in place.
-- **The silent reconcile answered.** Adopting a further-along run from
-  another device changed everything under the player's hands and said
-  nothing but a telemetry event. It now leaves a margin note ("another
-  device had walked further. the book opens there.") and the cloud line says
-  so for the rest of the session (`GameLoop.TakeCloudNotice`,
-  `RunPersistence.AdoptedFromCloud`).
-- **WHAT THIS BOOK TELLS US.** `PlayerPreferences.ShareAnalytics` behind an
-  `IPreferenceStore` seam, applied at launch and on every change through the
-  new `ITelemetry.SetCollectionEnabled`. `FirebaseTelemetry` refuses opted-out
-  events **before the buffer**, not at the send — a held event would
-  otherwise go up the moment Firebase woke — and clears anything already
-  waiting, so saying no reaches backwards as far as it can.
-- **Ad consent was never gathered at all.** `AdMobAds` initialised the SDK
-  with no UMP call anywhere in the project, so an EEA player was served ads
-  having been asked nothing — this file's own line about "the SDK's own UMP
-  dialog" described something that did not exist. `Initialise` now runs
-  `ConsentInformation.Update` → `LoadAndShowConsentFormIfRequired` before
-  requesting ads, and the inside cover re-opens the form
-  (`IAds.PrivacyOptionsAvailable` / `ShowPrivacyOptions`). ⚠️ **This does
-  nothing until a GDPR message is published in the AdMob console** — the SDK
-  has no form to load otherwise. That is a console visit, not code.
-- **WHAT WAS BOUGHT.** `RestorePurchases` finally has a button. Entitlements
-  were already asked of the store rather than trusted to the save, but the
-  only thing that asked was the launch, so a player whose slot didn't come
-  back had nothing to press.
-- **STARTING AGAIN.** Wipes the run on the device *and* in the cloud, behind
-  a worded confirm. Three things that would each have made it not work:
-  `RunPersistence.StartedOver` refuses adoption for the rest of the session
-  (sign-in resolves seconds after launch, which is exactly when a 0-played
-  fresh run loses to the old cloud save); `Announcements.Forget` un-meets the
-  kith (familiar ids are minted per run, so the new seed would never have
-  been asked for its names); and `SyncStoreEntitlements` re-folds paid slots
-  immediately rather than at the next launch.
-- **The colophon moved, unchanged.** Same preamble, same five CC BY works in
-  full, same public-domain note — one level deeper, and no longer with a
-  sheet of its own (`OpenColophonSheet` is gone; `ArtCreditsTests` still
-  pins every field the licence requires).
+### 1.5 Systems tails
 
-Interpretations shipped (tune/confirm):
-- **Analytics defaults to shared.** A default of false would silently opt
-  out every existing player on the update that ships this — invisible until
-  the analytics went quiet. Pinned by a test.
-- **Crash reports are outside the choice** and the sheet says so: they carry
-  nothing of the run, and a build that cannot report its own faults cannot
-  be mended. If that reads as a dodge, the lever is folding Crashlytics in
-  — but then a crash-looping device becomes undiagnosable by design.
-- **The sheet is a snapshot, like every other sheet** — no live updaters
-  (the page's are cleared with the body they belong to and would outlive a
-  closed sheet), so the "written 12s ago" line is re-read by the buttons
-  that change it rather than ticking.
-- **Discoverability is the open question.** Settings live at the bottom of
-  the Record page with no gear anywhere in the chrome, which is right for
-  the book and unusual for a phone game. If a playtester cannot find it,
-  the answer is a corner mark on the Record tab, not a pinned bar.
-- **`StartAgain` leaves the wipe unbackuped by design** — the confirm says
-  it reaches Play Games, because a second device would otherwise hand the
-  old run straight back and read as the wipe having failed.
-- Wording throughout is §7-register draft, like the rest of the narrative.
+- **`GameLoop` has no test fixture, and the gap has narrowed to ordering.**
+  `RunPersistence`, `Announcements`, `SessionLog`, `Achievements`, `Leaderboards`,
+  `GameStats` and `SaveFile` are all extracted and tested. What is left in the
+  MonoBehaviour is the sequencing between them — `AdoptCloudRun` is eight steps
+  that must happen in one breath, `StartAgain` is four with the same property, and
+  getting either out of order is silent. Lift the sequences into plain classes (the
+  pattern the rest already follows) rather than writing a PlayMode fixture.
+- **Folio spreads are 2–4 entries; design wants 4–8.** A balance pass, deferred
+  since the Folio landed.
+- **No `postMatch` multiplier (design §8).** Familiar XP is a flat per-second at
+  any post; Roosts comfort and Kinship are the only XP-rate levers.
+- **No observation skill XP.** Sketches are too rare for per-unit XP; decide a
+  grant when tool-tier or level gates need the level.
+- **The amber sink is the time-skip alone.** Cosmetics and extra craft queues were
+  the other two, and cosmetics have **no substrate at all** — no skin/wardrobe
+  system, no warden or familiar sprite. That absence is what retired the cosmetic
+  reward cloak.
+- **The kit bag has nothing to reward.** With Pitch Torch and Clay-Lined Creel
+  moved into the Almanac, the kit is back to one piece per slot, so the swap is
+  inert until new gear ships.
+- **`Bootstrap` spawns GameLoop + GameHud via `[RuntimeInitializeOnLoadMethod]`.**
+  Replace with a real bootstrap scene when there is content to lay out.
+- **Some species have no acquisition path but bonds** — the non-node species
+  (dray-stag, tawny-owl, cavern-bat) have no gift pile to be called by. Future
+  arrival content.
+- **Crafting and gifts spend only common stock.** A run holding only Fine berries
+  can't gift. Probably right, but revisit with balance.
 
-Still open here:
-- ~~**No privacy-policy link.**~~ ✅ RESOLVED 2026-08-01. The policy was
-  already written and hosted — `decryptic.app/wildgrove/privacy`, on the
-  Decryptic static site as neutral ground, and the URL Play's listing gives.
-  What it wasn't was **true**: written 17 July, it still said "Wildgrove
-  currently shows no advertising and includes no advertising networks" after
-  AdMob rewarded ads landed, and "if a future update adds optional Google Play
-  Games sign-in" after Play Games shipped and was confirmed on device. So the
-  link was the small half; the page was rewritten to match what ships (rewarded
-  ads only and how to reach the consent form, Play Games as live and optional,
-  entitlements held by Play rather than by the save, Play Games Rewards, and
-  the analytics opt-out this sheet added). `PrivacyPolicyUrl` +
-  "The privacy policy in full" under WHAT THIS BOOK TELLS US.
-  ⚠️ **The page lives in the Decryptic repo** (`src/Decryptic.App/wwwroot/
-  wildgrove/privacy.html`) and deploys with that site. Its header comment
-  carries the keep-in-step warning, since the page has silently rotted behind
-  the build twice. **Shipped: committed there as `a675ded`, pushed, and the
-  live page confirmed rewritten (effective 1 August 2026 — rewarded ads,
-  Play Games, the analytics opt-out) on 2026-08-02.**
-- The inside cover has had **no device pass** — it is the newest sheet and
-  the longest, and the scroll clamp is what keeps it on a phone screen. The
-  privacy row lands in the middle of it, so it wants the same pass.
+### 1.6 The Warden's Sigil — ship it or cut it
 
-## Release blockers — the console half (2026-08-01)
+Design-doc-only (§11 IAP, ~US$7); **not in the built store catalogue**. Effect
+size **decided 2026-08-01: +20% yields and craft speed**, down from ×2 (at ×2 it
+halved the paid floor to ~2–3 days for the whole map and became a second pace
+stacked on the skip budget's deliberate ×2). Still open: **whether it ships at
+all**, and whether ~US$7 is right for a perk this quiet — a cheaper Sigil, or one
+folded into a bundle with Amber and cosmetics, may be the honest answer. If it
+ships it needs a permanent `yieldMult` + craft-speed entitlement path: there is
+**none** today, and nothing in `KithPurchases.Apply` / `StoreProductIds` grants a
+sim modifier.
 
-The code side of the release blockers is closed — the last of it was the silent
-store-connect failure, resolved 2026-08-01 (both silent paths now release
-everyone queued behind the connection via `StoreConnection`, lifted out of
-`UnityIapStore` so the state machine is testable off-device; `StoreResult.Unavailable`
-distinguishes "the store was never reached" from "the purchase was refused" at
-all three buy sites, and `IStore.RestorePurchases` reports whether it asked, so
-the inside cover and the weekly-cache Look button stop answering for a store
-that was never reached. A failed attempt is deliberately **not** remembered:
-the next press reconnects from the top. `StoreConnectionTests`, 8) — plus the
-privacy row above.
+---
 
-What is left cannot be done from the repo at all: two AdMob console visits. Both
-are inert-until-done in a way that gives no error — the game runs, the logs are
-clean, and the thing simply doesn't work — so they are written out step by step
-rather than left as a line saying "console visit".
+## 2. Bugs & fixes
 
-**1. The Amber-drip rewarded unit.** `AdUnitIds.AmberDrip` is an alias of
-`TimeSkip`, so the drip and the skip currently share one unit: one fill pool,
-one frequency cap, one row in reporting. Nothing breaks; the drip's earn rate
-just becomes unmeasurable and each placement quietly caps the other. Dev builds
-serve Google's test unit regardless, which is why this only ever shows up in
-production numbers.
+- **Three published incremental achievements have drifted from the data they
+  count.** Each needs the same three-place fix, landing together: Play Console
+  step count → `store/play-games/achievements.json` → `Achievements.cs`. Batch
+  them into one console visit (the Sep 1 Rewards visit is the natural one).
+  - **"The Almanac Complete"** — 14 steps; the tree is now **22** one-off nodes.
+    It unlocks at 14 while promising "buy every node the Almanac holds".
+  - **"The Whole Wood"** — 12 steps; the kea and pika took the roster to **14**.
+  - **"All Five Plates"** — 5 steps; **7** plates are drawable. The name itself
+    rots, so either rename in the console or leave the count and reword the
+    description to "the first five".
+  - Add with them a test pinning each constant to its data-derived count (the
+    constants must stay hardcoded because the console holds the same figure) —
+    `Achievements.StepTarget` and
+    `AchievementsTests.EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas`
+    are the pattern. Worth doing for **"Reader of Stones" (4)** too, if that
+    number ever means anything other than "some of them".
+- **`AdUnitIds.AmberDrip` is an alias of `TimeSkip`.** The drip and the skip share
+  one ad unit: one fill pool, one frequency cap, one reporting row. Nothing breaks
+  — the drip's earn rate just becomes unmeasurable and each placement quietly caps
+  the other. Dev builds serve Google's test unit regardless, so it only ever shows
+  in production numbers. One-literal code change, gated on the console visit in
+  §3.1. (`Services/ServiceIds.cs`)
+- **EEA players are served ads having been asked nothing.** The code side is done
+  — `AdMobAds.GatherConsent` runs `ConsentInformation.Update` →
+  `LoadAndShowConsentFormIfRequired` before any ad request, and the inside cover
+  re-opens the form. It is **inert until a GDPR message is published** in the
+  AdMob console: the SDK has no form to load, `PrivacyOptionsAvailable` stays
+  false, the row stays hidden, and there is no error anywhere. See §3.1.
+- **Sim purity is a convention with nothing enforcing it.** `CLAUDE.md` states
+  `Wildgrove.Sim` = `noEngineReferences: true`; the asmdef flag is **`false`**, and
+  flipping it does not compile — Sim takes `GameDataAsset` in nearly every
+  signature, that derives from `ScriptableObject`, and the compiler needs
+  `UnityEngine.CoreModule` to resolve the base type (`CS0012` in `Exchange`,
+  `Folio`, `Almanac` and more; tried 2026-08-02, reverted). The files honour the
+  rule by discipline, but a `UnityEngine.Random` or `Time.deltaTime` would compile
+  and ship. Closing it for real means a plain-C# `GameData` runtime type with the
+  ScriptableObject reduced to a wrapper the Game layer unwraps at load — a
+  signature change across most of the sim, so it wants its own pass, not a flag
+  flip. Until then `CLAUDE.md` describes intent, not the build.
+- **`GameDataValidator` hardcodes the skills vocabulary** as a C# `HashSet` rather
+  than sourcing it from data.
+- **`zone.unlocks` means two different things** depending on the zone: the
+  starting zone's list seeds `UnlockedSkills`, every other zone's only informs
+  `RiteGenerator.SkillDebutOrder` pacing (so a typo in a late zone's list silently
+  moves that skill's debut and re-paces every run-2+ Rite). The `final-waystones`
+  sentinel would be cleaner in a field of its own — a data-schema change, so it
+  needs a `GameData.asset` re-import in the same commit.
+- **The import-time validator doesn't check the authored run-1 Rite for a
+  stationing-aware ≥`chooseCount`.** The guarantee lives in the generator plus the
+  runs-2–10 proof in `RiteGeneratorTests`, which is where *generated* rites are
+  checkable — the authored one is a cheap follow-up.
+- **Three naming seams left open on purpose, worth closing on touch:**
+  `digSite`/`DigSpeed` still carry the old excavation vocabulary as the shared
+  site/speed plumbing (reinterpreted in comments); `BubbleWorldView` and
+  `economy.bubbles` still say "bubble" where the UI says windfall; and
+  `GameDataValidator`'s `KnownSkills` whitelist still lists the retired
+  `"excavation"` — that one is now load-bearing as the last stable
+  never-granted-skill test example, so leave it.
+- **Kinship constants are hardcoded.** `Divisor` 1000 and `XpRatePerLevel` 0.02
+  are `const`s in `Kinship.cs`; they belong in an `economy.json` section with the
+  rest of the tuning.
+---
+
+## 3. Outside-code
+
+Nothing here can be done from the repo, and most of it is inert-until-done in a
+way that gives no error: the game runs, the logs are clean, and the thing simply
+doesn't work.
+
+### 3.1 AdMob console — release blockers
+
+**The Amber-drip rewarded unit** (fixes the alias bug in §2):
 
 1. AdMob → **Apps** → Wildgrove (`com.inthrall.wildgrove`) → **Ad units** →
    **Add ad unit**.
-2. Format **Rewarded**. Name it to match the other two — they read as
-   `Wildgrove Time Skip` / `Wildgrove Offline Boost`, so `Wildgrove Amber Drip`.
-3. **Reward amount 1, reward item "amber"**. The value is never read: the game
-   grants the drip from `economy.json`, not from the ad's reward payload. Set it
-   anyway — AdMob requires the fields, and a nonsense value in the console is a
-   thing to misread later.
-4. Leave frequency capping off. The drip's own cooldown is the throttle, and a
+2. Format **Rewarded**. Name to match the other two (`Wildgrove Time Skip` /
+   `Wildgrove Offline Boost`) → **`Wildgrove Amber Drip`**.
+3. **Reward amount 1, item "amber"**. Never read — the game grants the drip from
+   `economy.json`, not the ad payload — but AdMob requires the fields, and a
+   nonsense value in the console is a thing to misread later.
+4. Leave frequency capping **off**. The drip's own cooldown is the throttle; a
    second one in the console would be invisible from the code.
 5. Copy the unit id (`ca-app-pub-6903871125040514/…`) and replace the
-   `AmberDrip = TimeSkip` alias in `ServiceIds.cs` with the literal, restoring
-   its own XML doc line. That is the whole code change.
-6. New units take **a few hours** to start serving. A fresh unit returning
-   no-fill on the first device test is expected, not a fault.
+   `AmberDrip = TimeSkip` alias in `ServiceIds.cs`, restoring its XML doc line.
+   That is the whole code change.
+6. New units take **a few hours** to start serving. A fresh unit returning no-fill
+   on the first device test is expected, not a fault.
 
-**2. The GDPR/consent message.** `AdMobAds.GatherConsent` already runs
-`ConsentInformation.Update` → `LoadAndShowConsentFormIfRequired` before any ad
-is requested, and the inside cover re-opens the form. **All of that does
-nothing until a message is published in the console** — the SDK has no form to
-load, `PrivacyOptionsAvailable` stays false, the inside cover's row stays
-hidden, and an EEA player is served ads having been asked nothing. There is no
-error anywhere; it looks exactly like a player outside the EEA.
+**The GDPR/consent message:**
 
 1. AdMob → **Privacy & messaging** → **GDPR** → **Create message**.
-2. Select the Wildgrove app; leave the default set of regions (EEA + UK).
+2. Select Wildgrove; leave the default regions (EEA + UK).
 3. Consent options: **Consent / Manage options / Do not consent**. The third
-   button matters — a message without it is the "consent or leave" pattern
-   Google has been rejecting.
-4. Set the **privacy policy URL** to `https://decryptic.app/wildgrove/privacy`
-   (the same URL the Play listing and the inside cover use).
+   button matters — without it, it's the "consent or leave" pattern Google has
+   been rejecting.
+4. Privacy policy URL → `https://decryptic.app/wildgrove/privacy` (the same URL
+   the Play listing and the inside cover use).
 5. Style it and **Publish**. Unpublished messages do not load.
-6. Then do the same under **Privacy & messaging → US states** if the app is
-   listed there — same shape, separate message.
-7. Verify on device with a **debug geography** override
-   (`ConsentDebugSettings`, EEA) or a VPN. Confirm: the form shows on first
-   launch, no ad request precedes it, and **Ad privacy choices** then appears on
-   the inside cover.
+6. Repeat under **Privacy & messaging → US states** if the app is listed there —
+   same shape, separate message.
+7. Verify on device with a debug geography override (`ConsentDebugSettings`, EEA)
+   or a VPN. Confirm: the form shows on first launch, no ad request precedes it,
+   and **Ad privacy choices** then appears on the inside cover.
 
-## Release blockers — the device half
+### 3.2 Play Console
 
-Not repo work either, but nothing else is tracking these and none of them can be
-closed from a desk. The build is not proven until they are.
+- **Create the two store products** — `starter_bundle` (slot + 30 Amber, one-time)
+  and `kith_slot`, both NonConsumable. `StoreProductIds.All` already names them;
+  without the console entries the ladder's two purchasable slots cannot be bought.
+- **Attach a Play Games Reward offer to each of the three reward products.** The
+  products (`reward_drovers_halter`, `reward_weekly_amber_cache`,
+  `reward_wayfarers_plate`) are created and activated. **The association UI and
+  reward testing do not open until Sep 1 2026**, and the Level Up bar for ≥2
+  single-use rewards is **Sep 30 2026** — a one-month window. (≥1 repeatable by
+  **Mar 1 2027**; the weekly cache is it.)
+- **Do not create `reward_wayfarers_cloak`.** The cosmetic reward was retired
+  unbuilt — it wanted a cosmetic substrate the game has never had. A test pins
+  that the id is uncatalogued, so an award of it could never be acknowledged.
+- **Re-step the three drifted achievements** (§2) in the same visit.
+- **Add Mo as a license tester** (Settings → License testing) so test purchases
+  aren't charged.
+- **Keep Sidekick on for CI uploads.** Sidekick is added at *upload* time for App
+  Bundles. Every release here is uploaded by `android-release.yml` via
+  `r0adkll/upload-google-play`, so Testing → Advanced settings → **Play Games
+  Sidekick** → *"Automatically make Sidekick on by default for new app bundles"*
+  must be set, or each CI upload lands Sidekick-less and the guideline quietly
+  fails.
 
-- **Cloud Snapshots cross-device.** Single-device is confirmed (2026-07-28).
-  The most-played-wins reconcile has never been exercised against a *second*
-  device, which is the only place it differs from newest-wins — i.e. the whole
-  of what `AdoptCloudRun` exists for is untested.
-- **Ad serving for the newer placements** — the amber drip and the offline
-  boost — on a real device. Dev builds serve Google's test unit regardless, so
-  a placement that never fills in production looks fine everywhere else.
+### 3.3 On device — the build is not proven until these are done
+
+- **Cloud Snapshots cross-device.** Single-device confirmed 2026-07-28. The
+  most-played-wins reconcile has never met a *second* device, which is the only
+  place it differs from newest-wins — i.e. the whole of what `AdoptCloudRun`
+  exists for is untested.
 - **The IAP purchase flow since the v5 API rewrite.** The rewrite and the R8
-  billing keeps have not been re-tested together on a device; either alone
-  passing says nothing about the pair.
-- **Add Mo as a Play Console license tester** (Settings → License testing) so
-  test purchases aren't charged, and install from the **internal track** rather
-  than sideloading — billing is unreliable sideloaded, and a sideloaded failure
-  is indistinguishable from a real one.
+  billing keeps have not been re-tested *together*; either alone passing says
+  nothing about the pair. Install from the **internal track**, never sideloaded —
+  billing is unreliable sideloaded, and a sideloaded failure is indistinguishable
+  from a real one.
+- **Ad serving for the newer placements** (amber drip, offline boost). Dev builds
+  serve Google's test unit regardless, so a placement that never fills in
+  production looks fine everywhere else.
+- **The real out-of-app reward delivery.** `StubStore.DeliverReward` exercises
+  grant → acknowledge and the refusal branch in the editor; a live Quest award
+  can't be tried before Sep 1. What *is* checkable now: an internal-track build's
+  catalogue fetch should resolve every reward id with a price. An id coming back
+  unavailable means the console entry and `RewardProductIds` disagree — the one
+  failure that would silently swallow every future award.
+- **The pad / keyboard / large-screen gate.** Play it through on real 4:3, 16:10,
+  21:9 and foldable hardware with a controller in hand. Keyboard and controller
+  navigation is built and tested; it has never been *held*.
+- **Verify the input declarations in the built AAB**, not just in the unit tests —
+  they pin the transform, not the Gradle merge. `aapt2 dump badging` on the next
+  release AAB should list every feature and **none as required**.
+- **The inside cover has had no device pass.** It is the newest sheet and the
+  longest; the scroll clamp is what keeps it on a phone screen, and the privacy
+  row lands in the middle of it.
+- **Play Games on PC, in Google's developer emulator** — mouse-only,
+  keyboard-only, pad, and a window resize/maximise. **Mo's call and Mo's machine**:
+  the emulator wants virtualisation on a work machine, so it is handed over rather
+  than done here.
 
-## Test coverage
+### 3.4 Blocked on Google
 
-From the 2026-07-18 whole-codebase review: `GameLoop` and `SaveFile` had no
-fixtures at all — the two seams where load/resume/autosave/offline-credit
-ordering lives, and where every bug that has bitten (pause→resume never
-crediting, the corrupt-save crash loop, the cloud reconcile baseline) was found
-on a device rather than in the suite.
+- **Game Stats cannot submit.** Six stats plus one progression level are chosen
+  and wired; `PlayGamesServices.RecordStat` counts what it could not send and says
+  so in logcat. GPGS 2.1.0 (July 2025, still the newest release) has no
+  `PlayerGameEvent` and no `RecordEvent`, and the Java coordinate is unpublished
+  so there is nothing to reach over JNI either. **API GA July 2026; Play Console
+  CSV upload opens August 2026.** When the plugin lands it becomes three lines
+  (`new PlayerGameEvent.Builder(name)` → `.AddProperty` → `RecordEvent`) and
+  nothing else moves.
+  - Console side is authored and waiting in `store/play-games/gamestats/`. Two
+    knowingly-unfinished parts: the **stat icons aren't drawn** (Google has
+    published no size spec — use `tools/make-store-art.py` once the console says
+    what shape), and the column values (`HIGHER`, the free-text units) are the
+    guide's documented spellings, not ones a console has accepted. Expect one
+    correction round. `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema`
+    fails if code and CSV drift, because Play drops undeclared events silently.
 
-- ~~`SaveFile`~~ ✅ RESOLVED 2026-08-02 — `SaveFileTests`, 7 tests over the disk
-  half that `RunPersistence`'s fake store deliberately doesn't reach: the round
-  trip, the atomic replace (the branch only a *second* write takes, which is the
-  one an autosave takes for the rest of the run), the `.corrupt` and `.newer`
-  set-asides landing in their own slots with their bytes intact, and a failed
-  write staying a logged error instead of taking the session down. They need a
-  real disk, so `SaveFile.DirectoryOverride` was added to point them at a scratch
-  directory — without it the fixture writes over the developer's own editor run,
-  which is presumably why this never got written.
-- **`GameLoop` still has no fixture, and the shape of the gap has changed.**
-  Most of what the review worried about has since been extracted into classes
-  that *are* tested — `RunPersistence`, `Announcements`, `SessionLog`,
-  `Achievements`, `Leaderboards`, `GameStats`, and now `SaveFile`. What is left
-  in the MonoBehaviour is the **ordering between them**, and that is where the
-  remaining risk sits: `AdoptCloudRun` is eight steps that must happen in one
-  breath (rebase stats, mark arrivals seen, drop the stale offline summary,
-  credit the new absence, re-fold entitlements, save, notice), and `StartAgain`
-  is four with the same property. Both are commented as sequences precisely
-  because getting one out of order is silent. Testing them means either a
-  PlayMode fixture or lifting the sequence into a plain class the way the others
-  were lifted — the second is the pattern the file already follows.
+---
 
-Recorded closed so they don't get re-raised (all checked 2026-08-01): the
-dangling-warden-post test exists (`SaveCodecTests.Restore_DanglingWardenPost_ClearsToCamp`),
-a `Modifiers` fixture exists (`Assets/Tests/EditMode/Sim/ModifiersTests.cs`), the
-amber-pack consumable icons exist (`store/iap/amber_pack_{small,large}-icon.png`),
-and the unplated species (osier-otter, horseshoe-bat, ermine) were closed by the
-Round 7 art pass (`0687b1f`).
+## Appendix A — deferred, post-MVP
 
-## Narrative authoring
+- **v1.1 species abilities**, more bonds, and world sprites for companions.
+- **Cosmetics** as an amber sink — needs a substrate that doesn't exist (§1.5).
+- **Tool-tier gating of *recipes*** (§4) — waits on skill-level design.
+- **Roster capacity from late Roosts levels** (§4) — deliberately not built;
+  headcount stays the slot ladder's job. Revisit only if the ladder grows sources.
+- **A bond earned with no slot open** still fires its celebration while the
+  companion waits. Unreachable at MVP (sources ≤ slots at every rung); revisit if
+  sources ever outpace slots.
+- **`compendium_entry_discovered` telemetry** — skipped because offline catch-up
+  would burst-fire it.
+- **A TMP font swap** (SDF crispness, real style faces). The four OFL faces render
+  through Unity's dynamic-font path, so bold/italic are synthesized and exotic
+  glyphs fall back to OS fonts — which is why the HUD avoids ✎/★/✓/→.
+- **`NumberFormat`'s suffix table** (`K, M, B, T`, then `aa, ab, …`, then
+  scientific) is first-pass; revisit if a naming convention is chosen.
+- **x86-64 ABI** stays off. Play Games on PC runs ARM64 through translation, which
+  is ample for a 2D URP idle game, and a third ABI costs the IL2CPP build-time
+  doubling that got ARMv7 dropped. Revisit only if PC vitals show it.
 
-- **MVP dialogue is drafted, not final.** All four waystones, all four verse
-  lines, and all three fossil cards in `design/data/dialogue.json` now have
-  text in the §7 register, and the validator enforces waystone + verse text
-  for every mvp-scope zone. The words are a first draft — re-voice anything
-  that misses the tone before release. Still unwritten (by design, later
-  scope): v1.1+ zone waystones/verses, more Provisioner lines, the final
-  waystones chain.
+## Appendix B — standing constraints
 
-## Data-layer review items (open from the data-layer PR review)
+Not work items. Each of these cost real time to find.
 
-- **Skills vocabulary hardcoded** in `GameDataValidator` as a C# `HashSet` rather than
-  sourced from data.
-- ~~**`zone.unlocks` is documentation-only** and the validator only reads the
-  starting zone's~~ ✅ CORRECTED 2026-08-02 — the note was stale on both
-  counts. `RiteGenerator.SkillDebutOrder` walks **every** zone's `unlocks` to
-  decide how early a generated verse may demand a skill's goods, so a typo in
-  a late zone's list silently moves that skill's debut and re-paces every
-  run-2+ Rite. The validator now checks all zones (`cloudreach-peaks`'
-  non-skill `final-waystones` token is whitelisted in `KnownNonSkillUnlocks`).
-  Still open: the field means two things depending on the zone — the starting
-  zone's list seeds `UnlockedSkills`, the rest only inform pacing — and the
-  sentinel would be cleaner in a field of its own (a data-schema change, so it
-  needs a `GameData.asset` re-import in the same commit).
-- ~~**`map-mistfen` grants a zone but no dig site / skills**~~ ✅ RESOLVED
-  2026-07-28 with the Mistfen build: the map now carries `unlockSkill
-  apothecary` and `unlockDigSite mistfen-marsh` (see the Mid/late-game
-  content section).
-
-## Sim purity is a convention, not a constraint (2026-08-02)
-
-`CLAUDE.md` states the rule as `Wildgrove.Sim` = `noEngineReferences: true`, and
-the sim's own files honour it — there is not one `UnityEngine` reference among
-them. **The asmdef flag is `false`, and setting it to `true` does not compile.**
-Sim takes `GameDataAsset` in nearly every signature, `GameDataAsset` derives from
-`ScriptableObject`, and the compiler needs `UnityEngine.CoreModule` to resolve
-that base type: `error CS0012` in `Exchange`, `Folio`, `Almanac` and the rest.
-Tried on 2026-08-02, reverted.
-
-So the layer is engine-free by discipline, and nothing enforces it — a
-`UnityEngine.Random` or a `Time.deltaTime` added to the sim would compile and
-ship, and the property every file header claims would be quietly gone.
-
-Closing it for real means separating the content data from its Unity container:
-a plain-C# `GameData` runtime type that Sim depends on, with the ScriptableObject
-reduced to a wrapper the Game layer unwraps at load. That is a signature change
-across most of the sim, so it wants its own pass — not a flag flip. Until then,
-`CLAUDE.md`'s table describes the intent rather than the build.
-
-## Number formatting
-
-- **`NumberFormat` suffix table** runs `K, M, B, T` then `aa, ab, …` before falling
-  back to scientific — first-pass abbreviations; revisit if a naming convention is
-  chosen. (`Assets/Scripts/Game/NumberFormat.cs`)
+- **Never use Play Games' own overlay.** `ShowLeaderboardUI` / `ShowAchievementsUI`
+  route through `HelperFragment`, which extends the framework
+  `android.app.Fragment` (deprecated since API 28) and throws **synchronously** on
+  the JNI class lookup at `targetSdk 36` — it presents as a hung callback.
+  Everything routed to the GMS clients is fine, and GPGS 2.1.0 is the newest
+  release, so there is no upstream fix to upgrade to (issue #3318). Any reward or
+  standing UI must be drawn **in-journal**.
+- **A leaderboard's public page can come back empty while Play still ranks the
+  player** (`read 0 rows` with submissions accepted). Never rely on `LoadScores`
+  alone — fall back to `data.PlayerScore`. Empty *and* `player unranked` means
+  Play isn't ranking the game at all: check the PGS **configuration** publish
+  state, which is a separate thing from a leaderboard being "live".
+- **Confirm on device first, then remove the instrument.** The first diagnostics
+  sink was retired in the same commit as the fix it was meant to prove; when the
+  symptom returned there was nothing left to read it with.
+- **Run `Wildgrove/Fix Art Import Settings` after adding art.** The pass that
+  caught `res-timber` importing with `alphaUsage: 0` — its transparency discarded,
+  drawing on a solid block for a week — found it only by being re-run.
+- **Art licensing:** prefer PD/no-attribution. `Retort (PSF)` is CC BY-SA —
+  copyleft on a game asset, avoid. `Phial (PSF)` is a modern child-proof pill vial
+  with a printed label, not period glassware.
+- **`res-amber.jpg` and `res-flint.jpg` are not loaded by `ArtLibrary`, and must
+  not be deleted as unused.** There is no amber or flint *resource* — the runtime
+  never asks for either plate, which is what makes them look spare. They are
+  source plates in `make-store-art.py`'s `ACHIEVEMENT_PLATES` manifest, and the
+  two cards built from them (`achievement-something-older-512.png`,
+  `achievement-reader-of-stones-512.png`) are **published on Play Console**.
+  Deleting either fails `make-store-art.py --check` and strands a live card.
+  The licence consequence: **`res-amber`'s CC BY 4.0 (Perrichot, *Dolichoderus
+  longipilosus specimen tag and amber*) attribution is owed by a published
+  derived work**, not merely by the file shipping under `Resources/` — so it
+  cannot be dropped, and there is no five-CC-BY-works-to-four saving to be had.
+  Separately and correctly recorded in `CREDITS.md`: the *IAP* amber icons
+  (`amber_pack_small/large`, `reward_weekly_amber_cache`) derive from the
+  `insect-deep-amber` source work (St. John's fly in amber, CC BY 2.0) — a
+  different work from `res-amber`, and the two must not be conflated.
+- **Re-check `resizeableActivity` after any editor upgrade.** It was OFF (a fresh
+  6000.5.5f1 project has it on), which meant compatibility mode, letterboxing, a
+  restart prompt on unfold, and **the wide journal spread could never appear**.
+- **`Application.isMobilePlatform` is true on Play Games on PC** — it is an Android
+  build. Ask `DeviceForm`
+  (`PackageManager.hasSystemFeature("android.hardware.type.pc")`) instead. Getting
+  this wrong hid the keyboard hint from the only player with nothing but a
+  keyboard, and made Escape quit the app outright.
+- **`chromeosInputEmulation` is a dead end** — `[Obsolete]` in 6000.5, serialises
+  nothing. The manifest declaration is the only live lever.
+- **Supported Aspect Ratio: leave it alone.** The mode is an internal property with
+  no public API, and setting `maxAspectRatio` flips mode 1→2 as a side effect. Moot
+  anyway — `android:maxAspectRatio` only applies to a non-resizable activity.
+- **Android `targetSdk` is pinned to 36**, not Auto — an editor or module update
+  could otherwise move a release's target silently. Raise it deliberately when
+  Play's required level moves.
+- **A permission implies a required feature.** `ACCESS_WIFI_STATE` implies
+  `android.hardware.wifi`, `READ_PHONE_STATE` implies telephony — which is why
+  `AndroidInputManifest` declares Google's 17 "not on a PC" features as
+  not-required even though Wildgrove asks for none of them. An ad SDK bumping a
+  permission would otherwise quietly cost the PC audience.
+- **Play's "androidx.fragment 1.1.0 is outdated" warning is stale** and needs no
+  fix. AdMob's import declares 1.7.1 from v43 on and Gradle takes the highest
+  (verified from the artifacts: v42 bundles 1.1.0, v62 bundles 1.7.1). The warning
+  persists only while a pre-v43 artifact is still active in a track.
+- **The privacy policy lives in the Decryptic repo**
+  (`src/Decryptic.App/wwwroot/wildgrove/privacy.html`) and deploys with that site.
+  It has silently rotted behind the build twice; its header comment carries the
+  keep-in-step warning.
+- **The chrome budget rule:** a bar is only pinned if it is read on every tab — the
+  page is the row that pays for it. `UpdateWorldGap` makes the world strip the
+  shock absorber (14–26% of screen, after a 32% page floor), so the next thing that
+  grows shrinks the strip's whitespace rather than the page.
+- **Existing test saves restore to a 1-slot ladder** after the collection-ladder
+  rework — most of the roster wakes resting. Wipe or re-station.

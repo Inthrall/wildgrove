@@ -3,10 +3,15 @@ using UnityEngine;
 namespace Wildgrove.Game.World
 {
     /// <summary>
-    /// Runtime-generated programmer art for the world layer, so Phase 1 ships
-    /// zero image assets: one anti-aliased white disc sprite (tinted per use)
-    /// and a deterministic muted colour per resource id. Replaced wholesale by
-    /// the hand-drawn naturalist plates when the art direction lands.
+    /// Runtime-generated programmer art for the world layer: one anti-aliased
+    /// white disc sprite (tinted per use) and a deterministic muted colour per
+    /// resource id.
+    ///
+    /// It was written to be replaced wholesale by the naturalist plates, and
+    /// wasn't. The plates landed and every node draws one via
+    /// <see cref="ArtLibrary.ForResource"/>, but this stayed as three things
+    /// they don't cover: the per-resource tint the plates are mounted against,
+    /// the label builder, and the fallback for an id with no plate.
     /// </summary>
     public static class PlaceholderArt
     {
