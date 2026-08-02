@@ -333,21 +333,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresQualityPoolsRngAndPristineWindow()
+        public void RoundTrip_RestoresQualityPoolsRngAndChoiceWindow()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.AddFine("berries", new BigDouble(12.5));
-            state.AddPristine("berries", new BigDouble(3.0));
+            state.AddDecent("berries", new BigDouble(12.5));
+            state.AddChoice("berries", new BigDouble(3.0));
             state.rngState = 987654321UL;
-            state.nodes[0].pristineBonusRemaining = 17.5;
+            state.nodes[0].choiceBonusRemaining = 17.5;
 
             var restored = RoundTrip(state);
 
-            Assert.That(restored.GetFine("berries").ToDouble(), Is.EqualTo(12.5).Within(Tolerance));
-            Assert.That(restored.GetPristine("berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
+            Assert.That(restored.GetDecent("berries").ToDouble(), Is.EqualTo(12.5).Within(Tolerance));
+            Assert.That(restored.GetChoice("berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
             // The rng must resume exactly — a reload can't reroll fate.
             Assert.That(restored.rngState, Is.EqualTo(987654321UL));
-            Assert.That(restored.nodes[0].pristineBonusRemaining, Is.EqualTo(17.5).Within(Tolerance));
+            Assert.That(restored.nodes[0].choiceBonusRemaining, Is.EqualTo(17.5).Within(Tolerance));
         }
 
         [Test]
@@ -792,26 +792,26 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             state.lifetimeGathered["berries"] = new BigDouble(1e42);
             state.lifetimeCrafted["berry-preserve"] = 7.0;
-            state.lifetimePristine["berries"] = new BigDouble(2.0);
+            state.lifetimeChoice["berries"] = new BigDouble(2.0);
 
             var restored = RoundTrip(state);
 
             Assert.That(restored.lifetimeGathered["berries"].ToDouble(), Is.EqualTo(1e42).Within(1e33));
             Assert.That(restored.lifetimeCrafted["berry-preserve"], Is.EqualTo(7.0));
-            Assert.That(restored.lifetimePristine["berries"].ToDouble(), Is.EqualTo(2.0));
+            Assert.That(restored.lifetimeChoice["berries"].ToDouble(), Is.EqualTo(2.0));
         }
 
         [Test]
         public void TryMigrate_V15Save_StartsTheRecordEmpty()
         {
             // v15 predates the Compendium — the lifetime record starts here.
-            var save = new SaveData { version = 15, lifetimeGathered = null, lifetimeCrafted = null, lifetimePristine = null };
+            var save = new SaveData { version = 15, lifetimeGathered = null, lifetimeCrafted = null, lifetimeChoice = null };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
             Assert.That(save.lifetimeGathered, Is.Empty);
             Assert.That(save.lifetimeCrafted, Is.Empty);
-            Assert.That(save.lifetimePristine, Is.Empty);
+            Assert.That(save.lifetimeChoice, Is.Empty);
         }
 
         [Test]
@@ -927,13 +927,47 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void TryMigrate_V7Save_GetsEmptyQualityPools()
         {
-            // v7 predates quality rolls — nothing found yet.
-            var save = new SaveData { version = 7, fineResources = null, pristineResources = null };
+            // v7 predates quality rolls — nothing found yet. Neither the v8
+            // wire names nor the v42 ones are in the file, so both nulls must
+            // come out of the ladder as empty pools.
+            var save = new SaveData
+            {
+                version = 7,
+                fineResources = null,
+                pristineResources = null,
+                decentResources = null,
+                choiceResources = null,
+            };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.fineResources, Is.Empty);
-            Assert.That(save.pristineResources, Is.Empty);
+            Assert.That(save.decentResources, Is.Empty);
+            Assert.That(save.choiceResources, Is.Empty);
+        }
+
+        [Test]
+        public void TryMigrate_V41Save_CarriesTheQualityPoolsUnderTheNewGradeNames()
+        {
+            // v41 called the grades Fine and Pristine. Only the names changed:
+            // a warden mid-run must find every held find, every lifetime tally
+            // and a live tend window exactly where they left them.
+            var save = new SaveData
+            {
+                version = 41,
+                fineResources = new List<SavedResource> { new SavedResource { id = "berries", amount = new BigDouble(12.0) } },
+                pristineResources = new List<SavedResource> { new SavedResource { id = "glow-moss", amount = new BigDouble(3.0) } },
+                lifetimePristine = new List<SavedResource> { new SavedResource { id = "glow-moss", amount = new BigDouble(9.0) } },
+                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-berries", pristineBonusRemaining = 17.5 } },
+            };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.decentResources[0].id, Is.EqualTo("berries"));
+            Assert.That(save.decentResources[0].amount.ToDouble(), Is.EqualTo(12.0).Within(Tolerance));
+            Assert.That(save.choiceResources[0].id, Is.EqualTo("glow-moss"));
+            Assert.That(save.choiceResources[0].amount.ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
+            Assert.That(save.lifetimeChoice[0].amount.ToDouble(), Is.EqualTo(9.0).Within(Tolerance));
+            Assert.That(save.nodes[0].choiceBonusRemaining, Is.EqualTo(17.5).Within(Tolerance));
         }
 
         [Test]

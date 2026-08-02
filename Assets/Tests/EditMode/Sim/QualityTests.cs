@@ -8,8 +8,8 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins design §5's quality rolls: one roll per haul batch (never per
-    /// unit), the whole delivery taking the rolled tier — Fine to its own
-    /// pool, Pristine held apart as specimens — with the Pristine chance
+    /// unit), the whole delivery taking the rolled tier — Decent to its own
+    /// pool, Choice held apart as specimens — with the Choice chance
     /// following §8 (flat bonuses add points, Tending multiplies) and every
     /// roll drawn from the run's saved, deterministic rng.
     /// </summary>
@@ -33,12 +33,12 @@ namespace Wildgrove.Sim.Tests
                 // Chances start at 0 — each test dials up the tier it pins.
                 quality = new EconomyData.QualityData
                 {
-                    fineChance = 0.0, fineValueMult = 1.5, pristineBaseChance = 0.0, pristineValueMult = 10.0,
+                    decentChance = 0.0, decentValueMult = 1.5, choiceBaseChance = 0.0, choiceValueMult = 10.0,
                 },
                 tending = new EconomyData.TendingData
                 {
                     burstYieldMult = 3.0, burstDurationSec = 5.0,
-                    pristineBonusDurationSec = 30.0, pristineChanceBonus = 1.0,
+                    choiceBonusDurationSec = 30.0, choiceChanceBonus = 1.0,
                 },
             };
             _data.zones = new List<ZoneData>
@@ -55,7 +55,7 @@ namespace Wildgrove.Sim.Tests
                 new UpgradeData
                 {
                     order = 17, id = "field-press",
-                    effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.01 } },
+                    effects = { new EffectData { type = EffectType.ChoiceChanceBonus, value = 0.01 } },
                 },
             };
         }
@@ -67,32 +67,32 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_CertainFineRoll_LandsTheWholeBatchInTheFinePool()
+        public void Advance_CertainDecentRoll_LandsTheWholeBatchInTheDecentPool()
         {
-            _data.economy.quality.fineChance = 1.0;
+            _data.economy.quality.decentChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
             TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The t=2 batch of 2 units rolled Fine — nothing reaches the
-            // common stock.
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+            // The t=2 batch of 2 units rolled Decent — nothing reaches the
+            // plain stock.
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
-        public void Advance_CertainPristineRoll_LandsTheWholeBatchAsSpecimens()
+        public void Advance_CertainChoiceRoll_LandsTheWholeBatchAsSpecimens()
         {
-            _data.economy.quality.pristineBaseChance = 1.0;
+            _data.economy.quality.choiceBaseChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
             TestKith.StageGatherer(state);
 
             Simulation.Advance(state, _data, 2.0);
 
-            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(state.GetChoice("berries").ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
@@ -111,59 +111,59 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void PristineChance_AddsOwnedFlatBonusPoints()
+        public void ChoiceChance_AddsOwnedFlatBonusPoints()
         {
-            _data.economy.quality.pristineBaseChance = 0.005;
+            _data.economy.quality.choiceBaseChance = 0.005;
             var state = GameStateFactory.NewGame(_data);
             state.purchasedUpgradeIds.Add("field-press");
 
-            var chance = Quality.PristineChance(state, _data, state.nodes[0]);
+            var chance = Quality.ChoiceChance(state, _data, state.nodes[0]);
 
             // 0.5% base + the Field Press's 1pt (design §8's additive band).
             Assert.That(chance, Is.EqualTo(0.015).Within(Tolerance));
         }
 
         [Test]
-        public void PristineChance_TendWindowMultiplies()
+        public void ChoiceChance_TendWindowMultiplies()
         {
-            _data.economy.quality.pristineBaseChance = 0.005;
+            _data.economy.quality.choiceBaseChance = 0.005;
             var state = GameStateFactory.NewGame(_data);
             state.purchasedUpgradeIds.Add("field-press");
-            state.nodes[0].pristineBonusRemaining = 5.0;
+            state.nodes[0].choiceBonusRemaining = 5.0;
 
-            var chance = Quality.PristineChance(state, _data, state.nodes[0]);
+            var chance = Quality.ChoiceChance(state, _data, state.nodes[0]);
 
             // (0.005 + 0.01) · (1 + 1.0) — flat points add, Tending multiplies.
             Assert.That(chance, Is.EqualTo(0.03).Within(Tolerance));
         }
 
         [Test]
-        public void PristineChance_IsCappedAtOne()
+        public void ChoiceChance_IsCappedAtOne()
         {
-            _data.economy.quality.pristineBaseChance = 0.9;
+            _data.economy.quality.choiceBaseChance = 0.9;
             var state = GameStateFactory.NewGame(_data);
-            state.nodes[0].pristineBonusRemaining = 5.0;
+            state.nodes[0].choiceBonusRemaining = 5.0;
 
-            Assert.That(Quality.PristineChance(state, _data, state.nodes[0]), Is.EqualTo(1.0));
+            Assert.That(Quality.ChoiceChance(state, _data, state.nodes[0]), Is.EqualTo(1.0));
         }
 
         [Test]
-        public void Tend_OpensThePristineWindow_WhichOutlastsTheYieldBurst()
+        public void Tend_OpensTheChoiceWindow_WhichOutlastsTheYieldBurst()
         {
             var state = GameStateFactory.NewGame(_data);
 
             Simulation.Tend(state.nodes[0], _data.economy);
             Simulation.Advance(state, _data, 10.0);
 
-            // The 5 s yield burst is long spent; the 30 s Pristine window runs on.
+            // The 5 s yield burst is long spent; the 30 s Choice window runs on.
             Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(state.nodes[0].pristineBonusRemaining, Is.EqualTo(20.0).Within(Tolerance));
+            Assert.That(state.nodes[0].choiceBonusRemaining, Is.EqualTo(20.0).Within(Tolerance));
         }
 
         [Test]
         public void Advance_SameSeed_RollsTheSameOutcomes()
         {
-            _data.economy.quality.fineChance = 0.5;
+            _data.economy.quality.decentChance = 0.5;
             var first = GameStateFactory.NewGame(_data);
             var second = GameStateFactory.NewGame(_data);
             first.rngState = 42UL;
@@ -172,8 +172,8 @@ namespace Wildgrove.Sim.Tests
             Simulation.Advance(first, _data, 20.0);
             Simulation.Advance(second, _data, 20.0);
 
-            Assert.That(second.GetFine("berries").ToDouble(),
-                Is.EqualTo(first.GetFine("berries").ToDouble()).Within(Tolerance));
+            Assert.That(second.GetDecent("berries").ToDouble(),
+                Is.EqualTo(first.GetDecent("berries").ToDouble()).Within(Tolerance));
             Assert.That(second.GetResource("berries").ToDouble(),
                 Is.EqualTo(first.GetResource("berries").ToDouble()).Within(Tolerance));
             Assert.That(second.rngState, Is.EqualTo(first.rngState));
@@ -182,13 +182,13 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void AdvanceOfflineWithSummary_CountsQualityPoolsAsGains()
         {
-            _data.economy.quality.fineChance = 1.0;
+            _data.economy.quality.decentChance = 1.0;
             var state = GameStateFactory.NewGame(_data);
             TestKith.StageGatherer(state);
 
             var summary = Simulation.AdvanceOfflineWithSummary(state, _data, 30.0);
 
-            // Everything landed in the Fine pool, but the welcome-back sheet
+            // Everything landed in the Decent pool, but the welcome-back sheet
             // still reports the absence's full harvest.
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(summary.gains["berries"].ToDouble(), Is.EqualTo(30.0).Within(Tolerance));

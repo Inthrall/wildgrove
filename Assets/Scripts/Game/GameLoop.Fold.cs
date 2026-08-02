@@ -31,7 +31,7 @@ namespace Wildgrove.Game
             return given;
         }
 
-        /// <summary>Offer one Fine/Pristine specimen into a specimen slot. Returns true when one was given.</summary>
+        /// <summary>Offer one Decent/Choice specimen into a specimen slot. Returns true when one was given.</summary>
         public bool OfferSpecimen(RiteVerseData verse, int slotIndex)
         {
             var wasComplete = Rite.IsVerseComplete(State, Data, verse);
@@ -63,7 +63,7 @@ namespace Wildgrove.Game
             return true;
         }
 
-        /// <summary>Fix one Pristine specimen into the Folio (design §6 — permanence over the windfall). Returns false when no spread wants it or none is held.</summary>
+        /// <summary>Fix one Choice specimen into the Folio (design §6 — permanence over the windfall). Returns false when no spread wants it or none is held.</summary>
         public bool FixSpecimen(string resourceId)
         {
             var bondsBefore = EarnedBondIds();

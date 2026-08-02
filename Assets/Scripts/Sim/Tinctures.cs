@@ -6,7 +6,7 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Tinctures (design §5, Apothecary): buff consumables brewed at the fire.
-    /// Drinking one spends a single unit of common camp stock and grants its
+    /// Drinking one spends a single unit of plain camp stock and grants its
     /// effects for durationSec of SIM time (live or offline catch-up alike —
     /// sub-stepping ticks the clock down either way); drinking again while
     /// active adds the full duration on top of what's left — the clock

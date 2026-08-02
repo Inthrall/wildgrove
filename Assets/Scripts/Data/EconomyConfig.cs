@@ -96,10 +96,10 @@ namespace Wildgrove.Data
 
         public sealed class QualitySection
         {
-            public double FineChance { get; set; }
-            public double FineValueMult { get; set; }
-            public double PristineBaseChance { get; set; }
-            public double PristineValueMult { get; set; }
+            public double DecentChance { get; set; }
+            public double DecentValueMult { get; set; }
+            public double ChoiceBaseChance { get; set; }
+            public double ChoiceValueMult { get; set; }
         }
 
         public sealed class ObservationSection
@@ -139,8 +139,8 @@ namespace Wildgrove.Data
         {
             public double BurstYieldMult { get; set; }
             public double BurstDurationSec { get; set; }
-            public double PristineBonusDurationSec { get; set; }
-            public double PristineChanceBonus { get; set; }
+            public double ChoiceBonusDurationSec { get; set; }
+            public double ChoiceChanceBonus { get; set; }
         }
 
         public sealed class WardenSection

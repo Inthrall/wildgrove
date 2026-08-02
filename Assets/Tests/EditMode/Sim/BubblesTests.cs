@@ -32,7 +32,7 @@ namespace Wildgrove.Sim.Tests
             {
                 mastery = new EconomyData.MasteryData { yieldBonusPerLevel = 0.05 },
                 verdure = new EconomyData.VerdureData { yieldBonusPerPoint = 0.02 },
-                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0, pristineBonusDurationSec = 30.0 },
+                tending = new EconomyData.TendingData { burstYieldMult = 3.0, burstDurationSec = 5.0, choiceBonusDurationSec = 30.0 },
                 kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 },
                 bubbles = new EconomyData.BubblesData
                 {
@@ -254,9 +254,9 @@ namespace Wildgrove.Sim.Tests
 
             Bubbles.Pop(state, _data, state.nodes[0]);
 
-            // The catch is the tend act now — burst and Pristine window ride along.
+            // The catch is the tend act now — burst and Choice window ride along.
             Assert.That(state.nodes[0].tendBurstRemaining, Is.EqualTo(5.0).Within(Tolerance));
-            Assert.That(state.nodes[0].pristineBonusRemaining, Is.EqualTo(30.0).Within(Tolerance));
+            Assert.That(state.nodes[0].choiceBonusRemaining, Is.EqualTo(30.0).Within(Tolerance));
         }
 
         [Test]

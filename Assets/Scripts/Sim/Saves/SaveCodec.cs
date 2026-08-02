@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 41;
+        public const int CurrentVersion = 42;
 
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
@@ -80,14 +80,14 @@ namespace Wildgrove.Sim.Saves
                 save.resources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
-            foreach (var pair in state.fineResources)
+            foreach (var pair in state.decentResources)
             {
-                save.fineResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+                save.decentResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
-            foreach (var pair in state.pristineResources)
+            foreach (var pair in state.choiceResources)
             {
-                save.pristineResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+                save.choiceResources.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
             foreach (var pair in state.lifetimeGathered)
@@ -100,9 +100,9 @@ namespace Wildgrove.Sim.Saves
                 save.lifetimeCrafted.Add(new SavedTally { id = pair.Key, count = pair.Value });
             }
 
-            foreach (var pair in state.lifetimePristine)
+            foreach (var pair in state.lifetimeChoice)
             {
-                save.lifetimePristine.Add(new SavedResource { id = pair.Key, amount = pair.Value });
+                save.lifetimeChoice.Add(new SavedResource { id = pair.Key, amount = pair.Value });
             }
 
             foreach (var node in state.nodes)
@@ -113,7 +113,7 @@ namespace Wildgrove.Sim.Saves
                     masteryXp = node.masteryXp,
                     richnessLevel = node.richnessLevel,
                     tendBurstRemaining = node.tendBurstRemaining,
-                    pristineBonusRemaining = node.pristineBonusRemaining,
+                    choiceBonusRemaining = node.choiceBonusRemaining,
                     basket = node.basket,
                 });
             }
@@ -323,10 +323,10 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            RestorePool(state.fineResources, save.fineResources);
-            RestorePool(state.pristineResources, save.pristineResources);
+            RestorePool(state.decentResources, save.decentResources);
+            RestorePool(state.choiceResources, save.choiceResources);
             RestorePool(state.lifetimeGathered, save.lifetimeGathered);
-            RestorePool(state.lifetimePristine, save.lifetimePristine);
+            RestorePool(state.lifetimeChoice, save.lifetimeChoice);
 
             state.lifetimeCrafted.Clear();
             if (save.lifetimeCrafted != null)
@@ -373,7 +373,7 @@ namespace Wildgrove.Sim.Saves
                 node.masteryXp = saved.masteryXp;
                 node.richnessLevel = saved.richnessLevel;
                 node.tendBurstRemaining = saved.tendBurstRemaining;
-                node.pristineBonusRemaining = saved.pristineBonusRemaining;
+                node.choiceBonusRemaining = saved.choiceBonusRemaining;
                 node.basket = saved.basket;
             }
 
@@ -1033,7 +1033,7 @@ namespace Wildgrove.Sim.Saves
 
                     case 20:
                         // v20's Museum "donatedResources" became the Folio's
-                        // "fixedResources" — same meaning (Pristine specimens
+                        // "fixedResources" — same meaning (Choice specimens
                         // kept for permanence), renamed with the retheme.
                         save.fixedResources = save.donatedResources ?? new List<string>();
                         save.version = 21;
@@ -1277,6 +1277,26 @@ namespace Wildgrove.Sim.Saves
                         save.finalWaystonesRead = 0;
                         save.finalWaystoneLastFold = -1;
                         save.version = 41;
+                        break;
+
+                    case 41:
+                        // v41 graded finds Fine and Pristine — a fossil
+                        // dealer's words on a camp's berries and timber. The
+                        // grades read Decent and Choice from v42; only the
+                        // names changed, so every pool, tally, and live tend
+                        // window carries across as it stood.
+                        save.decentResources = save.fineResources ?? save.decentResources;
+                        save.choiceResources = save.pristineResources ?? save.choiceResources;
+                        save.lifetimeChoice = save.lifetimePristine ?? save.lifetimeChoice;
+                        foreach (var node in save.nodes ?? new List<SavedNode>())
+                        {
+                            if (node != null)
+                            {
+                                node.choiceBonusRemaining = node.pristineBonusRemaining;
+                            }
+                        }
+
+                        save.version = 42;
                         break;
 
                     default:

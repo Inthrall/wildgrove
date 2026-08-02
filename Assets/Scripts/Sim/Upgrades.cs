@@ -400,13 +400,13 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Flat Pristine-chance points from owned pristineChanceBonus effects
+        /// Flat Choice-chance points from owned choiceChanceBonus effects
         /// (Field Press +0.01, the Sunken Jaw insect +0.01), summed — design
         /// §8's additive band. Almanac bonuses join when that system lands.
         /// </summary>
-        public static double PristineChanceBonus(GameState state, GameDataAsset data)
+        public static double ChoiceChanceBonus(GameState state, GameDataAsset data)
         {
-            return Modifiers.Of(state, data).pristineChanceBonus;
+            return Modifiers.Of(state, data).choiceChanceBonus;
         }
 
         /// <summary>Dig-speed multiplier from owned digSpeedMult upgrades (Brush Screens ×2) — they multiply together.</summary>

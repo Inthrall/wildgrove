@@ -11,7 +11,7 @@ namespace Wildgrove.Sim
     /// the system layer: counters and discovery. The hand-drawn plates and
     /// entry text arrive with the art/narrative pass. Counters record the
     /// GROSS gather (like skill XP — a full basket loses the goods, not the
-    /// record of having gathered them), crafted batches, and Pristine units
+    /// record of having gathered them), crafted batches, and Choice units
     /// found; nothing ever decrements them.
     /// </summary>
     public static class Compendium
@@ -64,15 +64,15 @@ namespace Wildgrove.Sim
             }
         }
 
-        public static void RecordPristine(GameState state, string resourceId, BigDouble amount)
+        public static void RecordChoice(GameState state, string resourceId, BigDouble amount)
         {
             if (amount <= BigDouble.Zero)
             {
                 return;
             }
 
-            state.lifetimePristine.TryGetValue(resourceId, out var total);
-            state.lifetimePristine[resourceId] = total + amount;
+            state.lifetimeChoice.TryGetValue(resourceId, out var total);
+            state.lifetimeChoice[resourceId] = total + amount;
         }
 
         public static BigDouble LifetimeGathered(GameState state, string resourceId)
@@ -85,9 +85,9 @@ namespace Wildgrove.Sim
             return state.lifetimeCrafted.TryGetValue(recipeId, out var total) ? total : 0.0;
         }
 
-        public static BigDouble LifetimePristine(GameState state, string resourceId)
+        public static BigDouble LifetimeChoice(GameState state, string resourceId)
         {
-            return state.lifetimePristine.TryGetValue(resourceId, out var total) ? total : BigDouble.Zero;
+            return state.lifetimeChoice.TryGetValue(resourceId, out var total) ? total : BigDouble.Zero;
         }
 
         /// <summary>An entry is discovered by doing, never by reading: gather it, craft it, or bond with it.</summary>

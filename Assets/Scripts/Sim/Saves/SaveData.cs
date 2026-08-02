@@ -40,7 +40,7 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v14–v20 legacy wire name for fixed specimens — read only by the v20→v21 migration.</summary>
         public List<string> donatedResources = new List<string>();
 
-        /// <summary>v21+: resources whose Pristine specimen was fixed into the Folio (design §6). Renamed from donatedResources.</summary>
+        /// <summary>v21+: resources whose Choice specimen was fixed into the Folio (design §6). Renamed from donatedResources.</summary>
         public List<string> fixedResources = new List<string>();
 
         /// <summary>v15–v18 wire name for the warden's post — read only by the v18→v19 migration.</summary>
@@ -97,7 +97,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
         public List<SavedResource> lifetimeGathered = new List<SavedResource>();
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();
+
+        /// <summary>v16–v41 wire name for the Choice tally — read only by the v41→v42 migration.</summary>
         public List<SavedResource> lifetimePristine = new List<SavedResource>();
+
+        /// <summary>v42+: Choice specimens ever found, per resource. Renamed from lifetimePristine.</summary>
+        public List<SavedResource> lifetimeChoice = new List<SavedResource>();
 
         /// <summary>v37+: every species ever befriended and every station that has ever finished a batch. Absent before — the roster and the stations were the only record, and both are rebuilt each run.</summary>
         public List<string> speciesEverBefriended = new List<string>();
@@ -117,11 +122,15 @@ namespace Wildgrove.Sim.Saves
 
         public List<SavedResource> resources = new List<SavedResource>();
 
-        /// <summary>v8+: Fine-quality finds per resource (absent before quality rolls — pools start empty).</summary>
+        /// <summary>v8–v41 wire names for the two quality pools — read only by the v41→v42 migration.</summary>
         public List<SavedResource> fineResources = new List<SavedResource>();
-
-        /// <summary>v8+: Pristine specimens per resource (absent before quality rolls — pools start empty).</summary>
         public List<SavedResource> pristineResources = new List<SavedResource>();
+
+        /// <summary>v42+: Decent-quality finds per resource (absent before quality rolls — pools start empty). Renamed from fineResources.</summary>
+        public List<SavedResource> decentResources = new List<SavedResource>();
+
+        /// <summary>v42+: Choice specimens per resource (absent before quality rolls — pools start empty). Renamed from pristineResources.</summary>
+        public List<SavedResource> choiceResources = new List<SavedResource>();
 
         /// <summary>v8+: xorshift64* state for the run's rolls (0 in older saves — restore reseeds).</summary>
         public ulong rngState;
@@ -329,8 +338,11 @@ namespace Wildgrove.Sim.Saves
 
         public double tendBurstRemaining;
 
-        /// <summary>v8+: seconds left on the post-tend Pristine window (absent before quality rolls — defaults to zero).</summary>
+        /// <summary>v8–v41 wire name for the post-tend window — read only by the v41→v42 migration.</summary>
         public double pristineBonusRemaining;
+
+        /// <summary>v42+: seconds left on the post-tend Choice window (absent before quality rolls — defaults to zero). Renamed from pristineBonusRemaining.</summary>
+        public double choiceBonusRemaining;
 
         /// <summary>v2+: the pickings pooled at the node awaiting the next delivery (absent in v1 — defaults to zero).</summary>
         [JsonConverter(typeof(BigDoubleJsonConverter))]

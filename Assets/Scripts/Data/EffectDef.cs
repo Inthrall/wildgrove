@@ -7,7 +7,7 @@ namespace Wildgrove.Data
         SellValueBonus,
         CraftSpeedMult,
         DigSpeedMult,
-        PristineChanceBonus,
+        ChoiceChanceBonus,
         FolioSpreadBonusMult,
         OfflineCapHours,
         OfflineCapBonusHours,

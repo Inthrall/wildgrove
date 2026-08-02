@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     /// <summary>
     /// Pins the Compendium's lifetime record (design §5): counters accrue on
     /// the GROSS gather (overflow loses goods, never the record), on the
-    /// warden's hand-gather, per crafted batch, and per Pristine unit found;
+    /// warden's hand-gather, per crafted batch, and per Choice unit found;
     /// nothing ever decrements them; discovery is derived from the record.
     /// </summary>
     public class CompendiumTests
@@ -107,18 +107,18 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void PristineFinds_CountUnitByUnit()
+        public void ChoiceFinds_CountUnitByUnit()
         {
             _data.economy.kith = new EconomyData.KithData { slotsBase = 2, slotsMax = 6 };
             _data.economy.delivery = new EconomyData.DeliveryData { batchSeconds = 10 };
-            _data.economy.quality = new EconomyData.QualityData { pristineBaseChance = 1.0, fineChance = 0.0, fineValueMult = 1.5, pristineValueMult = 10 };
+            _data.economy.quality = new EconomyData.QualityData { choiceBaseChance = 1.0, decentChance = 0.0, decentValueMult = 1.5, choiceValueMult = 10 };
             var state = GameStateFactory.NewGame(_data);
             state.nodes[0].basket = new BigDouble(30);
 
             Simulation.Advance(state, _data, 10.0);
 
-            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance), "the whole batch rolled Pristine");
-            Assert.That(Compendium.LifetimePristine(state, "berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance));
+            Assert.That(state.GetChoice("berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance), "the whole batch rolled Choice");
+            Assert.That(Compendium.LifetimeChoice(state, "berries").ToDouble(), Is.EqualTo(30.0).Within(Tolerance));
         }
 
         [Test]
@@ -195,7 +195,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(empty.recorded, Is.EqualTo(0), "a new camp has written nothing");
 
             Compendium.RecordGather(state, "berries", BigDouble.One);
-            state.AddPristine("berries", 1);
+            state.AddChoice("berries", 1);
             Assert.That(Folio.TryFix(state, _data, "berries"), Is.True);
             state.insectSketches["silver-skimmer"] = 2;
             state.deepAmberFound = 1;

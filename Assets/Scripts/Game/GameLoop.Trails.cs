@@ -30,7 +30,7 @@ namespace Wildgrove.Game
             return Exchange.Rate(State, Data, from, to);
         }
 
-        /// <summary>Units of <paramref name="to"/> received for a tier's <paramref name="amount"/> of <paramref name="from"/> — Fine and Pristine pay their value multipliers.</summary>
+        /// <summary>Units of <paramref name="to"/> received for a tier's <paramref name="amount"/> of <paramref name="from"/> — Decent and Choice pay their value multipliers.</summary>
         public BigDouble ExchangeQuote(string from, string to, BigDouble amount, QualityTier quality)
         {
             return Exchange.Quote(State, Data, from, to, amount, quality);
@@ -55,7 +55,7 @@ namespace Wildgrove.Game
         /// <summary>
         /// Catch a windfall bubble at its node — the active-play reward that
         /// replaced tap-to-tend: a burst of the node's goods lands as camp
-        /// stock and the node is tended (burst + Pristine window + Rite deed).
+        /// stock and the node is tended (burst + Choice window + Rite deed).
         /// Returns the amount granted (zero = nothing was due, e.g. the node
         /// went fallow while the bubble drifted).
         /// </summary>

@@ -115,7 +115,7 @@ ACHIEVEMENT_PLATES = {
     "inseparable": "Familiars/familiar-owl",
     "the-whole-wood": "Familiars/familiar-weasel",
     # Compendium and Folio
-    "pristine": "Resources/res-crystals",
+    "choice": "Resources/res-crystals",
     "fixed-in-ink": "Resources/res-rare-herbs",
     "a-spread-complete": "Resources/res-herbs",
     "half-the-folio": "Resources/res-mushrooms",

@@ -21,7 +21,7 @@ namespace Wildgrove.Sim
         public long fingerprint = -1;
 
         public double tendingBurstBonus;
-        public double pristineChanceBonus;
+        public double choiceChanceBonus;
         public double digSpeedMultiplier = 1.0;
         public double offlineCapRaiseTo;
         public double offlineCapBonusHours;
@@ -109,8 +109,8 @@ namespace Wildgrove.Sim
                     case EffectType.TendingBurstBonus:
                         snapshot.tendingBurstBonus += effect.value;
                         break;
-                    case EffectType.PristineChanceBonus:
-                        snapshot.pristineChanceBonus += effect.value;
+                    case EffectType.ChoiceChanceBonus:
+                        snapshot.choiceChanceBonus += effect.value;
                         break;
                     case EffectType.DigSpeedMult:
                         snapshot.digSpeedMultiplier *= effect.value;

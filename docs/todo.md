@@ -37,7 +37,7 @@ Knobs the sitting is allowed to move, by file:
 | `rites.json` | the ×2.5-per-zone ramp (soften to ×2 if slow; ×3 walls the crags); `spotlightDiscount` 0.6 / `offSpotlightPremium` 1.5; `chooseCountPerMigrations`/`chooseCountMax` |
 | `almanac.json` | one-off tree total 178; granted-chain costs 6/10/14/22 + 8; `costGrowth.almanac` 1.25; The Long Song / The Long Reach rates |
 | `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
-| `tinctures.json` | four brews at 1200 s; the cordial's +1 pristine point |
+| `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |
 | `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
 | `regions.json` | four regions, all effect values |
 | `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
@@ -74,8 +74,8 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   indicator. (`Sim/Tinctures.cs`)
 - **No aggregate camp production view** — per-resource rates exist only on node
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
-- **Tending's Pristine window is invisible.** `Simulation.Tend` opens the 30 s
-  `pristineBonusRemaining` window and the HUD gives no cue. (`GameHud`)
+- **Tending's Choice window is invisible.** `Simulation.Tend` opens the 30 s
+  `choiceBonusRemaining` window and the HUD gives no cue. (`GameHud`)
 - **Verse cards don't render the spotlight (✳) marker.**
 - **The Migration vignette shows the Verdure gain only** — per-familiar Kinship
   gains aren't itemised, and Kinship is legible everywhere else now.
@@ -142,7 +142,7 @@ wired to nothing. The settings row lands with the audio pass.
 - **Some species have no acquisition path but bonds** — the non-node species
   (dray-stag, tawny-owl, cavern-bat) have no gift pile to be called by. Future
   arrival content.
-- **Crafting and gifts spend only common stock.** A run holding only Fine berries
+- **Crafting and gifts spend only plain stock.** A run holding only Decent berries
   can't gift. Probably right, but revisit with balance.
 
 ### 1.6 The Warden's Sigil — ship it or cut it
@@ -177,6 +177,17 @@ sim modifier.
     `AchievementsTests.EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas`
     are the pattern. Worth doing for **"Reader of Stones" (4)** too, if that
     number ever means anything other than "some of them".
+- **The "Pristine" achievement is renamed in the manifest but not in the
+  console.** The grades are Poor / Decent / Choice from 2026-08-02, so
+  `store/play-games/achievements.json` now names the achievement **"Choice"**
+  ("Find your first Choice specimen", slug `choice`) and `AchievementIds.g.cs`
+  carries the same encoded id under the new constant. `pgs-achievements.py`
+  matches the console **by display name**, so until the console entry is renamed
+  by hand a `--apply` run would read "Choice" as missing and insert a duplicate.
+  Rename it in the console first, then re-run the tool; the id itself never
+  changes, so unlocks in the field are unaffected either way. Re-upload
+  `store/play-games/achievement-choice-512.png` in the same visit (icons are a
+  manual upload — see the tool's header). Batch with the drifted-step visit above.
 - **`AdUnitIds.AmberDrip` is an alias of `TimeSkip`.** The drip and the skip share
   one ad unit: one fill pool, one frequency cap, one reporting row. Nothing breaks
   — the drip's earn rate just becomes unmeasurable and each placement quietly caps

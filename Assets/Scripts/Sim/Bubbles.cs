@@ -9,7 +9,7 @@ namespace Wildgrove.Sim
     /// catching it pockets a burst of that node's goods straight to camp.
     /// Catching one still counts as the warden tending the node (the Rite's
     /// tend deeds and the Cordage Wraps' burst bonus stay live), so the tend
-    /// burst and Pristine window ride along with the goods. The bubbles
+    /// burst and Choice window ride along with the goods. The bubbles
     /// themselves are ephemeral presentation (spawn timing and float live in
     /// the world layer, nothing persists) — this is the pure spend/grant
     /// maths. economy.bubbles absent or zeroed = the system is inert
@@ -83,7 +83,7 @@ namespace Wildgrove.Sim
         /// Catch a bubble at <paramref name="node"/>: the reward lands as camp
         /// stock (the warden's own catch — no waiting on a delivery), credits
         /// gather XP, mastery and the Compendium like any handled goods, and
-        /// tends the node (burst + Pristine window + Rite deed). Returns the
+        /// tends the node (burst + Choice window + Rite deed). Returns the
         /// amount granted, zero when nothing was due.
         /// </summary>
         public static BigDouble Pop(GameState state, GameDataAsset data, NodeState node)

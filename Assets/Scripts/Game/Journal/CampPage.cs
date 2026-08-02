@@ -640,9 +640,9 @@ namespace Wildgrove.Game
         // The quality tiers a deal is answered at, in row order.
         private static readonly QualityTier[] ExchangeTiers =
         {
-            QualityTier.Common,
-            QualityTier.Fine,
-            QualityTier.Pristine,
+            QualityTier.Poor,
+            QualityTier.Decent,
+            QualityTier.Choice,
         };
 
         /// <summary>
@@ -650,7 +650,7 @@ namespace Wildgrove.Game
         /// caravan's to name now — one give-good for one take-good, drawn from
         /// the wall-clock window and turning every few minutes. The player
         /// chooses only how much to answer with, at whichever quality tiers
-        /// the camp holds of the asked good: Fine and Pristine trade in at
+        /// the camp holds of the asked good: Decent and Choice trade in at
         /// their §5 value multipliers and are always paid out in plain goods,
         /// which is finally an exit for the windfall pools.
         /// </summary>
@@ -698,7 +698,7 @@ namespace Wildgrove.Game
                 row.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
                 Button trade = null;
                 trade = Button(row.transform, "Trade", 800, () => OfferTrade(trade, captured));
-                if (captured == QualityTier.Common)
+                if (captured == QualityTier.Poor)
                 {
                     KeyAction(trade);
                 }
@@ -760,7 +760,7 @@ namespace Wildgrove.Game
                     trade.interactable = live;
                     SetButtonTint(trade, live, true);
                     SetButtonLabel(trade, "Trade " + ExchangeDeal(offer, quality, spend, got)
-                                          + (quality == QualityTier.Common
+                                          + (quality == QualityTier.Poor
                                               ? string.Empty
                                               : "\n" + SizeOpen(14) + TierName(quality).TrimEnd() + " trades in at ×"
                                                 + PlainNumber(Exchange.QualityValueMultiplier(_loop.Data, quality)) + "</size>"));
@@ -774,22 +774,22 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(refresh);
         }
 
-        /// <summary>"fine " / "pristine " — the tier as the deal speaks it; plain goods go unmarked.</summary>
+        /// <summary>"decent " / "choice " — the tier as the deal speaks it; plain goods go unmarked.</summary>
         private static string TierName(QualityTier quality)
         {
             switch (quality)
             {
-                case QualityTier.Fine:
-                    return "fine ";
-                case QualityTier.Pristine:
-                    return "pristine ";
+                case QualityTier.Decent:
+                    return "decent ";
+                case QualityTier.Choice:
+                    return "choice ";
                 default:
                     return string.Empty;
             }
         }
 
         /// <summary>
-        /// "120 fine berries → 18 wildflowers". Fraction-capable throughout:
+        /// "120 decent berries → 18 wildflowers". Fraction-capable throughout:
         /// half of five berries is 2.5, and the whole-unit formatter would call
         /// that 2 while the caravan took two and a half.
         /// </summary>
@@ -825,10 +825,10 @@ namespace Wildgrove.Game
                 return;
             }
 
-            // Pristines have two other suitors — the folio's pages and the
+            // Choice finds have two other suitors — the folio's pages and the
             // rite's specimen slots — so emptying that pool warns of both.
-            var caution = quality == QualityTier.Pristine
-                ? " the folio and the rite ask for pristine finds too."
+            var caution = quality == QualityTier.Choice
+                ? " the folio and the rite ask for choice finds too."
                 : string.Empty;
             _hud.Sheets.OpenConfirmSheet(
                 "Trade all your " + TierName(quality) + GoodName(offer.from) + "?",

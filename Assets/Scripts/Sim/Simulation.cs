@@ -118,9 +118,9 @@ namespace Wildgrove.Sim
                     node.tendBurstRemaining = System.Math.Max(0.0, node.tendBurstRemaining - deltaSeconds);
                 }
 
-                if (node.pristineBonusRemaining > 0.0)
+                if (node.choiceBonusRemaining > 0.0)
                 {
-                    node.pristineBonusRemaining = System.Math.Max(0.0, node.pristineBonusRemaining - deltaSeconds);
+                    node.choiceBonusRemaining = System.Math.Max(0.0, node.choiceBonusRemaining - deltaSeconds);
                 }
             }
 
@@ -162,7 +162,7 @@ namespace Wildgrove.Sim
         /// Land every node's pooled pickings at camp on a fixed cadence — the
         /// "delivery batch" design §5's quality rolls attach to. Each node's
         /// pool arrives as one batch (a batch is always a single resource), so
-        /// rolls stay per-batch, never per unit, and Pristine keeps landing as
+        /// rolls stay per-batch, never per unit, and Choice keeps landing as
         /// a discrete windfall. Progress only accrues while something is
         /// waiting, so an idle grove doesn't bank deliveries against future
         /// goods.
@@ -202,22 +202,22 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Land one delivery batch at camp with its design §5 quality roll: the
-        /// whole delivery takes the rolled tier. Common goes to plain stock,
-        /// Fine to the fine pool (sold at the bonus alongside plain stock),
-        /// Pristine to the specimen pool (held for an explicit windfall sale —
+        /// whole delivery takes the rolled tier. Poor goes to plain stock,
+        /// Decent to the decent pool (sold at the bonus alongside plain stock),
+        /// Choice to the specimen pool (held for an explicit windfall sale —
         /// or, later, donation or offering).
         /// </summary>
         private static void Deliver(GameState state, GameDataAsset data, NodeState node, BigDouble amount)
         {
             switch (Quality.Roll(state, data, node))
             {
-                case QualityTier.Pristine:
-                    state.AddPristine(node.resourceId, amount);
-                    Compendium.RecordPristine(state, node.resourceId, amount);
+                case QualityTier.Choice:
+                    state.AddChoice(node.resourceId, amount);
+                    Compendium.RecordChoice(state, node.resourceId, amount);
                     break;
 
-                case QualityTier.Fine:
-                    state.AddFine(node.resourceId, amount);
+                case QualityTier.Decent:
+                    state.AddDecent(node.resourceId, amount);
                     break;
 
                 default:
@@ -244,7 +244,7 @@ namespace Wildgrove.Sim
         /// Apply a Tending burst to <paramref name="node"/> (the tap-to-tend
         /// interaction, design §5): for the next economy.tending.burstDurationSec
         /// seconds the node yields at burstYieldMult, and for
-        /// pristineBonusDurationSec its haul batches roll Pristine at the
+        /// choiceBonusDurationSec its haul batches roll Choice at the
         /// tending-boosted chance. Both refresh rather than stack — a fresh tap
         /// resets each timer to its full duration. No-op when tending isn't
         /// configured.
@@ -257,7 +257,7 @@ namespace Wildgrove.Sim
             }
 
             node.tendBurstRemaining = economy.tending.burstDurationSec;
-            node.pristineBonusRemaining = economy.tending.pristineBonusDurationSec;
+            node.choiceBonusRemaining = economy.tending.choiceBonusDurationSec;
         }
 
         /// <summary>
@@ -360,14 +360,14 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Camp stock plus basket contents, per resource — quality pools
-        /// included, so a Fine or Pristine batch landed offline still counts
+        /// included, so a Decent or Choice batch landed offline still counts
         /// as a welcome-back gain of its resource.
         /// </summary>
         private static Dictionary<string, BigDouble> SnapshotHoldings(GameState state)
         {
             var holdings = new Dictionary<string, BigDouble>(state.resources);
-            AddPool(holdings, state.fineResources);
-            AddPool(holdings, state.pristineResources);
+            AddPool(holdings, state.decentResources);
+            AddPool(holdings, state.choiceResources);
             foreach (var node in state.nodes)
             {
                 holdings.TryGetValue(node.resourceId, out var held);

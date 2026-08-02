@@ -71,7 +71,7 @@ namespace Wildgrove.Game
                 case RiteSlotType.Deed:
                     return slot.deed;
                 case RiteSlotType.Specimen:
-                    return "one " + (string.IsNullOrEmpty(slot.quality) ? "fine" : slot.quality) + " find";
+                    return "one " + (string.IsNullOrEmpty(slot.quality) ? "decent" : slot.quality) + " find";
                 case RiteSlotType.Sketch:
                     return "a field sketch";
                 default:

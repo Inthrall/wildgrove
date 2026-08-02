@@ -113,8 +113,8 @@ namespace Wildgrove.Game
                     return (string.IsNullOrEmpty(effect.skill) ? "crafting" : effect.skill) + " ×" + PlainNumber(effect.value) + " faster";
                 case EffectType.DigSpeedMult:
                     return "digs ×" + PlainNumber(effect.value) + " faster";
-                case EffectType.PristineChanceBonus:
-                    return "pristine chance +" + Percent(effect.value);
+                case EffectType.ChoiceChanceBonus:
+                    return "choice chance +" + Percent(effect.value);
                 case EffectType.FolioSpreadBonusMult:
                     return "folio spreads ×" + PlainNumber(effect.value);
                 case EffectType.OfflineCapHours:

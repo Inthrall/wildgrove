@@ -64,10 +64,10 @@ namespace Wildgrove.Game.Services
         /// <summary>"The Whole Wood" — Befriend every species that walks the grove.</summary>
         public const string TheWholeWood = "CggIp4me7kEQAhBB";
 
-        /// <summary>"Pristine" — Find your first Pristine specimen.</summary>
-        public const string Pristine = "CggIp4me7kEQAhBG";
+        /// <summary>"Choice" — Find your first Choice specimen.</summary>
+        public const string Choice = "CggIp4me7kEQAhBG";
 
-        /// <summary>"Fixed in Ink" — Fix a Pristine specimen into the Folio.</summary>
+        /// <summary>"Fixed in Ink" — Fix a Choice specimen into the Folio.</summary>
         public const string FixedInInk = "CggIp4me7kEQAhAx";
 
         /// <summary>"A Spread Complete" — Fill every entry of one Folio spread.</summary>
@@ -166,7 +166,7 @@ namespace Wildgrove.Game.Services
             WellKnown,
             Inseparable,
             TheWholeWood,
-            Pristine,
+            Choice,
             FixedInInk,
             ASpreadComplete,
             HalfTheFolio,

@@ -175,8 +175,8 @@ namespace Wildgrove.Sim.Tests
         {
             var state = StateWithTheRiteSung();
             state.AddResource("berries", 500);
-            state.AddFine("berries", 5);
-            state.AddPristine("berries", 2);
+            state.AddDecent("berries", 5);
+            state.AddChoice("berries", 2);
             state.nodes[0].masteryXp = 500.0;
             state.purchasedUpgradeIds.Add("flint-sickle");
             state.buildingLevels["fire"] = 3;
@@ -192,8 +192,8 @@ namespace Wildgrove.Sim.Tests
             // The run's own state resets to the fresh-run baseline (the kith
             // itself crosses — see Migrate_CarriesTheKithFolded).
             Assert.That(next.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(next.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(next.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(next.GetDecent("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(next.GetChoice("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.nodes[0].masteryXp, Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(next.purchasedUpgradeIds, Is.Empty);
             Assert.That(next.buildingLevels, Is.Empty);
@@ -236,7 +236,7 @@ namespace Wildgrove.Sim.Tests
                 },
             };
             var state = StateWithTheRiteSung();
-            state.AddPristine("berries", 1);
+            state.AddChoice("berries", 1);
             Folio.TryFix(state, _data, "berries");
 
             var next = Migration.Migrate(state, _data);
@@ -447,13 +447,13 @@ namespace Wildgrove.Sim.Tests
             var state = StateWithTheRiteSung();
             state.lifetimeGathered["berries"] = new BigDouble(123456.0);
             state.lifetimeCrafted["berry-preserve"] = 42.0;
-            state.lifetimePristine["berries"] = new BigDouble(3.0);
+            state.lifetimeChoice["berries"] = new BigDouble(3.0);
 
             var next = Migration.Migrate(state, _data);
 
             Assert.That(Compendium.LifetimeGathered(next, "berries").ToDouble(), Is.EqualTo(123456.0).Within(Tolerance));
             Assert.That(Compendium.LifetimeCrafted(next, "berry-preserve"), Is.EqualTo(42.0).Within(Tolerance));
-            Assert.That(Compendium.LifetimePristine(next, "berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance),
+            Assert.That(Compendium.LifetimeChoice(next, "berries").ToDouble(), Is.EqualTo(3.0).Within(Tolerance),
                 "the record is one of the axes that never reset");
         }
 

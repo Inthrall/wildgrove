@@ -181,9 +181,9 @@ namespace Wildgrove.EditorTools
 
             state.AddResource("copper-ingot", new BigDouble(14));
             state.AddResource("charcoal", new BigDouble(22));
-            state.AddPristine("berries", new BigDouble(3));
-            state.AddPristine("wildflowers", new BigDouble(1));
-            state.AddFine("nuts", new BigDouble(45));
+            state.AddChoice("berries", new BigDouble(3));
+            state.AddChoice("wildflowers", new BigDouble(1));
+            state.AddDecent("nuts", new BigDouble(45));
             Folio.TryFix(state, data, "wildflowers");
 
 

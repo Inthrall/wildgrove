@@ -1583,12 +1583,12 @@ namespace Wildgrove.Game
                 buildings += pair.Value;
             }
 
-            var pristine = 0;
-            foreach (var pair in state.pristineResources)
+            var choice = 0;
+            foreach (var pair in state.choiceResources)
             {
                 if (pair.Value > BigDouble.Zero)
                 {
-                    pristine++;
+                    choice++;
                 }
             }
 
@@ -1615,7 +1615,7 @@ namespace Wildgrove.Game
             }
 
             return _tab + "/" + state.roster.Count + "/" + state.nodes.Count + "/" + state.digSites.Count
-                   + "/" + owned + "/" + recipes + "/" + buildings + "/" + pristine
+                   + "/" + owned + "/" + recipes + "/" + buildings + "/" + choice
                    + "/" + _loop.UnlockedSkills().Count + "/" + state.gearBySlot.Count
                    + "/" + state.fixedResources.Count + "/" + recordedInsects
                    + "/" + state.builtPlanters.Count + "/" + revealedVerses

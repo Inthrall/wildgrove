@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: e8c52c50116a733b2087b341f89fcec7c93f16e2245518d733e025ab876b5563
+  sourceHash: 8a4dc8adc630b31bbdedf900c12583b1691121efe04db38493505d751cd89bb5
   economy:
     costGrowth:
       building: 1.25
@@ -59,10 +59,10 @@ MonoBehaviour:
       baseCapHours: 4
       rateMultiplier: 1
     quality:
-      fineChance: 0.035
-      fineValueMult: 1.5
-      pristineBaseChance: 0.005
-      pristineValueMult: 10
+      decentChance: 0.035
+      decentValueMult: 1.5
+      choiceBaseChance: 0.005
+      choiceValueMult: 10
     observation:
       pityTimerHoursWatched: 4
       baseSketchesPerHour: 0.25
@@ -71,8 +71,8 @@ MonoBehaviour:
     tending:
       burstYieldMult: 3
       burstDurationSec: 5
-      pristineBonusDurationSec: 30
-      pristineChanceBonus: 1
+      choiceBonusDurationSec: 30
+      choiceChanceBonus: 1
     warden:
       gatherPerSecond: 0.5
     bubbles:
@@ -2609,7 +2609,7 @@ MonoBehaviour:
       value: 1.5
   - id: aurora-cordial
     displayName: Aurora Cordial
-    description: 'sharpens the eye: +1% to a pristine find while it lasts'
+    description: 'sharpens the eye: +1% to a choice find while it lasts'
     durationSec: 1200
     effects:
     - type: 5
@@ -2708,7 +2708,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: fine
+          quality: decent
           renownGrant: 100
       - id: verse-bramble
         zone: bramble-hedgerows
@@ -2749,7 +2749,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: fine
+          quality: decent
           renownGrant: 150
       - id: verse-oldgrowth
         zone: old-growth-wood
@@ -2830,7 +2830,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: pristine
+          quality: choice
           renownGrant: 1000
       - id: verse-mistfen
         zone: mistfen-marsh
@@ -2870,7 +2870,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: pristine
+          quality: choice
           renownGrant: 2500
       - id: verse-hollows
         zone: the-hollows
@@ -2911,7 +2911,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: pristine
+          quality: choice
           renownGrant: 4000
       - id: verse-crags
         zone: highland-crags
@@ -2952,7 +2952,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: pristine
+          quality: choice
           renownGrant: 7000
       - id: verse-cloudreach
         zone: cloudreach-peaks
@@ -2986,7 +2986,7 @@ MonoBehaviour:
           amount: 0
           deed: 
           count: 1
-          quality: pristine
+          quality: choice
           renownGrant: 10000
         - type: 3
           resource: 

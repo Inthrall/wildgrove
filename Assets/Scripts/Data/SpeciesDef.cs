@@ -5,7 +5,7 @@ namespace Wildgrove.Data
     /// <summary>
     /// A species' single fixed trait (design doc §4): what makes it the
     /// specialist of one post. Interpreted by the sim: nodeYieldBonus (at a
-    /// node of <see cref="Resource"/>), pristineBonus, digSpeedBonus,
+    /// node of <see cref="Resource"/>), choiceBonus, digSpeedBonus,
     /// bubbleRewardBonus, wardenYieldBonus.
     /// </summary>
     public sealed class TraitDef
@@ -21,7 +21,7 @@ namespace Wildgrove.Data
         /// <summary>
         /// The related pair of resources the trait is specialised to (e.g.
         /// copper-scree + tin-seam) — the familiar works either node. Empty
-        /// means it applies wherever the familiar is posted (watch/pristine/bubble/warden).
+        /// means it applies wherever the familiar is posted (watch/choice/bubble/warden).
         /// </summary>
         public List<string> Resources { get; set; } = new List<string>();
 

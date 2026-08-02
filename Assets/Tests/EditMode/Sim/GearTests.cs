@@ -31,7 +31,7 @@ namespace Wildgrove.Sim.Tests
                 tending = new EconomyData.TendingData
                 {
                     burstYieldMult = 3.0, burstDurationSec = 5.0,
-                    pristineBonusDurationSec = 30.0, pristineChanceBonus = 1.0,
+                    choiceBonusDurationSec = 30.0, choiceChanceBonus = 1.0,
                 },
             };
             _data.zones = new List<ZoneData>

@@ -21,7 +21,7 @@ namespace Wildgrove.Sim
     /// The caravan names the deal, not the player: one from-good and one
     /// to-good, drawn deterministically from the wall-clock window
     /// (<see cref="OfferAt"/>) and changing every exchange.offerMinutes. Every
-    /// quality tier of the from-good is taken — Fine and Pristine at their
+    /// quality tier of the from-good is taken — Decent and Choice at their
     /// value multipliers — and the caravan always pays in plain goods, so
     /// excess high-quality stock trades down into more units of something else.
     /// </para>
@@ -137,10 +137,10 @@ namespace Wildgrove.Sim
 
             switch (quality)
             {
-                case QualityTier.Fine:
-                    return config.fineValueMult > 0.0 ? config.fineValueMult : 1.0;
-                case QualityTier.Pristine:
-                    return config.pristineValueMult > 0.0 ? config.pristineValueMult : 1.0;
+                case QualityTier.Decent:
+                    return config.decentValueMult > 0.0 ? config.decentValueMult : 1.0;
+                case QualityTier.Choice:
+                    return config.choiceValueMult > 0.0 ? config.choiceValueMult : 1.0;
                 default:
                     return 1.0;
             }
@@ -177,11 +177,11 @@ namespace Wildgrove.Sim
         /// </summary>
         public static BigDouble Quote(GameState state, GameDataAsset data, string from, string to, BigDouble amount)
         {
-            return Quote(state, data, from, to, amount, QualityTier.Common);
+            return Quote(state, data, from, to, amount, QualityTier.Poor);
         }
 
         /// <summary>
-        /// The quality-aware quote: a Fine or Pristine trade-in is worth its
+        /// The quality-aware quote: a Decent or Choice trade-in is worth its
         /// value multiplier more of the plain good coming back.
         /// </summary>
         public static BigDouble Quote(GameState state, GameDataAsset data, string from, string to, BigDouble amount, QualityTier quality)
@@ -221,12 +221,12 @@ namespace Wildgrove.Sim
         /// </summary>
         public static BigDouble TryTrade(GameState state, GameDataAsset data, string from, string to, BigDouble amount)
         {
-            return TryTrade(state, data, from, to, amount, QualityTier.Common);
+            return TryTrade(state, data, from, to, amount, QualityTier.Poor);
         }
 
         /// <summary>
         /// The quality-aware trade: spends from the tier's own pool (camp
-        /// stock, the Fine pool, or the held Pristines) and always pays into
+        /// stock, the Decent pool, or the held Choice finds) and always pays into
         /// plain camp stock — quality trades DOWN, excess windfalls becoming
         /// more units of an ordinary good.
         /// </summary>
@@ -266,10 +266,10 @@ namespace Wildgrove.Sim
         {
             switch (quality)
             {
-                case QualityTier.Fine:
-                    return state.fineResources;
-                case QualityTier.Pristine:
-                    return state.pristineResources;
+                case QualityTier.Decent:
+                    return state.decentResources;
+                case QualityTier.Choice:
+                    return state.choiceResources;
                 default:
                     return state.resources;
             }

@@ -108,7 +108,7 @@ namespace Wildgrove.Game.Services
             Count(AchievementIds.TheWholeWood, 12, (s, d) => s.speciesEverBefriended.Count),
 
             // ── Compendium and Folio ──────────────────────────────────────
-            Unlock(AchievementIds.Pristine, (s, d) => s.lifetimePristine.Count > 0),
+            Unlock(AchievementIds.Choice, (s, d) => s.lifetimeChoice.Count > 0),
             Unlock(AchievementIds.FixedInInk, (s, d) => s.fixedResources.Count > 0),
             Unlock(AchievementIds.ASpreadComplete, (s, d) => CompletedSpreadCount(s, d) >= 1),
             Unlock(AchievementIds.HalfTheFolio, (s, d) => CompletedSpreadCount(s, d) >= 5),

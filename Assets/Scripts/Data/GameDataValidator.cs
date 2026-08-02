@@ -35,7 +35,7 @@ namespace Wildgrove.Data
         // sites) — a slot naming anything else could never fill.
         private static readonly HashSet<string> KnownDeeds = new HashSet<string> { "tend" };
 
-        private static readonly HashSet<string> KnownSpecimenQualities = new HashSet<string> { "fine", "pristine" };
+        private static readonly HashSet<string> KnownSpecimenQualities = new HashSet<string> { "decent", "choice" };
 
         public static IReadOnlyList<string> Validate(GameData data)
         {
@@ -933,7 +933,7 @@ namespace Wildgrove.Data
         // kind would sit on a species and do nothing.
         private static readonly HashSet<string> KnownTraitKinds = new HashSet<string>
         {
-            "nodeYieldBonus", "pristineBonus", "digSpeedBonus", "bubbleRewardBonus", "wardenYieldBonus"
+            "nodeYieldBonus", "choiceBonus", "digSpeedBonus", "bubbleRewardBonus", "wardenYieldBonus"
         };
 
         // The trait's authored resource pair, falling back to the legacy single
@@ -1271,7 +1271,7 @@ namespace Wildgrove.Data
 
                 foreach (var entry in spread.Entries)
                 {
-                    // Pristine specimens only come from haul batches, so a spread
+                    // Choice specimens only come from haul batches, so a spread
                     // entry must be a GATHERED resource — a crafted good could
                     // never be fixed into the Folio.
                     if (!gathered.Contains(entry))
@@ -1802,27 +1802,27 @@ namespace Wildgrove.Data
             }
 
             if (economy.Quality != null
-                && (!IsChance(economy.Quality.FineChance) || !IsChance(economy.Quality.PristineBaseChance)))
+                && (!IsChance(economy.Quality.DecentChance) || !IsChance(economy.Quality.ChoiceBaseChance)))
             {
                 issues.Add("Economy quality chances must be within [0, 1]");
             }
 
-            if (economy.Quality != null && economy.Quality.FineChance + economy.Quality.PristineBaseChance > 1)
+            if (economy.Quality != null && economy.Quality.DecentChance + economy.Quality.ChoiceBaseChance > 1)
             {
                 // The two rolls share one [0,1) draw — together they must
-                // leave room for Common.
+                // leave room for Poor.
                 issues.Add("Economy quality chances must not sum above 1");
             }
 
             if (economy.Quality != null
-                && (economy.Quality.FineValueMult <= 0 || economy.Quality.PristineValueMult <= 0))
+                && (economy.Quality.DecentValueMult <= 0 || economy.Quality.ChoiceValueMult <= 0))
             {
                 issues.Add("Economy quality value multipliers must be positive");
             }
 
-            if (economy.Tending != null && economy.Tending.PristineChanceBonus < 0)
+            if (economy.Tending != null && economy.Tending.ChoiceChanceBonus < 0)
             {
-                issues.Add("Economy tending.pristineChanceBonus must not be negative");
+                issues.Add("Economy tending.choiceChanceBonus must not be negative");
             }
 
             if (economy.Tending != null && economy.Tending.BurstYieldMult <= 0)
@@ -1833,9 +1833,9 @@ namespace Wildgrove.Data
                 issues.Add("Economy tending.burstYieldMult must be positive");
             }
 
-            if (economy.Tending != null && (economy.Tending.BurstDurationSec < 0 || economy.Tending.PristineBonusDurationSec < 0))
+            if (economy.Tending != null && (economy.Tending.BurstDurationSec < 0 || economy.Tending.ChoiceBonusDurationSec < 0))
             {
-                issues.Add("Economy tending burst/pristine durations must not be negative");
+                issues.Add("Economy tending burst/choice durations must not be negative");
             }
 
             if (economy.Bubbles != null
@@ -1949,7 +1949,7 @@ namespace Wildgrove.Data
 
                 case EffectType.DigSpeedMult:
                 case EffectType.FolioSpreadBonusMult:
-                case EffectType.PristineChanceBonus:
+                case EffectType.ChoiceChanceBonus:
                 case EffectType.OfflineCapHours:
                 case EffectType.OfflineCapBonusHours:
                 case EffectType.TendingBurstBonus:

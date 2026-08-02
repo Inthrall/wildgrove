@@ -27,7 +27,7 @@
 
 ### Tend, don't take
 
-You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the kith brings home into the gear and goods a camp needs to push deeper. Some finds are **Pristine**: specimens worth keeping forever. Some the land only lets you watch — the rare **insects** that gather at quiet sites: observed and drawn in careful sketches, then let go — each plate a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the kith slips back into the grass, and the land — and the creatures — remember how you treated them.
+You are the warden of a small camp on the edge of an old, patient wilderness — and you are the only human in it. What company you have, the land sends: **familiars**, a handful of wild creatures who choose a careful warden — never more than a few, each one a name, a face, and a working partner. Together you gather, and together you give back: **replanting** what you take, building the land richer than you found it. Around the fire you craft what the kith brings home into the gear and goods a camp needs to push deeper. Some finds are **Choice**: specimens worth keeping forever. Some the land only lets you watch — the rare **insects** that gather at quiet sites: observed and drawn in careful sketches, then let go — each plate a sentence in a story nobody finishes telling you. And each region asks something back: a **Rite**, performed verse by verse at quiet places, offerings set down for spirits you never see — the land deciding whether you may move on. When the Rite is done and the season turns, the camp **migrates**, most of the kith slips back into the grass, and the land — and the creatures — remember how you treated them.
 
 The fantasy is *stewardship, not extraction*. You are a guest who works hard, with a few friends who noticed.
 
@@ -66,7 +66,7 @@ Wildgrove borrows Idle Obelisk's spine (the Trail) and gate (the Rite) — and, 
 > trail sat flat between rungs — and any tuning was wrong for either a 4- or a
 > 6-slot kith. Goods now travel home automatically and losslessly, landing at
 > camp as one batch per node every few seconds (the batch survives purely so
-> §5 quality rolls stay per-batch and Pristine lands as a discrete windfall).
+> §5 quality rolls stay per-batch and a Choice find lands as a discrete windfall).
 > With it went: the trail post and its lane maths, per-node basket caps and
 > overflow, the five hauling upgrade rungs, Sure Paths, the Store's basket
 > line (now: the away credit runs longer per level), the Timber Frame planter,
@@ -88,7 +88,7 @@ gather at their posts        walk themselves      │
 ```
 
 1. **Agents at posts.** The warden and each slotted familiar can be **stationed** at a post; a familiar without a post **rests at camp** — no output (a slot is the right to hold a post, §4). Up to six slots by endgame (one to start — §4 ladder), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
-2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Pristine chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
+2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Choice chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
 3. Harvest travels home on its own — deliveries are automatic and lossless (DECIDED 2026-07-31, superseding the 2026-07-18 trail post). The pack raven still arrives at minute one, now fattening every windfall bubble instead of walking a lane.
 4. The **fire and benches** turn raw finds into four kinds of output: **survival gear** (the kit — permanent-for-the-run buffs), **trade goods** (dense barter weight at the Exchange), **offerings** (consumed by the Rite, §8), and **planter materials** (given back to the nodes, §3).
 5. The **Exchange** — the silent caravan — barters goods for goods. Deeper zones demand better tools *and* better gear → invest → advance. Repeat.
@@ -163,7 +163,7 @@ There is no carrier type — and since 2026-07-31 no carrying at all: deliveries
 
 - Each species carries a **single fixed trait** — what makes it the specialist of one post. A familiar *comes with* its ability; there is no per-familiar build, no respec because there is nothing to respec. Species is identity: unique plate art, one trait, and **at most one familiar of each species, ever**.
 - A familiar still earns **XP at its post**, from its own work. **Levels never scale output** — they pace XP and Kinship only; yield comes from tools (the post's levers), the species trait (the holder's), and richness.
-- Trait kinds the sim reads: `nodeYieldBonus` (with a **pair** of related resources — the specialist works either node), `trailThroughputBonus`, `digSpeedBonus` (the watch), `pristineBonus`.
+- Trait kinds the sim reads: `nodeYieldBonus` (with a **pair** of related resources — the specialist works either node), `trailThroughputBonus`, `digSpeedBonus` (the watch), `choiceBonus`.
 - **A node specialist works a related pair of nodes** (reworked 2026-07-24), so one familiar answers either node's gift pile and boosts both wherever it's posted or as it wanders. The starting kith is sized to the gatherable nodes — seven pair-specialists cover zones 1–4 (plus rare-herbs) — and each species' animal is chosen to match the powerup it gives. Names each start with a distinct letter.
 
 | Species        | Trait                                           | Flavour                              |
@@ -209,7 +209,7 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 | **Forgecraft** | Survival crafting | Ores, timber (charcoal), clay    | Ingots → every tool tier; fittings    | MVP   |
 | **Bushcraft**  | Survival crafting | Timber, fibres, reeds, clay      | Cordage, planks, baskets; **planters**; gear | MVP |
 | **Observation** | Collection       | Observation sites (Zones 3+)     | Field sketches (insect-plate portions), amber | MVP |
-| **Curation**   | Collection        | Pristine specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
+| **Curation**   | Collection        | Choice specimens, insect plates | Folio fixings, spread bonuses         | MVP   |
 | **Entomology** | Gathering         | Marsh nodes                      | Insects (pure collection value)       | v1.1  |
 | **Apothecary** | Survival crafting | Herbs, peat, fungi, glow-moss, summit bloom and glacier ice | **Tinctures** (buff consumables — built 2026-07-28; a fourth, the Aurora Cordial, arrived with zone 8 on 2026-08-01 and is the only one gated behind a rung, the Rime Still) | v1.1 |
 | **Delving**    | Gathering         | Hollows nodes                    | Deep ores, crystals, ashglass (built 2026-07-29; deep ingots feed the deepsteel tier) | v1.1 |
@@ -264,9 +264,9 @@ There is no museum. There was never anywhere to put one. Everything the collecti
 
 **The Compendium** records every gatherable, creature, and recipe on first meeting — a plate, a line or two, lifetime counters. **Roster familiars each get a plate**, growing over seasons: name, species, Kinship level, and (at 1.1) an inscribed signature trait — the game's warmest pages, and its most-consulted, because the roster is fielded from here.
 
-Finds roll a quality: **Common** (96%), **Fine** (~3.5%, +50% barter weight), **Pristine** (~0.5% base, upgradeable). Quality rolls happen per **delivery batch**, not per unit — at idle rates a per-unit roll would shower Pristines and cheapen the windfall. A Pristine find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
+Finds roll a grade: **Poor** (96%), **Decent** (~3.5%, +50% barter weight), **Choice** (~0.5% base, upgradeable). **The grade words are the harvest's, not a fossil dealer's (DECIDED 2026-08-02):** what the kith brings home is berries, timber, fish and ore, and the ladder is deliberately left open above Choice — the higher grades are unwritten, not absent. Quality rolls happen per **delivery batch**, not per unit — at idle rates a per-unit roll would shower Choice finds and cheapen the windfall. A Choice find can be traded at the Exchange for a windfall — **fixed into the Folio** — or **offered**: the three-way windfall choice.
 
-**The Folio** (replaces the Museum) is the journal's back pages, where Pristine specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Pristine chance, +offline cap) — the Warden's Gallery is the capstone spread (its slot grant moved to the store ladder, §4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
+**The Folio** (replaces the Museum) is the journal's back pages, where Choice specimens are physically **fixed**: flowers pressed, feathers tipped in, scales gummed to the paper, a nut split and mounted. **Spreads** group 4–8 related entries; a completed spread grants a *permanent* bonus surviving Migration (+% yield, +Choice chance, +offline cap) — the Warden's Gallery is the capstone spread (its slot grant moved to the store ladder, §4). **Fixing is a real choice:** run-speed now versus permanence — the specimen is consumed by the page. (Note the line this draws: the living land *gives*, and what it gives may be kept, pressed, traded, or offered; the buried past is only ever borrowed with your eyes — see below.)
 
 ### Insects — the deep chase (observe · sketch · release — DECIDED 2026-07-21)
 
@@ -280,7 +280,7 @@ The one system that used to take. It doesn't anymore: **nothing is kept.** From 
 | Insect plate (MVP)       | Portions | Where                  | Bonus                      | What it whispers                                          |
 | ------------------------ | -------- | ---------------------- | -------------------------- | --------------------------------------------------------- |
 | **The Stag's Herald**    | 3        | Old-Growth Wood        | +10% all yields            | A beetle armoured like something ten times its size. It remembers being feared. |
-| **The Silver Skimmer**   | 4        | Silverrun River        | +15% fishing, +1% Pristine | A damselfly older than the river's name. It has watched the water change and change. |
+| **The Silver Skimmer**   | 4        | Silverrun River        | +15% fishing, +1% Choice | A damselfly older than the river's name. It has watched the water change and change. |
 | **Those Who Sow**        | 5        | Both sites, rare hours | +20% all yields            | The pollinators. They have tended this land far longer than you, and asked for nothing. |
 | **The Lantern Bearers**  | 4        | Mistfen Marsh          | +20% observation speed     | They light the drowned paths every night, for no one. Fireflies are **watched, never gathered** — the marsh's third *find* is glow-moss (corrected 2026-07-28; a firefly in a basket contradicted §6 outright). |
 | **The Quiet Court** (v1.1) | 5      | Hollows                | +25% delving               | Pale singers in the galleries no light has reached. The rarest plate (built 2026-07-29). |
@@ -350,7 +350,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 ### The Rite — the region's exit gate
 
 - **Verses**, one per zone at its verse site (four at MVP) — the first visible and chippable from session one. **Sung strictly in order**: a verse reveals only when its zone is reached *and* the verse before it is complete. A site reached ahead of its turn shows a sealed cairn naming the verse that still bars it. Migration requires every verse complete.
-- **Choose 3 of 5.** Five offering slots — raw finds, crafted goods, occasionally a Fine or Pristine specimen, occasionally a deed (Tend N times) — any three finish the verse. One or two **spotlight crafts** are the cheapest path, rotating run to run. Unchosen slots expire, no partial credit. **Each verse stands alone (2026-07-31):** a deed slot counts only the work done since *its own* verse revealed, so no verse arrives part-answered by the deeds the one before it was already paid for.
+- **Choose 3 of 5.** Five offering slots — raw finds, crafted goods, occasionally a Decent or Choice specimen, occasionally a deed (Tend N times) — any three finish the verse. One or two **spotlight crafts** are the cheapest path, rotating run to run. Unchosen slots expire, no partial credit. **Each verse stands alone (2026-07-31):** a deed slot counts only the work done since *its own* verse revealed, so no verse arrives part-answered by the deeds the one before it was already paid for.
 - **A verse asks for the country it just opened (2026-07-31).** The generator's picks lean to the goods that debuted latest, reaching back to older ones only when the new tier runs out. The candidate pool is unchanged — this only reorders it — but without the lean a Crags verse could ask for berry preserves the camp has stockpiled since the first hour, and a verse that is already answered when it appears is not a gate.
 - **How much it asks grows through the Rite, not just across folds (2026-07-31).** Goods amounts carry a geometric zone ramp of ×3.5 per zone order (`rites.json`, pinned flat for zones 1–2 by the hour-one targets), against a within-run power curve of about ×2.5 per zone step — so each verse costs roughly half again as long as the one before it, and verse 7 is the run's event rather than its seventh errand. This pushes the full-map estimates out past the FTP ~9–12 d / paid ~4–6 d the ×2.5 pass was measured against; the run-3-to-run-6 sitting judges both.
 - **Offerings are whole (BUILT 2026-07-31).** A slot takes its entire ask in one act or not at all: the button stays shut until the stores hold all of it, and the row reads **have / asked** so the gap is the thing you watch. Holding part of an ask is not progress, and no part-answer is banked for the verses behind it to inherit — what a verse asks, it asks in full. *Why:* dribbling stock into five slots made the size of an ask meaningless, since a slot filled a grain at a time costs only patience; the decision the Rite is meant to pose is which whole ask this run can actually reach. Offerings are consumed on delivery and **credit Renown at full trade value** (§9): you give up liquidity, never prestige progress. Deed, specimen, and field-sketch slots carry fixed Renown grants — the sketch's is the largest, as the steepest thing a warden can give (§6). Gifts and replanting earn no Renown — feeding the spirits is remembered; feeding the voles is lunch.
@@ -363,7 +363,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 When the Rite completes and the region slows, the camp folds. Levels, builds, richness, planters, buildings, gear, kit, and zone progress reset. You keep **the journal entire** — Compendium, Folio spreads, insect plates — plus the roster and every **Kinship** level, Amber, and newly banked **Verdure**.
 
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
-- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Pristine chance, observation speed, auto-craft, zone skips, The Old Friend's bond, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
+- **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Choice chance, observation speed, auto-craft, zone skips, The Old Friend's bond, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
 - **Region modifiers** (lush: +herbs · misted: +fish, +glow-moss, −flowers · ashen: +observation speed, +ashglass · windswept: +trail, +peat) flavour each run — every gatherable zone is touched by at least one season, so the marsh and the Hollows feel the year too (zones 4–6 balance pass) — and feed the Rite generator (**built 2026-07-28**, `regions.json`): the draw is deterministic from the migration count — nothing persists, a reload never rerolls a season — run 1 is always home ground (the authored tutorial Rite assumes it), the fold forecast names the region ahead, and the vignette speaks the arriving season's one-line sign.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
@@ -443,7 +443,7 @@ xpToLevel(L)      = 100 · 1.10^L                    warden craft XP
 Renown            = lifetime XP (warden + familiar) + offering credits (at trade value)
 verdureGain       = floor( √( Renown / K ) )        K tuned to the XP scale
 offlineEarn       = Σ per node: min(gather, trail rate) · min(t, cap)   wanderers ×0.5; unheld trail ×0.5 lane
-pristineChance    = (0.5% + fieldPress + almanac) · (1 + tendingBonus)
+choiceChance      = (0.5% + fieldPress + almanac) · (1 + tendingBonus)
 sketchProgress    = watchers · siteSpeed · rarity              pity: portion sketched / 4 h watched
 verseDemand(m)    = baseQty · d^m · modifierWeight    d = 1.45
 verseSlots(m)     = chooseCount + ⌊m / 2⌋, capped     the breadth ramp
@@ -462,10 +462,10 @@ The √ Verdure curve keeps the when-to-reset decision legible (each ~4× Renown
 
 | Verse (site)                    | Spotlight             | Five slots — complete any 3                                                             |
 | ------------------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| 1 · the fire circle, Sunfield   | Foraging              | Berries ×300 · wildflowers ×150 · fibres ×200 · Tend 25 times · 1 Fine specimen          |
-| 2 · the hollow oak, Bramble     | Firecraft, Mining     | Berry Preserves ×8 · nuts ×400 · copper ingots ×5 · herbs ×300 · 1 Fine specimen         |
+| 1 · the fire circle, Sunfield   | Foraging              | Berries ×300 · wildflowers ×150 · fibres ×200 · Tend 25 times · 1 Decent specimen          |
+| 2 · the hollow oak, Bramble     | Firecraft, Mining     | Berry Preserves ×8 · nuts ×400 · copper ingots ×5 · herbs ×300 · 1 Decent specimen         |
 | 3 · the oldest root, Old-Growth | Bushcraft, Forgecraft | Planks ×20 · cordage ×12 · Skewers ×12 · bronze ingots ×4 · 1 field sketch (torn out — re-observe the portion) |
-| 4 · the river bend, Silverrun   | Fishing               | Fish ×500 · Smoked Trout ×20 · clay ×300 · iron ingots ×6 · 1 Pristine specimen          |
+| 4 · the river bend, Silverrun   | Fishing               | Fish ×500 · Smoked Trout ×20 · clay ×300 · iron ingots ×6 · 1 Choice specimen          |
 
 ### Pacing targets
 
@@ -513,7 +513,7 @@ Familiar slots arrive by verses sung — plus the two store rungs (§4); creatur
 | 14 | Carving Bench                | Camp       | —               | Timber ×60, stone ×30                | Unlock Bushcraft + Plank, Cordage & **Planter** recipes |
 | 15 | Whetstone                    | Tools      | Mining 10       | Stone ×50, iron gravel ×10           | All gathering yield +25%                             |
 | 16 | Forager's Skewers            | Firecraft  | Firecraft 18    | Timber ×30, herbs ×120               | Mushroom Skewer recipe                               |
-| 17 | Field Press                  | Compendium | Curation 5      | Planks ×15, cordage ×6               | Pristine chance +1pt                                 |
+| 17 | Field Press                  | Compendium | Curation 5      | Planks ×15, cordage ×6               | Choice chance +1pt                                 |
 | 18 | Bellows Forge                | Camp       | Forgecraft 15   | Planks ×30, clay ×80, copper ×10     | Forge L2: iron heat; Forgecraft speed ×2             |
 | 19 | Wagon                        | Hauling    | Bushcraft 20    | Planks ×40, iron fittings ×4         | Carry capacity ×2                                    |
 | 20 | Smokehouse                   | Camp       | —               | Planks ×50, clay ×120, stone ×60     | Offline cap 6 h → 8 h                                |

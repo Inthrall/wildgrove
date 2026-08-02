@@ -25,9 +25,9 @@
     {
       "id": "aurora-cordial",
       "name": "Aurora Cordial",
-      "description": "sharpens the eye: +1% to a pristine find while it lasts",
+      "description": "sharpens the eye: +1% to a choice find while it lasts",
       "durationSec": 1200,
-      "effects": [ { "type": "pristineChanceBonus", "value": 0.01 } ]
+      "effects": [ { "type": "choiceChanceBonus", "value": 0.01 } ]
     }
   ]
 }

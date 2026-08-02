@@ -180,18 +180,18 @@
     },
 
     {
-      "slug": "pristine",
-      "name": "Pristine",
-      "description": "Find your first Pristine specimen.",
+      "slug": "choice",
+      "name": "Choice",
+      "description": "Find your first Choice specimen.",
       "type": "STANDARD",
       "state": "REVEALED",
       "points": 5,
-      "anchor": "first entry in lifetimePristine"
+      "anchor": "first entry in lifetimeChoice"
     },
     {
       "slug": "fixed-in-ink",
       "name": "Fixed in Ink",
-      "description": "Fix a Pristine specimen into the Folio.",
+      "description": "Fix a Choice specimen into the Folio.",
       "type": "STANDARD",
       "state": "REVEALED",
       "points": 5,

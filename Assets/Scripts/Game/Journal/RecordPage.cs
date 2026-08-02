@@ -208,27 +208,27 @@ namespace Wildgrove.Game
                     var stock = held > BigDouble.Zero
                         ? "<b>" + NumberFormat.Short(held) + "</b> held  ·  "
                         : string.Empty;
-                    // Fine finds are banked apart from the camp stock — 3.5%
+                    // Decent finds are banked apart from the camp stock — 3.5%
                     // of every haul landed where no page counted it, so the
                     // pool read as goods quietly going missing.
-                    var fine = _loop.State.GetFine(captured.id);
-                    var fineHeld = fine > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(fine) + "</b> fine  ·  "
+                    var decent = _loop.State.GetDecent(captured.id);
+                    var decentHeld = decent > BigDouble.Zero
+                        ? "<b>" + NumberFormat.Short(decent) + "</b> decent  ·  "
                         : string.Empty;
-                    // Pristine's own pool, on the same footing as fine — it was
+                    // Choice's own pool, on the same footing as decent — it was
                     // counted for a lifetime and shown nowhere, so the rarest
                     // thing the ground gives had no tally of its own.
-                    var pristine = _loop.State.GetPristine(captured.id);
-                    var pristineHeld = pristine > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(pristine) + "</b> pristine  ·  "
+                    var choice = _loop.State.GetChoice(captured.id);
+                    var choiceHeld = choice > BigDouble.Zero
+                        ? "<b>" + NumberFormat.Short(choice) + "</b> choice  ·  "
                         : string.Empty;
-                    var everPristine = Compendium.LifetimePristine(_loop.State, captured.id);
-                    var pristineEver = everPristine > BigDouble.Zero
-                        ? ", " + NumberFormat.Short(everPristine) + " of them pristine"
+                    var everChoice = Compendium.LifetimeChoice(_loop.State, captured.id);
+                    var choiceEver = everChoice > BigDouble.Zero
+                        ? ", " + NumberFormat.Short(everChoice) + " of them choice"
                         : string.Empty;
-                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + fineHeld + pristineHeld + "lifetime "
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + decentHeld + choiceHeld + "lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id))
-                                + pristineEver + "</color></size>";
+                                + choiceEver + "</color></size>";
                 });
             }
 
@@ -237,24 +237,24 @@ namespace Wildgrove.Game
                 MakeText(card, "<i>…and " + beyondTheTrail + " more beyond the trail.</i>", 18, TextAnchor.MiddleLeft, Ink2);
             }
 
-            // What "fine" is for, said once at the card's foot — the pool's
-            // only exit is a verse asking for a fine find, and without the
+            // What "decent" is for, said once at the card's foot — the pool's
+            // only exit is a verse asking for a decent find, and without the
             // note the tally above is a number with no door.
-            var fineNote = MakeText(card, "<i>fine finds are kept apart from the stores; a verse sometimes asks for one</i>",
+            var decentNote = MakeText(card, "<i>decent finds are kept apart from the stores; a verse sometimes asks for one</i>",
                 16, TextAnchor.MiddleLeft, Ink2, _serif);
             _liveUpdaters.Add(() =>
             {
-                var anyFine = false;
-                foreach (var pair in _loop.State.fineResources)
+                var anyDecent = false;
+                foreach (var pair in _loop.State.decentResources)
                 {
                     if (pair.Value > BigDouble.Zero)
                     {
-                        anyFine = true;
+                        anyDecent = true;
                         break;
                     }
                 }
 
-                fineNote.gameObject.SetActive(anyFine);
+                decentNote.gameObject.SetActive(anyDecent);
             });
 
             BuildCompendiumCrafts(card);
@@ -332,19 +332,19 @@ namespace Wildgrove.Game
                 });
             }
 
-            foreach (var pair in _loop.State.pristineResources)
+            foreach (var pair in _loop.State.choiceResources)
             {
                 if (pair.Value <= BigDouble.Zero)
                 {
                     continue;
                 }
 
-                BuildPristineEntry(card, pair.Key);
+                BuildChoiceEntry(card, pair.Key);
             }
         }
 
         /// <summary>
-        /// One held Pristine specimen. A specimen the page will take gets a row
+        /// One held Choice specimen. A specimen the page will take gets a row
         /// with the Press button on it; one it won't — already pressed, or no
         /// spread asks for it — is a line of text like the spreads above. It used
         /// to be a row either way, and a row is built around a 48dp button: with
@@ -355,7 +355,7 @@ namespace Wildgrove.Game
         /// newly-held specimen move the structure signature, so the page is
         /// rebuilt on either.
         /// </summary>
-        private void BuildPristineEntry(RectTransform card, string resourceId)
+        private void BuildChoiceEntry(RectTransform card, string resourceId)
         {
             var isFixed = Folio.IsFixed(_loop.State, resourceId);
             var wanted = false;
@@ -376,7 +376,7 @@ namespace Wildgrove.Game
                     ? "  ·  <color=" + MossDeepHex + ">pressed</color>"
                     : "  ·  <color=" + Ink2Hex + ">no spread asks for it</color>";
                 var settled = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
-                _liveUpdaters.Add(() => settled.text = PristineLine(resourceId, note));
+                _liveUpdaters.Add(() => settled.text = ChoiceLine(resourceId, note));
                 return;
             }
 
@@ -396,18 +396,18 @@ namespace Wildgrove.Game
 
             _liveUpdaters.Add(() =>
             {
-                label.text = PristineLine(resourceId, string.Empty);
+                label.text = ChoiceLine(resourceId, string.Empty);
                 var ok = Folio.CanFix(_loop.State, _loop.Data, resourceId);
                 fix.interactable = ok;
                 SetButtonTint(fix, ok);
             });
         }
 
-        /// <summary>"Pristine glow-moss  3 held", plus whatever the page has to say about it.</summary>
-        private string PristineLine(string resourceId, string note)
+        /// <summary>"Choice glow-moss  3 held", plus whatever the page has to say about it.</summary>
+        private string ChoiceLine(string resourceId, string note)
         {
-            return "Pristine " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
-                   + NumberFormat.Short(_loop.State.GetPristine(resourceId)) + " held</color>" + note + "</size>";
+            return "Choice " + resourceId + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">"
+                   + NumberFormat.Short(_loop.State.GetChoice(resourceId)) + " held</color>" + note + "</size>";
         }
 
         private void BuildDeepPagesCard()

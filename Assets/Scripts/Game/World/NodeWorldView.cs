@@ -6,7 +6,7 @@ namespace Wildgrove.Game.World
     /// <summary>
     /// One gathering node's world-space sprite: a resource-coloured disc, a
     /// gentle scale pulse while a Tending burst is live, a golden halo while
-    /// the post-tend Pristine window runs, and the assignment badge beneath
+    /// the post-tend Choice window runs, and the assignment badge beneath
     /// it — the tiny icon of whoever holds the post (one body per node),
     /// which is also the tap target for posting. Dimmed while nothing works
     /// it. Placement and per-frame refresh are driven by <see cref="WorldView"/>.
@@ -119,9 +119,9 @@ namespace Wildgrove.Game.World
                 : 1f;
             transform.localScale = Vector3.one * (_diameter * pulse);
 
-            // The Pristine window outlasts the yield burst — the halo breathes
+            // The Choice window outlasts the yield burst — the halo breathes
             // slowly so it reads as "charged" rather than "working".
-            var windowLive = Node.pristineBonusRemaining > 0.0;
+            var windowLive = Node.choiceBonusRemaining > 0.0;
             _halo.enabled = windowLive;
             if (windowLive)
             {

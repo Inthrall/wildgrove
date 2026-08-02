@@ -174,18 +174,18 @@ namespace Wildgrove.Sim.Tests
         {
             _data.economy.quality = new EconomyData.QualityData
             {
-                fineChance = 0.035,
-                fineValueMult = 1.5,
-                pristineBaseChance = 0.005,
-                pristineValueMult = 10.0,
+                decentChance = 0.035,
+                decentValueMult = 1.5,
+                choiceBaseChance = 0.005,
+                choiceValueMult = 10.0,
             };
         }
 
         [Test]
-        public void Quote_FineTier_PaysTheValueMultiplier()
+        public void Quote_DecentTier_PaysTheValueMultiplier()
         {
             GiveQualityConfig();
-            Assert.That(Exchange.Quote(new GameState(), _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine).ToDouble(),
+            Assert.That(Exchange.Quote(new GameState(), _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Decent).ToDouble(),
                 Is.EqualTo(10.0 * (2.0 / 3.0 * 0.85) * 1.5).Within(Tolerance));
         }
 
@@ -193,38 +193,38 @@ namespace Wildgrove.Sim.Tests
         public void QualityValueMultiplier_NoQualityConfig_IsOne()
         {
             // Hand-built fixtures without a quality section trade at par.
-            Assert.That(Exchange.QualityValueMultiplier(_data, QualityTier.Pristine), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(Exchange.QualityValueMultiplier(_data, QualityTier.Choice), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
-        public void TryTrade_FineTier_SpendsTheFinePool_AndPaysPlainGoods()
+        public void TryTrade_DecentTier_SpendsTheDecentPool_AndPaysPlainGoods()
         {
             GiveQualityConfig();
             var state = new GameState();
             state.AddResource("berries", new BigDouble(100.0));
-            state.AddFine("berries", new BigDouble(10.0));
+            state.AddDecent("berries", new BigDouble(10.0));
 
-            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine);
+            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Decent);
             var expected = 10.0 * (2.0 / 3.0 * 0.85) * 1.5;
 
             Assert.That(received.ToDouble(), Is.EqualTo(expected).Within(Tolerance));
-            // The fine pool paid; the plain stock never moved; the payout is plain.
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            // The decent pool paid; the plain stock never moved; the payout is plain.
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
             Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(expected).Within(Tolerance));
         }
 
         [Test]
-        public void TryTrade_PristineTier_PaysTenfold_IntoPlainStock()
+        public void TryTrade_ChoiceTier_PaysTenfold_IntoPlainStock()
         {
             GiveQualityConfig();
             var state = new GameState();
-            state.AddPristine("berries", new BigDouble(2.0));
+            state.AddChoice("berries", new BigDouble(2.0));
 
-            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(2.0), QualityTier.Pristine);
+            var received = Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(2.0), QualityTier.Choice);
 
             Assert.That(received.ToDouble(), Is.EqualTo(2.0 * (2.0 / 3.0 * 0.85) * 10.0).Within(Tolerance));
-            Assert.That(state.GetPristine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetChoice("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
@@ -232,11 +232,11 @@ namespace Wildgrove.Sim.Tests
         {
             GiveQualityConfig();
             var state = new GameState();
-            // Plenty of plain berries, no fine ones — a fine trade must refuse
-            // rather than quietly spending the camp stock at the fine rate.
+            // Plenty of plain berries, no decent ones — a decent trade must refuse
+            // rather than quietly spending the camp stock at the decent rate.
             state.AddResource("berries", new BigDouble(100.0));
 
-            Assert.That(Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Fine).ToDouble(),
+            Assert.That(Exchange.TryTrade(state, _data, "berries", "nuts", new BigDouble(10.0), QualityTier.Decent).ToDouble(),
                 Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }

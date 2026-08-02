@@ -10,7 +10,7 @@ namespace Wildgrove.Data
         /// <summary>An act rather than goods (e.g. Tend N times); carries a fixed renownGrant.</summary>
         Deed,
 
-        /// <summary>A Fine or Pristine specimen; carries a fixed renownGrant.</summary>
+        /// <summary>A Decent or Choice specimen; carries a fixed renownGrant.</summary>
         Specimen,
 
         /// <summary>An insect field sketch (design §6); carries a fixed renownGrant.</summary>

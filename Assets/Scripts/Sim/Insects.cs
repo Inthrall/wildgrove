@@ -86,7 +86,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The effects the run's recorded plates grant — fed into the same
-        /// accumulators as purchased upgrade effects (yield, Pristine chance).
+        /// accumulators as purchased upgrade effects (yield, Choice chance).
         /// </summary>
         public static IEnumerable<EffectData> RecordedEffects(GameState state, GameDataAsset data)
         {

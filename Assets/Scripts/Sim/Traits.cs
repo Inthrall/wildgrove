@@ -5,7 +5,7 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Applies a species' single fixed trait (design §4) where its familiar is
     /// stationed. Kinds: nodeYieldBonus (a node of the trait's resource),
-    /// pristineBonus (points at its node), digSpeedBonus (watching the sites
+    /// choiceBonus (points at its node), digSpeedBonus (watching the sites
     /// while wandering), bubbleRewardBonus (windfall bubbles pay more while it
     /// walks), wardenYieldBonus (the warden's own hands work faster while it
     /// walks). Resting familiars contribute nothing, and everything no-ops
@@ -111,8 +111,8 @@ namespace Wildgrove.Sim
                 : 1.0;
         }
 
-        /// <summary>Summed Pristine-chance points from the soft-pawed familiars assigned to <paramref name="node"/>.</summary>
-        public static double PristineBonusAt(GameState state, GameDataAsset data, NodeState node)
+        /// <summary>Summed Choice-chance points from the soft-pawed familiars assigned to <paramref name="node"/>.</summary>
+        public static double ChoiceBonusAt(GameState state, GameDataAsset data, NodeState node)
         {
             var bonus = 0.0;
             foreach (var familiar in state.roster)
@@ -123,7 +123,7 @@ namespace Wildgrove.Sim
                 }
 
                 var trait = Of(data, familiar);
-                if (trait != null && trait.kind == "pristineBonus")
+                if (trait != null && trait.kind == "choiceBonus")
                 {
                     bonus += trait.value * DeepeningFactor(data, familiar);
                 }

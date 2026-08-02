@@ -9,7 +9,7 @@ namespace Wildgrove.Sim.Tests
     /// Pins species traits (design §4): each species carries one fixed trait,
     /// applied where its familiar is stationed — the berry specialist at berry
     /// nodes, the hauler on the trail, the wanderer watching the sites, soft paws for
-    /// Pristine points. Resting familiars contribute nothing; absent species
+    /// Choice points. Resting familiars contribute nothing; absent species
     /// data no-ops (fixtures).
     /// </summary>
     public class TraitsTests
@@ -46,7 +46,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     id = "ermine", displayName = "ermine", roleLean = "gatherer",
                     suggestedNames = new List<string> { "Sleet" },
-                    trait = new TraitData { displayName = "Soft paws", kind = "pristineBonus", value = 0.01 },
+                    trait = new TraitData { displayName = "Soft paws", kind = "choiceBonus", value = 0.01 },
                 },
             };
         }
@@ -108,7 +108,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void PristineBonusAt_CountsOnlyTheStationedSoftPaws()
+        public void ChoiceBonusAt_CountsOnlyTheStationedSoftPaws()
         {
             var node = new NodeState { id = "n1", resourceId = "berries" };
             var state = new GameState();
@@ -116,7 +116,7 @@ namespace Wildgrove.Sim.Tests
             state.roster.Add(At("ermine", null));
             state.roster.Add(At("meadow-vole", "n1"));
 
-            Assert.That(Traits.PristineBonusAt(state, _data, node), Is.EqualTo(0.01).Within(Tolerance),
+            Assert.That(Traits.ChoiceBonusAt(state, _data, node), Is.EqualTo(0.01).Within(Tolerance),
                 "one stationed ermine counts; the resting one and the vole don't");
         }
 
@@ -175,7 +175,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void BubbleAndPristine_DeepenTheSameWay()
+        public void BubbleAndChoice_DeepenTheSameWay()
         {
             ConfigureSignatures();
 
@@ -188,7 +188,7 @@ namespace Wildgrove.Sim.Tests
             var state = new GameState();
             state.roster.Add(WithKinship("ermine", "n1", 2));
 
-            Assert.That(Traits.PristineBonusAt(state, _data, node),
+            Assert.That(Traits.ChoiceBonusAt(state, _data, node),
                 Is.EqualTo(0.01 * 1.25).Within(Tolerance), "soft paws sharpen too");
         }
 

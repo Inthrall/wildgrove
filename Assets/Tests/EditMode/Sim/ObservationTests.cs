@@ -284,17 +284,17 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RecordedPlate_PristineChanceBonus_JoinsTheQualityChance()
+        public void RecordedPlate_ChoiceChanceBonus_JoinsTheQualityChance()
         {
             _data.economy.quality = new EconomyData.QualityData
             {
-                fineChance = 0.035, fineValueMult = 1.5, pristineBaseChance = 0.005, pristineValueMult = 10.0,
+                decentChance = 0.035, decentValueMult = 1.5, choiceBaseChance = 0.005, choiceValueMult = 10.0,
             };
-            _data.insects[0].effects.Add(new EffectData { type = EffectType.PristineChanceBonus, value = 0.01 });
+            _data.insects[0].effects.Add(new EffectData { type = EffectType.ChoiceChanceBonus, value = 0.01 });
             var state = NewGameWithDigSite();
             state.insectSketches["stags-herald"] = 3;
 
-            var chance = Quality.PristineChance(state, _data, state.nodes[0]);
+            var chance = Quality.ChoiceChance(state, _data, state.nodes[0]);
 
             // 0.5% base + the insect's 1pt — same additive band as upgrades.
             Assert.That(chance, Is.EqualTo(0.015).Within(Tolerance));
@@ -321,7 +321,7 @@ namespace Wildgrove.Sim.Tests
             {
                 id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
                 sketches = 1, rarity = 0, rewarded = true,
-                effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 } },
+                effects = { new EffectData { type = EffectType.ChoiceChanceBonus, value = 0.005 } },
             });
 
             var state = NewGameWithDigSite();
@@ -340,7 +340,7 @@ namespace Wildgrove.Sim.Tests
             {
                 id = PlayRewards.WayfarersPlateId, displayName = "The Wayfarer's Plate",
                 sketches = 1, habitats = new List<string> { "old-growth-wood" }, rarity = 1.0, rewarded = true,
-                effects = { new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 } },
+                effects = { new EffectData { type = EffectType.ChoiceChanceBonus, value = 0.005 } },
             });
 
             var state = NewGameWithDigSite();

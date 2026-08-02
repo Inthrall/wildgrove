@@ -86,8 +86,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Mastery.Base, Is.EqualTo(50.0));
             Assert.That(data.Economy.Mastery.XpPerUnit, Is.EqualTo(0.25));
             Assert.That(data.Economy.Replant.RichnessPerLevel, Is.EqualTo(0.10), "design §3 replanting richness");
-            Assert.That(data.Economy.Quality.PristineValueMult, Is.EqualTo(10.0));
-            Assert.That(data.Economy.Tending.PristineChanceBonus, Is.EqualTo(1.0));
+            Assert.That(data.Economy.Quality.ChoiceValueMult, Is.EqualTo(10.0));
+            Assert.That(data.Economy.Tending.ChoiceChanceBonus, Is.EqualTo(1.0));
             Assert.That(data.Economy.Observation.BaseSketchesPerHour, Is.EqualTo(0.25));
             Assert.That(data.Economy.Amber.DigFindsPerHour, Is.EqualTo(0.06), "the free amber drip from dig sites");
             Assert.That(data.Economy.Amber.TimeSkipHours, Is.EqualTo(4.0));
@@ -919,7 +919,7 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.InsectsJson = sources.InsectsJson.Replace(
-                "{ \"type\": \"pristineChanceBonus\", \"value\": 0.01 }",
+                "{ \"type\": \"choiceChanceBonus\", \"value\": 0.01 }",
                 "{ \"type\": \"sellValueBonus\", \"resource\": \"bogus-item\", \"value\": 0.5 }");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
@@ -1098,7 +1098,7 @@ namespace Wildgrove.Data.Tests
         public void Validate_FolioEntryNotGathered_IsReported()
         {
             var sources = LoadSources();
-            // Pristine specimens only come from haul batches — a non-gathered
+            // Choice specimens only come from haul batches — a non-gathered
             // entry could never be fixed into the Folio.
             sources.FolioJson = sources.FolioJson.Replace(
                 "\"herbs\", \"copper-scree\"]",
@@ -1438,10 +1438,10 @@ namespace Wildgrove.Data.Tests
         public void Validate_QualityChancesSummingAboveOne_IsReported()
         {
             var sources = LoadSources();
-            // 0.999 + pristine's 0.005 leaves no room for Common in one draw.
+            // 0.999 + choice's 0.005 leaves no room for Poor in one draw.
             sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"fineChance\": 0.035,",
-                "\"fineChance\": 0.999,");
+                "\"decentChance\": 0.035,",
+                "\"decentChance\": 0.999,");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -1453,8 +1453,8 @@ namespace Wildgrove.Data.Tests
         {
             var sources = LoadSources();
             sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"pristineValueMult\": 10,",
-                "\"pristineValueMult\": 0,");
+                "\"choiceValueMult\": 10,",
+                "\"choiceValueMult\": 0,");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 

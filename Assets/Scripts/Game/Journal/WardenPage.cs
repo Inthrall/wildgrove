@@ -89,9 +89,9 @@ namespace Wildgrove.Game
                 parts.Add("×" + PlainNumber(snapshot.digSpeedMultiplier) + " watching at the sites");
             }
 
-            if (snapshot.pristineChanceBonus > 0.0)
+            if (snapshot.choiceChanceBonus > 0.0)
             {
-                parts.Add("+" + PlainNumber(snapshot.pristineChanceBonus * 100.0) + "% to a pristine find");
+                parts.Add("+" + PlainNumber(snapshot.choiceChanceBonus * 100.0) + "% to a choice find");
             }
 
             if (snapshot.tendingBurstBonus > 0.0)
@@ -552,12 +552,12 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(() =>
             {
                 var state = _loop.State;
-                var pristine = 0;
-                foreach (var pair in state.pristineResources)
+                var choice = 0;
+                foreach (var pair in state.choiceResources)
                 {
                     if (pair.Value > BigDouble.Zero)
                     {
-                        pristine++;
+                        choice++;
                     }
                 }
 
@@ -572,7 +572,7 @@ namespace Wildgrove.Game
                 line.text = "camp " + (state.migrationCount + 1)
                             + " · renown " + NumberFormat.Short(state.renown)
                             + " · fold forecast +" + Mathf.FloorToInt((float)System.Math.Max(0.0, _loop.VerdureAfterMigration() - state.verdurePoints)) + " Verdure"
-                            + (pristine > 0 ? " · Pristine kinds in hand " + pristine : string.Empty)
+                            + (choice > 0 ? " · Choice kinds in hand " + choice : string.Empty)
                             + toNext;
             });
         }

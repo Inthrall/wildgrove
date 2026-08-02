@@ -35,7 +35,7 @@ namespace Wildgrove.Sim.Tests
                 tending = new EconomyData.TendingData
                 {
                     burstYieldMult = 3.0, burstDurationSec = 5.0,
-                    pristineBonusDurationSec = 30.0, pristineChanceBonus = 1.0,
+                    choiceBonusDurationSec = 30.0, choiceChanceBonus = 1.0,
                 },
                 warden = new EconomyData.WardenData { gatherPerSecond = 0.5 },
             };
@@ -91,7 +91,7 @@ namespace Wildgrove.Sim.Tests
                     new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 100 },
                     new RiteSlotData { type = RiteSlotType.Resource, resource = "copper-ingot", amount = 5, renownGrant = 375 },
                     new RiteSlotData { type = RiteSlotType.Deed, deed = "tend", count = 3, renownGrant = 50 },
-                    new RiteSlotData { type = RiteSlotType.Specimen, quality = "fine", count = 1, renownGrant = 100 },
+                    new RiteSlotData { type = RiteSlotType.Specimen, quality = "decent", count = 1, renownGrant = 100 },
                     new RiteSlotData { type = RiteSlotType.Sketch, count = 1, renownGrant = 500 },
                 },
             };
@@ -295,13 +295,13 @@ namespace Wildgrove.Sim.Tests
             Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
             Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
 
-            state.AddFine("berries", BigDouble.One);
+            state.AddDecent("berries", BigDouble.One);
             state.insectSketches["stags-herald"] = 2;
             var renownBefore = state.renown;
 
             Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Null);
             Assert.That(Rite.DeliverSketch(state, _data, _sunfieldVerse, 4), Is.Null);
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance),
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance),
                 "an expired slot takes nothing");
             Assert.That(state.insectSketches["stags-herald"], Is.EqualTo(2));
             Assert.That(state.renown.ToDouble(), Is.EqualTo(renownBefore.ToDouble()).Within(Tolerance));
@@ -478,13 +478,13 @@ namespace Wildgrove.Sim.Tests
         public void DeliverSpecimen_ConsumesTheLargestMatchingPool()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.AddFine("berries", 2);
-            state.AddFine("nuts", 5);
+            state.AddDecent("berries", 2);
+            state.AddDecent("nuts", 5);
 
             var offered = Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3);
 
             Assert.That(offered, Is.EqualTo("nuts"));
-            Assert.That(state.GetFine("nuts").ToDouble(), Is.EqualTo(4.0).Within(Tolerance));
+            Assert.That(state.GetDecent("nuts").ToDouble(), Is.EqualTo(4.0).Within(Tolerance));
             Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 3), Is.True);
             Assert.That(state.renown.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
@@ -496,18 +496,18 @@ namespace Wildgrove.Sim.Tests
             // two are asked, and when both go the grant pays exactly once over.
             _sunfieldVerse.slots[3].count = 2;
             var state = GameStateFactory.NewGame(_data);
-            state.AddFine("berries", 1);
+            state.AddDecent("berries", 1);
 
             Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Null);
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
             Assert.That(state.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
 
-            state.AddFine("nuts", 1);
+            state.AddDecent("nuts", 1);
 
             Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Not.Null);
             Assert.That(Rite.IsSlotComplete(state, _sunfieldVerse, 3), Is.True);
-            Assert.That(state.GetFine("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(state.GetFine("nuts").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetDecent("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.GetDecent("nuts").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
             Assert.That(state.renown.ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
 
@@ -515,7 +515,7 @@ namespace Wildgrove.Sim.Tests
         public void DeliverSpecimen_EmptyPool_ReturnsNull()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.AddPristine("berries", 3); // wrong quality — the slot wants fine
+            state.AddChoice("berries", 3); // wrong quality — the slot wants decent
 
             Assert.That(Rite.DeliverSpecimen(state, _data, _sunfieldVerse, 3), Is.Null);
             Assert.That(state.renown.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));

@@ -11,7 +11,7 @@
   },
   "delivery": {
     "batchSeconds": 10,
-    "$note": "hauling as a throughput system is retired (it raced two absolute rates - gather vs carry - whose growth lanes could never be kept level, and any tuning was wrong for either a 4- or a 6-slot kith). Goods now reach camp automatically and losslessly: each node's pickings pool up and land as one batch every batchSeconds. The cadence exists ONLY so design S5 quality rolls stay per-batch (never per unit) and Pristine keeps landing as a discrete windfall - it is not a cap, and nothing gathered is ever lost."
+    "$note": "hauling as a throughput system is retired (it raced two absolute rates - gather vs carry - whose growth lanes could never be kept level, and any tuning was wrong for either a 4- or a 6-slot kith). Goods now reach camp automatically and losslessly: each node's pickings pool up and land as one batch every batchSeconds. The cadence exists ONLY so design S5 quality rolls stay per-batch (never per unit) and a Choice find keeps landing as a discrete windfall - it is not a cap, and nothing gathered is ever lost."
   },
   "kith": {
     "slotsBase": 1,
@@ -56,11 +56,11 @@
     "rateMultiplier": 1.0
   },
   "quality": {
-    "fineChance": 0.035,
-    "fineValueMult": 1.5,
-    "pristineBaseChance": 0.005,
-    "pristineValueMult": 10,
-    "$note": "design §5: quality rolls per delivery batch (Common 96% / Fine ~3.5% +50% value / Pristine 0.5% base). pristineValueMult is a first guess — the 'windfall' sale isn't priced in the doc. pristineChance = (pristineBaseChance + owned pristineChanceBonus effects) * (1 + tending.pristineChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
+    "decentChance": 0.035,
+    "decentValueMult": 1.5,
+    "choiceBaseChance": 0.005,
+    "choiceValueMult": 10,
+    "$note": "design §5: quality rolls per delivery batch (Poor 96% / Decent ~3.5% +50% value / Choice 0.5% base). choiceValueMult is a first guess — the 'windfall' sale isn't priced in the doc. choiceChance = (choiceBaseChance + owned choiceChanceBonus effects) * (1 + tending.choiceChanceBonus while the node's tend window is live) — flat bonuses add points, Tending multiplies (§8)."
   },
   "amber": {
     "$note": "Amber (design §10): the premium currency's free earn + soft sink. Site finds roll per tick at watchers * digFindsPerHour * digSpeedMult (a separate channel from field sketches — a fully-recorded site keeps surfacing amber; it's old resin with an ancient insect in it, the one thing takeable); a time-skip instantly credits timeSkipHours of full live production for timeSkipCostAmber. timeSkipDailyCapHours bounds PAID skips to that many skipped hours per real day (a leaky budget refilling at cap/24 per wall hour, so it holds on every timescale, no midnight cliff; 0/absent = uncapped). At 24 it pins a heavy spender to at most x2 a free player's pace: a day holds 24 natural sim-hours and skips may add at most 24 more — sim-time is the only thing money buys here, so this one number IS the whale throttle. The rewarded-ad skip sits OUTSIDE the budget (free players get it too — it's part of the baseline both sides share). adDripAmber is the small pile a rewarded ad gives; weeklyCacheAmber is the once-a-week Play Games cache (design §11). renameCostAmber is the small resin a familiar's rename asks — the arrival naming too, unless you keep the suggested name. All first guesses against the ~40/week-free lean.",
@@ -89,8 +89,8 @@
   "tending": {
     "burstYieldMult": 3.0,
     "burstDurationSec": 5,
-    "pristineBonusDurationSec": 30,
-    "pristineChanceBonus": 1.0,
+    "choiceBonusDurationSec": 30,
+    "choiceChanceBonus": 1.0,
     "$note": "burst values are first guesses — tune in Phase 1."
   },
   "bubbles": {
@@ -99,7 +99,7 @@
     "maxLive": 3,
     "rewardSeconds": 60,
     "rewardRatePerSecond": 0.5,
-    "$note": "windfall bubbles — the active-play reward that replaced tap-to-tend. A worked node floats a bubble up the strip every spawnIntervalSec (at most maxLive adrift at once, each living lifetimeSec); catching one grants rewardRatePerSecond x rewardSeconds of that node's resource straight to camp AND tends the node (burst + Pristine window + Rite tend deed). lifetimeSec deliberately exceeds spawnIntervalSec so windfalls BANK — glancing away banks 2-3 to pop in a burst instead of silently losing each one, and maxLive is the real ceiling. The haul is FLAT (2026-07-31): it used to be rewardSeconds of the node's OWN live output, which paid 1-2 units at most nodes — an unstaffed node earns only the wandering warden's share (warden.gatherPerSecond / node count), so the windfall shrank every time a zone opened, and the 2026-07-31 kith.gatherPerSecond cut to 0.1 took another 10x out of the staffed ones. rewardRatePerSecond is the notional gatherer behind the windfall, set to the warden's own hands so a catch reads as 'a minute of picking at that node' wherever it lands. Which nodes drift a bubble is still earned (someone must work it); only the size is fixed. Note a flat haul does not ride the late-game yield multipliers, so re-check its weight against zone 6-8 income in playtest."
+    "$note": "windfall bubbles — the active-play reward that replaced tap-to-tend. A worked node floats a bubble up the strip every spawnIntervalSec (at most maxLive adrift at once, each living lifetimeSec); catching one grants rewardRatePerSecond x rewardSeconds of that node's resource straight to camp AND tends the node (burst + Choice window + Rite tend deed). lifetimeSec deliberately exceeds spawnIntervalSec so windfalls BANK — glancing away banks 2-3 to pop in a burst instead of silently losing each one, and maxLive is the real ceiling. The haul is FLAT (2026-07-31): it used to be rewardSeconds of the node's OWN live output, which paid 1-2 units at most nodes — an unstaffed node earns only the wandering warden's share (warden.gatherPerSecond / node count), so the windfall shrank every time a zone opened, and the 2026-07-31 kith.gatherPerSecond cut to 0.1 took another 10x out of the staffed ones. rewardRatePerSecond is the notional gatherer behind the windfall, set to the warden's own hands so a catch reads as 'a minute of picking at that node' wherever it lands. Which nodes drift a bubble is still earned (someone must work it); only the size is fixed. Note a flat haul does not ride the late-game yield multipliers, so re-check its weight against zone 6-8 income in playtest."
   },
   "warden": {
     "gatherPerSecond": 0.5,

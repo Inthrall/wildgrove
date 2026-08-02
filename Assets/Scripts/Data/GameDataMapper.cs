@@ -410,10 +410,10 @@ namespace Wildgrove.Data
                 },
                 quality = new EconomyData.QualityData
                 {
-                    fineChance = e.Quality.FineChance,
-                    fineValueMult = e.Quality.FineValueMult,
-                    pristineBaseChance = e.Quality.PristineBaseChance,
-                    pristineValueMult = e.Quality.PristineValueMult
+                    decentChance = e.Quality.DecentChance,
+                    decentValueMult = e.Quality.DecentValueMult,
+                    choiceBaseChance = e.Quality.ChoiceBaseChance,
+                    choiceValueMult = e.Quality.ChoiceValueMult
                 },
                 observation = new EconomyData.ObservationData
                 {
@@ -443,8 +443,8 @@ namespace Wildgrove.Data
                 {
                     burstYieldMult = e.Tending.BurstYieldMult,
                     burstDurationSec = e.Tending.BurstDurationSec,
-                    pristineBonusDurationSec = e.Tending.PristineBonusDurationSec,
-                    pristineChanceBonus = e.Tending.PristineChanceBonus
+                    choiceBonusDurationSec = e.Tending.ChoiceBonusDurationSec,
+                    choiceChanceBonus = e.Tending.ChoiceChanceBonus
                 },
                 warden = new EconomyData.WardenData
                 {

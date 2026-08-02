@@ -49,7 +49,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public List<string> gearCrafted = new List<string>();
 
-        /// <summary>Resources whose Pristine specimen has been fixed into the Folio (design §6) — permanent, surviving every Migration.</summary>
+        /// <summary>Resources whose Choice specimen has been fixed into the Folio (design §6) — permanent, surviving every Migration.</summary>
         public List<string> fixedResources = new List<string>();
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Wildgrove.Sim
         /// <summary>Compendium lifetime counters (design §5) — never reset, never decremented; they survive Migration.</summary>
         public Dictionary<string, BigDouble> lifetimeGathered = new Dictionary<string, BigDouble>();
         public Dictionary<string, double> lifetimeCrafted = new Dictionary<string, double>();
-        public Dictionary<string, BigDouble> lifetimePristine = new Dictionary<string, BigDouble>();
+        public Dictionary<string, BigDouble> lifetimeChoice = new Dictionary<string, BigDouble>();
 
         /// <summary>
         /// Every species ever befriended, kept for good. The roster itself is
@@ -181,11 +181,11 @@ namespace Wildgrove.Sim
         /// <summary>Raw and crafted materials at camp, keyed by resource id — the only stock that can be sold, gifted, or spent. Goods reach camp in periodic deliveries from the nodes.</summary>
         public Dictionary<string, BigDouble> resources = new Dictionary<string, BigDouble>();
 
-        /// <summary>Fine-quality finds at camp, keyed by resource id (design §5: a Fine delivery batch, sold at the quality bonus alongside the common stock).</summary>
-        public Dictionary<string, BigDouble> fineResources = new Dictionary<string, BigDouble>();
+        /// <summary>Decent-quality finds at camp, keyed by resource id (design §5: a Decent delivery batch, sold at the quality bonus alongside the plain stock).</summary>
+        public Dictionary<string, BigDouble> decentResources = new Dictionary<string, BigDouble>();
 
-        /// <summary>Pristine specimens at camp, keyed by resource id (design §5). Never sold automatically — the windfall sale (and later donation or offering) is the player's explicit choice.</summary>
-        public Dictionary<string, BigDouble> pristineResources = new Dictionary<string, BigDouble>();
+        /// <summary>Choice specimens at camp, keyed by resource id (design §5). Never sold automatically — the windfall sale (and later donation or offering) is the player's explicit choice.</summary>
+        public Dictionary<string, BigDouble> choiceResources = new Dictionary<string, BigDouble>();
 
         /// <summary>Xorshift64* state for the run's rolls (quality, later loot). Seeded at run birth, saved with the run — the sim itself stays deterministic.</summary>
         public ulong rngState = 0x9E3779B97F4A7C15UL;
@@ -258,24 +258,24 @@ namespace Wildgrove.Sim
             resources[resourceId] = GetResource(resourceId) + amount;
         }
 
-        public BigDouble GetFine(string resourceId)
+        public BigDouble GetDecent(string resourceId)
         {
-            return fineResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
+            return decentResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
         }
 
-        public void AddFine(string resourceId, BigDouble amount)
+        public void AddDecent(string resourceId, BigDouble amount)
         {
-            fineResources[resourceId] = GetFine(resourceId) + amount;
+            decentResources[resourceId] = GetDecent(resourceId) + amount;
         }
 
-        public BigDouble GetPristine(string resourceId)
+        public BigDouble GetChoice(string resourceId)
         {
-            return pristineResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
+            return choiceResources.TryGetValue(resourceId, out var amount) ? amount : BigDouble.Zero;
         }
 
-        public void AddPristine(string resourceId, BigDouble amount)
+        public void AddChoice(string resourceId, BigDouble amount)
         {
-            pristineResources[resourceId] = GetPristine(resourceId) + amount;
+            choiceResources[resourceId] = GetChoice(resourceId) + amount;
         }
 
         public bool HasUpgrade(string upgradeId)
@@ -468,13 +468,13 @@ namespace Wildgrove.Sim
         public double tendBurstRemaining;
 
         /// <summary>
-        /// Seconds left on the post-tend Pristine window (design §5: Tending
-        /// "briefly raised Pristine chance"). While positive, delivery batches from
-        /// this node multiply their Pristine chance by
-        /// (1 + economy.tending.pristineChanceBonus). Refreshed by Tend
+        /// Seconds left on the post-tend Choice window (design §5: Tending
+        /// "briefly raised Choice chance"). While positive, delivery batches from
+        /// this node multiply their Choice chance by
+        /// (1 + economy.tending.choiceChanceBonus). Refreshed by Tend
         /// alongside the yield burst, on its own (longer) duration.
         /// </summary>
-        public double pristineBonusRemaining;
+        public double choiceBonusRemaining;
 
         /// <summary>
         /// The day's pickings pooled at the node, awaiting the next delivery —

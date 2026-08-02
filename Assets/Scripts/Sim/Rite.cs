@@ -207,7 +207,7 @@ namespace Wildgrove.Sim
                 case RiteSlotType.Resource:
                     return state.GetResource(slot.resource).ToDouble();
                 case RiteSlotType.Specimen:
-                    return PoolTotal(slot.quality == "pristine" ? state.pristineResources : state.fineResources);
+                    return PoolTotal(slot.quality == "choice" ? state.choiceResources : state.decentResources);
                 case RiteSlotType.Sketch:
                     return LooseSketchCount(state, data);
                 default:
@@ -381,7 +381,7 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Offer the slot's whole count of specimens into a Fine/Pristine
+        /// Offer the slot's whole count of specimens into a Decent/Choice
         /// specimen slot, each taken from the largest matching-quality pool.
         /// Returns the resource id of the last one given, or null when the camp
         /// can't answer the whole ask (verse unrevealed, slot complete, too few
@@ -395,7 +395,7 @@ namespace Wildgrove.Sim
                 return null;
             }
 
-            var pool = slot.quality == "pristine" ? state.pristineResources : state.fineResources;
+            var pool = slot.quality == "choice" ? state.choiceResources : state.decentResources;
             var progress = SlotProgress(state, verse, slotIndex);
             var wanted = WholeUnitsAsked(state, verse, slotIndex);
             string offered = null;

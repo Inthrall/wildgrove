@@ -158,7 +158,7 @@ namespace Wildgrove.Data
         public List<EffectData> effects = new List<EffectData>();
     }
 
-    /// <summary>One Folio spread (design §6): fix a Pristine specimen of each entry into the journal; completion grants a permanent effect surviving Migration.</summary>
+    /// <summary>One Folio spread (design §6): fix a Choice specimen of each entry into the journal; completion grants a permanent effect surviving Migration.</summary>
     [Serializable]
     public sealed class FolioSpreadData
     {
@@ -249,7 +249,7 @@ namespace Wildgrove.Data
         public string displayName;
         public string description;
 
-        /// <summary>nodeYieldBonus / pristineBonus / digSpeedBonus / bubbleRewardBonus / wardenYieldBonus.</summary>
+        /// <summary>nodeYieldBonus / choiceBonus / digSpeedBonus / bubbleRewardBonus / wardenYieldBonus.</summary>
         public string kind;
 
         public double value;
@@ -257,7 +257,7 @@ namespace Wildgrove.Data
         /// <summary>
         /// The related pair of resources a nodeYieldBonus trait covers (e.g.
         /// copper-scree + tin-seam) — the familiar works either node. Empty for
-        /// trail/watch/pristine traits, which apply wherever the familiar is posted.
+        /// trail/watch/choice traits, which apply wherever the familiar is posted.
         /// </summary>
         public List<string> resources = new List<string>();
 
@@ -599,10 +599,10 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class QualityData
         {
-            public double fineChance;
-            public double fineValueMult;
-            public double pristineBaseChance;
-            public double pristineValueMult;
+            public double decentChance;
+            public double decentValueMult;
+            public double choiceBaseChance;
+            public double choiceValueMult;
         }
 
         [Serializable]
@@ -641,8 +641,8 @@ namespace Wildgrove.Data
         {
             public double burstYieldMult;
             public double burstDurationSec;
-            public double pristineBonusDurationSec;
-            public double pristineChanceBonus;
+            public double choiceBonusDurationSec;
+            public double choiceChanceBonus;
         }
 
         [Serializable]

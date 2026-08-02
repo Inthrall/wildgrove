@@ -36,7 +36,7 @@ namespace Wildgrove.Sim.Tests
                     sketches = 1, rarity = 0, rewarded = true,
                     effects = new List<EffectData>
                     {
-                        new EffectData { type = EffectType.PristineChanceBonus, value = 0.005 },
+                        new EffectData { type = EffectType.ChoiceChanceBonus, value = 0.005 },
                     },
                 },
             };

@@ -90,7 +90,7 @@ namespace Wildgrove.Sim.Tests
                                     new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 100 },
                                     new RiteSlotData { type = RiteSlotType.Resource, resource = "nuts", amount = 50 },
                                     new RiteSlotData { type = RiteSlotType.Deed, deed = "tend", count = 10, renownGrant = 40 },
-                                    new RiteSlotData { type = RiteSlotType.Specimen, quality = "fine", count = 1, renownGrant = 80 },
+                                    new RiteSlotData { type = RiteSlotType.Specimen, quality = "decent", count = 1, renownGrant = 80 },
                                 },
                             },
                             new RiteVerseData
@@ -246,7 +246,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(deed.deed, Is.EqualTo("tend"));
             Assert.That(deed.count, Is.EqualTo(10), "deeds price in taps, not goods — the count stays authored");
             Assert.That(deed.renownGrant, Is.EqualTo(80), "40 x 2^1");
-            Assert.That(specimen.quality, Is.EqualTo("fine"));
+            Assert.That(specimen.quality, Is.EqualTo("decent"));
             Assert.That(specimen.count, Is.EqualTo(1));
             Assert.That(specimen.renownGrant, Is.EqualTo(160));
             Assert.That(fragment.count, Is.EqualTo(1));
@@ -638,7 +638,7 @@ namespace Wildgrove.Sim.Tests
                 return 0.0;
             }
 
-            return quality == "pristine" ? q.pristineBaseChance : q.fineChance;
+            return quality == "choice" ? q.choiceBaseChance : q.decentChance;
         }
     }
 }

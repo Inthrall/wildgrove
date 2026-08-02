@@ -264,9 +264,9 @@ namespace Wildgrove.Sim
                 next.lifetimeCrafted[pair.Key] = pair.Value;
             }
 
-            foreach (var pair in state.lifetimePristine)
+            foreach (var pair in state.lifetimeChoice)
             {
-                next.lifetimePristine[pair.Key] = pair.Value;
+                next.lifetimeChoice[pair.Key] = pair.Value;
             }
 
             // A bond whose source is a kept permanent (Museum set / Almanac node)
