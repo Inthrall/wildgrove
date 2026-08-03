@@ -126,7 +126,31 @@ namespace Wildgrove.Sim.Tests
         public void Portion_TakesTheFractionOfWhatIsHeld()
         {
             Assert.That(Exchange.Portion(new BigDouble(240.0), 0.25).ToDouble(), Is.EqualTo(60.0).Within(Tolerance));
-            Assert.That(Exchange.Portion(new BigDouble(5.0), 0.5).ToDouble(), Is.EqualTo(2.5).Within(Tolerance));
+        }
+
+        [Test]
+        public void Portion_PartShare_IsWholeUnits()
+        {
+            // The card names the amount in whole goods, so a part share must
+            // spend the number it shows — half of five is two, not two and a
+            // half traded under a label reading "2".
+            Assert.That(Exchange.Portion(new BigDouble(5.0), 0.5).ToDouble(), Is.EqualTo(2.0).Within(Tolerance));
+            Assert.That(Exchange.Portion(new BigDouble(3.47), 0.5).ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Portion_PartShareOfASmallPile_IsAtLeastOne()
+        {
+            // A quarter of three floors to nothing, which would read as a dead
+            // button on a pile the camp plainly holds.
+            Assert.That(Exchange.Portion(new BigDouble(3.0), 0.25).ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Portion_PartShareUnderAWholeUnit_IsZero()
+        {
+            // Below one whole good there is nothing the caravan will take.
+            Assert.That(Exchange.Portion(new BigDouble(0.6), 0.5).ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]

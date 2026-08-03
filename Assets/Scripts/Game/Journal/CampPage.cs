@@ -746,7 +746,11 @@ namespace Wildgrove.Game
                 foreach (var (quality, row, trade) in tierRows)
                 {
                     var held = Exchange.Held(_loop.State, offer.from, quality);
-                    var show = held > BigDouble.Zero;
+
+                    // A whole unit is the smallest thing the caravan will take,
+                    // so a sub-unit crumb shows no row at all rather than one
+                    // reading "0" beside a dead button.
+                    var show = held >= BigDouble.One;
                     row.SetActive(show);
                     if (!show)
                     {
@@ -756,7 +760,10 @@ namespace Wildgrove.Game
                     anyHeld = true;
                     var spend = Exchange.Portion(held, _exchangeFraction);
                     var got = _loop.ExchangeQuote(offer.from, offer.to, spend, quality);
-                    var live = got > BigDouble.Zero;
+
+                    // And a whole unit is the smallest thing it will pay: a
+                    // deal that comes back under one would read as "→ 0".
+                    var live = got >= BigDouble.One;
                     trade.interactable = live;
                     SetButtonTint(trade, live, true);
                     SetButtonLabel(trade, "Trade " + ExchangeDeal(offer, quality, spend, got)
@@ -789,14 +796,15 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// "120 decent berries → 18 wildflowers". Fraction-capable throughout:
-        /// half of five berries is 2.5, and the whole-unit formatter would call
-        /// that 2 while the caravan took two and a half.
+        /// "120 decent berries → 18 wildflowers". Whole units on both sides,
+        /// like every other resource readout in the journal — the caravan is
+        /// the one card that used to speak in halves and thirds, and a choice
+        /// pile trading in at ×2.5 made a meal of it.
         /// </summary>
         private string ExchangeDeal(ExchangeOffer offer, QualityTier quality, BigDouble spend, BigDouble got)
         {
-            return NumberFormat.Rate(spend) + " " + TierName(quality) + GoodName(offer.from)
-                   + " → " + NumberFormat.Rate(got) + " " + GoodName(offer.to);
+            return NumberFormat.Short(spend) + " " + TierName(quality) + GoodName(offer.from)
+                   + " → " + NumberFormat.Short(got) + " " + GoodName(offer.to);
         }
 
         /// <summary>
@@ -814,7 +822,7 @@ namespace Wildgrove.Game
 
             var spend = Exchange.Portion(Exchange.Held(_loop.State, offer.from, quality), _exchangeFraction);
             var got = _loop.ExchangeQuote(offer.from, offer.to, spend, quality);
-            if (got <= BigDouble.Zero)
+            if (got < BigDouble.One)
             {
                 return;
             }
@@ -861,12 +869,15 @@ namespace Wildgrove.Game
                 spend = held;
             }
 
-            var got = spend > BigDouble.Zero
+            // Quoted before it is struck: a pile that shrank far enough for the
+            // deal to come back under a whole unit is refused outright, rather
+            // than traded away for a flash reading "+0".
+            var got = _loop.ExchangeQuote(offer.from, offer.to, spend, quality) >= BigDouble.One
                 ? _loop.TradeAtExchange(offer.from, offer.to, spend, quality)
                 : BigDouble.Zero;
             if (got > BigDouble.Zero)
             {
-                Flash(trade, "+" + NumberFormat.Rate(got) + " " + GoodName(offer.to), true);
+                Flash(trade, "+" + NumberFormat.Short(got) + " " + GoodName(offer.to), true);
                 SetNote("traded " + TierName(quality) + GoodName(offer.from) + " for " + GoodName(offer.to)
                         + ". a nod. gone before the count.");
             }

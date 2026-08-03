@@ -198,10 +198,14 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// What a fraction-of-holdings amount ("half", "all") comes to. A whole
-        /// trade passes <paramref name="have"/> through untouched so the good
-        /// ends at zero rather than a floating-point crumb the UI would round
-        /// away and the player would never be able to spend.
+        /// What a fraction-of-holdings amount ("half", "all") comes to, in
+        /// whole units — the caravan counts goods, and the card names the
+        /// amount in the same whole units every other readout uses, so a part
+        /// share that quietly spent 2.5 under a label reading 2 would have the
+        /// card lying about its own deal. A whole trade still passes
+        /// <paramref name="have"/> through untouched so the good ends at zero
+        /// rather than a floating-point crumb the UI would round away and the
+        /// player would never be able to spend.
         /// </summary>
         public static BigDouble Portion(BigDouble have, double fraction)
         {
@@ -210,7 +214,16 @@ namespace Wildgrove.Sim
                 return BigDouble.Zero;
             }
 
-            return fraction >= 1.0 ? have : have * new BigDouble(fraction);
+            if (fraction >= 1.0)
+            {
+                return have;
+            }
+
+            // A part share of a small pile still answers with something: a
+            // quarter of three is one, not a dead button. Under a whole unit
+            // held there is nothing to give, and the row stays hidden.
+            var part = BigDouble.Floor(have * new BigDouble(fraction));
+            return part < BigDouble.One && have >= BigDouble.One ? BigDouble.One : part;
         }
 
         /// <summary>
