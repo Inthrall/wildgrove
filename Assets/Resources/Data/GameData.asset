@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 212444bc1c63cea3f04597f5115c2e6833dd5207431078460f4d22955d4c54ad
+  sourceHash: 739e9542a698bb4fbf7364e4a793805521a86f4765ce4afba6f17bf3206701e1
   economy:
     costGrowth:
       building: 1.25
@@ -28,7 +28,7 @@ MonoBehaviour:
       slotsMax: 6
       verseMilestones: 02000000050000000a000000
       generatorGatherPosts: 2
-      gatherPerSecond: 0.1
+      gatherPerSecond: 0.3
     crafting:
       baseCraftSeconds: 5
     tools:

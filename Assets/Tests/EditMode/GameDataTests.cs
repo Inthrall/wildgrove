@@ -61,7 +61,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
             Assert.That(data.Economy.Kith.VerseMilestones, Is.EqualTo(new[] { 2, 5, 10 }), "verses sung earn the middle rungs");
             Assert.That(data.Economy.Kith.GeneratorGatherPosts, Is.EqualTo(2), "the run-2+ generator's stationing assumption");
-            Assert.That(data.Economy.Kith.GatherPerSecond, Is.EqualTo(0.1), "a familiar's base hands — cut to a tenth when hauling retired (2026-07-31)");
+            Assert.That(data.Economy.Kith.GatherPerSecond, Is.EqualTo(0.3), "a familiar's base hands — cut to a tenth when hauling retired (2026-07-31), raised to 0.3 when that overshot (2026-08-03)");
             Assert.That(data.Economy.Store.StarterBundleAmber, Is.GreaterThan(0), "the starter bundle's one-time Amber pile");
             Assert.That(data.SpeciesById["meadow-vole"].Trait.Kind, Is.EqualTo("nodeYieldBonus"));
             Assert.That(data.SpeciesById["meadow-vole"].Trait.Resources,
