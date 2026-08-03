@@ -15,7 +15,11 @@ namespace Wildgrove.Sim
     /// — a recorded plate stops appearing, and a site with nothing left to
     /// record falls quiet. Nothing is taken: the insect is released. Rolls draw
     /// from the run's saved rng like quality does. (digSpeedMult is the shared
-    /// "site speed" modifier — planters/gear/almanac all feed it.) Watching also
+    /// "site speed" modifier — planters/gear/almanac all feed it.) Amber
+    /// (design §10) is the exception: one flat roll per tick for the whole
+    /// round, outside the site walk and untouched by digSpeedMult, because
+    /// per-site × multiplicative-stack compounded into a login payout many
+    /// times the design lean. Watching also
     /// trains the observation craft (economy.observation.skill), which is the
     /// only thing that earns that skill's XP — it is a watched-hours trickle, not
     /// a per-sketch award, so it keeps paying at a fully-recorded site.
@@ -42,14 +46,36 @@ namespace Wildgrove.Sim
 
             var hoursWatched = deltaSeconds / 3600.0;
             var digMult = Upgrades.DigSpeedMultiplier(state, data);
+
+            // Amber (design §10) is the round's renewable find — old resin with
+            // an ancient insect kept in it, the one thing takeable. Rolled ONCE
+            // for the whole round rather than per site, and flat: the sketch
+            // channel's dig-speed stack deliberately does not touch it. Both
+            // used to, and both compounded — six sites against a multiplicative
+            // ×10 stack put one login's catch-up near 70 amber where the design
+            // lean is ~40 a week. Rolled before the sketch walk, so a
+            // fully-recorded map keeps surfacing it. No draw when unconfigured
+            // or before the first site opens: pre-amber rng sequences must not
+            // shift.
+            var amber = data.economy.amber;
+            if (amber != null && amber.digFindsPerHour > 0.0 && state.digSites.Count > 0
+                && Rng.NextDouble(ref state.rngState) < watchers * amber.digFindsPerHour * hoursWatched)
+            {
+                state.amber += amber.perFind;
+                // Banked for GameLoop to report once per advance — the sim
+                // holds no telemetry sink, and an offline catch-up would
+                // otherwise fire thousands of per-substep events.
+                state.amberFoundUnlogged += amber.perFind;
+            }
+
             foreach (var site in state.digSites)
             {
                 // Reed-screen planters (design §3) steady this site's sketching.
                 var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
 
                 // The watching itself trains the craft (design §4: XP from every
-                // action) — credited per watcher per site-hour, before any of the
-                // three find channels roll, so a site with every plate already
+                // action) — credited per watcher per site-hour, before this
+                // site's find channels roll, so a site with every plate already
                 // recorded still teaches. That ordering is the whole point: the
                 // sketch pool is finite (25 portions across every plate) and
                 // rides the fold in insectSketches while skillXp resets, so
@@ -62,27 +88,13 @@ namespace Wildgrove.Sim
                         new BigDouble(watchers * observation.watchXpPerHour * siteDigMult * hoursWatched));
                 }
 
-                // Amber (design §10) is the site's renewable find — old resin
-                // with an ancient insect kept in it, the one thing takeable. A
-                // separate channel rolled before the sketch check, so a
-                // fully-recorded site keeps surfacing it. No draw when
-                // unconfigured: pre-amber rng sequences must not shift.
-                var amber = data.economy.amber;
-                if (amber != null && amber.digFindsPerHour > 0.0
-                    && Rng.NextDouble(ref state.rngState)
-                       < watchers * amber.digFindsPerHour * siteDigMult * (deltaSeconds / 3600.0))
-                {
-                    state.amber += amber.perFind;
-                    // Banked for GameLoop to report once per advance — the sim
-                    // holds no telemetry sink, and an offline catch-up would
-                    // otherwise fire thousands of per-substep events.
-                    state.amberFoundUnlogged += amber.perFind;
-                }
-
                 // The deep amber (design §6): the authored deep-past pieces,
-                // surfaced only at their own zone's site. Rolled beside the
-                // ordinary amber channel — it too keeps working after every
-                // plate here is recorded.
+                // surfaced only at their own zone's site. Stays per-site and
+                // keeps its dig-speed multiplier where the ordinary amber
+                // channel above gave both up — this one is lore pacing, not
+                // currency, it can only ever pay out four times, and the watch
+                // stack shortening that walk is the intent (see ambers.json).
+                // It too keeps working after every plate here is recorded.
                 DeepAmber.AdvanceSite(state, data, site.zoneId, watchers, siteDigMult, deltaSeconds);
 
                 // Reused scratch: this runs per site per 1 s substep — a full

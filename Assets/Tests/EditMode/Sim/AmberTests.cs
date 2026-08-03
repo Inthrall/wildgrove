@@ -6,9 +6,10 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the Amber economy layer (design §10): observation sites surface it as a
+    /// Pins the Amber economy layer (design §10): the wander surfaces it as a
     /// separate channel from field sketches (a fully-recorded site keeps producing),
-    /// unconfigured data draws no rng, and the time-skip sink credits full
+    /// once for the round and flat — neither the site count nor the dig-speed
+    /// stack touches the earn — unconfigured data draws no rng, and the time-skip sink credits full
     /// live-rate production for its cost — refused when short. IAP/ads are
     /// the plugin pass; the Rite can never be paid in Amber by construction.
     /// </summary>
@@ -96,6 +97,61 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(state.amber, Is.EqualTo(2.0).Within(Tolerance),
                 "amber is the dig's renewable — the insect channel falling quiet doesn't stop it");
+        }
+
+        /// <summary>
+        /// Record every plate this site holds, so the sketch channel falls
+        /// quiet and draws no rng — leaving the amber roll as the tick's only
+        /// draw, which is what lets a test reason about it per sub-step.
+        /// </summary>
+        private static void SilenceTheSketchChannel(GameState state)
+        {
+            state.insectSketches["stags-herald"] = 3;
+        }
+
+        [Test]
+        public void Digging_RollsOnceForTheRound_NotOncePerSite()
+        {
+            var state = StateWithAWanderer();
+            state.digSites.Add(new DigSiteState { zoneId = "silverrun-river" });
+            state.digSites.Add(new DigSiteState { zoneId = "the-hollows" });
+
+            Simulation.Advance(state, _data, 1.0);
+
+            Assert.That(state.amber, Is.EqualTo(2.0).Within(Tolerance),
+                "one find for the round at perFind — the roll sat inside the site walk until 2026-08-02, so opening ground multiplied the earn and six sites paid six times over");
+        }
+
+        [Test]
+        public void Digging_IgnoresTheDigSpeedStack()
+        {
+            // Half a find per 1 s sub-step, so Brush Screens' ×2 would push the
+            // roll to a flat certainty: "did every single step pay out?" is then
+            // an exact discriminator rather than a statistical one. Comparing a
+            // stacked run against a plain one roll-for-roll is not available —
+            // owning any upgrade shifts the run's rng sequence by itself.
+            const double seconds = 60.0;
+            _data.economy.amber.digFindsPerHour = 1800;
+            _data.upgrades = new List<UpgradeData>
+            {
+                new UpgradeData
+                {
+                    order = 23, id = "brush-screens",
+                    effects = { new EffectData { type = EffectType.DigSpeedMult, value = 2 } },
+                },
+            };
+
+            var state = StateWithAWanderer();
+            SilenceTheSketchChannel(state);
+            state.purchasedUpgradeIds.Add("brush-screens");
+            Assert.That(Upgrades.DigSpeedMultiplier(state, _data), Is.EqualTo(2.0).Within(Tolerance),
+                "the watch stack is genuinely on, or the test below passes for the wrong reason");
+
+            Simulation.Advance(state, _data, seconds);
+
+            Assert.That(state.amber, Is.GreaterThan(0.0), "the channel is live");
+            Assert.That(state.amber, Is.LessThan(seconds * _data.economy.amber.perFind),
+                "the watch stack quickens sketching, never amber — it used to do both, and per-site × a multiplicative stack compounded into a login payout ~30x the design lean");
         }
 
         [Test]
