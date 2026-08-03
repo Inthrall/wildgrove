@@ -58,7 +58,7 @@ namespace Wildgrove.Game
         private void BuildStockCard()
         {
             var card = Card("THE STORES");
-            MakeText(card, "<i>plain · decent · choice</i>",
+            MakeText(card, "<i>what the ground gave and the fire made</i>",
                 15, TextAnchor.MiddleCenter, Ink2, _serif);
 
             var grid = Grid(card);
