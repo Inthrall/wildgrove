@@ -87,6 +87,40 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void LayoutCentres_JustOverTheRowCap_SplitsDownTheMiddle()
+        {
+            // Four is the first count that wraps: 2/2, not the top row filled
+            // to its cap with one plate stranded underneath.
+            var centres = WorldStrip.LayoutCentres(Strip, 4);
+            var topY = Strip.yMin + Strip.height * 0.68f;
+            var bottomY = Strip.yMin + Strip.height * 0.32f;
+
+            Assert.That(centres[0].y, Is.EqualTo(topY).Within(Tolerance), "top row 0");
+            Assert.That(centres[1].y, Is.EqualTo(topY).Within(Tolerance), "top row 1");
+            Assert.That(centres[2].y, Is.EqualTo(bottomY).Within(Tolerance), "bottom row 2");
+            Assert.That(centres[3].y, Is.EqualTo(bottomY).Within(Tolerance), "bottom row 3");
+        }
+
+        [Test]
+        public void LayoutCentres_OddCount_RidesTheExtraOnTop()
+        {
+            // Seven cannot go 3/3, so the seventh plate joins the top row.
+            var centres = WorldStrip.LayoutCentres(Strip, 7);
+            var topY = Strip.yMin + Strip.height * 0.68f;
+            var bottomY = Strip.yMin + Strip.height * 0.32f;
+
+            for (var i = 0; i < 4; i++)
+            {
+                Assert.That(centres[i].y, Is.EqualTo(topY).Within(Tolerance), "top row " + i);
+            }
+
+            for (var i = 4; i < 7; i++)
+            {
+                Assert.That(centres[i].y, Is.EqualTo(bottomY).Within(Tolerance), "bottom row " + i);
+            }
+        }
+
+        [Test]
         public void LayoutCentres_AtTheRowCap_StaysSingleRow()
         {
             var centres = WorldStrip.LayoutCentres(Strip, WorldStrip.MaxPerRow);

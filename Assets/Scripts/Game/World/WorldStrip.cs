@@ -13,9 +13,12 @@ namespace Wildgrove.Game.World
     public static class WorldStrip
     {
         // Beyond this many sprites a single row turns into confetti — wrap to
-        // two. (Three zones ≈ 10 nodes; four zones plus the trail and wander
-        // posts ≈ 15.)
-        public const int MaxPerRow = 8;
+        // two. Three is deliberately early: the band is wide but shallow, and
+        // a row of four already sizes each plate off the width rather than the
+        // height, so the specimens shrink instead of filling the band. Two
+        // rows of three keep the plates big enough to read as portraits.
+        // (Three zones ≈ 10 nodes; four zones plus the wander post ≈ 15.)
+        public const int MaxPerRow = 3;
 
         /// <summary>The assignment badge's centre, in diameters below a post sprite's centre (single-row; two rows clamp to the row pitch — see <see cref="BadgeOffset"/>).</summary>
         public const float BadgeOffsetFactor = -0.72f;
@@ -121,7 +124,7 @@ namespace Wildgrove.Game.World
             return best;
         }
 
-        /// <summary>Rows the strip lays out in — one until crowded, then two.</summary>
+        /// <summary>Rows the strip lays out in — one up to <see cref="MaxPerRow"/>, then two.</summary>
         public static int Rows(int count)
         {
             return count <= MaxPerRow ? 1 : 2;
@@ -155,6 +158,10 @@ namespace Wildgrove.Game.World
                 return;
             }
 
+            // Split down the middle, the odd one out riding on top: four goes
+            // 2/2 rather than filling the top row to its cap and stranding a
+            // single plate underneath, and seven — which cannot go 3/3 — goes
+            // 4/3.
             var topCount = (count + 1) / 2;
             var bottomCount = count - topCount;
             var topY = strip.yMin + strip.height * 0.68f;
