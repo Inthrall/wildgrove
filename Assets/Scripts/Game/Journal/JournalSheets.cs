@@ -84,6 +84,16 @@ namespace Wildgrove.Game
         // meant for the previous sheet.
         private const float PumpedSheetGuardSeconds = 0.5f;
 
+        // How long the welcome-back sheet waits on a loaded rewarded ad before
+        // going up without one. Long enough for an ordinary cold-launch fill —
+        // the ads SDK's start and its first load are both network round trips —
+        // and short enough that a launch which will never have one (no fill, no
+        // signal, consent refused) isn't left staring at the grove.
+        private const float WelcomeRewardedWaitSeconds = 3f;
+
+        // When that wait runs out; -1 while nothing is waiting.
+        private float _welcomeWaitDeadline = -1f;
+
         internal void PumpSheets()
         {
             if (_sheet != null)
@@ -93,8 +103,16 @@ namespace Wildgrove.Game
 
             // Welcome-back FIRST — it's the context for everything after it;
             // being asked to name a newcomer before being told what happened
-            // while away read backwards.
+            // while away read backwards. The whole pump waits with it, for the
+            // same reason: a newcomer must not be announced ahead of the
+            // absence they arrived during.
+            if (WaitingOnDoubleIt(_loop.PendingOfflineSummary))
+            {
+                return;
+            }
+
             var summary = _loop.TakePendingOfflineSummary();
+            _welcomeWaitDeadline = -1f;
             if (summary != null && summary.creditedSeconds >= GameLoop.WelcomeBackMinSeconds)
             {
                 OpenWelcomeSheet(summary);
@@ -404,6 +422,39 @@ namespace Wildgrove.Game
         private static void Celebrate(Transform sheet, int seeds)
         {
             Seedfall.Sow(sheet, seeds, new Color(Ink2.r, Ink2.g, Ink2.b, 0.5f));
+        }
+
+        /// <summary>
+        /// Whether to hold the welcome-back sheet back a moment longer so it can
+        /// carry its "Double it" offer.
+        /// <para>
+        /// The offer is decided once, when the sheet is built, and on a cold
+        /// launch the pump reaches it about a quarter-second in — while the ads
+        /// SDK is still several async steps from its first loaded ad. The offer
+        /// was therefore missing from most cold launches and present on every
+        /// resume, which read as a bug and cost the player the reward. Asking
+        /// again on the pump's cadence is also what re-requests a failed load,
+        /// so the wait is the load's clock as well as its question.
+        /// </para>
+        /// </summary>
+        private bool WaitingOnDoubleIt(OfflineSummary summary)
+        {
+            // Nothing owed, nothing to double, or too small an absence to raise
+            // a sheet at all — no reason to wait on an ad none of them offer.
+            if (summary == null
+                || summary.gains.Count == 0
+                || summary.creditedSeconds < GameLoop.WelcomeBackMinSeconds
+                || _loop.RewardedReady(RewardedPlacement.OfflineBoost))
+            {
+                return false;
+            }
+
+            if (_welcomeWaitDeadline < 0f)
+            {
+                _welcomeWaitDeadline = Time.unscaledTime + WelcomeRewardedWaitSeconds;
+            }
+
+            return Time.unscaledTime < _welcomeWaitDeadline;
         }
 
         private void OpenWelcomeSheet(OfflineSummary summary)
