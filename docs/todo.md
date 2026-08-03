@@ -32,9 +32,9 @@ Knobs the sitting is allowed to move, by file:
 | `economy.json` — familiars | `familiarXp` {base 60, growth 1.12, xpPerSecond 1}; `signatureMilestones` [2,4,7]; `signatureDeepening` 0.25; Roosts `comfort` 0.1/level |
 | `economy.json` — loop | `burstYieldMult`/`burstDurationSec`; `warden.gatherPerSecond` 0.5; `bubbles.*`; `baseCarryCapacity`/`tripSeconds`/`basketCapacity`; `selfHaulTripMultiplier` |
 | `economy.json` — craft/skill | `baseCraftSeconds` 5 + the eight per-recipe `craftSeconds`; `xp.gatherPerUnit` 1; `xp.craftPerBatch` 25; mastery base 50 / growth 1.15 / xpPerUnit 0.25 |
-| `economy.json` — amber | `digFindsPerHour` 0.06, perFind 2, skip 4h/15; `timeSkipDailyCapHours` 24 (the deliberate ×2 whale throttle) |
+| `economy.json` — amber | `digFindsPerHour` 0.06, perFind 2, skip 4h/15; `timeSkipDailyCapHours` 24 (the deliberate ×2 whale throttle). **Read 0.06 as the whole rate now**: the roll went flat and once-per-round on 2026-08-02 (was per site × `digSpeedMult`, which compounded to ~7/hour on a six-site map behind the full watch stack). The passive earn no longer grows with the map at all, so the sitting's question is whether 0.06 is now too *mean* — the drip and the weekly cache are carrying the free player |
 | `zones.json` | every `minMigration` (1/2/3/4/5 — first guesses); zone 7–8 prices 90/140/70 and 300/220 |
-| `rites.json` | the ×2.5-per-zone ramp (soften to ×2 if slow; ×3 walls the crags); `spotlightDiscount` 0.6 / `offSpotlightPremium` 1.5; `chooseCountPerMigrations`/`chooseCountMax` |
+| `rites.json` | the ×2.5-per-zone ramp (soften to ×2 if slow; ×3 walls the crags); the specimen slots' own ×1.6-per-zone ramp (1 · 2 · 3 · 5 · 8 across zones 4–8, added 2026-08-03 — the question is whether the peaks' 8 reads as an ask or as a raid on the Folio's fodder); `spotlightDiscount` 0.6 / `offSpotlightPremium` 1.5; `chooseCountPerMigrations`/`chooseCountMax` |
 | `almanac.json` | one-off tree total 178; granted-chain costs 6/10/14/22 + 8; `costGrowth.almanac` 1.25; The Long Song / The Long Reach rates |
 | `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
 | `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 8a4dc8adc630b31bbdedf900c12583b1691121efe04db38493505d751cd89bb5
+  sourceHash: 3957c6dcc70346520d96a8cf71d2db9d65fa1c856676aeb26b16bf5824a06ce8
   economy:
     costGrowth:
       building: 1.25
@@ -2869,9 +2869,9 @@ MonoBehaviour:
           resource: 
           amount: 0
           deed: 
-          count: 1
+          count: 2
           quality: choice
-          renownGrant: 2500
+          renownGrant: 5000
       - id: verse-hollows
         zone: the-hollows
         spotlight:
@@ -2910,9 +2910,9 @@ MonoBehaviour:
           resource: 
           amount: 0
           deed: 
-          count: 1
+          count: 3
           quality: choice
-          renownGrant: 4000
+          renownGrant: 12000
       - id: verse-crags
         zone: highland-crags
         spotlight:
@@ -2951,9 +2951,9 @@ MonoBehaviour:
           resource: 
           amount: 0
           deed: 
-          count: 1
+          count: 5
           quality: choice
-          renownGrant: 7000
+          renownGrant: 35000
       - id: verse-cloudreach
         zone: cloudreach-peaks
         spotlight:
@@ -2985,9 +2985,9 @@ MonoBehaviour:
           resource: 
           amount: 0
           deed: 
-          count: 1
+          count: 8
           quality: choice
-          renownGrant: 10000
+          renownGrant: 80000
         - type: 3
           resource: 
           amount: 0
