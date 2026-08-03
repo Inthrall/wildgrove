@@ -5,19 +5,20 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// One gathering node's world-space sprite: a resource-coloured disc, a
-    /// gentle scale pulse while a Tending burst is live, a golden halo while
-    /// the post-tend Choice window runs, and the assignment badge beneath
-    /// it — the tiny icon of whoever holds the post (one body per node),
-    /// which is also the tap target for posting. Dimmed while nothing works
-    /// it. Placement and per-frame refresh are driven by <see cref="WorldView"/>.
+    /// golden halo while the post-tend Choice window runs, and the assignment
+    /// badge beneath it — the tiny icon of whoever holds the post (one body
+    /// per node), which is also the tap target for posting. Dimmed while
+    /// nothing works it. Placement and per-frame refresh are driven by
+    /// <see cref="WorldView"/>.
     /// (The selection ring is gone — selection stopped doing anything once
-    /// taps opened sheets directly, and its near-paper colour never read.)
+    /// taps opened sheets directly, and its near-paper colour never read.
+    /// The scale pulse that rode the Tending burst is gone too — a caught
+    /// windfall already plays its own send-off over the node, so the plate
+    /// twitching underneath only added noise.)
     /// </summary>
     public sealed class NodeWorldView : MonoBehaviour
     {
         private const float HaloScale = 1.16f;
-        private const float PulseAmount = 0.08f;
-        private const float PulseSpeed = 8f;
         private const float HaloPulseSpeed = 3f;
         private const float IdleAlpha = 0.55f;
 
@@ -114,10 +115,7 @@ namespace Wildgrove.Game.World
         /// </summary>
         public void Refresh(float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
         {
-            var pulse = Node.tendBurstRemaining > 0.0
-                ? 1f + PulseAmount * Mathf.Sin(time * PulseSpeed)
-                : 1f;
-            transform.localScale = Vector3.one * (_diameter * pulse);
+            transform.localScale = Vector3.one * _diameter;
 
             // The Choice window outlasts the yield burst — the halo breathes
             // slowly so it reads as "charged" rather than "working".
