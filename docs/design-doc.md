@@ -1,6 +1,6 @@
 # Wildgrove — Design Document
 
-*Design document v0.11 · July 2026 · Working title · Prior rationale lives in repo history*
+*Design document v0.12 · August 2026 · Working title · Prior rationale lives in repo history*
 
 > An idle gathering & collecting game about tending a wilderness that remembers. Walk deeper with a small kith of wild companions, craft to survive, plant back more than you take — and listen when the land speaks, which is rarely.
 
@@ -88,7 +88,7 @@ gather at their posts        walk themselves      │
 ```
 
 1. **Agents at posts.** The warden and each slotted familiar can be **stationed** at a post; a familiar without a post **rests at camp** — no output (a slot is the right to hold a post, §4). Up to six slots by endgame (one to start — §4 ladder), one usually on the trail, eight-plus nodes by mid-run: coverage is never enough, and *where the kith stands* is the moment-to-moment decision.
-2. **Tending** a node (tap / click / key) is the warden's own act: a burst of yield and briefly raised Choice chance. Tending a node stations the warden there (decided 2026-07-17). Attention is rewarded, never demanded.
+2. **The windfall catch (REWORKED 2026-07-24 — replaces tap-to-tend).** A worked node drifts a **windfall bubble** into the strip now and then; catching it (tap / click / key) is the warden's own act. The catch pockets a flat burst of goods straight to camp — `economy.bubbles` pays a fixed few seconds of a notional gatherer's hands, the same at every node, so opening new ground never shrinks the prize — and **counts as Tending**: the yield burst, the briefly raised Choice chance, and the Rite's tend deeds all ride on the catch. A fallow node drifts nothing — the bubble is still earned; only its size is fixed. Tending no longer stations the warden (superseding 2026-07-17): standing somewhere is an explicit assignment, one body per post. Attention is rewarded, never demanded.
 3. Harvest travels home on its own — deliveries are automatic and lossless (DECIDED 2026-07-31, superseding the 2026-07-18 trail post). The pack raven still arrives at minute one, now fattening every windfall bubble instead of walking a lane.
 4. The **fire and benches** turn raw finds into four kinds of output: **survival gear** (the kit — permanent-for-the-run buffs), **trade goods** (dense barter weight at the Exchange), **offerings** (consumed by the Rite, §8), and **planter materials** (given back to the nodes, §3).
 5. The **Exchange** — the silent caravan — barters goods for goods. Deeper zones demand better tools *and* better gear → invest → advance. Repeat.
@@ -226,15 +226,21 @@ Familiar power lives on two tracks, mirroring the game's own grammar (fast-reset
 
 Three kit slots — **Hands**, **Pack**, **Camp** — worn by the warden alone; persists for the run, rebuilt cheaply after Migration (the early-run ritual).
 
-Five pieces compete for the three slots, so two are always sitting out. **A made piece is never destroyed: crafting is paid once per run, and the piece a slot displaces keeps in the kit bag and goes back on for nothing** (decided 2026-07-28). Two pieces contend for Pack and two for Camp, and the tradeoff between them changes as the run does — a night away wants the Camp slot's offline pieces, a hauling stretch wants the Pack — so the choice has to be revisitable. Charging materials to change your mind turned it into a trap instead of a decision. The Warden page groups the kit **by slot**, names what is worn in each, and labels a bagged piece's button *Wear* rather than *Craft*.
+> **REWORKED — the kit is one piece per slot for now.** The Pitch Torch and the
+> Clay-Lined Creel moved into the Almanac (their jobs were permanent-track
+> jobs), taking the shipped kit to three pieces — one per slot — so the swap is
+> inert until new gear ships (a v1.1 lever; todo §1.5). The 2026-07-28 rule
+> stands for when it does: **a made piece is never destroyed** — crafting is
+> paid once per run, a displaced piece keeps in the kit bag and goes back on
+> for nothing; charging materials to change your mind turned a decision into a
+> trap. The Warden page groups the kit **by slot**, names what is worn in each,
+> and labels a bagged piece's button *Wear* rather than *Craft*.
 
 | Gear (MVP)       | Slot  | Craft     | Materials              | Effect                          |
 | ---------------- | ----- | --------- | ---------------------- | ------------------------------- |
 | Cordage Wraps    | Hands | Bushcraft | Fibres ×40             | Tending burst +50%              |
-| Birch Frame Pack | Pack  | Bushcraft | Timber ×25, cordage ×5 | Trail post carries +25%         |
-| Pitch Torch      | Camp  | Firecraft | Timber ×10, fibres ×10 | Night hours count fully offline |
+| Birch Frame Pack | Pack  | Bushcraft | Timber ×25, cordage ×5 | The warden's own hands +50% (hauling retired — the pack quickens the warden, not a lane) |
 | Oilskin Tarp     | Camp  | Bushcraft | Reeds ×30, fish oil ×5 | Offline cap +1 h                |
-| Clay-Lined Creel | Pack  | Bushcraft | Clay ×20, reeds ×15    | Fish never spoil in transit     |
 
 ### Recipe chains (MVP trade goods & planters)
 
@@ -418,7 +424,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 | ----------- | ---------------- | ------------------------------------------------------- | --------------------------------------------- |
 | **Renown**  | Per-run score    | All XP earned (warden + familiars) + offering credits   | None — the measure, not a wallet              |
 | **Verdure** | Meta (permanent) | Migration (√ of Renown)                                 | Almanac nodes; +2%/pt passive                 |
-| **Amber**   | Hard / premium   | IAP, observation sites, rewarded ads, weekly Play Games Reward  | Time-skips (paid skips budgeted to `timeSkipDailyCapHours`/day — 24 pins a heavy spender to ≤×2 a free player's pace, since sim-time is the only thing money buys; **built 2026-07-30**), cosmetics, extra craft queues |
+| **Amber**   | Hard / premium   | IAP, observation sites, rewarded ads, weekly Play Games Reward  | Time-skips (paid skips budgeted to `timeSkipDailyCapHours`/day — 24 pins a heavy spender to ≤×2 a free player's pace, since sim-time is the only thing money buys; **built 2026-07-30**), cosmetics & extra craft queues (both UNBUILT — the skip is the only shipped sink, and cosmetics have no substrate; todo §1.5) |
 | *(Goods)*   | Everything else  | Gathering, crafting                                     | Kit · Exchange · offerings · replanting/planters · buildings · provisions — six sinks competing |
 
 **DECIDED 2026-08-02 — the Amber earn is flat, and does not grow with the map.** The watch roll is taken **once for the round**, at `watchers × digFindsPerHour × hours`, outside the site walk and untouched by the dig-speed stack. It used to sit *inside* the walk and take the stack with it, and the two compounded: six sites against a multiplicative watch stack (brush screens ×2 · deep sight ×1.5 · hollow relics ×1.25 · lantern bearers ×1.2 · an ashen season ×1.5 · reed screens ×1.5 ≈ ×10) surfaced ~7 an hour, so one login's catch-up paid ~70 against the ~40/week free lean — about 30× over, in a game whose only sink is the time skip. Opening ground and quickening the watch are each meant to buy *sketches*; between them they were quietly buying the premium currency. `digFindsPerHour` stays 0.06 and is now the whole rate, so the number reads the way it is written. The open question moves the other way: whether 0.06 is now too **mean**, with the ad drip and the weekly cache carrying the free player. The roll still comes before the sketch walk, so a fully-recorded map keeps surfacing amber (§6).
@@ -434,11 +440,14 @@ global            = (1 + 0.02·Verdure) · almanac · museumSets · insects · b
 richnessMult(node)= 1 + 0.10 · richnessLevel
 replantCost(n, L) = base · r^L                      node's own resource; per node, per run
 planterCost(tier) = material bundle                 authored per planter type
-famXP/sec         = workRate · postMatch · comfort  postMatch >1 when specced for the node
-famXPToLevel(L)   = 60 · 1.12^L                     powerup choice every 5 levels
+famXP/sec         = xpPerSecond · comfort · kinship  postMatch is UNBUILT (todo §1.5) — XP is
+                                                    flat at any post; comfort & Kinship are
+                                                    the only rate levers today
+famXPToLevel(L)   = 60 · 1.12^L                     levels pace XP & Kinship only — traits
+                                                    are fixed per species (2026-07-23)
 kinshipGain(fam)  = floor( √( runFamXP / K_f ) )    at Migration; Kinship XP only — run XP
                                                     already credited Renown (no double count)
-kinshipPerks(K)   = starting level +K · XP rate +2%·K    signature trait at milestones (1.1)
+kinshipPerks(K)   = starting level +K · XP rate +2%·K    trait deepening at milestones (built 2026-07-28)
 buildingCost(L)   = bundle(base) scaled 1.25^L      paid in goods
 mapCost(zone)     = provisions bundle               authored per zone
 exchangeRate(a→b) = tradeValue(a) / tradeValue(b) · (1 − spread)     spread ~15%, tuned;
@@ -583,11 +592,11 @@ Free, generous, player-initiated. The gathering loop is never interrupted by ads
 | Requirement                                                   | Wildgrove answer                                                                                                              | Phase |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | PGS v2 SDK, init at startup                                   | Unity plugin, initialized in bootstrap scene                                                                                    | 0     |
-| Achievements (10 min / 40+ rec / 4 in first hour), **due July 2026** | 40+ from zones, crafts, spreads, plates, verses, Rites, Migrations, Kinship milestones, powerup builds; first-hour four per §10. **Only `FirstKith` exists — the nearest real gap**; the Game Stats quantities are the natural thresholds | 5     |
+| Achievements (10 min / 40+ rec / 4 in first hour), **due July 2026** | 40+ from zones, crafts, spreads, plates, verses, Rites, Migrations, Kinship milestones; first-hour four per §10. **45 published** — `AchievementIds.g.cs` is generated by `pgs-achievements.py` from the console round-trip. Remaining drift: three incremental step counts and the Pristine→Choice console rename (todo §2) | 5     |
 | Game Stats (≥5 repetitive, ≥1 competitive, ≥1 progression)    | **Wired 2026-07-29** (`GameStats`): resources gathered (SUM, competitive) · goods crafted (SUM) · windfalls caught · specimens fixed · verses sung · Migrations (COUNT) · **trails walked** as the progression level. Continuous stats post as deltas against a baseline; cadence is the save cadence. **Cannot submit yet** — no client SDK exists (GPGS 2.1.0 has no `RecordEvent`); API GA July 2026, Console CSV upload August 2026. Schema authored in `store/play-games/gamestats/` | 5     |
 | Cloud save + conflict policy (**due November 2026**)          | Saved Games API (<100 KB); conflict = highest lifetime Renown wins, prompt on tie                                               | 5     |
 | Sidekick overlay (**due July 2026**)                          | **Enabled in Play Console 2026-07-29.** No code: switched on at upload for app bundles (Testing → Advanced settings → *automatically* on for new bundles, which is the one CI depends on). SDK route is APK-only; minSdk 26 already clears its 23. Still owed: eyeball it on a device (Android 13+, 4 GB+, installed from Play, Sidekick on in Play Store developer options) | 5     |
-| Rewards items (2 single-use by Sep 30 2026 / 1 repeatable by Mar 1 2027) | Cloak, Drover's Halter, Weekly Amber Cache. **Delivery path built 2026-07-29** — out-of-app purchase flow, grant → confirm → acknowledge; the Halter and the Cache land, the Cloak waits on a cosmetic substrate, so the ≥2 single-use bar is not yet met | 6     |
+| Rewards items (2 single-use by Sep 30 2026 / 1 repeatable by Mar 1 2027) | Drover's Halter, Wayfarer's Plate, Weekly Amber Cache (the cloak was retired unbuilt 2026-07-30 — §11). **Delivery path built 2026-07-29** — out-of-app purchase flow, grant → tell → acknowledge — and all three products live in the console (2026-08-04). The bar is met in code and catalogue; offers attach when the association UI opens Sep 1 2026 | 6     |
 | Vulkan primary (Unity 2021+)                                  | Unity 6 LTS + URP, Vulkan first from day one                                                                                    | 0     |
 | 60 fps (avg ≥55 / P90 ≥50 / P99 ≥30)                          | 2D URP; frame budget checked each phase gate                                                                                    | all   |
 | Stability <1% crash / <2% ANR                                 | Crashlytics from Phase 1; vitals gate before launch                                                                             | all   |
@@ -688,7 +697,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 
 **Before Phase 1 ends**
 - **Readability without Coin** — the gate question. Fallback: a cosmetic skin over Renown, never a wallet.
-- **Active-play depth:** ship Tending only; prototype the hold-still-to-sketch observation reveal at 1.1 — doubly tempting now, since the sketch *is* the insect moment and release gives it an ending.
+- **Active-play depth:** ship the windfall catch only (the 2026-07-24 rework of Tending, §2); prototype the hold-still-to-sketch observation reveal at 1.1 — doubly tempting now, since the sketch *is* the insect moment and release gives it an ending.
 - **Name:** "Wildgrove" is a working title — check Play Store collisions and trademark before the listing.
 
 **Before Phase 3**

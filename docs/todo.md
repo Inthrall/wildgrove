@@ -112,19 +112,23 @@ wired to nothing. The settings row lands with the audio pass.
 - **Every §7-register line in the game is a first draft.** Waystones, verse lines,
   plate lore, the 24 Kinship inscriptions (~190 of the 1,200-word budget), the
   crags/peaks/final-waystone chains, and the inside cover's wording. Re-voice
-  before release.
+  before release. The Phase 6 rule rides with the final edit: **cut 20%** — the
+  1,200-word budget is a ceiling, not a target.
 - **Most of the ~1,200-word budget is unwritten.** Still absent: Provisioner
   trigger lines (first-visit / after-migration), and lines for **generated**
   verses — runs 2+ reuse the zone's site with no authored words, so the narrative
   pass has to decide what a run-3 verse *says*.
 - **Waystones are a modal, not a world object.** Tappable waystones in the world
-  are still the intent; the sheet stands in.
+  are still the intent; the sheet stands in. The §14 legibility check rides on
+  this: the waystone (the past) and the verse site (the present) must read as
+  distinct objects on a zone screen.
 - **The Compendium has no plates or entry text** — the system layer with lifetime
   counters and discovery is live, the art and words aren't.
-- **`design-doc.md` is behind the build in two places:** §5/§8 still describe
-  tap-to-tend (windfall bubbles replaced it 2026-07-24), and the §6 lore / §7
-  backstory written for fossils were only lightly reframed for the
-  observe·sketch·release rework.
+- **`design-doc.md` re-synced 2026-08-04** (windfall catch, the three-piece kit,
+  the famXP formulas, the §12 achievement and Rewards rows). What remains there
+  is voice, not accuracy: the §6 lore / §7 backstory were written for fossils
+  and only lightly reframed for observe·sketch·release — that rewrite belongs
+  to the narrative pass above.
 
 ### 1.5 Systems tails
 
@@ -152,7 +156,9 @@ wired to nothing. The settings row lands with the audio pass.
   Replace with a real bootstrap scene when there is content to lay out.
 - **Some species have no acquisition path but bonds** — the non-node species
   (dray-stag, tawny-owl, cavern-bat) have no gift pile to be called by. Future
-  arrival content.
+  arrival content. The counts are still Mo's open §14 call: how many are
+  bondable at MVP (working assumption 1–2) and the earn rate after (1 per 2–3
+  Migrations early, slower later).
 - **Crafting and gifts spend only plain stock.** A run holding only Decent berries
   can't gift. Probably right, but revisit with balance.
 
@@ -167,6 +173,17 @@ folded into a bundle with Amber and cosmetics, may be the honest answer. If it
 ships it needs a permanent `yieldMult` + craft-speed entitlement path: there is
 **none** today, and nothing in `KithPurchases.Apply` / `StoreProductIds` grants a
 sim modifier.
+
+### 1.7 Onboarding — the last pass before launch
+
+Design §13 Phase 6's final step, carried here so it doesn't vanish with the
+plan: a light tutorial layer — the teaching notes (each system's first margin
+note is its instruction, §7) verified against beta FTUE analytics, plus
+contextual first-time nudges (a soft mark on the first windfall catch, the
+first replant, the first fielding choice) that stay inside the no-popup,
+two-lines-on-screen tone. The gate it feeds: the first-hour funnel must be
+green before ship (§3.5). Sequenced after the playtest sitting and the
+narrative pass — the nudges point at whatever those two settle.
 
 ---
 
@@ -337,7 +354,8 @@ for:
   so there is nothing to reach over JNI either. **API GA July 2026; Play Console
   CSV upload opens August 2026.** When the plugin lands it becomes three lines
   (`new PlayerGameEvent.Builder(name)` → `.AddProperty` → `RecordEvent`) and
-  nothing else moves.
+  nothing else moves. **Both dates have now arrived (checked 2026-08-04):** look
+  for the plugin release and the CSV upload on the next console visit.
   - Console side is authored and waiting in `store/play-games/gamestats/`. Two
     knowingly-unfinished parts: the **stat icons aren't drawn** (Google has
     published no size spec — use `tools/make-store-art.py` once the console says
@@ -345,6 +363,18 @@ for:
     guide's documented spellings, not ones a console has accepted. Expect one
     correction round. `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema`
     fails if code and CSV drift, because Play drops undeclared events silently.
+
+### 3.5 Launch (design §13 Phase 6 — carried here so the plan's tail isn't lost)
+
+- **The name check, before the listing.** "Wildgrove" is a working title —
+  check Play Store collisions and trademark (design §14). Everything
+  listing-side hangs off the answer, so it comes before screenshots or copy.
+- **The store listing**, with tablet and PC screenshots (Level Up parity).
+- **Closed beta: 2–3 weeks of vitals**, with the Play Games on PC opt-in and the
+  Level Up self-check run during it.
+- **The ship gate:** vitals green 14 consecutive days and D1 retention >30% in
+  beta → ship. The onboarding pass (§1.7) feeds the same gate — the first-hour
+  funnel must be green.
 
 ---
 
