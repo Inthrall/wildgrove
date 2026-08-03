@@ -199,12 +199,6 @@ sim modifier.
   changes, so unlocks in the field are unaffected either way. Re-upload
   `store/play-games/achievement-choice-512.png` in the same visit (icons are a
   manual upload — see the tool's header). Batch with the drifted-step visit above.
-- **`AdUnitIds.AmberDrip` is an alias of `TimeSkip`.** The drip and the skip share
-  one ad unit: one fill pool, one frequency cap, one reporting row. Nothing breaks
-  — the drip's earn rate just becomes unmeasurable and each placement quietly caps
-  the other. Dev builds serve Google's test unit regardless, so it only ever shows
-  in production numbers. One-literal code change, gated on the console visit in
-  §3.1. (`Services/ServiceIds.cs`)
 - **EEA players are served ads having been asked nothing.** The code side is done
   — `AdMobAds.GatherConsent` runs `ConsentInformation.Update` →
   `LoadAndShowConsentFormIfRequired` before any ad request, and the inside cover
@@ -254,22 +248,11 @@ doesn't work.
 
 ### 3.1 AdMob console — release blockers
 
-**The Amber-drip rewarded unit** (fixes the alias bug in §2):
-
-1. AdMob → **Apps** → Wildgrove (`com.inthrall.wildgrove`) → **Ad units** →
-   **Add ad unit**.
-2. Format **Rewarded**. Name to match the other two (`Wildgrove Time Skip` /
-   `Wildgrove Offline Boost`) → **`Wildgrove Amber Drip`**.
-3. **Reward amount 1, item "amber"**. Never read — the game grants the drip from
-   `economy.json`, not the ad payload — but AdMob requires the fields, and a
-   nonsense value in the console is a thing to misread later.
-4. Leave frequency capping **off**. The drip's own cooldown is the throttle; a
-   second one in the console would be invisible from the code.
-5. Copy the unit id (`ca-app-pub-6903871125040514/…`) and replace the
-   `AmberDrip = TimeSkip` alias in `ServiceIds.cs`, restoring its XML doc line.
-   That is the whole code change.
-6. New units take **a few hours** to start serving. A fresh unit returning no-fill
-   on the first device test is expected, not a fault.
+**The Amber-drip rewarded unit — DONE 2026-08-04.** `Wildgrove Amber Drip`
+(`ca-app-pub-6903871125040514/5608337861`) created in the console and
+`ServiceIds.cs` repointed, retiring the `AmberDrip = TimeSkip` alias. New units
+take **a few hours** to start serving — no-fill on the first device test is
+expected, not a fault.
 
 **The GDPR/consent message:**
 

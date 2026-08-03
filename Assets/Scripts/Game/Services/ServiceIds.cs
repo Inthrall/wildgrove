@@ -16,19 +16,8 @@ namespace Wildgrove.Game.Services
         /// <summary>Rewarded unit for the time-skip reward.</summary>
         public const string TimeSkip = "ca-app-pub-6903871125040514/3141391976";
 
-        /// <summary>
-        /// Rewarded unit for the Amber drip.
-        /// <para>
-        /// ⚠️ RELEASE BLOCKER — this is <see cref="TimeSkip"/>, aliased rather
-        /// than copied so the placeholder cannot be mistaken for a unit of its
-        /// own. Two placements on one unit share fill, frequency capping and
-        /// reporting, so the drip's earn rate is unmeasurable and each placement
-        /// caps the other. Dev builds serve Google's test unit regardless, so
-        /// this only bites in production. Create a dedicated rewarded unit in
-        /// AdMob and repoint this one constant.
-        /// </para>
-        /// </summary>
-        public const string AmberDrip = TimeSkip;
+        /// <summary>Rewarded unit for the Amber drip.</summary>
+        public const string AmberDrip = "ca-app-pub-6903871125040514/5608337861";
     }
 
     /// <summary>In-app purchase product IDs (Google Play Console SKUs). All one-off non-consumables.</summary>
