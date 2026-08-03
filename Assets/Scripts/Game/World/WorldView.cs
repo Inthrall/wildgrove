@@ -7,13 +7,16 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node
-    /// plus a <see cref="StationWorldView"/> for the wander post (the trail post
-    /// moved to the HUD's trail-home line in the band above the strip),
     /// and lays them out in the screen gap the HUD leaves open (the HUD reports
     /// that gap via <see cref="StripScreenRect"/> each frame). The strip IS the
     /// assignment board (design §2: one body per post): every post wears a
     /// badge of its holder, and this class answers both tap questions — which
-    /// node a tap tends, and which post's badge a tap assigns. Placeholder
+    /// node a tap tends, and which post's badge a tap assigns. While any kith
+    /// slot stands unfilled a (+) mark closes the strip; tapping it opens the
+    /// Trail page, where every post offers its own "Post here". (The wander
+    /// post used to hold that closing spot as a plate of its own, but it wore a
+    /// node's face without being one — it is assigned from the watch card and
+    /// the familiars' own sheets now.) Placeholder
     /// tier: shapes in a strip now; a real region scene replaces the layout
     /// when the art lands, but the camera/world seam and hit-testing stay.
     ///
@@ -70,7 +73,10 @@ namespace Wildgrove.Game.World
         // out of _bubbles, so they can't be caught twice or block a spawn.
         private readonly List<BubbleWorldView> _bursting = new List<BubbleWorldView>();
         private BubbleWorldView _lastCaught;
-        private StationWorldView _wanderView;
+        // The (+) closing the strip while a kith slot stands unfilled — not a
+        // post, an invitation to fill one (the tap opens the Trail page).
+        private TextMesh _openSlotsMark;
+        private bool _openSlotsShown;
         private Vector2[] _centres = new Vector2[0];
         private bool[] _badgeVisible = new bool[0];
         private float _radiusPx;
@@ -105,19 +111,21 @@ namespace Wildgrove.Game.World
                 view.RefreshLabel();
             }
 
-            _wanderView?.RefreshLabel();
+            PlaceholderArt.RefreshLabel(_openSlotsMark);
         }
 
         /// <summary>
         /// The post whose plate or badge is under the screen point, or null for
         /// a miss. Plates and badges resolve together — nearest centre wins
         /// (see <see cref="WorldStrip.ResolveHit"/>) — and <paramref name="node"/>
-        /// carries the gathering node when the hit was one (null for the
-        /// wander plate).
+        /// carries the gathering node when the hit was one.
+        /// <paramref name="openSlots"/> is true when the hit was the (+) mark
+        /// instead of any post — the caller opens the Trail page.
         /// </summary>
-        public string PostAtScreenPoint(Vector2 screenPoint, out NodeState node)
+        public string PostAtScreenPoint(Vector2 screenPoint, out NodeState node, out bool openSlots)
         {
             node = null;
+            openSlots = false;
             var index = WorldStrip.ResolveHit(StripScreenRect, _centres, _radiusPx, _diameterPx, _badgeVisible, screenPoint);
             if (index < 0 || index >= _centres.Length)
             {
@@ -130,7 +138,8 @@ namespace Wildgrove.Game.World
                 return node.id;
             }
 
-            return Familiar.WanderStation;
+            openSlots = true;
+            return null;
         }
 
         private void LateUpdate()
@@ -164,6 +173,12 @@ namespace Wildgrove.Game.World
             // layout maths runs — the spread, the plate size and the row count
             // are all read off the count.
             GatherStrip(state);
+            _openSlotsShown = _loop.KithWalking() < _loop.KithSlots();
+            if (_openSlotsMark.gameObject.activeSelf != _openSlotsShown)
+            {
+                _openSlotsMark.gameObject.SetActive(_openSlotsShown);
+            }
+
             Layout();
 
             // A fresh camp with nothing posted anywhere used to render the
@@ -199,13 +214,12 @@ namespace Wildgrove.Game.World
                 view.Refresh(Time.time, wardenHere, occupant, IconFor(occupant), anyPosted);
             }
 
-            var wanderer = Stationing.OccupantOf(state, Familiar.WanderStation);
+            // The (+) is not a post, so it wears no badge — its plate circle
+            // is the whole tap target.
             if (_badgeVisible.Length > _onStrip.Count)
             {
-                _badgeVisible[_onStrip.Count] = Warden.IsWandering(state) || wanderer != null;
+                _badgeVisible[_onStrip.Count] = false;
             }
-
-            _wanderView.Refresh(Warden.IsWandering(state), wanderer, IconFor(wanderer));
 
             UpdateBubbles(state);
         }
@@ -230,12 +244,14 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            // A camp with nobody anywhere keeps the whole board. Hiding every
-            // plate would take the assignment surface away at exactly the
-            // moment the first posting has to happen — and an empty band under
-            // the page head reads as a rendering fault, not as "nothing to do".
-            // The strip collapses to the worked posts on the first posting.
-            if (_onStrip.Count == 0 && !Stationing.HasBodyAt(state, Familiar.WanderStation))
+            // A camp with no node held keeps the whole board — a wanderer-only
+            // camp included, now that the wander post has no plate of its own.
+            // Hiding every plate would take the assignment surface away at
+            // exactly the moment the first posting has to happen — and an empty
+            // band under the page head reads as a rendering fault, not as
+            // "nothing to do". The strip collapses to the worked posts on the
+            // first node posting.
+            if (_onStrip.Count == 0)
             {
                 _onStrip.AddRange(_views);
             }
@@ -369,7 +385,7 @@ namespace Wildgrove.Game.World
             // CreateLabel sizes for a diameter-scaled parent; this one hangs
             // off the unscaled container, so size it to the strip instead.
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var diameter = WorldStrip.BubbleDiameter(StripScreenRect, _onStrip.Count + 1) * worldPerPixel;
+            var diameter = WorldStrip.BubbleDiameter(StripScreenRect, StripTotal()) * worldPerPixel;
             label.characterSize = diameter * 0.055f;
             label.GetComponent<MeshRenderer>().sortingOrder = 9;
             StartCoroutine(RiseAndFadeLabel(label, diameter));
@@ -468,8 +484,8 @@ namespace Wildgrove.Game.World
             MaybeSpawnBubble(state, config, now);
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
-            var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, _onStrip.Count + 1);
-            var twoRows = WorldStrip.Rows(_onStrip.Count + 1) == 2;
+            var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, StripTotal());
+            var twoRows = WorldStrip.Rows(StripTotal()) == 2;
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;
@@ -589,24 +605,25 @@ namespace Wildgrove.Game.World
                     ArtLibrary.ForResource(node.resourceId)));
             }
 
-            // The wander post closes the strip (roaming every node and watch
-            // site). The trail post moved to the HUD's trail-home line.
-            _wanderView = StationWorldView.Create(
-                _container, Familiar.WanderStation, "wandering",
-                PlaceholderArt.DigSiteColour(Familiar.WanderStation), _labelFont,
-                ArtLibrary.ForSkill("observation"));
+            // The (+) closes the strip while a kith slot stands unfilled —
+            // Layout sizes and places it; LateUpdate shows and hides it.
+            _openSlotsMark = PlaceholderArt.CreateLabel(_container, "+", _labelFont,
+                new Color(0.333f, 0.392f, 0.247f, 1f)); // JournalTheme's MossDeep — an invitation, not a cost
+            _openSlotsMark.anchor = TextAnchor.MiddleCenter;
+            _openSlotsMark.transform.localPosition = Vector3.zero;
+            _openSlotsMark.gameObject.SetActive(false);
 
             _builtFor = _loop.State;
         }
 
         private void Layout()
         {
-            // Nodes first, the wander post after — one shared strip, so the hit
-            // test's "first N centres are nodes" convention holds. Nodes here
-            // means the ones ON the strip (GatherStrip has already run), so the
-            // centres and _onStrip index alike. The buffer is reused frame to
-            // frame — this runs per LateUpdate.
-            var total = _onStrip.Count + 1;
+            // Nodes first, the (+) mark after when it shows — one shared strip,
+            // so the hit test's "first N centres are nodes" convention holds.
+            // Nodes here means the ones ON the strip (GatherStrip has already
+            // run), so the centres and _onStrip index alike. The buffer is
+            // reused frame to frame — this runs per LateUpdate.
+            var total = StripTotal();
             if (_centres.Length != total)
             {
                 _centres = new Vector2[total];
@@ -631,8 +648,20 @@ namespace Wildgrove.Game.World
                 _onStrip[i].SetStripLayout(badgeOffsetLocal, showCaptions);
             }
 
-            _wanderView.SetPlacement(ScreenToWorld(_centres[_onStrip.Count]), _diameterPx * worldPerPixel);
-            _wanderView.SetStripLayout(badgeOffsetLocal, showCaptions);
+            if (_openSlotsShown && _centres.Length > _onStrip.Count)
+            {
+                _openSlotsMark.transform.position = ScreenToWorld(_centres[_onStrip.Count]);
+                // A TextMesh at fontSize 64 stands ~6.4 world units per unit of
+                // characterSize — 0.09 of the plate diameter fills roughly the
+                // 60% of the circle a plate's own art does.
+                _openSlotsMark.characterSize = _diameterPx * worldPerPixel * 0.09f;
+            }
+        }
+
+        /// <summary>Everything the strip lays out this frame — the worked plates, and the (+) mark when it shows.</summary>
+        private int StripTotal()
+        {
+            return _onStrip.Count + (_openSlotsShown ? 1 : 0);
         }
 
         private Vector3 ScreenToWorld(Vector2 screenPoint)

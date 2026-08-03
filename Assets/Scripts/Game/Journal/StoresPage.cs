@@ -44,8 +44,12 @@ namespace Wildgrove.Game
 
         internal void BuildStoresPage()
         {
-            BuildStockCard();
+            // The brews lead the page: the bottles are the one thing here that
+            // can be USED rather than read, and the drawer under them grows a
+            // tile per stack — below it they would drift further out of reach
+            // with every zone the trail opens.
             BuildBrewsCard();
+            BuildStockCard();
         }
 
         // ── The drawer ────────────────────────────────────────────────────
@@ -112,7 +116,7 @@ namespace Wildgrove.Game
         /// Every id the drawer can show, in a fixed order: the gatherables as
         /// the data lists them, then the crafted goods as the recipes make
         /// them. Tinctures are held out — they are goods, so they would
-        /// otherwise appear twice, and their own card below is where they can
+        /// otherwise appear twice, and their own card above is where they can
         /// be drunk.
         /// </summary>
         private List<(string id, bool gradeable)> StockOrder()

@@ -1509,12 +1509,25 @@ namespace Wildgrove.Game
 
                     // Plates and badges resolve together, nearest centre wins —
                     // a node plate IS the assign gesture now (tap-to-tend
-                    // became the bubbles above), and the trail/wander plates
-                    // resolve to their station.
-                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out _) : null;
+                    // became the bubbles above).
+                    var openSlots = false;
+                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out _, out openSlots) : null;
                     if (station != null)
                     {
                         _sheets.OpenPostingSheet(station);
+                    }
+                    else if (openSlots)
+                    {
+                        // The (+) closing the strip is not a post — it is the
+                        // nudge to fill one, and the Trail page is where every
+                        // post offers itself. On a spread the Trail already
+                        // faces the reader, so there is nothing to switch.
+                        if (!_wide)
+                        {
+                            OpenTab(TabTrail);
+                        }
+
+                        SetNote("room to post another body — every plate on the Trail offers its own post.");
                     }
                 }
                 else if (!typing && !FocusHasTarget)
@@ -1649,7 +1662,14 @@ namespace Wildgrove.Game
             _tendFlashes.Clear();
             for (var i = _body.childCount - 1; i >= 0; i--)
             {
-                Destroy(_body.GetChild(i).gameObject);
+                var child = _body.GetChild(i).gameObject;
+                // Off before Destroy: a destroyed child holds its place in the
+                // layout until end of frame, so the old and new pages would
+                // share the body for one rendered frame — a visible stutter on
+                // every rebuild. Inactive, it leaves the layout at once, and
+                // the scroll can settle before this frame draws.
+                child.SetActive(false);
+                Destroy(child);
             }
 
             _spread = null;
@@ -1711,16 +1731,35 @@ namespace Wildgrove.Game
         /// <em>normalised</em> position, which is a different place on the page
         /// once the page has changed height — so opening a ground near the
         /// bottom would fling the reader somewhere else entirely, and the
-        /// ground they just opened would be off-screen. Scrolling back to the
-        /// heading leaves it under the finger that pressed it.
+        /// ground they just opened would be off-screen. The heading's spot in
+        /// the viewport is measured at the press and restored after the
+        /// rebuild, so the ground folds open exactly where it stands rather
+        /// than leaping to the top of the view.
         /// </para>
         /// </summary>
-        internal void FoldZone(string zoneId)
+        internal void FoldZone(string zoneId, RectTransform heading)
         {
             JournalZones.Toggle(ZoneOpen, zoneId, _trail.NewestZoneId());
             PendingZoneFold = zoneId;
+            _zoneFoldOffset = HeadingViewportOffset(heading);
             _pendingScroll = ZoneLandmark;
+            // Answer the tap on the next frame, not at the next cadence tick —
+            // a quarter second between press and movement reads as a stutter.
+            _refreshCountdown = 0f;
             _dirty = true;
+        }
+
+        /// <summary>Distance from the viewport's top edge down to <paramref name="heading"/>'s top edge — where the fold's settle puts it back.</summary>
+        private float HeadingViewportOffset(RectTransform heading)
+        {
+            if (heading == null || _scroll == null)
+            {
+                return LandmarkMargin;
+            }
+
+            var viewport = _scroll.viewport;
+            var local = (Vector2)viewport.InverseTransformPoint(heading.position);
+            return viewport.rect.yMax - (local.y + heading.rect.yMax);
         }
 
         /// <summary>
@@ -1742,6 +1781,12 @@ namespace Wildgrove.Game
         /// <summary>The landmark name a zone fold scrolls back to.</summary>
         private const string ZoneLandmark = "zone";
 
+        /// <summary>The small breath a deep-linked landmark keeps from the viewport's top edge.</summary>
+        private const float LandmarkMargin = 6f;
+
+        /// <summary>Where the pressed zone heading stood in the viewport — the fold's settle restores it there.</summary>
+        private float _zoneFoldOffset = LandmarkMargin;
+
         private RectTransform LandmarkCard(string landmark)
         {
             switch (landmark)
@@ -1757,8 +1802,14 @@ namespace Wildgrove.Game
 
         private System.Collections.IEnumerator SettleScroll(float normalized, string landmark)
         {
-            // Destroyed children leave the layout at end of frame — wait one
-            // so the fresh page has its real height before positioning it.
+            // Once now — the rebuild switches its stale children off before
+            // Destroy, so the fresh page's height is already real and the
+            // scroll can land before this frame ever draws...
+            Canvas.ForceUpdateCanvases();
+            ApplyScroll(normalized, landmark);
+
+            // ...and once a frame later, for anything the first layout pass
+            // settled late.
             yield return null;
             if (_scroll == null || _body == null)
             {
@@ -1766,22 +1817,34 @@ namespace Wildgrove.Game
             }
 
             Canvas.ForceUpdateCanvases();
-            var target = LandmarkCard(landmark);
-            if (target != null)
-            {
-                ScrollTo(target);
-            }
-            else
-            {
-                _scroll.verticalNormalizedPosition = Mathf.Clamp01(normalized);
-            }
+            ApplyScroll(normalized, landmark);
 
             // The fresh page has its real height now, so the mark can go back
             // where it was — and RevealFocused can measure honestly.
             RestoreFocus();
         }
 
-        private void ScrollTo(RectTransform target)
+        private void ApplyScroll(float normalized, string landmark)
+        {
+            if (_scroll == null || _body == null)
+            {
+                return;
+            }
+
+            var target = LandmarkCard(landmark);
+            if (target != null)
+            {
+                // A fold's landmark goes back to where its heading stood; the
+                // deep links land theirs at the top of the view.
+                ScrollTo(target, landmark == ZoneLandmark ? _zoneFoldOffset : LandmarkMargin);
+            }
+            else
+            {
+                _scroll.verticalNormalizedPosition = Mathf.Clamp01(normalized);
+            }
+        }
+
+        private void ScrollTo(RectTransform target, float offsetFromTop)
         {
             var range = _body.rect.height - _scroll.viewport.rect.height;
             if (range <= 0f)
@@ -1793,7 +1856,7 @@ namespace Wildgrove.Game
             // content-local space is its distance down the page.
             var local = (Vector2)_body.InverseTransformPoint(target.position);
             var distanceFromTop = -(local.y + target.rect.yMax);
-            _scroll.verticalNormalizedPosition = 1f - Mathf.Clamp01((distanceFromTop - 6f) / range);
+            _scroll.verticalNormalizedPosition = 1f - Mathf.Clamp01((distanceFromTop - offsetFromTop) / range);
         }
 
         /// <summary>

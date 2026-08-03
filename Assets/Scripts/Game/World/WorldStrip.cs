@@ -17,7 +17,7 @@ namespace Wildgrove.Game.World
         // a row of four already sizes each plate off the width rather than the
         // height, so the specimens shrink instead of filling the band. Two
         // rows of three keep the plates big enough to read as portraits.
-        // (Three zones ≈ 10 nodes; four zones plus the wander post ≈ 15.)
+        // (Three zones ≈ 10 nodes; four zones plus the open-slots mark ≈ 15.)
         public const int MaxPerRow = 3;
 
         /// <summary>The assignment badge's centre, in diameters below a post sprite's centre (single-row; two rows clamp to the row pitch — see <see cref="BadgeOffset"/>).</summary>

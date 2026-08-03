@@ -109,7 +109,10 @@ namespace Wildgrove.Game
                 : SizeOpen(15) + name + "</size>" + SizeOpen(13) + "\n<color=" + Ink2Hex + ">"
                   + ZoneGrowth(zone) + "</color></size>";
 
-            var heading = Button(_body, label, 400, () => _hud.FoldZone(captured));
+            // The heading hands its own rect to the fold, which notes where it
+            // stands in the viewport — the rebuilt page puts it back there.
+            Button heading = null;
+            heading = Button(_body, label, 400, () => _hud.FoldZone(captured, (RectTransform)heading.transform));
             heading.gameObject.name = "ZoneHeading";
             AddFoldArrow(heading, open);
 
@@ -595,13 +598,19 @@ namespace Wildgrove.Game
         /// as it roams. The card carries the site's own clocks — how often a
         /// sketch comes and the pity timer that guarantees one (both were
         /// load-bearing and invisible) — plus the site's planters, with a
-        /// one-line note on whether anyone wanders.
+        /// one-line note on whether anyone wanders. The card also offers the
+        /// wander post itself: the strip no longer carries a wander plate, so
+        /// the page describing the watching is where the watcher is sent.
         /// </summary>
         private void BuildWatchPlate(DigSiteState site)
         {
             var captured = site;
             var card = Card("THE WATCH · " + ZoneName(site.zoneId).ToUpperInvariant());
-            var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
+            var row = Row(card);
+            var line = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
+            FlexibleWidth(line.gameObject, 1f);
+            Button post = null;
+            post = Button(row.transform, "Post a wanderer", 220, () => _hud.Sheets.OpenPostingSheet(Familiar.WanderStation));
             var clocks = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
 
             if (_loop.PlantersUnlocked() && _loop.DigSitePlanters().Count > 0)
@@ -622,7 +631,8 @@ namespace Wildgrove.Game
                 var watching = Stationing.WanderAgents(_loop.State, _loop.Data) > 0.0;
                 line.text = watching
                     ? "the wanderer passes through, watching where the small lives cross"
-                    : "<color=" + OchreInkHex + ">no one wanders, and the small lives go unrecorded. post someone to the wander plate at the end of the strip.</color>";
+                    : "<color=" + OchreInkHex + ">no one wanders, and the small lives go unrecorded.</color>";
+                SetButtonLabel(post, watching ? "Change post" : "Post a wanderer");
 
                 // The clocks only run while someone watches — quoting a rate
                 // to an empty site would contradict the line above it.

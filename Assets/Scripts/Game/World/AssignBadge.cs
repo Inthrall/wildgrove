@@ -4,12 +4,12 @@ using Wildgrove.Sim;
 namespace Wildgrove.Game.World
 {
     /// <summary>
-    /// The small assignment badge pinned under every strip post (node, trail,
-    /// wander): a tiny icon of whoever holds the post — the warden's own
-    /// silhouette, a familiar's portrait, or a tinted disc with the familiar's
-    /// initial when its species has no plate yet — and a dashed-feeling "+" mark
+    /// The small assignment badge pinned under every strip node plate: a tiny
+    /// icon of whoever holds the post — the warden's own silhouette, a
+    /// familiar's portrait, or a tinted disc with the familiar's initial when
+    /// its species has no plate yet — and a dashed-feeling "+" mark
     /// while the post stands empty. Tapping the badge is the assign/unassign gesture
-    /// (<see cref="WorldView.StationAtScreenPoint"/> does the hit test; this
+    /// (<see cref="WorldView.PostAtScreenPoint"/> does the hit test; this
     /// is just the visuals).
     /// </summary>
     public sealed class AssignBadge
