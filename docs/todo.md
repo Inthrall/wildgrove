@@ -269,9 +269,12 @@ for:
 
 ### 3.2 Play Console
 
-- **Create the two store products** — `starter_bundle` (slot + 30 Amber, one-time)
-  and `kith_slot`, both NonConsumable. `StoreProductIds.All` already names them;
-  without the console entries the ladder's two purchasable slots cannot be bought.
+- **The product catalogue is complete — DONE 2026-08-04.** All eight ids in
+  `StoreCatalogue.All` have a console entry — `starter_bundle` and `kith_slot`
+  landed last, and `reward_wayfarers_cloak` is rightly absent. The amber packs
+  are one-time products like the rest, which is correct: consumable-vs-durable
+  is the client's distinction (`StoreCatalogue.IsConsumable`), not a console
+  setting. What's left to prove is the internal-track catalogue fetch (§3.3).
 - **Attach a Play Games Reward offer to each of the three reward products.** The
   products (`reward_drovers_halter`, `reward_weekly_amber_cache`,
   `reward_wayfarers_plate`) are created and activated. **The association UI and
