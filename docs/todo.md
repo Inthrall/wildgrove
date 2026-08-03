@@ -199,12 +199,6 @@ sim modifier.
   changes, so unlocks in the field are unaffected either way. Re-upload
   `store/play-games/achievement-choice-512.png` in the same visit (icons are a
   manual upload — see the tool's header). Batch with the drifted-step visit above.
-- **EEA players are served ads having been asked nothing.** The code side is done
-  — `AdMobAds.GatherConsent` runs `ConsentInformation.Update` →
-  `LoadAndShowConsentFormIfRequired` before any ad request, and the inside cover
-  re-opens the form. It is **inert until a GDPR message is published** in the
-  AdMob console: the SDK has no form to load, `PrivacyOptionsAvailable` stays
-  false, the row stays hidden, and there is no error anywhere. See §3.1.
 - **Sim purity is a convention with nothing enforcing it.** `CLAUDE.md` states
   `Wildgrove.Sim` = `noEngineReferences: true`; the asmdef flag is **`false`**, and
   flipping it does not compile — Sim takes `GameDataAsset` in nearly every
@@ -254,21 +248,24 @@ doesn't work.
 take **a few hours** to start serving — no-fill on the first device test is
 expected, not a fault.
 
-**The GDPR/consent message:**
+**The GDPR/consent message — published 2026-08-04** (GDPR and US states both).
+What remains is the on-device verification, which no editor run can stand in
+for:
 
-1. AdMob → **Privacy & messaging** → **GDPR** → **Create message**.
-2. Select Wildgrove; leave the default regions (EEA + UK).
-3. Consent options: **Consent / Manage options / Do not consent**. The third
-   button matters — without it, it's the "consent or leave" pattern Google has
-   been rejecting.
-4. Privacy policy URL → `https://decryptic.app/wildgrove/privacy` (the same URL
-   the Play listing and the inside cover use).
-5. Style it and **Publish**. Unpublished messages do not load.
-6. Repeat under **Privacy & messaging → US states** if the app is listed there —
-   same shape, separate message.
-7. Verify on device with a debug geography override (`ConsentDebugSettings`, EEA)
-   or a VPN. Confirm: the form shows on first launch, no ad request precedes it,
-   and **Ad privacy choices** then appears on the inside cover.
+- `GatherConsent` passes a bare `ConsentRequestParameters` — no debug geography
+  is wired — so test via a VPN to an EEA country, or temporarily add
+  `ConsentDebugSettings` (`DebugGeography.EEA` plus the device hash the UMP SDK
+  prints to logcat on the first unregistered run). `ConsentInformation.Reset()`
+  clears a stored answer between attempts. Confirm first, then remove the
+  instrument.
+- A pass looks like: the form shows on first launch and no ad request precedes
+  it; **Ad privacy choices** then appears on the inside cover —
+  `PrivacyOptionsAvailable` flipping true is the one in-game signal the message
+  is live. "Do not consent" logs `[ads] consent withheld — no ads requested`
+  and the rewarded buttons stay unready, which is correct. Logcat must stay
+  free of `[ads] consent update failed` / `[ads] consent form failed`: both
+  paths log-and-continue on purpose, so the game will never surface a failure
+  on its own.
 
 ### 3.2 Play Console
 
