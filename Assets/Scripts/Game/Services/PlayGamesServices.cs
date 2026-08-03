@@ -285,29 +285,15 @@ namespace Wildgrove.Game.Services
             return "a warden";
         }
 
-        // How many stat events this session has had to hold. Counted rather than
-        // buffered: an idle run records on every save, and a queue that can never
-        // drain is a leak, not a recovery plan.
-        private int _statEventsHeld;
-        private bool _statApiWarned;
-
         /// <summary>
-        /// Records a Game Stats event — or rather, will. **The client SDK does not
-        /// exist yet.** Google's Game Stats guide says client integration "will be
-        /// made available using Unity, Java and C++ SDKs", GA from July 2026, with
-        /// the Play Console CSV upload live August 2026; the shipped Unity plugin
-        /// (GPGS 2.1.0, July 2025 — still the latest release) has no
-        /// <c>PlayerGameEvent</c> and no <c>RecordEvent</c> on
-        /// <c>PlayGamesPlatform</c>. There is nothing to call and nothing to
-        /// reach over JNI: the Java coordinate isn't published either.
-        /// <para>
-        /// So this counts what it could not send and says so in logcat. When the
-        /// plugin lands, the whole body becomes the documented three lines —
-        /// <c>new PlayerGameEvent.Builder(eventName)</c>, <c>.AddProperty(k, v)</c>
-        /// per property, <c>PlayGamesPlatform.Instance.RecordEvent(built)</c> —
-        /// and nothing else in the game changes: <see cref="GameStats"/> already
-        /// decides what is recorded and when.
-        /// </para>
+        /// Records a Game Stats event (GPGS 2.2.0's <c>PlayerGameEvent</c> API).
+        /// The event name and every property key must already be declared in the
+        /// console's uploaded CSV schema — Play drops undeclared events silently,
+        /// which is what the schema test in GameStatsTests pins. The builder
+        /// enforces Play's own limits by throwing (25 properties, 100-char names,
+        /// 1024-char string values), and the record itself goes over JNI, so the
+        /// whole act is guarded: a dropped stat must never take the save cadence
+        /// down with it.
         /// </summary>
         public void RecordStat(string eventName, params (string key, object value)[] properties)
         {
@@ -316,20 +302,79 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            _statEventsHeld++;
-            if (!_statApiWarned)
+            try
             {
-                _statApiWarned = true;
-                Log("game-stats: NOT submitted — GPGS " + GooglePlayGames.PluginVersion.VersionString
-                    + " has no Game Stats client API (first held event: " + eventName + ")");
+                var builder = new PlayerGameEvent.Builder(eventName);
+                if (properties != null)
+                {
+                    foreach (var property in properties)
+                    {
+                        AddProperty(builder, property.key, property.value);
+                    }
+                }
+
+                PlayGamesPlatform.Instance.RecordEvent(builder.Build());
+                if (Debug.isDebugBuild)
+                {
+                    // The dev-build instrument for the first on-device check —
+                    // production stays quiet because this fires on every save.
+                    Log("game-stats: recorded " + eventName);
+                }
+            }
+            catch (Exception e)
+            {
+                Log("game-stats: " + eventName + " dropped — " + e.GetType().Name + ": " + e.Message);
+            }
+        }
+
+        /// <summary>
+        /// The builder only takes the types Play accepts, so the boxed value is
+        /// dispatched by type. <see cref="GameStats"/> owns the vocabulary and only
+        /// sends strings and numbers today; an unknown type is a coding error said
+        /// out loud rather than an event lost.
+        /// </summary>
+        private static void AddProperty(PlayerGameEvent.Builder builder, string key, object value)
+        {
+            switch (value)
+            {
+                case string text:
+                    builder.AddProperty(key, text);
+                    break;
+                case int intValue:
+                    builder.AddProperty(key, intValue);
+                    break;
+                case long longValue:
+                    builder.AddProperty(key, longValue);
+                    break;
+                case double doubleValue:
+                    builder.AddProperty(key, doubleValue);
+                    break;
+                case bool boolValue:
+                    builder.AddProperty(key, boolValue);
+                    break;
+                default:
+                    Debug.LogWarning("[play-games] game-stats: property " + key + " has unsupported type "
+                        + (value == null ? "null" : value.GetType().Name) + " — skipped");
+                    break;
             }
         }
 
         public void FlushStats()
         {
-            if (_statEventsHeld > 0)
+            if (!IsSignedIn)
             {
-                Log("game-stats: " + _statEventsHeld + " event(s) unsent this session");
+                return;
+            }
+
+            try
+            {
+                // A nudge at the save boundary; Play still batches on its own
+                // schedule. Guarded like every other JNI call in this file.
+                PlayGamesPlatform.Instance.RequestEventsUpload();
+            }
+            catch (Exception e)
+            {
+                Log("game-stats: upload nudge failed — " + e.GetType().Name + ": " + e.Message);
             }
         }
 

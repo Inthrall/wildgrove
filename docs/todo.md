@@ -325,6 +325,10 @@ for:
 - **Ad serving for the newer placements** (amber drip, offline boost). Dev builds
   serve Google's test unit regardless, so a placement that never fills in
   production looks fine everywhere else.
+- **Game Stats events flowing on device** — a dev build logs
+  `[play-games] game-stats: recorded <event>` on the save cadence. Stats appear
+  on the Gamer profile only after the console schema is live (September 2026
+  window), so the log line is the whole check until then.
 - **The real out-of-app reward delivery.** `StubStore.DeliverReward` exercises
   grant → acknowledge and the refusal branch in the editor; a live Quest award
   can't be tried before Sep 1. What *is* checkable now: an internal-track build's
@@ -347,22 +351,34 @@ for:
 
 ### 3.4 Blocked on Google
 
-- **Game Stats cannot submit.** Six stats plus one progression level are chosen
-  and wired; `PlayGamesServices.RecordStat` counts what it could not send and says
-  so in logcat. GPGS 2.1.0 (July 2025, still the newest release) has no
-  `PlayerGameEvent` and no `RecordEvent`, and the Java coordinate is unpublished
-  so there is nothing to reach over JNI either. **API GA July 2026; Play Console
-  CSV upload opens August 2026.** When the plugin lands it becomes three lines
-  (`new PlayerGameEvent.Builder(name)` → `.AddProperty` → `RecordEvent`) and
-  nothing else moves. **Both dates have now arrived (checked 2026-08-04):** look
-  for the plugin release and the CSV upload on the next console visit.
-  - Console side is authored and waiting in `store/play-games/gamestats/`. Two
-    knowingly-unfinished parts: the **stat icons aren't drawn** (Google has
-    published no size spec — use `tools/make-store-art.py` once the console says
-    what shape), and the column values (`HIGHER`, the free-text units) are the
-    guide's documented spellings, not ones a console has accepted. Expect one
-    correction round. `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema`
-    fails if code and CSV drift, because Play drops undeclared events silently.
+- **Game Stats — the client submits since 2026-08-04; the console side is the
+  remainder.** GPGS **2.2.0** (released 2026-07-31) added the API and is now
+  vendored: `PlayGamesServices.RecordStat` builds a `PlayerGameEvent` and
+  records it, `FlushStats` nudges `RequestEventsUpload` on the save cadence,
+  and dev builds log `[play-games] game-stats: recorded <event>` per event as
+  the on-device instrument. What remains:
+  - **Editor confirm, first Unity open after the upgrade:** let the import run,
+    then Android Resolver **Force Resolve** — the gradle templates were
+    hand-edited to what EDM should now produce (the `gpgs-plugin-support`
+    maven line and its local m2repository are gone; the support lib is a plain
+    AAR under `Runtime/Plugins/Android` now, with
+    `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` declared
+    direct) and a resolve proves the guess. Run the EditMode suite while there.
+  - **Console:** upload the authored CSVs from `store/play-games/gamestats/`
+    (the upload window opened August 2026; draft-config testing with test
+    accounts opens **September 2026** — batch with the Sep 1 rewards visit).
+    Two knowingly-unfinished parts stand: the **stat icons aren't drawn**
+    (Google has published no size spec — use `tools/make-store-art.py` once
+    the console says what shape), and the column values (`HIGHER`, the
+    free-text units) are the guide's documented spellings, not ones a console
+    has accepted. Expect one correction round.
+    `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
+    CSV drift, because Play drops undeclared events silently.
+  - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its
+    own `PluginVersion.cs` still saying "2.1.0" (`package.json` says 2.2.0),
+    ships `.orig`/`.rej` patch debris in the unitypackage (excluded from the
+    vendored copy), and raises the plugin's minSdk floor to 24 — Wildgrove's
+    26 clears it.
 
 ### 3.5 Launch (design §13 Phase 6 — carried here so the plan's tail isn't lost)
 
@@ -407,9 +423,10 @@ Not work items. Each of these cost real time to find.
   route through `HelperFragment`, which extends the framework
   `android.app.Fragment` (deprecated since API 28) and throws **synchronously** on
   the JNI class lookup at `targetSdk 36` — it presents as a hung callback.
-  Everything routed to the GMS clients is fine, and GPGS 2.1.0 is the newest
-  release, so there is no upstream fix to upgrade to (issue #3318). Any reward or
-  standing UI must be drawn **in-journal**.
+  Everything routed to the GMS clients is fine. Checked again at 2.2.0
+  (2026-08-04): the bridge inside `gpgs-plugin-support.aar` still references the
+  framework `android.app.Fragment`, so the rule stands (issue #3318). Any reward
+  or standing UI must be drawn **in-journal**.
 - **A leaderboard's public page can come back empty while Play still ranks the
   player** (`read 0 rows` with submissions accepted). Never rely on `LoadScores`
   alone — fall back to `data.PlayerScore`. Empty *and* `player unranked` means
