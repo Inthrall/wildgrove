@@ -52,8 +52,10 @@
     "$note": "gatherPerUnit tuned to 3 via the balance model (docs/economy-model.xlsx) so gathering pulls roughly even with familiar time-XP as a Renown source (§9 'every good handled credits Renown') — at 1 it was only ~22% of Renown. Note this also credits warden gathering-skill XP, but recipe gates (max level 5) are already met in minutes at any value, so progression is unaffected. craftPerBatch is still a first guess. Confirm in playtest."
   },
   "offline": {
-    "baseCapHours": 4,
-    "rateMultiplier": 1.0
+    "baseCapHours": 2,
+    "maxCapHours": 12,
+    "rateMultiplier": 1.0,
+    "$note": "The away ladder is rescaled to run 2 h -> 12 h (2026-08-03). It used to start at 4 h and top out unbounded: the raise-to rungs stopped at 12 h but the Store's endless +0.25 h/level and three additive pieces kept climbing past it forever. Now the run starts on a short night that has to be earned longer, and maxCapHours is the ceiling every source is measured against. The authored kit lands on exactly 12 with nothing to spare — Long Watch III (9 h) plus the Oilskin Tarp, the Old-Growth Bounty spread and the Almanac Desk at +1 h each — so the Store's per-level hours are the early accelerator and the overflow they eventually make is what the ceiling is there to catch."
   },
   "quality": {
     "decentChance": 0.035,

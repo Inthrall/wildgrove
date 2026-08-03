@@ -298,6 +298,33 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void OfflineCapHours_IsHeldToTheAuthoredCeiling()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            _data.economy.offline.maxCapHours = 9;
+            Upgrades.TryPurchase(state, _data, Upgrade("smokehouse"));
+            Upgrades.TryPurchase(state, _data, Upgrade("oilskin-tarp"));
+
+            // The smokehouse's 8 h plus the tarp's +2 would stand at 10 h; the
+            // ceiling holds it at 9, and the away credit follows the held cap.
+            Assert.That(Upgrades.OfflineCapHours(state, _data), Is.EqualTo(9.0).Within(Tolerance));
+            Assert.That(Simulation.AdvanceOffline(state, _data, 24 * 3600.0),
+                Is.EqualTo(9 * 3600.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void OfflineCapGainHours_WhenTheBandAlreadyReachesTheCeiling_IsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            _data.economy.offline.maxCapHours = 6;
+            Upgrades.TryPurchase(state, _data, Upgrade("oilskin-tarp"));
+
+            // Base 4 plus the tarp's +2 is already the whole cap, so the
+            // cellar's raise to 6 buys the run no more night than it has.
+            Assert.That(Upgrades.OfflineCapGainHours(state, _data, 6), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
         public void TryPurchase_WardenBonusUpgrade_LeavesYieldMultipliersAlone()
         {
             var state = GameStateFactory.NewGame(_data);

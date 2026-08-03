@@ -593,6 +593,10 @@ namespace Wildgrove.Data
         public sealed class OfflineData
         {
             public double baseCapHours;
+
+            /// <summary>The away cap's ceiling. Non-positive means unbounded — the shape a hand-built test fixture leaves it in.</summary>
+            public double maxCapHours;
+
             public double rateMultiplier;
         }
 

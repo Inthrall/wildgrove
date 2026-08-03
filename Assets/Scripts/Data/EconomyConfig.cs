@@ -91,6 +91,10 @@ namespace Wildgrove.Data
         public sealed class OfflineSection
         {
             public double BaseCapHours { get; set; }
+
+            /// <summary>The ceiling every away-cap source is measured against — no combination of raise-to rungs, gear, Almanac and Store levels credits more than this.</summary>
+            public double MaxCapHours { get; set; }
+
             public double RateMultiplier { get; set; }
         }
 

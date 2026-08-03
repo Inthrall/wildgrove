@@ -659,6 +659,56 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void AwayLadder_RunsFromTheBaseCapToTheCeilingAndNoFurther()
+        {
+            var data = GameData.Parse(LoadSources());
+            var offline = data.Economy.Offline;
+
+            var everyEffect = data.Upgrades.SelectMany(u => u.Effects ?? new List<EffectDef>())
+                .Concat(data.Almanac.SelectMany(n => n.Effects ?? new List<EffectDef>()))
+                .Concat(data.Gear.SelectMany(g => g.Effects ?? new List<EffectDef>()))
+                .Concat(data.Spreads.SelectMany(s => s.Effects ?? new List<EffectDef>()))
+                .ToList();
+
+            var bestFloor = everyEffect
+                .Where(e => e.Type == EffectType.OfflineCapHours)
+                .Select(e => e.Value ?? 0.0)
+                .DefaultIfEmpty(0.0)
+                .Max();
+            var wholeBand = everyEffect
+                .Where(e => e.Type == EffectType.OfflineCapBonusHours)
+                .Sum(e => e.Value ?? 0.0);
+
+            // The ladder starts on a short night and is walked out to the
+            // ceiling: 2 h base → 12 h with everything authored owned. The
+            // authored kit must land on the ceiling exactly — under it and the
+            // stated maximum is unreachable, over it and a piece the player
+            // bought pays nothing. The Store's endless per-level hours are the
+            // one source deliberately left to overflow into the clamp.
+            Assert.That(offline.BaseCapHours, Is.EqualTo(2.0), "a fresh run's first night away");
+            Assert.That(offline.MaxCapHours, Is.EqualTo(12.0), "the away cap's stated top");
+            Assert.That(bestFloor + wholeBand, Is.EqualTo(offline.MaxCapHours),
+                "the best raise-to rung plus every additive piece must total the ceiling exactly");
+            Assert.That(bestFloor, Is.GreaterThan(offline.BaseCapHours),
+                "the raise-to rungs have to be worth buying over the base");
+            Assert.That(data.BuildingsById["store"].PerLevel.Type, Is.EqualTo("offlineCapBonusHours"),
+                "the Store line is the away cap's early accelerator");
+        }
+
+        [Test]
+        public void Validate_MaxCapUnderBaseCap_IsReported()
+        {
+            var sources = LoadSources();
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "\"maxCapHours\": 12",
+                "\"maxCapHours\": 1");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues.Any(i => i.Contains("offline.maxCapHours")), Is.True, string.Join("\n", issues));
+        }
+
+        [Test]
         public void Validate_ZeroedBubblesValue_IsReported()
         {
             var sources = LoadSources();

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 3957c6dcc70346520d96a8cf71d2db9d65fa1c856676aeb26b16bf5824a06ce8
+  sourceHash: 212444bc1c63cea3f04597f5115c2e6833dd5207431078460f4d22955d4c54ad
   economy:
     costGrowth:
       building: 1.25
@@ -56,7 +56,8 @@ MonoBehaviour:
       gatherPerUnit: 3
       craftPerBatch: 25
     offline:
-      baseCapHours: 4
+      baseCapHours: 2
+      maxCapHours: 12
       rateMultiplier: 1
     quality:
       decentChance: 0.035
@@ -518,7 +519,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 6
+      value: 3
   - order: 12
     id: preserving-jars
     displayName: Preserving Jars
@@ -742,7 +743,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 8
+      value: 5
   - order: 23
     id: map-silverrun
     displayName: 'Trail Map: Silverrun River'
@@ -1513,7 +1514,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 2
+      value: 1
   insects:
   - id: stags-herald
     displayName: The Stag's Herald
@@ -1679,7 +1680,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 6
+      value: 4
   - id: verdant-eye-i
     displayName: Verdant Eye I
     costVerdure: 3
@@ -1749,7 +1750,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 8
+      value: 6
   - id: verdant-eye-ii
     displayName: Verdant Eye II
     costVerdure: 12
@@ -1825,7 +1826,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 2
+      value: 1
   - id: remembered-edge-i
     displayName: The Remembered Edge
     costVerdure: 6
@@ -1895,7 +1896,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 12
+      value: 9
   - id: old-songs-iii
     displayName: Old Songs III
     costVerdure: 20

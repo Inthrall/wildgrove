@@ -431,16 +431,20 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The run's offline cap: the base cap, raised (never lowered) to the
-        /// best offlineCapHours effect active (Root Cellar 6 h, Smokehouse
-        /// 8 h, the Almanac's Long Watch), plus the additive
-        /// offlineCapBonusHours band (the Oilskin Tarp's +2 h).
+        /// The run's offline cap: the base cap (2 h), raised (never lowered) to
+        /// the best offlineCapHours effect active (Root Cellar 3 h, Smokehouse
+        /// 5 h, the Almanac's Long Watch up to 9 h), plus the additive
+        /// offlineCapBonusHours band (the Oilskin Tarp, the Almanac Desk, the
+        /// Old-Growth Bounty spread and the Store's per-level hours) — and
+        /// finally held to economy.offline.maxCapHours, which is the ladder's
+        /// stated top. The authored kit lands on the ceiling exactly; the
+        /// Store's endless levels are what the clamp is there to catch.
         /// </summary>
         public static double OfflineCapHours(GameState state, GameDataAsset data)
         {
             var snapshot = Modifiers.Of(state, data);
             var cap = System.Math.Max(data.economy.offline.baseCapHours, snapshot.offlineCapRaiseTo);
-            return cap + snapshot.offlineCapBonusHours;
+            return ClampToMaxCap(cap + snapshot.offlineCapBonusHours, data);
         }
 
         /// <summary>
@@ -448,8 +452,8 @@ namespace Wildgrove.Sim
         /// can say "+2h" about an effect that is authored as a raise-to. These
         /// raise a floor rather than stack, so the gain is measured against the
         /// floor the run would stand on without this one — a floor the run has
-        /// already cleared adds nothing. The additive band cancels out of the
-        /// comparison, since it applies after the floor either way.
+        /// already cleared adds nothing, and neither does one bought when the
+        /// additive band has already carried the run to the ceiling.
         /// </summary>
         public static double OfflineCapGainHours(GameState state, GameDataAsset data, double raiseToHours)
         {
@@ -462,7 +466,25 @@ namespace Wildgrove.Sim
                 }
             }
 
-            return System.Math.Max(0.0, raiseToHours - floor);
+            // The additive band no longer cancels out of the comparison: it
+            // decides whether the raise lands under the ceiling or against it.
+            var band = Modifiers.Of(state, data).offlineCapBonusHours;
+            var without = ClampToMaxCap(floor + band, data);
+            var with = ClampToMaxCap(System.Math.Max(floor, raiseToHours) + band, data);
+
+            return System.Math.Max(0.0, with - without);
+        }
+
+        /// <summary>
+        /// Hold an away cap to the authored ceiling. A non-positive
+        /// maxCapHours means unbounded — the shape a hand-built test fixture
+        /// leaves it in; authored data always states it (validator-enforced).
+        /// </summary>
+        private static double ClampToMaxCap(double hours, GameDataAsset data)
+        {
+            var ceiling = data.economy.offline.maxCapHours;
+
+            return ceiling > 0.0 ? System.Math.Min(hours, ceiling) : hours;
         }
 
         /// <summary>

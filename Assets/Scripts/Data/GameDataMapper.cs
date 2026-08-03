@@ -406,6 +406,7 @@ namespace Wildgrove.Data
                 offline = new EconomyData.OfflineData
                 {
                     baseCapHours = e.Offline.BaseCapHours,
+                    maxCapHours = e.Offline.MaxCapHours,
                     rateMultiplier = e.Offline.RateMultiplier
                 },
                 quality = new EconomyData.QualityData

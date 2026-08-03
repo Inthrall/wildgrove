@@ -103,7 +103,7 @@ The single most load-bearing rule set in the game — written down so every syst
 - **Unattended nodes.** A node with no assigned agent keeps its richness and planters; only wanderers touch it, glancingly.
 - **Transit.** Reassignment is always allowed and never costs goods; the agent *walks* — seconds, scaled by trail distance, producing nothing en route and visible on the trail. The map is honest.
 - **The trail post — RETIRED (DECIDED 2026-07-31).** Deliveries are automatic; no body is spent carrying. The fell pony of **The Drover's Halter** (§11) keeps her lane as a station — at the warden's side, holding no slot — but her job is the warden's hands (+50%), not a load.
-- **Offline.** Per node: `earn = gather rate · min(t, cap)`, with wanderers counting at ×0.5. Nothing caps the trip home any more; the welcome-back sheet reports the absence's full harvest. Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet).
+- **Offline.** Per node: `earn = gather rate · min(t, cap)`, with wanderers counting at ×0.5. Nothing caps the trip home any more; the welcome-back sheet reports the absence's full harvest. Per-agent base rates are tuned **up** from flock-era assumptions so a night away with a small kith still feels generous (magnitudes in the Phase 3 spreadsheet). **The cap itself is a ladder — DECIDED 2026-08-03: it starts at 2 h and tops out at 12 h**, and the top is a real ceiling (`economy.offline.maxCapHours`), not merely the highest rung anyone authored. The sources: raise-to rungs (Root Cellar 3 h, Smokehouse 5 h, The Long Watch I/II/III at 4/6/9 h) take the floor, then an additive band adds to it (Oilskin Tarp, The Almanac Desk and the Old-Growth Bounty spread at +1 h each, plus the Store line's +0.25 h per level). The authored kit lands on 12 exactly; the Store's endless levels are the one source left to overflow into the clamp, which is what makes it the early accelerator and nothing later.
 - **Reachability.** Anywhere the design says "reachable" — most importantly the Rite validator (§8) — it means *satisfiable under plausible stationing with the current kith size*, not merely unlocked.
 
 ---
@@ -233,7 +233,7 @@ Five pieces compete for the three slots, so two are always sitting out. **A made
 | Cordage Wraps    | Hands | Bushcraft | Fibres ×40             | Tending burst +50%              |
 | Birch Frame Pack | Pack  | Bushcraft | Timber ×25, cordage ×5 | Trail post carries +25%         |
 | Pitch Torch      | Camp  | Firecraft | Timber ×10, fibres ×10 | Night hours count fully offline |
-| Oilskin Tarp     | Camp  | Bushcraft | Reeds ×30, fish oil ×5 | Offline cap +2 h                |
+| Oilskin Tarp     | Camp  | Bushcraft | Reeds ×30, fish oil ×5 | Offline cap +1 h                |
 | Clay-Lined Creel | Pack  | Bushcraft | Clay ×20, reeds ×15    | Fish never spoil in transit     |
 
 ### Recipe chains (MVP trade goods & planters)
@@ -510,7 +510,7 @@ Familiar slots arrive by verses sung — plus the two store rungs (§4); creatur
 | 6  | Handcart                     | Hauling    | Bushcraft-ready | Timber via Exchange, fibres ×150     | Carry capacity ×2                                    |
 | 7  | Camp Fire Ring               | Camp       | —               | Stone ×40, fibres ×100               | Unlock Firecraft + Forgecraft (copper on open fire) + Preserve recipe |
 | 8  | Copper Sickle                | Tools      | Foraging 12     | Copper ingots ×5                     | Foraging yield ×2                                    |
-| 9  | Root Cellar                  | Camp       | —               | Stone ×80, timber ×20 (Exchange)     | Offline cap 4 h → 6 h                                |
+| 9  | Root Cellar                  | Camp       | —               | Stone ×80, timber ×20 (Exchange)     | Offline cap 2 h → 3 h                                |
 | 10 | Preserving Jars              | Firecraft  | Firecraft 10    | Clay via Exchange, herbs ×80         | Preserve barter weight +50%                          |
 | 11 | Trail Map: Old-Growth Wood   | Trail      | Copper tools    | Provisions bundle                    | Unlock Zone 3 + Logging + **first observation site**         |
 | 12 | Bronze Hatchet               | Tools      | Logging 5       | Bronze ingots ×5                     | Logging yield ×2                                     |
@@ -521,7 +521,7 @@ Familiar slots arrive by verses sung — plus the two store rungs (§4); creatur
 | 17 | Field Press                  | Compendium | Curation 5      | Planks ×15, cordage ×6               | Choice chance +1pt                                 |
 | 18 | Bellows Forge                | Camp       | Forgecraft 15   | Planks ×30, clay ×80, copper ×10     | Forge L2: iron heat; Forgecraft speed ×2             |
 | 19 | Wagon                        | Hauling    | Bushcraft 20    | Planks ×40, iron fittings ×4         | Carry capacity ×2                                    |
-| 20 | Smokehouse                   | Camp       | —               | Planks ×50, clay ×120, stone ×60     | Offline cap 6 h → 8 h                                |
+| 20 | Smokehouse                   | Camp       | —               | Planks ×50, clay ×120, stone ×60     | Offline cap 3 h → 5 h                                |
 | 21 | Trail Map: Silverrun River   | Trail      | Bronze tools    | Provisions bundle                    | Unlock Zone 4 + Fishing + riverbank observation site         |
 | 22 | Iron Toolset                 | Tools      | 3 crafts @ 20   | Iron ingots ×8                       | Foraging, Logging & Mining ×2                        |
 | 23 | Brush Screens                | Entomology | Entomology 8    | Reeds ×80, planks ×20                | Observation speed ×2                                         |
@@ -545,7 +545,7 @@ Named entries above are debut levels; each further level costs an escalating mat
 | **The Fire**         | #7 Camp Fire Ring              | Fire recipes; copper heat from L1; then fire craft speed                 |
 | **The Forge**        | Clay Furnace (between #11–12)  | L1 bronze heat · L2 (#18) iron heat · L3+ forge speed                    |
 | **The Bench**        | #14 Carving Bench              | Bench recipes incl. planters; then queue speed                           |
-| **The Store**        | #9 Root Cellar → #20 Smokehouse| Offline cap; then storage capacity                                       |
+| **The Store**        | #9 Root Cellar → #20 Smokehouse| Offline cap (+0.25 h/level, saturating at the 12 h ceiling); then storage capacity |
 | **Roosts & Burrows** | ~early debut                   | **Familiar comfort**: +XP rate per level; late levels +1 roster capacity |
 
 ---
@@ -623,7 +623,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 ### Phase 1 — Core loop slice (3–4 wks)
 
 - Sunfield only: two nodes, stationing (warden + the first two familiars, one holding the trail post), Tending, replanting, familiar XP with the first powerup choice, the Exchange with two tradeable goods
-- Offline progress (4 h cap, stationing rules §2) + a welcome-back summary of the absence's harvest
+- Offline progress (2 h cap at the start, 12 h fully walked out — stationing rules §2) + a welcome-back summary of the absence's harvest
 - Sunfield-reachable upgrades wired to data; placeholder art, real numbers; input abstraction (touch now, K&M/pad later); Crashlytics + basic analytics
 
 **Gate (two questions):** *is 20 minutes fun?* — hand it to 3–5 people, watch where they stall — and *can a new player say what anything is worth without Coin?* If either fails with placeholder art, stop and fix; content won't save it.

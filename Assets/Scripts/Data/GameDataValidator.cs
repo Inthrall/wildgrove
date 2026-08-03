@@ -1794,6 +1794,14 @@ namespace Wildgrove.Data
                 issues.Add("Economy offline.baseCapHours must be positive");
             }
 
+            if (economy.Offline != null && economy.Offline.MaxCapHours < economy.Offline.BaseCapHours)
+            {
+                // Authored data must always state the ceiling, and a ceiling
+                // under the floor would clamp a fresh run's first night below
+                // the cap it is supposed to start on.
+                issues.Add("Economy offline.maxCapHours must be at least offline.baseCapHours");
+            }
+
             if (economy.Offline != null && economy.Offline.RateMultiplier <= 0)
             {
                 // The sim multiplies every offline second by this — zero
