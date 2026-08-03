@@ -15,7 +15,9 @@ namespace Wildgrove.Game.Tests
         public void StepTab_WalksForwardAndWraps()
         {
             Assert.That(JournalNav.StepTab("trail", 1, false), Is.EqualTo("camp"));
-            Assert.That(JournalNav.StepTab("camp", 1, false), Is.EqualTo("warden"));
+            Assert.That(JournalNav.StepTab("camp", 1, false), Is.EqualTo("stores"),
+                "the drawer sits beside the camp that holds it");
+            Assert.That(JournalNav.StepTab("stores", 1, false), Is.EqualTo("warden"));
             Assert.That(JournalNav.StepTab("record", 1, false), Is.EqualTo("trail"), "the last tab wraps to the first");
         }
 

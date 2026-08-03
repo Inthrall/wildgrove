@@ -28,7 +28,7 @@ namespace Wildgrove.Game
 
     internal sealed class StoreCaptureBehaviour : MonoBehaviour
     {
-        private static readonly string[] Pages = { "trail", "camp", "warden", "record" };
+        private static readonly string[] Pages = { "trail", "camp", "stores", "warden", "record" };
 
         private IEnumerator Start()
         {

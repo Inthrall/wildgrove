@@ -71,8 +71,10 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   entry still unlisted. (`Sim/Compendium.cs`)
 - **The Ladder card windows to the next 3 rungs**; the shape of the tree is never
   visible, where the Almanac lists revealed tiers. (`CampPage`)
-- **A live tincture is only visible on the Warden tab** — no global buff
-  indicator. (`Sim/Tinctures.cs`)
+- **A live tincture is only visible on the Stores tab** — no global buff
+  indicator. The bottle's tile wears a green rule and counts down while the brew
+  runs, but nothing says so from any other page. (`Sim/Tinctures.cs`,
+  `StoresPage.BuildBrewTile`)
 - **No aggregate camp production view** — per-resource rates exist only on node
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
 - **Tending's Choice window is invisible.** `Simulation.Tend` opens the 30 s
@@ -82,6 +84,14 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   gains aren't itemised, and Kinship is legible everywhere else now.
 - **Kith post buttons are a 4-column grid** sized for MVP station counts. Eight
   zones exist now; this was flagged to revisit "when zones multiply" and they have.
+  `SquareCellGrid` (built for the Stores drawer, 2026-08-04) is the width-aware
+  grid this wants — it picks its own column count per page width.
+- **The Stores drawer has no sort or filter, and no name on a tile.** The order
+  is data order — gatherables then crafted goods — which is stable but arbitrary
+  once the drawer runs past a screen, and there is no "what can I craft with"
+  view. Names live on tap (the tile writes the stack into the margin note), which
+  is right for a drawer of plates and unproven with a player who does not yet
+  know the plates. Watch this first in the playtest sitting. (`StoresPage`)
 - **Inside-cover discoverability.** Settings sit at the bottom of the Record page
   with no gear in the chrome. Right for the book, unusual for a phone game — if a
   playtester can't find it, the answer is a corner mark on the Record tab, not a

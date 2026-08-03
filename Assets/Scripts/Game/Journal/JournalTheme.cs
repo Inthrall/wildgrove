@@ -42,10 +42,24 @@ namespace Wildgrove.Game
         // Halted work wears this; nothing you tap does.
         internal const string AlarmHex = "#8C2F22";
 
+        // The grade inks — the three borders a specimen drawer is read by
+        // (design §5: Poor · Decent · Choice). WoW's loot scale for the hues,
+        // the journal's pigment for the weight (DECIDED 2026-08-04, third
+        // pass). The first mixed all three for parchment (chalk / moss /
+        // woad) and they read as one border in three lights; the second took
+        // WoW verbatim and #1EFF00 glowed like a backlight on the paper.
+        // These keep the scale every loot game already taught — white, green,
+        // blue, instantly apart — at the saturation of something printed
+        // rather than lit.
+        internal static readonly Color GradePoor = Color.white;                             // #FFFFFF
+        internal static readonly Color GradeDecent = new Color(0.2f, 0.549f, 0.129f, 1f);   // #338C21
+        internal static readonly Color GradeChoice = new Color(0.102f, 0.42f, 0.722f, 1f);  // #1A6BB8
+
         internal const string TabTrail = "trail";
         internal const string TabCamp = "camp";
+        internal const string TabStores = "stores";
         internal const string TabWarden = "warden";
         internal const string TabRecord = "record";
-        internal static readonly string[] Tabs = { TabTrail, TabCamp, TabWarden, TabRecord };
+        internal static readonly string[] Tabs = { TabTrail, TabCamp, TabStores, TabWarden, TabRecord };
     }
 }

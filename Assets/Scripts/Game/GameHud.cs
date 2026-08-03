@@ -21,8 +21,8 @@ namespace Wildgrove.Game
     /// The Warden's Journal — the code-built uGUI HUD, laid out after the
     /// docs/wildgrove-journal.html mock: a paper page with a title header, a
     /// currency ledger, a handwritten margin note, a pinned Rite / Fold
-    /// tracker, and four journal tabs along the bottom (Trail · Camp ·
-    /// Warden · Record) — set in the journal's own type (IM Fell / Caveat /
+    /// tracker, and five journal tabs along the bottom (Trail · Camp ·
+    /// Stores · Warden · Record) — set in the journal's own type (IM Fell / Caveat /
     /// Lora), ruled ink borders, paper grain, and the small motion touches
     /// (tend flash, the carrier on the trail line). All game logic stays in
     /// Wildgrove.Sim; this only reads state and calls <see cref="GameLoop"/>
@@ -70,6 +70,7 @@ namespace Wildgrove.Game
         private JournalText _labels;
         private TrailPage _trail;
         private CampPage _camp;
+        private StoresPage _stores;
         private WardenPage _warden;
         private RecordPage _record;
         private JournalSheets _sheets;
@@ -213,6 +214,7 @@ namespace Wildgrove.Game
             _labels = new JournalText(_loop);
             _trail = new TrailPage(this);
             _camp = new CampPage(this);
+            _stores = new StoresPage(this);
             _warden = new WardenPage(this);
             _record = new RecordPage(this);
             _sheets = new JournalSheets(this);
@@ -466,13 +468,12 @@ namespace Wildgrove.Game
             // It used to run every held resource, which is the one chrome row
             // whose height GROWS with the save: two lines at Sunfield, four by
             // the second camp, and every one of them taken off the page. The
-            // stores now read on the Record page beside their own entries, and
-            // a tap here goes there.
+            // stores read in their own drawer now, and a tap here goes there.
             MakeHairline(root);
             _ledger = MakeText(root, string.Empty, 19, TextAnchor.MiddleCenter, Ink);
             var ledgerButton = _ledger.gameObject.AddComponent<Button>();
             ledgerButton.targetGraphic = _ledger;
-            ledgerButton.onClick.AddListener(() => OpenTab(TabRecord));
+            ledgerButton.onClick.AddListener(() => OpenTab(TabStores));
             NeverDim(ledgerButton);
             MakeHairline(root);
 
@@ -780,6 +781,7 @@ namespace Wildgrove.Game
 
             AddTab(barGo.transform, TabTrail, "Trail");
             AddTab(barGo.transform, TabCamp, "Camp");
+            AddTab(barGo.transform, TabStores, "Stores");
             AddTab(barGo.transform, TabWarden, "Warden");
             AddTab(barGo.transform, TabRecord, "Record");
         }
@@ -1686,6 +1688,9 @@ namespace Wildgrove.Game
             {
                 case TabCamp:
                     _camp.BuildCampPage();
+                    break;
+                case TabStores:
+                    _stores.BuildStoresPage();
                     break;
                 case TabWarden:
                     _warden.BuildWardenPage();

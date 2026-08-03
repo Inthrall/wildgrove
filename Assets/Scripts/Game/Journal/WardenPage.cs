@@ -24,7 +24,6 @@ namespace Wildgrove.Game
         {
             BuildKitCard();
             BuildCraftsCard();
-            BuildBrewsCard();
             BuildFavoursCard();
             BuildKithCard();
             BuildRunCard();
@@ -118,56 +117,10 @@ namespace Wildgrove.Game
             return string.Join("\n", parts);
         }
 
-        /// <summary>
-        /// The tinctures card (design §5, Apothecary) — hidden until the craft
-        /// is learned (the Mistfen map teaches it), like the crafting section
-        /// before its first recipe. Brewing happens at the fire with the other
-        /// recipes; this card is the drinking.
-        /// </summary>
-        private void BuildBrewsCard()
-        {
-            if (_loop.Data.tinctures == null || _loop.Data.tinctures.Count == 0
-                || !Upgrades.UnlockedSkills(_loop.State, _loop.Data).Contains("apothecary"))
-            {
-                return;
-            }
-
-            var card = Card("TINCTURES · brewed at the fire");
-            MakeText(card, "one at a time each: a second bottle adds time, not depth",
-                15, TextAnchor.MiddleCenter, Ink2);
-
-            foreach (var tincture in _loop.Data.tinctures)
-            {
-                var captured = tincture;
-                var row = Row(card);
-                // A tincture id is also its recipe output, so the brew's own
-                // vessel is the good's plate.
-                var vessel = ArtLibrary.ForGood(captured.id);
-                if (vessel != null)
-                {
-                    IconImage(row.transform, vessel, 56f, Color.white);
-                }
-
-                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink, _serif);
-                FlexibleWidth(label.gameObject, 1f);
-                var drink = Button(row.transform, "Drink", 120, () => _loop.DrinkTincture(captured));
-
-                _liveUpdaters.Add(() =>
-                {
-                    var remaining = _loop.TinctureRemainingSeconds(captured);
-                    var status = remaining > 0.0
-                        ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">LIVE · " + NumberFormat.Duration(remaining) + " left</color></size>"
-                        : string.Empty;
-                    label.text = captured.displayName + status
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + captured.description
-                                 + " · have " + NumberFormat.Short(_loop.State.GetResource(captured.id)) + "</color></size>";
-
-                    var ok = _loop.CanDrinkTincture(captured);
-                    drink.interactable = ok;
-                    SetButtonTint(drink, ok);
-                });
-            }
-        }
+        // The tinctures card moved to the Stores page (2026-08-04). A bottle
+        // is stock — a thing counted, spent and run out of — and it was the
+        // one item on this page that behaved that way; the shelf it belongs
+        // on is the drawer with everything else the camp holds.
 
         private void BuildKitCard()
         {

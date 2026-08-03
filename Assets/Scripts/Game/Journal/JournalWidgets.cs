@@ -551,11 +551,22 @@ namespace Wildgrove.Game
         /// <summary>Overlay a ruled outline on a panel. Positive inset draws it outside the bounds (the mock's offset outline).</summary>
         internal static GameObject AddBorder(GameObject host, Color color, float inset = 0f)
         {
+            return AddBorder(host, color, inset, BorderSprite());
+        }
+
+        /// <summary>
+        /// As <see cref="AddBorder(GameObject, Color, float)"/>, on a rule of
+        /// your choosing — the Stores drawer's grade rule is the hairline eight
+        /// times over, because that border has to mean something rather than
+        /// merely separate two sheets of paper.
+        /// </summary>
+        internal static GameObject AddBorder(GameObject host, Color color, float inset, Sprite rule)
+        {
             var go = new GameObject("Border", typeof(Image), typeof(LayoutElement));
             go.transform.SetParent(host.transform, false);
             go.GetComponent<LayoutElement>().ignoreLayout = true;
             var image = go.GetComponent<Image>();
-            image.sprite = BorderSprite();
+            image.sprite = rule;
             image.type = Image.Type.Sliced;
             image.color = color;
             image.raycastTarget = false;

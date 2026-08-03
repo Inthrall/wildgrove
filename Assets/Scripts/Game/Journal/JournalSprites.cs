@@ -11,6 +11,7 @@ namespace Wildgrove.Game
     internal static class JournalSprites
     {
         private static Sprite _borderSprite;
+        private static Sprite _gradeBorderSprite;
         private static Sprite _grainSprite;
         private static Sprite _dashSprite;
         private static Sprite _dashAcrossSprite;
@@ -194,6 +195,39 @@ namespace Wildgrove.Game
             }
 
             return _borderSprite;
+        }
+
+        /// <summary>
+        /// The Stores drawer's grade rule — the same ruled outline as
+        /// <see cref="BorderSprite"/>, drawn eight times thicker. The card
+        /// rule is a 2-unit hairline, which is right for a border that only
+        /// has to separate two sheets of paper and wrong for one that has to
+        /// carry meaning: at hairline weight the chalk grade was invisible
+        /// against the tile and the moss one read as a drawing error.
+        /// </summary>
+        internal static Sprite GradeBorderSprite()
+        {
+            if (_gradeBorderSprite == null)
+            {
+                const int size = 24;
+                const int thickness = 8;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var edge = x < thickness || y < thickness || x >= size - thickness || y >= size - thickness;
+                        texture.SetPixel(x, y, edge ? Color.white : Color.clear);
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Point;
+                _gradeBorderSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f),
+                    100f, 0, SpriteMeshType.FullRect, new Vector4(thickness, thickness, thickness, thickness));
+            }
+
+            return _gradeBorderSprite;
         }
 
         /// <summary>The page's paper-grain noise — the mock's fractal-noise overlay, seeded for a stable look.</summary>

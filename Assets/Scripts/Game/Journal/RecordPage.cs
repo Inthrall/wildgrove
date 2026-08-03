@@ -200,33 +200,17 @@ namespace Wildgrove.Game
                 var line = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
                 _liveUpdaters.Add(() =>
                 {
-                    // What the camp holds now, then what it has ever gathered.
-                    // The held figure used to run in the chrome ledger, a line
-                    // that grew a wrap every zone; here each number sits beside
-                    // the entry it belongs to and costs the page nothing.
-                    var held = _loop.State.GetResource(captured.id);
-                    var stock = held > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(held) + "</b> held  ·  "
-                        : string.Empty;
-                    // Decent finds are banked apart from the camp stock — 3.5%
-                    // of every haul landed where no page counted it, so the
-                    // pool read as goods quietly going missing.
-                    var decent = _loop.State.GetDecent(captured.id);
-                    var decentHeld = decent > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(decent) + "</b> decent  ·  "
-                        : string.Empty;
-                    // Choice's own pool, on the same footing as decent — it was
-                    // counted for a lifetime and shown nowhere, so the rarest
-                    // thing the ground gives had no tally of its own.
-                    var choice = _loop.State.GetChoice(captured.id);
-                    var choiceHeld = choice > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(choice) + "</b> choice  ·  "
-                        : string.Empty;
+                    // Lifetime only. The three held figures ran here too until
+                    // the Stores drawer took them (2026-08-04) — one entry then
+                    // answered both "what have I ever found" and "what can I
+                    // spend", and a line reading "1.2K held · 40 decent · 3
+                    // choice · lifetime 8.4K" made neither legible. This page
+                    // is the record; the drawer is the stock.
                     var everChoice = Compendium.LifetimeChoice(_loop.State, captured.id);
                     var choiceEver = everChoice > BigDouble.Zero
                         ? ", " + NumberFormat.Short(everChoice) + " of them choice"
                         : string.Empty;
-                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + stock + decentHeld + choiceHeld + "lifetime "
+                    line.text = captured.id + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">lifetime "
                                 + NumberFormat.Short(Compendium.LifetimeGathered(_loop.State, captured.id))
                                 + choiceEver + "</color></size>";
                 });
@@ -237,25 +221,9 @@ namespace Wildgrove.Game
                 MakeText(card, "<i>…and " + beyondTheTrail + " more beyond the trail.</i>", 18, TextAnchor.MiddleLeft, Ink2);
             }
 
-            // What "decent" is for, said once at the card's foot — the pool's
-            // only exit is a verse asking for a decent find, and without the
-            // note the tally above is a number with no door.
-            var decentNote = MakeText(card, "<i>decent finds are kept apart from the stores; a verse sometimes asks for one</i>",
-                16, TextAnchor.MiddleLeft, Ink2, _serif);
-            _liveUpdaters.Add(() =>
-            {
-                var anyDecent = false;
-                foreach (var pair in _loop.State.decentResources)
-                {
-                    if (pair.Value > BigDouble.Zero)
-                    {
-                        anyDecent = true;
-                        break;
-                    }
-                }
-
-                decentNote.gameObject.SetActive(anyDecent);
-            });
+            // The "what decent is for" note went to the Stores drawer with the
+            // pools it explains — a green border needs the note beside it, and
+            // here it sat under lifetime tallies that never mention a grade.
 
             BuildCompendiumCrafts(card);
         }
