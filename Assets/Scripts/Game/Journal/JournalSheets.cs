@@ -1024,8 +1024,8 @@ namespace Wildgrove.Game
                 StationPlate(familiar.stationId), 120f, 740f);
 
             // What this one is good at, at the moment it decides where they
-            // walk — the roster row used to carry it on every line, which is
-            // where it was read least and cost most.
+            // walk. Not on every roster row, which is where it is read least
+            // and costs most.
             var trait = _loop.FamiliarTrait(familiar);
             if (trait != null)
             {
@@ -1060,9 +1060,9 @@ namespace Wildgrove.Game
                 return;
             }
 
-            // Said once, above the list: from rest, an EMPTY post needs a free
-            // slot, while stepping in for someone always works. It used to be
-            // repeated as a tail on every empty destination.
+            // Said once, above the list, rather than as a tail on every empty
+            // destination: from rest, an EMPTY post needs a free slot, while
+            // stepping in for someone always works.
             if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
             {
                 var notice = MakeText(sheet,
@@ -1542,9 +1542,9 @@ namespace Wildgrove.Game
         /// still cancels — cancelling is always safe).
         /// <para>
         /// The panel hugs its content until it would outgrow the screen, then
-        /// pins and scrolls: the sheets whose length is a function of the save
-        /// (the posting sheet lists the whole roster, the station pick every
-        /// post) used to grow straight off the top and bottom of the display,
+        /// pins and scrolls. Without that, the sheets whose length is a function
+        /// of the save (the posting sheet lists the whole roster, the station
+        /// pick every post) grow straight off the top and bottom of the display,
         /// taking "Never mind" with them. The scroll layer lives INSIDE the
         /// panel so the card, its rules and its padding stay put and only the
         /// lines move.

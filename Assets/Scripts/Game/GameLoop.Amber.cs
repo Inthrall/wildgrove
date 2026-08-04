@@ -257,8 +257,8 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Whether a week has turned since the last Amber cache arrived — the
-        /// card's "due" reading only. The cache is no longer a tap the game can
-        /// grant itself: it is a Play Games Reward, set out by Play and received
+        /// card's "due" reading only. The cache is not a tap the game can grant
+        /// itself: it is a Play Games Reward, set out by Play and received
         /// through <see cref="CheckPlayRewards"/> or on launch (design §11).
         /// </summary>
         public bool WeeklyCacheDue => Amber.WeeklyCacheDue(State, Data, NowUnixMs());

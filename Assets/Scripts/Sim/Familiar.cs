@@ -33,8 +33,8 @@ namespace Wildgrove.Sim
         /// <summary>
         /// The wander-post station id: its holder roams the run's nodes,
         /// gathering a little of everything and watching the small lives at
-        /// every observation site along the way (the watch is no longer a
-        /// post of its own).
+        /// every observation site along the way (the watch is not a post of its
+        /// own).
         /// </summary>
         public const string WanderStation = "wander";
 

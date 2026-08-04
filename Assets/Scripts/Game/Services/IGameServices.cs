@@ -22,8 +22,8 @@ namespace Wildgrove.Game.Services
     /// <summary>
     /// The Play Games Services seam — sign-in, achievements, and cloud save
     /// (Snapshots). Game code drives all three through this; the backend is
-    /// swappable — <see cref="StubGameServices"/> until the Play Games plugin
-    /// implementation exists, then the real service implements it without
+    /// swappable — <see cref="StubGameServices"/> in the editor and on any
+    /// non-Android target, the Play Games implementation on device — without
     /// touching the call sites.
     /// </summary>
     public interface IGameServices

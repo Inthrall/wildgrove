@@ -34,7 +34,7 @@ namespace Wildgrove.Data
     {
         public string id;
 
-        /// <summary>Base Provisioner sell value in Coin per unit (raw gatherables only).</summary>
+        /// <summary>Base trade value per unit (raw gatherables only) — the field keeps its old name; see Economy.TradeValuePerUnit.</summary>
         public double sellValue;
 
         /// <summary>The gathering skill that works this resource — drives node upgrade targeting.</summary>
@@ -107,8 +107,8 @@ namespace Wildgrove.Data
     }
 
     /// <summary>
-    /// One camp building line (design §9) — the repeatable Coin sink. Named §9
-    /// upgrades are milestone levels; bought levels each grant perLevel.
+    /// One camp building line (design §9) — the repeatable materials sink. Named
+    /// §9 upgrades are milestone levels; bought levels each grant perLevel.
     /// </summary>
     [Serializable]
     public sealed class BuildingData

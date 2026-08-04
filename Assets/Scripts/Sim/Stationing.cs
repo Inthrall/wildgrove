@@ -130,8 +130,8 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Effective watchers the wander post supplies to every observation
-        /// site (the watch is no longer a post of its own — the wanderer
-        /// passes each site as it roams), scaled by watch-speed traits.
+        /// site (the watch is not a post of its own — the wanderer passes each
+        /// site as it roams), scaled by watch-speed traits.
         /// </summary>
         public static double WanderAgents(GameState state, GameDataAsset data)
         {

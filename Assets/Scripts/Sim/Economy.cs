@@ -9,9 +9,9 @@ namespace Wildgrove.Sim
     /// the single trade-value table the Exchange barters against and the Rite
     /// credits Renown by: raw finds at their resources.json trade value (× owned
     /// bonuses and mastery), crafted trade goods at their input-derived worth.
-    /// Selling-for-Coin and the old gift/Feeder curves are gone — recruitment
-    /// lives in <see cref="Roster"/>, bartering in <see cref="Exchange"/>. Pure
-    /// and deterministic like the tick.
+    /// Nothing is sold for currency here: recruitment lives in
+    /// <see cref="Roster"/>, bartering in <see cref="Exchange"/>. Pure and
+    /// deterministic like the tick.
     /// </summary>
     public static class Economy
     {

@@ -17,11 +17,11 @@ namespace Wildgrove.Sim
     ///
     /// The payout is a FLAT haul: rewardSeconds of a notional gatherer's hands
     /// (rewardRatePerSecond), the same at every node no matter who works it or
-    /// how developed it is. It used to be rewardSeconds of the node's own live
-    /// output, which made most windfalls worth 1–2 units — a node worked only
-    /// by the wandering warden earns gatherPerSecond/nodeCount, so the payout
-    /// shrank every time a zone opened. Whether a bubble rises at all is still
-    /// earned (see <see cref="IsWorked"/>); only its size is now fixed.
+    /// how developed it is. Scaling it to the node's own live output instead
+    /// makes most windfalls worth 1–2 units — a node worked only by the
+    /// wandering warden earns gatherPerSecond/nodeCount, so the payout would
+    /// shrink every time a zone opened. Whether a bubble rises at all is still
+    /// earned (see <see cref="IsWorked"/>); only its size is fixed.
     /// </summary>
     public static class Bubbles
     {
@@ -36,7 +36,7 @@ namespace Wildgrove.Sim
         /// <summary>
         /// True when someone — a stationed familiar or the warden's own hands —
         /// works <paramref name="node"/>. A fallow node drifts nothing, so the
-        /// bubble still has to be earned even though its size no longer varies.
+        /// bubble still has to be earned even though its size does not vary.
         /// </summary>
         public static bool IsWorked(GameState state, GameDataAsset data, NodeState node)
         {

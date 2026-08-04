@@ -94,9 +94,9 @@ namespace Wildgrove.Game
         /// </para>
         /// <para>
         /// A chevron in the left margin says which way the ground is folded.
-        /// Which way a plate opens was previously only legible by inference —
-        /// from whether plates followed it, and from the growing-list subtitle a
-        /// shut ground wears — so a ground with nothing under it read as an
+        /// Without it, which way a plate opens is legible only by inference —
+        /// from whether plates follow it, and from the growing-list subtitle a
+        /// shut ground wears — so a ground with nothing under it reads as an
         /// unresponsive button rather than an empty open one.
         /// </para>
         /// </summary>
@@ -449,9 +449,9 @@ namespace Wildgrove.Game
             var label = MakeText(row.transform, string.Empty, 20, TextAnchor.MiddleLeft, Ink, _serif);
             FlexibleWidth(label.gameObject, 1f);
 
-            // The page must offer the post it describes — posting used to live
-            // only on the world strip's plates, so the node's own card could
-            // say "0.0/s" without ever explaining or fixing it.
+            // The page must offer the post it describes. With posting only on
+            // the world strip's plates, the node's own card can say "0.0/s"
+            // without ever explaining or fixing it.
             Button post = null;
             post = Button(row.transform, "Post here", 190, () => _hud.Sheets.OpenPostingSheet(captured.id));
 
@@ -594,13 +594,13 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The watch is not a post any more — the wanderer passes each site
-        /// as it roams. The card carries the site's own clocks — how often a
-        /// sketch comes and the pity timer that guarantees one (both were
-        /// load-bearing and invisible) — plus the site's planters, with a
-        /// one-line note on whether anyone wanders. The card also offers the
-        /// wander post itself: the strip no longer carries a wander plate, so
-        /// the page describing the watching is where the watcher is sent.
+        /// The watch is not a post — the wanderer passes each site as it roams.
+        /// The card carries the site's own clocks — how often a sketch comes and
+        /// the pity timer that guarantees one, both load-bearing and otherwise
+        /// invisible — plus the site's planters, with a one-line note on whether
+        /// anyone wanders. The card also offers the wander post itself: the
+        /// strip carries no wander plate, so the page describing the watching is
+        /// where the watcher is sent.
         /// </summary>
         private void BuildWatchPlate(DigSiteState site)
         {
@@ -779,11 +779,10 @@ namespace Wildgrove.Game
                 {
                     // One quiet card for the next verse that isn't open yet,
                     // whichever holds it — its turn, or a trail that hasn't
-                    // reached its site. The site used to have to be reached
-                    // before the card would draw, so a run with every reachable
-                    // verse sung showed nothing but SUNG VERSES, and the rite's
-                    // last verse — the whole Migration gate — went unmentioned
-                    // on every page in the book.
+                    // reached its site. Gate the card on the site being reached
+                    // and a run with every reachable verse sung shows nothing
+                    // but SUNG VERSES, leaving the rite's last verse — the whole
+                    // Migration gate — unmentioned on every page in the book.
                     if (!sealedShown)
                     {
                         BuildSealedVerseCard(verses, verse, number);
@@ -1012,8 +1011,8 @@ namespace Wildgrove.Game
                 else
                 {
                     // A deed slot has no button — it is earned at the nodes,
-                    // never pressed — and nothing on the row used to say so,
-                    // so its count read as a delivery the player couldn't make.
+                    // never pressed — so the row has to say so, or its count
+                    // reads as a delivery the player can't make.
                     var deedTail = slot.type == RiteSlotType.Deed
                         ? "  <color=" + Ink2Hex + "><i>counted as the work is done</i></color>"
                         : string.Empty;

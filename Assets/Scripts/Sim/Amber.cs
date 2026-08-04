@@ -17,9 +17,9 @@ namespace Wildgrove.Sim
         public const long WeeklyCacheCooldownMs = 7L * 24L * 60L * 60L * 1000L;
 
         /// <summary>
-        /// Cooldown between rewarded Amber-drip claims. The ad-watch used to be
-        /// the only throttle; once Remove Ads grants the reward with no ad, this
-        /// is what keeps the drip from being tapped without limit. Tuning value —
+        /// Cooldown between rewarded Amber-drip claims — the throttle that does
+        /// not depend on the ad-watch, so the drip still can't be tapped without
+        /// limit once Remove Ads grants the reward with no ad. Tuning value —
         /// safe to adjust.
         /// </summary>
         public const long AdDripCooldownMs = 4L * 60L * 60L * 1000L;

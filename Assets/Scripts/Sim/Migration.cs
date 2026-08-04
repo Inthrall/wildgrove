@@ -130,12 +130,11 @@ namespace Wildgrove.Sim
             // (Presence-lapse — benching non-bonded familiars to re-meet — is
             // a v1.1 refinement; at MVP the whole roster stays present.)
             // Folded into COPIES, and the copies are what cross. Folding the
-            // roster in place emptied every station and reset every run level on
-            // the state the caller still holds, so the run being retired was
-            // quietly wrecked by the act of reading what it was worth — and the
-            // two states then shared one roster, so a later edit to either
-            // reached both. Nothing depends on that today only because the
-            // caller swaps states in the next breath.
+            // roster in place would empty every station and reset every run
+            // level on the state the caller still holds — wrecking the run being
+            // retired by the act of reading what it was worth — and would leave
+            // the two states sharing one roster, so a later edit to either
+            // reaches both.
             next.roster = new List<Familiar>(state.roster.Count);
             foreach (var familiar in state.roster)
             {

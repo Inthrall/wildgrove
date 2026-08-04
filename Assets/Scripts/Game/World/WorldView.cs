@@ -13,21 +13,21 @@ namespace Wildgrove.Game.World
     /// badge of its holder, and this class answers both tap questions — which
     /// node a tap tends, and which post's badge a tap assigns. While any kith
     /// slot stands unfilled a (+) mark closes the strip; tapping it opens the
-    /// Trail page, where every post offers its own "Post here". (The wander
-    /// post used to hold that closing spot as a plate of its own, but it wore a
-    /// node's face without being one — it is assigned from the watch card and
-    /// the familiars' own sheets now.) Placeholder
-    /// tier: shapes in a strip now; a real region scene replaces the layout
-    /// when the art lands, but the camera/world seam and hit-testing stay.
+    /// Trail page, where every post offers its own "Post here". The wander post
+    /// keeps no plate of its own here — it would wear a node's face without
+    /// being one — and is assigned from the watch card and the familiars' own
+    /// sheets. Placeholder tier: shapes in a strip for now; a real region scene
+    /// replaces the layout when the art lands, but the camera/world seam and
+    /// hit-testing stay.
     ///
     /// Only the posts with a body on them are drawn. The band is on screen at
-    /// every tab, so it used to spend the page's whole height on plates nobody
-    /// was working — fifteen by the fourth zone, and the two the warden and the
-    /// kith actually stood at lost among them. A view is built for every node
-    /// regardless (<see cref="_views"/>); <see cref="_onStrip"/> is the subset
-    /// laid out this frame, and posting or resting a body moves a plate in or
-    /// out without a rebuild. Fallow nodes are not stranded: every one of them
-    /// keeps its own card, with its own "Post here", on the Trail page.
+    /// every tab, so drawing them all spends the page's whole height on plates
+    /// nobody is working — fifteen by the fourth zone, and the two the warden
+    /// and the kith actually stand at lost among them. A view is built for every
+    /// node regardless (<see cref="_views"/>); <see cref="_onStrip"/> is the
+    /// subset laid out this frame, and posting or resting a body moves a plate
+    /// in or out without a rebuild. Fallow nodes are not stranded: every one of
+    /// them keeps its own card, with its own "Post here", on the Trail page.
     /// </summary>
     [RequireComponent(typeof(GameLoop))]
     public sealed class WorldView : MonoBehaviour
@@ -181,9 +181,9 @@ namespace Wildgrove.Game.World
 
             Layout();
 
-            // A fresh camp with nothing posted anywhere used to render the
-            // whole strip at idle-dim — reading as "disabled" exactly when the
-            // first tap must happen. Dim only once dim can mean something.
+            // A fresh camp with nothing posted anywhere would otherwise render
+            // the whole strip at idle-dim — reading as "disabled" exactly when
+            // the first tap must happen. Dim only once dim can mean something.
             var anyPosted = postNodeId != null || Warden.IsWandering(state);
             if (!anyPosted)
             {

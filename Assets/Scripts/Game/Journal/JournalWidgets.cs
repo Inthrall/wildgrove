@@ -431,10 +431,10 @@ namespace Wildgrove.Game
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                // Opaque. The dead plate used to be RulePaper at 55%, which
-                // composites over card paper to within a hair of DeepPaper —
-                // the live plate. That is why nothing looked disabled: the two
-                // states were rendering the same colour.
+                // Opaque, never RulePaper at partial alpha: at 55% it composites
+                // over card paper to within a hair of DeepPaper — the live plate
+                // — so both states render the same colour and nothing looks
+                // disabled.
                 image.color = on ? (keyAction ? MossWash : DeepPaper) : RulePaper;
             }
 

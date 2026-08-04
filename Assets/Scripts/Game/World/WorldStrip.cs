@@ -126,8 +126,8 @@ namespace Wildgrove.Game.World
 
         /// <summary>
         /// Resolve a tap against plates and badges TOGETHER, so a top-row
-        /// badge's hit circle can no longer steal a tap meant for the
-        /// bottom-row plate it overlaps. Circles differ in size, so ties are
+        /// badge's hit circle cannot steal a tap meant for the bottom-row plate
+        /// it overlaps. Circles differ in size, so ties are
         /// broken by RADIUS-NORMALISED distance — the circle the tap is
         /// proportionally deepest inside wins (a direct badge tap still beats
         /// the plate whose edge it grazes). Badge circles only answer inside

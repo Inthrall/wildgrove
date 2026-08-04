@@ -400,9 +400,9 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Flat Choice-chance points from owned choiceChanceBonus effects
-        /// (Field Press +0.01, the Sunken Jaw insect +0.01), summed — design
-        /// §8's additive band. Almanac bonuses join when that system lands.
+        /// Flat Choice-chance points from every owned choiceChanceBonus effect
+        /// — upgrades, insect plates and Almanac nodes alike — summed into
+        /// design §8's additive band.
         /// </summary>
         public static double ChoiceChanceBonus(GameState state, GameDataAsset data)
         {
@@ -466,8 +466,9 @@ namespace Wildgrove.Sim
                 }
             }
 
-            // The additive band no longer cancels out of the comparison: it
-            // decides whether the raise lands under the ceiling or against it.
+            // The additive band does not cancel out of this comparison, so it
+            // belongs on both sides: it decides whether the raise lands under
+            // the ceiling or against it.
             var band = Modifiers.Of(state, data).offlineCapBonusHours;
             var without = ClampToMaxCap(floor + band, data);
             var with = ClampToMaxCap(System.Math.Max(floor, raiseToHours) + band, data);

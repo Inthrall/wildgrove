@@ -29,10 +29,10 @@ namespace Wildgrove.Game.World
         private const float SwaySpeed = 1.1f;
 
         // Sepia ink, NOT paper. The world camera clears to the journal's own
-        // page colour, so the warm parchment this used to be drawn in differed
-        // from the background by about three percent — survivable for a solid
-        // disc's glow, invisible for hair. A clock is a line drawing; draw it
-        // in the colour the plates are drawn in.
+        // page colour, so a warm parchment differs from the background by about
+        // three percent — survivable for a solid disc's glow, invisible for
+        // hair. A clock is a line drawing; draw it in the colour the plates are
+        // drawn in.
         private static readonly Color MountColour = new Color(0.404f, 0.345f, 0.259f, MountAlpha);
         private static readonly Color ShineColour = new Color(1f, 1f, 1f, 0.55f);
 

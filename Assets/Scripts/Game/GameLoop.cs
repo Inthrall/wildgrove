@@ -47,13 +47,13 @@ namespace Wildgrove.Game
         /// <summary>The analytics/crash-reporting sink (Debug.Log in editor, Firebase on device).</summary>
         public ITelemetry Telemetry { get; private set; }
 
-        /// <summary>Rewarded-ads seam (stub until the AdMob implementation lands).</summary>
+        /// <summary>Rewarded-ads seam — AdMob on device, <see cref="StubAds"/> in the editor.</summary>
         public IAds Ads { get; private set; }
 
-        /// <summary>In-app purchase seam (stub until the Unity IAP implementation lands).</summary>
+        /// <summary>In-app purchase seam — Unity IAP on device, <see cref="StubStore"/> in the editor.</summary>
         public IStore Store { get; private set; }
 
-        /// <summary>Play Games seam — sign-in, achievements, cloud save (stub until the implementation lands).</summary>
+        /// <summary>Play Games seam — sign-in, achievements, cloud save; stubbed in the editor.</summary>
         public IGameServices GameServices { get; private set; }
 
         /// <summary>The Game Stats recorder (Level Up): what the gamer profile is told, and when.</summary>

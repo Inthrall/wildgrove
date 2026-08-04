@@ -42,11 +42,10 @@ namespace Wildgrove.Game
         internal void BuildCampPage()
         {
             // The camp actions (the rewarded time-skip, and Remove Ads until
-            // it's owned) used to be a bar pinned in the chrome, read on all
-            // four tabs and paid for by the open page on all four. They're camp
-            // business, so they head the camp's page — and being in the body
-            // means they refresh off the page's own updater pool rather than
-            // the HUD's chrome pass.
+            // it's owned) are camp business, so they head the camp's page
+            // rather than a bar pinned in the chrome that all four tabs would
+            // pay for. Being in the body also means they refresh off the page's
+            // own updater pool rather than the HUD's chrome pass.
             _hud.Sheets.BuildCampActions(_body);
             _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
 
@@ -331,13 +330,12 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The crafting stations, a card each. Every recipe used to sit in one
-        /// flat list, which said nothing about the rule underneath it: a
-        /// station works ONE recipe at a time, and the stations work at once.
-        /// So starting a second recipe either silently stopped the first (same
-        /// station) or didn't (a different one), and the page gave no way to
-        /// tell which — nor any hint of why several bars could turn together.
-        /// A card per station is that rule made into the shape of the page.
+        /// The crafting stations, a card each — the rule made into the shape of
+        /// the page: a station works ONE recipe at a time, and the stations
+        /// work at once. A flat list of every recipe says none of that, so
+        /// starting a second recipe appears to either silently stop the first
+        /// (same station) or not (a different one), with nothing to tell which
+        /// — nor any hint of why several bars can turn together.
         /// </summary>
         private void BuildCraftingCards()
         {
@@ -519,11 +517,11 @@ namespace Wildgrove.Game
                     }
 
                     // One shape in every state: every input, always with what's
-                    // held. The line used to switch between "needs 5 timber"
-                    // and an itemised shortfall, so it changed length — and
-                    // often wrapped — every time stock crossed a recipe's cost,
-                    // which during a busy camp is constantly. What's blocking is
-                    // now said in ochre rather than by rewriting the line.
+                    // held. A line that switches between "needs 5 timber" and
+                    // an itemised shortfall changes length — and often wraps —
+                    // every time stock crosses a recipe's cost, which during a
+                    // busy camp is constantly. What's blocking is said in ochre
+                    // rather than by rewriting the line.
                     var inputs = new List<string>();
                     foreach (var input in captured.inputs)
                     {
@@ -563,10 +561,10 @@ namespace Wildgrove.Game
             foreach (var building in _loop.Data.buildings)
             {
                 var captured = building;
-                // The crafting card filters to what the run can see; this one
-                // used to firehose every line in the game data from minute
-                // one, naming resources the player hadn't met. A line waits
-                // until every good its next level asks for has been gathered.
+                // Filter to what the run can see, like the crafting card —
+                // every line in the game data from minute one names resources
+                // the player hasn't met. A line waits until every good its next
+                // level asks for has been gathered.
                 if (!BundleDiscovered(_loop.NextBuildingBundle(captured)))
                 {
                     continue;
@@ -797,9 +795,9 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// "120 decent berries → 18 wildflowers". Whole units on both sides,
-        /// like every other resource readout in the journal — the caravan is
-        /// the one card that used to speak in halves and thirds, and a choice
-        /// pile trading in at ×2.5 made a meal of it.
+        /// like every other resource readout in the journal — the caravan is the
+        /// one card whose rates would otherwise speak in halves and thirds, and
+        /// a choice pile trading in at ×2.5 makes a meal of it.
         /// </summary>
         private string ExchangeDeal(ExchangeOffer offer, QualityTier quality, BigDouble spend, BigDouble got)
         {

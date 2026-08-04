@@ -6,10 +6,10 @@ using UnityEngine;
 namespace Wildgrove.Game.Telemetry
 {
     /// <summary>
-    /// The placeholder <see cref="ITelemetry"/> sink: events go to the Unity
-    /// log, so instrumented behaviour is visible in the editor console and in
-    /// logcat during the Phase 1 playtests. Replaced by a Firebase-backed sink
-    /// once the Firebase project + google-services.json exist (docs/todo.md).
+    /// The plain <see cref="ITelemetry"/> sink: events go to the Unity log, so
+    /// instrumented behaviour is visible in the editor console and in logcat.
+    /// Used alone in the editor, and mirrored underneath
+    /// <see cref="FirebaseTelemetry"/> on device.
     /// </summary>
     public sealed class UnityLogTelemetry : ITelemetry
     {

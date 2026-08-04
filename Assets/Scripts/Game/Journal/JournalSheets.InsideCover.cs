@@ -15,7 +15,7 @@ namespace Wildgrove.Game
     /// It is a sheet rather than a fifth tab on purpose: the chrome budget rule
     /// (a bar is pinned only if it is read on every tab) applies twice over to
     /// a tab, and a settings screen is read about once a month. It opens from
-    /// the last card of the last page, where the colophon used to sit alone.
+    /// the last card of the last page.
     /// </para>
     /// <para>
     /// Sheets are snapshots — nothing here registers a live updater, because
@@ -199,9 +199,9 @@ namespace Wildgrove.Game
             {
                 Flash(restore, "asking Play", true);
 
-                // "Asked and answered" used to flash whether or not Play was
-                // reached — the one reading a player with a missing purchase
-                // must not be given, because it says the store looked.
+                // Flash "asked and answered" only when Play actually answered:
+                // it is the one reading a player with a missing purchase must
+                // not be given, because it says the store looked.
                 _loop.Store.RestorePurchases(answered => Flash(restore,
                     answered ? "asked and answered" : "Play didn't answer", answered));
             });

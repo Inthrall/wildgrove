@@ -263,8 +263,8 @@ namespace Wildgrove.Sim
         /// <summary>
         /// <see cref="Tend(NodeState, EconomyData)"/> plus the deed record —
         /// tending is a warden act, and the Rite's deed slots count it
-        /// (design §7). It no longer moves the warden's post — standing
-        /// somewhere is an explicit assignment now (one body per post, §2).
+        /// (design §7). It does not move the warden's post — standing somewhere
+        /// is an explicit assignment (one body per post, §2).
         /// The driver calls this; the state-less overload stays for
         /// burst-maths tests.
         /// </summary>

@@ -243,7 +243,7 @@ namespace Wildgrove.Game.Services
                 if (error != null || ad == null)
                 {
                     // No fill, or no network. Back off and let the next poll try
-                    // again — a failed load used to be the end of that placement
+                    // again, so one failed load isn't the end of that placement
                     // for the session.
                     load.NextAttemptAt = Time.realtimeSinceStartup + load.Backoff;
                     Debug.LogWarning("[ads] rewarded load failed (" + placement + "), retrying in "

@@ -6,8 +6,8 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The mutable runtime state of a single run (one migration cycle). Plain
-    /// C# so the simulation is testable without a scene and serialisable by the
-    /// save system when it lands. Content constants come from GameDataAsset;
+    /// C# so the simulation is testable without a scene and serialisable by
+    /// <see cref="Saves.SaveCodec"/>. Content constants come from GameDataAsset;
     /// this holds only what changes as the player plays.
     /// </summary>
     [Serializable]
@@ -19,8 +19,7 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Lifetime Renown (design §9): all XP earned this run (warden skills +
         /// familiars) plus Rite offering credits. The ledger's single climbing
-        /// number now that Coin is gone; Verdure derives from it at Migration
-        /// and it is never spent.
+        /// number — Verdure derives from it at Migration, and it is never spent.
         /// </summary>
         public BigDouble renown = BigDouble.Zero;
 
@@ -187,7 +186,7 @@ namespace Wildgrove.Sim
         /// <summary>Choice specimens at camp, keyed by resource id (design §5). Never sold automatically — the windfall sale (and later donation or offering) is the player's explicit choice.</summary>
         public Dictionary<string, BigDouble> choiceResources = new Dictionary<string, BigDouble>();
 
-        /// <summary>Xorshift64* state for the run's rolls (quality, later loot). Seeded at run birth, saved with the run — the sim itself stays deterministic.</summary>
+        /// <summary>Xorshift64* state for the run's rolls (quality grades, observation sketches, deep amber). Seeded at run birth, saved with the run — the sim itself stays deterministic.</summary>
         public ulong rngState = 0x9E3779B97F4A7C15UL;
 
         /// <summary>
@@ -486,9 +485,9 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Combined tool + gear + upgrade multiplier for this node. Defaults to
-        /// 1 and is rebuilt by Upgrades.RecomputeYieldMultipliers on purchase
-        /// (gear folds in when its system lands); the tick treats it as an
-        /// opaque multiplier so it stays balance-agnostic.
+        /// 1 and is rebuilt by Upgrades.RecomputeYieldMultipliers on purchase;
+        /// the tick treats it as an opaque multiplier so it stays
+        /// balance-agnostic.
         /// </summary>
         public double yieldMultiplier = 1.0;
     }

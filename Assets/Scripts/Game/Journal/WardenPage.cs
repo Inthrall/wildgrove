@@ -131,12 +131,12 @@ namespace Wildgrove.Game
 
             var slots = KitSlots();
             var card = Card("THE KIT");
-            // Five pieces, three slots. This card used to list them flat in
-            // data order, so the two PACK pieces sat four rows apart with the
-            // slot named only as a prefix — they read as separate things to
-            // collect rather than one slot's two contenders, and a player could
-            // swap between them for a while without noticing they were the same
-            // decision. Group by slot, and say the arithmetic out loud.
+            // Five pieces, three slots. Group by slot and say the arithmetic out
+            // loud: listed flat in data order, the two PACK pieces sit four rows
+            // apart with the slot named only as a prefix, so they read as
+            // separate things to collect rather than one slot's two contenders
+            // — and a player can swap between them for a while without noticing
+            // they are the same decision.
             MakeText(card, slots.Count + " slots: " + string.Join(" · ", slots), 16, TextAnchor.MiddleCenter, Ink2);
             MakeText(card, "Worn for the run, folded at Migration", 20, TextAnchor.MiddleCenter, Ink2, _hand);
 

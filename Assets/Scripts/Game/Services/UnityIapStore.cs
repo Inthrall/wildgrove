@@ -256,8 +256,8 @@ namespace Wildgrove.Game.Services
             {
                 // Lazy connect: billing stays off the startup path until the
                 // player actually initiates a purchase. A connection that never
-                // comes up answers Unavailable — it used to answer nothing at
-                // all, which left the button dead with no way to say why.
+                // comes up answers Unavailable rather than nothing at all, which
+                // would leave the button dead with no way to say why.
                 WhenConnected(connected =>
                 {
                     if (connected)

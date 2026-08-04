@@ -155,12 +155,12 @@ namespace Wildgrove.Game
         // One open sheet at a time; the dim layer blocks input beneath it.
         private GameObject _sheet;
 
-        // First-run teaching. The margin note used to be overwritten forever by
-        // the first action's outcome note — now outcome notes drift back to the
-        // teaching line after a few seconds until each core gesture (post
-        // someone, catch a windfall) has been performed once. Posting is
-        // derived from state (a loaded save with a posted kith has learned it);
-        // the catch is a one-time flag that survives restarts.
+        // First-run teaching. Outcome notes drift back to the teaching line
+        // after a few seconds until each core gesture (post someone, catch a
+        // windfall) has been performed once — otherwise the first action's
+        // outcome note overwrites the margin note for good. Posting is derived
+        // from state (a loaded save with a posted kith has learned it); the
+        // catch is a one-time flag that survives restarts.
         private const string HintCaughtKey = "wildgrove.hint.caught";
         private const float NoteRevertSeconds = 6f;
         private bool _hintPostDone;
@@ -475,10 +475,10 @@ namespace Wildgrove.Game
             FlexibleWidth(_title.gameObject, 1f);
 
             // Ledger — the three meta currencies, hairline-ruled like the mock.
-            // It used to run every held resource, which is the one chrome row
-            // whose height GROWS with the save: two lines at Sunfield, four by
-            // the second camp, and every one of them taken off the page. The
-            // stores read in their own drawer now, and a tap here goes there.
+            // Keep it to those three: a chrome row that lists held resources
+            // grows with the save (two lines at Sunfield, four by the second
+            // camp), and every one of them comes off the page. The stores read
+            // in their own drawer, and a tap here goes there.
             MakeHairline(root);
             var ledgerGo = MakeRect("Ledger", root);
             _ledgerRow = ledgerGo;
@@ -568,13 +568,12 @@ namespace Wildgrove.Game
             counterRect.sizeDelta = new Vector2(380f, 44f);
             counterRect.anchoredPosition = new Vector2(-6f, -4f);
 
-            // The trail-home line and the camp actions used to be pinned here,
-            // between the strip and the page. Both are page chrome wearing a
-            // global badge — the carrier walking home is the Trail's business
-            // and the rewarded time-skip is the Camp's — and together they cost
-            // the page a fifth of its height on every tab. They now head their
-            // own pages; the strip above stays global, so catching and posting
-            // are still reachable from everywhere.
+            // Nothing else pins here, between the strip and the page: the
+            // trail-home line and the camp actions each head their own page
+            // instead. Both are page chrome wearing a global badge — the
+            // carrier walking home is the Trail's business, the rewarded
+            // time-skip the Camp's — and pinned here they cost every tab a
+            // fifth of its height.
 
             // The open journal page — a scroll view the tab pages build into.
             _body = BuildScroll(root);
@@ -615,10 +614,10 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Fit the chrome to the device: keep the page out of the display
-        /// cutout and gesture areas (the tabs bar used to sit flush with the
-        /// screen edge, inside Android's home-swipe zone), and cap the world
-        /// strip's share of the screen. Re-applied whenever the safe area or
-        /// canvas size changes.
+        /// cutout and gesture areas (a tabs bar flush with the screen edge
+        /// lands inside Android's home-swipe zone), and cap the world strip's
+        /// share of the screen. Re-applied whenever the safe area or canvas
+        /// size changes.
         /// </summary>
         private void FitLayoutToScreen()
         {
@@ -685,7 +684,7 @@ namespace Wildgrove.Game
         /// <summary>
         /// Stand the margin note beside the tracker on a spread instead of over
         /// it. Two short lines become one — and because the row is the tracker's
-        /// either way, a note arriving mid-play no longer shoves the whole page
+        /// either way, a note arriving mid-play doesn't shove the whole page
         /// down a line to make room for itself.
         /// </summary>
         private void ApplyNoteFold(bool wide)
@@ -1118,11 +1117,11 @@ namespace Wildgrove.Game
             // entries, never between a name and its number.
             const string pair = " ";
             var state = _loop.State;
-            // The three meta currencies only. The held stores used to run here
-            // too — one entry per resource, so the line grew a wrap every zone
-            // and quietly ate the page it sits above. They read on the Record
-            // page now, each beside its own compendium entry, where "how much
-            // do I hold" is asked deliberately rather than glanced at.
+            // The three meta currencies only — never the held stores. One entry
+            // per resource grows a wrap every zone and quietly eats the page
+            // this line sits above. Holdings read on the Record page, each
+            // beside its own compendium entry, where "how much do I hold" is
+            // asked deliberately rather than glanced at.
             var parts = new List<string>();
 
             // OchreInk, not Ochre — the theme's own rule: plain ochre fails
@@ -1685,8 +1684,7 @@ namespace Wildgrove.Game
                     }
 
                     // Plates and badges resolve together, nearest centre wins —
-                    // a node plate IS the assign gesture now (tap-to-tend
-                    // became the bubbles above).
+                    // a node plate IS the assign gesture.
                     var openSlots = false;
                     var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out _, out openSlots) : null;
                     if (station != null)

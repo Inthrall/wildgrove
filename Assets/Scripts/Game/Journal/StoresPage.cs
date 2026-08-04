@@ -14,13 +14,12 @@ namespace Wildgrove.Game
     /// The Stores page — what the camp holds right now, drawn as a drawer of
     /// square plates rather than a list of names and numerals.
     /// <para>
-    /// The held figures used to run in the Compendium, one clause per entry
-    /// beside the lifetime tallies ("1.2K held · 40 decent · lifetime 8.4K").
-    /// That made one page answer two different questions — <em>what have I
-    /// ever found</em> and <em>what can I spend</em> — and the second is the
-    /// one a player asks mid-craft, when the answer was buried three pages
-    /// back among entries they were not looking for. The Compendium keeps the
-    /// record; this page keeps the stock.
+    /// The Compendium keeps the record; this page keeps the stock. Held figures
+    /// belong here rather than as a clause per Compendium entry beside the
+    /// lifetime tallies — one page answering both <em>what have I ever
+    /// found</em> and <em>what can I spend</em> buries the second, which is the
+    /// one a player asks mid-craft, three pages back among entries they were not
+    /// looking for.
     /// </para>
     /// <para>
     /// One tile per <em>stack</em>, not per resource: a resource held Poor,

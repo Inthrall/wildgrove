@@ -16,8 +16,8 @@ namespace Wildgrove.Game.Services
         /// The store was never reached at all — no billing connection, so the
         /// purchase was never started and nothing could have been charged. Kept
         /// apart from <see cref="Failed"/> because it is the one outcome the
-        /// player can act on (signal, Play services, sign-in) and because it is
-        /// the outcome that used to arrive as silence.
+        /// player can act on (signal, Play services, sign-in), and because
+        /// without it this outcome arrives as silence.
         /// </summary>
         Unavailable,
 

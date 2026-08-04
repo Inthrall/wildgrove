@@ -6,8 +6,8 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The observation tick (design §6): the wanderer passes every zone's
-    /// observation site as it roams (the watch is no longer a post of its
-    /// own), watching what lives there and recording it — adding a field
+    /// observation site as it roams (the watch is not a post of its own),
+    /// watching what lives there and recording it — adding a field
     /// sketch at watchers · baseSketchesPerHour · digSpeedMult · the site's
     /// summed unrecorded rarity; a pity timer guarantees a sketch once
     /// pityTimerHoursWatched hours pass without one. Which insect the sketch
