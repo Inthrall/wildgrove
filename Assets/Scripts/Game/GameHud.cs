@@ -52,11 +52,9 @@ namespace Wildgrove.Game
     {
         private const float RefreshInterval = 0.25f;
 
-        // The world strip's share of the page, and the floor the open page is
-        // never squeezed below. See UpdateWorldGap.
-        private const float StripShareMax = 0.26f;
-        private const float StripShareMin = 0.14f;
-        private const float MinPageShare = 0.32f;
+        // The paper margin down each side of the page, before JournalLayout
+        // widens it to centre the book on a very broad canvas.
+        private const int PageMargin = 16;
 
         private GameLoop _loop;
         private IGameInput _input;
@@ -78,6 +76,12 @@ namespace Wildgrove.Game
         private Text _title;
         private Text _slotCounter;
         private Text _ledger;
+        // The head's two rows, and the rule under the ledger — a spread folds
+        // the ledger up into the title's row and drops that rule.
+        private RectTransform _headRow;
+        private RectTransform _ledgerRow;
+        private GameObject _ledgerRule;
+        private RectTransform _trackerRow;
         private Text _note;
         private Text _trackerText;
         private GameObject _trackerPanel;
@@ -225,7 +229,7 @@ namespace Wildgrove.Game
             var hint = HintText();
             if (hint != null)
             {
-                _note.text = hint;
+                ShowNote(hint);
             }
         }
 
@@ -268,7 +272,7 @@ namespace Wildgrove.Game
             var hint = HintText();
             if (hint != null && _note != null)
             {
-                _note.text = hint;
+                ShowNote(hint);
                 _noteRevert = 0f;
             }
         }
@@ -318,7 +322,7 @@ namespace Wildgrove.Game
                     var hint = HintText();
                     if (hint != null && _note != null)
                     {
-                        _note.text = hint;
+                        ShowNote(hint);
                     }
                 }
             }
@@ -443,7 +447,7 @@ namespace Wildgrove.Game
             rootLayout.childControlHeight = true;
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
-            rootLayout.padding = new RectOffset(16, 16, 10, 6);
+            rootLayout.padding = new RectOffset(PageMargin, PageMargin, 10, 6);
             rootLayout.spacing = 6;
 
             // Header — the page title, centred like the mock's page head. The
@@ -453,16 +457,22 @@ namespace Wildgrove.Game
             // reads on the Record page's Standing card. The header band is
             // transparent: the page paper shows through, but it must NOT
             // swallow pointer raycasts (an Image would).
+            // A ROW, not a column: on a spread the ledger folds up into this
+            // line beside the title (see ApplyHeadFold), and a row is what it
+            // has to land in.
             var headerGo = MakeRect("Header", root).gameObject;
-            var headerLayout = headerGo.AddComponent<VerticalLayoutGroup>();
+            _headRow = (RectTransform)headerGo.transform;
+            var headerLayout = headerGo.AddComponent<HorizontalLayoutGroup>();
             headerLayout.childControlWidth = true;
             headerLayout.childControlHeight = true;
             headerLayout.childForceExpandWidth = true;
             headerLayout.childForceExpandHeight = false;
-            headerLayout.spacing = 0;
+            headerLayout.childAlignment = TextAnchor.MiddleCenter;
+            headerLayout.spacing = 24;
             // 27 authored ≈ the old 36 at the previous FontScale — the title
             // was already big enough; the scale bump is for the working text.
             _title = MakeText(headerGo.transform, string.Empty, 27, TextAnchor.MiddleCenter, Ink, _serif);
+            FlexibleWidth(_title.gameObject, 1f);
 
             // Ledger — the three meta currencies, hairline-ruled like the mock.
             // It used to run every held resource, which is the one chrome row
@@ -470,19 +480,42 @@ namespace Wildgrove.Game
             // the second camp, and every one of them taken off the page. The
             // stores read in their own drawer now, and a tap here goes there.
             MakeHairline(root);
-            _ledger = MakeText(root, string.Empty, 19, TextAnchor.MiddleCenter, Ink);
+            var ledgerGo = MakeRect("Ledger", root);
+            _ledgerRow = ledgerGo;
+            var ledgerLayout = ledgerGo.gameObject.AddComponent<HorizontalLayoutGroup>();
+            ledgerLayout.childControlWidth = true;
+            ledgerLayout.childControlHeight = true;
+            ledgerLayout.childForceExpandWidth = true;
+            ledgerLayout.childForceExpandHeight = false;
+            ledgerLayout.childAlignment = TextAnchor.MiddleCenter;
+            _ledger = MakeText(ledgerGo, string.Empty, 19, TextAnchor.MiddleCenter, Ink);
+            FlexibleWidth(_ledger.gameObject, 1f);
             var ledgerButton = _ledger.gameObject.AddComponent<Button>();
             ledgerButton.targetGraphic = _ledger;
             ledgerButton.onClick.AddListener(() => OpenTab(TabStores));
             NeverDim(ledgerButton);
-            MakeHairline(root);
+            _ledgerRule = MakeHairline(root);
 
-            // Margin note — the handwritten aside.
+            // Margin note — the handwritten aside. Hidden while it has nothing
+            // to say (ShowNote), and on a spread it stands in the tracker's row
+            // rather than owning a line of its own.
             _note = MakeText(root, string.Empty, 24, TextAnchor.MiddleLeft, Ink2, _hand);
+            FlexibleWidth(_note.gameObject, 1f);
+            _note.gameObject.SetActive(false);
 
             // Pinned tracker — verse progress before the Rite consents, the
-            // Fold forecast (with its button) after.
-            var trackerGo = MakePanel("Tracker", root, CardPaper);
+            // Fold forecast (with its button) after. It sits in a row of its own
+            // so a spread can stand the margin note beside it (ApplyNoteFold).
+            var trackerRow = MakeRect("TrackerRow", root);
+            _trackerRow = trackerRow;
+            var trackerRowLayout = trackerRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+            trackerRowLayout.childControlWidth = true;
+            trackerRowLayout.childControlHeight = true;
+            trackerRowLayout.childForceExpandWidth = true;
+            trackerRowLayout.childForceExpandHeight = false;
+            trackerRowLayout.childAlignment = TextAnchor.MiddleLeft;
+            trackerRowLayout.spacing = 24;
+            var trackerGo = MakePanel("Tracker", trackerRow, CardPaper);
             _trackerPanel = trackerGo;
             var trackerLayout = trackerGo.AddComponent<HorizontalLayoutGroup>();
             trackerLayout.childControlWidth = true;
@@ -499,6 +532,10 @@ namespace Wildgrove.Game
             trackerLayout.spacing = 10;
             var trackerElement = trackerGo.AddComponent<LayoutElement>();
             trackerElement.flexibleHeight = 0;
+            // Ignored while the tracker owns its row; on a spread it shares the
+            // width with the margin note, and takes the lot when the note is
+            // saying nothing.
+            trackerElement.flexibleWidth = 1f;
             var trackerButton = trackerGo.AddComponent<Button>();
             trackerButton.onClick.AddListener(() => ScrollToOnTrail("verse"));
             NeverDim(trackerButton);
@@ -600,6 +637,7 @@ namespace Wildgrove.Game
             _appliedCanvasHeight = canvasHeight;
             _appliedCanvasWidth = canvasWidth;
             ApplyWideLayout(JournalLayout.IsWide(canvasWidth, canvasHeight));
+            ApplyPageMargins(canvasWidth);
 
             var scale = _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;
             _root.offsetMin = new Vector2(safe.xMin / scale, safe.yMin / scale);
@@ -607,6 +645,100 @@ namespace Wildgrove.Game
 
             Canvas.ForceUpdateCanvases();
             UpdateWorldGap();
+        }
+
+        /// <summary>
+        /// On a spread, the title and the ledger share one line — the title out
+        /// to the left margin, RENOWN in at the right — and the rule that used
+        /// to separate them goes with them.
+        /// <para>
+        /// Landscape is short of exactly one thing, height, and the chrome costs
+        /// the same absolute units there as it does on a phone: two centred
+        /// lines and their rules were a card's worth of the open page spent
+        /// saying two short things that read perfectly well side by side. The
+        /// page head and the ledger are still the same two elements, still in
+        /// the same order left-to-right as they were top-to-bottom.
+        /// </para>
+        /// </summary>
+        private void ApplyHeadFold(bool wide)
+        {
+            if (_headRow == null || _ledgerRow == null || _ledger == null)
+            {
+                return;
+            }
+
+            // Reparent BEFORE hiding the row it came from, or the ledger goes
+            // dark with its old host.
+            var host = wide ? _headRow : _ledgerRow;
+            if (_ledger.transform.parent != host)
+            {
+                _ledger.transform.SetParent(host, false);
+            }
+
+            _title.alignment = wide ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter;
+            _ledger.alignment = wide ? TextAnchor.MiddleRight : TextAnchor.MiddleCenter;
+            _ledgerRow.gameObject.SetActive(!wide);
+            _ledgerRule.SetActive(!wide);
+            ApplyNoteFold(wide);
+        }
+
+        /// <summary>
+        /// Stand the margin note beside the tracker on a spread instead of over
+        /// it. Two short lines become one — and because the row is the tracker's
+        /// either way, a note arriving mid-play no longer shoves the whole page
+        /// down a line to make room for itself.
+        /// </summary>
+        private void ApplyNoteFold(bool wide)
+        {
+            if (_trackerRow == null || _note == null || _root == null)
+            {
+                return;
+            }
+
+            if (wide)
+            {
+                if (_note.transform.parent != _trackerRow)
+                {
+                    _note.transform.SetParent(_trackerRow, false);
+                    // Left of the tracker plate — the margin it is named for.
+                    _note.transform.SetAsFirstSibling();
+                }
+
+                return;
+            }
+
+            if (_note.transform.parent != _root)
+            {
+                _note.transform.SetParent(_root, false);
+                // Back to its own line, immediately above the tracker's row.
+                _note.transform.SetSiblingIndex(_trackerRow.GetSiblingIndex());
+            }
+        }
+
+        /// <summary>
+        /// Widen the side margins until the book is no broader than
+        /// <see cref="JournalLayout.MaxWidth"/>, so an ultrawide canvas gets
+        /// paper margins rather than a page stretched past any reading measure.
+        /// Every row is a child of the root, so the chrome's rules, the strip
+        /// band and both columns narrow together — the book stays one object.
+        /// </summary>
+        private void ApplyPageMargins(float canvasWidth)
+        {
+            var layout = _root != null ? _root.GetComponent<VerticalLayoutGroup>() : null;
+            if (layout == null)
+            {
+                return;
+            }
+
+            var side = JournalLayout.SideMargin(canvasWidth, PageMargin);
+            if (layout.padding.left == side)
+            {
+                return;
+            }
+
+            // A fresh RectOffset: mutating the live one in place doesn't dirty
+            // the layout, and the margins would only land on the next rebuild.
+            layout.padding = new RectOffset(side, side, layout.padding.top, layout.padding.bottom);
         }
 
         /// <summary>
@@ -624,6 +756,7 @@ namespace Wildgrove.Game
             // change and forcing a second rebuild of a page just built.
             var changed = wide != _wide;
             _wide = wide;
+            ApplyHeadFold(wide);
 
             if (_tabButtons.TryGetValue(TabTrail, out var trailTab))
             {
@@ -695,13 +828,28 @@ namespace Wildgrove.Game
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             layout.spacing = 10;
-            var fitter = column.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            // No ContentSizeFitter here, deliberately: the spread's row already
+            // controls the column's height (childControlHeight), and a fitter on
+            // the same axis fought it — it resized the rect about the centre
+            // pivot AFTER the row had placed the top edge, so whichever page was
+            // the shorter one floated down half the difference. On a spread that
+            // read as the Camp starting a third of the way down the paper while
+            // the Trail beside it began at the top. The row's own UpperLeft
+            // alignment is the whole answer.
+            //
             // Equal halves; without a flexible width the columns collapse to
             // their content and the spread drifts off-centre.
             var element = column.gameObject.AddComponent<LayoutElement>();
             element.flexibleWidth = 1f;
             element.minWidth = 1f;
+            // And a preferred width of nothing, so the SPLIT is the layout's
+            // decision rather than the pages'. A column reports the preferred
+            // width of its widest card, the row honours that before it shares
+            // anything out, and the Trail — whose rows are the longest in the
+            // book — was helping itself to 70% of the paper while the Stores
+            // grid crammed itself into what was left. Two pages of a book are
+            // the same width whatever is printed on them.
+            element.preferredWidth = 0f;
             return column;
         }
 
@@ -716,7 +864,9 @@ namespace Wildgrove.Game
         /// pinned rows are measured, the page is guaranteed its floor, and the
         /// strip takes the remainder — clamped so it neither swells into empty
         /// paper on a tall screen nor collapses below a readable band on a
-        /// short one.
+        /// short one. The shares differ between a column and a spread, which is
+        /// why the layout is asked (<see cref="JournalLayout.StripHeight"/>)
+        /// rather than clamped here.
         /// </para>
         /// </summary>
         private void UpdateWorldGap()
@@ -754,10 +904,7 @@ namespace Wildgrove.Game
 
             chrome += layout.spacing * Mathf.Max(0, rows - 1);
 
-            var target = Mathf.Clamp(
-                available - chrome - available * MinPageShare,
-                available * StripShareMin,
-                available * StripShareMax);
+            var target = JournalLayout.StripHeight(available, chrome, _wide);
             // Only on a real change — assigning every cadence dirties the whole
             // layout for nothing.
             if (Mathf.Abs(target - _worldGapElement.preferredHeight) > 1f)
@@ -923,7 +1070,7 @@ namespace Wildgrove.Game
                 {
                     // The gesture just landed (or a posted save just loaded) —
                     // advance the teaching line rather than leaving stale advice.
-                    _note.text = HintText() ?? string.Empty;
+                    ShowNote(HintText());
                 }
             }
 
@@ -946,6 +1093,13 @@ namespace Wildgrove.Game
                     break;
                 case TabRecord:
                     title = "The Journal's Back Pages";
+                    break;
+                case TabStores:
+                    // Without a case of its own the Stores page fell through to
+                    // the Trail's title and headed itself with the name of the
+                    // zone — a page about the shelves at home announcing the
+                    // hedgerow it came from.
+                    title = "The Stores";
                     break;
                 default:
                     var zone = _labels.LatestZone();
@@ -1075,8 +1229,31 @@ namespace Wildgrove.Game
         {
             if (_note != null)
             {
-                _note.text = text;
+                ShowNote(text);
                 _noteRevert = NoteRevertSeconds;
+            }
+        }
+
+        /// <summary>
+        /// Write the margin note — and take its row away entirely when there is
+        /// nothing to say. An empty hand-written line still reserved a full line
+        /// of paper, and once the teaching hints are learnt that is most of the
+        /// game: a blank band between the ledger and the tracker that the open
+        /// page could have had. <see cref="UpdateWorldGap"/> measures only the
+        /// rows that are standing, so the page collects the difference.
+        /// </summary>
+        private void ShowNote(string text)
+        {
+            if (_note == null)
+            {
+                return;
+            }
+
+            _note.text = text ?? string.Empty;
+            var speaking = _note.text.Length > 0;
+            if (_note.gameObject.activeSelf != speaking)
+            {
+                _note.gameObject.SetActive(speaking);
             }
         }
 

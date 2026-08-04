@@ -69,11 +69,39 @@ namespace Wildgrove.EditorTools
             System.IO.File.WriteAllText(SaveFile.Path, SaveCodec.ToJson(save));
 
             PlayModeWindow.SetViewType(PlayModeWindow.PlayModeViewTypes.GameView);
-            PlayModeWindow.SetCustomRenderingResolution(1080, 2400, "Store Portrait");
+            var (shotWidth, shotHeight) = ShotSize();
+            PlayModeWindow.SetCustomRenderingResolution((uint)shotWidth, (uint)shotHeight,
+                shotWidth >= shotHeight ? "Store Landscape" : "Store Portrait");
 
             SessionState.SetBool(SessionFlag, true);
             SessionState.SetFloat(SessionFlag + ".start", (float)EditorApplication.timeSinceStartup);
             EditorApplication.EnterPlaymode();
+        }
+
+        /// <summary>
+        /// The GameView size to photograph: phone portrait by default (what the
+        /// store listing asks for), or WILDGROVE_SHOT_SIZE=WIDTHxHEIGHT — which
+        /// is how the journal's landscape shapes get looked at, the spread being
+        /// the one layout no portrait shot can show (design §12 asks the game to
+        /// hold up on 4:3 / 16:10 / 21:9).
+        /// </summary>
+        private static (int Width, int Height) ShotSize()
+        {
+            var requested = System.Environment.GetEnvironmentVariable("WILDGROVE_SHOT_SIZE");
+            var parts = requested != null ? requested.Split('x') : null;
+            if (parts != null && parts.Length == 2
+                && int.TryParse(parts[0], out var width) && int.TryParse(parts[1], out var height)
+                && width > 0 && height > 0)
+            {
+                return (width, height);
+            }
+
+            if (!string.IsNullOrEmpty(requested))
+            {
+                Debug.LogWarning("[store-shots] Ignoring WILDGROVE_SHOT_SIZE='" + requested + "' — expected WIDTHxHEIGHT, e.g. 2580x1459.");
+            }
+
+            return (1080, 2400);
         }
 
         /// <summary>Put the player's real save back (or remove the staged one when none existed).</summary>
@@ -86,9 +114,14 @@ namespace Wildgrove.EditorTools
                 System.IO.File.Copy(backup, SaveFile.Path, true);
                 System.IO.File.Delete(backup);
             }
-            else if (System.IO.File.Exists(SaveFile.Path))
+            else if (System.IO.File.Exists(noneMarker) && System.IO.File.Exists(SaveFile.Path))
             {
                 // No prior save existed — don't leave the staged one behind.
+                // Gated on the marker, and the marker alone: this runs more than
+                // once per capture (the poller calls it, and the load-time sweep
+                // can too), and without the gate the second call found no backup,
+                // decided the save in front of it was staged, and deleted a real
+                // one. A save this harness did not create is never its to remove.
                 System.IO.File.Delete(SaveFile.Path);
             }
 

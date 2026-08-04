@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Wildgrove.Game
 {
     /// <summary>
@@ -45,6 +47,87 @@ namespace Wildgrove.Game
             }
 
             return width >= MinWideWidth && width / height >= WideAspect;
+        }
+
+        /// <summary>
+        /// The widest the book is ever drawn, in canvas units: two
+        /// reference-width pages and the spine gap between them. Past this the
+        /// margins grow instead of the columns — a 32:9 canvas measures ~2700
+        /// units across, and a page that wide runs the type past any sensible
+        /// measure while the chrome's centred lines strand themselves in the
+        /// middle of a metre of paper. (Not letterboxing: the margins ARE the
+        /// world camera's paper, so nothing is masked off.)
+        /// </summary>
+        public const float MaxWidth = 2f * 1080f + SpreadGap;
+
+        /// <summary>
+        /// The page's side margin in canvas units — the base margin, widened to
+        /// centre the book once the canvas is broader than <see cref="MaxWidth"/>.
+        /// </summary>
+        public static int SideMargin(float width, int margin)
+        {
+            if (width <= MaxWidth)
+            {
+                return margin;
+            }
+
+            return margin + Mathf.RoundToInt((width - MaxWidth) * 0.5f);
+        }
+
+        // ── The vertical budget ──────────────────────────────────────────────
+        // Three rows compete for the canvas height: the pinned chrome (fixed,
+        // and measured), the world strip's band, and the open page. The shares
+        // below are of the WHOLE canvas height, not of what the chrome leaves.
+
+        /// <summary>The strip band's ceiling, as a share of canvas height, in a single column.</summary>
+        public const float StripShareMax = 0.26f;
+
+        /// <summary>The strip band's floor, as a share of canvas height, in a single column.</summary>
+        public const float StripShareMin = 0.14f;
+
+        /// <summary>What the open page keeps before the band may grow, in a single column.</summary>
+        public const float MinPageShare = 0.32f;
+
+        // A spread is a landscape shape, and landscape is where height is
+        // scarce: a 16:9 canvas is ~1080 units tall against a phone's 1920,
+        // while the chrome above the page costs the same absolute units on
+        // both. Held at the portrait shares the band took a quarter of that
+        // short canvas — a deep, near-empty band with three plates adrift in it
+        // — and the page underneath was squeezed to its floor and clipped by
+        // the tabs. Wide, the band gives up height it does not need (it is
+        // twice as broad, so the plates spread sideways instead of stacking —
+        // see WorldStrip.PerRowCap) and the page takes the difference.
+
+        /// <summary>The strip band's ceiling, as a share of canvas height, on a spread.</summary>
+        public const float WideStripShareMax = 0.17f;
+
+        /// <summary>The strip band's floor, as a share of canvas height, on a spread.</summary>
+        public const float WideStripShareMin = 0.1f;
+
+        /// <summary>What the open page keeps before the band may grow, on a spread.</summary>
+        public const float WideMinPageShare = 0.44f;
+
+        /// <summary>
+        /// The world strip's band height, in the same units as
+        /// <paramref name="available"/>: whatever the pinned chrome and the
+        /// page's floor don't need, clamped to the layout's share of the canvas
+        /// so the band neither swells into empty paper on a tall screen nor
+        /// collapses below a readable row on a short one.
+        /// </summary>
+        /// <param name="available">The canvas height the root has to divide.</param>
+        /// <param name="chrome">Measured height of every pinned row — header, ledger, note, tracker, tabs — plus padding and spacing.</param>
+        /// <param name="wide">True on a spread (see <see cref="IsWide"/>).</param>
+        public static float StripHeight(float available, float chrome, bool wide)
+        {
+            if (available <= 0f)
+            {
+                return 0f;
+            }
+
+            var pageFloor = available * (wide ? WideMinPageShare : MinPageShare);
+            var floor = available * (wide ? WideStripShareMin : StripShareMin);
+            var ceiling = available * (wide ? WideStripShareMax : StripShareMax);
+            return Mathf.Clamp(available - chrome - pageFloor, floor, ceiling);
         }
     }
 }

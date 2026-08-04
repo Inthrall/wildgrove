@@ -15,6 +15,15 @@ namespace Wildgrove.Game.Tests
 
         private static readonly Rect Strip = new Rect(100f, 800f, 880f, 400f);
 
+        /// <summary>
+        /// A single row rides above the band's middle by exactly the lift that
+        /// puts its hanging captions back inside the band.
+        /// </summary>
+        private static float RowY(Rect strip, int count)
+        {
+            return strip.center.y + WorldStrip.CaptionLift(WorldStrip.Diameter(strip, count));
+        }
+
         [Test]
         public void LayoutCentres_SpreadsEvenly_AlongTheMiddle()
         {
@@ -24,7 +33,7 @@ namespace Wildgrove.Game.Tests
             Assert.That(centres[0].x, Is.EqualTo(100f + 880f * 0.25f).Within(Tolerance));
             Assert.That(centres[1].x, Is.EqualTo(100f + 880f * 0.50f).Within(Tolerance));
             Assert.That(centres[2].x, Is.EqualTo(100f + 880f * 0.75f).Within(Tolerance));
-            Assert.That(centres[0].y, Is.EqualTo(1000f).Within(Tolerance));
+            Assert.That(centres[0].y, Is.EqualTo(RowY(Strip, 3)).Within(Tolerance));
         }
 
         [Test]
@@ -33,7 +42,39 @@ namespace Wildgrove.Game.Tests
             var centres = WorldStrip.LayoutCentres(Strip, 1);
 
             Assert.That(centres[0].x, Is.EqualTo(Strip.center.x).Within(Tolerance));
-            Assert.That(centres[0].y, Is.EqualTo(Strip.center.y).Within(Tolerance));
+            Assert.That(centres[0].y, Is.EqualTo(RowY(Strip, 1)).Within(Tolerance));
+        }
+
+        [Test]
+        public void SingleRow_PlateAndItsCaption_StayInsideTheBand()
+        {
+            // The regression this pins: the caption used to hang below the band
+            // and, once the bar under the strip moved onto the page, printed
+            // itself across the facing page's running head.
+            foreach (var band in new[] { PhoneBand, SpreadBand, Strip })
+            {
+                var count = 3;
+                var diameter = WorldStrip.Diameter(band, count);
+                var centre = WorldStrip.LayoutCentres(band, count)[0];
+
+                Assert.That(WorldStrip.ShowsCaptions(band, count), Is.True, "captioned: " + band);
+                Assert.That(centre.y + diameter * 0.5f, Is.LessThanOrEqualTo(band.yMax + Tolerance),
+                    "plate top inside the band: " + band);
+                Assert.That(centre.y - diameter * (WorldStrip.CaptionedPlate - 0.5f),
+                    Is.GreaterThanOrEqualTo(band.yMin - Tolerance),
+                    "caption bottom inside the band: " + band);
+            }
+        }
+
+        [Test]
+        public void SingleRow_ShallowBand_SizesThePlateForItsCaption()
+        {
+            // Height-bound, so the whole captioned plate — not the disc alone —
+            // is what has to fit the band.
+            var band = new Rect(0f, 0f, 2000f, 100f);
+
+            Assert.That(WorldStrip.Diameter(band, 3),
+                Is.EqualTo(100f / WorldStrip.CaptionedPlate).Within(Tolerance));
         }
 
         [Test]
@@ -45,12 +86,14 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void Diameter_FitsBothHeightAndSpread()
         {
-            // Height would allow 240 (400 * 0.6); the spread allows 880/4 * 0.7 = 154.
+            // Height would allow 400/1.82 ≈ 220 for a captioned row; the spread
+            // allows 880/4 * 0.7 = 154, so the spread wins.
             Assert.That(WorldStrip.Diameter(Strip, 3), Is.EqualTo(154f).Within(Tolerance));
 
             // A short wide strip is height-bound instead.
             var shortStrip = new Rect(0f, 0f, 2000f, 100f);
-            Assert.That(WorldStrip.Diameter(shortStrip, 3), Is.EqualTo(60f).Within(Tolerance));
+            Assert.That(WorldStrip.Diameter(shortStrip, 3),
+                Is.EqualTo(100f / WorldStrip.CaptionedPlate).Within(Tolerance));
         }
 
         [Test]
@@ -127,8 +170,71 @@ namespace Wildgrove.Game.Tests
 
             foreach (var centre in centres)
             {
-                Assert.That(centre.y, Is.EqualTo(Strip.center.y).Within(Tolerance));
+                Assert.That(centre.y, Is.EqualTo(RowY(Strip, WorldStrip.MaxPerRow)).Within(Tolerance));
             }
+        }
+
+        // The band the HUD actually leaves open, in screen pixels: a portrait
+        // phone's is broad and shallow, a spread's is twice as broad and half as
+        // deep (landscape is short of the one thing the band spends — height).
+        private static readonly Rect PhoneBand = new Rect(0f, 0f, 1048f, 282f);
+        private static readonly Rect SpreadBand = new Rect(0f, 0f, 1900f, 176f);
+
+        [Test]
+        public void PerRowCap_PhoneBand_IsTheAuthoredThree()
+        {
+            // The cap the constant was tuned against: the shape agrees with it,
+            // so a column's band wraps exactly where it always did.
+            Assert.That(WorldStrip.PerRowCap(PhoneBand), Is.EqualTo(WorldStrip.MaxPerRow));
+            Assert.That(WorldStrip.Rows(PhoneBand, 4), Is.EqualTo(2), "four still wraps in a column");
+        }
+
+        [Test]
+        public void PerRowCap_SpreadBand_SeatsTheWholeCamp()
+        {
+            // A spread's band is broad enough for a full kith in one row, and
+            // wrapping them was what made the plates specks: two rows of that
+            // shallow band leave 52px plates where one row keeps 105.
+            Assert.That(WorldStrip.PerRowCap(SpreadBand), Is.GreaterThanOrEqualTo(6));
+            Assert.That(WorldStrip.Rows(SpreadBand, 6), Is.EqualTo(1));
+            Assert.That(WorldStrip.Diameter(SpreadBand, 6),
+                Is.EqualTo(SpreadBand.height / WorldStrip.CaptionedPlate).Within(Tolerance),
+                "the band's height sizes the plates, not the crowd");
+        }
+
+        [Test]
+        public void PerRowCap_NeverFallsBelowTheAuthoredCap()
+        {
+            // A squarish or degenerate band must not wrap earlier than the
+            // constant — the shape only ever buys a row more room.
+            Assert.That(WorldStrip.PerRowCap(new Rect(0f, 0f, 400f, 400f)), Is.EqualTo(WorldStrip.MaxPerRow));
+            Assert.That(WorldStrip.PerRowCap(Strip), Is.EqualTo(WorldStrip.MaxPerRow));
+            Assert.That(WorldStrip.PerRowCap(new Rect(0f, 0f, 0f, 0f)), Is.EqualTo(WorldStrip.MaxPerRow));
+        }
+
+        [Test]
+        public void LayoutCentres_SpreadBand_KeepsTheKithOnOneLine()
+        {
+            var centres = WorldStrip.LayoutCentres(SpreadBand, 6);
+
+            foreach (var centre in centres)
+            {
+                Assert.That(centre.y, Is.EqualTo(RowY(SpreadBand, 6)).Within(Tolerance), centre.ToString());
+                Assert.That(SpreadBand.Contains(centre), Is.True, centre.ToString());
+            }
+        }
+
+        [Test]
+        public void LayoutCentres_SpreadBandOverItsCap_StillWraps()
+        {
+            // Two rows are the last resort, not a thing the spread lost: a band
+            // carrying more than its width can seat still splits.
+            var count = WorldStrip.PerRowCap(SpreadBand) + 1;
+            var centres = WorldStrip.LayoutCentres(SpreadBand, count);
+
+            Assert.That(WorldStrip.Rows(SpreadBand, count), Is.EqualTo(2));
+            Assert.That(centres[0].y, Is.EqualTo(SpreadBand.yMin + SpreadBand.height * 0.68f).Within(Tolerance));
+            Assert.That(centres[count - 1].y, Is.EqualTo(SpreadBand.yMin + SpreadBand.height * 0.32f).Within(Tolerance));
         }
 
         [Test]

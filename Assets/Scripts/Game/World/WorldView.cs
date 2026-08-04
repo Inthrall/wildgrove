@@ -485,7 +485,7 @@ namespace Wildgrove.Game.World
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             var bubbleDiameterPx = WorldStrip.BubbleDiameter(StripScreenRect, StripTotal());
-            var twoRows = WorldStrip.Rows(StripTotal()) == 2;
+            var twoRows = WorldStrip.Rows(StripScreenRect, StripTotal()) == 2;
             foreach (var bubble in _bubbles)
             {
                 var age = now - bubble.SpawnTime;
@@ -636,7 +636,7 @@ namespace Wildgrove.Game.World
             // Two-row layout: captions would hang over the row beneath, and
             // the badge drop clamps to the row pitch (visuals must match the
             // hit maths in WorldStrip.BadgeOffset).
-            var showCaptions = WorldStrip.Rows(total) == 1;
+            var showCaptions = WorldStrip.ShowsCaptions(StripScreenRect, total);
             var badgeOffsetLocal = _diameterPx > 0f
                 ? WorldStrip.BadgeOffset(StripScreenRect, total, _diameterPx) / _diameterPx
                 : WorldStrip.BadgeOffsetFactor;

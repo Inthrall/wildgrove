@@ -12,13 +12,64 @@ namespace Wildgrove.Game.World
     /// </summary>
     public static class WorldStrip
     {
-        // Beyond this many sprites a single row turns into confetti — wrap to
-        // two. Three is deliberately early: the band is wide but shallow, and
-        // a row of four already sizes each plate off the width rather than the
-        // height, so the specimens shrink instead of filling the band. Two
-        // rows of three keep the plates big enough to read as portraits.
+        // The fewest plates a row ever carries before wrapping to two — the
+        // phone band's answer, and the floor under PerRowCap. Three is
+        // deliberately early there: that band is wide but shallow, and a row of
+        // four already sizes each plate off the width rather than the height,
+        // so the specimens shrink instead of filling the band. Two rows of
+        // three keep the plates big enough to read as portraits.
         // (Three zones ≈ 10 nodes; four zones plus the open-slots mark ≈ 15.)
         public const int MaxPerRow = 3;
+
+        // How much of the band a row of plates is allowed to use: 0.6 of the
+        // row's height, and 0.7 of each plate's share of the width. Diameter
+        // sizes by these, so PerRowCap must reason with the same two numbers or
+        // the wrap and the sizing disagree.
+        private const float RowHeightShare = 0.6f;
+        private const float RowWidthShare = 0.7f;
+
+        // The captioned plate, measured in diameters, top to bottom: half a
+        // diameter of plate above its centre, then the caption hanging under it
+        // — PlaceholderArt.CreateLabel drops the label 1.02 diameters below the
+        // centre and its glyphs run about 0.3 further. (The assignment badge
+        // hangs in that same space, shallower, so the caption is the deepest
+        // thing a plate carries.)
+        private const float CaptionDrop = 1.02f;
+        private const float CaptionGlyphs = 0.3f;
+
+        /// <summary>
+        /// A captioned plate's full height in diameters — what a single row
+        /// actually occupies, as against the disc alone.
+        /// </summary>
+        public const float CaptionedPlate = 0.5f + CaptionDrop + CaptionGlyphs;
+
+        /// <summary>
+        /// How many plates a single row of THIS band can carry: as many as the
+        /// width can seat at the size the band's height already allows.
+        /// <para>
+        /// <see cref="MaxPerRow"/> alone was a portrait answer to a question
+        /// about the band's shape, and on a spread it read as one: a landscape
+        /// band is twice as broad and — because height is what landscape is
+        /// short of — barely half as deep, so five plates that would sit
+        /// comfortably in one row wrapped into two rows of specks in a band
+        /// with room to spare either side. Never fewer than
+        /// <see cref="MaxPerRow"/>, so a column's band wraps exactly where it
+        /// always did.
+        /// </para>
+        /// </summary>
+        public static int PerRowCap(Rect strip)
+        {
+            if (strip.width <= 0f || strip.height <= 0f)
+            {
+                return MaxPerRow;
+            }
+
+            // Solving width / (n + 1) * RowWidthShare >= height / CaptionedPlate
+            // for n: the largest row that is still sized by the band's height.
+            // (The single row's height budget — the same one Diameter uses.)
+            var byShape = Mathf.FloorToInt(strip.width * RowWidthShare * CaptionedPlate / strip.height) - 1;
+            return Mathf.Max(MaxPerRow, byShape);
+        }
 
         /// <summary>The assignment badge's centre, in diameters below a post sprite's centre (single-row; two rows clamp to the row pitch — see <see cref="BadgeOffset"/>).</summary>
         public const float BadgeOffsetFactor = -0.72f;
@@ -31,7 +82,7 @@ namespace Wildgrove.Game.World
         public static float BadgeOffset(Rect strip, int count, float diameter)
         {
             var drop = -BadgeOffsetFactor * diameter;
-            if (Rows(count) == 2)
+            if (Rows(strip, count) == 2)
             {
                 var pitch = strip.height * (0.68f - 0.32f);
                 drop = Mathf.Min(drop, pitch * 0.4f);
@@ -124,10 +175,38 @@ namespace Wildgrove.Game.World
             return best;
         }
 
-        /// <summary>Rows the strip lays out in — one up to <see cref="MaxPerRow"/>, then two.</summary>
-        public static int Rows(int count)
+        /// <summary>Rows the strip lays out in — one up to <see cref="PerRowCap"/>, then two.</summary>
+        public static int Rows(Rect strip, int count)
         {
-            return count <= MaxPerRow ? 1 : 2;
+            return count <= PerRowCap(strip) ? 1 : 2;
+        }
+
+        /// <summary>
+        /// True while the plates name themselves. Only in a single row: in two
+        /// the captions would hang over the row beneath. <see cref="WorldView"/>
+        /// draws them, and the single-row sizing below reserves their space.
+        /// </summary>
+        public static bool ShowsCaptions(Rect strip, int count)
+        {
+            return Rows(strip, count) == 1;
+        }
+
+        /// <summary>
+        /// How far above the band's middle a single row of plates rides, so that
+        /// the plate AND its hanging caption sit inside the band rather than
+        /// spilling out of the bottom of it.
+        /// <para>
+        /// The captions always hung below the band — which was harmless while a
+        /// pinned bar sat under the strip to hang into, and stopped being
+        /// harmless when that bar moved onto the page: on a spread the herbs
+        /// plate captioned itself straight across the facing page's running
+        /// head. Centring the captioned plate rather than the disc puts the
+        /// whole thing back inside the band it belongs to.
+        /// </para>
+        /// </summary>
+        public static float CaptionLift(float diameter)
+        {
+            return diameter * (CaptionedPlate * 0.5f - 0.5f);
         }
 
         /// <summary>
@@ -147,12 +226,14 @@ namespace Wildgrove.Game.World
         /// </summary>
         public static void LayoutCentresInto(Rect strip, int count, Vector2[] centres)
         {
-            if (Rows(count) == 1)
+            if (Rows(strip, count) == 1)
             {
+                // Lifted so the caption below each plate lands inside the band.
+                var y = strip.center.y + CaptionLift(Diameter(strip, count));
                 for (var i = 0; i < centres.Length; i++)
                 {
                     var x = strip.xMin + strip.width * (i + 1) / (count + 1);
-                    centres[i] = new Vector2(x, strip.center.y);
+                    centres[i] = new Vector2(x, y);
                 }
 
                 return;
@@ -190,10 +271,15 @@ namespace Wildgrove.Game.World
                 return 0f;
             }
 
-            var rows = Rows(count);
+            var rows = Rows(strip, count);
             var perRow = (count + rows - 1) / rows;
-            var byHeight = strip.height / rows * 0.6f;
-            var byWidth = strip.width / (perRow + 1) * 0.7f;
+            // A single row carries captions, so its height budget is the whole
+            // captioned plate, not the disc — otherwise the disc fills the band
+            // and the caption has to hang out of it.
+            var byHeight = rows == 1
+                ? strip.height / CaptionedPlate
+                : strip.height / rows * RowHeightShare;
+            var byWidth = strip.width / (perRow + 1) * RowWidthShare;
             return Mathf.Max(0f, Mathf.Min(byHeight, byWidth));
         }
 

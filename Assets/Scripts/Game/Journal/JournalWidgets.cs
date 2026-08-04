@@ -144,11 +144,12 @@ namespace Wildgrove.Game
             return go;
         }
 
-        internal static void MakeHairline(RectTransform parent)
+        internal static GameObject MakeHairline(RectTransform parent)
         {
             var go = MakePanel("Rule", parent, RulePaper);
             FixedHeight(go, 2);
             go.GetComponent<Image>().raycastTarget = false;
+            return go;
         }
 
         internal static Button Button(Transform parent, string text, float width, UnityEngine.Events.UnityAction onClick)
