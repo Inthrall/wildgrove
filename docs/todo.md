@@ -357,13 +357,28 @@ for:
   records it, `FlushStats` nudges `RequestEventsUpload` on the save cadence,
   and dev builds log `[play-games] game-stats: recorded <event>` per event as
   the on-device instrument. What remains:
-  - **Editor confirm, first Unity open after the upgrade:** let the import run,
-    then Android Resolver **Force Resolve** — the gradle templates were
-    hand-edited to what EDM should now produce (the `gpgs-plugin-support`
-    maven line and its local m2repository are gone; the support lib is a plain
-    AAR under `Runtime/Plugins/Android` now, with
-    `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` declared
-    direct) and a resolve proves the guess. Run the EditMode suite while there.
+  - **Editor confirm — the import half is DONE 2026-08-04.** The 2.2.0 import
+    ran clean on the first open: no compile errors, only GPGS's own CS0618
+    warnings about its now-deprecated `GPGSProjectSettings`, and `GPGSUpgrader`
+    logged `start`/`done`. The R8 proxy sweep in `proguard-user.txt` was re-run
+    at 2.2.0 and needs no new keep — the game-stats API adds no proxied name
+    (`AndroidEventsClient` goes through `AndroidTaskUtils` and
+    `gms.games.event`, both already kept). The **EditMode suite is green on
+    2.2.0**: 914/914 in 36s via `Unity.exe -runTests -testPlatform EditMode`
+    against the vendored plugin and the patched `PluginVersion.cs`, including
+    `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` — so code and the
+    authored CSVs still agree ahead of the console upload.
+  - **Still owed in the editor: Android Resolver Force Resolve.** No resolve
+    appears in either Unity log Unity still keeps, so
+    the hand-edited templates remain unconfirmed — though they already match
+    EDM's own output conventions, down to the `GooglePlayGamesPluginDependencies
+    .xml:9` / `:14` end-of-element line attributions, and EDM's auto-resolve
+    hook has run repeatedly without wanting to rewrite
+    `AndroidResolverDependencies.xml`. (The templates being right is the claim:
+    the `gpgs-plugin-support` maven line and its local m2repository are gone,
+    the support lib is a plain AAR under `Runtime/Plugins/Android`, and
+    `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` are
+    declared direct — 2.1.0 got both transitively, at games-v2 **21.0.0**.)
   - **Console:** upload the authored CSVs from `store/play-games/gamestats/`
     (the upload window opened August 2026; draft-config testing with test
     accounts opens **September 2026** — batch with the Sep 1 rewards visit).
@@ -375,10 +390,23 @@ for:
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
     CSV drift, because Play drops undeclared events silently.
   - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its
-    own `PluginVersion.cs` still saying "2.1.0" (`package.json` says 2.2.0),
-    ships `.orig`/`.rej` patch debris in the unitypackage (excluded from the
-    vendored copy), and raises the plugin's minSdk floor to 24 — Wildgrove's
-    26 clears it.
+    own `PluginVersion.cs` still saying "2.1.0" (`package.json` says 2.2.0) —
+    **patched locally to 2.2.0 / `0x20200` / `"20200"` on 2026-08-04, and the
+    patch must be re-applied on the next re-vendor.** `GPGSUpgrader` stamps that
+    constant into `ProjectSettings/GooglePlayGameSettings.txt`, so upstream's
+    stale value made a successful upgrade read as an upgrade that never ran —
+    which is exactly how it was misread. It also ships `.orig`/`.rej` patch
+    debris in the unitypackage (excluded from the vendored copy), and raises the
+    plugin's minSdk floor to 24 — Wildgrove's 26 clears it.
+  - **Do not re-run Window → Google Play Games → Setup to tidy the version.**
+    The androidlib's `games.unityVersion` meta-data still reads 2.1.0; it is
+    Google-facing telemetry only and is deliberately left alone. Regenerating it
+    means re-running Android Setup, and neither `GooglePlayGameSettings.txt` nor
+    `PlayGamesSettings.asset` holds the app id any more — the field would open
+    blank and a confirm would write a manifest with no
+    `com.google.android.gms.games.APP_ID`, which is the one meta-data sign-in
+    needs. The real id lives in `GameInfo.ApplicationId` (`17679484071`) and in
+    the generated `GooglePlayGamesManifest.androidlib/AndroidManifest.xml`.
 
 ### 3.5 Launch (design §13 Phase 6 — carried here so the plan's tail isn't lost)
 

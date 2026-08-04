@@ -19,8 +19,13 @@ namespace GooglePlayGames
     public class PluginVersion
     {
         // Current Version.
-        public const int VersionInt = 0x20100;
-        public const string VersionString = "2.1.0";
-        public const string VersionKey = "20100" ;
+        // Patched locally. Upstream 2.2.0 shipped this file still reading 2.1.0
+        // (package.json says 2.2.0), so GPGSUpgrader stamped "2.1.0" into
+        // ProjectSettings/GooglePlayGameSettings.txt on a successful upgrade —
+        // which reads exactly like an upgrade that never ran. Re-apply on the
+        // next re-vendor if Google still hasn't bumped it.
+        public const int VersionInt = 0x20200;
+        public const string VersionString = "2.2.0";
+        public const string VersionKey = "20200";
     }
 }

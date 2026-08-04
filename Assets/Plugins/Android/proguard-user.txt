@@ -25,8 +25,10 @@
 # An AAR may already ship its own consumer proguard.txt covering itself — check
 # with `unzip -p <plugin>.aar proguard.txt` before duplicating a rule here.
 #
-# Last full sweep: 2026-07-27 (GPGS 2.1.0, GMA 11.3.0, Unity IAP 5.4.1,
-# Firebase 13.13.0). Every reachable proxied interface is covered.
+# Last full sweep: 2026-08-04 (GPGS 2.2.0, GMA 11.3.0, Unity IAP 5.4.1,
+# Firebase 13.13.0). Every reachable proxied interface is covered. The 2.2.0
+# game-stats API added no new proxied name — AndroidEventsClient goes through
+# AndroidTaskUtils and gms.games.event, both already under the keeps below.
 
 # --- WorkManager / Room -------------------------------------------------------
 # androidx.startup's WorkManagerInitializer builds Room's generated
@@ -50,7 +52,7 @@
 -dontwarn com.google.android.gms.ads.**
 
 # --- Play Games Services ------------------------------------------------------
-# gpgs-plugin-support-2.1.0.aar ships NO consumer proguard.txt, so everything
+# gpgs-plugin-support.aar ships NO consumer proguard.txt, so everything
 # GPGS proxies has to be kept from here — including com.google.games.bridge.*
 # (HelperFragment and the *CallbackProxy types), covered by the second rule.
 -keep class com.google.android.gms.games.** { *; }
@@ -88,13 +90,16 @@
 -keep class com.google.android.gms.common.** { *; }
 -dontwarn com.google.android.gms.**
 
-# --- Pre-emptive: proxied but not currently reachable -------------------------
-# Found by the sweep, kept ahead of need. Neither package is bundled today, so
-# both rules are no-ops — they cost nothing and remove a landmine if the code
-# path ever gets used or a plugin upgrade revives it.
+# --- Proxied, but never called by the game ------------------------------------
+# Found by the sweep, kept ahead of need. Neither code path is reachable from
+# Wildgrove, so both rules cost nothing today and remove a landmine if a path
+# ever gets used or a plugin upgrade revives it.
 #
 # GPGS's AndroidNearbyConnectionClient proxies the Nearby callbacks. We never
-# call Nearby and play-services-nearby isn't in the resolved dependency set.
+# call Nearby, but play-services-nearby:18.5.0 IS bundled — GPGS 2.2.0 declares
+# it direct, and 2.1.0 pulled the same version in transitively through
+# gpgs-plugin-support's POM. So this keep guards a library that really ships;
+# it is not the no-op the earlier note here claimed.
 -keep class com.google.android.gms.nearby.** { *; }
 -keep interface com.google.android.gms.nearby.** { *; }
 -dontwarn com.google.android.gms.nearby.**
