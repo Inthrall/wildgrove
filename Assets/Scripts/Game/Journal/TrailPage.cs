@@ -809,7 +809,31 @@ namespace Wildgrove.Game
 
             if (sung != null)
             {
+                // Every verse in play is sung: the rite is complete, and the
+                // next verse belongs to the camp after this one. Without a
+                // card in the current-verse slot the page would end on SUNG
+                // VERSES alone, with nothing saying where the rite goes next.
+                if (sung.Count == verses.Count)
+                {
+                    BuildRiteSungCard();
+                }
+
                 BuildSungVersesCard(verses, sung);
+            }
+        }
+
+        /// <summary>
+        /// The card standing where the next verse would — every verse in play
+        /// is sung, so the only verse left to sing waits beyond the fold.
+        /// </summary>
+        private void BuildRiteSungCard()
+        {
+            var card = Card("THE NEXT VERSE");
+            MakeText(card, "<i>the rite is sung entire — the next verse will be written after the fold</i>",
+                19, TextAnchor.MiddleCenter, Ink2, _serif);
+            if (_firstVerseCard == null)
+            {
+                _firstVerseCard = card;
             }
         }
 

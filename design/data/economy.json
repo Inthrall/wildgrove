@@ -38,10 +38,10 @@
     "$note": "curve and xpPerUnit are first guesses, not in the design doc — mastery XP per unit gathered at the node, rung r costs base·growth^r. yieldBonusPerLevel applies to both yield and the raw resource's sell value (§4 '+5% yield/value')."
   },
   "verdure": {
-    "renownDivisor": 2800,
+    "renownDivisor": 1000000,
     "exponent": 0.5,
     "yieldBonusPerPoint": 0.02,
-    "$note": "renownDivisor tuned via the balance model (docs/economy-model.xlsx, ECO-2 Renown) to bank ~10 Verdure at the first fold once Renown-at-fold rose with gatherPerUnit=3. Verdure = floor((lifetimeRenown / renownDivisor) ^ exponent). Model-derived; confirm in playtest."
+    "$note": "renownDivisor re-anchored on observed play (2026-08-04 playtest): the model's 2800 assumed ~280K Renown at the first fold, but a real run reached ~110M by fold 1 and 1.38B by fold 2, banking hundreds of Verdure against a ~166-point tree. 1e6 restores the design targets on real numbers: ~10 at fold 1, tree done around fold 3-4, the repeatable line after. Verdure = floor((lifetimeRenown / renownDivisor) ^ exponent); exponent stays 0.5 — the sqrt shape is a design commitment (design doc section 9). Existing saves keep their banked total (it never shrinks), so an over-banked playtest save just forecasts +0 until the curve catches up."
   },
   "xp": {
     "base": 100,

@@ -1629,11 +1629,17 @@ namespace Wildgrove.Game
                 }
             }
 
+            // Sung count as well as revealed: completing the rite's LAST verse
+            // reveals nothing new, so without this the Trail never rebuilds and
+            // the finished verse stands as a full card — flipped to "sung" by
+            // its live updater — instead of collapsing into SUNG VERSES.
+            var sungVerses = Rite.CompletedVerseCount(state, _loop.Data);
+
             return _tab + "/" + state.roster.Count + "/" + state.nodes.Count + "/" + state.digSites.Count
                    + "/" + owned + "/" + recipes + "/" + buildings + "/" + choice
                    + "/" + _loop.UnlockedSkills().Count + "/" + state.gearBySlot.Count
                    + "/" + state.fixedResources.Count + "/" + recordedInsects
-                   + "/" + state.builtPlanters.Count + "/" + revealedVerses
+                   + "/" + state.builtPlanters.Count + "/" + revealedVerses + "/" + sungVerses
                    + "/" + Compendium.DiscoveredCount(state, _loop.Data);
         }
 

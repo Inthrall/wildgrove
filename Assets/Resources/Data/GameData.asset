@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 739e9542a698bb4fbf7364e4a793805521a86f4765ce4afba6f17bf3206701e1
+  sourceHash: 0ee1c470b20620ea6875c01271c4d5ca781a2358c3282ab22d953ebb768db8be
   economy:
     costGrowth:
       building: 1.25
@@ -46,7 +46,7 @@ MonoBehaviour:
       maxLevel: 99
       xpPerUnit: 0.25
     verdure:
-      renownDivisor: 2800
+      renownDivisor: 1000000
       exponent: 0.5
       yieldBonusPerPoint: 0.02
     xp:
