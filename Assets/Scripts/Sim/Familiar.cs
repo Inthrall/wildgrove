@@ -38,7 +38,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public const string WanderStation = "wander";
 
-        /// <summary>Legacy prefix for a pre-v27 dig-site station id ("dig:{zoneId}") — read only by save migration; the watch stopped being a post.</summary>
+        /// <summary>Prefix for a dig-site station id ("dig:{zoneId}"). Not a post the game hands out — the watch is the wanderer's — so a familiar carrying one is rested on load; see SaveCodec.StationValid.</summary>
         public const string DigStationPrefix = "dig:";
 
         /// <summary>Stable per-run roster id (e.g. "fam-1"), minted by <see cref="GameState.NextFamiliarId"/>.</summary>

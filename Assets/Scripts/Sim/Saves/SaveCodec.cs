@@ -22,6 +22,21 @@ namespace Wildgrove.Sim.Saves
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
         public const int CurrentVersion = 42;
 
+        /// <summary>
+        /// The oldest wire shape this build reads. Saves below it are refused
+        /// whole rather than partly understood — <see cref="TryMigrate"/> has no
+        /// rung to stand them on, and SaveFile sets them aside instead of
+        /// deleting them.
+        /// <para>
+        /// It sits at <see cref="CurrentVersion"/> because the ladder is empty:
+        /// v42 is the first shape to need no migration of its own. Adding a step
+        /// leaves this where it is and raises only CurrentVersion; the two part
+        /// company from then on, and this one moves again only when the bottom
+        /// rungs are retired.
+        /// </para>
+        /// </summary>
+        public const int EarliestReadableVersion = 42;
+
         public static SaveData Capture(GameState state, long savedAtUnixMs)
         {
             var save = new SaveData
@@ -221,8 +236,7 @@ namespace Wildgrove.Sim.Saves
             // Replace the fresh-run seed kith with the saved roster of
             // individuals (design §4). A station pointing at a node the current
             // data no longer builds is cleared to resting, like the warden
-            // post; an empty name (a v19→v20 migrated familiar) gets a
-            // species-appropriate default.
+            // post; an empty name gets a species-appropriate default.
             state.roster = new List<Familiar>();
             if (save.roster != null)
             {
@@ -248,8 +262,8 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            // A v20+ save always carries a seq ahead of every id; only fall back
-            // for a malformed one. roster.Count + 1 could collide with an
+            // A save always carries a seq ahead of every id; only fall back for
+            // a malformed one. roster.Count + 1 could collide with an
             // existing "fam-N" if the roster has a gap, so derive the next seq
             // from the highest id actually present.
             state.nextFamiliarSeq = save.nextFamiliarSeq > 0 ? save.nextFamiliarSeq : NextSeqAfter(state.roster);
@@ -340,9 +354,9 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            // A pre-v8 save carries no rng state (0) — keep the fresh seed the
-            // baseline NewGame just rolled rather than pinning every migrated
-            // run to the same constant.
+            // Zero is xorshift's fixed point, so a save carrying no rng state
+            // keeps the fresh seed NewGame just rolled rather than pinning every
+            // restored run to the same constant.
             if (save.rngState != 0UL)
             {
                 state.rngState = save.rngState;
@@ -581,12 +595,10 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            // The roster is a collection now — one familiar per species, ever
-            // (design §4). Pre-collection saves can carry duplicates (chiefly
-            // the v19→v20 count rebuild, which minted one familiar per
-            // anonymous head): keep each species' best — bonded first, then
-            // the deepest Kinship, then roster order — and let the rest slip
-            // back into the grass.
+            // The roster is a collection — one familiar per species, ever
+            // (design §4). A save that carries duplicates keeps each species'
+            // best — bonded first, then the deepest Kinship, then roster order —
+            // and lets the rest slip back into the grass.
             var bySpecies = new HashSet<string>();
             var deduped = new List<Familiar>(state.roster.Count);
             foreach (var familiar in state.roster
@@ -604,9 +616,9 @@ namespace Wildgrove.Sim.Saves
                 state.roster = deduped;
             }
 
-            // One body per post (§2): a pre-v27 save can carry several
-            // familiars on one station — bonded first, then deepest Kinship
-            // keeps the post; the rest go home to camp.
+            // One body per post (§2): a save carrying several familiars on one
+            // station keeps bonded first, then deepest Kinship; the rest go home
+            // to camp.
             var taken = new HashSet<string>();
             foreach (var familiar in state.roster
                 .OrderByDescending(f => f.bonded)
@@ -682,55 +694,10 @@ namespace Wildgrove.Sim.Saves
         }
 
         /// <summary>
-        /// The v26→v27 watch retirement: the watch is no longer a post, so the
-        /// first dig-stationed familiar becomes the wanderer (it was already
-        /// out watching the sites) and any others rest at camp.
-        /// </summary>
-        private static void RetireDigStations(SaveData save)
-        {
-            if (save.roster == null)
-            {
-                return;
-            }
-
-            var wanderTaken = false;
-            foreach (var familiar in save.roster)
-            {
-                if (familiar?.stationId == null || !familiar.stationId.StartsWith(Familiar.DigStationPrefix))
-                {
-                    continue;
-                }
-
-                familiar.stationId = wanderTaken ? null : Familiar.WanderStation;
-                wanderTaken = true;
-            }
-        }
-
-        /// <summary>Distinct zones among a save's nodes (ids are "zone:resource") — the v1 carrier back-grant.</summary>
-        private static int CountZones(SaveData save)
-        {
-            var zones = new HashSet<string>();
-            if (save.nodes != null)
-            {
-                foreach (var node in save.nodes)
-                {
-                    var split = node?.id?.IndexOf(':') ?? -1;
-                    if (split > 0)
-                    {
-                        zones.Add(node.id.Substring(0, split));
-                    }
-                }
-            }
-
-            return zones.Count;
-        }
-
-        /// <summary>
         /// Whether a saved familiar's station id still resolves under the
         /// current data (else it's cleared to resting, so the familiar isn't
-        /// stranded as a silent no-op). Legacy "dig:" stations fail here by
-        /// design — the watch stopped being a post at v27, and TryMigrate
-        /// already rehomed the watchers.
+        /// stranded as a silent no-op). A "dig:" station fails here by design:
+        /// the watch is not a post, so anyone still carrying one is rested.
         /// </summary>
         private static bool StationValid(GameState state, string stationId)
         {
@@ -768,50 +735,6 @@ namespace Wildgrove.Sim.Saves
             }
 
             return highest + 1;
-        }
-
-        /// <summary>
-        /// The v19→v20 kith rebuild: turn the anonymous per-node gatherer,
-        /// per-site digger, and camp carrier counts into individual roster
-        /// familiars (voles gather and dig, ravens hold the trail — the seed
-        /// species). Names are left blank for Restore to fill with species
-        /// defaults, since these familiars were never named.
-        /// </summary>
-        private static List<SavedFamiliar> BuildRosterFromCounts(SaveData save)
-        {
-            var roster = new List<SavedFamiliar>();
-            var seq = 1;
-
-            if (save.nodes != null)
-            {
-                foreach (var node in save.nodes)
-                {
-                    for (var i = 0; i < node.familiarCount; i++)
-                    {
-                        roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "meadow-vole", stationId = node.id });
-                    }
-                }
-            }
-
-            if (save.digSites != null)
-            {
-                foreach (var site in save.digSites)
-                {
-                    for (var i = 0; i < site.familiarCount; i++)
-                    {
-                        roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "meadow-vole", stationId = Familiar.DigStationPrefix + site.zoneId });
-                    }
-                }
-            }
-
-            for (var i = 0; i < save.carrierCount; i++)
-            {
-                // The trail post no longer exists (v39 retired hauling) — the
-                // seed raven arrives resting and the player posts it anywhere.
-                roster.Add(new SavedFamiliar { id = "fam-" + seq++, speciesId = "pack-raven", stationId = null });
-            }
-
-            return roster;
         }
 
         private static bool NodeExists(GameState state, string nodeId)
@@ -875,429 +798,35 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>
         /// Bring an older save up to <see cref="CurrentVersion"/> in place.
-        /// Returns false for a save from a future build — never guess at a
-        /// shape this build doesn't know.
+        /// Returns false for a save this build must not read: one from a future
+        /// build, and one older than <see cref="EarliestReadableVersion"/> —
+        /// never guess at a shape this build doesn't know.
         /// </summary>
         public static bool TryMigrate(SaveData save)
         {
-            if (save == null || save.version > CurrentVersion)
+            if (save == null || save.version > CurrentVersion || save.version < EarliestReadableVersion)
             {
                 return false;
-            }
-
-            // v1 was the first released shape; pre-v1 (hand-edited or very
-            // early dev saves) enters the ladder at v1.
-            if (save.version < 1)
-            {
-                save.version = 1;
             }
 
             while (save.version < CurrentVersion)
             {
                 switch (save.version)
                 {
-                    case 1:
-                        // v1 predates carriers and baskets. Grant the regional
-                        // seed carrier per zone the save had opened, matching
-                        // what the live path would have accrued; baskets
-                        // default to empty via the missing-field default.
-                        save.carrierCount = System.Math.Max(1, CountZones(save));
-                        save.version = 2;
-                        break;
-
-                    case 2:
-                        // v2 predates crafting — stations simply start empty.
-                        save.stations = save.stations ?? new List<SavedStation>();
-                        save.version = 3;
-                        break;
-
-                    case 3:
-                        // v3 predates camp buildings — no levels bought yet.
-                        save.buildingLevels = save.buildingLevels ?? new List<SavedBuildingLevel>();
-                        save.version = 4;
-                        break;
-
-                    case 4:
-                        // v4 predates skill XP — every skill starts back at
-                        // level 1 (XP was never earned, not lost).
-                        save.skillXp = save.skillXp ?? new List<SavedSkillXp>();
-                        save.version = 5;
-                        break;
-
-                    case 5:
-                        // v5 nodes carried a masteryLevel nothing ever granted
-                        // (always 0) — dropped on read; masteryXp starts fresh.
-                        save.version = 6;
-                        break;
-
-                    case 6:
-                        // v6 predates discrete hauling — the fleet starts a
-                        // fresh trip (haulTripProgress's missing-field zero).
-                        save.version = 7;
-                        break;
-
-                    case 7:
-                        // v7 predates quality rolls — the quality pools start
-                        // empty and Restore reseeds the missing (0) rng state.
-                        save.fineResources = save.fineResources ?? new List<SavedResource>();
-                        save.pristineResources = save.pristineResources ?? new List<SavedResource>();
-                        save.version = 8;
-                        break;
-
-                    case 8:
-                        // v8 predates the observation system — sites resync
-                        // from owned upgrades on restore; nothing recorded yet.
-                        save.digSites = save.digSites ?? new List<SavedDigSite>();
-                        save.insectSketches = save.insectSketches ?? new List<SavedInsectSketches>();
-                        save.version = 9;
-                        break;
-
-                    case 9:
-                        // v9 predates the Rite runtime — nothing offered, no
-                        // deeds counted, renown at the missing-field zero.
-                        save.deedCounts = save.deedCounts ?? new List<SavedDeedCount>();
-                        save.verseProgress = save.verseProgress ?? new List<SavedVerseProgress>();
-                        save.version = 10;
-                        break;
-
-                    case 10:
-                        // v10 predates Migration — no camp has folded yet
-                        // (migrationCount's missing-field zero).
-                        save.version = 11;
-                        break;
-
-                    case 11:
-                        // v11 predates the Almanac — no nodes bought yet.
-                        save.almanacNodeIds = save.almanacNodeIds ?? new List<string>();
-                        save.version = 12;
-                        break;
-
-                    case 12:
-                        // v12 predates the warden's kit — bare hands.
-                        save.gear = save.gear ?? new List<SavedGearSlot>();
-                        save.version = 13;
-                        break;
-
-                    case 13:
-                        // v13 predates the Museum — nothing donated yet.
-                        save.donatedResources = save.donatedResources ?? new List<string>();
-                        save.version = 14;
-                        break;
-
-                    case 14:
-                        // v14 predates bonded familiars — no post recorded;
-                        // earned bonds themselves are derived, never stored,
-                        // so they need no migration at all.
-                        save.version = 15;
-                        break;
-
-                    case 15:
-                        // v15 predates the Compendium — the record starts here.
-                        save.lifetimeGathered = save.lifetimeGathered ?? new List<SavedResource>();
-                        save.lifetimeCrafted = save.lifetimeCrafted ?? new List<SavedTally>();
-                        save.lifetimePristine = save.lifetimePristine ?? new List<SavedResource>();
-                        save.version = 16;
-                        break;
-
-                    case 16:
-                        // v16 predates the amber system — none held (the
-                        // double already defaults to 0).
-                        save.version = 17;
-                        break;
-
-                    case 17:
-                        // v17 predates waystone reveals — an old save's
-                        // already-unlocked zones will show their stones once,
-                        // which reads as a feature, not a bug.
-                        save.seenWaystoneZoneIds = save.seenWaystoneZoneIds ?? new List<string>();
-                        save.version = 18;
-                        break;
-
-                    case 18:
-                        // v18's "bonded post" became the warden's post — same
-                        // meaning (the last-tended node), wider role.
-                        save.wardenPostNodeId = save.bondedPostNodeId;
-                        save.version = 19;
-                        break;
-
-                    case 19:
-                        // v19 predates the kith roster: familiars were anonymous
-                        // per-node/per-camp counts, and Coin was the currency.
-                        // Rebuild the counts into a roster of individuals; Coin
-                        // simply drops (money became XP — the run's Renown is
-                        // recomputed from XP, and nothing was owed).
-                        save.roster = BuildRosterFromCounts(save);
-                        save.nextFamiliarSeq = save.roster.Count + 1;
-                        save.version = 20;
-                        break;
-
-                    case 20:
-                        // v20's Museum "donatedResources" became the Folio's
-                        // "fixedResources" — same meaning (Choice specimens
-                        // kept for permanence), renamed with the retheme.
-                        save.fixedResources = save.donatedResources ?? new List<string>();
-                        save.version = 21;
-                        break;
-
-                    case 21:
-                        // v21 predates replanting — every node starts at richness
-                        // 0 (SavedNode.richnessLevel's missing-field default).
-                        save.version = 22;
-                        break;
-
-                    case 22:
-                        // v22 predates planters — a fresh run has none built
-                        // (SaveData.builtPlanters's initializer covers the
-                        // missing field).
-                        save.builtPlanters = save.builtPlanters ?? new List<SavedPlanter>();
-                        save.version = 23;
-                        break;
-
-                    case 23:
-                        // v23's fossil chase became the insect field-sketch
-                        // collection (design §6: observe · sketch · release).
-                        // The content ids changed entirely (antler-crown →
-                        // stags-herald, …), so old fossil-fragment progress
-                        // can't map — it drops, and the plates start empty.
-                        save.insectSketches = save.insectSketches ?? new List<SavedInsectSketches>();
-                        save.version = 24;
-                        break;
-
-                    case 24:
-                        // v24 predates the gift event — no pile was ever left
-                        // (SavedFamiliar.gifted's missing-field default covers it).
-                        save.version = 25;
-                        break;
-
-                    case 25:
-                        // v25 predates the collection ladder: powerupIds drop
-                        // (traits are the species' fixed ability now, nothing
-                        // to carry), and the new counters' missing-field
-                        // defaults are correct — no folded verses counted, no
-                        // slots purchased. Restore dedupes duplicate species
-                        // and rests any familiars past the narrower ladder.
-                        save.version = 26;
-                        break;
-
-                    case 26:
-                        // v26 predates one-body-per-post: the watch stopped
-                        // being a post (the first watcher takes the new wander
-                        // post, the rest go home), and the warden's post is
-                        // explicit now — an old save's null meant "the first
-                        // node", so write that in before null comes to mean
-                        // "at camp". Restore enforces one body per post.
-                        RetireDigStations(save);
-                        if (string.IsNullOrEmpty(save.wardenPostNodeId)
-                            && save.nodes != null && save.nodes.Count > 0)
-                        {
-                            save.wardenPostNodeId = save.nodes[0].id;
-                        }
-
-                        save.version = 27;
-                        break;
-
-                    case 27:
-                        // v27 predates the weekly Amber cache — the cache re-arms
-                        // a week after the last claim, so a missing timestamp (0)
-                        // correctly reads as "never claimed, ready now".
-                        save.version = 28;
-                        break;
-
-                    case 28:
-                        // v28 predates the rewarded-reward cooldowns — a missing
-                        // drip/time-skip timestamp (0) reads as "never claimed,
-                        // ready now", exactly as intended for an old save.
-                        save.version = 29;
-                        break;
-
-                    case 29:
-                        // v29 predates accumulated play time — a missing value (0)
-                        // just means this save starts the tally from zero, which
-                        // a live run overtakes on its first frames.
-                        save.version = 30;
-                        break;
-
-                    case 30:
-                        // v30 predates the kit bag: taking a slot destroyed the
-                        // piece already in it, so the only pieces this save can
-                        // prove were made are the ones still worn. Seed the bag
-                        // with those. Anything an old save overwrote is
-                        // genuinely gone and is made again at material cost —
-                        // there is no record left to recover it from.
-                        save.gearCrafted = save.gearCrafted ?? new List<string>();
-                        if (save.gear != null)
-                        {
-                            foreach (var worn in save.gear)
-                            {
-                                if (worn?.gearId != null && !save.gearCrafted.Contains(worn.gearId))
-                                {
-                                    save.gearCrafted.Add(worn.gearId);
-                                }
-                            }
-                        }
-
-                        save.version = 31;
-                        break;
-
-                    case 31:
-                        // v31 predates the Apothecary — no tincture was ever
-                        // drunk, so the buff list simply starts empty.
-                        save.activeTinctures = save.activeTinctures ?? new List<SavedTincture>();
-                        save.version = 32;
-                        break;
-
-                    case 32:
-                        // v32 predates the Hollows' deep amber — nothing was
-                        // ever surfaced, so the absent counters (0) are right.
-                        save.version = 33;
-                        break;
-
-                    case 33:
-                        // v33 predates The Drover's Halter — the reward was never
-                        // redeemed, so the absent flag (false) is right and the
-                        // fell pony is simply absent from the roster.
-                        save.version = 34;
-                        break;
-
-                    case 34:
-                        // v34 predates the Almanac's repeatable line — no
-                        // levels held, and the one-off nodes the save already
-                        // lists carry over untouched.
-                        save.almanacLevels = save.almanacLevels ?? new List<SavedAlmanacLevel>();
-                        save.version = 35;
-                        break;
-
-                    case 35:
-                        // v35 predates The Wayfarer's Plate — nothing to hold:
-                        // the reward did not exist, so it cannot have been
-                        // redeemed, and the plate is simply unrecorded.
-                        save.version = 36;
-                        break;
-
-                    case 36:
-                        // v36 predates the two records the roster and the camp
-                        // cannot keep for themselves. Seeded from the run in
-                        // hand rather than left empty: the species walking with
-                        // the warden right now, and the stations already at
-                        // work, are the part of the history that can still be
-                        // recovered. The rest is genuinely lost — an older save
-                        // never wrote it down — so a returning player may have
-                        // to re-befriend a species they once knew before "The
-                        // Whole Wood" reads true.
-                        save.speciesEverBefriended = save.speciesEverBefriended ?? new List<string>();
-                        if (save.roster != null)
-                        {
-                            foreach (var familiar in save.roster)
-                            {
-                                if (!string.IsNullOrEmpty(familiar?.speciesId)
-                                    && !save.speciesEverBefriended.Contains(familiar.speciesId))
-                                {
-                                    save.speciesEverBefriended.Add(familiar.speciesId);
-                                }
-                            }
-                        }
-
-                        save.stationsEverWorked = save.stationsEverWorked ?? new List<string>();
-                        if (save.stations != null)
-                        {
-                            foreach (var station in save.stations)
-                            {
-                                if (!string.IsNullOrEmpty(station?.stationId)
-                                    && !save.stationsEverWorked.Contains(station.stationId))
-                                {
-                                    save.stationsEverWorked.Add(station.stationId);
-                                }
-                            }
-                        }
-
-                        save.version = 37;
-                        break;
-
-                    case 37:
-                        // v37 predates the paid-skip budget — no skip was ever
-                        // charged against it, so the absent stamp (0) is right
-                        // and the budget simply reads full.
-                        save.version = 38;
-                        break;
-
-                    case 38:
-                        // v38 still had the trail post and carrier hauling.
-                        // Deliveries are automatic now: whoever held the trail
-                        // steps back to camp (their slot frees, the player
-                        // reposts them where they like), and any pending
-                        // basket contents ride through node.basket unchanged —
-                        // the first delivery tick lands them at camp. The old
-                        // haulTripProgress timer is dropped (the new delivery
-                        // timer starts fresh, costing at most one batch's wait).
-                        if (save.roster != null)
-                        {
-                            foreach (var familiar in save.roster)
-                            {
-                                if (familiar != null && familiar.stationId == Familiar.LegacyTrailStation)
-                                {
-                                    familiar.stationId = null;
-                                }
-                            }
-                        }
-
-                        save.version = 39;
-                        break;
-
-                    case 39:
-                        // v39 counted a deed slot against the run's LIFETIME
-                        // deed count; from v40 each slot counts only the work
-                        // done since its own verse revealed. Baselining these
-                        // rows at zero keeps the old reading — a save mid-way
-                        // through a deed slot must not have that work taken
-                        // back. Verses that reveal from here on baseline
-                        // themselves at their reveal, the new way.
-                        if (save.verseProgress != null)
-                        {
-                            foreach (var verse in save.verseProgress)
-                            {
-                                foreach (var slot in verse?.slots ?? new List<SavedSlotProgress>())
-                                {
-                                    if (slot != null)
-                                    {
-                                        slot.deedBaseline = 0.0;
-                                        slot.deedBaselineSet = true;
-                                    }
-                                }
-                            }
-                        }
-
-                        save.version = 40;
-                        break;
-
-                    case 40:
-                        // v40 predates the final waystones. None read, and the
-                        // fold stamp goes to "never" rather than 0 so a warden
-                        // already standing on the peaks gets the first stone on
-                        // the run in hand instead of waiting out a fold for it.
-                        save.finalWaystonesRead = 0;
-                        save.finalWaystoneLastFold = -1;
-                        save.version = 41;
-                        break;
-
-                    case 41:
-                        // v41 graded finds Fine and Pristine — a fossil
-                        // dealer's words on a camp's berries and timber. The
-                        // grades read Decent and Choice from v42; only the
-                        // names changed, so every pool, tally, and live tend
-                        // window carries across as it stood.
-                        save.decentResources = save.fineResources ?? save.decentResources;
-                        save.choiceResources = save.pristineResources ?? save.choiceResources;
-                        save.lifetimeChoice = save.lifetimePristine ?? save.lifetimeChoice;
-                        foreach (var node in save.nodes ?? new List<SavedNode>())
-                        {
-                            if (node != null)
-                            {
-                                node.choiceBonusRemaining = node.pristineBonusRemaining;
-                            }
-                        }
-
-                        save.version = 42;
-                        break;
+                    // One case per rung, each bringing a save up exactly one
+                    // version and letting the loop carry it the rest of the way.
+                    // A step only ever fills in what its version predates; it
+                    // never reaches for the current content data, because a
+                    // migration has to hold for a save opened years later:
+                    //
+                    //     case 42:
+                    //         save.newThing = new List<SavedThing>();
+                    //         save.version = 43;
+                    //         break;
+                    //
+                    // Retiring the bottom of the ladder means raising
+                    // EarliestReadableVersion to match, so a save that can no
+                    // longer climb is refused outright rather than half-read.
 
                     default:
                         // A gap in the ladder is a coding error — refuse rather

@@ -196,18 +196,5 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.nodes[0].yieldMultiplier, Is.EqualTo(1.25).Within(Tolerance),
                 "restore rebuilds the multipliers with the plate recorded");
         }
-
-        [Test]
-        public void OlderSave_MigratesWithNothingSurfaced()
-        {
-            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
-            save.version = 32;
-            save.deepAmberFound = 0;
-            save.deepAmberPityHours = 0.0;
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.deepAmberFound, Is.EqualTo(0), "v32 predates the Hollows — nothing was ever surfaced");
-        }
     }
 }

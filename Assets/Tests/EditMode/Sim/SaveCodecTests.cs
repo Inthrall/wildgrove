@@ -187,7 +187,7 @@ namespace Wildgrove.Sim.Tests
         public void Restore_DropsNodesTheDataNoLongerHas()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
-            save.nodes.Add(new SavedNode { id = "gone-zone:gone-resource", familiarCount = 9 });
+            save.nodes.Add(new SavedNode { id = "gone-zone:gone-resource", masteryXp = 400.0 });
 
             var restored = SaveCodec.Restore(save, _data);
 
@@ -284,17 +284,6 @@ namespace Wildgrove.Sim.Tests
             Assert.That(station.recipeId, Is.EqualTo("berry-preserve"));
             Assert.That(station.inFlight, Is.True);
             Assert.That(station.progressSeconds, Is.EqualTo(2.5).Within(Tolerance));
-        }
-
-        [Test]
-        public void TryMigrate_V2Save_GetsEmptyStations()
-        {
-            // v2 predates crafting — the run simply has no stations yet.
-            var save = new SaveData { version = 2, stations = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.stations, Is.Empty);
         }
 
         [Test]
@@ -439,34 +428,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V10Save_ClimbsToCurrent()
-        {
-            // v10 predates Migration — no camp has folded yet.
-            var save = new SaveData { version = 10 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.migrationCount, Is.EqualTo(0));
-        }
-
-        [Test]
         public void RoundTrip_RestoresAlmanacOwnership()
         {
             var state = GameStateFactory.NewGame(_data);
             state.almanacNodeIds.Add("old-songs-i");
 
             Assert.That(RoundTrip(state).almanacNodeIds, Is.EqualTo(new[] { "old-songs-i" }));
-        }
-
-        [Test]
-        public void TryMigrate_V11Save_GetsAnEmptyAlmanac()
-        {
-            // v11 predates the Almanac — nothing bought yet.
-            var save = new SaveData { version = 11, almanacNodeIds = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.almanacNodeIds, Is.Empty);
         }
 
         [Test]
@@ -480,36 +447,6 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.wayfarersPlateOwned, Is.True, "the redemption survives a save");
             Assert.That(Insects.SketchCount(restored, PlayRewards.WayfarersPlateId), Is.EqualTo(1),
                 "and so does the page, which is where the plate actually lives");
-        }
-
-        [Test]
-        public void TryMigrate_V35Save_HasNoWayfarersPlate()
-        {
-            // v35 predates the reward, so it cannot have been redeemed — the
-            // plate is simply unrecorded and the flag reads false.
-            var save = new SaveData { version = 35 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.wayfarersPlateOwned, Is.False);
-        }
-
-        [Test]
-        public void TryMigrate_V34Save_GetsAnUnsungLongSong()
-        {
-            // v34 predates the Almanac's repeatable line — no levels held, and
-            // the one-off nodes the save already lists are untouched.
-            var save = new SaveData
-            {
-                version = 34,
-                almanacNodeIds = new List<string> { "old-songs-i" },
-                almanacLevels = null,
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.almanacLevels, Is.Empty);
-            Assert.That(save.almanacNodeIds, Is.EqualTo(new[] { "old-songs-i" }));
         }
 
         [Test]
@@ -564,46 +501,6 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V30Save_SeedsTheKitBagFromWhatIsWorn()
-        {
-            // v30 destroyed the displaced piece, so what's worn is all this
-            // save can prove was made.
-            var save = new SaveData
-            {
-                version = 30,
-                gear = new List<SavedGearSlot>
-                {
-                    new SavedGearSlot { slot = "hands", gearId = "cordage-wraps" },
-                    new SavedGearSlot { slot = "camp", gearId = "oilskin-tarp" },
-                },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.gearCrafted, Is.EquivalentTo(new[] { "cordage-wraps", "oilskin-tarp" }));
-        }
-
-        [Test]
-        public void TryMigrate_V30SaveWithBareHands_GetsAnEmptyKitBag()
-        {
-            var save = new SaveData { version = 30, gear = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.gearCrafted, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V12Save_GetsBareHands()
-        {
-            // v12 predates the warden's kit.
-            var save = new SaveData { version = 12, gear = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.gear, Is.Empty);
-        }
-
-        [Test]
         public void RoundTrip_RestoresFolioFixings()
         {
             var state = GameStateFactory.NewGame(_data);
@@ -635,67 +532,6 @@ namespace Wildgrove.Sim.Tests
             // matching no node at all — they stand at camp until re-posted.
             Assert.That(restored.wardenPostNodeId, Is.Null);
             Assert.That(Warden.IsPosted(restored, restored.nodes[0]), Is.False);
-        }
-
-        [Test]
-        public void TryMigrate_V26Save_RetiresTheWatch_TheFirstWatcherWanders()
-        {
-            // v26 stationed watchers at "dig:{zone}" posts; the watch stopped
-            // being a post — the first watcher takes the wander post (it was
-            // already out watching), the rest go home to camp.
-            var save = new SaveData
-            {
-                version = 26,
-                roster = new List<SavedFamiliar>
-                {
-                    new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "dig:bramble-hedgerows" },
-                    new SavedFamiliar { id = "fam-2", speciesId = "b", stationId = "dig:old-growth-wood" },
-                    new SavedFamiliar { id = "fam-3", speciesId = "c", stationId = "trail" },
-                },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.roster[0].stationId, Is.EqualTo(Familiar.WanderStation));
-            Assert.That(save.roster[1].stationId, Is.Null, "one body per post — the second watcher rests");
-            Assert.That(save.roster[2].stationId, Is.Null, "the trail post retired at v39 — the carrier rests");
-        }
-
-        [Test]
-        public void TryMigrate_V38Save_RestsTheTrailCarrier_AndKeepsEveryoneElse()
-        {
-            // v38 still had the trail post; v39 retired hauling. Whoever held
-            // the trail steps back to camp (their slot frees for a real post);
-            // node posts and the wander post ride through untouched.
-            var save = new SaveData
-            {
-                version = 38,
-                roster = new List<SavedFamiliar>
-                {
-                    new SavedFamiliar { id = "fam-1", speciesId = "a", stationId = "sunfield-meadow:berries" },
-                    new SavedFamiliar { id = "fam-2", speciesId = "b", stationId = Familiar.LegacyTrailStation },
-                    new SavedFamiliar { id = "fam-3", speciesId = "c", stationId = Familiar.WanderStation },
-                },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.roster[0].stationId, Is.EqualTo("sunfield-meadow:berries"));
-            Assert.That(save.roster[1].stationId, Is.Null, "the carrier rests — the post no longer exists");
-            Assert.That(save.roster[2].stationId, Is.EqualTo(Familiar.WanderStation));
-        }
-
-        [Test]
-        public void TryMigrate_V26Save_BareWardenPost_BecomesTheFirstNode()
-        {
-            // Pre-v27, a null post MEANT "the first node"; v27 makes null mean
-            // "at camp" — the migration writes the old meaning in explicitly.
-            var save = new SaveData
-            {
-                version = 26,
-                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-meadow:berries" } },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.wardenPostNodeId, Is.EqualTo("sunfield-meadow:berries"));
         }
 
         [Test]
@@ -755,35 +591,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V17Save_HasReadNoWaystones()
-        {
-            // v17 predates waystone reveals — already-unlocked zones will show
-            // their stones once, which reads as a feature.
-            var save = new SaveData { version = 17, seenWaystoneZoneIds = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.seenWaystoneZoneIds, Is.Empty);
-        }
-
-        [Test]
         public void RoundTrip_RestoresAmber()
         {
             var state = GameStateFactory.NewGame(_data);
             state.amber = 42.0;
 
             Assert.That(RoundTrip(state).amber, Is.EqualTo(42.0));
-        }
-
-        [Test]
-        public void TryMigrate_V16Save_HoldsNoAmber()
-        {
-            // v16 predates the amber system — none held.
-            var save = new SaveData { version = 16 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.amber, Is.EqualTo(0.0));
         }
 
         [Test]
@@ -802,226 +615,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V15Save_StartsTheRecordEmpty()
-        {
-            // v15 predates the Compendium — the lifetime record starts here.
-            var save = new SaveData { version = 15, lifetimeGathered = null, lifetimeCrafted = null, lifetimeChoice = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.lifetimeGathered, Is.Empty);
-            Assert.That(save.lifetimeCrafted, Is.Empty);
-            Assert.That(save.lifetimeChoice, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V14Save_HasNoWardenPost()
-        {
-            // v14 predates bonded familiars; earned bonds are derived, never
-            // stored, so only the post needs a default.
-            var save = new SaveData { version = 14, bondedPostNodeId = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.wardenPostNodeId, Is.Null);
-        }
-
-        [Test]
-        public void TryMigrate_V18Save_CarriesTheBondedPostToTheWarden()
-        {
-            // v18's "bonded post" became the warden's post — same meaning
-            // (the last-tended node), wider role.
-            var save = new SaveData { version = 18, bondedPostNodeId = "sunfield-meadow:berries" };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.wardenPostNodeId, Is.EqualTo("sunfield-meadow:berries"));
-        }
-
-        [Test]
-        public void TryMigrate_V13Save_GetsAnEmptyFolio()
-        {
-            // v13 predates the Museum/Folio — nothing fixed yet.
-            var save = new SaveData { version = 13, donatedResources = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.fixedResources, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V20Save_CarriesDonationsToFixedResources()
-        {
-            // v20's Museum "donatedResources" becomes the Folio's "fixedResources".
-            var save = new SaveData { version = 20, donatedResources = new List<string> { "berries", "nuts" } };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.fixedResources, Is.EqualTo(new[] { "berries", "nuts" }));
-        }
-
-        [Test]
-        public void TryMigrate_V39Save_KeepsItsDeedProgressByBaseliningAtZero()
-        {
-            // v39 counted deed slots against the run's LIFETIME tally. Baselining
-            // an existing row at zero reads exactly as it did before, so a save
-            // part-way through a deed slot doesn't have that work taken back;
-            // verses that reveal after the load baseline themselves the new way.
-            var save = new SaveData
-            {
-                version = 39,
-                verseProgress =
-                {
-                    new SavedVerseProgress
-                    {
-                        verseId = "verse-sunfield",
-                        slots = { new SavedSlotProgress { delivered = 20.0 } },
-                    },
-                },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.verseProgress[0].slots[0].deedBaselineSet, Is.True);
-            Assert.That(save.verseProgress[0].slots[0].deedBaseline, Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(save.verseProgress[0].slots[0].delivered, Is.EqualTo(20.0).Within(Tolerance));
-        }
-
-        [Test]
-        public void TryMigrate_V40Save_HasTakenNoFinalWaystone()
-        {
-            // The stamp goes to "never" rather than 0: a v40 warden already
-            // standing on the peaks must get the first stone on the run in hand,
-            // not wait out a fold for a stone they were never offered.
-            var save = new SaveData { version = 40 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.finalWaystonesRead, Is.EqualTo(0));
-            Assert.That(save.finalWaystoneLastFold, Is.EqualTo(-1));
-        }
-
-        [Test]
-        public void TryMigrate_V9Save_GetsEmptyRiteProgress()
-        {
-            // v9 predates the Rite runtime — nothing offered yet.
-            var save = new SaveData { version = 9, deedCounts = null, verseProgress = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.deedCounts, Is.Empty);
-            Assert.That(save.verseProgress, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V8Save_GetsEmptyObservation()
-        {
-            // v8 predates excavation — nothing dug yet.
-            var save = new SaveData { version = 8, digSites = null, insectSketches = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.digSites, Is.Empty);
-            Assert.That(save.insectSketches, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V7Save_GetsEmptyQualityPools()
-        {
-            // v7 predates quality rolls — nothing found yet. Neither the v8
-            // wire names nor the v42 ones are in the file, so both nulls must
-            // come out of the ladder as empty pools.
-            var save = new SaveData
-            {
-                version = 7,
-                fineResources = null,
-                pristineResources = null,
-                decentResources = null,
-                choiceResources = null,
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.decentResources, Is.Empty);
-            Assert.That(save.choiceResources, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V41Save_CarriesTheQualityPoolsUnderTheNewGradeNames()
-        {
-            // v41 called the grades Fine and Pristine. Only the names changed:
-            // a warden mid-run must find every held find, every lifetime tally
-            // and a live tend window exactly where they left them.
-            var save = new SaveData
-            {
-                version = 41,
-                fineResources = new List<SavedResource> { new SavedResource { id = "berries", amount = new BigDouble(12.0) } },
-                pristineResources = new List<SavedResource> { new SavedResource { id = "glow-moss", amount = new BigDouble(3.0) } },
-                lifetimePristine = new List<SavedResource> { new SavedResource { id = "glow-moss", amount = new BigDouble(9.0) } },
-                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-berries", pristineBonusRemaining = 17.5 } },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.decentResources[0].id, Is.EqualTo("berries"));
-            Assert.That(save.decentResources[0].amount.ToDouble(), Is.EqualTo(12.0).Within(Tolerance));
-            Assert.That(save.choiceResources[0].id, Is.EqualTo("glow-moss"));
-            Assert.That(save.choiceResources[0].amount.ToDouble(), Is.EqualTo(3.0).Within(Tolerance));
-            Assert.That(save.lifetimeChoice[0].amount.ToDouble(), Is.EqualTo(9.0).Within(Tolerance));
-            Assert.That(save.nodes[0].choiceBonusRemaining, Is.EqualTo(17.5).Within(Tolerance));
-        }
-
-        [Test]
-        public void Restore_PreQualitySaveWithoutRngState_KeepsAFreshSeed()
+        public void Restore_SaveWithoutRngState_KeepsAFreshSeed()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
-            save.rngState = 0UL; // what any pre-v8 save deserialises to
+            save.rngState = 0UL; // what a save missing the field deserialises to
 
             var restored = SaveCodec.Restore(save, _data);
 
             Assert.That(restored.rngState, Is.Not.EqualTo(0UL), "zero is xorshift's fixed point — restore must reseed");
-        }
-
-        [Test]
-        public void TryMigrate_V6Save_StartsAFreshDeliveryCadence()
-        {
-            // v6 predates delivery batching — no cadence was in progress.
-            var save = new SaveData { version = 6 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.deliveryProgress, Is.EqualTo(0.0));
-        }
-
-        [Test]
-        public void TryMigrate_V5Save_ClimbsToCurrent()
-        {
-            // v5 nodes carried a never-earned masteryLevel — nothing to carry.
-            var save = new SaveData { version = 5 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-        }
-
-        [Test]
-        public void TryMigrate_V4Save_GetsEmptySkillXp()
-        {
-            // v4 predates skill XP — nothing earned yet.
-            var save = new SaveData { version = 4, skillXp = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.skillXp, Is.Empty);
-        }
-
-        [Test]
-        public void TryMigrate_V3Save_GetsEmptyBuildingLevels()
-        {
-            // v3 predates camp buildings — nothing bought yet.
-            var save = new SaveData { version = 3, buildingLevels = null };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.buildingLevels, Is.Empty);
         }
 
         [Test]
@@ -1038,9 +639,9 @@ namespace Wildgrove.Sim.Tests
             // Bit-rot inside a BigDouble string must land on the corrupt-file
             // path, not crash the launch: a parse failure here used to escape
             // as FormatException past the JsonException catch.
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": \"1.5e\" }"), Is.Null);
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": \"1.x5e42\" }"), Is.Null);
-            Assert.That(SaveCodec.FromJson("{ \"version\": 6, \"renown\": 100 }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 42, \"renown\": \"1.5e\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 42, \"renown\": \"1.x5e42\" }"), Is.Null);
+            Assert.That(SaveCodec.FromJson("{ \"version\": 42, \"renown\": 100 }"), Is.Null);
         }
 
         [Test]
@@ -1057,26 +658,6 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.nodes.Any(n => n.zoneId == "bramble-hedgerows"), Is.True);
             Assert.That(Stationing.CountAssignedTo(restored, restored.nodes.Single(n => n.resourceId == "nuts").id),
                 Is.EqualTo(0));
-        }
-
-        [Test]
-        public void TryMigrate_V19Save_RebuildsAnonymousCountsIntoARoster()
-        {
-            // v19 predates the kith roster: familiars were per-node/per-camp
-            // counts. The v19→v20 step turns each into an individual.
-            var save = new SaveData
-            {
-                version = 19,
-                carrierCount = 1,
-                nodes = new List<SavedNode> { new SavedNode { id = "sunfield-meadow:berries", familiarCount = 2 } },
-            };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.roster.Count, Is.EqualTo(3), "2 gatherers + 1 carrier become three roster familiars");
-            Assert.That(save.roster.FindAll(f => f.stationId == "sunfield-meadow:berries").Count, Is.EqualTo(2));
-            Assert.That(save.roster.FindAll(f => f.stationId == null).Count, Is.EqualTo(1),
-                "the carrier seeds resting — the trail post retired at v39");
         }
 
         [Test]
@@ -1145,45 +726,43 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V1Save_GrantsTheSeedCarrier()
+        public void TryMigrate_CurrentVersion_NeedsNoRung()
         {
-            // A v1 save predates carriers entirely — migration must hand the
-            // run its regional seed or nothing ever reaches camp again.
-            var save = new SaveData { version = 1 };
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
 
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.carrierCount, Is.EqualTo(1));
+            Assert.That(SaveCodec.TryMigrate(save), Is.True, "the shape this build writes is the shape it reads");
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion), "and nothing moved it");
         }
 
         [Test]
-        public void TryMigrate_MultiZoneV1Save_GrantsACarrierPerZone()
+        public void TryMigrate_VersionBelowTheFloor_IsRefusedRatherThanHalfRead()
         {
-            // The live path grants one seed carrier per zone opened — a v1
-            // save that had walked two zones must not come back with one.
-            var save = new SaveData
+            // The ladder that carried these up has been retired. Refusing is the
+            // whole point: a save read without its migrations looks healthy and
+            // is quietly wrong, which is worse than starting again.
+            var save = new SaveData { version = SaveCodec.EarliestReadableVersion - 1 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.False);
+        }
+
+        [Test]
+        public void TryMigrate_EveryVersionBelowTheFloor_IsRefused()
+        {
+            for (var version = 0; version < SaveCodec.EarliestReadableVersion; version++)
             {
-                version = 1,
-                nodes = new List<SavedNode>
-                {
-                    new SavedNode { id = "sunfield-meadow:berries" },
-                    new SavedNode { id = "sunfield-meadow:wildflowers" },
-                    new SavedNode { id = "bramble-hedgerows:nuts" },
-                },
-            };
+                var save = new SaveData { version = version };
 
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.carrierCount, Is.EqualTo(2));
+                Assert.That(SaveCodec.TryMigrate(save), Is.False,
+                    "v" + version + " is below the floor and must not climb");
+            }
         }
 
         [Test]
-        public void TryMigrate_OlderVersion_ClimbsTheWholeLadder()
+        public void EarliestReadableVersion_IsNeverAheadOfWhatThisBuildWrites()
         {
-            var save = new SaveData { version = 0 };
-
-            Assert.That(SaveCodec.TryMigrate(save), Is.True);
-            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
-            Assert.That(save.carrierCount, Is.EqualTo(1));
+            // Raising the floor past CurrentVersion would refuse the build's own
+            // saves — every launch would start again and set the last one aside.
+            Assert.That(SaveCodec.EarliestReadableVersion, Is.LessThanOrEqualTo(SaveCodec.CurrentVersion));
         }
     }
 }

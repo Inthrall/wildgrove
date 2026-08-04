@@ -9,7 +9,7 @@ namespace Wildgrove.Game.Tests
 {
     /// <summary>
     /// The disk half of the save, which <see cref="RunPersistence"/>'s fake
-    /// store deliberately doesn't reach: the atomic replace, and the two
+    /// store deliberately doesn't reach: the atomic replace, and the three
     /// set-aside slots a file lands in when it can no longer be read.
     /// <para>
     /// Every rule here exists because of something that happened on a device —
@@ -124,8 +124,8 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void TryLoad_WithAnUnreadableFile_LeavesAlreadySetAsideNewerDataAlone()
         {
-            // The two slots are separate for this exact sequence: downgrade,
-            // play, then corrupt. One set-aside must not consume the other.
+            // The slots are separate for this exact sequence: downgrade, play,
+            // then corrupt. One set-aside must not consume the other.
             var newer = SaveCodec.ToJson(Run(SaveCodec.CurrentVersion + 1, 5L, 9));
             File.WriteAllText(SaveFile.Path + ".newer", newer);
             File.WriteAllText(SaveFile.Path, "rubbish");
@@ -133,6 +133,24 @@ namespace Wildgrove.Game.Tests
 
             Assert.That(SaveFile.TryLoad(out _), Is.False);
             Assert.That(File.ReadAllText(SaveFile.Path + ".newer"), Is.EqualTo(newer));
+        }
+
+        [Test]
+        public void TryLoad_WithASaveBelowTheMigrationFloor_ParksItWholeAndCallsItLegacyNotCorrupt()
+        {
+            // A run saved before the migration steps were retired. It is not
+            // corrupt and it is not from the future — it is simply older than
+            // this build reads, and it is the only copy of that run.
+            var json = SaveCodec.ToJson(Run(SaveCodec.EarliestReadableVersion - 1, 5L, 9));
+            File.WriteAllText(SaveFile.Path, json);
+            LogAssert.Expect(LogType.Error, new Regex(@"predates.*set aside as .*\.legacy"));
+
+            Assert.That(SaveFile.TryLoad(out var save), Is.False);
+            Assert.That(save, Is.Null);
+            Assert.That(File.Exists(SaveFile.Path + ".legacy"), Is.True);
+            Assert.That(File.Exists(SaveFile.Path + ".corrupt"), Is.False, "calling it corrupt would be a lie");
+            Assert.That(File.ReadAllText(SaveFile.Path + ".legacy"), Is.EqualTo(json),
+                "a build that still had the steps could read this, so it must be intact");
         }
 
         [Test]

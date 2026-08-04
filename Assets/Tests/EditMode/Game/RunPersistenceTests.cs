@@ -210,6 +210,23 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Reconcile_WithACloudSaveBelowTheMigrationFloor_KeepsTheRunInHand()
+        {
+            // Same rule from the other end: a cloud save too old to climb is
+            // refused, so a longer-played run that can't be read never displaces
+            // the one being played.
+            _sut.Load();
+            var ancient = Saved(playedMs: 900_000L, savedAtUnixMs: Now - 60_000L);
+            ancient.version = SaveCodec.EarliestReadableVersion - 1;
+            _cloud.Stored = SaveCodec.ToJson(ancient);
+
+            var adopted = false;
+            _sut.Reconcile(_ => adopted = true);
+
+            Assert.That(adopted, Is.False);
+        }
+
+        [Test]
         public void Save_WhenTheCloudTakesIt_ReportsNoFailure()
         {
             var run = _sut.Load();

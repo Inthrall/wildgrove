@@ -21,158 +21,142 @@ namespace Wildgrove.Sim.Saves
 
         public double verdurePoints;
 
-        /// <summary>v10+: lifetime Renown from Rite offerings (absent before the Rite runtime — nothing offered yet).</summary>
+        /// <summary>Lifetime Renown from Rite offerings.</summary>
         [JsonConverter(typeof(BigDoubleJsonConverter))]
         public BigDouble renown;
 
-        /// <summary>v11+: completed Migrations (absent before the prestige build — zero).</summary>
+        /// <summary>Completed Migrations.</summary>
         public int migrationCount;
 
-        /// <summary>v12+: Almanac nodes bought with Verdure (absent before the Almanac — none owned).</summary>
+        /// <summary>Almanac nodes bought with Verdure.</summary>
         public List<string> almanacNodeIds = new List<string>();
 
-        /// <summary>v13+: the warden's worn kit, one gear id per slot (absent before the gear system — bare hands).</summary>
+        /// <summary>The warden's worn kit, one gear id per slot.</summary>
         public List<SavedGearSlot> gear = new List<SavedGearSlot>();
 
-        /// <summary>v31+: the kit bag — every piece made this run, so a displaced piece can be worn again for nothing (absent before the bag; the v30→v31 step seeds it from what was worn).</summary>
+        /// <summary>The kit bag — every piece made this run, so a displaced piece can be worn again for nothing.</summary>
         public List<string> gearCrafted = new List<string>();
 
-        /// <summary>v14–v20 legacy wire name for fixed specimens — read only by the v20→v21 migration.</summary>
-        public List<string> donatedResources = new List<string>();
-
-        /// <summary>v21+: resources whose Choice specimen was fixed into the Folio (design §6). Renamed from donatedResources.</summary>
+        /// <summary>Resources whose Choice specimen was fixed into the Folio (design §6).</summary>
         public List<string> fixedResources = new List<string>();
 
-        /// <summary>v15–v18 wire name for the warden's post — read only by the v18→v19 migration.</summary>
-        public string bondedPostNodeId;
-
-        /// <summary>v19+: the warden's post. v19–v26 null meant "the first node" (the v26→v27 migration writes that in); v27+ null means the warden stands at camp.</summary>
+        /// <summary>The warden's post; null means the warden stands at camp.</summary>
         public string wardenPostNodeId;
 
-        /// <summary>v17+: Amber (absent before the amber system — none held).</summary>
+        /// <summary>Amber held (design §10).</summary>
         public double amber;
 
-        /// <summary>v26+: verses sung in folded runs (absent before the slot ladder counted verses — 0; the current run's verses derive from verseProgress).</summary>
+        /// <summary>Verses sung in folded runs.</summary>
         public int foldedVersesSung;
 
-        /// <summary>v26+: kith slots owned through the store (absent before the store slots — 0). Bridges sessions that start before billing resolves.</summary>
+        /// <summary>Kith slots owned through the store. Bridges sessions that start before billing resolves.</summary>
         public int purchasedKithSlots;
 
-        /// <summary>v26+: whether the starter bundle's one-time Amber grant has been paid out.</summary>
+        /// <summary>Whether the starter bundle's one-time Amber grant has been paid out.</summary>
         public bool starterBundleAmberGranted;
 
-        /// <summary>v34+: whether The Drover's Halter has been redeemed (absent before the reward — false, so the fell pony is simply absent).</summary>
+        /// <summary>Whether The Drover's Halter has been redeemed.</summary>
         public bool droversHalterOwned;
 
-        /// <summary>v36+: whether The Wayfarer's Plate has been redeemed (absent before the reward — false; the plate's own record lives in insectSketches).</summary>
+        /// <summary>Whether The Wayfarer's Plate has been redeemed.</summary>
         public bool wayfarersPlateOwned;
 
-        /// <summary>v28+: UTC unix ms of the last weekly Amber cache claim (absent before the cache — 0, reads as never claimed).</summary>
+        /// <summary>UTC unix ms of the last weekly Amber cache claim.</summary>
         public long weeklyCacheClaimedUnixMs;
 
-        /// <summary>v29+: UTC unix ms of the last rewarded Amber-drip claim (absent before drip throttling — 0, ready now).</summary>
+        /// <summary>UTC unix ms of the last rewarded Amber-drip claim.</summary>
         public long adDripClaimedUnixMs;
 
-        /// <summary>v29+: UTC unix ms of the last rewarded time-skip (absent before time-skip throttling — 0, ready now).</summary>
+        /// <summary>UTC unix ms of the last rewarded time-skip.</summary>
         public long timeSkipClaimedUnixMs;
 
-        /// <summary>v38+: paid-skip budget hours left at the stamp below (absent before the hasten cap — 0 with no stamp, reads as a full budget).</summary>
+        /// <summary>Paid-skip budget hours left at the stamp below.</summary>
         public double timeSkipBudgetHours;
 
-        /// <summary>v38+: UTC unix ms the paid-skip budget was last settled (absent before the cap — 0, never spent).</summary>
+        /// <summary>UTC unix ms the paid-skip budget was last settled.</summary>
         public long timeSkipBudgetStampUnixMs;
 
-        /// <summary>v30+: accumulated foreground play time in ms (absent before — 0). Monotonic; the basis cloud saves are compared on.</summary>
+        /// <summary>Accumulated foreground play time in ms. Monotonic; the basis cloud saves are compared on.</summary>
         public long playedMs;
 
-        /// <summary>v18+: zones whose waystone has been read (absent before — every unlocked stone shows once).</summary>
+        /// <summary>Zones whose waystone has been read.</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 
-        /// <summary>v41+: final waystones read, a count into the authored order (absent before — none read).</summary>
+        /// <summary>Final waystones read, a count into the authored order.</summary>
         public int finalWaystonesRead;
 
-        /// <summary>v41+: the fold the last final waystone was read on; -1 is "none yet", and only meaningful when finalWaystonesRead > 0.</summary>
+        /// <summary>The fold the last final waystone was read on; -1 is "none yet", and only meaningful when finalWaystonesRead > 0.</summary>
         public int finalWaystoneLastFold = -1;
 
-        /// <summary>v16+: Compendium lifetime counters (absent before — nothing recorded yet).</summary>
+        /// <summary>Compendium lifetime counters.</summary>
         public List<SavedResource> lifetimeGathered = new List<SavedResource>();
         public List<SavedTally> lifetimeCrafted = new List<SavedTally>();
 
-        /// <summary>v16–v41 wire name for the Choice tally — read only by the v41→v42 migration.</summary>
-        public List<SavedResource> lifetimePristine = new List<SavedResource>();
-
-        /// <summary>v42+: Choice specimens ever found, per resource. Renamed from lifetimePristine.</summary>
+        /// <summary>Choice specimens ever found, per resource.</summary>
         public List<SavedResource> lifetimeChoice = new List<SavedResource>();
 
-        /// <summary>v37+: every species ever befriended and every station that has ever finished a batch. Absent before — the roster and the stations were the only record, and both are rebuilt each run.</summary>
+        /// <summary>Every species ever befriended and every station that has ever finished a batch.</summary>
         public List<string> speciesEverBefriended = new List<string>();
         public List<string> stationsEverWorked = new List<string>();
 
-        /// <summary>v2–v19 legacy: the anonymous camp-wide carrier count. Read only by the v19→v20 migration, which rebuilds it into <see cref="roster"/>.</summary>
-        public int carrierCount;
-
-        /// <summary>v20+: the warden's kith — every familiar as an individual (design §4). Replaces the anonymous per-node/per-camp counts.</summary>
+        /// <summary>The warden's kith — every familiar as an individual (design §4).</summary>
         public List<SavedFamiliar> roster = new List<SavedFamiliar>();
 
-        /// <summary>v20+: sequence for minting roster ids.</summary>
+        /// <summary>Sequence for minting roster ids.</summary>
         public int nextFamiliarSeq;
 
-        /// <summary>v39+: seconds toward the next delivery batch (formerly haulTripProgress; renamed on the v39 hauling retirement — an old timer is dropped, costing at most one batch's wait).</summary>
+        /// <summary>Seconds toward the next delivery batch.</summary>
         public double deliveryProgress;
 
         public List<SavedResource> resources = new List<SavedResource>();
 
-        /// <summary>v8–v41 wire names for the two quality pools — read only by the v41→v42 migration.</summary>
-        public List<SavedResource> fineResources = new List<SavedResource>();
-        public List<SavedResource> pristineResources = new List<SavedResource>();
-
-        /// <summary>v42+: Decent-quality finds per resource (absent before quality rolls — pools start empty). Renamed from fineResources.</summary>
+        /// <summary>Decent-quality finds per resource.</summary>
         public List<SavedResource> decentResources = new List<SavedResource>();
 
-        /// <summary>v42+: Choice specimens per resource (absent before quality rolls — pools start empty). Renamed from pristineResources.</summary>
+        /// <summary>Choice specimens per resource.</summary>
         public List<SavedResource> choiceResources = new List<SavedResource>();
 
-        /// <summary>v8+: xorshift64* state for the run's rolls (0 in older saves — restore reseeds).</summary>
+        /// <summary>Xorshift64* state for the run's rolls; zero is not a usable state, so restore reseeds it.</summary>
         public ulong rngState;
 
         public List<SavedNode> nodes = new List<SavedNode>();
 
-        /// <summary>v9+: observation sites and their pity timers (absent before the observation system — sites resync from owned upgrades).</summary>
+        /// <summary>Observation sites and their pity timers.</summary>
         public List<SavedDigSite> digSites = new List<SavedDigSite>();
 
-        /// <summary>v23+: planters built this run (design §3), each attached to a node or dig site (absent before — none built).</summary>
+        /// <summary>Planters built this run (design §3), each attached to a node or dig site.</summary>
         public List<SavedPlanter> builtPlanters = new List<SavedPlanter>();
 
-        /// <summary>v9+: field sketches recorded, per insect id (absent before the observation system — nothing recorded yet). Renamed from v23's fossilFragments — the collectible changed entirely (§6), so old fossil progress does not carry.</summary>
+        /// <summary>Field sketches recorded, per insect id (design §6).</summary>
         public List<SavedInsectSketches> insectSketches = new List<SavedInsectSketches>();
 
-        /// <summary>v10+: warden deed counts (absent before the Rite runtime).</summary>
+        /// <summary>Warden deed counts.</summary>
         public List<SavedDeedCount> deedCounts = new List<SavedDeedCount>();
 
-        /// <summary>v10+: offering progress per verse of the Rite (absent before the Rite runtime).</summary>
+        /// <summary>Offering progress per verse of the Rite.</summary>
         public List<SavedVerseProgress> verseProgress = new List<SavedVerseProgress>();
 
         public List<string> purchasedUpgradeIds = new List<string>();
 
-        /// <summary>v3+: crafting stations and their work in progress (absent before crafting existed).</summary>
+        /// <summary>Crafting stations and their work in progress.</summary>
         public List<SavedStation> stations = new List<SavedStation>();
 
-        /// <summary>v32+: tincture buffs currently live (absent before the Apothecary existed).</summary>
+        /// <summary>Tincture buffs currently live.</summary>
         public List<SavedTincture> activeTinctures = new List<SavedTincture>();
 
-        /// <summary>v33+: deep amber pieces surfaced, a count into the authored order (absent before the Hollows — none found).</summary>
+        /// <summary>Deep amber pieces surfaced, a count into the authored order.</summary>
         public int deepAmberFound;
 
-        /// <summary>v33+: hours watched at the deep site without a piece surfacing — the pity clock.</summary>
+        /// <summary>Hours watched at the deep site without a piece surfacing — the pity clock.</summary>
         public double deepAmberPityHours;
 
-        /// <summary>v4+: bought camp building levels per line (absent before buildings existed).</summary>
+        /// <summary>Bought camp building levels per line.</summary>
         public List<SavedBuildingLevel> buildingLevels = new List<SavedBuildingLevel>();
 
-        /// <summary>v35+: levels held on each repeatable Almanac line (absent before the endless line existed).</summary>
+        /// <summary>Levels held on each repeatable Almanac line.</summary>
         public List<SavedAlmanacLevel> almanacLevels = new List<SavedAlmanacLevel>();
 
-        /// <summary>v5+: total XP per skill (absent before the XP system existed; levels are derived, never stored).</summary>
+        /// <summary>Total XP per skill.</summary>
         public List<SavedSkillXp> skillXp = new List<SavedSkillXp>();
     }
 
@@ -184,7 +168,7 @@ namespace Wildgrove.Sim.Saves
         public double xp;
     }
 
-    /// <summary>One kith familiar (design §4). Level derives from xp; Kinship, station, and bond marker persist. (v26 dropped powerupIds — a familiar's abilities are its species' fixed trait.)</summary>
+    /// <summary>One kith familiar (design §4). Level derives from xp; Kinship, station, and bond marker persist. No abilities are stored — a familiar's are its species' fixed trait.</summary>
     [Serializable]
     public sealed class SavedFamiliar
     {
@@ -197,7 +181,7 @@ namespace Wildgrove.Sim.Saves
         public bool bonded;
         public string bondId;
 
-        /// <summary>v25+: the gift event's arrival (missing before = false — the pile was never left).</summary>
+        /// <summary>The gift event's arrival.</summary>
         public bool gifted;
     }
 
@@ -232,21 +216,18 @@ namespace Wildgrove.Sim.Saves
         public double delivered;
         public bool granted;
 
-        /// <summary>v40+: the run's deed count when this slot's verse revealed — a deed slot counts only the work done since.</summary>
+        /// <summary>The run's deed count when this slot's verse revealed — a deed slot counts only the work done since.</summary>
         public double deedBaseline;
 
-        /// <summary>v40+: whether <see cref="deedBaseline"/> has been taken (zero is a real baseline, so it needs its own flag).</summary>
+        /// <summary>Whether <see cref="deedBaseline"/> has been taken (zero is a real baseline, so it needs its own flag).</summary>
         public bool deedBaselineSet;
     }
 
-    /// <summary>One dig site's diggers and pity progress (identity resyncs from owned unlockDigSite upgrades on restore).</summary>
+    /// <summary>One observation site's pity progress (identity resyncs from owned unlockDigSite upgrades on restore; the watching itself comes from the wanderer, not from anyone posted here).</summary>
     [Serializable]
     public sealed class SavedDigSite
     {
         public string zoneId;
-
-        /// <summary>v9–v19 legacy anonymous digger count; the v19→v20 migration rebuilds it into the roster.</summary>
-        public int familiarCount;
 
         public double pityHours;
     }
@@ -327,24 +308,18 @@ namespace Wildgrove.Sim.Saves
     {
         public string id;
 
-        /// <summary>v2–v19 legacy anonymous gatherer count; the v19→v20 migration rebuilds it into the roster.</summary>
-        public int familiarCount;
-
-        /// <summary>v6+: mastery XP (replaces v≤5's masteryLevel, which nothing ever granted — dropped on read).</summary>
+        /// <summary>Mastery XP.</summary>
         public double masteryXp;
 
-        /// <summary>v22+: replanting richness level (design §3; absent before — defaults to 0).</summary>
+        /// <summary>Replanting richness level (design §3).</summary>
         public int richnessLevel;
 
         public double tendBurstRemaining;
 
-        /// <summary>v8–v41 wire name for the post-tend window — read only by the v41→v42 migration.</summary>
-        public double pristineBonusRemaining;
-
-        /// <summary>v42+: seconds left on the post-tend Choice window (absent before quality rolls — defaults to zero). Renamed from pristineBonusRemaining.</summary>
+        /// <summary>Seconds left on the post-tend Choice window.</summary>
         public double choiceBonusRemaining;
 
-        /// <summary>v2+: the pickings pooled at the node awaiting the next delivery (absent in v1 — defaults to zero).</summary>
+        /// <summary>The pickings pooled at the node awaiting the next delivery.</summary>
         [JsonConverter(typeof(BigDoubleJsonConverter))]
         public BigDouble basket;
     }

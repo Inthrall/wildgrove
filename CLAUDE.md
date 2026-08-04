@@ -70,9 +70,22 @@ sequential migration `switch`, and make sure `Restore` copes with the old data
 (clamping, dedupe, resting things that no longer fit). Test saves from before a
 migration are the cheapest way to find what `Restore` missed.
 
-`SaveFile` writes to disk with an atomic replace and sets aside `.corrupt` / `.newer`
-files. Tests that need real disk use `SaveFile.DirectoryOverride` to point at a scratch
-directory — without it the fixture overwrites the developer's own editor save.
+**The ladder is currently empty.** `EarliestReadableVersion` sits at `CurrentVersion`
+(42): the pre-launch history was retired once there were no saves in the world to
+carry, so v42 is both the only shape written and the only one read. The `switch` and
+the climb around it are kept for the first migration that needs them — add a case, bump
+`CurrentVersion`, and **leave `EarliestReadableVersion` where it is**, so v42 saves
+still climb. It moves again only when bottom rungs are deliberately dropped, and
+raising it is a decision about whose saves stop working.
+
+Anything below the floor is refused whole rather than half-read — a save loaded without
+its migrations looks healthy and is quietly wrong.
+
+`SaveFile` writes to disk with an atomic replace and sets aside `.corrupt` (unreadable),
+`.newer` (from a future build) and `.legacy` (below the floor) — separate slots so one
+can't overwrite another, and so a healthy save is never called corrupt. Tests that need
+real disk use `SaveFile.DirectoryOverride` to point at a scratch directory — without it
+the fixture overwrites the developer's own editor save.
 
 ## Tests
 

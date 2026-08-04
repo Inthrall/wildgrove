@@ -10,7 +10,8 @@ namespace Wildgrove.Game
     /// atomically (temp file, then swap) so a crash mid-write can't destroy
     /// the previous save. A file that no longer reads is set aside rather than
     /// deleted: *.corrupt for unreadable data, *.newer for a healthy save from
-    /// a future build (each its own slot, so one can't overwrite the other).
+    /// a future build, *.legacy for one from below the migration floor (each its
+    /// own slot, so one can't overwrite another).
     /// Cloud Saved Games layers on top of this in Phase 5.
     /// </summary>
     public static class SaveFile
@@ -32,7 +33,7 @@ namespace Wildgrove.Game
         public static string Path =>
             System.IO.Path.Combine(DirectoryOverride ?? Application.persistentDataPath, "save.json");
 
-        /// <summary>Load and migrate the save. False when there is no usable save (missing, corrupt, or from a future build).</summary>
+        /// <summary>Load and migrate the save. False when there is no usable save (missing, corrupt, from a future build, or older than <see cref="SaveCodec.EarliestReadableVersion"/>).</summary>
         public static bool TryLoad(out SaveData save)
         {
             save = null;
@@ -70,13 +71,24 @@ namespace Wildgrove.Game
 
             if (parsed == null || !SaveCodec.TryMigrate(parsed))
             {
-                // A future-build save (APK rollback, staged-rollout downgrade)
-                // is healthy data this build can't read — park it in its own
-                // slot so a later genuine corruption can't overwrite it, and
-                // re-upgrading can recover it by hand.
+                // Three different failures, three slots — a save is only ever
+                // called corrupt when it actually is, and none of them can
+                // overwrite another.
                 if (parsed != null && parsed.version > SaveCodec.CurrentVersion)
                 {
+                    // A future-build save (APK rollback, staged-rollout
+                    // downgrade) is healthy data this build can't read. Park it
+                    // so re-upgrading can recover it by hand.
                     SetAside(".newer", "Save is from a newer build (v" + parsed.version + ")");
+                }
+                else if (parsed != null && parsed.version < SaveCodec.EarliestReadableVersion)
+                {
+                    // Healthy data from below the migration floor: the ladder
+                    // that would have carried it up has been retired. Keep it —
+                    // it is the only copy of that run, and a build that still
+                    // had the steps could read it.
+                    SetAside(".legacy", "Save predates the oldest readable format (v" + parsed.version
+                                        + ", need v" + SaveCodec.EarliestReadableVersion + ")");
                 }
                 else
                 {
