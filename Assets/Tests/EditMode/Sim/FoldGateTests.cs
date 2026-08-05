@@ -210,6 +210,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void UnlockedZoneIds_ASungVerseCannotOpenAFoldGatedTrail()
+        {
+            // Singing a zone's verse opens the next trail along — but never
+            // past the fold gate. Without this the whole §8 pacing collapses on
+            // run 1: the opening verse would hand over the marsh, the marsh's
+            // verse the heath, and the map would be walked in a morning.
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data).Contains("mistfen-marsh"), Is.False,
+                "the marsh does not exist on run 1, verse or no verse");
+            Assert.That(state.nodes.TrueForAll(node => node.zoneId == GameStateFactory.StartingZoneId), Is.True);
+
+            // Two folds on, that same sung verse is the way in — no map needed.
+            state.migrationCount = 2;
+            GameStateFactory.SyncUnlockedZones(state, _data);
+
+            Assert.That(state.nodes.Exists(node => node.zoneId == "mistfen-marsh"), Is.True);
+        }
+
+        [Test]
         public void IsVerseInPlay_HoldsAGatedZonesVerseOutOfTheRite()
         {
             var state = GameStateFactory.NewGame(_data);

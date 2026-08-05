@@ -228,9 +228,7 @@ namespace Wildgrove.Sim
                 // The same wake-up a purchase does: a granted trail map opens
                 // its zone (and dig site), the multipliers fold the new
                 // effects in, and a newly revealed verse credits deeds done.
-                GameStateFactory.SyncUnlockedZones(state, data);
-                Upgrades.RecomputeYieldMultipliers(state, data);
-                Rite.SyncDeedSlots(state, data);
+                Rite.Settle(state, data);
             }
         }
     }

@@ -172,6 +172,44 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void DeliverResource_SingingAVerse_OpensTheNextZonesGathering()
+        {
+            // Design §7: the Rite is the way on. No trail map is bought here.
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 100);
+            state.AddResource("copper-ingot", 5);
+
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 1);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data).Contains("bramble-hedgerows"), Is.True);
+            Assert.That(state.nodes.Exists(node => node.zoneId == "bramble-hedgerows"), Is.True,
+                "and the ground is there to work, not merely listed");
+            Assert.That(Rite.IsVerseRevealed(state, _data, _brambleVerse), Is.True,
+                "the trail it opens carries the next verse with it");
+        }
+
+        [Test]
+        public void RecordDeed_TheDeedThatSingsTheVerse_OpensTheNextZone()
+        {
+            // A deed slot can be the one that answers the verse, and that path
+            // never passes through an offering — it has to open the ground too.
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 100);
+            Rite.DeliverResource(state, _data, _sunfieldVerse, 0);
+
+            Assert.That(state.nodes.Exists(node => node.zoneId == "bramble-hedgerows"), Is.False,
+                "one slot answered of the two asked");
+
+            Rite.RecordDeed(state, _data, "tend");
+            Rite.RecordDeed(state, _data, "tend");
+            Rite.RecordDeed(state, _data, "tend");
+
+            Assert.That(Rite.IsVerseComplete(state, _data, _sunfieldVerse), Is.True);
+            Assert.That(state.nodes.Exists(node => node.zoneId == "bramble-hedgerows"), Is.True);
+        }
+
+        [Test]
         public void IsVerseRevealed_NeedsTheZoneAndEveryEarlierVerseSung()
         {
             var state = GameStateFactory.NewGame(_data);

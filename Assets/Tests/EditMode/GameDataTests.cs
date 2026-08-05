@@ -524,17 +524,30 @@ namespace Wildgrove.Data.Tests
             var sources = LoadSources();
             // Every zone in the data now has a trail map (the peaks' rung was
             // the last one owed), so there is no staged zone left to point a
-            // verse at — the corruption has to take a map away instead. Sending
-            // map-cloudreach's grants to a zone that is already unlockable
-            // leaves the peaks with a verse and no way in, which is exactly the
-            // shape this rule exists to catch. Rebasing on the LAST zone's own
-            // rung is what keeps it from rotting again: it needs no unbuilt
-            // content to point at. (highland-crags and the-hollows each held
-            // the old staged-zone role in turn.)
+            // verse at — the corruption has to take the ways in away instead.
+            // There are two, and stripping only one proves nothing:
+            //
+            //   1. the map rung — sending map-cloudreach's grants to a zone
+            //      that is already unlockable; and
+            //   2. the Rite — singing a zone's verse opens the next trail
+            //      along, so while ANY verse is keyed to highland-crags the
+            //      peaks behind it are reachable. Moving the crags verse onto
+            //      the peaks takes that away (and leaves both verses standing
+            //      in ground nothing opens, which is the point).
+            //
+            // Rebasing on the LAST zone is what keeps this from rotting again:
+            // it needs no unbuilt content to point at. (highland-crags and
+            // the-hollows each held the old staged-zone role in turn.)
             sources.UpgradesJson = sources.UpgradesJson.Replace(
                 "\"zone\": \"cloudreach-peaks\"",
                 "\"zone\": \"the-hollows\"");
             Assert.That(sources.UpgradesJson, Does.Not.Contain("cloudreach-peaks"),
+                "the corruption must land, or this test proves nothing");
+
+            sources.RitesJson = sources.RitesJson.Replace(
+                "\"zone\": \"highland-crags\"",
+                "\"zone\": \"cloudreach-peaks\"");
+            Assert.That(sources.RitesJson, Does.Not.Contain("highland-crags"),
                 "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));

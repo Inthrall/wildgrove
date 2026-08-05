@@ -89,11 +89,11 @@ namespace Wildgrove.Sim
 
             // A trail map's unlockZone effect takes hold immediately: the new
             // zone's nodes appear (with the design §2 regional seed) before the
-            // multipliers are rebuilt so they're covered too. The newly
-            // revealed verse then credits deeds already done.
-            GameStateFactory.SyncUnlockedZones(state, data);
-            RecomputeYieldMultipliers(state, data);
-            Rite.SyncDeedSlots(state, data);
+            // multipliers are rebuilt so they're covered too, and the newly
+            // revealed verse credits deeds already done. A tool rung settles for
+            // a second reason — a verse sung earlier may have been waiting on
+            // exactly this tier to open the trail it earned.
+            Rite.Settle(state, data);
             return true;
         }
 
@@ -265,8 +265,12 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The zones this run has opened: the starting zone plus every zone an
-        /// owned upgrade's unlockZone effect grants.
+        /// The zones this run has opened: the starting zone, every zone an owned
+        /// upgrade's unlockZone effect grants, and the ground the Rite has
+        /// earned — singing a zone's verse opens the next trail along. The Rite
+        /// is the way on; the ladder's trail maps are the second path to the
+        /// same ground (and still the only source of a zone's dig site,
+        /// specialist skill and recipes).
         /// </summary>
         public static HashSet<string> UnlockedZoneIds(GameState state, GameDataAsset data)
         {
@@ -279,7 +283,87 @@ namespace Wildgrove.Sim
                 }
             }
 
+            AddZonesEarnedByRite(state, data, ids);
             return ids;
+        }
+
+        /// <summary>
+        /// The trails the Rite has opened (design §7): for every verse sung, the
+        /// next zone along from the one it was sung in. The zone's own two gates
+        /// still stand, so a sung verse opens ground the moment the run can walk
+        /// it and not before — a tool tier still to forge or a fold still ahead
+        /// holds the trail, and it arrives on the purchase or the fold that
+        /// answers, both of which sync the zones again.
+        ///
+        /// Only <see cref="Rite.IsVerseComplete"/> may be consulted from here.
+        /// The revealed and in-play tests read the unlocked zones back out, so
+        /// asking either of them from inside this derivation would recurse.
+        /// </summary>
+        private static void AddZonesEarnedByRite(GameState state, GameDataAsset data, HashSet<string> ids)
+        {
+            var rite = Rite.CurrentRite(state, data);
+            if (rite?.verses == null)
+            {
+                return;
+            }
+
+            foreach (var verse in rite.verses)
+            {
+                if (!Rite.IsVerseComplete(state, data, verse))
+                {
+                    continue;
+                }
+
+                var next = NextZoneAlong(data, verse.zone);
+                if (next != null && MeetsZoneGates(state, data, next))
+                {
+                    ids.Add(next.id);
+                }
+            }
+        }
+
+        /// <summary>The zone one step further along the trail, or null at the end of the map.</summary>
+        private static ZoneData NextZoneAlong(GameDataAsset data, string zoneId)
+        {
+            if (data?.zones == null || string.IsNullOrEmpty(zoneId)
+                || !data.ZonesById.TryGetValue(zoneId, out var from))
+            {
+                return null;
+            }
+
+            ZoneData next = null;
+            foreach (var zone in data.zones)
+            {
+                if (zone.order > from.order && (next == null || zone.order < next.order))
+                {
+                    next = zone;
+                }
+            }
+
+            return next;
+        }
+
+        /// <summary>
+        /// The zone's own two gates — the §8 fold and the §3 tool tier — read
+        /// straight off the zone rather than through a map rung. The trail-map
+        /// path reads the same pair via <see cref="MeetsFoldGate"/> and
+        /// <see cref="MeetsToolRequirement"/>; this is that gate for the path
+        /// that has no rung to hang it on.
+        /// </summary>
+        public static bool MeetsZoneGates(GameState state, GameDataAsset data, ZoneData zone)
+        {
+            if (zone == null || zone.minMigration > (state != null ? state.migrationCount : 0))
+            {
+                return false;
+            }
+
+            var tiers = data?.economy?.tools?.tiers;
+            if (tiers == null || string.IsNullOrEmpty(zone.requiredTool))
+            {
+                return true;
+            }
+
+            return tiers.IndexOf(zone.requiredTool) <= ToolTierIndex(state, data);
         }
 
         /// <summary>

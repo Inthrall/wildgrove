@@ -875,6 +875,49 @@ namespace Wildgrove.Data
             return best;
         }
 
+        /// <summary>
+        /// Every zone a run could ever stand in: the starting zone, whatever an
+        /// upgrade's unlockZone effect grants, and — since singing a verse opens
+        /// the next trail along (design §7) — the zone after each verse's own.
+        /// Ground outside this set can never open, so anything keyed to it (a
+        /// verse, an amber window, the final waystones) is authored into a
+        /// place the player cannot reach.
+        ///
+        /// The fold and tool gates are deliberately NOT read here: they delay a
+        /// trail, they don't deny it, and a validator that folded them in would
+        /// refuse content that is merely late.
+        /// </summary>
+        private static HashSet<string> UnlockableZoneIds(GameData data)
+        {
+            var ids = new HashSet<string> { GameData.StartingZoneId };
+            ids.UnionWith(data.Upgrades
+                .SelectMany(upgrade => upgrade.Effects)
+                .Where(effect => effect.Type == EffectType.UnlockZone && effect.Zone != null)
+                .Select(effect => effect.Zone));
+
+            if (data.Rites?.Rites == null)
+            {
+                return ids;
+            }
+
+            var byOrder = data.Zones.OrderBy(zone => zone.Order).ToList();
+            foreach (var verse in data.Rites.Rites.SelectMany(rite => rite.Verses))
+            {
+                if (verse.Zone == null || !data.ZonesById.TryGetValue(verse.Zone, out var sung))
+                {
+                    continue;
+                }
+
+                var next = byOrder.FirstOrDefault(zone => zone.Order > sung.Order);
+                if (next != null)
+                {
+                    ids.Add(next.Id);
+                }
+            }
+
+            return ids;
+        }
+
         private static readonly HashSet<string> KnownBondRoles = new HashSet<string> { "gatherer", "carrier" };
         private static readonly HashSet<string> KnownBondSourceTypes = new HashSet<string> { "folioSpread", "almanacNode" };
 
@@ -1223,15 +1266,9 @@ namespace Wildgrove.Data
                 issues.Add($"Deep amber zone '{amber.Zone}' has no observation site — nothing could ever surface a piece");
             }
 
-            // Mirrors the verse-zone rule: only the starting zone and upgrade
-            // unlockZone effects actually open zones at runtime, so a window
-            // keyed anywhere else can never open.
-            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
-            unlockableZones.UnionWith(data.Upgrades
-                .SelectMany(u => u.Effects)
-                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
-                .Select(e => e.Zone));
-            if (!unlockableZones.Contains(amber.Zone))
+            // Mirrors the verse-zone rule: a window keyed to ground nothing
+            // opens can never open.
+            if (!UnlockableZoneIds(data).Contains(amber.Zone))
             {
                 issues.Add($"Deep amber zone '{amber.Zone}' is never unlockable — no upgrade grants it, so the deep past could never surface");
             }
@@ -1364,12 +1401,8 @@ namespace Wildgrove.Data
 
             // A verse only accepts offerings once its zone is unlocked, and
             // the Rite needs EVERY verse complete — a verse keyed to a zone
-            // no trail map opens would block Migration permanently.
-            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
-            unlockableZones.UnionWith(data.Upgrades
-                .SelectMany(u => u.Effects)
-                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
-                .Select(e => e.Zone));
+            // nothing opens would block Migration permanently.
+            var unlockableZones = UnlockableZoneIds(data);
 
             foreach (var rite in data.Rites.Rites)
             {
@@ -1560,14 +1593,8 @@ namespace Wildgrove.Data
                 return;
             }
 
-            // Mirrors the verse-zone and deep-amber rules: only the starting zone
-            // and upgrade unlockZone effects open ground at runtime.
-            var unlockableZones = new HashSet<string> { GameData.StartingZoneId };
-            unlockableZones.UnionWith(data.Upgrades
-                .SelectMany(u => u.Effects)
-                .Where(e => e.Type == EffectType.UnlockZone && e.Zone != null)
-                .Select(e => e.Zone));
-            if (!unlockableZones.Contains(chain.Zone))
+            // Mirrors the verse-zone and deep-amber rules.
+            if (!UnlockableZoneIds(data).Contains(chain.Zone))
             {
                 issues.Add($"The final waystones stand in '{chain.Zone}', which is never unlockable — the §7 reveal could never be read");
             }

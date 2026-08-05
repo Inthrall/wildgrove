@@ -132,6 +132,15 @@ wired to nothing. The settings row lands with the audio pass.
 
 ### 1.5 Systems tails
 
+- **Trail Map provisions are no longer on the critical path (2026-08-05).**
+  Singing a zone's verse now opens the next zone's gathering, so the map rungs
+  are a second way into ground the Rite already gives. They still carry each
+  zone's dig site, specialist skill and recipes, which is real — but their
+  provisions bundle was the early Exchange lesson, and nothing now forces a
+  player through it. Decide at the run-1-to-run-3 sitting: leave them as an
+  optional shortcut, reprice the bundles, or strip the `unlockZone` effect and
+  move the dig site + skills onto the zone. Touching `Upgrades.UnlockedZoneIds`
+  and `upgrades.json`'s `trail` track.
 - **`GameLoop` has no test fixture, and the gap has narrowed to ordering.**
   `RunPersistence`, `Announcements`, `SessionLog`, `Achievements`, `Leaderboards`,
   `GameStats` and `SaveFile` are all extracted and tested. What is left in the

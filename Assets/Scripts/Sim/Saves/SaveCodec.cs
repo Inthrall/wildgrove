@@ -222,15 +222,24 @@ namespace Wildgrove.Sim.Saves
         public static GameState Restore(SaveData save, GameDataAsset data)
         {
             // The baseline supplies the node set the current data says exists:
-            // the fresh-run starting zone, extended with every zone the saved
-            // purchases had unlocked. Regional seeds for zones the save KNEW
-            // are overwritten by the saved values below; a zone that first
-            // materialises during this restore (a data update added the
-            // unlock) keeps its seeds, matching the live unlock path.
+            // the fresh-run starting zone, extended with every zone the save had
+            // opened. Regional seeds for zones the save KNEW are overwritten by
+            // the saved values below; a zone that first materialises during this
+            // restore (a data update added the unlock) keeps its seeds, matching
+            // the live unlock path.
+            //
+            // Both halves of "had opened" must be in hand before the sync: the
+            // purchases, and — since a sung verse opens the next trail along —
+            // the verse progress and the fold count its gates are read against.
+            // Sync late and those zones' nodes wouldn't exist when the saved
+            // node rows are matched by id below, silently dropping a whole
+            // zone's mastery, richness and baskets.
             var state = GameStateFactory.NewGame(data);
             state.purchasedUpgradeIds = save.purchasedUpgradeIds != null
                 ? new List<string>(save.purchasedUpgradeIds)
                 : new List<string>();
+            state.migrationCount = save.migrationCount;
+            RestoreVerseProgress(save, state);
             GameStateFactory.SyncUnlockedZones(state, data);
 
             // Replace the fresh-run seed kith with the saved roster of
@@ -278,7 +287,6 @@ namespace Wildgrove.Sim.Saves
 
             state.verdurePoints = save.verdurePoints;
             state.renown = save.renown;
-            state.migrationCount = save.migrationCount;
             state.almanacNodeIds = save.almanacNodeIds != null
                 ? new List<string>(save.almanacNodeIds)
                 : new List<string>();
@@ -563,38 +571,6 @@ namespace Wildgrove.Sim.Saves
                 }
             }
 
-            state.verseProgress.Clear();
-            if (save.verseProgress != null)
-            {
-                foreach (var savedVerse in save.verseProgress)
-                {
-                    if (savedVerse?.verseId == null)
-                    {
-                        continue;
-                    }
-
-                    // Unknown verse ids are kept (a retuned rite may rename);
-                    // slot rows beyond the current data's slot count are
-                    // harmless — progress reads go by the data's indices.
-                    var verse = new VerseProgressState { verseId = savedVerse.verseId };
-                    if (savedVerse.slots != null)
-                    {
-                        foreach (var slot in savedVerse.slots)
-                        {
-                            verse.slots.Add(new SlotProgressState
-                            {
-                                delivered = slot?.delivered ?? 0.0,
-                                granted = slot?.granted ?? false,
-                                deedBaseline = slot?.deedBaseline ?? 0.0,
-                                deedBaselineSet = slot?.deedBaselineSet ?? false,
-                            });
-                        }
-                    }
-
-                    state.verseProgress.Add(verse);
-                }
-            }
-
             // The roster is a collection — one familiar per species, ever
             // (design §4). A save that carries duplicates keeps each species'
             // best — bonded first, then the deepest Kinship, then roster order —
@@ -684,13 +660,56 @@ namespace Wildgrove.Sim.Saves
             // from what the save happened to store (§11).
             Roster.SyncDroversHalter(state, data);
 
-            // Last, so recorded insect plates' effects fold in with the upgrades'.
-            Upgrades.RecomputeYieldMultipliers(state, data);
-
-            // A verse that revealed since this save was taken (or a deed slot
-            // an older build left unsynced) credits deeds already done.
-            Rite.SyncDeedSlots(state, data);
+            // Last, so recorded insect plates' effects fold in with the
+            // upgrades'. Settling also picks up any trail an Almanac grant just
+            // added, and a verse that revealed since this save was taken (or a
+            // deed slot an older build left unsynced) credits deeds already
+            // done. The zones were synced up front for the node rows; this is
+            // the idempotent second pass.
+            Rite.Settle(state, data);
             return state;
+        }
+
+        /// <summary>
+        /// The saved Rite progress, verbatim. Restored early — before the zones
+        /// are synced — because a sung verse opens the next trail along, so the
+        /// node set can't be built without it.
+        /// </summary>
+        private static void RestoreVerseProgress(SaveData save, GameState state)
+        {
+            state.verseProgress.Clear();
+            if (save.verseProgress == null)
+            {
+                return;
+            }
+
+            foreach (var savedVerse in save.verseProgress)
+            {
+                if (savedVerse?.verseId == null)
+                {
+                    continue;
+                }
+
+                // Unknown verse ids are kept (a retuned rite may rename); slot
+                // rows beyond the current data's slot count are harmless —
+                // progress reads go by the data's indices.
+                var verse = new VerseProgressState { verseId = savedVerse.verseId };
+                if (savedVerse.slots != null)
+                {
+                    foreach (var slot in savedVerse.slots)
+                    {
+                        verse.slots.Add(new SlotProgressState
+                        {
+                            delivered = slot?.delivered ?? 0.0,
+                            granted = slot?.granted ?? false,
+                            deedBaseline = slot?.deedBaseline ?? 0.0,
+                            deedBaselineSet = slot?.deedBaselineSet ?? false,
+                        });
+                    }
+                }
+
+                state.verseProgress.Add(verse);
+            }
         }
 
         /// <summary>

@@ -96,6 +96,47 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void RoundTrip_AZoneOpenedByASungVerse_KeepsThatZonesNodeProgress()
+        {
+            // A trail opened by the Rite rather than by a map rung is the
+            // awkward case for restore: node rows are matched by id against the
+            // baseline node set, so if the zones are synced before the verse
+            // progress is in hand this zone's nodes don't exist yet, and a whole
+            // zone's mastery, richness and baskets go quietly missing.
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData>
+                {
+                    new RiteData { id = "first-rite", migration = 0, verses = { verse } },
+                },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+
+            var bramble = state.nodes.Find(node => node.zoneId == "bramble-hedgerows");
+            Assert.That(bramble, Is.Not.Null, "the verse opened the trail");
+            bramble.masteryXp = 250.0;
+            bramble.richnessLevel = 3;
+            bramble.basket = new BigDouble(9.5);
+
+            var restored = RoundTrip(state);
+
+            var restoredBramble = restored.nodes.Find(node => node.id == bramble.id);
+            Assert.That(restoredBramble, Is.Not.Null, "the zone comes back with no map ever having been bought");
+            Assert.That(restoredBramble.masteryXp, Is.EqualTo(250.0).Within(Tolerance));
+            Assert.That(restoredBramble.richnessLevel, Is.EqualTo(3));
+            Assert.That(restoredBramble.basket.ToDouble(), Is.EqualTo(9.5).Within(Tolerance));
+        }
+
+        [Test]
         public void RoundTrip_RestoresCurrenciesResourcesAndNodeProgress()
         {
             var state = GameStateFactory.NewGame(_data);

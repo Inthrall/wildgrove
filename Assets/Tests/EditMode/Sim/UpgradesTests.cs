@@ -498,6 +498,65 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Upgrades.MissingToolTier(state, _data, _data.upgrades[0]), Is.Null);
         }
 
+        /// <summary>A one-verse Rite in the starting zone — sing it and the trail on to Bramble is earned.</summary>
+        private RiteVerseData AddSunfieldVerse()
+        {
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData>
+                {
+                    new RiteData { id = "first-rite", migration = 0, verses = { verse } },
+                },
+            };
+            return verse;
+        }
+
+        [Test]
+        public void UnlockedZoneIds_ASungVerseOpensTheNextTrailAlong()
+        {
+            var verse = AddSunfieldVerse();
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data),
+                Is.EquivalentTo(new[] { GameStateFactory.StartingZoneId }));
+
+            Rite.DeliverResource(state, _data, verse, 0);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data),
+                Is.EquivalentTo(new[] { GameStateFactory.StartingZoneId, "bramble-hedgerows" }),
+                "no map bought — the Rite is the way on");
+            Assert.That(state.nodes.Exists(node => node.zoneId == "bramble-hedgerows"), Is.True,
+                "and the ground is there to work, not merely listed");
+        }
+
+        [Test]
+        public void UnlockedZoneIds_ASungVerseWaitsForTheZonesToolTier()
+        {
+            EnableToolGate();
+            var verse = AddSunfieldVerse();
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data).Contains("bramble-hedgerows"), Is.False,
+                "the verse is sung, but the warden has no copper to walk the trail with");
+
+            state.AddResource("copper-ingot", 5);
+            Assert.That(Upgrades.TryPurchase(state, _data, Upgrade("copper-sickle")), Is.True);
+
+            Assert.That(Upgrades.UnlockedZoneIds(state, _data).Contains("bramble-hedgerows"), Is.True);
+            Assert.That(state.nodes.Exists(node => node.zoneId == "bramble-hedgerows"), Is.True,
+                "the tool rung settles the run, so the trail earned earlier arrives with it");
+        }
+
         [Test]
         public void MeetsToolRequirement_DataWithoutTools_NeverGates()
         {

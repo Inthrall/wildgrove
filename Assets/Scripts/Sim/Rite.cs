@@ -497,7 +497,45 @@ namespace Wildgrove.Sim
             BaselineDeedSlots(state, data);
             state.deedCounts.TryGetValue(deed, out var count);
             state.deedCounts[deed] = count + 1;
+
+            // The deed about to be credited may be the slot that sings the
+            // verse, and a sung verse opens the next trail. Settle after the
+            // sync rather than instead of it — the ground can only be read off
+            // progress the sync has already written — but only when a verse
+            // actually landed: tending is a tap, and every other tap would
+            // otherwise rebuild every node's multiplier for nothing.
+            var sungBefore = SungVerseCount(state, data);
             SyncDeedSlots(state, data);
+            if (SungVerseCount(state, data) > sungBefore)
+            {
+                Settle(state, data);
+            }
+        }
+
+        /// <summary>
+        /// Verses of the current rite that are answered, in-play or not — the
+        /// cheap "did that change anything" probe. Deliberately blind to
+        /// <see cref="IsVerseInPlay"/>, which reads the unlocked zones back and
+        /// would make this the expensive thing it exists to avoid.
+        /// </summary>
+        private static int SungVerseCount(GameState state, GameDataAsset data)
+        {
+            var rite = CurrentRite(state, data);
+            if (rite?.verses == null)
+            {
+                return 0;
+            }
+
+            var sung = 0;
+            foreach (var verse in rite.verses)
+            {
+                if (IsVerseComplete(state, data, verse))
+                {
+                    sung++;
+                }
+            }
+
+            return sung;
         }
 
         /// <summary>
@@ -616,17 +654,33 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Completing a verse unseals the next one, so sync now — the same sync
-        /// a zone unlock or a restore does. The verse that just opened takes its
-        /// deed baseline in that sync and counts only the work done from here
-        /// on: the deeds gathered while it was sealed belonged to the verses
-        /// that were open at the time, and were paid for there.
+        /// Bring the run into line with the ground it has earned: open the zones
+        /// the sung verses and the owned trail maps unlock between them, fold
+        /// the new nodes into the multipliers, and baseline the verse that newly
+        /// revealed. Every path that can open ground ends here — an offering, a
+        /// deed, a purchase, an Almanac grant, a restore — and it is idempotent,
+        /// so calling it twice costs a walk and changes nothing.
+        /// </summary>
+        public static void Settle(GameState state, GameDataAsset data)
+        {
+            GameStateFactory.SyncUnlockedZones(state, data);
+            Upgrades.RecomputeYieldMultipliers(state, data);
+            SyncDeedSlots(state, data);
+        }
+
+        /// <summary>
+        /// Singing a verse opens the next trail along (design §7 — the Rite is
+        /// the way on) and unseals the verse behind it, so settle now: the same
+        /// sync a zone unlock or a restore does. The verse that just opened takes
+        /// its deed baseline in that sync and counts only the work done from
+        /// here on — the deeds gathered while it was sealed belonged to the
+        /// verses that were open at the time, and were paid for there.
         /// </summary>
         private static void SyncIfVerseJustSung(GameState state, GameDataAsset data, RiteVerseData verse)
         {
             if (IsVerseComplete(state, data, verse))
             {
-                SyncDeedSlots(state, data);
+                Settle(state, data);
             }
         }
 
