@@ -35,6 +35,14 @@ namespace Wildgrove.Game
         /// </summary>
         private const string PrivacyPolicyUrl = "https://decryptic.app/wildgrove/privacy";
 
+        /// <summary>
+        /// How long "Begin a new book" stays dead after the question opens. The
+        /// only hold in the game, on the only tap that destroys something the
+        /// player cannot earn back: long enough that the warning above it is read
+        /// rather than tapped past, short enough not to read as a broken button.
+        /// </summary>
+        private const float StartAgainHoldSeconds = 3f;
+
         internal void OpenInsideCoverSheet()
         {
             var sheet = BeginSheet();
@@ -249,7 +257,10 @@ namespace Wildgrove.Game
                 // or its panel would be orphaned behind the confirm.
                 CloseSheet();
                 OpenConfirmSheet("Start again?",
-                    "Every fold and every companion is struck out, here and with Play Games.",
+                    "<b><color=" + OchreHex + ">This cannot be undone.</color></b>\n"
+                    + "Every fold, every companion, every page of this book is struck out — here and with Play Games, "
+                    + "so no other device can hand it back. Nothing of this run is kept, and nothing of it can be found again.\n\n"
+                    + "<i>What was paid for stays yours.</i>",
                     "Begin a new book",
                     () =>
                     {
@@ -262,7 +273,8 @@ namespace Wildgrove.Game
                         _zoneOpen.Clear();
                         _dirty = true;
                         SetNote("the first camp, and nothing in it but the morning.");
-                    });
+                    },
+                    StartAgainHoldSeconds);
             });
         }
 

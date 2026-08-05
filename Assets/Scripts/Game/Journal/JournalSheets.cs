@@ -1565,8 +1565,17 @@ namespace Wildgrove.Game
         /// "never mind" / go-ahead choice styled like the Fold sheet's Migrate.
         /// The confirmed action runs after the sheet closes, so it may open a
         /// sheet of its own.
+        /// <para>
+        /// <paramref name="holdSeconds"/> keeps the go-ahead dead, counting down
+        /// on its own face, for that long after the sheet opens — a hold for the
+        /// one confirm behind which something cannot be earned back. It is an
+        /// argument rather than this sheet's rule because a trade or a spend
+        /// doesn't earn a wait: made universal it would only teach the player to
+        /// sit through the count without reading it.
+        /// </para>
         /// </summary>
-        internal void OpenConfirmSheet(string title, string body, string confirmLabel, System.Action onConfirm)
+        internal void OpenConfirmSheet(string title, string body, string confirmLabel, System.Action onConfirm,
+            float holdSeconds = 0f)
         {
             // Same rule as the Fold sheet: a confirm's scrim is inert.
             var sheet = BeginSheet(scrimDismisses: false);
@@ -1596,6 +1605,44 @@ namespace Wildgrove.Game
                 onConfirm?.Invoke();
             });
             KeyAction(confirm);
+
+            if (holdSeconds > 0f)
+            {
+                confirm.interactable = false;
+                SetButtonTint(confirm, false, true);
+                _hud.StartCoroutine(ArmAfter(confirm, confirmLabel, holdSeconds));
+            }
+        }
+
+        /// <summary>
+        /// Hold a confirm's go-ahead shut for a few seconds, counting the wait
+        /// down on the button's own face so it reads as a deliberate pause and
+        /// not as a plate that failed to wake up. Then it arms, wearing the
+        /// words it was given.
+        /// </summary>
+        private static System.Collections.IEnumerator ArmAfter(Button button, string label, float seconds)
+        {
+            for (var remaining = Mathf.CeilToInt(seconds); remaining > 0; remaining--)
+            {
+                // The sheet can be dismissed mid-count — writing to a destroyed
+                // widget throws, and there is nothing left to arm.
+                if (button == null)
+                {
+                    yield break;
+                }
+
+                SetButtonLabel(button, label + " · " + remaining);
+                yield return new WaitForSeconds(1f);
+            }
+
+            if (button == null)
+            {
+                yield break;
+            }
+
+            SetButtonLabel(button, label);
+            button.interactable = true;
+            SetButtonTint(button, true, true);
         }
 
         /// <summary>"Pass the time, +2 hours" (+ the "watch a short ad" tail until Remove Ads is owned) — says what the reward gives.</summary>
