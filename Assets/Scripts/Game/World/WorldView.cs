@@ -44,7 +44,8 @@ namespace Wildgrove.Game.World
     /// node regardless (<see cref="_views"/>); <see cref="_onStrip"/> is the
     /// subset laid out this frame, and posting or resting a body moves a plate
     /// in or out without a rebuild. Fallow nodes are not stranded: every one of
-    /// them keeps its own card, with its own "Post here", on the Trail page.
+    /// them keeps its own card on the Trail page, wearing the same (+) this
+    /// strip does until somebody stands there.
     ///
     /// The warden's plate is the exception that never leaves: they are the one
     /// body the player IS, so their slot leads the strip whether they are posted

@@ -17,6 +17,7 @@ namespace Wildgrove.Game
         private static Sprite _dashAcrossSprite;
         private static Sprite _quillSprite;
         private static Sprite _crossSprite;
+        private static Sprite _plusSprite;
         private static Sprite _foldArrowSprite;
 
         /// <summary>
@@ -123,6 +124,68 @@ namespace Wildgrove.Game
             }
 
             return _crossSprite;
+        }
+
+        /// <summary>
+        /// The invitation mark — the moss (+) the strip's empty slot and the
+        /// warden's own plate at camp wear, drawn here in ink for the journal's
+        /// picture buttons so an unheld post says "someone could stand here" in
+        /// the one glyph the game already uses for it.
+        /// <para>
+        /// Drawn rather than typed, unlike the recruit bar's "+": a picture
+        /// button carries a Sprite, and a plate that switched between a Text and
+        /// an Image would have two channels to keep in step. Moss is baked in
+        /// (every other mark in this file bakes its ink) — it is the grove's
+        /// invitation colour, never ochre, which belongs to costs and halts.
+        /// </para>
+        /// <para>
+        /// Twice the cross's texture: the post plates wear this at 84 units,
+        /// where a 32-pixel glyph goes soft.
+        /// </para>
+        /// </summary>
+        internal static Sprite PlusSprite()
+        {
+            if (_plusSprite == null)
+            {
+                const int size = 64;
+                const float margin = 14f;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                var strokes = new[]
+                {
+                    (from: new Vector2(margin, size * 0.5f), to: new Vector2(size - margin, size * 0.5f)),
+                    (from: new Vector2(size * 0.5f, margin), to: new Vector2(size * 0.5f, size - margin)),
+                };
+
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var point = new Vector2(x + 0.5f, y + 0.5f);
+                        var alpha = 0f;
+                        foreach (var stroke in strokes)
+                        {
+                            var along = stroke.to - stroke.from;
+                            var t = Mathf.Clamp01(Vector2.Dot(point - stroke.from, along) / along.sqrMagnitude);
+                            var distance = Vector2.Distance(point, stroke.from + (along * t));
+                            // Thickest where the strokes cross, tapering to all
+                            // four ends — the same nib as the cross, at the same
+                            // relative weight.
+                            var halfWidth = Mathf.Lerp(1.8f, 3.8f, 1f - Mathf.Abs((t * 2f) - 1f));
+                            alpha = Mathf.Max(alpha, Mathf.Clamp01(halfWidth - distance + 0.5f));
+                        }
+
+                        texture.SetPixel(x, y, alpha <= 0f
+                            ? Color.clear
+                            : new Color(MossDeep.r, MossDeep.g, MossDeep.b, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _plusSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _plusSprite;
         }
 
         /// <summary>

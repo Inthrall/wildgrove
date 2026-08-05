@@ -189,6 +189,72 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// A button whose whole face is one picture — the trail's post plates,
+        /// which wear whoever stands on the ground instead of naming the act.
+        /// A body has a portrait and an empty post has the moss (+), so the
+        /// plate answers "who is here?" without the row having to spend its
+        /// width on a verb that never changes meaning.
+        /// <para>
+        /// <paramref name="fallback"/> is the words the plate falls back on when
+        /// there is no picture for what it carries — <see cref="ArtLibrary"/>
+        /// returns null for art not yet drawn, and a button is the one place
+        /// where showing nothing is not an option. Swap the picture live with
+        /// <see cref="SetButtonGlyph"/>.
+        /// </para>
+        /// </summary>
+        internal static Button GlyphButton(Transform parent, Sprite sprite, string fallback, float width, float glyph,
+            UnityEngine.Events.UnityAction onClick)
+        {
+            var button = ButtonPlate(parent, width, onClick);
+
+            // The words live on the plate whether or not they are showing, so a
+            // picture that goes missing at refresh has something to fall back to.
+            var label = MakeText(button.transform, string.Empty, 19, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
+            var labelRect = (RectTransform)label.transform;
+            Stretch(labelRect);
+            labelRect.offsetMin = new Vector2(10, 0);
+            labelRect.offsetMax = new Vector2(-10, 0);
+            // The picture sets the floor, not the touch minimum — a plate
+            // shorter than its own glyph would clip the animal.
+            FitToLabel(button, label, Mathf.Max(120f, glyph + 16f));
+
+            // No layout group on the plate, so the picture is anchored by hand,
+            // over the label's own rect — only ever one of the two is showing.
+            var icon = IconImage(button.transform, sprite, glyph, Color.white);
+            var rect = (RectTransform)icon.transform;
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(glyph, glyph);
+
+            SetButtonGlyph(button, sprite, fallback);
+            return button;
+        }
+
+        /// <summary>
+        /// Re-picture a <see cref="GlyphButton"/> — the post plates do this on
+        /// the refresh cadence, as bodies come and go from the ground.
+        /// </summary>
+        internal static void SetButtonGlyph(Button button, Sprite sprite, string fallback)
+        {
+            var glyph = button.transform.Find("Glyph");
+            if (glyph != null)
+            {
+                var image = glyph.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.sprite = sprite;
+                    // An Image holding no sprite draws a plain white square, so
+                    // the picture is switched off rather than emptied.
+                    image.enabled = sprite != null;
+                }
+            }
+
+            SetButtonLabel(button, sprite != null ? string.Empty : fallback);
+        }
+
+        /// <summary>
         /// <see cref="PictureButton"/>'s strip without the tap — the same
         /// pictures-either-side-of-words line for a heading that states what a
         /// row would choose. Returns the label so the caller can style it.

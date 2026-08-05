@@ -431,6 +431,41 @@ namespace Wildgrove.Game
             return null;
         }
 
+        /// <summary>
+        /// The post plate and the picture it wears. Narrower than the worded
+        /// buttons it replaces (190 at a node, 220 at the watch) because a
+        /// picture needs no room to wrap — the width goes back to the node's own
+        /// line, which already runs to three. 84 is as small as a portrait can
+        /// be drawn and still read as an animal rather than a smudge, and it
+        /// clears the plate's 120 of touch height either side.
+        /// </summary>
+        private const float PostPlate = 150f;
+        private const float PostGlyph = 84f;
+
+        /// <summary>
+        /// What a post's plate shows: the body standing there — a companion's
+        /// own portrait, the warden's mark — and the moss (+) when the ground is
+        /// nobody's. The occupant is asked first and answers alone, the same
+        /// order the line beside it reads in, so plate and words can't disagree
+        /// about who is on the ground.
+        /// <para>
+        /// Null when a posted companion's species has no plate: the button then
+        /// falls back to its words (see <see cref="JournalWidgets.GlyphButton"/>)
+        /// rather than showing the (+), which would say the ground was free when
+        /// it is held. Shipped content can't reach that — ArtLibraryTests pins a
+        /// plate to every species — but a species added ahead of its art can.
+        /// </para>
+        /// </summary>
+        private static Sprite PostMark(Familiar occupant, bool wardenPosted)
+        {
+            if (occupant != null)
+            {
+                return ArtLibrary.ForSpecies(occupant.speciesId);
+            }
+
+            return wardenPosted ? ArtLibrary.ForWarden() : PlusSprite();
+        }
+
         private void BuildNodePlate(NodeState node, int figure)
         {
             var captured = node;
@@ -451,9 +486,10 @@ namespace Wildgrove.Game
 
             // The page must offer the post it describes. With posting only on
             // the world strip's plates, the node's own card can say "0.0/s"
-            // without ever explaining or fixing it.
-            Button post = null;
-            post = Button(row.transform, "Post here", 190, () => _hud.Sheets.OpenPostingSheet(captured.id));
+            // without ever explaining or fixing it. The plate wears the body
+            // standing here rather than a verb — see PostMark.
+            var post = GlyphButton(row.transform, PlusSprite(), "Post here", PostPlate, PostGlyph,
+                () => _hud.Sheets.OpenPostingSheet(captured.id));
 
             Button replant = null;
             replant = Button(row.transform, "Plant back", 190, () =>
@@ -551,7 +587,8 @@ namespace Wildgrove.Game
                              + "</size>"
                              + MasteryLine(captured);
 
-                SetButtonLabel(post, occupant != null || wardenHere ? "Change post" : "Post here");
+                SetButtonGlyph(post, PostMark(occupant, wardenHere),
+                    occupant != null || wardenHere ? "Change post" : "Post here");
                 SetButtonLabel(replant, "Plant back\n" + SizeOpen(14) + NumberFormat.Short(_loop.ReplantCost(captured)) + " " + captured.resourceId
                                         + (richnessPct > 0 ? " → +" + richnessPct + "% yield" : string.Empty) + "</size>");
                 var ok = _loop.CanReplant(captured);
@@ -609,8 +646,8 @@ namespace Wildgrove.Game
             var row = Row(card);
             var line = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink2);
             FlexibleWidth(line.gameObject, 1f);
-            Button post = null;
-            post = Button(row.transform, "Post a wanderer", 220, () => _hud.Sheets.OpenPostingSheet(Familiar.WanderStation));
+            var post = GlyphButton(row.transform, PlusSprite(), "Post a wanderer", PostPlate, PostGlyph,
+                () => _hud.Sheets.OpenPostingSheet(Familiar.WanderStation));
             var clocks = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
 
             if (_loop.PlantersUnlocked() && _loop.DigSitePlanters().Count > 0)
@@ -632,7 +669,12 @@ namespace Wildgrove.Game
                 line.text = watching
                     ? "the wanderer passes through, watching where the small lives cross"
                     : "<color=" + OchreInkHex + ">no one wanders, and the small lives go unrecorded.</color>";
-                SetButtonLabel(post, watching ? "Change post" : "Post a wanderer");
+                // The wander post takes one body like any other, so its plate
+                // wears that body — the roamer's own portrait, or the warden's
+                // mark when they are the one walking the run.
+                SetButtonGlyph(post, PostMark(Stationing.OccupantOf(_loop.State, Familiar.WanderStation),
+                        Warden.IsWandering(_loop.State)),
+                    watching ? "Change post" : "Post a wanderer");
 
                 // The clocks only run while someone watches — quoting a rate
                 // to an empty site would contradict the line above it.
