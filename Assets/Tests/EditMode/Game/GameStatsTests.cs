@@ -20,12 +20,14 @@ namespace Wildgrove.Game.Tests
     {
         private RecordingGameServices _services;
         private GameStats _stats;
+        private bool _sharing;
 
         [SetUp]
         public void SetUp()
         {
             _services = new RecordingGameServices();
-            _stats = new GameStats(_services);
+            _sharing = true; // the shipped default; the off cases set it themselves
+            _stats = new GameStats(_services, () => _sharing);
         }
 
         private static GameState StateWithGathered(double units)
@@ -92,6 +94,74 @@ namespace Wildgrove.Game.Tests
 
             Assert.That(_services.Amount(StatEventNames.HaulArrived), Is.EqualTo(75.0).Within(1e-9),
                 "the whole stretch, once there is a profile to hang it on");
+        }
+
+        [Test]
+        public void Flush_WhenPlayNotesAreOff_SaysNothingAndDoesNotAskPlayToUpload()
+        {
+            var state = StateWithGathered(0.0);
+            _stats.Rebase(state);
+            _sharing = false;
+
+            state.lifetimeGathered["berries"] = new BigDouble(75.0);
+            _stats.Flush(state);
+
+            Assert.That(_services.Recorded(StatEventNames.HaulArrived), Is.False, "nothing is recorded");
+            Assert.That(_services.Flushes, Is.EqualTo(0), "and Play isn't nudged to upload either");
+        }
+
+        [Test]
+        public void Flush_WhenPlayNotesComeBackOn_DropsTheOptedOutStretchRatherThanPostingIt()
+        {
+            // The opposite of the signed-out rule, and deliberately so: a player
+            // who refused has refused that stretch, so the baseline moves while
+            // the switch is off and only what follows can go out.
+            var state = StateWithGathered(0.0);
+            _stats.Rebase(state);
+            _sharing = false;
+
+            state.lifetimeGathered["berries"] = new BigDouble(75.0);
+            _stats.Flush(state);
+
+            _sharing = true;
+            _stats.Flush(state);
+            Assert.That(_services.Recorded(StatEventNames.HaulArrived), Is.False,
+                "the stretch gathered while opted out is gone, not banked");
+
+            state.lifetimeGathered["berries"] = new BigDouble(100.0);
+            _stats.Flush(state);
+
+            Assert.That(_services.Amount(StatEventNames.HaulArrived), Is.EqualTo(25.0).Within(1e-9),
+                "only what was gathered after the switch came back on");
+        }
+
+        [Test]
+        public void RecordWindfall_WhenPlayNotesAreOff_SaysNothing()
+        {
+            _sharing = false;
+
+            _stats.RecordWindfall("wildflowers");
+
+            Assert.That(_services.Recorded(StatEventNames.WindfallCaught), Is.False);
+        }
+
+        [Test]
+        public void ReportProgress_WhenPlayNotesAreOff_IsPostedOnceTheyComeBackOn()
+        {
+            // Progress is the current level rather than a stretch of history, so
+            // unlike the deltas there is nothing about the opted-out period in it.
+            var state = new GameState();
+            state.seenWaystoneZoneIds.Add("sunfield-meadow");
+            _sharing = false;
+
+            _stats.ReportProgress(state);
+            Assert.That(_services.Recorded(StatEventNames.ProgressUpdate), Is.False);
+
+            _sharing = true;
+            _stats.ReportProgress(state);
+
+            Assert.That(_services.Property(StatEventNames.ProgressUpdate, StatPropertyNames.CurrentProgress),
+                Is.EqualTo(1));
         }
 
         [Test]

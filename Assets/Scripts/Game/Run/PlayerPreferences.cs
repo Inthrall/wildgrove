@@ -54,10 +54,14 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Whether product events reach the analytics sink. Defaults to true —
-        /// the sink's own regional consent gate is UMP's job, and a default of
-        /// false would quietly turn analytics off for every existing player on
-        /// the update that ships this.
+        /// Whether product events reach the analytics sink — and, since Game
+        /// Stats, whether gameplay events reach the gamer profile too. Both are
+        /// notes on how the game is played, so they answer to the one switch: a
+        /// switch that stopped only one of them would be worse than none, because
+        /// the sheet says it stops the telling. Defaults to true — the sink's own
+        /// regional consent gate is UMP's job, and a default of false would
+        /// quietly turn analytics off for every existing player on the update
+        /// that ships this.
         /// <para>
         /// Crash reports are deliberately NOT covered: they carry no play data,
         /// and a build that stops reporting its own crashes cannot be fixed.

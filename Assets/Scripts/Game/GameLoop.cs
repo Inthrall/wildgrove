@@ -193,7 +193,7 @@ namespace Wildgrove.Game
             Store = new StubStore();
             GameServices = new StubGameServices();
 #endif
-            Stats = new GameStats(GameServices);
+            Stats = new GameStats(GameServices, () => Preferences.ShareAnalytics);
             _persistence = new RunPersistence(Data, new SaveFileStore(), GameServices, _clock);
             // Credit consumable purchases that resolved after their session ended
             // (fetched back and consumed on this launch, so no live callback is

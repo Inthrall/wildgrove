@@ -1,3 +1,4 @@
+using System;
 using BreakInfinity;
 using Wildgrove.Sim;
 
@@ -71,15 +72,29 @@ namespace Wildgrove.Game.Services
     public sealed class GameStats
     {
         private readonly IGameServices _services;
+        private readonly Func<bool> _sharing;
 
         private double _reportedGathered;
         private double _reportedCrafted;
         private int _reportedProgress = -1;
 
-        public GameStats(IGameServices services)
+        /// <summary>
+        /// <paramref name="sharing"/> is the player's Play notes answer, asked
+        /// each time rather than read once: the switch is on a sheet they can
+        /// open mid-session, and this object lives for the process.
+        /// </summary>
+        public GameStats(IGameServices services, Func<bool> sharing)
         {
             _services = services;
+            _sharing = sharing;
         }
+
+        /// <summary>
+        /// Whether anything may go out. An unwired predicate reads as no — a
+        /// wiring mistake that stops the stats is a bug we can see in the log
+        /// line, and one that posts them anyway is a broken promise we cannot.
+        /// </summary>
+        private bool Sharing => _sharing != null && _sharing();
 
         /// <summary>
         /// Seed the totals baseline from a run without reporting any of it — at
@@ -109,6 +124,17 @@ namespace Wildgrove.Game.Services
         {
             if (_services == null || state == null)
             {
+                return;
+            }
+
+            if (!Sharing)
+            {
+                // The baseline moves as though the stretch had been reported.
+                // Held, it would be the opted-out stretch's gathering waiting for
+                // the switch to come back on — and what the policy promises is
+                // that it is dropped, not deferred. Signed out is the opposite
+                // case on purpose: there the player hasn't refused anything.
+                Rebase(state);
                 return;
             }
 
@@ -228,11 +254,14 @@ namespace Wildgrove.Game.Services
         /// <summary>
         /// Hand one event to Play, reporting whether it was taken. Signed out it
         /// is not: the stat belongs to a gamer profile, and a caller that banks a
-        /// delta needs to know the difference between recorded and dropped.
+        /// delta needs to know the difference between recorded and dropped. Play
+        /// notes turned off it is not either — these are gameplay notes like the
+        /// ones the sink gets, and one switch has to mean both or it means
+        /// neither.
         /// </summary>
         private bool Record(string eventName, params (string key, object value)[] properties)
         {
-            if (_services == null || !_services.IsSignedIn)
+            if (_services == null || !_services.IsSignedIn || !Sharing)
             {
                 return false;
             }
