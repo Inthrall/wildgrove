@@ -172,13 +172,19 @@ wired to nothing. The settings row lands with the audio pass.
   optional shortcut, reprice the bundles, or strip the `unlockZone` effect and
   move the dig site + skills onto the zone. Touching `Upgrades.UnlockedZoneIds`
   and `upgrades.json`'s `trail` track.
-- **`GameLoop` has no test fixture, and the gap has narrowed to ordering.**
-  `RunPersistence`, `Announcements`, `SessionLog`, `Achievements`, `Leaderboards`,
-  `GameStats` and `SaveFile` are all extracted and tested. What is left in the
-  MonoBehaviour is the sequencing between them — `AdoptCloudRun` is eight steps
-  that must happen in one breath, `StartAgain` is four with the same property, and
-  getting either out of order is silent. Lift the sequences into plain classes (the
-  pattern the rest already follows) rather than writing a PlayMode fixture.
+- ~~**`GameLoop` has no test fixture, and the gap has narrowed to ordering.**~~
+  ✅ RESOLVED 2026-08-06. Both sequences are `RunSwap` (`Assets/Scripts/Game/Run/`),
+  a plain class beside the seven already lifted: `AdoptFromCloud` is the eight steps,
+  `StartAgain` the four, and the margin note the adoption owes moved with them —
+  `GameLoop.TakeCloudNotice` now just drains it. What the sequences still need from
+  the scene (the live state, dropping a catch-up in flight, crediting an absence,
+  folding the store's entitlements, the save-and-sync) is the `IRunHost` seam, which
+  `GameLoop` implements **explicitly** so the seam widens nothing into the surface
+  the HUD reads. `RunSwapTests` pins the order both ways it can go wrong: the step
+  list itself, and the effects a wrong position would spoil — the stats baseline
+  taken from the adopted run rather than the discarded one, and the welcome-back
+  summary being the adopted absence's rather than the summary that was just dropped.
+  No PlayMode fixture was needed.
 - **Folio spreads are 2–4 entries; design wants 4–8.** A balance pass, deferred
   since the Folio landed.
 - **No `postMatch` multiplier (design §8).** Familiar XP is a flat per-second at

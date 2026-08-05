@@ -22,7 +22,7 @@ namespace Wildgrove.Game
     /// neighbours rather than here.
     /// </para>
     /// </summary>
-    public sealed partial class GameLoop : MonoBehaviour
+    public sealed partial class GameLoop : MonoBehaviour, IRunHost
     {
         private const double AutosaveIntervalSeconds = 30.0;
 
@@ -100,14 +100,14 @@ namespace Wildgrove.Game
 
         // The run's own bookkeeping, split out of this MonoBehaviour so each part
         // can be tested without an Awake: which save we woke from and when it was
-        // last written, what the player is still owed a moment for, and what the
-        // session has told telemetry.
+        // last written, what the player is still owed a moment for, what the
+        // session has told telemetry, and the order the run is swapped out in.
         private readonly IClock _clock = SystemClock.Instance;
         private readonly Announcements _announce = new Announcements();
         private readonly System.Diagnostics.Stopwatch _catchUpClock = new System.Diagnostics.Stopwatch();
         private RunPersistence _persistence;
+        private RunSwap _swap;
         private SessionLog _session;
-        private string _cloudNotice;
 
         // A long absence being credited a slice per frame; null when none is.
         private OfflineCatchUp _catchUp;
@@ -263,6 +263,10 @@ namespace Wildgrove.Game
 #endif
             Stats = new GameStats(GameServices, () => Preferences.ShareAnalytics);
             _persistence = new RunPersistence(Data, new SaveFileStore(), GameServices, _clock);
+            // The two sequences that replace the run wholesale. They read this
+            // MonoBehaviour back through IRunHost, so their ordering — the thing
+            // that fails silently — is pinned by RunSwapTests.
+            _swap = new RunSwap(this, _persistence, _announce, Stats, Telemetry);
             // Credit consumable purchases that resolved after their session ended
             // (fetched back and consumed on this launch, so no live callback is
             // waiting). The store's fetch is lazy — it runs no earlier than the
@@ -332,7 +336,7 @@ namespace Wildgrove.Game
                 {
                     ReassertAchievements();
                     SubmitLeaderboards();
-                    _persistence.Reconcile(AdoptCloudRun);
+                    _persistence.Reconcile(_swap.AdoptFromCloud);
                 }
             });
 
@@ -385,51 +389,35 @@ namespace Wildgrove.Game
             Ads.SetAdsWanted(!removed);
         }
 
-        /// <summary>
-        /// Take on a cloud save that beat the one we launched with (see
-        /// <see cref="RunPersistence.Reconcile"/> for which one wins) — the run
-        /// swaps under everything that was reading it, so each of those has to be
-        /// told in the same breath.
-        /// </summary>
-        private void AdoptCloudRun(RunPersistence.Run adopted)
+        // ─── The run, as RunSwap reaches it (IRunHost) ────────────────────────
+        // Explicit implementations: each of these is already how the rest of this
+        // class does the thing, and the seam must not widen any of them into the
+        // public surface the HUD sees.
+
+        GameState IRunHost.State
         {
-            if (State == null)
-            {
-                // The pull outlived the run it was for (a teardown mid-flight);
-                // nothing left to adopt into, and no save will follow.
-                return;
-            }
+            get { return State; }
+            set { State = value; }
+        }
 
-            // A catch-up in flight was crediting the run being set aside. Its
-            // remaining seconds belong to a book no longer in hand — drop it
-            // before the swap, or the next frame's slice would advance the
-            // adopted run by an absence it never had.
+        void IRunHost.DropCatchUp()
+        {
             DropCatchUp();
+        }
 
-            State = adopted.State;
-            // Re-baseline the stats on the adopted run, or the gap between two
-            // runs' lifetime totals would post as this session's gathering.
-            Stats.Rebase(State);
-            // A cloud kith has already been met and named, like a local load.
-            _announce.MarkArrivalsSeen(State.roster);
-            _announce.MarkKithSlotsSeen();
-            // The local load's summary credited the state we've just discarded;
-            // drop it so the absence since the cloud save credits the adopted run.
-            _announce.DropOfflineSummary();
-            CreditAbsence(adopted.AwaySeconds);
-            // The adopted save may predate a purchase or a reward this device
-            // already owns — re-fold the entitlements rather than let the
-            // cloud roll a paid slot or a redeemed pony back.
+        void IRunHost.CreditAbsence(double awaySeconds)
+        {
+            CreditAbsence(awaySeconds);
+        }
+
+        void IRunHost.SyncStoreEntitlements()
+        {
             SyncStoreEntitlements();
-            // Converge the device and cloud on the adopted save now rather than
-            // waiting for the autosave interval to write it back down locally.
+        }
+
+        void IRunHost.SaveAndSync()
+        {
             SaveAndSync();
-            // Say it. The run just changed under the player's hands — silently,
-            // until now — and the margin note is where the journal tells them
-            // something happened without stopping the game to do it.
-            _cloudNotice = "another device had walked further. the book opens there.";
-            Telemetry.LogEvent("cloud_save_adopted",
-                ("saved_at_ms", adopted.SavedAtUnixMs), ("played_ms", State.playedMs));
         }
 
         /// <summary>
@@ -612,9 +600,7 @@ namespace Wildgrove.Game
         /// </summary>
         public string TakeCloudNotice()
         {
-            var notice = _cloudNotice;
-            _cloudNotice = null;
-            return notice;
+            return _swap?.TakeNotice();
         }
 
         /// <summary>
@@ -643,31 +629,14 @@ namespace Wildgrove.Game
         /// <summary>
         /// Close this book and open a blank one: the run is wiped from the
         /// device and from Play Games, and a fresh camp takes its place without
-        /// a relaunch. Everything that was reading the old run is told in the
-        /// same breath, exactly as <see cref="AdoptCloudRun"/> has to.
+        /// a relaunch. The sequence — everything reading the old run being told
+        /// in the same breath — is <see cref="RunSwap.StartAgain"/>.
         /// </summary>
         public void StartAgain()
         {
-            if (State == null)
-            {
-                return;
-            }
-
-            // Same reason as AdoptCloudRun: a catch-up in flight was crediting
-            // the book being closed.
-            DropCatchUp();
-
-            var run = _persistence.StartOver();
-            State = run.State;
-            Stats.Rebase(State);
-            // Nothing owed by the old run belongs to this one — including who
-            // has been met, so the new seed kith is asked for its names.
-            _announce.Forget();
-            // A wiped run has no bought slots in it. They were paid for, so they
-            // are folded straight back rather than waiting for the next launch
-            // to notice — the same reason an adopted cloud save re-syncs.
-            SyncStoreEntitlements();
-            Telemetry.LogEvent("run_started_over");
+            // Null only before Awake has run, where there is no book to close —
+            // the same nothing-to-do the sequence's own State guard answers with.
+            _swap?.StartAgain();
         }
 
         /// <summary>

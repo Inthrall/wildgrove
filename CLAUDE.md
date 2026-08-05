@@ -45,10 +45,13 @@ means lifting a plain-C# `GameData` out of the ScriptableObject; see
 **If logic is hard to test because it lives in a MonoBehaviour, lift it into a plain
 class** — that is the pattern the codebase already follows (`RunPersistence`,
 `Announcements`, `SessionLog`, `Achievements`, `Leaderboards`, `GameStats`,
-`StoreConnection` were all lifted out of `GameLoop` / `UnityIapStore` for exactly this
-reason). `GameLoop` still holds multi-step sequences whose *ordering* is the risk —
-`AdoptCloudRun` (eight steps) and `StartAgain` (four). Getting one out of order fails
-silently, so extend them with care and prefer lifting the sequence out over adding to it.
+`RunSwap`, `StoreConnection` were all lifted out of `GameLoop` / `UnityIapStore` for
+exactly this reason). The two sequences that replace the run wholesale — adopting a
+cloud save (eight steps) and starting the book again (four) — are `RunSwap`, which
+reaches the scene back through the `IRunHost` seam `GameLoop` implements explicitly.
+**Their ordering is the risk and every way of getting it wrong is silent**, so a new
+step goes into that sequence with a `RunSwapTests` assertion pinning where it sits,
+never into `GameLoop`.
 
 ## Content is data, not code
 
