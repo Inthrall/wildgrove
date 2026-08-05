@@ -4,22 +4,22 @@ using Wildgrove.Sim;
 namespace Wildgrove.Game.World
 {
     /// <summary>
-    /// One gathering node's world-space sprite: a resource-coloured disc, a
-    /// golden halo while the post-tend Choice window runs, and the assignment
-    /// badge beneath it — the tiny icon of whoever holds the post (one body
-    /// per node), which is also the tap target for posting. Dimmed while
-    /// nothing works it. Placement and per-frame refresh are driven by
-    /// <see cref="WorldView"/>.
+    /// One gathering node's world-space sprite: a resource-coloured disc and
+    /// the assignment badge beneath it — the tiny icon of whoever holds the
+    /// post (one body per node), which is also the tap target for posting.
+    /// Dimmed while nothing works it. Placement and per-frame refresh are
+    /// driven by <see cref="WorldView"/>.
     /// (The selection ring is gone — selection stopped doing anything once
     /// taps opened sheets directly, and its near-paper colour never read.
     /// The scale pulse that rode the Tending burst is gone too — a caught
     /// windfall already plays its own send-off over the node, so the plate
-    /// twitching underneath only added noise.)
+    /// twitching underneath only added noise. The golden halo that breathed
+    /// while the Choice window ran went the same way 2026-08-06: it lit for
+    /// half a minute after every catch, which is most of the time on a worked
+    /// node, so the strip's brightest mark was also its least informative.)
     /// </summary>
     public sealed class NodeWorldView : MonoBehaviour
     {
-        private const float HaloScale = 1.16f;
-        private const float HaloPulseSpeed = 3f;
         private const float IdleAlpha = 0.55f;
 
         // The node plate's longest side, in local units before the parent's
@@ -27,14 +27,12 @@ namespace Wildgrove.Game.World
         // its mount.
         private const float PlateFit = 1.05f;
 
-        private static readonly Color HaloColour = new Color(1f, 0.78f, 0.25f, 0.5f);
         private static readonly Color LabelColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
         public NodeState Node { get; private set; }
 
         private SpriteRenderer _disc;
         private SpriteRenderer _plate;
-        private SpriteRenderer _halo;
         private AssignBadge _badge;
         private TextMesh _label;
         private Color _colour;
@@ -51,9 +49,6 @@ namespace Wildgrove.Game.World
             // The resource name under the disc — the strip's shapes and the
             // FIG. plates below name the same thing, so a glance connects them.
             view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour);
-
-            view._halo = CreateSprite(go.transform, "Halo", PlaceholderArt.Disc, HaloColour, 1);
-            view._halo.transform.localScale = Vector3.one * HaloScale;
 
             view._disc = CreateSprite(go.transform, "Disc", PlaceholderArt.Disc, colour, 2);
 
@@ -113,20 +108,9 @@ namespace Wildgrove.Game.World
         /// dimming EVERY plate read as "disabled" exactly when the first tap
         /// (posting) had to happen; dim only once dim can mean something.
         /// </summary>
-        public void Refresh(float time, bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
+        public void Refresh(bool wardenPosted, Familiar occupant, Sprite occupantIcon, bool dimIdle)
         {
             transform.localScale = Vector3.one * _diameter;
-
-            // The Choice window outlasts the yield burst — the halo breathes
-            // slowly so it reads as "charged" rather than "working".
-            var windowLive = Node.choiceBonusRemaining > 0.0;
-            _halo.enabled = windowLive;
-            if (windowLive)
-            {
-                var halo = HaloColour;
-                halo.a = 0.35f + 0.2f * Mathf.Sin(time * HaloPulseSpeed);
-                _halo.color = halo;
-            }
 
             // One body per post: somebody standing here — warden or familiar —
             // is what "working" means now.

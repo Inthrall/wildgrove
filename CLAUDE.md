@@ -122,6 +122,12 @@ Prefer a test that pins the *specific* thing over one that only proves nothing t
 a mis-keyed sprite still loads a sprite, so `ArtLibraryTests` pins each motif to its own
 plate rather than asserting "something drew".
 
+**`Assert.Multiple` does not exist here.** Unity's bundled NUnit (`com.unity.ext.nunit`,
+engine 3.5) predates it, so the grouped-assertion idiom fails to compile with
+`CS0117: 'Assert' does not contain a definition for 'Multiple'`. Write sequential
+`Assert.That(...)` calls, each with its own message — which is the shape every fixture
+here already uses.
+
 ## Art, plates and attribution
 
 `ArtCredits` lists the CC BY source works, each with the modification made — the licence

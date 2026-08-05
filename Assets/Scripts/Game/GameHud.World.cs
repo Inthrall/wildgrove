@@ -81,12 +81,6 @@ namespace Wildgrove.Game
                     {
                         _sheets.OpenPostingSheet(postId);
                     }
-                    else if (tap == StripTap.Warden)
-                    {
-                        // The warden's plate at camp: the one body whose "where"
-                        // is the open question, so it asks that directly.
-                        _sheets.OpenWardenWalkSheet();
-                    }
                     else if (tap == StripTap.OpenSlots)
                     {
                         // The (+) closing the strip is not a post — it is the

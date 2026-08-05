@@ -392,35 +392,122 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The warden's own ladder widening (design §4) — a verse sung past a
-        /// milestone, or a slot bought. Nothing announced it before: the count
+        /// milestone, or a place bought. Nothing announced it before: the count
         /// on the Warden page simply read one higher the next time anyone
         /// looked, which is no way to mark the thing the whole kith is gated on.
+        /// <para>
+        /// It is an attunement, not an inventory slot. What widens is the
+        /// warden's own reach — one more wild thing they can keep in step with
+        /// — so the sheet leads with whoever has been waiting at camp for it, in
+        /// their own portrait, and its key action walks THAT companion out. The
+        /// old sheet counted the idle and then sent the player off to find the
+        /// Warden page to do anything about it, which is where the reward was
+        /// quietly left unclaimed.
+        /// </para>
         /// </summary>
         private void OpenKithSlotSheet(int slots)
         {
             var sheet = BeginSheet();
             Celebrate(sheet, SlotSeeds);
-            MakeText(sheet, "The circle widens", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "Attuned to one more", 32, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "<i>something else in the grove has decided to trust you</i>",
+                21, TextAnchor.MiddleCenter, Ink2, _hand);
 
-            var hearth = ArtLibrary.ForBuilding("fire");
-            if (hearth != null)
+            // The companion is the news; the place is only why. Their own
+            // portrait, for the same reason the arrival sheet carries one —
+            // this is a meeting, and the fire alone is furniture.
+            var waiting = FirstResting();
+            var plate = waiting != null ? ArtLibrary.ForSpecies(waiting.speciesId) : null;
+            var portrait = plate != null;
+            if (plate == null)
             {
-                PlateImage(sheet, hearth, 180f);
+                // No one idle, or a species whose plate isn't drawn yet — the
+                // hearth stands in, as the sheet always used to open.
+                plate = ArtLibrary.ForBuilding("fire");
             }
 
-            MakeText(sheet, "another may hold a post", 22, TextAnchor.UpperCenter, Ink2, _hand);
-            MakeText(sheet, slots + " of " + Kith.SlotsMax(_loop.Data) + " places at the fire",
-                20, TextAnchor.UpperCenter, Ink, _smallCaps);
+            if (plate != null)
+            {
+                PlateImage(sheet, plate, portrait ? 200f : 180f);
+            }
 
-            // Where the reward actually lands — a slot is worth nothing until
-            // someone resting is walked out to a node.
-            var resting = _loop.KithCount() - _loop.KithWalking();
-            MakeText(sheet, resting > 0
-                    ? "<i>" + (resting == 1 ? "one of the kith rests" : resting + " of the kith rest")
-                      + " at camp, and the Warden page will station them.</i>"
-                    : "<i>the next to arrive can walk straight out.</i>",
-                18, TextAnchor.MiddleCenter, Ink2, _hand);
-            Button(sheet, "Good", 320, CloseSheet);
+            PaintKithPlaces(BuildKithPlaces(sheet, 30f));
+            MakeText(sheet, slots + " of " + Kith.SlotsMax(_loop.Data) + " places at the fire",
+                16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            var resting = _loop.KithResting();
+            if (waiting != null)
+            {
+                MakeText(sheet, resting == 1
+                        ? waiting.name + " has waited at camp for this."
+                        : waiting.name + " and " + (resting == 2 ? "one other wait" : (resting - 1) + " others wait")
+                          + " at camp.",
+                    22, TextAnchor.UpperCenter, Ink, _serif);
+            }
+            else
+            {
+                MakeText(sheet, "<i>the next to come in from the trees can walk straight out.</i>",
+                    18, TextAnchor.MiddleCenter, Ink2, _hand);
+            }
+
+            var ahead = NextKithPlaceLine();
+            if (ahead != null)
+            {
+                MakeText(sheet, "<i>" + ahead + "</i>", 16, TextAnchor.MiddleCenter, Ink2);
+            }
+
+            if (waiting == null)
+            {
+                Button(sheet, "Good", 320, CloseSheet);
+                return;
+            }
+
+            // Where the reward actually lands: a place is worth nothing until
+            // someone resting is walked out to a post, so the sheet does that
+            // rather than describing where it could be done.
+            KeyAction(Button(sheet, "Walk with " + waiting.name, 420, () => OpenStationPickSheet(waiting)));
+            Button(sheet, "Later", 320, CloseSheet);
+        }
+
+        /// <summary>The first companion idle at camp, or null — who a newly opened place is for.</summary>
+        private Familiar FirstResting()
+        {
+            foreach (var familiar in _loop.State.roster)
+            {
+                if (familiar.IsResting)
+                {
+                    return familiar;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// What widens the circle next, or null once the whole of it is open:
+        /// the verse milestone still ahead, else the places the store keeps.
+        /// Said quietly, in one line — a celebration is not a shop window, but
+        /// a player who cannot see the rest of the ladder cannot plan for it,
+        /// and the last rungs live somewhere nothing ever pointed at.
+        /// </summary>
+        private string NextKithPlaceLine()
+        {
+            var remaining = Kith.SlotsMax(_loop.Data) - _loop.KithSlots();
+            if (remaining <= 0)
+            {
+                return null;
+            }
+
+            var milestone = _loop.NextKithVerseMilestone();
+            if (milestone > 0)
+            {
+                return "the next place opens at " + milestone + " verses sung — "
+                       + _loop.TotalVersesSung() + " so far.";
+            }
+
+            return remaining == 1
+                ? "the ladder's last place is kept on the Warden page."
+                : "the ladder's last " + remaining + " places are kept on the Warden page.";
         }
 
         // How heavy the drift is, by how much the moment is worth: a bond is
@@ -897,7 +984,13 @@ namespace Wildgrove.Game
             var holder = occupantHere != null
                 ? occupantHere.name + " walks here"
                 : wardenHere ? _loop.WardenName() + " walks here" : "no one walks here";
-            var holderPlate = occupantHere != null ? ArtLibrary.ForSpecies(occupantHere.speciesId) : null;
+            // The warden wears their own plate everywhere else a holder is
+            // drawn — the strip's badge, both pickers, the roster's corner mark
+            // — so the heading showed "the warden walks here" beside an empty
+            // space: the one place a post's holder was named and not pictured.
+            var holderPlate = occupantHere != null
+                ? ArtLibrary.ForSpecies(occupantHere.speciesId)
+                : wardenHere ? ArtLibrary.ForWarden() : null;
             PictureRow(sheet, StationPlate(stationId),
                 StationLabel(stationId).ToUpperInvariant()
                 + "\n" + SizeOpen(16) + "<color=" + (occupantHere != null || wardenHere ? InkHex : Ink2Hex) + ">"
@@ -934,8 +1027,21 @@ namespace Wildgrove.Game
                 var wardenVerb = isWanderPost
                     ? "Send " + _loop.WardenName() + " wandering"
                     : "Walk " + _loop.WardenName() + " here";
-                Button(sheet, "<color=" + MossDeepHex + ">" + wardenVerb + "</color>  "
-                              + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>", 740, () =>
+                // Drawn like the companion rows below it, because it is the same
+                // offer: the body's own plate leads, the ground they stand on
+                // now trails. It was the one candidate row with no pictures at
+                // all, which read as a different KIND of choice rather than the
+                // same choice about a different body. The whereabouts stay in
+                // words only where no crop can stand in for them — camp, the
+                // trail and the wander post have no plate (the companion rows'
+                // rule).
+                var wardenGround = StationPlate(Warden.PostNodeId(state));
+                var whereTail = wardenGround != null
+                    ? string.Empty
+                    : "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>";
+                PictureButton(sheet, ArtLibrary.ForWarden(),
+                    "<color=" + MossDeepHex + ">" + wardenVerb + "</color>" + whereTail,
+                    wardenGround, 740, 120f, () =>
                 {
                     if (isWanderPost)
                     {
@@ -1080,6 +1186,24 @@ namespace Wildgrove.Game
                  + "now " + StationLabel(familiar.stationId)).ToUpperInvariant(),
                 StationPlate(familiar.stationId), 120f, 740f);
 
+            // The standing the roster used to carry on its row, before the
+            // roster became a drawer of plates (2026-08-06): the level and how
+            // far into the next, and the two honours the row wore. "% to next"
+            // is the crafts card's idiom — the levels climb the same way, so
+            // they read the same way. Moss, not ochre: accolades are honours,
+            // and ochre is the ink of costs and halted work.
+            var bonded = familiar.bonded
+                ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">BONDED</color></size>"
+                : string.Empty;
+            var kinship = _loop.FamiliarKinship(familiar) > 0
+                ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">KINSHIP "
+                  + Roman(_loop.FamiliarKinship(familiar)) + "</color></size>"
+                : string.Empty;
+            MakeText(sheet, "level " + Roman(_loop.FamiliarLevel(familiar)) + " · "
+                            + Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(familiar) * 100f)
+                            + "% to next" + bonded + kinship,
+                18, TextAnchor.UpperCenter, Ink2, _serif);
+
             // What this one is good at, at the moment it decides where they
             // walk. Not on every roster row, which is where it is read least
             // and costs most.
@@ -1099,6 +1223,20 @@ namespace Wildgrove.Game
             {
                 var lines = MakeText(sheet, reckoning, 16, TextAnchor.UpperCenter, Ink2);
                 var element = lines.gameObject.AddComponent<LayoutElement>();
+                element.minWidth = 740;
+                element.preferredWidth = 740;
+            }
+
+            // The plate's newest margin line (design §7) — earned at Kinship
+            // signature milestones, in the warden's hand. Older lines stay on
+            // the plate's Record entry; the freshest reads here, where the
+            // companion is read whole, rather than under a roster row.
+            var earned = _loop.FamiliarInscriptions(familiar);
+            if (earned.Count > 0)
+            {
+                var inscription = MakeText(sheet, "\"" + earned[earned.Count - 1] + "\"",
+                    17, TextAnchor.UpperCenter, Ink2, _hand);
+                var element = inscription.gameObject.AddComponent<LayoutElement>();
                 element.minWidth = 740;
                 element.preferredWidth = 740;
             }
@@ -1123,7 +1261,7 @@ namespace Wildgrove.Game
             if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
             {
                 var notice = MakeText(sheet,
-                    "<i>every slot is walked, so the empty posts stay shut. open one on the Ladder to walk with one more. stepping in for someone already posted still works: they go back to camp.</i>",
+                    "<i>every place at the fire is walked, so the empty posts stay shut. the next place opens with a verse sung, and the Warden page keeps the rest of the ladder. stepping in for someone already posted still works: they go back to camp.</i>",
                     16, TextAnchor.UpperCenter, Ink2);
                 var element = notice.gameObject.AddComponent<LayoutElement>();
                 element.minWidth = 740;
@@ -1265,31 +1403,6 @@ namespace Wildgrove.Game
         {
             var postId = Warden.PostNodeId(_loop.State);
             return postId == null ? "now: at camp" : "now: " + StationLabel(postId);
-        }
-
-        /// <summary>
-        /// The plate for what a post yields — the resource of the node it is.
-        /// Null for camp (no station at all), the trail, the wander post and
-        /// dig stations: none of those stand over a crop, so there is no
-        /// picture to show and the row falls back to naming them.
-        /// </summary>
-        private Sprite StationPlate(string stationId)
-        {
-            var node = FindNode(stationId);
-            return node == null ? null : ArtLibrary.ForResource(node.resourceId);
-        }
-
-        private NodeState FindNode(string stationId)
-        {
-            foreach (var node in _loop.State.nodes)
-            {
-                if (node.id == stationId)
-                {
-                    return node;
-                }
-            }
-
-            return null;
         }
 
         private static bool PostMatches(string stationId, string buttonStationId)

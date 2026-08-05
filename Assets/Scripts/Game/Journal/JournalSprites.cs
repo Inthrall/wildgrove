@@ -19,6 +19,44 @@ namespace Wildgrove.Game
         private static Sprite _crossSprite;
         private static Sprite _plusSprite;
         private static Sprite _foldArrowSprite;
+        private static Sprite _discSprite;
+
+        /// <summary>
+        /// A plain filled circle, drawn white so a caller tints it. It backs a
+        /// mark laid over a picture — a tile's corner mark, where a crop glyph
+        /// dropped straight onto a portrait reads as something the animal is
+        /// holding rather than as a mark about it. The world strip's assignment
+        /// badge has always sat on a disc for the same reason; this is the
+        /// journal's own, so the paper tones come from
+        /// <see cref="JournalTheme"/> rather than the world's palette.
+        /// </summary>
+        internal static Sprite DiscSprite()
+        {
+            if (_discSprite == null)
+            {
+                const int size = 64;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                var centre = (size - 1) * 0.5f;
+                var radius = size * 0.5f - 1f;
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        // A one-pixel feather at the rim: a hard-edged circle at
+                        // this size renders as a cogwheel against paper.
+                        var distance = Vector2.Distance(new Vector2(x, y), new Vector2(centre, centre));
+                        var alpha = Mathf.Clamp01(radius - distance);
+                        texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _discSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _discSprite;
+        }
 
         /// <summary>
         /// The fold arrow — a pen-drawn chevron beside a ground's name, down

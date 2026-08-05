@@ -108,6 +108,22 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Resting_CountsTheIdleAndLeavesThePonyOut()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.foldedVersesSung = 2;
+            Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
+            Roster.Recruit(state, _data, "pack-raven", null);
+            state.droversHalterOwned = true;
+            Roster.SyncDroversHalter(state, _data);
+
+            Assert.That(Roster.OfSpecies(state, Familiar.PonySpecies), Is.Not.Null, "the Halter's pony stands in her lane");
+            Assert.That(Kith.Resting(state), Is.EqualTo(1), "only the raven is idle");
+            Assert.That(Kith.Count(state) - Kith.Walking(state), Is.EqualTo(2),
+                "count minus walking counts the pony as idle — which is why Resting exists");
+        }
+
+        [Test]
         public void NextVerseMilestone_WalksTheTable()
         {
             var state = GameStateFactory.NewGame(_data);

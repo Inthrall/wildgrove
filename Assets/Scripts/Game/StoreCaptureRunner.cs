@@ -50,11 +50,33 @@ namespace Wildgrove.Game
                 hud.OpenTab(page);
                 // Two label cadences so every row on the page is fresh.
                 yield return new WaitForSeconds(0.6f);
+                yield return ClearSheets(hud);
                 ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "store-" + page + ".png"));
                 yield return new WaitForSeconds(0.4f);
             }
 
             System.IO.File.WriteAllText(System.IO.Path.Combine(dir, "capture-done.marker"), "done");
+        }
+
+        /// <summary>
+        /// Shut whatever sheet is standing before the shutter. The staged save
+        /// is stamped in the past, so the first thing every capture photographed
+        /// was the welcome-back sheet — over all five pages, since the scrim
+        /// outlives a tab change. Dismissing is the player's own way out of it
+        /// (the scrim tap), and PumpSheets can raise a second one behind the
+        /// first, so this drains rather than dismisses once.
+        /// </summary>
+        private static IEnumerator ClearSheets(GameHud hud)
+        {
+            for (var attempt = 0; attempt < 6 && hud.Sheet != null; attempt++)
+            {
+                hud.Sheets.DismissSheet();
+                yield return null;
+            }
+
+            // A dismissed sheet leaves a rebuild behind it; let the page settle
+            // before it is photographed.
+            yield return new WaitForSeconds(0.3f);
         }
     }
 }

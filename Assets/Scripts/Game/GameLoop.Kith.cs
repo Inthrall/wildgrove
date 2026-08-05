@@ -63,6 +63,12 @@ namespace Wildgrove.Game
             return Kith.Walking(State);
         }
 
+        /// <summary>Companions idle at camp with no post — who an opening slot is for.</summary>
+        public int KithResting()
+        {
+            return Kith.Resting(State);
+        }
+
         /// <summary>The next verse-milestone still ahead of the ladder, or 0 when every earned slot is open.</summary>
         public int NextKithVerseMilestone()
         {

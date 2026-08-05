@@ -312,6 +312,168 @@ namespace Wildgrove.Game
             element.preferredWidth = glyph;
         }
 
+        /// <summary>
+        /// A centred row of small discs — a short countable ladder said as
+        /// marks rather than as "n of m" in words, which is how a player can
+        /// see at a glance that there are places beyond the ones they hold.
+        /// Built blank: the caller tints each disc to what it stands for, and
+        /// keeps the array so it can repaint them as the ladder moves.
+        /// </summary>
+        internal static Image[] MarkRow(Transform parent, int count, float size)
+        {
+            var go = MakeRect("Marks", parent).gameObject;
+            var layout = go.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 10;
+
+            var marks = new Image[count > 0 ? count : 0];
+            for (var index = 0; index < marks.Length; index++)
+            {
+                marks[index] = IconImage(go.transform, DiscSprite(), size, Ink).GetComponent<Image>();
+            }
+
+            return marks;
+        }
+
+        // ── Plate tiles ───────────────────────────────────────────────────
+
+        /// <summary>
+        /// Deep enough for two lines of the caption's own 13: these captions are
+        /// names (a ground's, a companion's), not the Stores drawer's counts, and
+        /// a name clipped in half names nothing.
+        /// </summary>
+        private const float TileCaption = 56f;
+        private const float TileInset = 6f;
+
+        /// <summary>
+        /// The corner mark's plate — small enough that it reads as a mark ON the
+        /// tile rather than a second thing to tap.
+        /// </summary>
+        private const float TileCorner = 46f;
+
+        /// <summary>
+        /// One square of a drawer whose tiles are TAPPED: the plate filling it,
+        /// its name on a strip along the bottom inside edge, and an optional
+        /// corner mark for whoever or whatever is already there. The caption is
+        /// INSIDE the square on purpose — a label hung under the tile would make
+        /// the cell oblong and the drawer ragged (the Stores drawer's rule).
+        /// <para>
+        /// Shared by the strip's posting pickers and the Warden page's roster,
+        /// which are the same question asked from two places: a drawer of plates
+        /// standing for bodies and grounds. <see cref="StoresPage"/> keeps its
+        /// own tile — that one's border is the grade, so it cannot be this one's
+        /// hairline.
+        /// </para>
+        /// </summary>
+        internal static Button PlateTile(RectTransform grid, Sprite plate, string caption, Sprite corner,
+            UnityEngine.Events.UnityAction onPick)
+        {
+            return PlateTile(grid, plate, caption, corner, onPick, out _, out _, out _);
+        }
+
+        /// <summary>
+        /// As <see cref="PlateTile(RectTransform, Sprite, string, Sprite, UnityEngine.Events.UnityAction)"/>,
+        /// handing back the three pieces a tile that OUTLIVES its own contents
+        /// has to be able to rewrite: the caption (a companion can be renamed),
+        /// the corner mark (they can walk elsewhere — see
+        /// <see cref="SetTileCorner"/>), and the rule (an honour can be earned).
+        /// A picker builds its tiles for one open sheet and needs none of them.
+        /// </summary>
+        internal static Button PlateTile(RectTransform grid, Sprite plate, string caption, Sprite corner,
+            UnityEngine.Events.UnityAction onPick, out Text label, out Image mark, out Image rule)
+        {
+            var go = MakePanel("Tile", grid, DeepPaper);
+            var tile = (RectTransform)go.transform;
+            rule = AddBorder(go, Ink2).GetComponent<Image>();
+
+            if (plate != null)
+            {
+                var art = new GameObject("Plate", typeof(Image));
+                art.transform.SetParent(tile, false);
+                var image = art.GetComponent<Image>();
+                image.sprite = plate;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+                var rect = (RectTransform)art.transform;
+                Stretch(rect);
+                // Clear of the border and of the caption strip below it — a
+                // plate read through either is a plate read twice.
+                rect.offsetMin = new Vector2(TileInset, TileCaption);
+                rect.offsetMax = new Vector2(-TileInset, -TileInset);
+            }
+
+            var strip = MakePanel("Caption", tile, CardPaper);
+            var stripRect = (RectTransform)strip.transform;
+            stripRect.anchorMin = Vector2.zero;
+            stripRect.anchorMax = new Vector2(1f, 0f);
+            stripRect.offsetMin = new Vector2(2f, 2f);
+            stripRect.offsetMax = new Vector2(-2f, TileCaption - 2f);
+            strip.GetComponent<Image>().raycastTarget = false;
+
+            label = MakeText(strip.transform, caption, 13, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
+            Stretch((RectTransform)label.transform);
+            label.raycastTarget = false;
+
+            // The mark rides on a disc of paper, pinned in the corner: dropped
+            // straight onto the plate, a crop glyph reads as something the
+            // animal is holding rather than as a mark about it. Built whether or
+            // not there is anything to show, so a tile that gains a mark later
+            // has somewhere to put it.
+            var backing = MakePanel("Mark", tile, CardPaper);
+            var backingImage = backing.GetComponent<Image>();
+            backingImage.sprite = DiscSprite();
+            backingImage.raycastTarget = false;
+            var backingRect = (RectTransform)backing.transform;
+            backingRect.anchorMin = Vector2.one;
+            backingRect.anchorMax = Vector2.one;
+            backingRect.pivot = Vector2.one;
+            backingRect.anchoredPosition = new Vector2(-TileInset, -TileInset);
+            backingRect.sizeDelta = new Vector2(TileCorner, TileCorner);
+
+            // Inside the disc, so the rim of paper reads as a mount all the way
+            // round the glyph.
+            mark = IconImage(backing.transform, corner, TileCorner - 10f, Color.white).GetComponent<Image>();
+            var markRect = (RectTransform)mark.transform;
+            markRect.anchorMin = new Vector2(0.5f, 0.5f);
+            markRect.anchorMax = new Vector2(0.5f, 0.5f);
+            markRect.pivot = new Vector2(0.5f, 0.5f);
+            markRect.anchoredPosition = Vector2.zero;
+            markRect.sizeDelta = new Vector2(TileCorner - 10f, TileCorner - 10f);
+            SetTileCorner(mark, corner);
+
+            var button = go.AddComponent<Button>();
+            // Without a targetGraphic the ColorTint transition has nothing to
+            // tint, and the tile acknowledges no press at all.
+            button.targetGraphic = go.GetComponent<Image>();
+            var colours = button.colors;
+            colours.highlightedColor = new Color(0.97f, 0.96f, 0.93f, 1f);
+            colours.pressedColor = new Color(0.8f, 0.76f, 0.68f, 1f);
+            // Disabled stays SetButtonTint's job — white here so the two
+            // channels don't multiply into a blank plate.
+            colours.disabledColor = Color.white;
+            button.colors = colours;
+            button.onClick.AddListener(onPick);
+            return button;
+        }
+
+        /// <summary>
+        /// Re-mark a tile's corner, or clear it — a companion walks somewhere
+        /// else and the tile has to say so without being rebuilt under a finger.
+        /// The paper disc is the mark's own parent, so the pair is switched off
+        /// together: a bare disc is a blot with nothing in it, and an
+        /// <see cref="Image"/> holding no sprite draws a plain white square
+        /// (<see cref="SetButtonGlyph"/>'s rule, for the same reason).
+        /// </summary>
+        internal static void SetTileCorner(Image mark, Sprite sprite)
+        {
+            mark.sprite = sprite;
+            mark.transform.parent.gameObject.SetActive(sprite != null);
+        }
+
         /// <summary>The bare plate every button is drawn on — paper, border, press tint, touch-sized.</summary>
         private static Button ButtonPlate(Transform parent, float width, UnityEngine.Events.UnityAction onClick)
         {

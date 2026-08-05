@@ -79,21 +79,40 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
 - **Tending's Choice window is invisible.** `Simulation.Tend` opens the 30 s
   `choiceBonusRemaining` window and the HUD gives no cue. (`GameHud`)
+  <br>It has none in the world strip either, from 2026-08-06: the golden halo
+  that breathed around a node while the window ran is **deliberately removed**.
+  `Bubbles.Pop` tends the node too, so the halo lit after every caught windfall
+  as well as every tap — most of the time on a worked node — which made the
+  strip's brightest mark its least informative. Whatever answers this item
+  should say how much of the window is LEFT (a countdown, not a glow), and
+  should not be a pulsing ring put back on the plate.
 - **Verse cards don't render the spotlight (✳) marker.**
 - **The Migration vignette shows the Verdure gain only** — per-familiar Kinship
   gains aren't itemised, and Kinship is legible everywhere else now.
-- **The Warden page's kith list is rows, and wants to be a Stores-style grid.**
-  `BuildKithCard` lays one row per companion — portrait, a two-line label, a
-  "Post" button, and an inscription line under it — which read well at three
-  companions and is a page per companion at eight slots. The Stores drawer is the
-  shape it wants: a `SquareCellGrid` of plates, each tile a portrait with the
-  name in its caption strip. Everything the row says now moves onto the popup a
-  tile opens — level and % to next, Kinship, BONDED, the trait, the freshest
-  inscription, the post, and the rename — so a companion is read in one place
-  rather than half on the card and half in a sheet. The grid itself needs no new
-  tooling: the posting pickers already run on `SquareCellGrid` (2026-08-05), and
-  `StoresPage.Tile` is the plate-and-caption tile to match.
-  (`WardenPage.BuildKithCard`, `JournalSheets.OpenStationPickSheet`, `StoresPage`)
+- ~~**The Warden page's kith list is rows, and wants to be a Stores-style grid.**~~
+  ✅ RESOLVED 2026-08-06. `BuildKithGrid` lays the roster on a `SquareCellGrid` at
+  the Stores drawer's own 190 cell — a plate per companion, the name in its
+  caption strip, and the crop of the ground they work as a corner mark (nothing
+  at all for one resting at camp, which is how the drawer says "idle" without
+  spending a word on it). Everything the row said in words moved onto the sheet
+  the tile opens: level and % to next, BONDED and the Kinship numeral on one
+  standing line, then the trait, the Kinship reckoning and the freshest
+  inscription. The **bond** kept a channel of its own on the card — a moss rule
+  instead of the ink one — because it is the one permanent honour and a plate has
+  no room for the word. The tile itself is now shared
+  (`JournalWidgets.PlateTile`), lifted out of `JournalSheets.Posting` since the
+  roster and the posting pickers are the same drawer asked from a page rather
+  than the strip; `StationPlate`/`FindNode` moved to `JournalSection` for the same
+  reason. Tiles are built once per structure change and rewritten in place, so a
+  rename, a move or a new bond never destroys the tile under a finger.
+  (`WardenPage.BuildKithGrid`, `JournalWidgets.PlateTile`,
+  `JournalSheets.OpenStationPickSheet`)
+  <br>**Two things the playtest sitting should judge:** whether the moss rule
+  reads as an honour beside the Stores drawer's grade rules (the one place a
+  coloured border already means something else), and whether a drawer of
+  portraits with only a name under each is legible before a player knows the
+  species — the same open question as the Stores drawer's unlabelled plates
+  below, and the two now stand or fall together.
 - ~~**Renaming the warden is priced at 50 Amber and does not exist.**~~
   ✅ RESOLVED 2026-08-06. Both prices are live and played through by the same
   plumbing: a companion at **30** (`economy.amber.renameCostAmber`, up from a
@@ -127,6 +146,19 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   with no gear in the chrome. Right for the book, unusual for a phone game — if a
   playtester can't find it, the answer is a corner mark on the Record tab, not a
   pinned bar.
+- **The warden is a body among grounds, and the strip has no plate for one.**
+  The warden's own plate led the strip for a day (2026-08-05) and came off again
+  2026-08-06: captioned with a name where every neighbour carried a crop, it read
+  as a node you could gather from. What it was reaching for is now the ORDER —
+  `WorldView.LeadWithTheWarden` puts the ground the warden stands on first, and
+  the badge under it says whose it is, exactly as it does for a companion. A
+  warden at camp therefore shows nowhere on the strip, which is what "at camp"
+  means, and `OpenWardenWalkSheet` went with the plate that was its only way in.
+  What remains open is whether "walk the warden" is reachable enough: it is asked
+  at the post (the posting sheet's warden row, the body picker's warden tile) and
+  from a fallow node's Trail card, but never from a surface that is *about the
+  warden*. The Warden page's own THE WARDEN card is the obvious home if the
+  playtest sitting finds players hunting for it.
 - **Zone folding, one beat to watch:** the moment the second zone unlocks, the
   meadow's plates disappear behind a heading for the first time. It names its
   resources and looks pressable, but that is the one place a player could think
@@ -262,6 +294,25 @@ narrative pass — the nudges point at whatever those two settle.
   changes, so unlocks in the field are unaffected either way. Re-upload
   `store/play-games/achievement-choice-512.png` in the same visit (icons are a
   manual upload — see the tool's header). Batch with the drifted-step visit above.
+- **The store-screenshot harness stages a camp it doesn't get.** Found 2026-08-06
+  while using it to look at the new roster drawer. Two faults, both in
+  `StoreScreenshots.StageShowcaseState`, and both cosmetic-but-visible in a
+  published listing shot:
+  - **`kinshipXp = 4200` is a Kinship LEVEL, not XP.** `Kinship.Level` returns
+    `(int)familiar.kinshipXp` directly — the field stores the level, the √
+    conversion happens at Migration — so the showcase's first companion reads
+    "KINSHIP MMMMCC" and begins every run at level 4200. A sane figure (4, say)
+    is the whole fix; it is in the staging only, never in a real save.
+  - **Six companions are staged and two arrive.** The showcase opens the ladder
+    (`foldedVersesSung = 10`, `purchasedKithSlots = 2`) and adds four staged
+    companions to the two seeds, but the captured page reads "1 of 1 posts
+    walked · 2 companions" — so `SaveCodec.Capture`/`Restore` is dropping four
+    of them and clamping the ladder to one slot, not merely resting them (which
+    is what the standing note in Appendix B describes). Cause unconfirmed;
+    it means neither the store shots nor a visual check ever sees a full drawer.
+  - The third fault — every shot photographed the welcome-back sheet, since the
+    staged save is stamped in the past and a scrim outlives a tab change — is
+    fixed (`StoreCaptureRunner.ClearSheets`).
 - **Sim purity is a convention with nothing enforcing it.** `CLAUDE.md` states
   `Wildgrove.Sim` = `noEngineReferences: true`; the asmdef flag is **`false`**, and
   flipping it does not compile — Sim takes `GameDataAsset` in nearly every

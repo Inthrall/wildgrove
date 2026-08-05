@@ -117,6 +117,33 @@ namespace Wildgrove.Sim
             return count;
         }
 
+        /// <summary>
+        /// How many companions wait at camp with no post at all — who a newly
+        /// opened place is actually for. The pony is never one of them: she is
+        /// always at her own lane (§11), so <see cref="Count"/> minus
+        /// <see cref="Walking"/> counted her as idle while
+        /// <see cref="Walking"/> was already excusing her, and every reading
+        /// of "resting" was one too many from the moment the Halter landed.
+        /// </summary>
+        public static int Resting(GameState state)
+        {
+            if (state?.roster == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            foreach (var familiar in state.roster)
+            {
+                if (familiar.IsResting)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
         /// <summary>True when another familiar can take a post — stationing and stationed arrivals both ask first.</summary>
         public static bool HasRoom(GameState state, GameDataAsset data)
         {

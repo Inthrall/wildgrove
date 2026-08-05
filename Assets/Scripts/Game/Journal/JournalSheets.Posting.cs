@@ -11,9 +11,7 @@ namespace Wildgrove.Game
     /// <em>which ground?</em> then <em>who walks there?</em> Both are drawers of
     /// plates rather than lists of sentences, because both questions are about
     /// things that HAVE pictures: the grove's crops and the creatures that work
-    /// them. The (+) closing the strip runs the pair; the warden's own (+) runs
-    /// the first half alone, since tapping their plate has already answered the
-    /// second.
+    /// them. The (+) closing the strip runs the pair.
     /// <para>
     /// These are the strip's way in. The prose-row sheets stay the journal's:
     /// <see cref="OpenPostingSheet"/> when a post is tapped (it must also stand
@@ -30,15 +28,9 @@ namespace Wildgrove.Game
         // the fourth zone.
         private const float TileCell = 170f;
 
-        // Deep enough for two lines of the caption's own 13: these captions are
-        // names ("copper-scree", a familiar's), not the Stores drawer's counts,
-        // and a name clipped in half names nothing.
-        private const float TileCaption = 56f;
-        private const float TileInset = 6f;
-
-        // The holder's own plate, pinned in the tile's corner — small enough
-        // that it reads as a mark ON the ground rather than a second choice.
-        private const float HolderGlyph = 46f;
+        // The tile itself is JournalWidgets.PlateTile — the Warden page's roster
+        // is the same drawer of plates asked from a page rather than the strip,
+        // so the square, its caption strip and its corner mark are shared.
 
         /// <summary>
         /// Step one of the strip's (+): which ground? Every node in the run,
@@ -55,35 +47,11 @@ namespace Wildgrove.Game
             BuildGroundGrid(sheet, OpenBodyPickSheet);
         }
 
-        /// <summary>
-        /// The warden's plate at camp asks only where: the body is already
-        /// chosen, so a pick walks them there instead of opening step two.
-        /// </summary>
-        internal void OpenWardenWalkSheet()
-        {
-            var sheet = BeginSheet();
-
-            // The warden is named in the question, so this is where the name can
-            // be changed — the same quill-beside-the-heading pair a familiar's
-            // station sheet uses, for the same reason.
-            var heading = Row((RectTransform)sheet);
-            var headingLayout = heading.GetComponent<HorizontalLayoutGroup>();
-            headingLayout.childAlignment = TextAnchor.MiddleCenter;
-            headingLayout.spacing = 2;
-            MakeText(heading.transform, "Where shall " + _loop.WardenName() + " walk?",
-                30, TextAnchor.MiddleCenter, Ink, _serif);
-            IconButton(heading.transform, JournalSprites.QuillSprite(), 40f, 120f, () =>
-            {
-                CloseSheet();
-                // Back to this sheet afterwards, so the new name is in the
-                // question and the ground being chosen is not lost to an aside.
-                OpenWardenNamingSheet(OpenWardenWalkSheet);
-            });
-
-            MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
-
-            BuildGroundGrid(sheet, WalkWardenTo);
-        }
+        // OpenWardenWalkSheet ("Where shall the warden walk?") went with the
+        // warden's plate at the head of the strip (2026-08-06) — that plate was
+        // its only way in. The same question is asked at the post instead: every
+        // posting sheet carries a warden row, and the body picker a warden tile.
+        // WalkWardenTo below is what both of those still call.
 
         /// <summary>
         /// Step two: who walks the ground just chosen? The warden leads — they
@@ -112,7 +80,9 @@ namespace Wildgrove.Game
                 StationLabel(stationId).ToUpperInvariant()
                 + "\n" + SizeOpen(16) + "<color=" + (occupantHere != null || wardenHere ? InkHex : Ink2Hex) + ">"
                 + holder + "</color></size>",
-                occupantHere != null ? ArtLibrary.ForSpecies(occupantHere.speciesId) : null, 120f, 740f);
+                occupantHere != null
+                    ? ArtLibrary.ForSpecies(occupantHere.speciesId)
+                    : wardenHere ? ArtLibrary.ForWarden() : null, 120f, 740f);
 
             if (occupantHere == null)
             {
@@ -133,7 +103,10 @@ namespace Wildgrove.Game
             // here — the post's own sheet is where a holder stands down.
             if (!wardenHere && (node != null || isWanderPost))
             {
-                PlateTile(grid, ArtLibrary.ForWarden(), _loop.WardenName(), null, () => WalkWardenTo(stationId));
+                // Wearing the ground they stand on now, exactly as the companion
+                // tiles below do — the warden is a body like any other here.
+                PlateTile(grid, ArtLibrary.ForWarden(), _loop.WardenName(),
+                    StationPlate(Warden.PostNodeId(state)), () => WalkWardenTo(stationId));
             }
 
             foreach (var familiar in state.roster)
@@ -255,12 +228,12 @@ namespace Wildgrove.Game
 
             if (!anyResting)
             {
-                return "everyone is already posted. move one here and the post they leave falls idle, or open a slot on the Ladder to walk with one more.";
+                return "everyone is already posted. move one here and the post they leave falls idle, or widen the circle — a verse sung opens the next place at the fire, and the Warden page keeps the rest of the ladder.";
             }
 
             if (!Kith.HasRoom(state, _loop.Data))
             {
-                return "someone waits at camp, but every slot is walked. open a slot on the Ladder to put them to work, or move a walker here from a post you need less.";
+                return "someone waits at camp, but every place at the fire is walked. a verse sung opens the next one — the Warden page keeps the rest of the ladder — or move a walker here from a post you need less.";
             }
 
             return null;
@@ -303,74 +276,6 @@ namespace Wildgrove.Game
             element.minWidth = 740;
             element.preferredWidth = 740;
             return (RectTransform)go.transform;
-        }
-
-        /// <summary>
-        /// One square of a picker: the plate filling it, its name on a strip
-        /// along the bottom inside edge, and an optional corner mark for
-        /// whoever/whatever is already there. The caption is INSIDE the square
-        /// on purpose — a label hung under the tile would make the cell oblong
-        /// and the drawer ragged (the Stores drawer's rule).
-        /// </summary>
-        private static Button PlateTile(RectTransform grid, Sprite plate, string caption, Sprite corner,
-            UnityEngine.Events.UnityAction onPick)
-        {
-            var go = MakePanel("Tile", grid, DeepPaper);
-            var tile = (RectTransform)go.transform;
-            AddBorder(go, Ink2);
-
-            if (plate != null)
-            {
-                var art = new GameObject("Plate", typeof(Image));
-                art.transform.SetParent(tile, false);
-                var image = art.GetComponent<Image>();
-                image.sprite = plate;
-                image.preserveAspect = true;
-                image.raycastTarget = false;
-                var rect = (RectTransform)art.transform;
-                Stretch(rect);
-                // Clear of the border and of the caption strip below it — a
-                // plate read through either is a plate read twice.
-                rect.offsetMin = new Vector2(TileInset, TileCaption);
-                rect.offsetMax = new Vector2(-TileInset, -TileInset);
-            }
-
-            var strip = MakePanel("Caption", tile, CardPaper);
-            var stripRect = (RectTransform)strip.transform;
-            stripRect.anchorMin = Vector2.zero;
-            stripRect.anchorMax = new Vector2(1f, 0f);
-            stripRect.offsetMin = new Vector2(2f, 2f);
-            stripRect.offsetMax = new Vector2(-2f, TileCaption - 2f);
-            strip.GetComponent<Image>().raycastTarget = false;
-
-            var label = MakeText(strip.transform, caption, 13, TextAnchor.MiddleCenter, Ink, SmallCapsFont);
-            Stretch((RectTransform)label.transform);
-            label.raycastTarget = false;
-
-            if (corner != null)
-            {
-                var mark = IconImage(tile, corner, HolderGlyph, Color.white);
-                var rect = (RectTransform)mark.transform;
-                rect.anchorMin = Vector2.one;
-                rect.anchorMax = Vector2.one;
-                rect.pivot = Vector2.one;
-                rect.anchoredPosition = new Vector2(-TileInset, -TileInset);
-                rect.sizeDelta = new Vector2(HolderGlyph, HolderGlyph);
-            }
-
-            var button = go.AddComponent<Button>();
-            // Without a targetGraphic the ColorTint transition has nothing to
-            // tint, and the tile acknowledges no press at all.
-            button.targetGraphic = go.GetComponent<Image>();
-            var colours = button.colors;
-            colours.highlightedColor = new Color(0.97f, 0.96f, 0.93f, 1f);
-            colours.pressedColor = new Color(0.8f, 0.76f, 0.68f, 1f);
-            // Disabled stays SetButtonTint's job — white here so the two
-            // channels don't multiply into a blank plate.
-            colours.disabledColor = Color.white;
-            button.colors = colours;
-            button.onClick.AddListener(onPick);
-            return button;
         }
     }
 }

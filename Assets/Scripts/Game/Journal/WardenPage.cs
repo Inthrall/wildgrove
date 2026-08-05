@@ -36,9 +36,18 @@ namespace Wildgrove.Game
         /// with the only body on the page unnamed. The name sits above
         /// everything it owns, with the quill beside it that buys or changes it.
         /// <para>
-        /// While unnamed the card says the price in the warden's own hand rather
-        /// than hiding: it is the one place the offer can be made without
-        /// interrupting anything, and "the warden" reads as a gap to fill.
+        /// The card says the name and nothing else. It carried the price of a
+        /// name under it while the warden was unnamed (2026-08-06), which put a
+        /// cost on the page every visit for an offer the quill already makes —
+        /// the naming sheet is where the price belongs, and it says it there.
+        /// </para>
+        /// <para>
+        /// The label is built WITH the name in it, not empty for a live updater
+        /// to fill. An empty label in a horizontal group is measured at zero
+        /// width, so the first vertical pass wrapped a ten-letter name into ten
+        /// lines of 60px type and <see cref="HeightSettledElement"/> — grow-only
+        /// by design — held the card at that height for good. That is what made
+        /// this card a screenful of blank paper.
         /// </para>
         /// </summary>
         private void BuildNameCard()
@@ -50,25 +59,11 @@ namespace Wildgrove.Game
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.spacing = 2;
 
-            var name = MakeText(row.transform, string.Empty, 30, TextAnchor.MiddleCenter, Ink, _serif);
+            var name = MakeText(row.transform, _loop.WardenName(), 30, TextAnchor.MiddleCenter, Ink, _serif);
             IconButton(row.transform, JournalSprites.QuillSprite(), 40f, 120f,
                 () => _hud.Sheets.OpenWardenNamingSheet());
 
-            var offer = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _hand);
-            _liveUpdaters.Add(() =>
-            {
-                var named = _loop.IsWardenNamed();
-                name.text = _loop.WardenName();
-
-                var cost = Mathf.FloorToInt((float)_loop.WardenRenameCost());
-                // Nothing to say once a name is given — the quill stays, so a
-                // change is still one tap, but the price stops being news.
-                offer.gameObject.SetActive(!named && cost > 0);
-                if (!named && cost > 0)
-                {
-                    offer.text = "<i>a name of your own asks <color=" + OchreHex + ">" + cost + " amber</color></i>";
-                }
-            });
+            _liveUpdaters.Add(() => name.text = _loop.WardenName());
         }
 
         /// <summary>
@@ -370,6 +365,9 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>The cell the roster drawer aims for — the Stores drawer's own, so the two read as the same furniture.</summary>
+        private const float KithTileIdeal = 190f;
+
         private void BuildKithCard()
         {
             var card = Card("THE KITH · roster & posts");
@@ -395,123 +393,199 @@ namespace Wildgrove.Game
                 }
             });
 
-            foreach (var familiar in _loop.State.roster)
+            if (_loop.State.roster.Count > 0)
             {
-                var captured = familiar;
-                var row = Row(card);
-                var portrait = ArtLibrary.ForSpecies(captured.speciesId);
-                if (portrait != null)
-                {
-                    IconImage(row.transform, portrait, 64f, Color.white);
-                }
-
-                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink, _serif);
-                FlexibleWidth(label.gameObject, 1f);
-                // The card is headed "roster & posts" — so the row must offer
-                // the post, not just report it. "Post" opens the where-sheet
-                // (rest, every node, the trail, the wander post), and renaming
-                // now lives in there too, behind a quill beside the name: it
-                // belongs where the name is being read, not on a second button
-                // squeezing the name on every line. 120 units is the touch
-                // floor, and every unit off it goes to the name beside it.
-                Button(row.transform, "Post", 120, () => _hud.Sheets.OpenStationPickSheet(captured));
-
-                // Two lines, and the row's height is then the buttons' 120-unit
-                // touch floor rather than the text. The four lines this used to
-                // run — name/species/kinship, then level and post, then the
-                // trait and its full description — wrapped into five in a
-                // column ~344 units wide and made a page of one companion.
-                // Species reads off the plate beside it (and by name in both
-                // posting sheets); the trait moved to the Post sheet, where it
-                // is what the decision is actually about.
-                _liveUpdaters.Add(() =>
-                {
-                    // Moss, not ochre — accolades are honours, and ochre is
-                    // the ink of costs and halted work.
-                    var bonded = captured.bonded ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">BONDED</color></size>" : string.Empty;
-                    var kin = _loop.FamiliarKinship(captured) > 0
-                        ? "  " + SizeOpen(14) + "<color=" + MossDeepHex + ">KINSHIP " + Roman(_loop.FamiliarKinship(captured)) + "</color></size>"
-                        : string.Empty;
-                    // "% to next" matches the crafts card above — the levels
-                    // climb on the same idiom, so they read on it too.
-                    var toNext = Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(captured) * 100f);
-                    label.text = captured.name + bonded + kin
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">level " + Roman(_loop.FamiliarLevel(captured))
-                                 + " · " + toNext + "% to next · " + StationLabel(captured.stationId) + "</color></size>";
-                });
-
-                // The plate's newest margin line (design §7) — earned at
-                // Kinship signature milestones, in the warden's hand. Older
-                // lines stay on the plate's Record entry; the roster shows
-                // the freshest so the card doesn't grow a paragraph per
-                // companion.
-                var inscription = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2, _hand);
-                _liveUpdaters.Add(() =>
-                {
-                    var earned = _loop.FamiliarInscriptions(captured);
-                    inscription.gameObject.SetActive(earned.Count > 0);
-                    if (earned.Count > 0)
-                    {
-                        inscription.text = "\"" + earned[earned.Count - 1] + "\"";
-                    }
-                });
+                // The drawer's own instruction, in the brews card's idiom ("tap a
+                // bottle to drink it"): a plate carries a name and nothing else,
+                // so the one thing a player has to be told is that tapping it
+                // opens the companion whole.
+                MakeText(card, "<i>tap a plate to read one, and to say where they walk</i>",
+                    15, TextAnchor.MiddleCenter, Ink2, _serif);
+                BuildKithGrid(card);
             }
 
             BuildKithLadderLines(card);
         }
 
         /// <summary>
-        /// The slot ladder's open questions, under the roster (design §4): the
-        /// next verse-earned slot, then the two the store keeps — the starter
-        /// bundle (slot + Amber) first, the plain slot behind it.
+        /// The roster as a drawer of plates rather than a row per companion. A
+        /// row was a portrait, a two-line label, a Post button and an
+        /// inscription under it — legible at the three companions the ladder
+        /// starts with, and a page per companion at the eight it ends with. So
+        /// the card keeps what a glance is for (who walks with you, and where
+        /// each of them stands) and the tile's sheet takes everything that was
+        /// words: the level and how far into the next, the honours, the trait,
+        /// the freshest inscription, the posting and the rename.
+        /// <para>
+        /// Tiles are built once per structure change — the roster's count is in
+        /// <c>StructureSignature</c>, so an arrival rebuilds the page — and then
+        /// rewritten in place as names, posts and honours change. Rebuilding a
+        /// grid on every refresh would destroy the tile under a finger.
+        /// </para>
+        /// </summary>
+        private void BuildKithGrid(RectTransform card)
+        {
+            var grid = KithGrid(card);
+            var tiles = new List<KithTile>();
+            foreach (var familiar in _loop.State.roster)
+            {
+                var captured = familiar;
+                var tile = new KithTile { Familiar = captured };
+                PlateTile(grid, ArtLibrary.ForSpecies(captured.speciesId), captured.name,
+                    Where(captured), () => _hud.Sheets.OpenStationPickSheet(captured),
+                    out tile.Caption, out tile.Corner, out tile.Rule);
+                tiles.Add(tile);
+            }
+
+            _liveUpdaters.Add(() =>
+            {
+                foreach (var tile in tiles)
+                {
+                    tile.Refresh(Where(tile.Familiar));
+                }
+            });
+        }
+
+        /// <summary>
+        /// The ground a companion works, as its crop's plate — the corner mark
+        /// both posting pickers already wear. Nothing for one resting at camp:
+        /// an unmarked tile is the plainest way to say they are standing idle,
+        /// and the count above the drawer says how many.
+        /// </summary>
+        private Sprite Where(Familiar familiar)
+        {
+            return familiar.IsResting ? null : StationPlate(familiar.stationId);
+        }
+
+        /// <summary>The drawer the roster is laid on — the Stores drawer's grid, at its own cell size.</summary>
+        private static RectTransform KithGrid(RectTransform card)
+        {
+            var go = MakeRect("Grid", card).gameObject;
+            var grid = go.AddComponent<SquareCellGrid>();
+            grid.idealCell = KithTileIdeal;
+            grid.spacing = new Vector2(8f, 8f);
+            grid.childAlignment = TextAnchor.UpperLeft;
+            return (RectTransform)go.transform;
+        }
+
+        /// <summary>
+        /// One roster tile, bound to one companion, holding the pieces that
+        /// outlive what they show. The Stores drawer's shape: the page's live
+        /// pass is a loop over tiles rather than a closure per companion per
+        /// field.
+        /// </summary>
+        private sealed class KithTile
+        {
+            internal Familiar Familiar;
+            internal Text Caption;
+            internal Image Corner;
+            internal Image Rule;
+
+            internal void Refresh(Sprite where)
+            {
+                // Renaming is a tap away inside the tile's own sheet, and a
+                // rename does not change the page's structure.
+                Caption.text = Familiar.name;
+                SetTileCorner(Corner, where);
+                // Moss for a bond, ink for the rest. The row said BONDED in
+                // words and a plate has no room for words, so the honour moves
+                // onto the one channel a tile has spare — moss, not ochre,
+                // because accolades are honours and ochre is the ink of costs
+                // and halted work. No grades are drawn on this drawer, so a
+                // green rule can't be misread as the Stores drawer's "decent".
+                Rule.color = Familiar.bonded ? MossDeep : Ink2;
+            }
+        }
+
+        /// <summary>
+        /// The ladder under the roster (design §4), drawn as the marks the
+        /// attunement sheet uses — every place the kith can ever hold, the held
+        /// ones inked, the open one moss, the ones still to come faint. Then
+        /// what widens it: the next verse-earned place, and the two the store
+        /// keeps (the starter bundle first, the plain place behind it).
+        /// <para>
+        /// Those two were a bare line of text with a dashed rule and an
+        /// invisible Button on the label — the only purchase in the game that
+        /// didn't look like the amber card's rows, sitting at the foot of the
+        /// longest card on the page. "I can't see where to buy a place" was the
+        /// whole of the feedback. They are ordinary rows now: what it opens, its
+        /// price beside it, and a Buy plate that reads as one.
+        /// </para>
         /// </summary>
         private void BuildKithLadderLines(RectTransform card)
         {
-            var verseLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleLeft, Ink2);
+            var places = BuildKithPlaces(card, 26f);
+            var caption = MakeText(card, string.Empty, 15, TextAnchor.MiddleCenter, Ink2, _smallCaps);
+            var verseLine = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
+                PaintKithPlaces(places);
+                var open = _loop.KithSlots();
+                var max = Kith.SlotsMax(_loop.Data);
+                caption.text = open + " of " + max + " places at the fire";
+
+                // One line under the marks, and only ever one: the verse still
+                // to be sung while there is one, then nothing more to say once
+                // the whole circle is open. The store's own rows speak for
+                // themselves below.
                 var next = _loop.NextKithVerseMilestone();
-                verseLine.gameObject.SetActive(next > 0);
+                var full = open >= max;
+                verseLine.gameObject.SetActive(next > 0 || full);
                 if (next > 0)
                 {
-                    verseLine.text = "<i>a slot opens when " + next + " verses are sung: "
+                    verseLine.text = "<i>a place opens when " + next + " verses are sung: "
                                      + _loop.TotalVersesSung() + " so far</i>";
+                }
+                else if (full)
+                {
+                    verseLine.text = "<i>every place at the fire is open</i>";
                 }
             });
 
-            var bundleLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-            var bundleButton = bundleLine.gameObject.AddComponent<Button>();
-            bundleButton.transition = Selectable.Transition.None;
-            bundleButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.StarterBundle));
-            bundleLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            AddDashedBorder(bundleLine.gameObject);
+            var bundleAmber = Mathf.FloorToInt((float)(_loop.Data.economy?.store?.starterBundleAmber ?? 0.0));
+            BuildKithPlaceRow(card, StoreProductIds.StarterBundle,
+                "the starter bundle: a place at the fire"
+                + (bundleAmber > 0 ? ", and " + bundleAmber + " amber" : string.Empty),
+                () => !_loop.Store.IsOwned(StoreProductIds.StarterBundle));
 
-            var slotLine = MakeText(card, string.Empty, 17, TextAnchor.MiddleLeft, Ink2);
-            var slotButton = slotLine.gameObject.AddComponent<Button>();
-            slotButton.transition = Selectable.Transition.None;
-            slotButton.onClick.AddListener(() => OnBuyKithProduct(StoreProductIds.KithSlot));
-            slotLine.gameObject.AddComponent<LayoutElement>().minHeight = 52f;
-            AddDashedBorder(slotLine.gameObject);
+            // The plain place waits its turn behind the bundle — one offer on
+            // the page at a time.
+            BuildKithPlaceRow(card, StoreProductIds.KithSlot, "the ladder's last place",
+                () => _loop.Store.IsOwned(StoreProductIds.StarterBundle)
+                      && !_loop.Store.IsOwned(StoreProductIds.KithSlot));
+        }
+
+        /// <summary>
+        /// One of the ladder's two bought places, in the amber card's row idiom:
+        /// what it opens on the left with its real-money price beside it, and a
+        /// Buy plate on the right. <paramref name="offered"/> decides whether
+        /// the row stands on the page at all.
+        /// </summary>
+        private void BuildKithPlaceRow(RectTransform card, string productId, string gives, System.Func<bool> offered)
+        {
+            // Real money says its price on the line — the Play dialog must never
+            // be where the player first learns it. Moss on what it gives: this
+            // is an invitation, not a warning. The tail arrives with the (lazy)
+            // catalogue fetch, so the line is kept current.
+            System.Func<string> written = () => "open another place at the fire" + PriceTail(productId)
+                                                + "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">"
+                                                + gives + "</color></size>";
+
+            var row = Row(card);
+            // Built WITH its words, never empty for the updater to fill: an empty
+            // label measures zero wide in a horizontal group, and the row's
+            // settled height is grow-only (see BuildNameCard).
+            var label = MakeText(row.transform, written(), 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            Button(row.transform, "Buy", 170, () => OnBuyKithProduct(productId));
 
             _liveUpdaters.Add(() =>
             {
-                var bundleOwned = _loop.Store.IsOwned(StoreProductIds.StarterBundle);
-                bundleLine.gameObject.SetActive(!bundleOwned);
-                if (!bundleOwned)
+                var show = offered();
+                row.SetActive(show);
+                if (show)
                 {
-                    // Real money says its price on the line — the Play dialog
-                    // must never be where the player first learns it. Moss:
-                    // it's an invitation, not a warning.
-                    bundleLine.text = "<color=" + MossDeepHex + ">+  open a slot: the starter bundle (a slot, and a pile of amber)</color>"
-                                      + PriceTail(StoreProductIds.StarterBundle);
-                }
-
-                // The plain slot waits its turn behind the bundle.
-                var slotOwned = _loop.Store.IsOwned(StoreProductIds.KithSlot);
-                slotLine.gameObject.SetActive(bundleOwned && !slotOwned);
-                if (bundleOwned && !slotOwned)
-                {
-                    slotLine.text = "<color=" + MossDeepHex + ">+  open the last slot</color>" + PriceTail(StoreProductIds.KithSlot);
+                    label.text = written();
                 }
             });
         }
@@ -524,7 +598,7 @@ namespace Wildgrove.Game
                 {
                     case StoreResult.Purchased:
                     case StoreResult.AlreadyOwned:
-                        SetNote("a slot opens. thank you for keeping the grove.");
+                        SetNote("a place opens at the fire. thank you for keeping the grove.");
                         _dirty = true;
                         break;
                     case StoreResult.Failed:
@@ -534,7 +608,7 @@ namespace Wildgrove.Game
                         SetNote("the store couldn't be reached. nothing was charged — try again shortly.");
                         break;
                     case StoreResult.Deferred:
-                        SetNote("the payment hasn't cleared yet. the slot opens when Play finishes it.");
+                        SetNote("the payment hasn't cleared yet. the place opens when Play finishes it.");
                         break;
                 }
             });

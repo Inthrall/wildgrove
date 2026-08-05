@@ -62,6 +62,69 @@ namespace Wildgrove.Game
                 : "  " + JournalWidgets.SizeOpen(15) + "<color=" + JournalTheme.Ink2Hex + ">" + price + "</color></size>";
         }
 
+        /// <summary>
+        /// The kith's ladder as marks (design §4) — one for every place it can
+        /// ever open, so the places still to be earned or bought are visible as
+        /// faint marks rather than as nothing at all. Shared by the Warden page
+        /// and the attunement sheet: the same marks, painted by the same rule,
+        /// so the celebration and the page can never disagree about the ladder.
+        /// </summary>
+        protected Image[] BuildKithPlaces(Transform parent, float size)
+        {
+            return JournalWidgets.MarkRow(parent, Kith.SlotsMax(_loop.Data), size);
+        }
+
+        /// <summary>
+        /// Ink for a place someone stands in, moss for one standing open and
+        /// waiting for a body, the faint rule for one not yet on the ladder.
+        /// Moss because an open place is an invitation — ochre is the ink of
+        /// costs and halted work.
+        /// </summary>
+        protected void PaintKithPlaces(Image[] places)
+        {
+            var walking = _loop.KithWalking();
+            var open = _loop.KithSlots();
+            for (var index = 0; index < places.Length; index++)
+            {
+                places[index].color = index < walking
+                    ? JournalTheme.Ink
+                    : index < open
+                        ? JournalTheme.MossDeep
+                        : JournalTheme.RulePaper;
+            }
+        }
+
+        /// <summary>
+        /// The plate for what a post yields — the resource of the node it is.
+        /// Null for camp (no station at all), the trail, the wander post and
+        /// dig stations: none of those stand over a crop, so there is no
+        /// picture to show and the caller falls back to naming them.
+        /// <para>
+        /// Shared rather than the sheets' own: the Warden page's roster tiles
+        /// wear the ground each companion works, and a second lookup would be
+        /// the one place the page and the picker could disagree about what a
+        /// post looks like.
+        /// </para>
+        /// </summary>
+        protected Sprite StationPlate(string stationId)
+        {
+            var node = FindNode(stationId);
+            return node == null ? null : ArtLibrary.ForResource(node.resourceId);
+        }
+
+        protected NodeState FindNode(string stationId)
+        {
+            foreach (var node in _loop.State.nodes)
+            {
+                if (node.id == stationId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+
         // ─── Data labels (read live game state) ───
         protected List<ZoneData> ZonesInOrder() => _hud.Labels.ZonesInOrder();
         protected ZoneData LatestZone() => _hud.Labels.LatestZone();
