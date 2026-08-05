@@ -326,17 +326,39 @@ for:
   identity (display name, gamer profile) and the gameplay stats declared, with
   *collected* / *shared* / *optional* set to match — the form and the page
   disagreeing is a policy strike in its own right, whichever of the two is right.
-- **The Unity question — half answered.** `com.unity.analytics` 3.8.2 was dropped
-  2026-08-05: nothing referenced `Unity.Services.Analytics`, and it was pulling
-  `com.unity.services.analytics` 6.3.0 into the AAB, which is what a Data Safety
-  reviewer reads. The legacy `com.unity.modules.unityanalytics` built-in module went
-  with it. IAP is untouched — `com.unity.purchasing` depends on
-  `com.unity.services.core`, not on analytics. **Do not re-add either** without
-  saying so on the privacy page and the Data Safety form first.
-  What's left: Unity IAP v5 still requires `UnityServices.InitializeAsync()`
-  (`UnityIapStore.ConnectAsync`), so UGS *core* initialises on any device that opens
-  the store. Confirm by logcat whether core alone transmits an installation id — if
-  it does, Unity is a processor and belongs on the page and the form beside Google.
+- **AdMob's own disclosure table, read 2026-08-05 — three rows are stricter than
+  they look.** Google publishes the SDK's collection at
+  `developers.google.com/admob/unity/privacy/play-data-disclosure`, and it says
+  **collected *and shared*** for all four: IP address (→ *Location · Approximate
+  location*, which the form must therefore declare), user product interactions (→
+  *App activity · App interactions*), diagnostics (→ *App info and performance ·
+  Diagnostics*), and device/account identifiers (→ *Device or other IDs*). None is
+  ephemeral. Two consequences: **App interactions cannot be declared Optional** —
+  Play notes governs our half, not AdMob's, and the row answers for the whole app —
+  and **Diagnostics is Shared** even though Crashlytics alone wouldn't be (*Crash
+  logs* stays unshared). The ad id could be blocked in the manifest to drop the
+  identifier row; we don't, so it is collected.
+- **The Unity question — answered 2026-08-05: Unity does not go on the page or the
+  form.** Unity's own Apple privacy manifests ship inside both packages and declare
+  `NSPrivacyCollectedDataTypes` empty, `NSPrivacyTrackingDomains` empty and
+  `NSPrivacyTracking` false — for `com.unity.services.core` (whose only accessed-API
+  reason is UserDefaults, i.e. the installation id it keeps in PlayerPrefs) and for
+  `com.unity.purchasing`. There are no endpoint strings in core's runtime, and its
+  Telemetry/Metrics code is plumbing for *other* UGS packages, none of which are
+  installed. Unity's data-safety index points at that manifest as its whole answer
+  for Services Core. **This holds only while core + purchasing are the only UGS
+  packages** — Authentication, Cloud Save, Analytics and Crash Reporting all collect,
+  so adding any of them reopens both the page and the form. Static evidence, not
+  observed traffic; a packet check would confirm it but nothing points at needing one.
+- **Done — the analytics package drop, kept here for the warning.**
+  `com.unity.analytics` 3.8.2 was dropped 2026-08-05: nothing referenced
+  `Unity.Services.Analytics`, and it was pulling `com.unity.services.analytics` 6.3.0
+  into the AAB, which is what a Data Safety reviewer reads. The legacy
+  `com.unity.modules.unityanalytics` built-in module went with it. IAP is untouched —
+  `com.unity.purchasing` depends on `com.unity.services.core`, not on analytics.
+  **Do not re-add either** without saying so on the privacy page and the Data Safety
+  form first. UGS core still initialises whenever the store connects
+  (`UnityIapStore.ConnectAsync`); that is fine, per the entry above.
 - **Re-step the three drifted achievements** (§2) in the same visit.
 - **Add Mo as a license tester** (Settings → License testing) so test purchases
   aren't charged.
