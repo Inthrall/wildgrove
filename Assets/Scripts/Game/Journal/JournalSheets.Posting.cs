@@ -11,7 +11,9 @@ namespace Wildgrove.Game
     /// <em>which ground?</em> then <em>who walks there?</em> Both are drawers of
     /// plates rather than lists of sentences, because both questions are about
     /// things that HAVE pictures: the grove's crops and the creatures that work
-    /// them. The (+) closing the strip runs the pair.
+    /// them. The (+) closing the strip runs the pair; the warden's own empty
+    /// ground runs the first half alone, since tapping their place has already
+    /// answered the second.
     /// <para>
     /// These are the strip's way in. The prose-row sheets stay the journal's:
     /// <see cref="OpenPostingSheet"/> when a post is tapped (it must also stand
@@ -47,11 +49,38 @@ namespace Wildgrove.Game
             BuildGroundGrid(sheet, OpenBodyPickSheet);
         }
 
-        // OpenWardenWalkSheet ("Where shall the warden walk?") went with the
-        // warden's plate at the head of the strip (2026-08-06) — that plate was
-        // its only way in. The same question is asked at the post instead: every
-        // posting sheet carries a warden row, and the body picker a warden tile.
-        // WalkWardenTo below is what both of those still call.
+        /// <summary>
+        /// The warden's empty ground asks only where: the body is already chosen,
+        /// so a pick walks them there instead of opening step two. Reached from
+        /// the head of the strip while they hold no node — the same question the
+        /// posting sheet's warden row and the body picker's warden tile ask from
+        /// the other side, and all three end at <see cref="WalkWardenTo"/>.
+        /// </summary>
+        internal void OpenWardenWalkSheet()
+        {
+            var sheet = BeginSheet();
+
+            // The warden is named in the question, so this is where the name can
+            // be changed — the same quill-beside-the-heading pair a familiar's
+            // station sheet uses, for the same reason.
+            var heading = Row((RectTransform)sheet);
+            var headingLayout = heading.GetComponent<HorizontalLayoutGroup>();
+            headingLayout.childAlignment = TextAnchor.MiddleCenter;
+            headingLayout.spacing = 2;
+            MakeText(heading.transform, "Where shall " + _loop.WardenName() + " walk?",
+                30, TextAnchor.MiddleCenter, Ink, _serif);
+            IconButton(heading.transform, JournalSprites.QuillSprite(), 40f, 120f, () =>
+            {
+                CloseSheet();
+                // Back to this sheet afterwards, so the new name is in the
+                // question and the ground being chosen is not lost to an aside.
+                OpenWardenNamingSheet(OpenWardenWalkSheet);
+            });
+
+            MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            BuildGroundGrid(sheet, WalkWardenTo);
+        }
 
         /// <summary>
         /// Step two: who walks the ground just chosen? The warden leads — they

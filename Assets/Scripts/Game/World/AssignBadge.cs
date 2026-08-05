@@ -18,13 +18,11 @@ namespace Wildgrove.Game.World
         private static readonly Color WardenColour = new Color(0.95f, 0.92f, 0.83f, 1f);
         private static readonly Color VacantBack = new Color(0.9f, 0.86f, 0.76f, 0.45f);
         private static readonly Color OccupiedBack = new Color(0.98f, 0.95f, 0.88f, 1f);
-        private static readonly Color BondedColour = new Color(1f, 0.72f, 0.2f, 1f);
         private static readonly Color MarkColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
         private readonly Transform _root;
         private readonly SpriteRenderer _back;
         private readonly SpriteRenderer _icon;
-        private readonly SpriteRenderer _bondedPip;
         private readonly TextMesh _mark;
         private readonly Sprite _wardenPlate;
 
@@ -46,11 +44,13 @@ namespace Wildgrove.Game.World
             _icon = CreateSprite(root.transform, "Icon", null, Color.white, 4);
             _icon.enabled = false;
 
-            // The bonded companion's gold diamond, riding the badge's shoulder.
-            _bondedPip = CreateSprite(root.transform, "Bonded", PlaceholderArt.Diamond, BondedColour, 5);
-            _bondedPip.transform.localScale = Vector3.one * 0.12f;
-            _bondedPip.transform.localPosition = new Vector3(WorldStrip.BadgeRadiusFactor * 0.9f, WorldStrip.BadgeRadiusFactor * 0.9f, 0f);
-            _bondedPip.enabled = false;
+            // No bonded mark rides the badge (removed 2026-08-06). Only two
+            // familiars in the game can ever be bonded — Sootwing the raven and
+            // Burr the vole — and both are among the companions a run starts
+            // with, so through the early game the pip was on every badge on the
+            // strip, marking nothing. The bond is said where it can be read at
+            // leisure instead: the roster tile's moss rule, and BONDED in words
+            // on the companion's own sheet.
 
             // One TextMesh serves both the vacant "+" and the no-plate initial.
             var markGo = new GameObject("Mark");
@@ -103,14 +103,12 @@ namespace Wildgrove.Game.World
                 }
 
                 SetMark(string.Empty);
-                _bondedPip.enabled = false;
                 return;
             }
 
             if (occupant != null)
             {
                 _back.enabled = true;
-                _bondedPip.enabled = occupant.bonded;
                 if (occupantIcon != null)
                 {
                     _back.color = OccupiedBack;
@@ -134,7 +132,6 @@ namespace Wildgrove.Game.World
             // what the idle-dimmed plate already says.
             _back.enabled = false;
             _icon.enabled = false;
-            _bondedPip.enabled = false;
             SetMark(string.Empty);
         }
 

@@ -146,19 +146,27 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   with no gear in the chrome. Right for the book, unusual for a phone game — if a
   playtester can't find it, the answer is a corner mark on the Record tab, not a
   pinned bar.
-- **The warden is a body among grounds, and the strip has no plate for one.**
-  The warden's own plate led the strip for a day (2026-08-05) and came off again
-  2026-08-06: captioned with a name where every neighbour carried a crop, it read
-  as a node you could gather from. What it was reaching for is now the ORDER —
-  `WorldView.LeadWithTheWarden` puts the ground the warden stands on first, and
-  the badge under it says whose it is, exactly as it does for a companion. A
-  warden at camp therefore shows nowhere on the strip, which is what "at camp"
-  means, and `OpenWardenWalkSheet` went with the plate that was its only way in.
-  What remains open is whether "walk the warden" is reachable enough: it is asked
-  at the post (the posting sheet's warden row, the body picker's warden tile) and
-  from a fallow node's Trail card, but never from a surface that is *about the
-  warden*. The Warden page's own THE WARDEN card is the obvious home if the
-  playtest sitting finds players hunting for it.
+- **The warden's place on the strip has had three shapes in two days — watch
+  this one in the sitting.** A badge under whichever node they stood at (so a
+  warden at camp was nowhere on the board at all), then a plate of their own at
+  the head of the strip (2026-08-05), which broke the board's grammar: every
+  plate there is a GROUND, so a body among them read as a node you could gather
+  from, captioned with a name where its neighbours carried crops — and that
+  caption ran into the next one. Now (2026-08-06) it is split in two:
+  - Holding a node, the warden's own ground **leads the plates**
+    (`WorldView.LeadWithTheWarden`) and the badge under it says whose it is,
+    exactly as for a companion. The player's body reads first without being a
+    plate.
+  - Standing at camp, an **empty ground** leads instead (`WardenWorldView`): a
+    moss (+) where the crop would be, their badge beneath it, captioned "at camp"
+    (never the warden's name — that caption is what collided), and a tap that
+    opens the walk sheet.
+  - **Wandering shows nothing here, deliberately** (2026-08-06). A roaming warden
+    holds the wander post, which is no single node and so has no plate on the
+    strip — but drawing them on an empty ground would say they had no work, when
+    roaming IS the work. One slot, one meaning. The cost is that the warden is
+    off the board while wandering; the watch card and the pickers are where that
+    posting is read.
 - **Zone folding, one beat to watch:** the moment the second zone unlocks, the
   meadow's plates disappear behind a heading for the first time. It names its
   resources and looks pressable, but that is the one place a player could think
