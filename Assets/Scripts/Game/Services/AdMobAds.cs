@@ -32,6 +32,7 @@ namespace Wildgrove.Game.Services
         private bool _initialised;
         private bool _adsStarted;
         private bool _sdkReady;
+        private bool _adsWanted;
 
         public event Action<bool> ConsentResolved;
 
@@ -64,7 +65,7 @@ namespace Wildgrove.Game.Services
             return false;
         }
 
-        public void Initialise()
+        public void Initialise(bool adsWanted)
         {
             if (_initialised)
             {
@@ -72,8 +73,10 @@ namespace Wildgrove.Game.Services
             }
 
             _initialised = true;
+            _adsWanted = adsWanted;
             // Marshal SDK callbacks to the main thread so reward handlers can
-            // touch the simulation and UI safely.
+            // touch the simulation and UI safely. A property set on the wrapper —
+            // no JNI, nothing sent, so it costs a player who wants no ads nothing.
             MobileAds.RaiseAdEventsOnUnityMainThread = true;
 
             // A consent answer given on an earlier launch is already held by the
@@ -133,6 +136,30 @@ namespace Wildgrove.Game.Services
             });
         }
 
+        public void SetAdsWanted(bool adsWanted)
+        {
+            if (_adsWanted == adsWanted)
+            {
+                return;
+            }
+
+            _adsWanted = adsWanted;
+            if (!adsWanted)
+            {
+                // Nothing to unsend if the SDK is already up — this launch bought
+                // the ads away, so from here it is only "request no more". The
+                // next launch never wakes it at all, which is the state that
+                // matters and the one the privacy page describes.
+                Debug.Log("[ads] ads bought away — nothing further requested");
+                return;
+            }
+
+            if (ConsentInformation.CanRequestAds())
+            {
+                StartAds();
+            }
+        }
+
         /// <summary>Hand the current regional verdict to whoever is listening (see <see cref="IAds.ConsentResolved"/>).</summary>
         private void PublishConsent()
         {
@@ -146,8 +173,10 @@ namespace Wildgrove.Game.Services
         /// </summary>
         private void StartAds()
         {
-            if (_adsStarted)
+            if (_adsStarted || !_adsWanted)
             {
+                // Not wanted means the SDK is never initialised — this is the one
+                // line that keeps a payer's launch from reaching Google at all.
                 return;
             }
 
@@ -224,8 +253,11 @@ namespace Wildgrove.Game.Services
         /// </summary>
         private void RequestLoad(RewardedPlacement placement)
         {
-            if (!_sdkReady)
+            if (!_sdkReady || !_adsWanted)
             {
+                // _adsWanted is re-checked here, not just at StartAds: a purchase
+                // mid-session leaves an SDK that is up and a poll that would go on
+                // preloading against it.
                 return;
             }
 

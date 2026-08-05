@@ -101,6 +101,17 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // A long absence is still being credited a slice per frame, so
+            // there is no figure to greet the player with yet — and no sheet at
+            // all until there is. This is what "behind the welcome-back sheet"
+            // means: the catch-up runs in the pause the pump already takes on a
+            // cold launch (see WelcomeRewardedWaitSeconds), and the player waits
+            // on a sheet rather than on a locked frame.
+            if (_loop.CatchingUp)
+            {
+                return;
+            }
+
             // Welcome-back FIRST — it's the context for everything after it;
             // being asked to name a newcomer before being told what happened
             // while away read backwards. The whole pump waits with it, for the
@@ -1462,6 +1473,12 @@ namespace Wildgrove.Game
                             _removeAdsButton.gameObject.SetActive(false);
                         }
 
+                        // A confirmed purchase doesn't re-raise the store's
+                        // resolved event, so this is the only place that hears it
+                        // — and until it is heard, the SDK already up from launch
+                        // goes on preloading ads this player has just paid to be
+                        // rid of.
+                        _loop.NoteAdsEntitlement(true);
                         SetNote("The ads step aside. Thank you for keeping the grove.");
                         break;
                     case StoreResult.Cancelled:

@@ -16,14 +16,20 @@ namespace Wildgrove.Game.Services
 
         public bool IsRewardedReady(RewardedPlacement placement) => true;
 
-        public void Initialise()
+        public void Initialise(bool adsWanted)
         {
-            Debug.Log("[ads] stub initialised");
+            Debug.Log("[ads] stub initialised, ads " + (adsWanted ? "wanted" : "bought away"));
 
             // No consent layer in the editor, and nowhere for the answer to be
             // withheld — granted, so the fold path downstream is exercised
-            // rather than skipped.
+            // rather than skipped. Published whether ads are wanted or not, which
+            // is the real layer's contract too: the answer binds the sink.
             ConsentResolved?.Invoke(true);
+        }
+
+        public void SetAdsWanted(bool adsWanted)
+        {
+            Debug.Log("[ads] stub ads " + (adsWanted ? "wanted" : "bought away"));
         }
 
         /// <summary>No SDK, so no form to re-open — the inside cover draws no row.</summary>

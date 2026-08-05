@@ -45,6 +45,7 @@ namespace Wildgrove.Game
     public sealed class PlayerPreferences
     {
         internal const string ShareAnalyticsKey = "wildgrove.settings.shareAnalytics";
+        internal const string AdsRemovedKey = "wildgrove.entitlements.adsRemoved";
 
         private readonly IPreferenceStore _store;
 
@@ -72,6 +73,26 @@ namespace Wildgrove.Game
         {
             get => _store.GetBool(ShareAnalyticsKey, true);
             set => _store.SetBool(ShareAnalyticsKey, value);
+        }
+
+        /// <summary>
+        /// Whether the store said, last time it was asked, that the ads had been
+        /// bought away. Remembered on the device for one reason: the launch has to
+        /// decide whether to wake the ads SDK *before* billing can be asked
+        /// anything (billing is deliberately off the launch path), and waking it
+        /// for a player who paid is exactly what the purchase is meant to prevent.
+        /// <para>
+        /// This is not the source of truth for the entitlement — the store still
+        /// is, and <see cref="Wildgrove.Game.Services.IAds.SetAdsWanted"/> corrects
+        /// this launch either way once it answers. Nothing is granted on the
+        /// strength of this flag, so the worst a stale one can do is cost a
+        /// session its rewarded ads, never hand out something unpaid for.
+        /// </para>
+        /// </summary>
+        public bool AdsRemoved
+        {
+            get => _store.GetBool(AdsRemovedKey, false);
+            set => _store.SetBool(AdsRemovedKey, value);
         }
     }
 }

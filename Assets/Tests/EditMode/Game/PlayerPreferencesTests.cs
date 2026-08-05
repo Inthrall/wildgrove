@@ -59,5 +59,57 @@ namespace Wildgrove.Game.Tests
 
             Assert.That(new PlayerPreferences(store).ShareAnalytics, Is.True);
         }
+
+        [Test]
+        public void AdsRemoved_WithNothingStored_IsFalse()
+        {
+            // The other default that matters, and it points the other way: unknown
+            // has to mean "ads wanted", because this flag decides whether the ads
+            // SDK wakes at launch and nobody has paid anything yet.
+            var preferences = new PlayerPreferences(new FakeStore());
+
+            Assert.That(preferences.AdsRemoved, Is.False);
+        }
+
+        [Test]
+        public void AdsRemoved_SurvivesTheRoundTrip()
+        {
+            // The whole point of remembering it: the next launch has to know
+            // before billing can be asked, so it must be readable by an instance
+            // that never saw the purchase.
+            var store = new FakeStore();
+            var preferences = new PlayerPreferences(store);
+
+            preferences.AdsRemoved = true;
+
+            Assert.That(new PlayerPreferences(store).AdsRemoved, Is.True);
+        }
+
+        [Test]
+        public void AdsRemoved_ClearedAfterARefund_Sticks()
+        {
+            var store = new FakeStore();
+            var preferences = new PlayerPreferences(store) { AdsRemoved = true };
+
+            preferences.AdsRemoved = false;
+
+            Assert.That(new PlayerPreferences(store).AdsRemoved, Is.False);
+        }
+
+        [Test]
+        public void TheTwoChoices_DoNotShareAKey()
+        {
+            // They are stored side by side and read at the same moment in the
+            // launch; one key would make turning off analytics buy the ads away.
+            var store = new FakeStore();
+            var preferences = new PlayerPreferences(store);
+
+            preferences.ShareAnalytics = false;
+            preferences.AdsRemoved = true;
+
+            Assert.That(preferences.ShareAnalytics, Is.False);
+            Assert.That(preferences.AdsRemoved, Is.True);
+            Assert.That(store.Written, Has.Count.EqualTo(2));
+        }
     }
 }

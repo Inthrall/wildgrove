@@ -390,6 +390,15 @@ for:
   notes* on:** the stats now answer to that switch as well as to sign-in, so a
   silent log with the switch off is the gate working, not a fault. Check the off
   case too — no `recorded` line at all.
+- **A payer's launch reaches no advertiser — check it on a device.** `Ads.Initialise`
+  now takes whether ads are wanted, read from the remembered `AdsRemoved`
+  entitlement, and `MobileAds.Initialize` is never called when they are not. The
+  check is what is *absent* from a second launch after buying remove-ads: no
+  `[ads] rewarded load` lines at all, and `[ads] ads bought away` where the SDK
+  would have woken. Then buy it mid-session and confirm the same log line appears
+  immediately rather than at the next launch. Also confirm the refund direction —
+  the store reporting not-owned must start the ads that session, not leave the
+  rewarded buttons dead until a relaunch.
 - **The real out-of-app reward delivery.** `StubStore.DeliverReward` exercises
   grant → acknowledge and the refusal branch in the editor; a live Quest award
   can't be tried before Sep 1. What *is* checkable now: an internal-track build's

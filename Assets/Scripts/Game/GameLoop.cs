@@ -221,7 +221,12 @@ namespace Wildgrove.Game
             // answer on the spot.
             Ads.ConsentResolved += Telemetry.SetConsent;
 
-            Ads.Initialise();
+            // Ads are wanted unless the store said last time that they had been
+            // bought away. Asked of the remembered flag rather than the store,
+            // because billing cannot be asked anything this early — and a payer's
+            // launch must not wake the ads SDK at all, which is what the purchase
+            // is for. ResolveEntitlements corrects it either way, seconds later.
+            Ads.Initialise(!Preferences.AdsRemoved);
             // The billing connection must not run *at* startup — on some devices it
             // launches ProxyBillingActivity before Unity loads and crashes the app —
             // so it stays off the synchronous launch path. But we still resolve owned
@@ -295,6 +300,21 @@ namespace Wildgrove.Game
         {
             SyncKithPurchases();
             SyncRewardEntitlements();
+            NoteAdsEntitlement(Store.RemoveAdsOwned);
+        }
+
+        /// <summary>
+        /// Record what the store says about the ads, and hold this session to it.
+        /// Only reached when ownership is actually known (the store raises its
+        /// resolved event on a successful read, never on a failed one), so a
+        /// refund can clear the flag here without a lost connection doing the
+        /// same — and a cleared flag starts the ads this session rather than
+        /// leaving the player without rewards until they relaunch.
+        /// </summary>
+        internal void NoteAdsEntitlement(bool removed)
+        {
+            Preferences.AdsRemoved = removed;
+            Ads.SetAdsWanted(!removed);
         }
 
         /// <summary>

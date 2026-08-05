@@ -48,8 +48,33 @@ namespace Wildgrove.Game.Services
         /// <summary>True once a rewarded ad for this specific placement has loaded and can be shown right now. Per-placement: a button must ask about its own placement, not whether any ad is ready.</summary>
         bool IsRewardedReady(RewardedPlacement placement);
 
-        /// <summary>Load the SDK and preload the first rewarded ad. Safe to call once at startup.</summary>
-        void Initialise();
+        /// <summary>
+        /// Ask the regional consent layer for its verdict, and — only when
+        /// <paramref name="adsWanted"/> — wake the ads SDK and preload the first
+        /// rewarded ad. Safe to call once at startup.
+        /// <para>
+        /// The two halves are deliberately separable. A player who bought the ads
+        /// away wants nothing requested and nothing sent, so the SDK is never
+        /// woken for them; the consent verdict is still asked for, because its
+        /// answer binds the analytics sink as well (see <see cref="ConsentResolved"/>)
+        /// and a payer left with no answer would be counted under whatever
+        /// default happened to be in force.
+        /// </para>
+        /// </summary>
+        void Initialise(bool adsWanted);
+
+        /// <summary>
+        /// Say whether ads are wanted at all, once the store has answered — the
+        /// launch decision is made from the remembered entitlement, and this is
+        /// what corrects it either way.
+        /// <para>
+        /// False stops anything further being requested. True wakes the SDK if
+        /// consent allows, so a refunded or never-owned entitlement still gets
+        /// its rewarded ads this session rather than next launch. Idempotent, and
+        /// the SDK is only ever woken once.
+        /// </para>
+        /// </summary>
+        void SetAdsWanted(bool adsWanted);
 
         /// <summary>
         /// True when this player can be shown the ad-privacy form again — i.e.
