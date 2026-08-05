@@ -268,7 +268,7 @@ namespace Wildgrove.Game.World
             // The warden's plate wears no badge of its own — it IS the body, so
             // its whole circle is the tap target (posted or at camp).
             _badgeVisible[WardenCentre] = false;
-            _wardenView.Refresh(postNodeId != null);
+            _wardenView.Refresh(postNodeId != null, Warden.DisplayName(_loop.State));
 
             for (var i = 0; i < _onStrip.Count; i++)
             {
@@ -674,7 +674,9 @@ namespace Wildgrove.Game.World
 
             // The warden leads the strip, always — Layout places them first and
             // LateUpdate decides whether the plate wears their mark or the (+).
-            _wardenView = WardenWorldView.Create(_container, "the warden", _labelFont);
+            // The caption is the warden's name from the first frame; Refresh
+            // keeps it current if it changes.
+            _wardenView = WardenWorldView.Create(_container, Warden.DisplayName(_loop.State), _labelFont);
 
             // The (+) closes the strip while a kith slot stands unfilled —
             // Layout sizes and places it; LateUpdate shows and hides it.

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 43;
+        public const int CurrentVersion = 44;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -28,10 +28,10 @@ namespace Wildgrove.Sim.Saves
         /// rung to stand them on, and SaveFile sets them aside instead of
         /// deleting them.
         /// <para>
-        /// It stays at 42 now that the ladder has its first rung: a v42 save
-        /// still climbs to v43 and is read whole. It moves again only when the
-        /// bottom rungs are deliberately retired, which is a decision about
-        /// whose saves stop working.
+        /// It stays at 42 while the ladder grows above it: a v42 save climbs
+        /// 42→43→44 and is read whole. It moves only when the bottom rungs are
+        /// deliberately retired, which is a decision about whose saves stop
+        /// working — never a side effect of adding a rung on top.
         /// </para>
         /// </summary>
         public const int EarliestReadableVersion = 42;
@@ -48,6 +48,7 @@ namespace Wildgrove.Sim.Saves
                 almanacNodeIds = new List<string>(state.almanacNodeIds),
                 fixedResources = new List<string>(state.fixedResources),
                 wardenPostNodeId = state.wardenPostNodeId,
+                wardenName = state.wardenName,
                 amber = state.amber,
                 foldedVersesSung = state.foldedVersesSung,
                 purchasedKithSlots = state.purchasedKithSlots,
@@ -302,6 +303,10 @@ namespace Wildgrove.Sim.Saves
                                      || NodeExists(state, save.wardenPostNodeId)
                 ? save.wardenPostNodeId
                 : null;
+            // A blank or whitespace name restores as no name at all rather than
+            // as a warden called " " — the display falls back to "the warden",
+            // which is the same thing an un-renamed run reads.
+            state.wardenName = string.IsNullOrWhiteSpace(save.wardenName) ? null : save.wardenName.Trim();
             state.amber = save.amber;
             state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
@@ -855,6 +860,15 @@ namespace Wildgrove.Sim.Saves
                         // cooldowns until real time passed it) or need the
                         // current clock, which a migration must never reach for.
                         save.version = 43;
+                        break;
+
+                    case 43:
+                        // v44 added the warden's bought name. Left null: a save
+                        // written before the rename existed belongs to a warden
+                        // who was never named, and null is exactly how an
+                        // un-renamed v44 run reads — every line falls back to
+                        // "the warden", which is what that save already said.
+                        save.version = 44;
                         break;
 
                     default:

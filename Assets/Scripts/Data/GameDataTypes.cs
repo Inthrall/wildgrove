@@ -620,6 +620,7 @@ namespace Wildgrove.Data
             public double adDripAmber;
             public double weeklyCacheAmber;
             public double renameCostAmber;
+            public double wardenRenameCostAmber;
         }
 
         /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>

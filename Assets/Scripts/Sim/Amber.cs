@@ -174,6 +174,57 @@ namespace Wildgrove.Sim
             return true;
         }
 
+        /// <summary>
+        /// The Amber naming the warden asks — dearer than a companion's, because
+        /// it is bought once for the body the player wears for every run and it
+        /// reads on every page. 0 when the amber system is inert, so fixtures and
+        /// a pre-amber save name for free rather than being blocked.
+        /// </summary>
+        public static double WardenRenameCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.wardenRenameCostAmber > 0.0 ? amber.wardenRenameCostAmber : 0.0;
+        }
+
+        /// <summary>Whether naming the warden is affordable right now — free (cost 0), or enough Amber in hand for the price.</summary>
+        public static bool CanRenameWarden(GameState state, GameDataAsset data)
+        {
+            return state != null && state.amber >= WardenRenameCost(data);
+        }
+
+        /// <summary>
+        /// Name the warden for its Amber price. Charged on a change only, like a
+        /// companion's: re-typing the same name, or typing blank, is a free
+        /// no-op rather than a purchase. Returns whether the name changed.
+        /// <para>
+        /// Clearing a name back to unnamed is deliberately NOT offered here — a
+        /// blank is refused, not treated as "call me the warden again", so a
+        /// mis-tap can never silently spend 50 Amber undoing a name.
+        /// </para>
+        /// </summary>
+        public static bool TryRenameWarden(GameState state, GameDataAsset data, string name)
+        {
+            if (state == null || string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            var trimmed = name.Trim();
+            if (trimmed == Warden.DisplayName(state))
+            {
+                return false;
+            }
+
+            if (!CanRenameWarden(state, data))
+            {
+                return false;
+            }
+
+            state.wardenName = trimmed;
+            state.amber -= WardenRenameCost(data);
+            return true;
+        }
+
         /// <summary>Whether the rewarded Amber drip is configured and off cooldown — gates the "Watch" button on both the ad and the ad-free (Remove Ads) paths.</summary>
         public static bool CanGrantDrip(GameState state, GameDataAsset data, long nowUnixMs)
         {

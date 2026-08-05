@@ -111,6 +111,53 @@ namespace Wildgrove.Game
             return renamed;
         }
 
+        /// <summary>What to call the warden on the page — their bought name, or "the warden" while they have none.</summary>
+        public string WardenName()
+        {
+            return Warden.DisplayName(State);
+        }
+
+        /// <summary>The warden's name in the possessive — "the warden's own hands", or "Rowan's".</summary>
+        public string WardenNamePossessive()
+        {
+            return Warden.PossessiveName(State);
+        }
+
+        /// <summary>Whether the warden has been named — the sheet asks, to head a first naming differently from a change.</summary>
+        public bool IsWardenNamed()
+        {
+            return Warden.IsNamed(State);
+        }
+
+        /// <summary>The Amber naming the warden asks, or 0 when the amber system is inert — drives the sheet's price label.</summary>
+        public double WardenRenameCost()
+        {
+            return Amber.WardenRenameCost(Data);
+        }
+
+        /// <summary>Whether naming the warden is affordable right now — the "Save" button's enabled state.</summary>
+        public bool CanRenameWarden()
+        {
+            return Amber.CanRenameWarden(State, Data);
+        }
+
+        /// <summary>
+        /// Name the warden for its Amber price. Returns false when the name is
+        /// blank, unchanged, or unaffordable; the cost is spent only when the
+        /// name actually changes.
+        /// </summary>
+        public bool RenameWarden(string name)
+        {
+            var cost = Amber.WardenRenameCost(Data);
+            var named = Amber.TryRenameWarden(State, Data, name);
+            if (named)
+            {
+                Telemetry.LogEvent("warden_renamed", ("amber_cost", cost));
+            }
+
+            return named;
+        }
+
         /// <summary>
         /// Station a familiar at a post — a node id, "trail", a "dig:{zone}"
         /// site, or null to rest at camp (design §2). Returns false when a

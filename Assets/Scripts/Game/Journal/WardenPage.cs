@@ -22,11 +22,53 @@ namespace Wildgrove.Game
 
         internal void BuildWardenPage()
         {
+            BuildNameCard();
             BuildKitCard();
             BuildCraftsCard();
             BuildFavoursCard();
             BuildKithCard();
             BuildRunCard();
+        }
+
+        /// <summary>
+        /// The page's own head: who this is. The Warden page is the warden's
+        /// identity, and until now it opened on their luggage — the kit card —
+        /// with the only body on the page unnamed. The name sits above
+        /// everything it owns, with the quill beside it that buys or changes it.
+        /// <para>
+        /// While unnamed the card says the price in the warden's own hand rather
+        /// than hiding: it is the one place the offer can be made without
+        /// interrupting anything, and "the warden" reads as a gap to fill.
+        /// </para>
+        /// </summary>
+        private void BuildNameCard()
+        {
+            var card = Card("THE WARDEN");
+
+            var row = Row(card);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 2;
+
+            var name = MakeText(row.transform, string.Empty, 30, TextAnchor.MiddleCenter, Ink, _serif);
+            IconButton(row.transform, JournalSprites.QuillSprite(), 40f, 120f,
+                () => _hud.Sheets.OpenWardenNamingSheet());
+
+            var offer = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _hand);
+            _liveUpdaters.Add(() =>
+            {
+                var named = _loop.IsWardenNamed();
+                name.text = _loop.WardenName();
+
+                var cost = Mathf.FloorToInt((float)_loop.WardenRenameCost());
+                // Nothing to say once a name is given — the quill stays, so a
+                // change is still one tap, but the price stops being news.
+                offer.gameObject.SetActive(!named && cost > 0);
+                if (!named && cost > 0)
+                {
+                    offer.text = "<i>a name of your own asks <color=" + OchreHex + ">" + cost + " amber</color></i>";
+                }
+            });
         }
 
         /// <summary>
@@ -67,7 +109,7 @@ namespace Wildgrove.Game
             var snapshot = Modifiers.Of(state, data);
             if (snapshot.wardenYieldBonus > 0.0)
             {
-                parts.Add("+" + PlainNumber(snapshot.wardenYieldBonus * 100.0) + "% the warden's own hands");
+                parts.Add("+" + PlainNumber(snapshot.wardenYieldBonus * 100.0) + "% " + _loop.WardenNamePossessive() + " own hands");
             }
 
             if (snapshot.craftSpeedGlobal != 1.0)
@@ -234,7 +276,7 @@ namespace Wildgrove.Game
                 {
                     if (_loop.WearGear(captured))
                     {
-                        Flash(action, "on the warden", true);
+                        Flash(action, "on " + _loop.WardenName(), true);
                         SetNote("took the " + captured.displayName.ToLowerInvariant()
                                 + " out of the bag. what it replaced keeps, and nothing is lost.");
                         _dirty = true;

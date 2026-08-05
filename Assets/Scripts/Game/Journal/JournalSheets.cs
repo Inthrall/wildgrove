@@ -789,6 +789,78 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// Name the warden — the player's own body, priced apart from a
+        /// companion's because it is bought once and read on every page.
+        /// <para>
+        /// The field opens EMPTY on a first naming rather than pre-filled with
+        /// "the warden": that phrase is the absence of a name, and offering it as
+        /// the starting text invites a player to edit it into "the warden of the
+        /// north" — a placeholder mistaken for a default. A later change does
+        /// pre-fill, because there the text really is their name.
+        /// </para>
+        /// </summary>
+        internal void OpenWardenNamingSheet(System.Action onClosed = null)
+        {
+            System.Action done = () =>
+            {
+                CloseSheet();
+                if (onClosed != null)
+                {
+                    onClosed();
+                }
+            };
+
+            var sheet = onClosed == null ? BeginSheet() : BeginSheet(done);
+            var named = _loop.IsWardenNamed();
+            MakeText(sheet, named ? "Take a new name" : "Name the warden", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            var cost = Mathf.FloorToInt((float)_loop.WardenRenameCost());
+            if (cost > 0)
+            {
+                MakeText(sheet, "your own name asks " + SizeOpen(19) + "<color=" + OchreHex + ">"
+                                + cost + " amber</color></size>", 18, TextAnchor.UpperCenter, Ink2, _hand);
+            }
+
+            // §7 register: the sheet says what the name is FOR, since the price
+            // is steep and its effect is diffuse — it changes lines the player
+            // is not looking at while they read this one.
+            MakeText(sheet, "<i>a name the whole grove will use — every post, every page.</i>",
+                16, TextAnchor.UpperCenter, Ink2, _hand);
+
+            var field = MakeInputField(sheet, named ? _loop.WardenName() : string.Empty);
+            var error = MakeText(sheet, string.Empty, 16, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            var save = Button(sheet, cost > 0 ? "Save · " + cost + " amber" : "Save", 320, () =>
+            {
+                var typed = field.text;
+                if (string.IsNullOrWhiteSpace(typed) || typed.Trim() == _loop.WardenName())
+                {
+                    done();
+                    return;
+                }
+
+                if (!_loop.CanRenameWarden())
+                {
+                    error.text = "<color=" + OchreInkHex + "><i>not enough amber. resin is dear, and you go unnamed a while longer.</i></color>";
+                    return;
+                }
+
+                if (_loop.RenameWarden(typed))
+                {
+                    SetNote(named
+                        ? "a new name, paid in resin, set at the front of the journal."
+                        : "you set your name at the front of the journal.");
+                    _dirty = true;
+                }
+
+                done();
+            });
+            KeyAction(save);
+
+            Button(sheet, "Cancel", 320, () => done());
+        }
+
+        /// <summary>
         /// The posting sheet — the strip's badges are the post affordance
         /// (one body per post, design §2), so the sheet asks only "who".
         /// Whoever holds the post is named at the top and gets their own
@@ -824,7 +896,7 @@ namespace Wildgrove.Game
             // three separate lines of type saying the same thing.
             var holder = occupantHere != null
                 ? occupantHere.name + " walks here"
-                : wardenHere ? "the warden walks here" : "no one walks here";
+                : wardenHere ? _loop.WardenName() + " walks here" : "no one walks here";
             var holderPlate = occupantHere != null ? ArtLibrary.ForSpecies(occupantHere.speciesId) : null;
             PictureRow(sheet, StationPlate(stationId),
                 StationLabel(stationId).ToUpperInvariant()
@@ -847,10 +919,10 @@ namespace Wildgrove.Game
             }
             else if (wardenHere)
             {
-                Button(sheet, "Send the warden back to camp", 740, () =>
+                Button(sheet, "Send " + _loop.WardenName() + " back to camp", 740, () =>
                 {
                     _loop.RestWarden();
-                    SetNote("the warden steps back to camp.");
+                    SetNote(_loop.WardenName() + " steps back to camp.");
                     CloseSheet();
                 });
             }
@@ -859,19 +931,21 @@ namespace Wildgrove.Game
             {
                 // Moss verbs — these are the actions the sheet exists for;
                 // ochre made them read as warnings.
-                var wardenVerb = isWanderPost ? "Send the warden wandering" : "Walk the warden here";
+                var wardenVerb = isWanderPost
+                    ? "Send " + _loop.WardenName() + " wandering"
+                    : "Walk " + _loop.WardenName() + " here";
                 Button(sheet, "<color=" + MossDeepHex + ">" + wardenVerb + "</color>  "
                               + SizeOpen(15) + "<color=" + Ink2Hex + ">" + WardenWhereabouts() + "</color></size>", 740, () =>
                 {
                     if (isWanderPost)
                     {
                         _loop.WanderWarden();
-                        SetNote("the warden sets off to wander the run.");
+                        SetNote(_loop.WardenName() + " sets off to wander the run.");
                     }
                     else
                     {
                         _loop.PostWarden(node);
-                        SetNote("the warden walks to " + StationLabel(node.id) + ".");
+                        SetNote(_loop.WardenName() + " walks to " + StationLabel(node.id) + ".");
                     }
 
                     CloseSheet();

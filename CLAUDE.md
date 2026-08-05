@@ -70,10 +70,13 @@ sequential migration `switch`, and make sure `Restore` copes with the old data
 (clamping, dedupe, resting things that no longer fit). Test saves from before a
 migration are the cheapest way to find what `Restore` missed.
 
-**The ladder has one rung.** `CurrentVersion` is 43 and `EarliestReadableVersion` is
-42: a v42 save climbs the `case 42:` step (which adds nothing — the clock ratchet's
-high water mark is meaningfully zero on a save written before it existed) and is read
-whole. Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
+**The ladder has two rungs.** `CurrentVersion` is 44 and `EarliestReadableVersion` is
+42: a v42 save climbs `case 42:` (the clock ratchet's high water mark, meaningfully
+zero on a save written before it existed) then `case 43:` (the warden's bought name,
+left null — an un-named warden is exactly what that save described), and is read
+whole. Both rungs add nothing but a version, which is the shape to copy: a migration
+fills in only what its version predates, and never reaches for current content data.
+Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
 `EarliestReadableVersion` where it is**. It moves again only when bottom rungs are
 deliberately dropped, and raising it is a decision about whose saves stop working.
 

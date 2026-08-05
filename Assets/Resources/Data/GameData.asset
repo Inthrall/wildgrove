@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 1f4fb3d1a55091e8184f958707634801f54487ca1e5cf7416f515f7cb4b5dc13
+  sourceHash: 3e9a0d6c27d458bd1ff45eae29a498ee16a138a4f6b585c3c004aec4ef3191ea
   economy:
     costGrowth:
       building: 1.25
@@ -105,7 +105,8 @@ MonoBehaviour:
       timeSkipDailyCapHours: 24
       adDripAmber: 3
       weeklyCacheAmber: 20
-      renameCostAmber: 5
+      renameCostAmber: 30
+      wardenRenameCostAmber: 50
     store:
       starterBundleAmber: 30
       amberPackSmall: 50

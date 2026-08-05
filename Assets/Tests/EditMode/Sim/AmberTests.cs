@@ -36,7 +36,9 @@ namespace Wildgrove.Sim.Tests
                 observation = new EconomyData.ObservationData { pityTimerHoursWatched = 4, baseSketchesPerHour = 0.25 },
                 // digFindsPerHour high enough that one 1-second sub-step is a
                 // certain find — the chance test would flake otherwise.
-                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20, renameCostAmber = 5 },
+                // The two rename prices are deliberately different numbers here,
+                // so a test that read the wrong one could not pass by accident.
+                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20, renameCostAmber = 5, wardenRenameCostAmber = 20 },
                 store = new EconomyData.StoreData { starterBundleAmber = 30, amberPackSmall = 50, amberPackLarge = 150 },
             };
             _data.resources = new List<ResourceData>
@@ -370,6 +372,117 @@ namespace Wildgrove.Sim.Tests
                 "no amber economy — a rename is free, never blocked");
             Assert.That(familiar.name, Is.EqualTo("Bramble"));
             Assert.That(state.amber, Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void WardenName_ReadsAsTheWardenUntilOneIsBought()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Warden.IsNamed(state), Is.False);
+            Assert.That(Warden.DisplayName(state), Is.EqualTo("the warden"),
+                "an un-renamed run must read exactly as it did before naming existed");
+            Assert.That(Warden.PossessiveName(state), Is.EqualTo("the warden's"));
+        }
+
+        [Test]
+        public void WardenRename_ChargesItsOwnDearerPriceAndNamesEverySurface()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 25.0;
+
+            Assert.That(Amber.CanRenameWarden(state, _data), Is.True);
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.True);
+
+            Assert.That(state.wardenName, Is.EqualTo("Rowan"));
+            Assert.That(Warden.IsNamed(state), Is.True);
+            Assert.That(Warden.DisplayName(state), Is.EqualTo("Rowan"));
+            Assert.That(Warden.PossessiveName(state), Is.EqualTo("Rowan's"));
+            Assert.That(state.amber, Is.EqualTo(5.0).Within(Tolerance),
+                "the warden's own 20-amber price is spent, not the familiar's 5");
+        }
+
+        [Test]
+        public void WardenRename_RefusedAndSpendsNothingWhenShort()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 19.0; // one short of the warden's 20-amber price
+
+            Assert.That(Amber.CanRenameWarden(state, _data), Is.False);
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.False);
+            Assert.That(Warden.DisplayName(state), Is.EqualTo("the warden"), "the anonymity holds");
+            Assert.That(state.amber, Is.EqualTo(19.0).Within(Tolerance), "nothing spent on a refusal");
+        }
+
+        [Test]
+        public void WardenRename_AffordableAtTheFamiliarPriceIsStillRefused()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 6.0; // enough for a familiar's 5, nowhere near the warden's 20
+
+            Assert.That(Amber.CanRename(state, _data), Is.True, "a companion is affordable here");
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.False,
+                "the warden's price must be read from its own knob, not the familiar's");
+            Assert.That(state.amber, Is.EqualTo(6.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void WardenRename_UnchangedOrBlankNameSpendsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 60.0;
+
+            Assert.That(Amber.TryRenameWarden(state, _data, "  "), Is.False, "blank is a free no-op");
+            Assert.That(Amber.TryRenameWarden(state, _data, "the warden"), Is.False,
+                "typing the anonymous name back is no change — and must never be charged for");
+
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.True);
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.False, "no change, no charge");
+            Assert.That(Amber.TryRenameWarden(state, _data, " Rowan "), Is.False,
+                "the same name in whitespace is still the same name");
+            Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance), "exactly one naming was paid for");
+        }
+
+        [Test]
+        public void WardenRename_IsFreeWhenAmberIsInert()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 0.0;
+
+            Assert.That(Amber.WardenRenameCost(_data), Is.EqualTo(0.0));
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.True,
+                "no amber economy — naming is free, never blocked");
+            Assert.That(Warden.DisplayName(state), Is.EqualTo("Rowan"));
+        }
+
+        [Test]
+        public void WardenName_SurvivesTheFold()
+        {
+            // The same one-verse rite TimeSkip_BudgetSurvivesMigration stands up,
+            // for the same reason: a fold only happens once a rite is sung.
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData> { new RiteData { id = "first-rite", migration = 0, verses = { verse } } },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+            state.amber = 25.0;
+            Assert.That(Amber.TryRenameWarden(state, _data, "Rowan"), Is.True);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next, Is.Not.Null, "the sung rite lets the fold happen at all");
+            Assert.That(Warden.DisplayName(next), Is.EqualTo("Rowan"),
+                "a bought name crosses the fold — a warden does not forget their name by migrating");
         }
 
         [Test]

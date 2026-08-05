@@ -815,6 +815,64 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void TryMigrate_V43_ClimbsToCurrentUnnamed()
+        {
+            // v44 added the warden's bought name. A save written before it
+            // belongs to a warden who was never named, and null is exactly how
+            // an un-renamed v44 run reads — so the migration invents nothing.
+            var save = new SaveData { version = 43 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.wardenName, Is.Null);
+        }
+
+        [Test]
+        public void Restore_V43Save_ReadsAsTheAnonymousWarden()
+        {
+            var save = new SaveData { version = 43 };
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(Warden.DisplayName(state), Is.EqualTo(Warden.Anonymous),
+                "an older save must read exactly as it did before naming existed");
+        }
+
+        [Test]
+        public void Capture_RoundTripsTheWardenName()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.wardenName = "Rowan";
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.wardenName, Is.EqualTo("Rowan"),
+                "a name that didn't survive the save would be bought again every launch");
+        }
+
+        [Test]
+        public void Restore_BlankWardenName_ReadsAsNoNameRatherThanAWardenCalledNothing()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.wardenName = "   ";
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(state.wardenName, Is.Null);
+            Assert.That(Warden.DisplayName(state), Is.EqualTo(Warden.Anonymous));
+        }
+
+        [Test]
+        public void Restore_PaddedWardenName_ComesBackTrimmed()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.wardenName = "  Rowan  ";
+
+            Assert.That(SaveCodec.Restore(save, _data).wardenName, Is.EqualTo("Rowan"));
+        }
+
+        [Test]
         public void TryMigrate_CurrentVersion_NeedsNoRung()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);

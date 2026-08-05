@@ -82,10 +82,41 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
 - **Verse cards don't render the spotlight (✳) marker.**
 - **The Migration vignette shows the Verdure gain only** — per-familiar Kinship
   gains aren't itemised, and Kinship is legible everywhere else now.
-- **Kith post buttons are a 4-column grid** sized for MVP station counts. Eight
-  zones exist now; this was flagged to revisit "when zones multiply" and they have.
-  `SquareCellGrid` (built for the Stores drawer, 2026-08-04) is the width-aware
-  grid this wants — it picks its own column count per page width.
+- **The Warden page's kith list is rows, and wants to be a Stores-style grid.**
+  `BuildKithCard` lays one row per companion — portrait, a two-line label, a
+  "Post" button, and an inscription line under it — which read well at three
+  companions and is a page per companion at eight slots. The Stores drawer is the
+  shape it wants: a `SquareCellGrid` of plates, each tile a portrait with the
+  name in its caption strip. Everything the row says now moves onto the popup a
+  tile opens — level and % to next, Kinship, BONDED, the trait, the freshest
+  inscription, the post, and the rename — so a companion is read in one place
+  rather than half on the card and half in a sheet. The grid itself needs no new
+  tooling: the posting pickers already run on `SquareCellGrid` (2026-08-05), and
+  `StoresPage.Tile` is the plate-and-caption tile to match.
+  (`WardenPage.BuildKithCard`, `JournalSheets.OpenStationPickSheet`, `StoresPage`)
+- ~~**Renaming the warden is priced at 50 Amber and does not exist.**~~
+  ✅ RESOLVED 2026-08-06. Both prices are live and played through by the same
+  plumbing: a companion at **30** (`economy.amber.renameCostAmber`, up from a
+  never-played 5, which was loose change beside a 15-amber skip) and the warden
+  at **50** (`wardenRenameCostAmber` — dearer because it is bought once for the
+  body the player wears across every fold, and it reads on every page).
+  `state.wardenName` is the field, `SaveCodec` v44 the rung (`EarliestReadable`
+  stays 42), and `Migration` carries the name across the fold so a purchase is
+  never charged twice. `Warden.DisplayName`/`PossessiveName` are the one gate
+  every surface reads, so an un-named run renders exactly the strings it always
+  did — that is what made the sweep safe. Named everywhere the warden is shown
+  **except the tab**, which stays "Warden" as the page's name, not the body's:
+  the strip caption, both posting pickers and the plate tile, the walk/stand-down
+  buttons and their notes, the empty-post notice, the trail plate's "posted"
+  line, the pony's side, both "own hands" favour lines, and the gear-worn flash.
+  Bought from a quill on the new **THE WARDEN** card heading the Warden page, or
+  from the quill beside the walk sheet's question.
+  <br>**Two knobs the playtest sitting should judge** (both are first guesses,
+  like the rest of §1.1): whether 50 reads as *your own name* or as a wall in
+  front of one, given a free player's ~40 Amber/week; and whether the offer
+  belongs on the Warden card at all, where an un-named warden meets it every
+  visit. Deliberate: a blank is refused rather than treated as clearing the name,
+  so a mis-tap can never spend 50 Amber undoing one.
 - **The Stores drawer has no sort or filter, and no name on a tile.** The order
   is data order — gatherables then crafted goods — which is stable but arbitrary
   once the drawer runs past a screen, and there is no "what can I craft with"

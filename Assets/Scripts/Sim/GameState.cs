@@ -58,6 +58,16 @@ namespace Wildgrove.Sim
         /// </summary>
         public string wardenPostNodeId;
 
+        /// <summary>
+        /// What the warden is called, bought once for Amber (design §4's rename,
+        /// extended to the player's own body). Empty until then, and empty is
+        /// the shipped state: <see cref="Warden.DisplayName"/> reads it as "the
+        /// warden", which is what every line said before a name could be given.
+        /// Crosses the fold with the rest of what is the player's rather than
+        /// the run's — a warden does not forget their name by migrating.
+        /// </summary>
+        public string wardenName;
+
         /// <summary>Amber (design §10) — the premium currency; observation sites surface it free, and it survives Migration.</summary>
         public double amber;
 

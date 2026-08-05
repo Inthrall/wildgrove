@@ -336,7 +336,7 @@ namespace Wildgrove.Game
             {
                 var pony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation);
                 status.text = pony != null
-                    ? pony.name + " walks at the warden's side"
+                    ? pony.name + " walks at " + _loop.WardenNamePossessive() + " side"
                     : "the day's pickings walk themselves home";
             });
         }
@@ -571,7 +571,7 @@ namespace Wildgrove.Game
                 var standing = occupant != null
                     ? "<color=" + MossDeepHex + ">" + occupant.name + " posted</color>"
                     : wardenHere
-                        ? "<color=" + MossDeepHex + ">the warden posted</color>"
+                        ? "<color=" + MossDeepHex + ">" + _loop.WardenName() + " posted</color>"
                         : roamed
                             ? "<color=" + Ink2Hex + ">no one posted · a wanderer passes</color>"
                             : "<color=" + OchreInkHex + ">fallow: no one posted</color>";

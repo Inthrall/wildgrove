@@ -101,8 +101,14 @@ namespace Wildgrove.Game.World
         /// Draw the warden as posted (their mark) or at camp (the moss (+)).
         /// <paramref name="posted"/> covers the wander post too: roaming is
         /// holding a post, so the mark stands either way.
+        /// <para>
+        /// The caption comes in per refresh rather than being fixed at
+        /// <see cref="Create"/>: the warden can be named mid-run, and the strip
+        /// only rebuilds when the run itself changes — so a name set at camp
+        /// would otherwise sit unread on the plate until the next fold.
+        /// </para>
         /// </summary>
-        public void Refresh(bool posted)
+        public void Refresh(bool posted, string caption)
         {
             _face.enabled = posted;
             _disc.enabled = posted && !_hasPlate;
@@ -110,6 +116,11 @@ namespace Wildgrove.Game.World
             if (_mark.text != text)
             {
                 _mark.text = text;
+            }
+
+            if (_label != null && caption != null && _label.text != caption)
+            {
+                _label.text = caption;
             }
         }
 

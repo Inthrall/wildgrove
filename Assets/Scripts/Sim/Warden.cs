@@ -14,6 +14,50 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Warden
     {
+        /// <summary>
+        /// The unnamed warden's name — what every line called them before a
+        /// rename could be bought, and what they are called again if the name
+        /// is ever cleared. Lower case because it reads mid-sentence far more
+        /// often than it opens one ("walk the warden here"), and a real name
+        /// carries its own capital.
+        /// </summary>
+        public const string Anonymous = "the warden";
+
+        /// <summary>
+        /// What to call the warden on the page: their bought name, or
+        /// <see cref="Anonymous"/> while they have none. Every surface that
+        /// names the warden goes through here, so an unnamed run reads exactly
+        /// as it always did and a named one changes everywhere at once.
+        /// </summary>
+        /// <remarks>
+        /// A display word in the sim, like <c>Roster</c>'s fallback familiar
+        /// name: the name is state, "unnamed" is a fact about that state, and
+        /// one answer for every caller is worth more here than keeping the last
+        /// English out of the assembly.
+        /// </remarks>
+        public static string DisplayName(GameState state)
+        {
+            var name = state?.wardenName;
+            return string.IsNullOrWhiteSpace(name) ? Anonymous : name.Trim();
+        }
+
+        /// <summary>
+        /// The warden's name in the possessive — "the warden's own hands", or
+        /// "Rowan's". Always <c>'s</c>, including after a trailing s ("Ross's"),
+        /// which is the modern convention and the one that never reads as a
+        /// plural.
+        /// </summary>
+        public static string PossessiveName(GameState state)
+        {
+            return DisplayName(state) + "'s";
+        }
+
+        /// <summary>Whether the warden has been named — the rename sheet asks, to tell a first naming from a change.</summary>
+        public static bool IsNamed(GameState state)
+        {
+            return !string.IsNullOrWhiteSpace(state?.wardenName);
+        }
+
         /// <summary>The warden's post — a node id, <see cref="Familiar.WanderStation"/>, or null while they stand at camp.</summary>
         public static string PostNodeId(GameState state)
         {

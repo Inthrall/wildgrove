@@ -62,7 +62,24 @@ namespace Wildgrove.Game
         internal void OpenWardenWalkSheet()
         {
             var sheet = BeginSheet();
-            MakeText(sheet, "Where shall the warden walk?", 30, TextAnchor.UpperCenter, Ink, _serif);
+
+            // The warden is named in the question, so this is where the name can
+            // be changed — the same quill-beside-the-heading pair a familiar's
+            // station sheet uses, for the same reason.
+            var heading = Row((RectTransform)sheet);
+            var headingLayout = heading.GetComponent<HorizontalLayoutGroup>();
+            headingLayout.childAlignment = TextAnchor.MiddleCenter;
+            headingLayout.spacing = 2;
+            MakeText(heading.transform, "Where shall " + _loop.WardenName() + " walk?",
+                30, TextAnchor.MiddleCenter, Ink, _serif);
+            IconButton(heading.transform, JournalSprites.QuillSprite(), 40f, 120f, () =>
+            {
+                CloseSheet();
+                // Back to this sheet afterwards, so the new name is in the
+                // question and the ground being chosen is not lost to an aside.
+                OpenWardenNamingSheet(OpenWardenWalkSheet);
+            });
+
             MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
             BuildGroundGrid(sheet, WalkWardenTo);
@@ -90,7 +107,7 @@ namespace Wildgrove.Game
             // itself: its crop, and whoever stands there now.
             var holder = occupantHere != null
                 ? occupantHere.name + " walks here"
-                : wardenHere ? "the warden walks here" : "no one walks here";
+                : wardenHere ? _loop.WardenName() + " walks here" : "no one walks here";
             PictureRow(sheet, StationPlate(stationId),
                 StationLabel(stationId).ToUpperInvariant()
                 + "\n" + SizeOpen(16) + "<color=" + (occupantHere != null || wardenHere ? InkHex : Ink2Hex) + ">"
@@ -116,7 +133,7 @@ namespace Wildgrove.Game
             // here — the post's own sheet is where a holder stands down.
             if (!wardenHere && (node != null || isWanderPost))
             {
-                PlateTile(grid, ArtLibrary.ForWarden(), "the warden", null, () => WalkWardenTo(stationId));
+                PlateTile(grid, ArtLibrary.ForWarden(), _loop.WardenName(), null, () => WalkWardenTo(stationId));
             }
 
             foreach (var familiar in state.roster)
@@ -190,7 +207,7 @@ namespace Wildgrove.Game
             if (stationId == Familiar.WanderStation)
             {
                 _loop.WanderWarden();
-                SetNote("the warden sets off to wander the run.");
+                SetNote(_loop.WardenName() + " sets off to wander the run.");
                 CloseSheet();
                 return;
             }
@@ -202,7 +219,7 @@ namespace Wildgrove.Game
             }
 
             _loop.PostWarden(node);
-            SetNote("the warden walks to " + StationLabel(stationId) + ".");
+            SetNote(_loop.WardenName() + " walks to " + StationLabel(stationId) + ".");
             CloseSheet();
         }
 
@@ -233,7 +250,7 @@ namespace Wildgrove.Game
                 // instruction, in the order it is done: leave the pile, someone
                 // comes.
                 return "no one walks with you yet. leave a pile of a plate's own goods on the Trail page and whoever is drawn to it comes to stay."
-                       + (wardenCanStand ? " until then the warden can stand here alone." : string.Empty);
+                       + (wardenCanStand ? " until then " + _loop.WardenName() + " can stand here alone." : string.Empty);
             }
 
             if (!anyResting)

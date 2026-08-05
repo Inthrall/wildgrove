@@ -185,6 +185,11 @@ namespace Wildgrove.Sim
             // "You keep … Amber" — the premium currency never resets.
             next.amber = state.amber;
 
+            // The warden's name crosses with it, and for the same reason: it was
+            // bought, and it names the player rather than the run. A fold that
+            // dropped it would charge 50 Amber again for a name already given.
+            next.wardenName = state.wardenName;
+
             // Lore stays read: run 2 re-unlocks the zones without re-showing
             // every stone the warden has already stood before. (NewGame marks
             // the starting stone itself, so add without duplicating.)

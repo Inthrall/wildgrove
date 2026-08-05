@@ -123,7 +123,7 @@ namespace Wildgrove.Game
                 case EffectType.TendingBurstBonus:
                     return "tending burst +" + Percent(effect.value);
                 case EffectType.WardenYieldBonus:
-                    return "the warden's own hands +" + Percent(effect.value);
+                    return Warden.PossessiveName(_loop.State) + " own hands +" + Percent(effect.value);
                 case EffectType.BubbleRewardBonus:
                     return "windfalls +" + Percent(effect.value);
                 case EffectType.UnlockZone:

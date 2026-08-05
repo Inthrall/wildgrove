@@ -42,6 +42,7 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>The warden's post; null means the warden stands at camp.</summary>
         public string wardenPostNodeId;
+        public string wardenName;
 
         /// <summary>Amber held (design §10).</summary>
         public double amber;
