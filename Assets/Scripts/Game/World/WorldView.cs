@@ -5,20 +5,37 @@ using Wildgrove.Sim;
 
 namespace Wildgrove.Game.World
 {
+    /// <summary>What a tap on the strip landed on — <see cref="WorldView.TapAtScreenPoint"/>'s answer.</summary>
+    public enum StripTap
+    {
+        /// <summary>Nothing: the tap fell between the plates.</summary>
+        Miss,
+
+        /// <summary>A post's plate or badge — the post's id comes back with it.</summary>
+        Post,
+
+        /// <summary>The warden's own plate while they stand at camp — the (+) asking where they walk.</summary>
+        Warden,
+
+        /// <summary>The (+) closing the strip: an unfilled kith slot, not a post.</summary>
+        OpenSlots,
+    }
+
     /// <summary>
-    /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node
+    /// The world layer: spawns a <see cref="NodeWorldView"/> per gathering node,
+    /// leads them with the warden's own plate (<see cref="WardenWorldView"/>),
     /// and lays them out in the screen gap the HUD leaves open (the HUD reports
     /// that gap via <see cref="StripScreenRect"/> each frame). The strip IS the
     /// assignment board (design §2: one body per post): every post wears a
     /// badge of its holder, and this class answers both tap questions — which
     /// node a tap tends, and which post's badge a tap assigns. While any kith
     /// slot stands unfilled a (+) mark closes the strip; tapping it opens the
-    /// Trail page, where every post offers its own "Post here". The wander post
-    /// keeps no plate of its own here — it would wear a node's face without
-    /// being one — and is assigned from the watch card and the familiars' own
-    /// sheets. Placeholder tier: shapes in a strip for now; a real region scene
-    /// replaces the layout when the art lands, but the camera/world seam and
-    /// hit-testing stay.
+    /// picker — a ground, then a body. The wander post keeps no plate of its own
+    /// here — it would wear a node's face without being one — and is assigned
+    /// from the watch card, the pickers and the familiars' own sheets.
+    /// Placeholder tier: shapes in a strip for now; a real region scene replaces
+    /// the layout when the art lands, but the camera/world seam and hit-testing
+    /// stay.
     ///
     /// Only the posts with a body on them are drawn. The band is on screen at
     /// every tab, so drawing them all spends the page's whole height on plates
@@ -28,11 +45,21 @@ namespace Wildgrove.Game.World
     /// subset laid out this frame, and posting or resting a body moves a plate
     /// in or out without a rebuild. Fallow nodes are not stranded: every one of
     /// them keeps its own card, with its own "Post here", on the Trail page.
+    ///
+    /// The warden's plate is the exception that never leaves: they are the one
+    /// body the player IS, so their slot leads the strip whether they are posted
+    /// or standing at camp (where it wears the same (+) an unfilled slot does).
     /// </summary>
     [RequireComponent(typeof(GameLoop))]
     public sealed class WorldView : MonoBehaviour
     {
         private const float HitSlop = 1.15f;
+
+        // The strip's shared centre order: the warden, then the plates on the
+        // strip, then the (+) mark when it shows. One buffer serves the layout
+        // and the hit test, so both read the order from here.
+        private const int WardenCentre = 0;
+        private const int FirstNodeCentre = 1;
 
         // A windfall carries the resource's plate, so it needs enough room to
         // be recognised as that specimen — WorldStrip.BubbleDiameter sizes it
@@ -73,8 +100,11 @@ namespace Wildgrove.Game.World
         // out of _bubbles, so they can't be caught twice or block a spawn.
         private readonly List<BubbleWorldView> _bursting = new List<BubbleWorldView>();
         private BubbleWorldView _lastCaught;
+        // The warden's own plate, leading the strip — always laid out, at
+        // centre 0, so the nodes on the strip run from centre 1.
+        private WardenWorldView _wardenView;
         // The (+) closing the strip while a kith slot stands unfilled — not a
-        // post, an invitation to fill one (the tap opens the Trail page).
+        // post, an invitation to fill one (the tap opens the ground picker).
         private TextMesh _openSlotsMark;
         private bool _openSlotsShown;
         private Vector2[] _centres = new Vector2[0];
@@ -111,35 +141,51 @@ namespace Wildgrove.Game.World
                 view.RefreshLabel();
             }
 
+            _wardenView.RefreshLabel();
             PlaceholderArt.RefreshLabel(_openSlotsMark);
         }
 
         /// <summary>
-        /// The post whose plate or badge is under the screen point, or null for
-        /// a miss. Plates and badges resolve together — nearest centre wins
-        /// (see <see cref="WorldStrip.ResolveHit"/>) — and <paramref name="node"/>
-        /// carries the gathering node when the hit was one.
-        /// <paramref name="openSlots"/> is true when the hit was the (+) mark
-        /// instead of any post — the caller opens the Trail page.
+        /// What the screen point landed on. Plates and badges resolve together —
+        /// nearest centre wins (see <see cref="WorldStrip.ResolveHit"/>) — and
+        /// <paramref name="postId"/> carries the post for a
+        /// <see cref="StripTap.Post"/>, null otherwise.
+        /// <para>
+        /// The warden's leading plate answers as the post they hold while they
+        /// hold one: tapping the warden and tapping the ground they stand on are
+        /// the same question ("who walks here?"). Only a warden at camp answers
+        /// <see cref="StripTap.Warden"/> — the (+) asking where they walk.
+        /// </para>
         /// </summary>
-        public string PostAtScreenPoint(Vector2 screenPoint, out NodeState node, out bool openSlots)
+        public StripTap TapAtScreenPoint(Vector2 screenPoint, out string postId)
         {
-            node = null;
-            openSlots = false;
+            postId = null;
             var index = WorldStrip.ResolveHit(StripScreenRect, _centres, _radiusPx, _diameterPx, _badgeVisible, screenPoint);
             if (index < 0 || index >= _centres.Length)
             {
-                return null;
+                return StripTap.Miss;
             }
 
-            if (index < _onStrip.Count)
+            if (index == WardenCentre)
             {
-                node = _onStrip[index].Node;
-                return node.id;
+                var wardenPost = _loop != null && _loop.State != null ? Warden.PostNodeId(_loop.State) : null;
+                if (wardenPost == null)
+                {
+                    return StripTap.Warden;
+                }
+
+                postId = wardenPost;
+                return StripTap.Post;
             }
 
-            openSlots = true;
-            return null;
+            var nodeIndex = index - FirstNodeCentre;
+            if (nodeIndex < _onStrip.Count)
+            {
+                postId = _onStrip[nodeIndex].Node.id;
+                return StripTap.Post;
+            }
+
+            return StripTap.OpenSlots;
         }
 
         private void LateUpdate()
@@ -202,6 +248,11 @@ namespace Wildgrove.Game.World
                 _badgeVisible = new bool[_centres.Length];
             }
 
+            // The warden's plate wears no badge of its own — it IS the body, so
+            // its whole circle is the tap target (posted or at camp).
+            _badgeVisible[WardenCentre] = false;
+            _wardenView.Refresh(postNodeId != null);
+
             for (var i = 0; i < _onStrip.Count; i++)
             {
                 var view = _onStrip[i];
@@ -210,15 +261,15 @@ namespace Wildgrove.Game.World
                 // A vacant badge draws nothing, so it must hit nothing. Only
                 // the empty-camp fallback puts a vacant plate on the strip at
                 // all; every other frame each of these is someone's post.
-                _badgeVisible[i] = wardenHere || occupant != null;
+                _badgeVisible[FirstNodeCentre + i] = wardenHere || occupant != null;
                 view.Refresh(Time.time, wardenHere, occupant, IconFor(occupant), anyPosted);
             }
 
-            // The (+) is not a post, so it wears no badge — its plate circle
-            // is the whole tap target.
-            if (_badgeVisible.Length > _onStrip.Count)
+            // The (+) is not a post either, so it wears no badge — its plate
+            // circle is the whole tap target.
+            if (_badgeVisible.Length > FirstNodeCentre + _onStrip.Count)
             {
-                _badgeVisible[_onStrip.Count] = false;
+                _badgeVisible[FirstNodeCentre + _onStrip.Count] = false;
             }
 
             UpdateBubbles(state);
@@ -245,12 +296,11 @@ namespace Wildgrove.Game.World
             }
 
             // A camp with no node held keeps the whole board — a wanderer-only
-            // camp included, now that the wander post has no plate of its own.
+            // camp included, since the wander post has no plate of its own.
             // Hiding every plate would take the assignment surface away at
-            // exactly the moment the first posting has to happen — and an empty
-            // band under the page head reads as a rendering fault, not as
-            // "nothing to do". The strip collapses to the worked posts on the
-            // first node posting.
+            // exactly the moment the first posting has to happen, leaving the
+            // warden's plate alone in the band with nowhere to walk to. The
+            // strip collapses to the worked posts on the first node posting.
             if (_onStrip.Count == 0)
             {
                 _onStrip.AddRange(_views);
@@ -555,11 +605,11 @@ namespace Wildgrove.Game.World
 
         private Vector2 NodeCentre(NodeState node)
         {
-            for (var i = 0; i < _onStrip.Count && i < _centres.Length; i++)
+            for (var i = 0; i < _onStrip.Count && FirstNodeCentre + i < _centres.Length; i++)
             {
                 if (_onStrip[i].Node == node)
                 {
-                    return _centres[i];
+                    return _centres[FirstNodeCentre + i];
                 }
             }
 
@@ -605,6 +655,10 @@ namespace Wildgrove.Game.World
                     ArtLibrary.ForResource(node.resourceId)));
             }
 
+            // The warden leads the strip, always — Layout places them first and
+            // LateUpdate decides whether the plate wears their mark or the (+).
+            _wardenView = WardenWorldView.Create(_container, "the warden", _labelFont);
+
             // The (+) closes the strip while a kith slot stands unfilled —
             // Layout sizes and places it; LateUpdate shows and hides it.
             _openSlotsMark = PlaceholderArt.CreateLabel(_container, "+", _labelFont,
@@ -618,11 +672,12 @@ namespace Wildgrove.Game.World
 
         private void Layout()
         {
-            // Nodes first, the (+) mark after when it shows — one shared strip,
-            // so the hit test's "first N centres are nodes" convention holds.
-            // Nodes here means the ones ON the strip (GatherStrip has already
-            // run), so the centres and _onStrip index alike. The buffer is
-            // reused frame to frame — this runs per LateUpdate.
+            // The warden first, then the nodes, then the (+) mark when it shows
+            // — one shared strip, so the hit test's centre order (WardenCentre /
+            // FirstNodeCentre) holds. Nodes here means the ones ON the strip
+            // (GatherStrip has already run), so the centres and _onStrip index
+            // one apart. The buffer is reused frame to frame — this runs per
+            // LateUpdate.
             var total = StripTotal();
             if (_centres.Length != total)
             {
@@ -642,15 +697,18 @@ namespace Wildgrove.Game.World
                 : WorldStrip.BadgeOffsetFactor;
 
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
+            _wardenView.SetPlacement(ScreenToWorld(_centres[WardenCentre]), _diameterPx * worldPerPixel);
+            _wardenView.SetStripLayout(showCaptions);
+
             for (var i = 0; i < _onStrip.Count; i++)
             {
-                _onStrip[i].SetPlacement(ScreenToWorld(_centres[i]), _diameterPx * worldPerPixel);
+                _onStrip[i].SetPlacement(ScreenToWorld(_centres[FirstNodeCentre + i]), _diameterPx * worldPerPixel);
                 _onStrip[i].SetStripLayout(badgeOffsetLocal, showCaptions);
             }
 
-            if (_openSlotsShown && _centres.Length > _onStrip.Count)
+            if (_openSlotsShown && _centres.Length > FirstNodeCentre + _onStrip.Count)
             {
-                _openSlotsMark.transform.position = ScreenToWorld(_centres[_onStrip.Count]);
+                _openSlotsMark.transform.position = ScreenToWorld(_centres[FirstNodeCentre + _onStrip.Count]);
                 // A TextMesh at fontSize 64 stands ~6.4 world units per unit of
                 // characterSize — 0.09 of the plate diameter fills roughly the
                 // 60% of the circle a plate's own art does.
@@ -658,10 +716,10 @@ namespace Wildgrove.Game.World
             }
         }
 
-        /// <summary>Everything the strip lays out this frame — the worked plates, and the (+) mark when it shows.</summary>
+        /// <summary>Everything the strip lays out this frame — the warden, the worked plates, and the (+) mark when it shows.</summary>
         private int StripTotal()
         {
-            return _onStrip.Count + (_openSlotsShown ? 1 : 0);
+            return FirstNodeCentre + _onStrip.Count + (_openSlotsShown ? 1 : 0);
         }
 
         private Vector3 ScreenToWorld(Vector2 screenPoint)

@@ -870,38 +870,10 @@ namespace Wildgrove.Game
             // The friction the old sheet hid: to fill an EMPTY post with the
             // kith fully committed, you either rob another post or grow the
             // kith. Name it up front so the flat roster list isn't a puzzle.
+            // (EmptyPostNotice words it — the body picker asks the same thing.)
             if (occupantHere == null)
             {
-                var anyResting = false;
-                foreach (var f in state.roster)
-                {
-                    if (f.IsResting)
-                    {
-                        anyResting = true;
-                        break;
-                    }
-                }
-
-                string notice = null;
-                if (state.roster.Count == 0)
-                {
-                    // A brand-new warden's first tap can land here — the sheet
-                    // must answer "how do I ever fill this?" or it's a riddle.
-                    // One instruction, in the order it is done: leave the pile,
-                    // someone comes. The old line opened on what the land does
-                    // and left the doing to be inferred.
-                    notice = "no one walks with you yet. leave a pile of a plate's own goods on the Trail page and whoever is drawn to it comes to stay."
-                             + (wardenCanStand ? " until then the warden can stand here alone." : string.Empty);
-                }
-                else if (!anyResting)
-                {
-                    notice = "everyone is already posted. move one here and the post they leave falls idle, or open a slot on the Ladder to walk with one more.";
-                }
-                else if (!hasRoom)
-                {
-                    notice = "someone waits at camp, but every slot is walked. open a slot on the Ladder to put them to work, or move a walker here from a post you need less.";
-                }
-
+                var notice = EmptyPostNotice(wardenCanStand);
                 if (notice != null)
                 {
                     var line = MakeText(sheet, "<i>" + notice + "</i>", 16, TextAnchor.UpperCenter, Ink2);

@@ -1685,24 +1685,26 @@ namespace Wildgrove.Game
 
                     // Plates and badges resolve together, nearest centre wins —
                     // a node plate IS the assign gesture.
-                    var openSlots = false;
-                    var station = _world != null ? _world.PostAtScreenPoint(screenPosition.Value, out _, out openSlots) : null;
-                    if (station != null)
+                    var postId = (string)null;
+                    var tap = _world != null
+                        ? _world.TapAtScreenPoint(screenPosition.Value, out postId)
+                        : StripTap.Miss;
+                    if (tap == StripTap.Post)
                     {
-                        _sheets.OpenPostingSheet(station);
+                        _sheets.OpenPostingSheet(postId);
                     }
-                    else if (openSlots)
+                    else if (tap == StripTap.Warden)
+                    {
+                        // The warden's plate at camp: the one body whose "where"
+                        // is the open question, so it asks that directly.
+                        _sheets.OpenWardenWalkSheet();
+                    }
+                    else if (tap == StripTap.OpenSlots)
                     {
                         // The (+) closing the strip is not a post — it is the
-                        // nudge to fill one, and the Trail page is where every
-                        // post offers itself. On a spread the Trail already
-                        // faces the reader, so there is nothing to switch.
-                        if (!_wide)
-                        {
-                            OpenTab(TabTrail);
-                        }
-
-                        SetNote("room to post another body — every plate on the Trail offers its own post.");
+                        // nudge to fill one, so it asks the two halves of a
+                        // posting in order: which ground, then who walks there.
+                        _sheets.OpenGroundPickSheet();
                     }
                 }
                 else if (!typing && !FocusHasTarget)
