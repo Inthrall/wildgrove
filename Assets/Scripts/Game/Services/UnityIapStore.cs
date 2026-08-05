@@ -19,7 +19,7 @@ namespace Wildgrove.Game.Services
     {
         private readonly HashSet<string> _owned = new HashSet<string>();
         private readonly Dictionary<string, Product> _products = new Dictionary<string, Product>();
-        private readonly Dictionary<string, Action<StoreResult>> _pending = new Dictionary<string, Action<StoreResult>>();
+        private readonly PendingPurchases _pending = new PendingPurchases();
         private readonly StoreConnection _connection = new StoreConnection();
 
         private StoreController _controller;
@@ -161,11 +161,19 @@ namespace Wildgrove.Game.Services
             Debug.LogError("[store] IAP disconnected: " + description?.Message);
 
             // This fires for a connection that never came up AND for one dropped
-            // mid-session. Only the first has callers waiting, and only the first
-            // is released here — a mid-session drop leaves the entitlements
-            // already read standing (they are still true) and any purchase begun
-            // after it fails through the ordinary OnPurchaseFailed path.
+            // mid-session. Only the first has connection waiters, and Failed
+            // releases those; a mid-session drop leaves the entitlements already
+            // read standing, because they are still true.
             ConnectionFailed();
+
+            // What a mid-session drop does NOT leave standing is a purchase in
+            // flight. Play delivers Confirmed, Failed or Deferred for a live
+            // order and each clears its entry — but a connection that fell over
+            // mid-flow may deliver none of them, and the in-flight guard in
+            // Purchase then swallows every retry for the rest of the session: a
+            // buy button that does nothing, with nothing said. Same failure
+            // OnPurchaseDeferred exists to prevent, so it gets the same answer.
+            _pending.ReleaseAll();
         }
 
         private void OnProductsFetched(List<Product> products)
@@ -279,7 +287,7 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            if (_pending.ContainsKey(productId))
+            if (_pending.IsInFlight(productId))
             {
                 // A purchase for this product is already in flight — a double tap,
                 // or several lazy-init retries queued before the connection came
@@ -304,7 +312,7 @@ namespace Wildgrove.Game.Services
                 return;
             }
 
-            _pending[productId] = onComplete;
+            _pending.Begin(productId, onComplete);
             _controller.PurchaseProduct(product);
         }
 
@@ -363,10 +371,10 @@ namespace Wildgrove.Game.Services
                     _owned.Add(productId);
                 }
 
-                if (_pending.ContainsKey(productId))
+                if (_pending.IsInFlight(productId))
                 {
                     // The live purchase flow: its callback grants the pile.
-                    Resolve(productId, StoreResult.Purchased);
+                    _pending.Resolve(productId, StoreResult.Purchased);
                 }
                 else if (RewardProductIds.IsReward(productId))
                 {
@@ -392,7 +400,7 @@ namespace Wildgrove.Game.Services
 
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                Resolve(productId, result);
+                _pending.Resolve(productId, result);
             }
         }
 
@@ -414,16 +422,7 @@ namespace Wildgrove.Game.Services
         {
             foreach (var productId in ProductIdsOf(order.CartOrdered))
             {
-                Resolve(productId, StoreResult.Deferred);
-            }
-        }
-
-        private void Resolve(string productId, StoreResult result)
-        {
-            if (_pending.TryGetValue(productId, out var callback))
-            {
-                _pending.Remove(productId);
-                callback?.Invoke(result);
+                _pending.Resolve(productId, StoreResult.Deferred);
             }
         }
 

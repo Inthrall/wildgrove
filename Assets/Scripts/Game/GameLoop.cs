@@ -27,6 +27,26 @@ namespace Wildgrove.Game
         private const double AutosaveIntervalSeconds = 30.0;
 
         /// <summary>
+        /// How often the run reaches past this device: the Play Games Snapshots
+        /// commit, the achievement sweep, the boards and the Game Stats figures.
+        /// Deliberately not the autosave interval — the local write is a file
+        /// and costs nothing, while each of these is a network round trip or
+        /// forty-odd JNI calls, and Google asks that Snapshots not be committed
+        /// on a short timer. The moments that matter (pause, quit, a purchase,
+        /// an adopted run, a fresh book) mirror at once regardless; this is only
+        /// the floor under a long uninterrupted session.
+        /// </summary>
+        private const double ServicesIntervalSeconds = 300.0;
+
+        /// <summary>
+        /// Wall-clock milliseconds a frame may spend crediting a deferred
+        /// absence. Small enough to stay inside a 60 fps budget beside the
+        /// frame's own work, so a twelve-hour catch-up costs frames rather than
+        /// a stall. See <see cref="Wildgrove.Sim.OfflineCatchUp"/>.
+        /// </summary>
+        private const double CatchUpMillisecondsPerFrame = 6.0;
+
+        /// <summary>
         /// Below this much credited absence the welcome-back sheet stays quiet —
         /// the same bar <see cref="SessionLog"/> reports the metric on, so the
         /// sheet and the number agree about what players actually saw.
@@ -76,6 +96,7 @@ namespace Wildgrove.Game
         public bool AdoptedFromCloud => _persistence != null && _persistence.AdoptedFromCloud;
 
         private double _autosaveCountdown = AutosaveIntervalSeconds;
+        private double _servicesCountdown = ServicesIntervalSeconds;
 
         // The run's own bookkeeping, split out of this MonoBehaviour so each part
         // can be tested without an Awake: which save we woke from and when it was
@@ -83,9 +104,14 @@ namespace Wildgrove.Game
         // session has told telemetry.
         private readonly IClock _clock = SystemClock.Instance;
         private readonly Announcements _announce = new Announcements();
+        private readonly System.Diagnostics.Stopwatch _catchUpClock = new System.Diagnostics.Stopwatch();
         private RunPersistence _persistence;
         private SessionLog _session;
         private string _cloudNotice;
+
+        // A long absence being credited a slice per frame; null when none is.
+        private OfflineCatchUp _catchUp;
+        private bool _rebaseStatsAfterCatchUp;
 
         private void Awake()
         {
@@ -106,16 +132,55 @@ namespace Wildgrove.Game
             // a sim time-skip never inflates it) as the monotonic cloud-save metric.
             State.playedMs += (long)(Time.unscaledDeltaTime * 1000f);
 
-            Simulation.Advance(State, Data, Time.deltaTime);
+            // A deferred absence takes the frame's sim time instead of the live
+            // tick: it is already advancing the grove, far faster than realtime,
+            // and running both would fold the seconds since launch into the
+            // welcome-back figure the sheet is about to quote.
+            if (_catchUp != null)
+            {
+                PumpCatchUp();
+            }
+            else
+            {
+                Simulation.Advance(State, Data, Time.deltaTime);
+            }
+
             _session.FlushAmberFinds(State);
             _announce.NoticeArrivals(State.roster);
             NoticeKithSlots();
 
-            _autosaveCountdown -= Time.deltaTime;
+            // Unscaled on both: a time skip must not bring the autosave or the
+            // cloud mirror forward with it.
+            _servicesCountdown -= Time.unscaledDeltaTime;
+            _autosaveCountdown -= Time.unscaledDeltaTime;
             if (_autosaveCountdown <= 0.0)
             {
                 _autosaveCountdown = AutosaveIntervalSeconds;
                 SaveNow();
+            }
+        }
+
+        /// <summary>
+        /// Credit as much of the deferred absence as this frame can afford. The
+        /// budget is wall-clock, but the slices it buys are whole sim-seconds,
+        /// so a slow device credits the same grove as a fast one — see
+        /// <see cref="OfflineCatchUp"/>.
+        /// </summary>
+        private void PumpCatchUp()
+        {
+            _catchUpClock.Restart();
+            while (!_catchUp.IsComplete && _catchUpClock.Elapsed.TotalMilliseconds < CatchUpMillisecondsPerFrame)
+            {
+                // A minute of grove per pass: long enough that the stopwatch
+                // read isn't the expensive part, short enough to land inside
+                // the budget rather than overshoot it.
+                _catchUp.Advance(60.0);
+            }
+
+            _catchUpClock.Stop();
+            if (_catchUp.IsComplete)
+            {
+                FinishCatchUp();
             }
         }
 
@@ -126,7 +191,10 @@ namespace Wildgrove.Game
             // the mobile session boundary: end on pause, start on resume.
             if (paused)
             {
-                SaveNow();
+                // Sync, not just save: this is the last moment the process is
+                // reliably alive, so the cloud mirror and the milestones owed
+                // have to go now rather than on the next cadence.
+                SaveAndSync();
                 EndSession();
             }
             else if (!_session.IsOpen && State != null)
@@ -143,7 +211,7 @@ namespace Wildgrove.Game
 
         private void OnApplicationQuit()
         {
-            SaveNow();
+            SaveAndSync();
             EndSession();
         }
 
@@ -245,7 +313,7 @@ namespace Wildgrove.Game
             {
                 _announce.MarkArrivalsSeen(State.roster);
                 _announce.MarkKithSlotsSeen();
-                CreditAbsence(run.AwaySeconds);
+                CreditAbsence(run.AwaySeconds, rebaseStatsWhenCredited: true);
             }
 
             _autosaveCountdown = AutosaveIntervalSeconds;
@@ -332,6 +400,12 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // A catch-up in flight was crediting the run being set aside. Its
+            // remaining seconds belong to a book no longer in hand — drop it
+            // before the swap, or the next frame's slice would advance the
+            // adopted run by an absence it never had.
+            DropCatchUp();
+
             State = adopted.State;
             // Re-baseline the stats on the adopted run, or the gap between two
             // runs' lifetime totals would post as this session's gathering.
@@ -349,7 +423,7 @@ namespace Wildgrove.Game
             SyncStoreEntitlements();
             // Converge the device and cloud on the adopted save now rather than
             // waiting for the autosave interval to write it back down locally.
-            SaveNow();
+            SaveAndSync();
             // Say it. The run just changed under the player's hands — silently,
             // until now — and the margin note is where the journal tells them
             // something happened without stopping the game to do it.
@@ -361,12 +435,99 @@ namespace Wildgrove.Game
         /// <summary>
         /// Run the offline catch-up for an absence and queue the welcome-back
         /// summary — shared by the cold-launch load and the pause→resume path.
+        /// <para>
+        /// A short absence is credited here and now: five minutes is at most
+        /// 300 sub-steps, and holding it over would cost more than running it.
+        /// A longer one is handed to <see cref="OfflineCatchUp"/> and credited a
+        /// slice per frame, because the away cap reaches twelve hours and that
+        /// is 43,200 sub-steps — a stall on a cold launch, and a worse one on a
+        /// pause→resume, where the grove is already on screen. Nothing is owed
+        /// the player until it lands: the welcome-back sheet waits on
+        /// <see cref="CatchingUp"/>, so the work happens behind the sheet that
+        /// reports it rather than in front of the one frame that can't.
+        /// </para>
         /// </summary>
-        private void CreditAbsence(double awaySeconds)
+        /// <param name="rebaseStatsWhenCredited">
+        /// Re-take the Game Stats baseline once the absence has landed. The
+        /// launch path wants this and the others don't: a run's lifetime totals
+        /// as loaded — INCLUDING the night it was away — belong to earlier
+        /// sessions, while a resume's or an adopted run's absence has always
+        /// counted as this one's gathering. That difference predates the
+        /// deferral; the flag is here so deferring can't quietly change it,
+        /// because the baseline used to be taken after a catch-up that always
+        /// finished before Initialise returned.
+        /// </param>
+        private void CreditAbsence(double awaySeconds, bool rebaseStatsWhenCredited = false)
         {
-            var summary = Simulation.AdvanceOfflineWithSummary(State, Data, awaySeconds);
-            _announce.OfferOfflineSummary(summary);
-            _session.ReportWelcomeBack(summary);
+            // A catch-up still running belongs to this same absence chain (a
+            // resume landing on a launch's). Finish it before starting another,
+            // or its gains would be diffed against a moved baseline.
+            FinishCatchUp();
+
+            var catchUp = OfflineCatchUp.Begin(State, Data, awaySeconds);
+            if (catchUp.Summary.creditedSeconds < OfflineCatchUp.DeferThresholdSeconds)
+            {
+                catchUp.RunToCompletion();
+                AnnounceCatchUp(catchUp);
+                return;
+            }
+
+            _catchUp = catchUp;
+            _rebaseStatsAfterCatchUp = rebaseStatsWhenCredited;
+        }
+
+        /// <summary>
+        /// True while a long absence is still being credited. The sheet pump
+        /// holds everything behind this — a welcome-back sheet quoting a figure
+        /// the run is still adding to would be wrong twice over, and the
+        /// "Double it" offer would double a haul that hadn't finished landing.
+        /// </summary>
+        public bool CatchingUp => _catchUp != null;
+
+        /// <summary>How far a deferred catch-up has got, 0..1; 1 when none is running.</summary>
+        public double CatchUpProgress => _catchUp?.Progress ?? 1.0;
+
+        /// <summary>
+        /// Credit whatever is left of a deferred absence at once and report it.
+        /// The cold path — a save, a pause or a quit landing mid-catch-up, where
+        /// the alternative is writing a run that has only half woken up.
+        /// </summary>
+        private void FinishCatchUp()
+        {
+            if (_catchUp == null)
+            {
+                return;
+            }
+
+            var catchUp = _catchUp;
+            _catchUp = null;
+            catchUp.RunToCompletion();
+            AnnounceCatchUp(catchUp);
+        }
+
+        /// <summary>Hand a finished catch-up to the sheet queue, the stats baseline, and telemetry.</summary>
+        private void AnnounceCatchUp(OfflineCatchUp catchUp)
+        {
+            if (_rebaseStatsAfterCatchUp)
+            {
+                _rebaseStatsAfterCatchUp = false;
+                Stats.Rebase(State);
+            }
+
+            _announce.OfferOfflineSummary(catchUp.Summary);
+            _session.ReportWelcomeBack(catchUp.Summary);
+        }
+
+        /// <summary>
+        /// Throw away a catch-up in flight — the run it was crediting has been
+        /// replaced (an adopted cloud save, a book started again), so its
+        /// remaining seconds belong to nothing. Distinct from
+        /// <see cref="FinishCatchUp"/>, which is for a run that is still ours.
+        /// </summary>
+        private void DropCatchUp()
+        {
+            _catchUp = null;
+            _rebaseStatsAfterCatchUp = false;
         }
 
         private void StartSession()
@@ -379,24 +540,62 @@ namespace Wildgrove.Game
             _session.End(Time.realtimeSinceStartup);
         }
 
-        /// <summary>Persist the run now (also runs on the autosave interval, on pause, and on quit).</summary>
+        /// <summary>
+        /// Write the run to the device now — the autosave, and what anything
+        /// that changed the run should call. Cheap: a file, nothing else, unless
+        /// the services cadence has come due (see
+        /// <see cref="ServicesIntervalSeconds"/>).
+        /// <para>
+        /// Use <see cref="SaveAndSync"/> instead where the run must reach Play
+        /// Games in the same breath — a purchase, a pause, a quit, a swapped
+        /// book. Every other caller wants this one.
+        /// </para>
+        /// </summary>
         public void SaveNow()
+        {
+            Save(_servicesCountdown <= 0.0);
+        }
+
+        /// <summary>
+        /// Write the run AND push everything that leaves the device: the cloud
+        /// mirror, the boards, the achievements, the Game Stats figures. For the
+        /// moments where waiting on a cadence would be wrong — the process may
+        /// not be alive for the next one (pause, quit), or the thing that just
+        /// happened is exactly what the cloud must not roll back (a purchase, a
+        /// reward, an adopted run, a fresh book).
+        /// </summary>
+        public void SaveAndSync()
+        {
+            Save(true);
+        }
+
+        private void Save(bool syncServices)
         {
             if (State == null)
             {
                 return;
             }
 
-            _persistence.Save(State);
-            // Post the run's standing on the same cadence as the save (autosave,
-            // pause, quit). Idempotent — Play Games keeps only the player's best.
+            // A half-credited absence must never be what gets written down: the
+            // save stamp would move to now while the uncredited remainder still
+            // measured from the old one, and those seconds would simply vanish.
+            FinishCatchUp();
+
+            _persistence.Save(State, syncServices);
+            if (!syncServices)
+            {
+                return;
+            }
+
+            _servicesCountdown = ServicesIntervalSeconds;
+            // Post the run's standing. Idempotent — Play Games keeps only the
+            // player's best.
             SubmitLeaderboards();
-            // Same cadence for the Game Stats totals: hauls and crafts land every
-            // tick, so they go as one figure per save rather than one event each.
+            // The Game Stats totals: hauls and crafts land every tick, so they
+            // go as one figure per sync rather than one event each.
             Stats.Flush(State);
-            // And the achievements, for the same reason the leaderboards are
-            // here: sign-in alone would leave a milestone crossed mid-session
-            // waiting for the next launch to be granted.
+            // And the achievements — sign-in alone would leave a milestone
+            // crossed mid-session waiting for the next launch to be granted.
             ReassertAchievements();
         }
 
@@ -418,11 +617,28 @@ namespace Wildgrove.Game
             return notice;
         }
 
-        /// <summary>Now, by the same clock the save stamps carry — what the inside cover measures its "ago" against.</summary>
+        /// <summary>
+        /// Now, by the same clock the save stamps carry — what the inside cover
+        /// measures its "ago" against, and what every cooldown in the game is
+        /// read against. Through <see cref="ClockGuard"/>, so all of them see
+        /// one ratcheted reading: the device clock is the player's to set, and
+        /// this is the single place that is made not to matter.
+        /// </summary>
         public long NowUnixMs()
         {
-            return _clock.NowUnixMs();
+            return ClockGuard.Now(State, _clock.NowUnixMs());
         }
+
+        /// <summary>
+        /// True when the device clock reads behind the run's own high water mark
+        /// — the cooldowns are standing still until real time catches up. The
+        /// inside cover says so rather than leaving a frozen countdown to look
+        /// like a bug.
+        /// </summary>
+        public bool ClockIsBehind => ClockGuard.IsBehind(State, _clock.NowUnixMs());
+
+        /// <summary>Seconds of real time before the clock catches its mark back up, or 0.</summary>
+        public double ClockBehindBySeconds => ClockGuard.BehindByMs(State, _clock.NowUnixMs()) / 1000.0;
 
         /// <summary>
         /// Close this book and open a blank one: the run is wiped from the
@@ -436,6 +652,10 @@ namespace Wildgrove.Game
             {
                 return;
             }
+
+            // Same reason as AdoptCloudRun: a catch-up in flight was crediting
+            // the book being closed.
+            DropCatchUp();
 
             var run = _persistence.StartOver();
             State = run.State;

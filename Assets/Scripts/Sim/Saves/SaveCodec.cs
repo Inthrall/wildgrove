@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 42;
+        public const int CurrentVersion = 43;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -28,11 +28,10 @@ namespace Wildgrove.Sim.Saves
         /// rung to stand them on, and SaveFile sets them aside instead of
         /// deleting them.
         /// <para>
-        /// It sits at <see cref="CurrentVersion"/> because the ladder is empty:
-        /// v42 is the first shape to need no migration of its own. Adding a step
-        /// leaves this where it is and raises only CurrentVersion; the two part
-        /// company from then on, and this one moves again only when the bottom
-        /// rungs are retired.
+        /// It stays at 42 now that the ladder has its first rung: a v42 save
+        /// still climbs to v43 and is read whole. It moves again only when the
+        /// bottom rungs are deliberately retired, which is a decision about
+        /// whose saves stop working.
         /// </para>
         /// </summary>
         public const int EarliestReadableVersion = 42;
@@ -60,6 +59,7 @@ namespace Wildgrove.Sim.Saves
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
                 timeSkipBudgetHours = state.timeSkipBudgetHours,
                 timeSkipBudgetStampUnixMs = state.timeSkipBudgetStampUnixMs,
+                clockHighWaterUnixMs = state.clockHighWaterUnixMs,
                 playedMs = state.playedMs,
                 deepAmberFound = state.deepAmberFound,
                 deepAmberPityHours = state.deepAmberPityHours,
@@ -315,6 +315,10 @@ namespace Wildgrove.Sim.Saves
             state.timeSkipBudgetHours = state.timeSkipBudgetStampUnixMs > 0L && save.timeSkipBudgetHours > 0.0
                 ? save.timeSkipBudgetHours
                 : 0.0;
+            // The ratchet can only ever move forward, so a save carrying a
+            // negative or absent mark reads as "never told the time" rather
+            // than as a mark in the past — a past mark would be no guard at all.
+            state.clockHighWaterUnixMs = save.clockHighWaterUnixMs > 0L ? save.clockHighWaterUnixMs : 0L;
             state.playedMs = save.playedMs > 0 ? save.playedMs : 0L;
             state.deepAmberFound = save.deepAmberFound > 0 ? save.deepAmberFound : 0;
             state.deepAmberPityHours = save.deepAmberPityHours > 0.0 ? save.deepAmberPityHours : 0.0;
@@ -836,16 +840,22 @@ namespace Wildgrove.Sim.Saves
                     // version and letting the loop carry it the rest of the way.
                     // A step only ever fills in what its version predates; it
                     // never reaches for the current content data, because a
-                    // migration has to hold for a save opened years later:
-                    //
-                    //     case 42:
-                    //         save.newThing = new List<SavedThing>();
-                    //         save.version = 43;
-                    //         break;
+                    // migration has to hold for a save opened years later.
                     //
                     // Retiring the bottom of the ladder means raising
                     // EarliestReadableVersion to match, so a save that can no
                     // longer climb is refused outright rather than half-read.
+
+                    case 42:
+                        // v43 added the clock ratchet's high water mark. Left at
+                        // zero on purpose — "this run has never been told the
+                        // time", which is exactly true of a save written before
+                        // the ratchet existed. Stamping it with anything else
+                        // would either invent a mark (and freeze the run's
+                        // cooldowns until real time passed it) or need the
+                        // current clock, which a migration must never reach for.
+                        save.version = 43;
+                        break;
 
                     default:
                         // A gap in the ladder is a coding error — refuse rather

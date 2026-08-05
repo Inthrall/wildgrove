@@ -31,6 +31,12 @@ namespace Wildgrove.Game
             }
 
             Simulation.GrantHaul(State, summary.gains);
+            // Written down at once. The player sat through an ad for this, and
+            // the autosave is up to thirty seconds away — a process killed in
+            // that window would take the reward and leave nothing to show an ad
+            // was ever watched. Every other grant on this page saves; these two
+            // were the exceptions, and there was no reason for it.
+            SaveNow();
             return true;
         }
 
@@ -50,6 +56,11 @@ namespace Wildgrove.Game
 
             Simulation.AdvanceOffline(State, Data, hours * 3600.0);
             Amber.StampRewardedTimeSkip(State, NowUnixMs());
+            // As with the offline bonus above: the ad has been watched, so the
+            // grant AND the cooldown stamp it re-arms go to disk together. Losing
+            // the pair to a kill is not even a wash — the hours are gone and the
+            // ad was for nothing.
+            SaveNow();
             return true;
         }
 
@@ -96,7 +107,9 @@ namespace Wildgrove.Game
                     Store.IsOwned(StoreProductIds.StarterBundle),
                     Store.IsOwned(StoreProductIds.KithSlot)))
             {
-                SaveNow();
+                // A purchase is exactly what the cloud must never roll back, so
+                // it mirrors now rather than on the services cadence.
+                SaveAndSync();
             }
         }
 
@@ -118,7 +131,7 @@ namespace Wildgrove.Game
 
             if (landed)
             {
-                SaveNow();
+                SaveAndSync();
             }
         }
 
@@ -144,7 +157,7 @@ namespace Wildgrove.Game
 
             _announce.QueueReward(grant);
             Telemetry.LogEvent("play_reward_received", ("reward", grant.rewardId));
-            SaveNow();
+            SaveAndSync();
             return true;
         }
 
@@ -278,7 +291,7 @@ namespace Wildgrove.Game
                 {
                     var amount = Amber.GrantPack(State, AmberPackAmount(productId));
                     Telemetry.LogEvent("amber_pack", ("product", productId), ("amount", amount));
-                    SaveNow();
+                    SaveAndSync();
                 }
 
                 onComplete?.Invoke(result);
@@ -301,7 +314,7 @@ namespace Wildgrove.Game
             if (amount > 0.0)
             {
                 Telemetry.LogEvent("amber_pack_recovered", ("product", productId), ("amount", amount));
-                SaveNow();
+                SaveAndSync();
             }
         }
 

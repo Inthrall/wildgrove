@@ -86,11 +86,16 @@ namespace Wildgrove.Game
             Run run;
             if (_store.TryLoad(out var save))
             {
+                var state = SaveCodec.Restore(save, _data);
+                // Through the ratchet, so a device whose clock has been wound
+                // back since the save was written credits nothing rather than a
+                // negative absence — and one wound forward pays this catch-up
+                // and then stands still (see ClockGuard).
                 run = new Run
                 {
-                    State = SaveCodec.Restore(save, _data),
+                    State = state,
                     WasLoaded = true,
-                    AwaySeconds = (_clock.NowUnixMs() - save.savedAtUnixMs) / 1000.0,
+                    AwaySeconds = (ClockGuard.Now(state, _clock.NowUnixMs()) - save.savedAtUnixMs) / 1000.0,
                     SavedAtUnixMs = save.savedAtUnixMs,
                 };
             }
@@ -100,16 +105,21 @@ namespace Wildgrove.Game
             }
 
             LoadedPlayedMs = run.State.playedMs;
-            LastSavedUnixMs = _clock.NowUnixMs();
+            LastSavedUnixMs = ClockGuard.Now(run.State, _clock.NowUnixMs());
             return run;
         }
 
         /// <summary>
-        /// Write the run to the device slot and mirror it to the cloud.
+        /// Write the run to the device slot, and mirror it to the cloud when
+        /// <paramref name="mirrorToCloud"/> says to. The local write is cheap
+        /// and runs on the autosave cadence; the mirror is a Play Games
+        /// Snapshots commit — a network round trip Google asks not to be put on
+        /// a short timer — so the caller decides when one is owed (see
+        /// GameLoop's two save calls).
         /// </summary>
-        public void Save(GameState state)
+        public void Save(GameState state, bool mirrorToCloud = true)
         {
-            LastSavedUnixMs = _clock.NowUnixMs();
+            LastSavedUnixMs = ClockGuard.Now(state, _clock.NowUnixMs());
             // Advance the reconcile baseline too: cloud adoption compares against
             // the play time of the newest local save we hold, not the run we
             // launched with. Without this a cloud save from a stale device could
@@ -117,6 +127,11 @@ namespace Wildgrove.Game
             LoadedPlayedMs = state.playedMs;
             var save = SaveCodec.Capture(state, LastSavedUnixMs);
             _store.Write(save);
+            if (!mirrorToCloud)
+            {
+                return;
+            }
+
             // Mirror to cloud; Reconcile pulls it back on the next signed-in
             // launch, adopting it when it is further along than the local slot. Play
             // time is also the snapshot's played-time for the Snapshots conflict tiebreak.
@@ -182,11 +197,12 @@ namespace Wildgrove.Game
                     return;
                 }
 
+                var adoptedState = SaveCodec.Restore(cloud, _data);
                 var adopted = new Run
                 {
-                    State = SaveCodec.Restore(cloud, _data),
+                    State = adoptedState,
                     WasLoaded = true,
-                    AwaySeconds = (_clock.NowUnixMs() - cloud.savedAtUnixMs) / 1000.0,
+                    AwaySeconds = (ClockGuard.Now(adoptedState, _clock.NowUnixMs()) - cloud.savedAtUnixMs) / 1000.0,
                     SavedAtUnixMs = cloud.savedAtUnixMs,
                 };
 

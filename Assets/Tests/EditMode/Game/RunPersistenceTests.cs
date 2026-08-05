@@ -74,6 +74,78 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Save_WithoutMirroring_WritesTheDeviceAndLeavesTheCloudAlone()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.playedMs = 1234L;
+
+            _sut.Save(state, mirrorToCloud: false);
+
+            Assert.That(_store.Saved, Is.Not.Null, "the local slot is the cheap half and always happens");
+            Assert.That(_cloud.Commits, Is.Zero,
+                "a Snapshots commit is a network round trip — it must not ride the 30-second autosave");
+        }
+
+        [Test]
+        public void Save_Mirroring_CommitsToTheCloudToo()
+        {
+            _sut.Save(GameStateFactory.NewGame(_data), mirrorToCloud: true);
+
+            Assert.That(_cloud.Commits, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Save_MirroringDefaultsOn()
+        {
+            // The safe default: a caller that hasn't thought about it gets the
+            // old behaviour, and only GameLoop's autosave opts out.
+            _sut.Save(GameStateFactory.NewGame(_data));
+
+            Assert.That(_cloud.Commits, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Save_UnmirroredThenMirrored_SendsTheLaterRun()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.playedMs = 100L;
+            _sut.Save(state, mirrorToCloud: false);
+
+            state.playedMs = 900L;
+            _sut.Save(state, mirrorToCloud: true);
+
+            Assert.That(_cloud.SavedPlayedMs, Is.EqualTo(900L),
+                "skipping a mirror must not lose the run — the next one carries everything since");
+        }
+
+        [Test]
+        public void Load_WhenTheClockHasBeenWoundBack_CreditsNoAbsence()
+        {
+            // The save was written an hour into the future by a clock that has
+            // since been corrected. Without the ratchet this is a negative
+            // absence; with it the reading is held at the mark the save carries.
+            var state = GameStateFactory.NewGame(_data);
+            state.clockHighWaterUnixMs = Now + 3600_000L;
+            _store.Saved = SaveCodec.Capture(state, Now + 3600_000L);
+
+            var run = _sut.Load();
+
+            Assert.That(run.AwaySeconds, Is.EqualTo(0.0).Within(Tolerance),
+                "a clock wound back must credit nothing rather than a negative absence");
+        }
+
+        [Test]
+        public void Load_RatchetsTheMarkForwardToNow()
+        {
+            _store.Saved = Saved(playedMs: 10L, savedAtUnixMs: Now - 60_000L);
+
+            var run = _sut.Load();
+
+            Assert.That(run.State.clockHighWaterUnixMs, Is.EqualTo(Now),
+                "loading is a clock reading like any other, so it advances the mark");
+        }
+
+        [Test]
         public void Load_WithNothingSaved_StartsAFreshRun()
         {
             var run = _sut.Load();
@@ -325,6 +397,7 @@ namespace Wildgrove.Game.Tests
             public string Stored;
             public string SavedJson;
             public long SavedPlayedMs;
+            public int Commits;
 
             /// <summary>Set to have the cloud refuse the write, as a signed-out or failed Snapshot commit does.</summary>
             public bool RefuseWrites;
@@ -347,6 +420,7 @@ namespace Wildgrove.Game.Tests
                 SavedJson = data;
                 SavedPlayedMs = playedMs;
                 Stored = data;
+                Commits++;
                 onComplete?.Invoke(true);
             }
 

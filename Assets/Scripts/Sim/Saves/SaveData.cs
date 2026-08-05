@@ -76,6 +76,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>UTC unix ms the paid-skip budget was last settled.</summary>
         public long timeSkipBudgetStampUnixMs;
 
+        /// <summary>The latest UTC unix ms the run has ever been told it is — the clock ratchet (v43). 0 = never read.</summary>
+        public long clockHighWaterUnixMs;
+
         /// <summary>Accumulated foreground play time in ms. Monotonic; the basis cloud saves are compared on.</summary>
         public long playedMs;
 

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using UnityEngine;
 
 namespace Wildgrove.Data
@@ -13,8 +15,9 @@ namespace Wildgrove.Data
     {
         public const string ResourcesPath = "Data/GameData";
 
-        // SHA-256 of the source JSON this asset was generated from; lets the
-        // importer and tests detect a stale asset without reparsing.
+        // SHA-256 of the source JSON this asset was generated from AND of this
+        // class's own shape; lets the importer and tests detect a stale asset
+        // without reparsing. See SchemaFingerprint for why the shape is in there.
         public string sourceHash;
 
         public EconomyData economy;
@@ -63,6 +66,45 @@ namespace Wildgrove.Data
         public IReadOnlyDictionary<string, SpeciesData> SpeciesById => speciesById ??= Index(species, s => s.id);
         public IReadOnlyDictionary<string, PlanterData> PlantersById => plantersById ??= Index(planters, p => p.id);
         public IReadOnlyDictionary<string, TinctureData> TincturesById => tincturesById ??= Index(tinctures, t => t.id);
+
+        /// <summary>
+        /// A fingerprint of this class's own serialized shape — every public
+        /// field's name and type, in a fixed order.
+        /// <para>
+        /// It belongs in the import hash because the importer skips its work
+        /// when the hash matches, and until this was in there the hash covered
+        /// only the JSON. Add a field here (or change one's type) without
+        /// touching design/data, and the hash was unchanged, the editor-load
+        /// import skipped, and Play mode went on running against an asset built
+        /// by the old mapper — silently, because a missing field is just a
+        /// default. Builds were safe (the build step forces a re-import); the
+        /// editor was not, which is where the confusing hours get spent.
+        /// </para>
+        /// <para>
+        /// Shape only. A mapper that changes how it PROJECTS an unchanged field
+        /// still needs Wildgrove &gt; Import Design Data — this catches the
+        /// common case, not every case.
+        /// </para>
+        /// </summary>
+        public static string SchemaFingerprint()
+        {
+            var fields = typeof(GameDataAsset).GetFields(BindingFlags.Public | BindingFlags.Instance);
+            var names = new List<string>(fields.Length);
+            foreach (var field in fields)
+            {
+                names.Add(field.Name + ":" + field.FieldType.FullName);
+            }
+
+            // Reflection makes no promise about field order, so sorting is what
+            // keeps the fingerprint stable across runtimes rather than churning
+            // the asset on someone else's machine.
+            names.Sort(StringComparer.Ordinal);
+            // Newline-separated, not comma: a generic field's FullName carries
+            // its own commas (List`1[[...,, Version=..., Culture=neutral,...]]),
+            // so a comma join can't be split back into the entries it was made
+            // from — and something will want to, if only a test.
+            return string.Join("\n", names);
+        }
 
         public static GameDataAsset LoadFromResources()
         {

@@ -70,16 +70,34 @@ sequential migration `switch`, and make sure `Restore` copes with the old data
 (clamping, dedupe, resting things that no longer fit). Test saves from before a
 migration are the cheapest way to find what `Restore` missed.
 
-**The ladder is currently empty.** `EarliestReadableVersion` sits at `CurrentVersion`
-(42): the pre-launch history was retired once there were no saves in the world to
-carry, so v42 is both the only shape written and the only one read. The `switch` and
-the climb around it are kept for the first migration that needs them — add a case, bump
-`CurrentVersion`, and **leave `EarliestReadableVersion` where it is**, so v42 saves
-still climb. It moves again only when bottom rungs are deliberately dropped, and
-raising it is a decision about whose saves stop working.
+**The ladder has one rung.** `CurrentVersion` is 43 and `EarliestReadableVersion` is
+42: a v42 save climbs the `case 42:` step (which adds nothing — the clock ratchet's
+high water mark is meaningfully zero on a save written before it existed) and is read
+whole. Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
+`EarliestReadableVersion` where it is**. It moves again only when bottom rungs are
+deliberately dropped, and raising it is a decision about whose saves stop working.
 
 Anything below the floor is refused whole rather than half-read — a save loaded without
 its migrations looks healthy and is quietly wrong.
+
+## The clock is a ratchet
+
+Every cooldown and the whole offline credit are read through `ClockGuard.Now`, which
+never returns less than the highest reading the run has ever seen (`clockHighWaterUnixMs`,
+saved and carried across the fold). Winding the device clock forward pays out once and
+then buys nothing until real time catches the mark up; winding it back is not seen at
+all. **Anything new that reads the wall clock must go through `GameLoop.NowUnixMs()`**
+— not `IClock` directly — or it becomes the one unratcheted door into the Amber economy.
+
+## Long absences are credited a slice per frame
+
+`OfflineCatchUp` carries an absence of five minutes or more (`DeferThresholdSeconds`)
+across frames, because the tick sub-steps at one second and the away cap reaches twelve
+hours — 43,200 steps in one call is a stall. The welcome-back sheet waits on
+`GameLoop.CatchingUp`, so the work happens behind the sheet rather than in front of a
+locked frame. Slices are always whole seconds, which is what makes a sliced catch-up
+land byte-for-byte where an unsliced one would (`OfflineCatchUpTests` pins it) — keep
+that property if you touch the slicing.
 
 `SaveFile` writes to disk with an atomic replace and sets aside `.corrupt` (unreadable),
 `.newer` (from a future build) and `.legacy` (below the floor) — separate slots so one

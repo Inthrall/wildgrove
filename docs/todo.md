@@ -533,6 +533,17 @@ Not work items. Each of these cost real time to find.
 - **Confirm on device first, then remove the instrument.** The first diagnostics
   sink was retired in the same commit as the fix it was meant to prove; when the
   symptom returned there was nothing left to read it with.
+- **The device clock is the player's, and it is settled** (2026-08-05). Every
+  cooldown and the offline credit read wall-clock time, so winding the clock
+  forward used to re-arm the Amber drip, refill the paid-skip budget and pay a
+  fresh 12 h catch-up — repeatably, on a currency sold for money. `ClockGuard`
+  ratchets: a reading is never below the highest the run has seen
+  (`clockHighWaterUnixMs`, saved and carried across the fold). A wind forward is
+  therefore **spent, not minted**, and a wind back is not seen. The honest cost
+  is that a genuine backwards correction stalls cooldowns until real time
+  catches up, which is the right way round — a pause, not a loss. This is a
+  decision, not an open item: **do not add a wall-clock read that bypasses
+  `GameLoop.NowUnixMs()`.**
 - **Run `Wildgrove/Fix Art Import Settings` after adding art.** The pass that
   caught `res-timber` importing with `alphaUsage: 0` — its transparency discarded,
   drawing on a solid block for a week — found it only by being re-run.

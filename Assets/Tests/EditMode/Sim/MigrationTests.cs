@@ -429,6 +429,7 @@ namespace Wildgrove.Sim.Tests
             state.weeklyCacheClaimedUnixMs = 1_700_000_000_000L;
             state.adDripClaimedUnixMs = 1_700_000_001_000L;
             state.timeSkipClaimedUnixMs = 1_700_000_002_000L;
+            state.clockHighWaterUnixMs = 1_700_000_003_000L;
             state.playedMs = 9_000_000L;
 
             var next = Migration.Migrate(state, _data);
@@ -438,6 +439,8 @@ namespace Wildgrove.Sim.Tests
             Assert.That(next.weeklyCacheClaimedUnixMs, Is.EqualTo(1_700_000_000_000L), "the weekly cache does not re-arm on a fold");
             Assert.That(next.adDripClaimedUnixMs, Is.EqualTo(1_700_000_001_000L), "the drip cooldown crosses the fold");
             Assert.That(next.timeSkipClaimedUnixMs, Is.EqualTo(1_700_000_002_000L), "the time-skip cooldown crosses the fold");
+            Assert.That(next.clockHighWaterUnixMs, Is.EqualTo(1_700_000_003_000L),
+                "and so does the clock ratchet, or a fold would hand back every wind-forward it had just charged for");
             Assert.That(next.playedMs, Is.EqualTo(9_000_000L), "lifetime play time crosses the fold");
         }
 

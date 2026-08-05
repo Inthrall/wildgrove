@@ -31,9 +31,18 @@ namespace Wildgrove.Game.Telemetry
             new Queue<(string, (string, object)[])>();
         private readonly Queue<Exception> _exceptionBuffer = new Queue<Exception>();
 
-        private bool _ready;
-        private bool _failed;
-        private bool _collecting = true;
+        // Volatile for the same reason _gate exists: LogException can arrive on
+        // a worker thread (a faulted Task) while the main thread is setting
+        // these, and these are what decide whether it sends, buffers, or drops.
+        // The queues were guarded and the flags selecting between them were not,
+        // which left a worker free to read a stale _ready/_failed and enqueue
+        // into a buffer already drained — a bounded leak, but a silent one.
+        // A nullable bool can't be volatile, so the consent answer is read and
+        // written under _gate instead.
+        private volatile bool _ready;
+        private volatile bool _failed;
+        private volatile bool _collecting = true;
+
         // Null until Google's consent layer has an answer. Held rather than
         // applied when it arrives before Firebase has woken — the same problem
         // _collecting has, and the same solution.
@@ -69,22 +78,26 @@ namespace Wildgrove.Game.Telemetry
                 // (it is read at launch, and this callback lands seconds later),
                 // so it is applied here rather than lost.
                 FirebaseAnalytics.SetAnalyticsCollectionEnabled(_collecting);
-                if (_consentGranted.HasValue)
-                {
-                    ApplyConsent(_consentGranted.Value);
-                }
 
                 // Snapshot and clear under the lock, then send outside it so a
                 // worker-thread LogException can't race the drain and Firebase
-                // calls don't hold the lock.
+                // calls don't hold the lock. The held consent answer is read
+                // here too — it is the one flag that can't be volatile.
                 (string name, (string key, object value)[] parameters)[] events;
                 Exception[] exceptions;
+                bool? consent;
                 lock (_gate)
                 {
+                    consent = _consentGranted;
                     events = _buffer.ToArray();
                     _buffer.Clear();
                     exceptions = _exceptionBuffer.ToArray();
                     _exceptionBuffer.Clear();
+                }
+
+                if (consent.HasValue)
+                {
+                    ApplyConsent(consent.Value);
                 }
 
                 foreach (var buffered in events)
@@ -183,7 +196,11 @@ namespace Wildgrove.Game.Telemetry
 
         public void SetConsent(bool granted)
         {
-            _consentGranted = granted;
+            lock (_gate)
+            {
+                _consentGranted = granted;
+            }
+
             _fallback.SetConsent(granted);
             if (_ready)
             {

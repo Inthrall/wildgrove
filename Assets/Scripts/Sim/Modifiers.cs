@@ -12,7 +12,11 @@ namespace Wildgrove.Sim
     /// which funnel through <see cref="Upgrades.RecomputeYieldMultipliers"/>
     /// (plus building purchases), which bumps
     /// <see cref="GameState.modifierVersion"/>. A count fingerprint backstops
-    /// direct list mutation in tests and tools.
+    /// direct list mutation in tests and tools — see
+    /// <see cref="Modifiers.Fingerprint"/> for why counts alone are enough, and
+    /// why it must stay O(1): the tick asks for a modifier a couple of dozen
+    /// times per one-second sub-step, so a guard that walked the state's
+    /// dictionaries would cost more than the rebuild it was avoiding.
     /// </summary>
     public sealed class ModifierSnapshot
     {
@@ -57,39 +61,50 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// A cheap change detector over the effect-source collections, for
-        /// mutations that bypass the bump (hand-built test states). Same-count
-        /// replacement (re-crafting into a worn gear slot) is caught by the
-        /// explicit bump instead.
+        /// A change detector over the effect-source collections, for mutations
+        /// that bypass the bump (hand-built test states). Counts only, and
+        /// deliberately: it is checked on EVERY read, so it has to be O(1).
+        /// <para>
+        /// Counts are enough because a mutation that changes a value without
+        /// changing a count either bumps or changes no modifier. Building and
+        /// repeatable-Almanac levels rise through purchase paths that end in
+        /// <see cref="Upgrades.RecomputeYieldMultipliers"/>; a tincture's
+        /// second bottle banks time, not depth; a sketch changes nothing until
+        /// its plate is recorded, and recording bumps; a deep amber piece
+        /// changes nothing until the set is complete, and completing bumps.
+        /// The one thing counts miss — same-count replacement, re-crafting into
+        /// a worn gear slot — was always the explicit bump's job.
+        /// </para>
+        /// <para>
+        /// Mixed rather than packed. The old form multiplied each count by its
+        /// own power of ten and summed, which aliased the moment a band reached
+        /// its stride: 1,000 building levels (the Store's line is endless) read
+        /// as one field sketch, and the top bands could carry the sum past
+        /// long.MaxValue. A hash has no bands to overflow.
+        /// </para>
         /// </summary>
         private static long Fingerprint(GameState state)
         {
-            var buildingLevels = 0L;
-            foreach (var pair in state.buildingLevels)
-            {
-                buildingLevels += pair.Value;
-            }
+            // FNV-1a, 64-bit. Order is fixed, so this is a plain sequence hash:
+            // no two counts can trade places to produce the same answer.
+            var hash = 14695981039346656037UL;
+            Mix(ref hash, state.purchasedUpgradeIds.Count);
+            Mix(ref hash, state.almanacNodeIds.Count);
+            Mix(ref hash, state.almanacLevels.Count);
+            Mix(ref hash, state.fixedResources.Count);
+            Mix(ref hash, state.gearBySlot.Count);
+            Mix(ref hash, state.buildingLevels.Count);
+            Mix(ref hash, state.insectSketches.Count);
+            Mix(ref hash, state.activeTinctures.Count);
+            return unchecked((long)hash);
+        }
 
-            var sketches = 0L;
-            foreach (var pair in state.insectSketches)
+        private static void Mix(ref ulong hash, int value)
+        {
+            unchecked
             {
-                sketches += pair.Value;
+                hash = (hash ^ (uint)value) * 1099511628211UL;
             }
-
-            var almanacLevels = 0L;
-            foreach (var pair in state.almanacLevels)
-            {
-                almanacLevels += pair.Value;
-            }
-
-            return state.purchasedUpgradeIds.Count
-                   + (state.almanacNodeIds.Count + almanacLevels) * 1000L
-                   + state.fixedResources.Count * 1000_000L
-                   + state.gearBySlot.Count * 1000_000_000L
-                   + buildingLevels * 1000_000_000_000L
-                   + sketches * 1000_000_000_000_000L
-                   + state.activeTinctures.Count * 100_000_000_000_000_000L
-                   + state.deepAmberFound * 1000_000_000_000_000_000L;
         }
 
         private static ModifierSnapshot Build(GameState state, GameDataAsset data)

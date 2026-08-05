@@ -150,14 +150,21 @@ namespace Wildgrove.Data
             };
         }
 
-        /// <summary>Fingerprint of every source file, stored on GameDataAsset to detect staleness.</summary>
+        /// <summary>
+        /// Fingerprint of every source file AND of the asset's own shape,
+        /// stored on GameDataAsset to detect staleness. The shape is in there
+        /// because the importer skips its work on a matching hash, so a JSON-only
+        /// hash let a mapper or asset change go un-reimported in the editor —
+        /// see <see cref="GameDataAsset.SchemaFingerprint"/>.
+        /// </summary>
         public static string ComputeSourceHash(GameDataSources sources)
         {
             // The separator ends in an escaped NUL: it can't appear in JSON
             // text, so file boundaries never collide. Keep it as the escape
             // sequence — a raw NUL byte here once made git and grep treat
             // this whole file as binary.
-            var combined = string.Join("\n\u0000", sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
+            var combined = string.Join("\n\u0000", GameDataAsset.SchemaFingerprint(),
+                sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.InsectsJson, sources.RitesJson,
                 sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson,
                 sources.PlantersJson, sources.RegionsJson, sources.TincturesJson, sources.AmbersJson);

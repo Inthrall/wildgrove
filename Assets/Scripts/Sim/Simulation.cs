@@ -280,16 +280,13 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Credit time away since the last session, per design doc §8:
+        /// How much of an absence pays out, per design doc §8:
         /// offlineEarn = rate · min(t, cap). Real elapsed time is capped at the
         /// offline cap (base cap hours, raised by any offlineCapHours upgrade
-        /// owned; gear/Almanac bonuses arrive with their systems) and the
-        /// offline rate multiplier is applied, then the tick runs once with
-        /// that effective delta. Returns
-        /// the capped wall-clock seconds credited (before the rate multiplier),
-        /// so the welcome-back summary can report how much of the absence paid out.
+        /// owned, plus the additive band) — the wall-clock seconds credited,
+        /// before the rate multiplier.
         /// </summary>
-        public static double AdvanceOffline(GameState state, GameDataAsset data, double realElapsedSeconds)
+        public static double CreditedSeconds(GameState state, GameDataAsset data, double realElapsedSeconds)
         {
             if (state == null || data == null || realElapsedSeconds <= 0.0)
             {
@@ -297,10 +294,38 @@ namespace Wildgrove.Sim
             }
 
             var capSeconds = Upgrades.OfflineCapHours(state, data) * 3600.0;
-            var creditedSeconds = System.Math.Min(realElapsedSeconds, capSeconds);
+            return System.Math.Min(realElapsedSeconds, capSeconds);
+        }
 
-            Advance(state, data, creditedSeconds * data.economy.offline.rateMultiplier);
-            return creditedSeconds;
+        /// <summary>
+        /// The offline rate, and what it multiplies. It scales the SIM SECONDS
+        /// the catch-up runs, not the yield those seconds pay — a half rate
+        /// means the grove lived half as long while you were gone, so tincture
+        /// buffs lapse and craft batches land at the slower pace too, not just
+        /// the gathering. That is the intent (an absence is a thinner slice of
+        /// the same day, not a discounted one), and it is worth stating because
+        /// the value is 1.0 today and nothing would notice if it drifted.
+        /// Absent or non-positive config reads as 1.0 — hand-built fixtures
+        /// carry no offline section, and the validator rejects a real one below
+        /// zero.
+        /// </summary>
+        public static double OfflineRateMultiplier(GameDataAsset data)
+        {
+            var offline = data?.economy?.offline;
+            return offline != null && offline.rateMultiplier > 0.0 ? offline.rateMultiplier : 1.0;
+        }
+
+        /// <summary>
+        /// Credit time away since the last session, all in one call. Returns the
+        /// capped wall-clock seconds credited, so a caller can report how much
+        /// of the absence paid out. <see cref="OfflineCatchUp"/> is the same
+        /// work spread over frames, for an absence long enough to be worth it.
+        /// </summary>
+        public static double AdvanceOffline(GameState state, GameDataAsset data, double realElapsedSeconds)
+        {
+            var catchUp = OfflineCatchUp.Begin(state, data, realElapsedSeconds);
+            catchUp.RunToCompletion();
+            return catchUp.Summary.creditedSeconds;
         }
 
         /// <summary>
@@ -312,30 +337,9 @@ namespace Wildgrove.Sim
         /// </summary>
         public static OfflineSummary AdvanceOfflineWithSummary(GameState state, GameDataAsset data, double realElapsedSeconds)
         {
-            var summary = new OfflineSummary
-            {
-                realSeconds = System.Math.Max(0.0, realElapsedSeconds),
-            };
-            if (state == null)
-            {
-                return summary;
-            }
-
-            var before = SnapshotHoldings(state);
-            summary.creditedSeconds = AdvanceOffline(state, data, realElapsedSeconds);
-            var after = SnapshotHoldings(state);
-
-            foreach (var pair in after)
-            {
-                before.TryGetValue(pair.Key, out var had);
-                var gained = pair.Value - had;
-                if (gained > BigDouble.Zero)
-                {
-                    summary.gains[pair.Key] = gained;
-                }
-            }
-
-            return summary;
+            var catchUp = OfflineCatchUp.Begin(state, data, realElapsedSeconds);
+            catchUp.RunToCompletion();
+            return catchUp.Summary;
         }
 
         /// <summary>
@@ -361,9 +365,11 @@ namespace Wildgrove.Sim
         /// <summary>
         /// Camp stock plus basket contents, per resource — quality pools
         /// included, so a Decent or Choice batch landed offline still counts
-        /// as a welcome-back gain of its resource.
+        /// as a welcome-back gain of its resource. Internal to the assembly
+        /// rather than private: <see cref="OfflineCatchUp"/> takes the two ends
+        /// of the same diff, frames apart.
         /// </summary>
-        private static Dictionary<string, BigDouble> SnapshotHoldings(GameState state)
+        internal static Dictionary<string, BigDouble> SnapshotHoldings(GameState state)
         {
             var holdings = new Dictionary<string, BigDouble>(state.resources);
             AddPool(holdings, state.decentResources);

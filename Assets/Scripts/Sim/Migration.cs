@@ -168,6 +168,11 @@ namespace Wildgrove.Sim
             next.timeSkipBudgetHours = state.timeSkipBudgetHours;
             next.timeSkipBudgetStampUnixMs = state.timeSkipBudgetStampUnixMs;
 
+            // The clock ratchet crosses with them, and for the same reason: a
+            // fold that reset the mark would hand back every wind-forward the
+            // guard had just made the player pay for.
+            next.clockHighWaterUnixMs = state.clockHighWaterUnixMs;
+
             // Play time is lifetime, not per-run — it only ever grows, so a fold
             // carries it (a migrated save is further along, not reset to zero).
             next.playedMs = state.playedMs;

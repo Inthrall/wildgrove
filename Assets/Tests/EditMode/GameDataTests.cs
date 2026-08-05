@@ -1595,6 +1595,37 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
+        public void SourceHash_CoversTheAssetsOwnShape()
+        {
+            // The importer skips its work when the hash matches, so a hash over
+            // the JSON alone let an asset or mapper change go un-reimported: the
+            // editor kept serving a GameData.asset built by the old mapper, and
+            // a missing field just reads as a default. The shape is in the hash
+            // now, which is what makes ImportedAsset_IsUpToDateWithDesignData
+            // catch that case as well as a JSON edit.
+            var hash = GameData.ComputeSourceHash(LoadSources());
+
+            Assert.That(hash, Is.Not.EqualTo(GameData.ComputeSourceHash(new GameDataSources())),
+                "the hash must respond to its inputs at all");
+            Assert.That(GameDataAsset.SchemaFingerprint(), Does.Contain("economy:"),
+                "the fingerprint must actually name the asset's fields");
+        }
+
+        [Test]
+        public void SchemaFingerprint_IsStableAcrossCalls()
+        {
+            // Reflection makes no promise about field order, so the fingerprint
+            // sorts. Without that it would churn the committed asset from one
+            // machine to the next, which is worse than the staleness it fixes.
+            Assert.That(GameDataAsset.SchemaFingerprint(), Is.EqualTo(GameDataAsset.SchemaFingerprint()));
+
+            var parts = GameDataAsset.SchemaFingerprint().Split('\n');
+            var sorted = (string[])parts.Clone();
+            System.Array.Sort(sorted, System.StringComparer.Ordinal);
+            Assert.That(parts, Is.EqualTo(sorted), "the fingerprint must be in a fixed order");
+        }
+
+        [Test]
         public void ImportedAsset_SurfacesUpgradeGatesAndBuildingMaterials()
         {
             var asset = GameDataAsset.LoadFromResources();

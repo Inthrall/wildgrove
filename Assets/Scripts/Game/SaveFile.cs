@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using UnityEngine;
 using Wildgrove.Sim.Saves;
 
@@ -104,10 +105,23 @@ namespace Wildgrove.Game
 
         public static void Write(SaveData save)
         {
+            var temp = Path + ".tmp";
             try
             {
-                var temp = Path + ".tmp";
-                File.WriteAllText(temp, SaveCodec.ToJson(save));
+                // Flushed to the DEVICE, not just to the OS: without the true
+                // flush the atomic replace only protects against a crash partway
+                // through writing the slot, while a power loss could still swap
+                // in a temp file whose bytes never reached storage — an empty
+                // save that looks like a clean one. The point of the dance is
+                // that the previous save survives anything, so the temp has to
+                // be real before it becomes the save.
+                var bytes = new UTF8Encoding(false).GetBytes(SaveCodec.ToJson(save));
+                using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes, 0, bytes.Length);
+                    stream.Flush(true);
+                }
+
                 if (File.Exists(Path))
                 {
                     File.Replace(temp, Path, null);
@@ -122,6 +136,22 @@ namespace Wildgrove.Game
                 // A failed autosave shouldn't take the session down — the next
                 // interval retries.
                 Debug.LogError("Save write failed: " + e.Message);
+
+                // Don't leave the half-written temp behind: the next write opens
+                // it with FileMode.Create and would truncate it anyway, but a
+                // stray save.json.tmp beside a healthy save is the kind of thing
+                // that gets mistaken for the real one during a support hunt.
+                try
+                {
+                    if (File.Exists(temp))
+                    {
+                        File.Delete(temp);
+                    }
+                }
+                catch (Exception cleanup)
+                {
+                    Debug.LogWarning("Save temp file left behind: " + cleanup.Message);
+                }
             }
         }
 

@@ -92,6 +92,14 @@ namespace Wildgrove.Sim
         public long timeSkipBudgetStampUnixMs;
 
         /// <summary>
+        /// The latest UTC unix ms this run has ever been told it is — the
+        /// ratchet every clock reading is held at or above, so winding the
+        /// device clock forward and back can't farm the cooldowns above or the
+        /// offline credit. See <see cref="ClockGuard"/>. 0 = never read.
+        /// </summary>
+        public long clockHighWaterUnixMs;
+
+        /// <summary>
         /// Accumulated foreground play time in ms — a monotonic, clock-independent
         /// measure of how far a run has been carried. GameLoop adds each real
         /// frame delta; it survives Migration and is the basis cloud saves are

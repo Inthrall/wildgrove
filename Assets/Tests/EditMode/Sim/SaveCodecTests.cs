@@ -767,6 +767,54 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void TryMigrate_V42_ClimbsToCurrentWithNoClockMark()
+        {
+            // The ladder's first real rung. A v42 save predates the clock
+            // ratchet, so it must arrive with the mark at zero — "this run has
+            // never been told the time" — rather than with one invented for it,
+            // which would freeze its cooldowns until real time passed the
+            // invention.
+            var save = new SaveData { version = 42 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.clockHighWaterUnixMs, Is.Zero);
+        }
+
+        [Test]
+        public void Restore_V42Save_LeavesTheClockRatchetUnset()
+        {
+            var save = new SaveData { version = 42 };
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(state.clockHighWaterUnixMs, Is.Zero,
+                "so the first reading on the new build sets the mark honestly, from the device");
+        }
+
+        [Test]
+        public void Capture_RoundTripsTheClockRatchet()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.clockHighWaterUnixMs = 1_770_000_000_000L;
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.clockHighWaterUnixMs, Is.EqualTo(1_770_000_000_000L),
+                "a mark that didn't survive the save would reset every launch, which is no guard at all");
+        }
+
+        [Test]
+        public void Restore_NegativeClockRatchet_ReadsAsNeverSet()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.clockHighWaterUnixMs = -5L;
+
+            Assert.That(SaveCodec.Restore(save, _data).clockHighWaterUnixMs, Is.Zero);
+        }
+
+        [Test]
         public void TryMigrate_CurrentVersion_NeedsNoRung()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
