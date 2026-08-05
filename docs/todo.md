@@ -597,6 +597,17 @@ Not work items. Each of these cost real time to find.
   describing the Google account two sections down, and a sign-out the game has
   never had. Corrected 2026-08-05; its header comment carries the keep-in-step
   warning, and the deploy is the Decryptic site's, not this repo's.
+- **The type scale asks the font atlas for a lot.** Sixteen authored sizes across
+  four faces, doubled by `FontScale`, plus the world strip's TextMesh labels at 64
+  and a synthesised bold on the lit tab: every combination is its own glyph set in
+  a shared dynamic atlas, so the atlas repacks often and each repack is a chance
+  for a label to be left drawing through the old rects. Both known ways that
+  happens are now defended (`GameHud.RefreshRebuiltFonts` re-generates a frame
+  later, `WorldView.OnFontTextureRebuilt` guards every reach so it cannot throw
+  and cut the rest of the subscriber list), but the defences treat the symptom.
+  Collapsing the authored sizes toward a handful of steps would make the repacks
+  rare instead — a type pass, not a bug fix, and the 12sp Android floor
+  (`JournalWidgets.FontScale`) is the constraint it has to respect.
 - **The chrome budget rule:** a bar is only pinned if it is read on every tab — the
   page is the row that pays for it. `UpdateWorldGap` makes the world strip the
   shock absorber (14–26% of screen, after a 32% page floor), so the next thing that

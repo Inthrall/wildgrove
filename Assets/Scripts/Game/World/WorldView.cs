@@ -130,6 +130,15 @@ namespace Wildgrove.Game.World
         // The labels share the HUD's dynamic fonts; an atlas rebuild (a new
         // glyph/size requested anywhere) leaves stale TextMesh geometry unless
         // each label re-generates.
+        //
+        // Every reach here is guarded because this runs on a static event with
+        // other subscribers behind it — uGUI's own FontUpdateTracker, which is
+        // how every Text in the journal hears about the same rebuild. A throw
+        // from this handler stops the rest of that invocation list, so one
+        // unguarded field would leave the whole HUD drawing through the atlas
+        // it just replaced. _wardenView and _openSlotsMark are null until the
+        // first Rebuild, and the rebuild that Rebuild's own labels provoke is
+        // exactly the one that arrives while they still are.
         private void OnFontTextureRebuilt(Font font)
         {
             if (font != _labelFont)
@@ -139,10 +148,17 @@ namespace Wildgrove.Game.World
 
             foreach (var view in _views)
             {
-                view.RefreshLabel();
+                if (view != null)
+                {
+                    view.RefreshLabel();
+                }
             }
 
-            _wardenView.RefreshLabel();
+            if (_wardenView != null)
+            {
+                _wardenView.RefreshLabel();
+            }
+
             PlaceholderArt.RefreshLabel(_openSlotsMark);
         }
 

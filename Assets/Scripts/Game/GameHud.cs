@@ -161,6 +161,12 @@ namespace Wildgrove.Game
         private string _structureSignature;
         private bool _dirty;
 
+        // Fonts whose dynamic atlas was repacked and whose text has not been
+        // re-generated against it yet — see RefreshRebuiltFonts. Usually one
+        // entry, and empty on almost every frame.
+        private readonly List<Font> _atlasRebuilt = new List<Font>();
+        private readonly List<Text> _textBuffer = new List<Text>();
+
         private string _tab = TabTrail;
 
         // One open sheet at a time; the dim layer blocks input beneath it.
@@ -214,6 +220,29 @@ namespace Wildgrove.Game
         internal JournalText Labels => _labels;
         internal JournalSheets Sheets => _sheets;
 
+        private void OnEnable()
+        {
+            Font.textureRebuilt += OnFontTextureRebuilt;
+        }
+
+        private void OnDisable()
+        {
+            Font.textureRebuilt -= OnFontTextureRebuilt;
+        }
+
+        /// <summary>
+        /// Note the repack; the text is re-generated a frame later, in
+        /// <see cref="RefreshRebuiltFonts"/>, and deliberately not from here.
+        /// See that method for why the frame matters.
+        /// </summary>
+        private void OnFontTextureRebuilt(Font font)
+        {
+            if (font != null && !_atlasRebuilt.Contains(font))
+            {
+                _atlasRebuilt.Add(font);
+            }
+        }
+
         private void Awake()
         {
             _loop = GetComponent<GameLoop>();
@@ -242,6 +271,57 @@ namespace Wildgrove.Game
             {
                 ShowNote(hint);
             }
+        }
+
+        /// <summary>
+        /// Re-generate every label drawn from a font whose dynamic atlas was
+        /// repacked since the last frame, so none of them keeps drawing through
+        /// the old glyph rects.
+        /// <para>
+        /// uGUI has its own version of this (FontUpdateTracker calls
+        /// FontTextureChanged on each live Text from inside the rebuild event),
+        /// and it cannot help the label that CAUSED the rebuild: generating a
+        /// mesh is what requests glyphs, requesting a glyph the atlas has no
+        /// room for is what repacks it, and a Text mid-generation has its own
+        /// rebuild callback suppressed against re-entry — so it finishes against
+        /// the layout that has just been thrown away and keeps that mesh until
+        /// something dirties it again. A label whose string is re-assigned on
+        /// the refresh cadence (the title, the ledger, the tracker) is dirtied
+        /// within a quarter-second and heals itself; the chrome's write-once
+        /// labels are not, and the five tab names and the strip's slot counter
+        /// sat in glyph soup indefinitely.
+        /// </para>
+        /// <para>
+        /// Deferring a frame is the whole fix: outside the event, no suppression
+        /// flag is set, and a regeneration that repacks the atlas again is
+        /// simply noted for the next frame. It converges because the atlas only
+        /// grows — but see todo.md on the type scale: sixteen authored sizes
+        /// across four faces is what makes the repacks frequent enough to matter.
+        /// </para>
+        /// </summary>
+        private void RefreshRebuiltFonts()
+        {
+            if (_atlasRebuilt.Count == 0 || _canvas == null)
+            {
+                return;
+            }
+
+            // Inactive included: a Text is only on uGUI's tracked list while its
+            // object is enabled, so a closed sheet's labels never hear about the
+            // repack at all and come back wearing the old atlas. FontTextureChanged
+            // invalidates their cached generator, which is what makes the
+            // regeneration on re-enable a real one.
+            _canvas.GetComponentsInChildren(true, _textBuffer);
+            foreach (var text in _textBuffer)
+            {
+                if (_atlasRebuilt.Contains(text.font))
+                {
+                    text.FontTextureChanged();
+                }
+            }
+
+            _textBuffer.Clear();
+            _atlasRebuilt.Clear();
         }
 
         /// <summary>
@@ -290,6 +370,11 @@ namespace Wildgrove.Game
 
         private void Update()
         {
+            // Before the state guard: the chrome is on screen while the welcome
+            // sheet holds the run back, and garbled tabs there are the first
+            // thing anyone sees.
+            RefreshRebuiltFonts();
+
             if (_loop == null || _loop.State == null)
             {
                 return;
