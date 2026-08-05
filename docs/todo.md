@@ -310,6 +310,33 @@ for:
 - **Do not create `reward_wayfarers_cloak`.** The cosmetic reward was retired
   unbuilt — it wanted a cosmetic substrate the game has never had. A test pins
   that the id is uncatalogued, so an award of it could never be acknowledged.
+- **The deletion URL the form asks for is an anchor, and the anchor is
+  load-bearing.** `https://decryptic.app/wildgrove/privacy#deleting-your-data` —
+  a *Deleting your data* section added 2026-08-05 for exactly this field. Renaming
+  that `id` sends the console's link to the top of the page, where a reviewer finds
+  no deletion instructions; the page carries the same warning in a comment.
+  Account questions on the same form: **no** account creation (the game creates
+  none), **yes** users can sign in with an account created outside the app (the
+  Google account), and App access is *all functionality available without special
+  access* — nothing is gated behind the sign-in.
+- **Bring the Data Safety form up to what ships — before the next release.** The
+  privacy page was corrected on 2026-08-05 (Game Stats disclosed, the "no accounts"
+  claim withdrawn); the form is the half that isn't in a repo, and it has never
+  been revisited since Play Games and Game Stats landed. It needs the Play Games
+  identity (display name, gamer profile) and the gameplay stats declared, with
+  *collected* / *shared* / *optional* set to match — the form and the page
+  disagreeing is a policy strike in its own right, whichever of the two is right.
+- **The Unity question — half answered.** `com.unity.analytics` 3.8.2 was dropped
+  2026-08-05: nothing referenced `Unity.Services.Analytics`, and it was pulling
+  `com.unity.services.analytics` 6.3.0 into the AAB, which is what a Data Safety
+  reviewer reads. The legacy `com.unity.modules.unityanalytics` built-in module went
+  with it. IAP is untouched — `com.unity.purchasing` depends on
+  `com.unity.services.core`, not on analytics. **Do not re-add either** without
+  saying so on the privacy page and the Data Safety form first.
+  What's left: Unity IAP v5 still requires `UnityServices.InitializeAsync()`
+  (`UnityIapStore.ConnectAsync`), so UGS *core* initialises on any device that opens
+  the store. Confirm by logcat whether core alone transmits an installation id — if
+  it does, Unity is a processor and belongs on the page and the form beside Google.
 - **Re-step the three drifted achievements** (§2) in the same visit.
 - **Add Mo as a license tester** (Settings → License testing) so test purchases
   aren't charged.
@@ -337,7 +364,10 @@ for:
 - **Game Stats events flowing on device** — a dev build logs
   `[play-games] game-stats: recorded <event>` on the save cadence. Stats appear
   on the Gamer profile only after the console schema is live (September 2026
-  window), so the log line is the whole check until then.
+  window), so the log line is the whole check until then. **Check with *Play
+  notes* on:** the stats now answer to that switch as well as to sign-in, so a
+  silent log with the switch off is the gate working, not a fault. Check the off
+  case too — no `recorded` line at all.
 - **The real out-of-app reward delivery.** `StubStore.DeliverReward` exercises
   grant → acknowledge and the refusal branch in the editor; a live Quest award
   can't be tried before Sep 1. What *is* checkable now: an internal-track build's
@@ -520,8 +550,11 @@ Not work items. Each of these cost real time to find.
   persists only while a pre-v43 artifact is still active in a track.
 - **The privacy policy lives in the Decryptic repo**
   (`src/Decryptic.App/wwwroot/wildgrove/privacy.html`) and deploys with that site.
-  It has silently rotted behind the build twice; its header comment carries the
-  keep-in-step warning.
+  It has silently rotted behind the build three times now — the third was Game
+  Stats, and the same review found it still claiming "there are no accounts" while
+  describing the Google account two sections down, and a sign-out the game has
+  never had. Corrected 2026-08-05; its header comment carries the keep-in-step
+  warning, and the deploy is the Decryptic site's, not this repo's.
 - **The chrome budget rule:** a bar is only pinned if it is read on every tab — the
   page is the row that pays for it. `UpdateWorldGap` makes the world strip the
   shock absorber (14–26% of screen, after a 32% page floor), so the next thing that
