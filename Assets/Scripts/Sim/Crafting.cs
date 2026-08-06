@@ -196,6 +196,46 @@ namespace Wildgrove.Sim
             station.recipeId = null;
         }
 
+        /// <summary>
+        /// The order an Assign of <paramref name="recipe"/> would displace
+        /// right now, or null when nothing would be (an idle slot or spare
+        /// capacity takes it, or it is already assigned). Mirrors
+        /// <see cref="Assign"/> exactly — the page warns off this, and a
+        /// warning that disagrees with the act is worse than none.
+        /// </summary>
+        public static RecipeData WouldDisplace(GameState state, GameDataAsset data, RecipeData recipe)
+        {
+            if (state == null || recipe == null || ActiveStationFor(state, recipe) != null)
+            {
+                return null;
+            }
+
+            StationState first = null;
+            var slots = 0;
+            foreach (var station in state.stations)
+            {
+                if (station.stationId != recipe.station)
+                {
+                    continue;
+                }
+
+                if (station.recipeId == null)
+                {
+                    return null;
+                }
+
+                first = first ?? station;
+                slots++;
+            }
+
+            if (slots < OrderCapacity(state) || first == null)
+            {
+                return null;
+            }
+
+            return data.RecipesById.TryGetValue(first.recipeId, out var displaced) ? displaced : null;
+        }
+
         /// <summary>True when camp stock covers one batch of the recipe's inputs.</summary>
         public static bool HasInputs(GameState state, RecipeData recipe)
         {

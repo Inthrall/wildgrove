@@ -603,7 +603,10 @@ namespace Wildgrove.Game
         private void OpenWelcomeSheet(OfflineSummary summary)
         {
             var sheet = BeginSheet();
-            MakeText(sheet, "Welcome back", 32, TextAnchor.UpperCenter, Ink, _serif);
+            // A bought camp name reads here first — the return is the moment
+            // the camp is most itself (design §9's sink slate).
+            MakeText(sheet, _loop.IsCampNamed() ? "Welcome back to " + _loop.CampName() : "Welcome back",
+                32, TextAnchor.UpperCenter, Ink, _serif);
             MakeText(sheet, "Away " + NumberFormat.Duration(summary.realSeconds)
                             + " · credited " + NumberFormat.Duration(summary.creditedSeconds), 20, TextAnchor.UpperCenter, Ink2);
 
@@ -703,7 +706,65 @@ namespace Wildgrove.Game
                 KeyAction(doubleIt);
             }
 
+            BuildLedgerOffer(sheet, summary);
+
             Button(sheet, "Continue", 320, CloseSheet);
+        }
+
+        /// <summary>
+        /// Settle the ledger (design §9's sink slate): the hours the away cap
+        /// left uncredited, offered at the full live rate for Amber, drawn
+        /// from the paid-skip budget. The price sits on the button — this
+        /// sheet is already the moment of decision, and a second confirm over
+        /// a sheet would fight the scrim.
+        /// </summary>
+        private void BuildLedgerOffer(Transform sheet, OfflineSummary summary)
+        {
+            var hours = _loop.LedgerHoursOnOffer(summary);
+            if (hours <= 0.0)
+            {
+                return;
+            }
+
+            var uncovered = Amber.UncoveredHours(summary);
+            var cost = Mathf.FloorToInt((float)_loop.LedgerCost(summary));
+            MakeText(sheet, "<i>the night ran " + NumberFormat.Duration(uncovered * 3600.0)
+                            + " past what the camp could hold" + (hours < uncovered
+                                ? " — the day's hastening covers " + NumberFormat.Duration(hours * 3600.0) + " of it"
+                                : string.Empty) + ".</i>",
+                17, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            var affordable = _loop.CanSettleLedger(summary);
+            Button settle = null;
+            settle = Button(sheet, "Settle the ledger · " + cost + " amber", 420, () =>
+            {
+                var credited = _loop.SettleLedger(summary);
+                if (credited <= 0.0)
+                {
+                    // The run moved under the sheet (an adopted save) or the
+                    // amber is short after all — the offer quietly stands down.
+                    SetNote("the ledger keeps. nothing was spent.");
+                    return;
+                }
+
+                // The offer is spent — the line takes the button's place, the
+                // doubled haul's own idiom.
+                var slot = settle.transform.GetSiblingIndex();
+                var column = settle.transform.parent;
+                Object.Destroy(settle.gameObject);
+                var spent = MakeText(column, "<i>the ledger is settled — " + NumberFormat.Duration(credited * 3600.0)
+                                             + " credited at full pace</i>", 20, TextAnchor.MiddleCenter, MossDeep, _serif);
+                spent.transform.SetSiblingIndex(slot);
+                SetNote("amber spent: the hours the cap let go, given back.");
+                _dirty = true;
+            });
+            settle.interactable = affordable;
+            SetButtonTint(settle, affordable);
+            if (!affordable)
+            {
+                MakeText(sheet, "<color=" + OchreInkHex + "><i>not enough amber — the ledger keeps.</i></color>",
+                    16, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
         }
 
         internal void OpenMigrationSheet()
@@ -712,7 +773,10 @@ namespace Wildgrove.Game
             // The scrim stays inert on the run's one destructive confirm — a
             // stray tap must not answer it either way; Back still cancels.
             var sheet = BeginSheet(scrimDismisses: false);
-            MakeText(sheet, "Fold the camp", 32, TextAnchor.UpperCenter, Ink, _serif);
+            // A named camp folds by name — the name is part of what is being
+            // left, and the sheet is where that should be felt.
+            MakeText(sheet, _loop.IsCampNamed() ? "Fold " + _loop.CampName() : "Fold the camp",
+                32, TextAnchor.UpperCenter, Ink, _serif);
 
             // Say plainly what a fold IS before saying what it costs. "They were
             // never yours" is the right voice but it isn't an explanation, and a
@@ -982,6 +1046,74 @@ namespace Wildgrove.Game
                     SetNote(named
                         ? "a new name, paid in resin, set at the front of the journal."
                         : "you set your name at the front of the journal.");
+                    _dirty = true;
+                }
+
+                done();
+            });
+            KeyAction(save);
+
+            Button(sheet, "Cancel", 320, () => done());
+        }
+
+        /// <summary>
+        /// Name this run's camp (design §9's sink slate) — the warden sheet's
+        /// sibling, priced between a companion's naming and the warden's own.
+        /// The one difference the sheet must say: this name is the RUN's, and
+        /// it folds with the camp — a player paying 40 amber deserves to know
+        /// the purchase has a season.
+        /// </summary>
+        internal void OpenCampNamingSheet(System.Action onClosed = null)
+        {
+            System.Action done = () =>
+            {
+                CloseSheet();
+                if (onClosed != null)
+                {
+                    onClosed();
+                }
+            };
+
+            var sheet = onClosed == null ? BeginSheet() : BeginSheet(done);
+            var named = _loop.IsCampNamed();
+            MakeText(sheet, named ? "Rename the camp" : "Name the camp", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            var cost = Mathf.FloorToInt((float)_loop.CampNameCost());
+            if (cost > 0)
+            {
+                MakeText(sheet, "the camp's name asks " + SizeOpen(19) + "<color=" + OchreHex + ">"
+                                + cost + " amber</color></size>", 18, TextAnchor.UpperCenter, Ink2, _hand);
+            }
+
+            // §7 register: say what the name is for, and say what it isn't —
+            // it reads on the forecast and the pages, and it folds with the
+            // camp when the run ends.
+            MakeText(sheet, "<i>a name for this camp, this season: the pages will use it until the fold takes both.</i>",
+                16, TextAnchor.UpperCenter, Ink2, _hand);
+
+            var field = MakeInputField(sheet, named ? _loop.CampName() : string.Empty);
+            var error = MakeText(sheet, string.Empty, 16, TextAnchor.MiddleCenter, Ink2, _serif);
+
+            var save = Button(sheet, cost > 0 ? "Save · " + cost + " amber" : "Save", 320, () =>
+            {
+                var typed = field.text;
+                if (string.IsNullOrWhiteSpace(typed) || typed.Trim() == _loop.CampName())
+                {
+                    done();
+                    return;
+                }
+
+                if (!_loop.CanNameCamp())
+                {
+                    error.text = "<color=" + OchreInkHex + "><i>not enough amber. resin is dear, and the camp goes unnamed a while longer.</i></color>";
+                    return;
+                }
+
+                if (_loop.NameCamp(typed))
+                {
+                    SetNote(cost > 0
+                        ? "a name for the camp, paid in resin, written across the season's pages."
+                        : "a name for the camp, written across the season's pages.");
                     _dirty = true;
                 }
 

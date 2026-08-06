@@ -231,30 +231,25 @@ wired to nothing. The settings row lands with the audio pass.
   any post; Roosts comfort and Kinship are the only XP-rate levers.
 - **No observation skill XP.** Sketches are too rare for per-unit XP; decide a
   grant when tool-tier or level gates need the level.
-- **The 2026-08-06 amber-sink slate (design §9): the SIM layer is built
-  (2026-08-06)** — every sink, its economy keys, its save rungs (44→48, one per
-  shape change), its GameLoop API, and EditMode coverage. What remains is the
-  UI surface for each:
-  - **the calling gift** — DONE end-to-end: the pile line prices it and the
-    refusal note says the pile waits (`TrailPage`);
-  - **name the camp** — needs the naming sheet plus the read-outs (fold
-    forecast, welcome-back sheet, journal page headers). `Camp.DisplayName` is
-    the one answer every surface reads; `GameLoop` has no wrapper yet — add it
-    with the sheet;
-  - **settle the ledger** — needs its welcome-back sheet row; the plumbing is
-    `GameLoop.LedgerHoursOnOffer/LedgerCost/CanSettleLedger/SettleLedger`, and
-    the row shows when `LedgerHoursOnOffer(summary) > 0`;
-  - **the drover's consideration** — needs its row beside the Exchange deal
-    (`GameLoop.PressConsideration`, cost from `ConsiderationCost`); wording in
-    register — the caravan is dry, not petty ("bribe" is the design word only);
-  - **the second queue** — needs a buy row at the stations
-    (`GameLoop.BuySecondQueue`) and a station page that shows both orders:
-    `Crafting.WorkingRecipe` still names only the FIRST slot, so the page will
-    want a both-slots read before the row ships;
-  - **the keepsake page** — needs the journal surface: the shelf
-    (`Keepsakes.All`), the mount row (`GameLoop.MountKeepsake`), and the line
-    in the land's voice rendered from `KeepsakeState`'s facts (never stored —
-    the narrative pass owns the wording).
+- **The 2026-08-06 amber-sink slate (design §9) is BUILT end-to-end
+  (2026-08-06)** — sim, economy keys, save rungs (44→48), GameLoop APIs, and
+  the journal surfaces: the pile line prices the calling gift (`TrailPage`);
+  the Camp page heads with the camp's name card and its naming sheet, and the
+  name reads on the welcome-back and fold sheets (`JournalSheets`); the
+  welcome-back sheet carries the settle-the-ledger offer; the Exchange card
+  carries the drover's consideration row; the Amber card sells the second
+  queue and the station rule lines say the new count (`CraftWouldDisplace`
+  keeps "Craft instead" honest with the spare slot open); the Record page
+  keeps THE KEEPSAKES shelf and its mount row. Still owed:
+  - **a device click-through** of every new row — the suite proves the sim,
+    not the layout;
+  - **the narrative pass owns the wording** — every new line is a first draft
+    in register, and the keepsake line especially is rendered from
+    `KeepsakeState`'s facts precisely so a wording pass costs no save;
+  - **the chrome fold banner deliberately does NOT carry the camp name** —
+    it is a count, not a route; the name reads on the Camp page head, the
+    welcome-back sheet, and the fold sheet instead. Revisit only if playtest
+    misses it.
 
   Cosmetics stay retired — still **no substrate at all** (no skin/wardrobe
   system, no warden or familiar sprite); that absence is what retired the

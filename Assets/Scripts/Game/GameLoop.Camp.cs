@@ -134,6 +134,56 @@ namespace Wildgrove.Game
             return Crafting.WorkingRecipe(State, Data, stationId);
         }
 
+        /// <summary>The order assigning this recipe would set aside, or null when a slot is free — the "Craft instead" warning reads this, so it never disagrees with the act.</summary>
+        public RecipeData CraftWouldDisplace(RecipeData recipe)
+        {
+            return Crafting.WouldDisplace(State, Data, recipe);
+        }
+
+        /// <summary>Standing orders one station may hold this run — 2 once the second queue is bought.</summary>
+        public int StationOrderCapacity()
+        {
+            return Crafting.OrderCapacity(State);
+        }
+
+        // ─────────────── The camp's name (design §9's sink slate) ────────────
+
+        /// <summary>What to call the camp on the page — its bought name, or "the camp".</summary>
+        public string CampName()
+        {
+            return Camp.DisplayName(State);
+        }
+
+        /// <summary>Whether this run's camp has been named — the naming sheet asks, to tell a first naming from a change.</summary>
+        public bool IsCampNamed()
+        {
+            return Camp.IsNamed(State);
+        }
+
+        /// <summary>The Amber naming this run's camp asks — 0 when the amber system is inert (naming is free then).</summary>
+        public double CampNameCost()
+        {
+            return Amber.CampNameCost(Data);
+        }
+
+        /// <summary>Whether naming the camp is affordable right now.</summary>
+        public bool CanNameCamp()
+        {
+            return Amber.CanNameCamp(State, Data);
+        }
+
+        /// <summary>Name this run's camp (design §9) — charged on a change only. Returns whether the name changed.</summary>
+        public bool NameCamp(string name)
+        {
+            var named = Amber.TryNameCamp(State, Data, name);
+            if (named)
+            {
+                Telemetry.LogEvent("camp_named", ("amber_cost", Amber.CampNameCost(Data)));
+            }
+
+            return named;
+        }
+
         /// <summary>True when camp stock covers one batch of the recipe's inputs.</summary>
         public bool CanCraft(RecipeData recipe)
         {

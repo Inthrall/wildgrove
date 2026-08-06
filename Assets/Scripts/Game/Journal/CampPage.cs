@@ -49,11 +49,35 @@ namespace Wildgrove.Game
             _hud.Sheets.BuildCampActions(_body);
             _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
 
+            BuildCampNameCard();
             BuildCraftingCards();
             BuildBuildingsCard();
             BuildLadderCard();
             BuildExchangeCard();
             BuildAmberCard();
+        }
+
+        /// <summary>
+        /// The page's own head: what this camp is called (design §9's sink
+        /// slate) — the Warden page's name card, worn by the run instead of
+        /// the player. The quill opens the naming sheet, which carries the
+        /// price; the card says the name and nothing else, for the same
+        /// measured-at-zero-width reason the warden's does.
+        /// </summary>
+        private void BuildCampNameCard()
+        {
+            var card = Card("THE CAMP");
+
+            var row = Row(card);
+            var layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 2;
+
+            var name = MakeText(row.transform, _loop.CampName(), 30, TextAnchor.MiddleCenter, Ink, _serif);
+            IconButton(row.transform, JournalSprites.QuillSprite(), 40f, 120f,
+                () => _hud.Sheets.OpenCampNamingSheet());
+
+            _liveUpdaters.Add(() => name.text = _loop.CampName());
         }
 
         /// <summary>
@@ -74,6 +98,11 @@ namespace Wildgrove.Game
             if (Amber.Configured(economy))
             {
                 BuildTimeSkipRow(card, economy);
+            }
+
+            if (economy.amber.secondQueueCostAmber > 0.0)
+            {
+                BuildSecondQueueRow(card, economy);
             }
 
             if (economy.amber.weeklyCacheAmber > 0.0)
@@ -138,6 +167,58 @@ namespace Wildgrove.Game
                     : string.Empty);
                 skip.interactable = ok;
                 SetButtonTint(skip, ok);
+            });
+        }
+
+        /// <summary>
+        /// The run's second craft-queue slot (design §9's sink slate): each
+        /// station may hold two standing orders until the fold. One purchase,
+        /// so one row — the station cards' own rule lines say the new count.
+        /// </summary>
+        private void BuildSecondQueueRow(RectTransform card, EconomyData economy)
+        {
+            var cost = Mathf.FloorToInt((float)economy.amber.secondQueueCostAmber);
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+            var offer = "a second queue at every station, until the fold"
+                        + SizeOpen(15) + "<color=" + OchreHex + ">  " + cost + " amber</color></size>";
+            var held = "a second queue at every station"
+                       + SizeOpen(15) + "<color=" + MossDeepHex + ">  held, this run</color></size>";
+            Button buy = null;
+            buy = Button(row.transform, "Buy", 170, () =>
+            {
+                if (!_loop.CanBuySecondQueue())
+                {
+                    return;
+                }
+
+                // Amber is premium and hard-won — never spend it on a stray tap.
+                _hud.Sheets.OpenConfirmSheet(
+                    "Spend " + cost + " amber",
+                    "A second standing order at every station, until the camp folds?",
+                    "Spend " + cost + " amber",
+                    () =>
+                    {
+                        if (_loop.BuySecondQueue())
+                        {
+                            SetNote("amber spent: the stations each take a second work in hand.");
+                            _dirty = true;
+                        }
+                    });
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var owned = _loop.SecondQueueOwned;
+                label.text = owned ? held : offer;
+                buy.gameObject.SetActive(!owned);
+                if (!owned)
+                {
+                    var ok = _loop.CanBuySecondQueue();
+                    buy.interactable = ok;
+                    SetButtonTint(buy, ok);
+                }
             });
         }
 
@@ -404,10 +485,13 @@ namespace Wildgrove.Game
         /// "one work at a time — the bench and the forge keep their own." The
         /// second clause is the answer to "why can I craft several things at
         /// once", so it names the sibling stations rather than gesturing at
-        /// them; with no siblings it's simply left off.
+        /// them; with no siblings it's simply left off. With the second queue
+        /// bought (design §9's sink slate) the count changes for the run, so
+        /// the line is re-read live.
         /// </summary>
         private string StationRule(string stationId, List<KeyValuePair<string, List<RecipeData>>> stations)
         {
+            var works = _loop.StationOrderCapacity() > 1 ? "two works at a time" : "one work at a time";
             var others = new List<string>();
             foreach (var station in stations)
             {
@@ -419,16 +503,16 @@ namespace Wildgrove.Game
 
             if (others.Count == 0)
             {
-                return "one work at a time.";
+                return works + ".";
             }
 
             if (others.Count == 1)
             {
-                return "one work at a time: " + others[0] + " keeps its own.";
+                return works + ": " + others[0] + " keeps its own.";
             }
 
             var last = others.Count - 1;
-            return "one work at a time: " + string.Join(", ", others.GetRange(0, last))
+            return works + ": " + string.Join(", ", others.GetRange(0, last))
                    + " and " + others[last] + " keep their own.";
         }
 
@@ -444,8 +528,9 @@ namespace Wildgrove.Game
                 PlateImage(card, plate, 120f);
             }
 
-            MakeText(card, "<i>" + StationRule(stationId, stations) + "</i>",
+            var rule = MakeText(card, "<i>" + StationRule(stationId, stations) + "</i>",
                 17, TextAnchor.MiddleCenter, Ink2, _serif);
+            _liveUpdaters.Add(() => rule.text = "<i>" + StationRule(stationId, stations) + "</i>");
 
             foreach (var recipe in recipes)
             {
@@ -467,7 +552,10 @@ namespace Wildgrove.Game
                     // Displacement is silent in the sim (the old batch's inputs
                     // come back, no bar anywhere reports the swap) — so the
                     // page has to be the one that says what was set aside.
-                    var displaced = _loop.IsCrafting(captured) ? null : _loop.StationRecipe(captured.station);
+                    // WouldDisplace mirrors Assign exactly, so with the second
+                    // queue's spare slot open this stays null and no swap is
+                    // announced that didn't happen.
+                    var displaced = _loop.IsCrafting(captured) ? null : _loop.CraftWouldDisplace(captured);
                     _loop.ToggleCraft(captured);
                     if (displaced != null && _loop.IsCrafting(captured))
                     {
@@ -542,10 +630,12 @@ namespace Wildgrove.Game
                     // "Stop" alone read as a state ("it is stopped"), not an
                     // action — the row's own status line is what reports state.
                     // "Craft instead" is the tap that costs you something: the
-                    // station is on another recipe and this would displace it,
-                    // which the plain "Craft" gave no warning of.
-                    var busyElsewhere = !crafting && _loop.StationRecipe(captured.station) != null;
-                    SetButtonLabel(toggle, crafting ? "Stop crafting" : busyElsewhere ? "Craft instead" : "Craft");
+                    // station is full and this would displace an order, which
+                    // the plain "Craft" gave no warning of. With the second
+                    // queue's slot free, starting costs nothing to set aside —
+                    // so it reads "Craft".
+                    var wouldDisplace = !crafting && _loop.CraftWouldDisplace(captured) != null;
+                    SetButtonLabel(toggle, crafting ? "Stop crafting" : wouldDisplace ? "Craft instead" : "Craft");
                     // Stopping is always allowed; starting needs the gates AND
                     // a batch of inputs in camp stock.
                     var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));
@@ -706,6 +796,39 @@ namespace Wildgrove.Game
 
             var idle = MakeText(card, string.Empty, 18, TextAnchor.MiddleCenter, Ink2);
 
+            // A consideration for the drover (design §9's sink slate): a
+            // little amber and the deal re-draws now, never repeating itself.
+            // The row hides while the sink is unconfigured or no deal stands.
+            var considerationCost = Mathf.FloorToInt((float)_loop.ConsiderationCost());
+            GameObject considerationRow = null;
+            Button press = null;
+            if (considerationCost > 0)
+            {
+                considerationRow = Row(card);
+                var considerationLabel = MakeText(considerationRow.transform,
+                    "<i>press a consideration on the drover — the deal turns now</i>"
+                    + SizeOpen(15) + "<color=" + OchreHex + ">  " + considerationCost + " amber</color></size>",
+                    17, TextAnchor.MiddleLeft, Ink2, _serif);
+                FlexibleWidth(considerationLabel.gameObject, 1f);
+                press = Button(considerationRow.transform, "Press", 170, () =>
+                {
+                    // Amber is premium and hard-won — never spend it on a stray tap.
+                    _hud.Sheets.OpenConfirmSheet(
+                        "Spend " + considerationCost + " amber",
+                        "Press a consideration on the drover, and the deal turns now?",
+                        "Spend " + considerationCost + " amber",
+                        () =>
+                        {
+                            var redealt = _loop.PressConsideration();
+                            if (redealt != null)
+                            {
+                                SetNote("the drover pockets the resin and names another deal.");
+                                _dirty = true;
+                            }
+                        });
+                });
+            }
+
             refresh = () =>
             {
                 var offer = _loop.CurrentExchangeOffer();
@@ -713,6 +836,17 @@ namespace Wildgrove.Game
                 deal.gameObject.SetActive(open);
                 rate.gameObject.SetActive(open);
                 amountRow.SetActive(open);
+                if (considerationRow != null)
+                {
+                    considerationRow.SetActive(open);
+                    if (open)
+                    {
+                        var canPress = _loop.CanPressConsideration();
+                        press.interactable = canPress;
+                        SetButtonTint(press, canPress);
+                    }
+                }
+
                 if (!open)
                 {
                     foreach (var tierRow in tierRows)
