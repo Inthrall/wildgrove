@@ -391,31 +391,38 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The warden's own ladder widening (design §4) — a verse sung past a
+        /// The warden's own reach widening (design §4) — a verse sung past a
         /// milestone, or a place bought. Nothing announced it before: the count
         /// on the Warden page simply read one higher the next time anyone
         /// looked, which is no way to mark the thing the whole kith is gated on.
         /// <para>
-        /// It is an attunement, not an inventory slot. What widens is the
-        /// warden's own reach — one more wild thing they can keep in step with
-        /// — so the sheet leads with whoever has been waiting at camp for it, in
-        /// their own portrait, and its key action walks THAT companion out. The
-        /// old sheet counted the idle and then sent the player off to find the
-        /// Warden page to do anything about it, which is where the reward was
-        /// quietly left unclaimed.
+        /// It is an attunement, not an inventory slot. What widens is how many
+        /// wild things will keep step with the warden at once — so the sheet is
+        /// about the bond first and the number second: it leads with whoever has
+        /// been waiting at camp for it, in their own portrait, and its key action
+        /// walks THAT companion out. The old sheet counted the idle and then sent
+        /// the player off to find the Warden page to do anything about it, which
+        /// is where the reward was quietly left unclaimed.
+        /// </para>
+        /// <para>
+        /// It deliberately says nothing about what opens the NEXT place. This is
+        /// the one beat in the run where the grove gives without asking, and a
+        /// line pointing at the next rung turned it into a shop window — the
+        /// Warden page keeps the whole count, and can be read whenever the
+        /// player is actually planning rather than being thanked.
         /// </para>
         /// </summary>
         private void OpenKithSlotSheet(int slots)
         {
             var sheet = BeginSheet();
             Celebrate(sheet, SlotSeeds);
-            MakeText(sheet, "Attuned to one more", 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, "<i>something else in the grove has decided to trust you</i>",
+            MakeText(sheet, "Something wild comes closer", 34, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "<i>you have kept this grove well enough that the wild has noticed</i>",
                 21, TextAnchor.MiddleCenter, Ink2, _hand);
 
             // The companion is the news; the place is only why. Their own
             // portrait, for the same reason the arrival sheet carries one —
-            // this is a meeting, and the fire alone is furniture.
+            // this is a meeting, and the hearth alone is furniture.
             var waiting = FirstResting();
             var plate = waiting != null ? ArtLibrary.ForSpecies(waiting.speciesId) : null;
             var portrait = plate != null;
@@ -431,10 +438,7 @@ namespace Wildgrove.Game
                 PlateImage(sheet, plate, portrait ? 200f : 180f);
             }
 
-            PaintKithPlaces(BuildKithPlaces(sheet, 30f));
-            MakeText(sheet, slots + " of " + Kith.SlotsMax(_loop.Data) + " places at the fire",
-                16, TextAnchor.UpperCenter, Ink2, _smallCaps);
-
+            // Who it is for, before the count: a name lands, a tally doesn't.
             var resting = _loop.KithResting();
             if (waiting != null)
             {
@@ -442,23 +446,44 @@ namespace Wildgrove.Game
                         ? waiting.name + " has waited at camp for this."
                         : waiting.name + " and " + (resting == 2 ? "one other wait" : (resting - 1) + " others wait")
                           + " at camp.",
-                    22, TextAnchor.UpperCenter, Ink, _serif);
+                    24, TextAnchor.UpperCenter, Ink, _serif);
+
+                // What walking them out actually buys, in the same words the
+                // post sheet uses for it. "A place opened" is an abstraction;
+                // this companion's own trait is the reward in the hand, and it
+                // is the difference between being told and being paid.
+                var trait = _loop.FamiliarTrait(waiting);
+                if (trait != null)
+                {
+                    MakeText(sheet, "<i>" + trait.displayName.ToLowerInvariant() + ": " + trait.description + "</i>",
+                        17, TextAnchor.UpperCenter, MossDeep, _serif);
+                }
             }
             else
             {
-                MakeText(sheet, "<i>the next to come in from the trees can walk straight out.</i>",
-                    18, TextAnchor.MiddleCenter, Ink2, _hand);
+                MakeText(sheet, "<i>the next to come in from the trees need not wait. there is room beside you now.</i>",
+                    19, TextAnchor.MiddleCenter, Ink2, _hand);
             }
 
-            var ahead = NextKithPlaceLine();
-            if (ahead != null)
-            {
-                MakeText(sheet, "<i>" + ahead + "</i>", 16, TextAnchor.MiddleCenter, Ink2);
-            }
+            PaintKithPlaces(BuildKithPlaces(sheet, 34f));
+            MakeText(sheet, slots + " of " + Kith.SlotsMax(_loop.Data) + " places at your side",
+                16, TextAnchor.UpperCenter, Ink2, _smallCaps);
+
+            // The one thing the sheet never said, and the whole reason this is
+            // a reward rather than a notice: a place is kept. Coin, camp, tools
+            // and every skill level go into the fold — this doesn't (see
+            // GameLoop.Fold: slots ride lifetime verses and re-seed intact).
+            // Moss, which is this book's ink for what a thing gives.
+            MakeText(sheet, "one more may hold a post, and no migration takes it back.",
+                19, TextAnchor.MiddleCenter, MossDeep, _serif);
+
+            // The closing line: the number is not the reward, the deepening is.
+            MakeText(sheet, "<i>" + BondDeepeningLine(slots) + "</i>",
+                20, TextAnchor.MiddleCenter, Ink, _hand);
 
             if (waiting == null)
             {
-                Button(sheet, "Good", 320, CloseSheet);
+                KeyAction(Button(sheet, "Gladly", 320, CloseSheet));
                 return;
             }
 
@@ -467,6 +492,51 @@ namespace Wildgrove.Game
             // rather than describing where it could be done.
             KeyAction(Button(sheet, "Walk with " + waiting.name, 420, () => OpenStationPickSheet(waiting)));
             Button(sheet, "Later", 320, CloseSheet);
+        }
+
+        /// <summary>
+        /// What the widening is worth to the bond itself, deepening with every
+        /// rung — the attunement sheet's closing line. Written per place rather
+        /// than once, because the fifth time the grove gives ground must not
+        /// read the same as the second: this is the only place in the run that
+        /// says out loud how far the wild has come toward the warden.
+        /// <para>
+        /// <paramref name="slots"/> is the ordinal of the place just opened —
+        /// the warden starts holding one, so the first of these ever seen is
+        /// the SECOND place. Every line is written to that ordinal and to
+        /// nothing else. In particular none of them counts bodies on the trail:
+        /// a place is the right to hold a post, not a companion standing in it,
+        /// and a bought place can outrun the roster that fills it.
+        /// </para>
+        /// <para>
+        /// The last line is keyed off <see cref="Kith.SlotsMax"/> rather than
+        /// off six, so raising the ceiling in <c>economy.json</c> can't have the
+        /// grove declare it has nothing left to give with places still to come.
+        /// </para>
+        /// </summary>
+        private string BondDeepeningLine(int slots)
+        {
+            if (slots >= Kith.SlotsMax(_loop.Data))
+            {
+                return "the last of them. the wild has nothing further to hold back.";
+            }
+
+            switch (slots)
+            {
+                case 2:
+                    return "a second wild thing has chosen your path over its own.";
+                case 3:
+                    return "a third. the wood has stopped treating you as weather.";
+                case 4:
+                    return "a fourth. the trees no longer go quiet when you pass.";
+                case 5:
+                    return "a fifth. few are ever let this far in; the grove has begun to keep you as you keep it.";
+                default:
+                    // Only reachable if the ceiling is raised past six in
+                    // economy.json — count-free on purpose, so an unwritten
+                    // rung reads as quiet rather than as the wrong ordinal.
+                    return "another, and the grove has begun to keep you as you keep it.";
+            }
         }
 
         /// <summary>The first companion idle at camp, or null — who a newly opened place is for.</summary>
@@ -483,37 +553,12 @@ namespace Wildgrove.Game
             return null;
         }
 
-        /// <summary>
-        /// What widens the circle next, or null once the whole of it is open:
-        /// the verse milestone still ahead, else the places the store keeps.
-        /// Said quietly, in one line — a celebration is not a shop window, but
-        /// a player who cannot see the rest of the ladder cannot plan for it,
-        /// and the last rungs live somewhere nothing ever pointed at.
-        /// </summary>
-        private string NextKithPlaceLine()
-        {
-            var remaining = Kith.SlotsMax(_loop.Data) - _loop.KithSlots();
-            if (remaining <= 0)
-            {
-                return null;
-            }
-
-            var milestone = _loop.NextKithVerseMilestone();
-            if (milestone > 0)
-            {
-                return "the next place opens at " + milestone + " verses sung — "
-                       + _loop.TotalVersesSung() + " so far.";
-            }
-
-            return remaining == 1
-                ? "the ladder's last place is kept on the Warden page."
-                : "the ladder's last " + remaining + " places are kept on the Warden page.";
-        }
-
         // How heavy the drift is, by how much the moment is worth: a bond is
-        // permanent, a slot is the ladder, an arrival happens most runs.
-        private const int BondSeeds = 16;
-        private const int SlotSeeds = 12;
+        // permanent, a place at the warden's side is the thing the whole kith
+        // is gated on, an arrival happens most runs. The order is the point —
+        // the two that change the run for good drift heaviest.
+        private const int BondSeeds = 24;
+        private const int SlotSeeds = 20;
         private const int ArrivalSeeds = 8;
 
         /// <summary>Sow a drift of seed up a sheet — the journal's one celebration, in the ink it reads in.</summary>
@@ -911,7 +956,7 @@ namespace Wildgrove.Game
             // §7 register: the sheet says what the name is FOR, since the price
             // is steep and its effect is diffuse — it changes lines the player
             // is not looking at while they read this one.
-            MakeText(sheet, "<i>a name the whole grove will use — every post, every page.</i>",
+            MakeText(sheet, "<i>a name the whole grove will use: every post, every page.</i>",
                 16, TextAnchor.UpperCenter, Ink2, _hand);
 
             var field = MakeInputField(sheet, named ? _loop.WardenName() : string.Empty);
@@ -1261,7 +1306,7 @@ namespace Wildgrove.Game
             if (familiar.IsResting && !Kith.HasRoom(_loop.State, _loop.Data))
             {
                 var notice = MakeText(sheet,
-                    "<i>every place at the fire is walked, so the empty posts stay shut. the next place opens with a verse sung, and the Warden page keeps the rest of the ladder. stepping in for someone already posted still works: they go back to camp.</i>",
+                    "<i>every place at your side is spoken for, so the empty posts stay shut. a verse sung opens another, and the Warden page keeps the count. stepping in for someone already posted still works: they go back to camp.</i>",
                     16, TextAnchor.UpperCenter, Ink2);
                 var element = notice.gameObject.AddComponent<LayoutElement>();
                 element.minWidth = 740;
@@ -1414,7 +1459,7 @@ namespace Wildgrove.Game
         {
             if (!_loop.StationFamiliar(familiar, stationId))
             {
-                // The ladder said no — every slot already walks (design §4).
+                // No room at the warden's side — every place already walks (design §4).
                 SetNote("every slot is walked. rest someone before " + familiar.name + " takes a post.");
                 return;
             }
@@ -1728,7 +1773,7 @@ namespace Wildgrove.Game
                         // The store was never reached, so the button must come
                         // back — this is the one outcome a second press can fix.
                         RestoreRemoveAdsButton();
-                        SetNote("The store couldn't be reached. Nothing was charged — try again shortly.");
+                        SetNote("The store couldn't be reached. Nothing was charged. Try again shortly.");
                         break;
                     case StoreResult.Deferred:
                         // Play holds the order until the payment clears. A second
@@ -1741,7 +1786,7 @@ namespace Wildgrove.Game
                             SetButtonLabel(_removeAdsButton, "Waiting on Play…");
                         }
 
-                        SetNote("Play is still finishing that payment. The ads step aside when it clears — nothing more to do.");
+                        SetNote("Play is still finishing that payment. The ads step aside when it clears, with nothing more to do.");
                         break;
                 }
             });

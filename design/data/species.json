@@ -102,7 +102,7 @@
       "name": "Pack raven",
       "roleLean": "carrier",
       "suggestedNames": ["Sootwing", "Corvus", "Jet", "Rook", "Ash", "Grackle", "Cinder", "Onyx"],
-      "trait": { "name": "Deep pockets", "description": "Windfall bubbles pay +25% more while she walks — she fetches them home", "kind": "bubbleRewardBonus", "value": 0.25 },
+      "trait": { "name": "Deep pockets", "description": "Windfall bubbles pay +25% more while she walks, because she fetches them home", "kind": "bubbleRewardBonus", "value": 0.25 },
       "inscriptions": ["Carries more than looks possible, and counts every piece.", "Took the long way round the storm and set down nothing.", "I have stopped checking the loads. Her idea, somehow."]
     },
     {
@@ -110,7 +110,7 @@
       "name": "Fell pony",
       "roleLean": "carrier",
       "suggestedNames": ["Moss", "Bracken", "Tor", "Gale", "Pennine"],
-      "trait": { "name": "Half-broke", "description": "Carries what the warden picks, so their hands never leave the work — the warden's own gathering +50%", "kind": "wardenYieldBonus", "value": 0.50 },
+      "trait": { "name": "Half-broke", "description": "Carries what the warden picks, so their hands never leave the work. The warden's own gathering +50%", "kind": "wardenYieldBonus", "value": 0.50 },
       "inscriptions": ["Came down off the fell on her own account and has stayed on it.", "Will take the panniers. Will not take the halter twice.", "Ten winters of her own weather in her. I lead her nowhere; we go the same way."]
     }
   ]

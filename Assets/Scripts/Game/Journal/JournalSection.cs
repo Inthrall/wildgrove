@@ -63,11 +63,12 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The kith's ladder as marks (design §4) — one for every place it can
-        /// ever open, so the places still to be earned or bought are visible as
-        /// faint marks rather than as nothing at all. Shared by the Warden page
-        /// and the attunement sheet: the same marks, painted by the same rule,
-        /// so the celebration and the page can never disagree about the ladder.
+        /// The places at the warden's side as marks (design §4) — one for every
+        /// place the kith can ever open, so the places still to be earned or
+        /// bought are visible as faint marks rather than as nothing at all.
+        /// Shared by the Warden page and the attunement sheet: the same marks,
+        /// painted by the same rule, so the celebration and the page can never
+        /// disagree about how many there are.
         /// </summary>
         protected Image[] BuildKithPlaces(Transform parent, float size)
         {
@@ -76,7 +77,7 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Ink for a place someone stands in, moss for one standing open and
-        /// waiting for a body, the faint rule for one not yet on the ladder.
+        /// waiting for a body, the faint rule for one not yet earned.
         /// Moss because an open place is an invitation — ochre is the ink of
         /// costs and halted work.
         /// </summary>

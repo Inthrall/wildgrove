@@ -230,7 +230,7 @@ namespace Wildgrove.Game
         /// rather than as a tail on every line it applies to: you either rob
         /// another post or grow the kith. Null when there is nothing to warn
         /// about. Shared by the posting sheet and the body picker so the two
-        /// never disagree about the ladder's rules.
+        /// never disagree about the rules for a place at the warden's side.
         /// </summary>
         private string EmptyPostNotice(bool wardenCanStand)
         {
@@ -257,12 +257,12 @@ namespace Wildgrove.Game
 
             if (!anyResting)
             {
-                return "everyone is already posted. move one here and the post they leave falls idle, or widen the circle — a verse sung opens the next place at the fire, and the Warden page keeps the rest of the ladder.";
+                return "everyone is already posted. move one here and the post they leave falls idle, or make room beside you: a verse sung opens another place at your side, and the Warden page keeps the count.";
             }
 
             if (!Kith.HasRoom(state, _loop.Data))
             {
-                return "someone waits at camp, but every place at the fire is walked. a verse sung opens the next one — the Warden page keeps the rest of the ladder — or move a walker here from a post you need less.";
+                return "someone waits at camp, but every place at your side is spoken for. a verse sung opens another, or move a walker here from a post you need less. the Warden page keeps the count.";
             }
 
             return null;

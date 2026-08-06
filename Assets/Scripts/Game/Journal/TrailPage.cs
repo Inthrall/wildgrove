@@ -870,7 +870,7 @@ namespace Wildgrove.Game
         private void BuildRiteSungCard()
         {
             var card = Card("THE NEXT VERSE");
-            MakeText(card, "<i>the rite is sung entire — the next verse will be written after the fold</i>",
+            MakeText(card, "<i>the rite is sung entire. the next verse will be written after the fold</i>",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
             if (_firstVerseCard == null)
             {
@@ -992,7 +992,7 @@ namespace Wildgrove.Game
                         {
                             var units = PlainNumber(System.Math.Floor(given.ToDouble()));
                             Flash(offer, "set down " + units + " " + slot.resource, true);
-                            SetNote("set down " + units + " " + slot.resource + " — all of it. no answer. not yet.");
+                            SetNote("set down " + units + " " + slot.resource + ". all of it. no answer. not yet.");
                         }
                         else
                         {

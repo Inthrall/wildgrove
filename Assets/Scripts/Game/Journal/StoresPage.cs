@@ -191,7 +191,7 @@ namespace Wildgrove.Game
                 }
 
                 SetNote(_loop.TinctureRemainingSeconds(tincture) > 0.0
-                    ? tincture.displayName + " is already working — a second bottle would add time, not depth."
+                    ? tincture.displayName + " is already working. a second bottle would add time, not depth."
                     : "no " + GoodName(tincture.id) + " brewed. it is cooked at the fire with the other recipes.");
             });
 
@@ -208,7 +208,7 @@ namespace Wildgrove.Game
                     ? "<color=" + MossDeepHex + ">" + NumberFormat.Duration(remaining) + "</color>"
                     : (have > BigDouble.Zero
                         ? "<b>" + NumberFormat.Short(have) + "</b>"
-                        : "<color=" + Ink2Hex + ">—</color>");
+                        : "<color=" + Ink2Hex + ">·</color>");
                 SetTilePaper(tile, have > BigDouble.Zero || remaining > 0.0);
             });
         }

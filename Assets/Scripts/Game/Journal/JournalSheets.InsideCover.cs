@@ -146,7 +146,7 @@ namespace Wildgrove.Game
             SheetSection(sheet, "WHAT THIS BOOK TELLS US");
 
             MakeText(sheet,
-                "Notes on how the game is played — which trails open, where a run stops — "
+                "Notes on how the game is played, such as which trails open and where a run stops, "
                 + "go back to us so it can be made better. Nothing about you, and nothing you have named.",
                 16, TextAnchor.UpperLeft, Ink2, _serif);
 
@@ -198,7 +198,7 @@ namespace Wildgrove.Game
             SheetSection(sheet, "WHAT WAS BOUGHT");
 
             MakeText(sheet,
-                "Anything bought is held by Play, not by this device — a new phone, or this one wiped, "
+                "Anything bought is held by Play, not by this device. A new phone, or this one wiped, "
                 + "gets it all back.",
                 16, TextAnchor.UpperLeft, Ink2, _serif);
 
@@ -246,8 +246,8 @@ namespace Wildgrove.Game
             SheetSection(sheet, "STARTING AGAIN");
 
             MakeText(sheet,
-                "A new book opens at the first camp with nothing in it. This one — every fold, "
-                + "every companion, every page — is struck out here and with Play Games, and cannot be had back. "
+                "A new book opens at the first camp with nothing in it. Every fold of this one, "
+                + "every companion, every page, is struck out here and with Play Games, and cannot be had back. "
                 + "What was paid for stays yours.",
                 16, TextAnchor.UpperLeft, Ink2, _serif);
 
@@ -258,7 +258,7 @@ namespace Wildgrove.Game
                 CloseSheet();
                 OpenConfirmSheet("Start again?",
                     "<b><color=" + OchreHex + ">This cannot be undone.</color></b>\n"
-                    + "Every fold, every companion, every page of this book is struck out — here and with Play Games, "
+                    + "Every fold, every companion, every page of this book is struck out here and with Play Games, "
                     + "so no other device can hand it back. Nothing of this run is kept, and nothing of it can be found again.\n\n"
                     + "<i>What was paid for stays yours.</i>",
                     "Begin a new book",

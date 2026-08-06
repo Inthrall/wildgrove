@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 3e9a0d6c27d458bd1ff45eae29a498ee16a138a4f6b585c3c004aec4ef3191ea
+  sourceHash: bd18f7d5da572a248e3fa9ba5b6c32bcf09adfae0160e3c81e0754e83287e753
   economy:
     costGrowth:
       building: 1.25
@@ -2383,8 +2383,8 @@ MonoBehaviour:
     - Onyx
     trait:
       displayName: Deep pockets
-      description: "Windfall bubbles pay +25% more while she walks \u2014 she fetches
-        them home"
+      description: Windfall bubbles pay +25% more while she walks, because she fetches
+        them home
       kind: bubbleRewardBonus
       value: 0.25
       resources: []
@@ -2404,8 +2404,8 @@ MonoBehaviour:
     - Pennine
     trait:
       displayName: Half-broke
-      description: "Carries what the warden picks, so their hands never leave the
-        work \u2014 the warden's own gathering +50%"
+      description: Carries what the warden picks, so their hands never leave the
+        work. The warden's own gathering +50%
       kind: wardenYieldBonus
       value: 0.5
       resources: []
@@ -3015,8 +3015,8 @@ MonoBehaviour:
       text: Others folded flocks on this height, and the wind has their names. Count
         yours home each night.
     - key: cloudreach-peaks
-      text: "You have come to the end of the walking. What is left we said a stone
-        at a time \u2014 come back each season, and hear it out."
+      text: You have come to the end of the walking. What is left we said a stone
+        at a time. Come back each season, and hear it out.
     verses:
     - key: sunfield-meadow
       text: What you carry is borrowed. Set some down, and see what follows you home.

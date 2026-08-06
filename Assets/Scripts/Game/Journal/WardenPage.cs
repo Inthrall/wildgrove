@@ -404,13 +404,13 @@ namespace Wildgrove.Game
                 BuildKithGrid(card);
             }
 
-            BuildKithLadderLines(card);
+            BuildKithPlaceLines(card);
         }
 
         /// <summary>
         /// The roster as a drawer of plates rather than a row per companion. A
         /// row was a portrait, a two-line label, a Post button and an
-        /// inscription under it — legible at the three companions the ladder
+        /// inscription under it — legible at the three companions the run
         /// starts with, and a page per companion at the eight it ends with. So
         /// the card keeps what a glance is for (who walks with you, and where
         /// each of them stands) and the tile's sheet takes everything that was
@@ -498,11 +498,16 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The ladder under the roster (design §4), drawn as the marks the
+        /// The places at the warden's side (design §4), drawn as the marks the
         /// attunement sheet uses — every place the kith can ever hold, the held
         /// ones inked, the open one moss, the ones still to come faint. Then
         /// what widens it: the next verse-earned place, and the two the store
         /// keeps (the starter bundle first, the plain place behind it).
+        /// <para>
+        /// This page is where the count is spelled out — the celebration sheet
+        /// deliberately says nothing about what opens next, so a player who
+        /// wants to plan comes here for it.
+        /// </para>
         /// <para>
         /// Those two were a bare line of text with a dashed rule and an
         /// invisible Button on the label — the only purchase in the game that
@@ -512,7 +517,7 @@ namespace Wildgrove.Game
         /// price beside it, and a Buy plate that reads as one.
         /// </para>
         /// </summary>
-        private void BuildKithLadderLines(RectTransform card)
+        private void BuildKithPlaceLines(RectTransform card)
         {
             var places = BuildKithPlaces(card, 26f);
             var caption = MakeText(card, string.Empty, 15, TextAnchor.MiddleCenter, Ink2, _smallCaps);
@@ -522,11 +527,11 @@ namespace Wildgrove.Game
                 PaintKithPlaces(places);
                 var open = _loop.KithSlots();
                 var max = Kith.SlotsMax(_loop.Data);
-                caption.text = open + " of " + max + " places at the fire";
+                caption.text = open + " of " + max + " places at your side";
 
                 // One line under the marks, and only ever one: the verse still
                 // to be sung while there is one, then nothing more to say once
-                // the whole circle is open. The store's own rows speak for
+                // every place is open. The store's own rows speak for
                 // themselves below.
                 var next = _loop.NextKithVerseMilestone();
                 var full = open >= max;
@@ -538,25 +543,25 @@ namespace Wildgrove.Game
                 }
                 else if (full)
                 {
-                    verseLine.text = "<i>every place at the fire is open</i>";
+                    verseLine.text = "<i>the whole kith may walk with you</i>";
                 }
             });
 
             var bundleAmber = Mathf.FloorToInt((float)(_loop.Data.economy?.store?.starterBundleAmber ?? 0.0));
             BuildKithPlaceRow(card, StoreProductIds.StarterBundle,
-                "the starter bundle: a place at the fire"
+                "the starter bundle: a place at your side"
                 + (bundleAmber > 0 ? ", and " + bundleAmber + " amber" : string.Empty),
                 () => !_loop.Store.IsOwned(StoreProductIds.StarterBundle));
 
             // The plain place waits its turn behind the bundle — one offer on
             // the page at a time.
-            BuildKithPlaceRow(card, StoreProductIds.KithSlot, "the ladder's last place",
+            BuildKithPlaceRow(card, StoreProductIds.KithSlot, "the last place of the six",
                 () => _loop.Store.IsOwned(StoreProductIds.StarterBundle)
                       && !_loop.Store.IsOwned(StoreProductIds.KithSlot));
         }
 
         /// <summary>
-        /// One of the ladder's two bought places, in the amber card's row idiom:
+        /// One of the two bought places, in the amber card's row idiom:
         /// what it opens on the left with its real-money price beside it, and a
         /// Buy plate on the right. <paramref name="offered"/> decides whether
         /// the row stands on the page at all.
@@ -567,7 +572,7 @@ namespace Wildgrove.Game
             // be where the player first learns it. Moss on what it gives: this
             // is an invitation, not a warning. The tail arrives with the (lazy)
             // catalogue fetch, so the line is kept current.
-            System.Func<string> written = () => "open another place at the fire" + PriceTail(productId)
+            System.Func<string> written = () => "let one more walk at your side" + PriceTail(productId)
                                                 + "\n" + SizeOpen(15) + "<color=" + MossDeepHex + ">"
                                                 + gives + "</color></size>";
 
@@ -598,14 +603,14 @@ namespace Wildgrove.Game
                 {
                     case StoreResult.Purchased:
                     case StoreResult.AlreadyOwned:
-                        SetNote("a place opens at the fire. thank you for keeping the grove.");
+                        SetNote("a place opens at your side. thank you for keeping the grove.");
                         _dirty = true;
                         break;
                     case StoreResult.Failed:
                         SetNote("that didn't go through. nothing was charged.");
                         break;
                     case StoreResult.Unavailable:
-                        SetNote("the store couldn't be reached. nothing was charged — try again shortly.");
+                        SetNote("the store couldn't be reached. nothing was charged. try again shortly.");
                         break;
                     case StoreResult.Deferred:
                         SetNote("the payment hasn't cleared yet. the place opens when Play finishes it.");

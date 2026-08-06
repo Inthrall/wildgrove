@@ -51,7 +51,7 @@ namespace Wildgrove.Game
             if (adoptedThisSession)
             {
                 return "Kept with Play Games. This run was taken up from another device "
-                       + "when the book opened — it was further along than the one here.";
+                       + "when the book opened, because it was further along than the one here.";
             }
 
             return "Kept with Play Games, and copied up every time the book is written.";
