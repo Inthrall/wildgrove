@@ -23,7 +23,13 @@ namespace Wildgrove.Game.World
         private const int SeedheadHairs = 34;
         private const int PappusHairs = 9;
 
+        // The rim's inner edge, as a share of the sprite's own radius — the
+        // remainder is the stroke. Thin enough to read as a ruled circle rather
+        // than a heavy outline at the size a badge is drawn.
+        private const float RingInnerFactor = 0.86f;
+
         private static Sprite _disc;
+        private static Sprite _ring;
         private static Sprite _diamond;
         private static Sprite _triangle;
         private static Sprite _seedhead;
@@ -40,6 +46,25 @@ namespace Wildgrove.Game.World
                 }
 
                 return _disc;
+            }
+        }
+
+        /// <summary>
+        /// A white ruled circle, 1 world unit across at scale 1 — the rim drawn
+        /// round a badge so the body pinned there reads as a medallion set on
+        /// the plate rather than a cut-out floating over it. Same footprint as
+        /// <see cref="Disc"/>, so the two take the same scale.
+        /// </summary>
+        public static Sprite Ring
+        {
+            get
+            {
+                if (_ring == null)
+                {
+                    _ring = CreateRing();
+                }
+
+                return _ring;
             }
         }
 
@@ -114,7 +139,8 @@ namespace Wildgrove.Game.World
         /// resource, and doubles as the "this is a thing" tap affordance.
         /// Sized in the parent's local units, so it scales with the sprite.
         /// </summary>
-        public static TextMesh CreateLabel(Transform parent, string text, Font font, Color colour)
+        public static TextMesh CreateLabel(Transform parent, string text, Font font, Color colour,
+            int sortingOrder = StripLayers.NodeCaption)
         {
             var go = new GameObject("Label");
             go.transform.SetParent(parent, false);
@@ -129,7 +155,7 @@ namespace Wildgrove.Game.World
             label.color = colour;
             var renderer = go.GetComponent<MeshRenderer>();
             renderer.material = font.material;
-            renderer.sortingOrder = 4;
+            renderer.sortingOrder = sortingOrder;
             return label;
         }
 
@@ -198,6 +224,18 @@ namespace Wildgrove.Game.World
 
             return Sprite.Create(texture, new Rect(0f, 0f, DiscTexSize, DiscTexSize),
                 new Vector2(0.5f, 0.5f), DiscTexSize);
+        }
+
+        private static Sprite CreateRing()
+        {
+            // Inside the outer edge AND outside the inner one — the nearer of
+            // the two distances gives the same one-pixel anti-aliased rim on
+            // both sides of the stroke that the disc has on its edge.
+            return CreateShape("PlaceholderRing", (x, y, centre, radius) =>
+            {
+                var distance = Mathf.Sqrt((x - centre) * (x - centre) + (y - centre) * (y - centre));
+                return Mathf.Min(radius - distance, distance - radius * RingInnerFactor);
+            });
         }
 
         private static Sprite CreateDiamond()

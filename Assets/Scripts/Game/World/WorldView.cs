@@ -493,7 +493,8 @@ namespace Wildgrove.Game.World
             }
 
             var label = PlaceholderArt.CreateLabel(_container, text, _labelFont,
-                rewarded ? new Color(0.333f, 0.392f, 0.247f, 1f) : new Color(0.431f, 0.376f, 0.278f, 1f));
+                rewarded ? new Color(0.333f, 0.392f, 0.247f, 1f) : new Color(0.431f, 0.376f, 0.278f, 1f),
+                StripLayers.CatchText);
             label.anchor = TextAnchor.MiddleCenter;
             label.transform.position = ScreenToWorld(screen);
             // CreateLabel sizes for a diameter-scaled parent; this one hangs
@@ -501,7 +502,6 @@ namespace Wildgrove.Game.World
             var worldPerPixel = (ScreenToWorld(Vector2.right) - ScreenToWorld(Vector2.zero)).magnitude;
             var diameter = WorldStrip.BubbleDiameter(StripScreenRect, StripTotal()) * worldPerPixel;
             label.characterSize = diameter * 0.055f;
-            label.GetComponent<MeshRenderer>().sortingOrder = 9;
             StartCoroutine(RiseAndFadeLabel(label, diameter));
         }
 

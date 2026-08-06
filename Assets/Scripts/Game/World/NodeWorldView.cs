@@ -48,9 +48,10 @@ namespace Wildgrove.Game.World
 
             // The resource name under the disc — the strip's shapes and the
             // FIG. plates below name the same thing, so a glance connects them.
-            view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour);
+            view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour,
+                StripLayers.NodeCaption);
 
-            view._disc = CreateSprite(go.transform, "Disc", PlaceholderArt.Disc, colour, 2);
+            view._disc = CreateSprite(go.transform, "Disc", PlaceholderArt.Disc, colour, StripLayers.NodeDisc);
 
             // The resource's naturalist plate, pinned over the disc — the disc's
             // resource colour peeks around the portrait as a card mount. Scaled
@@ -58,7 +59,7 @@ namespace Wildgrove.Game.World
             // 100 px/unit, so a ~1200 px plate is ~12 units before this fit).
             if (face != null)
             {
-                view._plate = CreateSprite(go.transform, "Plate", face, Color.white, 3);
+                view._plate = CreateSprite(go.transform, "Plate", face, Color.white, StripLayers.NodePlate);
                 var longest = Mathf.Max(face.bounds.size.x, face.bounds.size.y);
                 view._plate.transform.localScale = Vector3.one * (longest > 0f ? PlateFit / longest : 1f);
 

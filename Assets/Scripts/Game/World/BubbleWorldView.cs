@@ -103,19 +103,18 @@ namespace Wildgrove.Game.World
                 // game's most valuable target.
                 view._hint = PlaceholderArt.CreateLabel(go.transform,
                     Wildgrove.Game.Input.DeviceForm.PressVerb + " to catch", hintFont,
-                    new Color(0.431f, 0.376f, 0.278f, 1f));
+                    new Color(0.431f, 0.376f, 0.278f, 1f), StripLayers.WindfallHint);
                 view._hint.transform.localPosition = new Vector3(0f, -0.62f, 0f);
                 view._hint.characterSize = 0.06f;
-                view._hint.GetComponent<MeshRenderer>().sortingOrder = 8;
             }
 
             // The clock the windfall rides on, whatever it's carrying.
-            view._mount = CreateSprite(go.transform, "Seedhead", PlaceholderArt.Seedhead, MountColour, 5);
+            view._mount = CreateSprite(go.transform, "Seedhead", PlaceholderArt.Seedhead, MountColour, StripLayers.WindfallMount);
             view._mount.transform.localScale = Vector3.one * MountFit;
 
             if (face != null)
             {
-                view._plate = CreateSprite(go.transform, "Plate", face, Color.white, 7);
+                view._plate = CreateSprite(go.transform, "Plate", face, Color.white, StripLayers.WindfallPlate);
                 var longest = Mathf.Max(face.bounds.size.x, face.bounds.size.y);
                 view._plate.transform.localScale = Vector3.one * (longest > 0f ? PlateFit / longest : 1f);
 
@@ -127,9 +126,9 @@ namespace Wildgrove.Game.World
             // another node.
             // Sized to the plate it stands in for, so the clock rings the bead
             // exactly as it rings a cutting.
-            view._skin = CreateSprite(go.transform, "Skin", PlaceholderArt.Disc, colour, 6);
+            view._skin = CreateSprite(go.transform, "Skin", PlaceholderArt.Disc, colour, StripLayers.WindfallSkin);
             view._skin.transform.localScale = Vector3.one * PlateFit;
-            view._shine = CreateSprite(go.transform, "Shine", PlaceholderArt.Disc, ShineColour, 7);
+            view._shine = CreateSprite(go.transform, "Shine", PlaceholderArt.Disc, ShineColour, StripLayers.WindfallShine);
             view._shine.transform.localScale = Vector3.one * (0.28f * PlateFit);
             view._shine.transform.localPosition = new Vector3(-0.22f, 0.24f, 0f) * PlateFit;
 
@@ -275,7 +274,7 @@ namespace Wildgrove.Game.World
                 _seedDrift[i] = new Vector2(Mathf.Cos(angle) * 0.6f, Mathf.Sin(angle) * 0.35f + 0.7f) * reach;
                 _seedSpin[i] = Mathf.Sin(angle * 3f) * 90f;
 
-                var seed = CreateSprite(transform, "Seed", PlaceholderArt.Pappus, _seedColour, 9);
+                var seed = CreateSprite(transform, "Seed", PlaceholderArt.Pappus, _seedColour, StripLayers.WindfallSeed);
                 seed.transform.localScale = Vector3.one * SeedScale;
                 _seeds[i] = seed;
             }

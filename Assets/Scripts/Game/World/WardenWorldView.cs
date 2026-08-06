@@ -47,7 +47,8 @@ namespace Wildgrove.Game.World
             go.transform.SetParent(parent, false);
             var view = go.AddComponent<WardenWorldView>();
 
-            view._label = PlaceholderArt.CreateLabel(go.transform, "at camp", labelFont, LabelColour);
+            view._label = PlaceholderArt.CreateLabel(go.transform, "at camp", labelFont, LabelColour,
+                StripLayers.NodeCaption);
 
             // The (+) an empty ground wears, drawn at the size and colour of the
             // one closing the strip — the two mean the same thing: a place
@@ -63,7 +64,8 @@ namespace Wildgrove.Game.World
             view._plus.color = MossColour;
             view._plus.text = "+";
             plusGo.GetComponent<MeshRenderer>().material = labelFont.material;
-            plusGo.GetComponent<MeshRenderer>().sortingOrder = 5;
+            // Where the crop would be, so it takes the plate's own rung.
+            plusGo.GetComponent<MeshRenderer>().sortingOrder = StripLayers.NodePlate;
 
             // The warden rides in the badge, like every other body on the strip.
             // Drawn once: the badge's warden branch is their silhouette on

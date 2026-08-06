@@ -11,6 +11,20 @@ namespace Wildgrove.Game.World
     /// while the post stands empty. Tapping the badge is the assign/unassign gesture
     /// (<see cref="WorldView.PostAtScreenPoint"/> does the hit test; this
     /// is just the visuals).
+    /// <para>
+    /// It is drawn as a MEDALLION — paper disc, portrait, inked rim over the
+    /// top — and all three parts matter, because a badge hangs into the plate
+    /// above it and the two are both collage cut-outs. Left bare (before
+    /// 2026-08-06) a bear's ears grew out of a currant stem and the warden's
+    /// head sprouted a daisy: two specimens with no edge between them, reading
+    /// as one confused drawing. The paper disc bites the plate off (which is
+    /// why it is opaque and sits on its own rung — see
+    /// <see cref="StripLayers"/>), and the rim draws the boundary the cut-outs
+    /// don't have. The rim goes OVER the portrait, not under it, so an
+    /// off-square plate can't break the circle — which is also why the portrait
+    /// is fitted to <see cref="IconFit"/> rather than the full badge, leaving
+    /// the stroke a margin to sit in.
+    /// </para>
     /// </summary>
     public sealed class AssignBadge
     {
@@ -19,9 +33,19 @@ namespace Wildgrove.Game.World
         private static readonly Color VacantBack = new Color(0.9f, 0.86f, 0.76f, 0.45f);
         private static readonly Color OccupiedBack = new Color(0.98f, 0.95f, 0.88f, 1f);
         private static readonly Color MarkColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
+        private static readonly Color RimColour = new Color(0.431f, 0.376f, 0.278f, 0.85f); // Ink2, eased to a ruled line
+
+        /// <summary>The badge's drawn width, in the parent's local units (the parent is scaled to one node diameter).</summary>
+        private const float Diameter = WorldStrip.BadgeRadiusFactor * 2f;
+
+        // The portrait's longest side. Short of the badge so the rim has clean
+        // paper to sit on — a plate fitted edge to edge would touch the stroke
+        // all the way round and lose it.
+        private const float IconFit = Diameter * 0.8f;
 
         private readonly Transform _root;
         private readonly SpriteRenderer _back;
+        private readonly SpriteRenderer _rim;
         private readonly SpriteRenderer _icon;
         private readonly TextMesh _mark;
         private readonly Sprite _wardenPlate;
@@ -38,11 +62,17 @@ namespace Wildgrove.Game.World
 
             _wardenPlate = ArtLibrary.ForWarden();
 
-            _back = CreateSprite(root.transform, "Back", PlaceholderArt.Disc, VacantBack, 3);
-            _back.transform.localScale = Vector3.one * (WorldStrip.BadgeRadiusFactor * 2f);
+            _back = CreateSprite(root.transform, "Back", PlaceholderArt.Disc, VacantBack, StripLayers.BadgePaper);
+            _back.transform.localScale = Vector3.one * Diameter;
 
-            _icon = CreateSprite(root.transform, "Icon", null, Color.white, 4);
+            _icon = CreateSprite(root.transform, "Icon", null, Color.white, StripLayers.BadgeIcon);
             _icon.enabled = false;
+
+            // Over the icon, at the paper's own width — the boundary between
+            // the body here and the specimen it hangs off.
+            _rim = CreateSprite(root.transform, "Rim", PlaceholderArt.Ring, RimColour, StripLayers.BadgeRim);
+            _rim.transform.localScale = Vector3.one * Diameter;
+            _rim.enabled = false;
 
             // No bonded mark rides the badge (removed 2026-08-06). Only two
             // familiars in the game can ever be bonded — Sootwing the raven and
@@ -64,7 +94,7 @@ namespace Wildgrove.Game.World
             _mark.color = MarkColour;
             var renderer = markGo.GetComponent<MeshRenderer>();
             renderer.material = markFont.material;
-            renderer.sortingOrder = 5;
+            renderer.sortingOrder = StripLayers.BadgeMark;
         }
 
         /// <summary>Re-run the mark's mesh after a dynamic font atlas rebuild.</summary>
@@ -88,20 +118,16 @@ namespace Wildgrove.Game.World
             if (wardenPosted)
             {
                 _back.enabled = true;
+                _rim.enabled = true;
                 _back.color = OccupiedBack;
                 // The warden's silhouette at a familiar's fit, so the bodies
                 // along the strip read as peers. The placeholder triangle is
                 // still the fallback — ArtLibrary answers null for a missing
                 // file, and a post with someone on it must never draw empty.
-                if (_wardenPlate != null)
-                {
-                    ShowIcon(_wardenPlate, Color.white, WorldStrip.BadgeRadiusFactor * 2f * 0.92f);
-                }
-                else
-                {
-                    ShowIcon(PlaceholderArt.Triangle, WardenColour, 0.36f);
-                }
-
+                ShowIcon(
+                    _wardenPlate != null ? _wardenPlate : PlaceholderArt.Triangle,
+                    _wardenPlate != null ? Color.white : WardenColour,
+                    IconFit);
                 SetMark(string.Empty);
                 return;
             }
@@ -109,10 +135,11 @@ namespace Wildgrove.Game.World
             if (occupant != null)
             {
                 _back.enabled = true;
+                _rim.enabled = true;
                 if (occupantIcon != null)
                 {
                     _back.color = OccupiedBack;
-                    ShowIcon(occupantIcon, Color.white, WorldStrip.BadgeRadiusFactor * 2f * 0.92f);
+                    ShowIcon(occupantIcon, Color.white, IconFit);
                     SetMark(string.Empty);
                 }
                 else
@@ -129,8 +156,11 @@ namespace Wildgrove.Game.World
 
             // A vacant post shows nothing — tapping the plate itself is the
             // assign gesture now, so the old "+" invitation would just repeat
-            // what the idle-dimmed plate already says.
+            // what the idle-dimmed plate already says. The rim goes with it:
+            // an empty ruled circle under a plate would read as a post that
+            // had something in it.
             _back.enabled = false;
+            _rim.enabled = false;
             _icon.enabled = false;
             SetMark(string.Empty);
         }
