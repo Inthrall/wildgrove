@@ -22,6 +22,10 @@ namespace Wildgrove.Game
         // The time-skip ad credits this many hours of gathering.
         private const double TimeSkipHours = 2.0;
 
+        // How many resource lines the welcome-back haul lists before it stops
+        // and counts the rest.
+        private const int WelcomeGainLines = 6;
+
         // How much of the screen a sheet's lines may fill before they scroll
         // instead of growing (the card's padding rides on top).
         private const float SheetMaxCanvasShare = 0.72f;
@@ -607,30 +611,73 @@ namespace Wildgrove.Game
             // the camp is most itself (design §9's sink slate).
             MakeText(sheet, _loop.IsCampNamed() ? "Welcome back to " + _loop.CampName() : "Welcome back",
                 32, TextAnchor.UpperCenter, Ink, _serif);
-            MakeText(sheet, "Away " + NumberFormat.Duration(summary.realSeconds)
-                            + " · credited " + NumberFormat.Duration(summary.creditedSeconds), 20, TextAnchor.UpperCenter, Ink2);
+
+            // The absence itself is not news — the player knows how long they
+            // were gone. "Away 7h 50m · credited 3h" led every return with a
+            // subtraction they had to do themselves to reach the only part
+            // that matters: that the camp stopped counting. So it says nothing
+            // at all on a return the cap covered, and names the ceiling on one
+            // it didn't.
+            var uncovered = Amber.UncoveredHours(summary);
+            if (uncovered > 0.0)
+            {
+                var cap = Mathf.RoundToInt((float)Upgrades.OfflineCapHours(_loop.State, _loop.Data));
+                MakeText(sheet, "max " + cap + (cap == 1 ? " hour" : " hours"), 20, TextAnchor.UpperCenter, Ink2);
+            }
+
+            // Remove Ads owned: the haul is doubled before the sheet is drawn,
+            // and nothing is asked. Offering "Double it" to someone who has
+            // bought the ads away is a toll booth with the gate already up —
+            // one tap, no ad, the same outcome whichever they choose, so the
+            // only thing the question can do is make them answer it. Not
+            // stopping to sell is what they paid for.
+            var doubledUpFront = summary.gains.Count > 0
+                                 && _loop.Store.RemoveAdsOwned
+                                 && _loop.GrantOfflineBonus(summary);
 
             // Kept so a doubled haul can rewrite its own lines — the proof of
-            // the reward belongs on the sheet the player is looking at.
+            // the reward belongs on the sheet the player is looking at. The
+            // amount held here is always the UNdoubled one: only the ad path
+            // rewrites these, and it is the path where nothing was doubled yet.
             var gainLines = new List<(Text line, string id, BigDouble amount)>();
             foreach (var pair in summary.gains)
             {
-                if (gainLines.Count >= 6)
+                if (gainLines.Count >= WelcomeGainLines)
                 {
                     break;
                 }
 
-                var line = MakeText(sheet, "+" + NumberFormat.Short(pair.Value) + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
+                var line = MakeText(sheet, "+" + NumberFormat.Short(doubledUpFront ? pair.Value * 2 : pair.Value)
+                                           + " " + pair.Key, 18, TextAnchor.MiddleCenter, Ink);
                 gainLines.Add((line, pair.Key, pair.Value));
             }
 
-            // Opt-in rewarded ad: watch to double the haul just credited (or,
-            // with Remove Ads owned, doubled outright with no ad). The sheet
-            // STAYS OPEN whatever the ad does — closing it threw the summary
-            // away as punishment for an abandoned ad, and swallowed the proof
-            // of a watched one.
-            if (summary.gains.Count > 0 && _loop.RewardedReady(RewardedPlacement.OfflineBoost))
+            // A silently truncated list reads as the whole haul — a camp that
+            // works nine resources came back to six and looked robbed.
+            if (summary.gains.Count > WelcomeGainLines)
             {
+                MakeText(sheet, "<i>and " + (summary.gains.Count - WelcomeGainLines) + " more</i>",
+                    16, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
+
+            if (doubledUpFront)
+            {
+                // No button, but the doubling still has to be legible — the
+                // numbers above are simply bigger than the night earned, and
+                // unexplained generosity reads as a bug. Same line the watched
+                // ad leaves behind, for the same reason.
+                MakeText(sheet, "<i>The land gives twice</i>", 20, TextAnchor.MiddleCenter, MossDeep, _serif);
+            }
+
+            else if (summary.gains.Count > 0 && _loop.RewardedReady(RewardedPlacement.OfflineBoost))
+            {
+                // Opt-in rewarded ad: watch to double the haul just credited.
+                // Not reached with Remove Ads owned — that haul is doubled
+                // above without being asked; the branch still catches the case
+                // where the up-front grant was refused because the run moved
+                // under the sheet. The sheet STAYS OPEN whatever the ad does —
+                // closing it threw the summary away as punishment for an
+                // abandoned ad, and swallowed the proof of a watched one.
                 Button doubleIt = null;
                 var originalLabel = "Double it" + _loop.RewardedActionSuffix;
                 doubleIt = Button(sheet, originalLabel, 360, () =>
@@ -712,11 +759,11 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Settle the ledger (design §9's sink slate): the hours the away cap
-        /// left uncredited, offered at the full live rate for Amber, drawn
-        /// from the paid-skip budget. The price sits on the button — this
-        /// sheet is already the moment of decision, and a second confirm over
-        /// a sheet would fight the scrim.
+        /// Buy back the hours the away cap left uncredited (design §9's sink
+        /// slate), at the full live rate, drawn from the paid-skip budget. The
+        /// price sits on the button beside the hours it buys — this sheet is
+        /// already the moment of decision, and a second confirm over a sheet
+        /// would fight the scrim.
         /// </summary>
         private void BuildLedgerOffer(Transform sheet, OfflineSummary summary)
         {
@@ -726,24 +773,26 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var uncovered = Amber.UncoveredHours(summary);
             var cost = Mathf.FloorToInt((float)_loop.LedgerCost(summary));
-            MakeText(sheet, "<i>the night ran " + NumberFormat.Duration(uncovered * 3600.0)
-                            + " past what the camp could hold" + (hours < uncovered
-                                ? " — the day's hastening covers " + NumberFormat.Duration(hours * 3600.0) + " of it"
-                                : string.Empty) + ".</i>",
-                17, TextAnchor.MiddleCenter, Ink2, _serif);
 
+            // No sentence above the button. The sheet used to carry one ("the
+            // night ran 4h 50m past what the camp could hold"), and every way
+            // of keeping it went wrong once the away line went: it has to name
+            // the hours lost to say anything at all, and naming them puts the
+            // arithmetic straight back on a sheet that just shed it. Where the
+            // skip budget makes the offer smaller than the loss, the offer is
+            // simply smaller — the button says what it buys and what it costs,
+            // and that is the entire decision in front of the player.
             var affordable = _loop.CanSettleLedger(summary);
             Button settle = null;
-            settle = Button(sheet, "Settle the ledger · " + cost + " amber", 420, () =>
+            settle = Button(sheet, "Catch up " + NumberFormat.Duration(hours * 3600.0) + " · " + cost + " amber", 420, () =>
             {
                 var credited = _loop.SettleLedger(summary);
                 if (credited <= 0.0)
                 {
                     // The run moved under the sheet (an adopted save) or the
                     // amber is short after all — the offer quietly stands down.
-                    SetNote("the ledger keeps. nothing was spent.");
+                    SetNote("those hours keep. nothing was spent.");
                     return;
                 }
 
@@ -752,7 +801,7 @@ namespace Wildgrove.Game
                 var slot = settle.transform.GetSiblingIndex();
                 var column = settle.transform.parent;
                 Object.Destroy(settle.gameObject);
-                var spent = MakeText(column, "<i>the ledger is settled — " + NumberFormat.Duration(credited * 3600.0)
+                var spent = MakeText(column, "<i>caught up — " + NumberFormat.Duration(credited * 3600.0)
                                              + " credited at full pace</i>", 20, TextAnchor.MiddleCenter, MossDeep, _serif);
                 spent.transform.SetSiblingIndex(slot);
                 SetNote("amber spent: the hours the cap let go, given back.");
@@ -762,7 +811,7 @@ namespace Wildgrove.Game
             SetButtonTint(settle, affordable);
             if (!affordable)
             {
-                MakeText(sheet, "<color=" + OchreInkHex + "><i>not enough amber — the ledger keeps.</i></color>",
+                MakeText(sheet, "<color=" + OchreInkHex + "><i>not enough amber — those hours keep.</i></color>",
                     16, TextAnchor.MiddleCenter, Ink2, _serif);
             }
         }
