@@ -130,6 +130,21 @@ namespace Wildgrove.Data
             public double WeeklyCacheAmber { get; set; }
             public double RenameCostAmber { get; set; }
             public double WardenRenameCostAmber { get; set; }
+
+            /// <summary>The Amber a gift pile's answer asks alongside the pile itself (design §4 calling gift — the sink slate's early-game entry).</summary>
+            public double CallingGiftAmber { get; set; }
+
+            /// <summary>The Amber naming this run's camp asks (design §9 sink slate) — per run; the name folds with the camp.</summary>
+            public double CampNameCostAmber { get; set; }
+
+            /// <summary>The Amber a consideration pressed on the drover asks (design §9 sink slate) — re-deals the caravan's standing offer at once.</summary>
+            public double ConsiderationCostAmber { get; set; }
+
+            /// <summary>The Amber this run's second craft-queue slot asks (design §9 sink slate) — per run; lapses at the fold.</summary>
+            public double SecondQueueCostAmber { get; set; }
+
+            /// <summary>The Amber a keepsake page asks (design §9 sink slate) — one per run, permanent journal content; commemorative only.</summary>
+            public double KeepsakePageCostAmber { get; set; }
         }
 
         /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>

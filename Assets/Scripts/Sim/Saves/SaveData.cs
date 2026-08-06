@@ -44,6 +44,21 @@ namespace Wildgrove.Sim.Saves
         public string wardenPostNodeId;
         public string wardenName;
 
+        /// <summary>This run's camp name (v45) — null until bought; folds with the run at Migration.</summary>
+        public string campName;
+
+        /// <summary>The exchange window the considerations below were pressed in (v46).</summary>
+        public long exchangeConsiderationWindowIndex;
+
+        /// <summary>Considerations pressed on the drover this window (v46) — persisted so a reload cannot reroll a bribed deal.</summary>
+        public int exchangeConsiderationsThisWindow;
+
+        /// <summary>Whether this run bought its second craft-queue slot (v47) — per run; lapses at the fold.</summary>
+        public bool secondQueueBought;
+
+        /// <summary>Keepsake pages set into the journal (v48) — permanent; they cross Migration with the rest of the book.</summary>
+        public List<SavedKeepsake> keepsakes = new List<SavedKeepsake>();
+
         /// <summary>Amber held (design §10).</summary>
         public double amber;
 
@@ -276,6 +291,16 @@ namespace Wildgrove.Sim.Saves
         public string recipeId;
         public bool inFlight;
         public double progressSeconds;
+    }
+
+    [Serializable]
+    public sealed class SavedKeepsake
+    {
+        public int migrationCount;
+        public string regionId;
+        public string campName;
+        public int versesSung;
+        public long setAtUnixMs;
     }
 
     [Serializable]

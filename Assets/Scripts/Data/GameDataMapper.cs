@@ -433,7 +433,12 @@ namespace Wildgrove.Data
                     adDripAmber = e.Amber.AdDripAmber,
                     weeklyCacheAmber = e.Amber.WeeklyCacheAmber,
                     renameCostAmber = e.Amber.RenameCostAmber,
-                    wardenRenameCostAmber = e.Amber.WardenRenameCostAmber
+                    wardenRenameCostAmber = e.Amber.WardenRenameCostAmber,
+                    callingGiftAmber = e.Amber.CallingGiftAmber,
+                    campNameCostAmber = e.Amber.CampNameCostAmber,
+                    considerationCostAmber = e.Amber.ConsiderationCostAmber,
+                    secondQueueCostAmber = e.Amber.SecondQueueCostAmber,
+                    keepsakePageCostAmber = e.Amber.KeepsakePageCostAmber
                 },
                 store = e.Store == null ? null : new EconomyData.StoreData
                 {

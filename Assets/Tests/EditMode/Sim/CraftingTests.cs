@@ -204,6 +204,87 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Crafting.ActiveStationFor(state, Recipe("dried-berries")), Is.Not.Null);
         }
 
+        // ─────────────── The second queue (design §9's sink slate) ───────────
+
+        [Test]
+        public void SecondQueue_LetsTheStationHoldTwoOrders()
+        {
+            var state = new GameState();
+            state.secondQueueBought = true;
+            state.AddResource("berries", new BigDouble(20.0));
+
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+            Crafting.Assign(state, _data, Recipe("dried-berries"));
+
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Not.Null,
+                "the second assign takes the new slot rather than displacing the first");
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("dried-berries")), Is.Not.Null);
+
+            Crafting.Advance(state, _data, 5.0);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetResource("dried-berries").ToDouble(), Is.EqualTo(1.0).Within(Tolerance),
+                "both orders turn at once — the queue removes latency, and materials stay the wall");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(12.0).Within(Tolerance),
+                "each order spent its own batch");
+        }
+
+        [Test]
+        public void SecondQueue_ThirdAssignStillDisplacesTheFirstOrder()
+        {
+            var state = new GameState();
+            state.secondQueueBought = true;
+            state.purchasedUpgradeIds.Add("camp-fire-ring");
+            state.AddResource("berries", new BigDouble(20.0));
+            state.AddResource("timber", new BigDouble(4.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+            Crafting.Assign(state, _data, Recipe("dried-berries"));
+
+            Crafting.Assign(state, _data, Recipe("charcoal"));
+
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Null,
+                "two slots hold two orders — a third assignment displaces the first, as one always did");
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("charcoal")), Is.Not.Null);
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("dried-berries")), Is.Not.Null);
+        }
+
+        [Test]
+        public void SecondQueue_StopFreesTheSlotForReuse()
+        {
+            var state = new GameState();
+            state.secondQueueBought = true;
+            state.AddResource("berries", new BigDouble(20.0));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+            Crafting.Assign(state, _data, Recipe("dried-berries"));
+
+            Crafting.Stop(state, _data, Recipe("berry-jam"));
+            Crafting.Assign(state, _data, Recipe("berry-jam"));
+
+            Assert.That(Crafting.ActiveStationFor(state, Recipe("berry-jam")), Is.Not.Null);
+            Assert.That(state.stations.Count, Is.EqualTo(2), "the emptied slot is reused, never a third opened");
+        }
+
+        [Test]
+        public void SecondQueue_AnOverCapacitySlotSitsIdle()
+        {
+            // A restored save (or a fold) can hold more orders than the run
+            // has bought — the extra slot must sit rather than craft, or the
+            // second queue is handed out for free.
+            var state = new GameState();
+            state.AddResource("berries", new BigDouble(20.0));
+            state.stations.Add(new StationState { stationId = "fire", recipeId = "berry-jam" });
+            state.stations.Add(new StationState { stationId = "fire", recipeId = "dried-berries" });
+
+            Crafting.Advance(state, _data, 5.0);
+
+            Assert.That(state.GetResource("berry-jam").ToDouble(), Is.EqualTo(1.0).Within(Tolerance),
+                "the first order works as ever");
+            Assert.That(state.GetResource("dried-berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance),
+                "the over-capacity slot sits idle until the queue is bought");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(15.0).Within(Tolerance),
+                "and it spends nothing while it sits");
+        }
+
         [Test]
         public void WorkingRecipe_NamesWhatAStationHolds_SoTheRowCanWarnBeforeDisplacing()
         {

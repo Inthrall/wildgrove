@@ -188,6 +188,9 @@ namespace Wildgrove.Sim
             // The warden's name crosses with it, and for the same reason: it was
             // bought, and it names the player rather than the run. A fold that
             // dropped it would charge 50 Amber again for a name already given.
+            // The CAMP's name is deliberately absent here: it names the run,
+            // and it folds with the camp — naming the next camp is the next
+            // region's own ritual (design §9's sink slate).
             next.wardenName = state.wardenName;
 
             // Lore stays read: run 2 re-unlocks the zones without re-showing
@@ -229,9 +232,14 @@ namespace Wildgrove.Sim
             // tick, so no bookkeeping is owed here.
             if (Upgrades.HasActiveEffect(state, data, EffectType.KeepCraftOrders))
             {
+                // One order per station id: the second queue is bought per run
+                // (design §9's sink slate) and lapses at the fold, so a second
+                // slot's order folds with the queue that held it — carrying it
+                // would hand the new run a capacity it hasn't bought.
+                var carried = new HashSet<string>();
                 foreach (var station in state.stations)
                 {
-                    if (station.recipeId != null)
+                    if (station.recipeId != null && carried.Add(station.stationId))
                     {
                         next.stations.Add(new StationState
                         {
@@ -241,6 +249,11 @@ namespace Wildgrove.Sim
                     }
                 }
             }
+
+            // Keepsake pages are journal content — set in amber, kept like the
+            // plates. The page remembering THIS run is the reason the sink is
+            // worth its price: the fold is exactly what it survives.
+            next.keepsakes.AddRange(state.keepsakes);
 
             // "You keep … the Folio" — fixed specimens and their spread bonuses too.
             next.fixedResources.AddRange(state.fixedResources);

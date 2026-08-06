@@ -247,6 +247,62 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Gifts.IsAvailable(state, _data), Is.True);
         }
 
+        /// <summary>Arm the calling gift (design §4, 2026-08-06) — the fixture's amber section carries only the asking.</summary>
+        private void ConfigureCallingGift(double asking)
+        {
+            _data.economy.amber = new EconomyData.AmberData { callingGiftAmber = asking };
+        }
+
+        [Test]
+        public void LeavePile_SpendsTheCallingGiftAlongsideThePile()
+        {
+            ConfigureCallingGift(10.0);
+            var state = GameStateFactory.NewGame(_data);
+            AnswerFirstVerse(state);
+            var node = ReadyNutNode(state);
+            state.amber = 25.0;
+
+            var arrived = Gifts.LeavePile(state, _data, node);
+
+            Assert.That(arrived, Is.Not.Null);
+            Assert.That(state.amber, Is.EqualTo(15.0), "the answer asks the calling gift alongside the pile");
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(15.0), "the pile itself is still spent");
+        }
+
+        [Test]
+        public void LeavePile_AmberShort_ThePileWaitsUnconsumed()
+        {
+            ConfigureCallingGift(10.0);
+            var state = GameStateFactory.NewGame(_data);
+            AnswerFirstVerse(state);
+            var node = ReadyNutNode(state);
+            state.amber = 9.0;
+
+            Assert.That(Gifts.CanLeavePile(state, _data, node), Is.False, "the asking is short");
+
+            var arrived = Gifts.LeavePile(state, _data, node);
+
+            Assert.That(arrived, Is.Null);
+            Assert.That(state.amber, Is.EqualTo(9.0), "nothing is spent until the whole answer can happen");
+            Assert.That(state.GetResource("nuts").ToDouble(), Is.EqualTo(25.0), "the pile is not consumed");
+            Assert.That(Gifts.PilesRemaining(state, _data), Is.EqualTo(1), "the earned pile waits rather than being refused");
+        }
+
+        [Test]
+        public void LeavePile_WithoutAnAmberSystem_TheAnswerIsFree()
+        {
+            // The default fixture has no amber section — a pre-amber save or a
+            // hand-built fixture calls for free, never blocked.
+            var state = GameStateFactory.NewGame(_data);
+            AnswerFirstVerse(state);
+            var node = ReadyNutNode(state);
+            state.amber = 0.0;
+
+            Assert.That(Amber.CallingGiftCost(_data), Is.EqualTo(0.0));
+            Assert.That(Gifts.LeavePile(state, _data, node), Is.Not.Null);
+            Assert.That(state.amber, Is.EqualTo(0.0));
+        }
+
         [Test]
         public void Gifted_SurvivesTheSaveRoundTrip()
         {

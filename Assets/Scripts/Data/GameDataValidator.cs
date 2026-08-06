@@ -1919,7 +1919,12 @@ namespace Wildgrove.Data
                     || economy.Amber.TimeSkipHours <= 0 || economy.Amber.TimeSkipCostAmber <= 0
                     || economy.Amber.AdDripAmber <= 0 || economy.Amber.WeeklyCacheAmber <= 0
                     || economy.Amber.RenameCostAmber <= 0
-                    || economy.Amber.WardenRenameCostAmber <= 0))
+                    || economy.Amber.WardenRenameCostAmber <= 0
+                    || economy.Amber.CallingGiftAmber <= 0
+                    || economy.Amber.CampNameCostAmber <= 0
+                    || economy.Amber.ConsiderationCostAmber <= 0
+                    || economy.Amber.SecondQueueCostAmber <= 0
+                    || economy.Amber.KeepsakePageCostAmber <= 0))
             {
                 // A present-but-zeroed section would ship an earn with no sink
                 // (or a sink no one can afford) — configure it whole or not at all.

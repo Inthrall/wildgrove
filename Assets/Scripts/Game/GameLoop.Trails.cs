@@ -24,6 +24,34 @@ namespace Wildgrove.Game
             return Exchange.OfferSecondsRemaining(Data, NowUnixMs());
         }
 
+        /// <summary>The Amber a consideration pressed on the drover asks — 0 hides the row (design §9's sink slate).</summary>
+        public double ConsiderationCost()
+        {
+            return Exchange.ConsiderationCost(Data);
+        }
+
+        /// <summary>Whether a consideration can be pressed right now — the row's enabled state.</summary>
+        public bool CanPressConsideration()
+        {
+            return Exchange.CanPressConsideration(State, Data, NowUnixMs());
+        }
+
+        /// <summary>
+        /// Press a consideration on the drover (design §9): spend the Amber
+        /// and the standing deal re-draws at once. Returns the new deal, or
+        /// null when refused.
+        /// </summary>
+        public ExchangeOffer PressConsideration()
+        {
+            var redealt = Exchange.PressConsideration(State, Data, NowUnixMs());
+            if (redealt != null)
+            {
+                Telemetry.LogEvent("consideration_pressed", ("from", redealt.from), ("to", redealt.to));
+            }
+
+            return redealt;
+        }
+
         /// <summary>Units of <paramref name="to"/> per one unit of <paramref name="from"/> at the Exchange.</summary>
         public BigDouble ExchangeRate(string from, string to)
         {
@@ -106,6 +134,20 @@ namespace Wildgrove.Game
         public BigDouble GiftPileCost()
         {
             return Gifts.PileCost(Data.economy);
+        }
+
+        /// <summary>The Amber the answer asks alongside the pile (design §4's calling gift) — 0 when the amber system is inert.</summary>
+        public double GiftCallingCost()
+        {
+            return Amber.CallingGiftCost(Data);
+        }
+
+        /// <summary>Whether the calling gift alone is what holds a pile back — for the pile line's refusal wording.</summary>
+        public bool GiftWaitsOnAmber(NodeState node)
+        {
+            return node != null
+                && State.GetResource(node.resourceId) >= Gifts.PileCost(Data.economy)
+                && !Amber.CanPayCallingGift(State, Data);
         }
 
         /// <summary>The specialist a pile at this node would call (design §4), or null when no one new answers here.</summary>

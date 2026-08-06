@@ -95,11 +95,28 @@ namespace Wildgrove.Sim
             return Buildings.TotalLevel(state, line) >= recipe.stationLevel;
         }
 
-        /// <summary>The station working <paramref name="recipe"/>, or null.</summary>
+        /// <summary>
+        /// Standing orders one station id may hold: one, or two once this
+        /// run's second queue is bought (design §9's sink slate). Per run —
+        /// the second slot lapses at the fold.
+        /// </summary>
+        public static int OrderCapacity(GameState state)
+        {
+            return state != null && state.secondQueueBought ? 2 : 1;
+        }
+
+        /// <summary>The slot working <paramref name="recipe"/>, or null — searches every slot the station holds, not just the first.</summary>
         public static StationState ActiveStationFor(GameState state, RecipeData recipe)
         {
-            var station = StationFor(state, recipe.station);
-            return station != null && station.recipeId == recipe.id ? station : null;
+            foreach (var station in state.stations)
+            {
+                if (station.stationId == recipe.station && station.recipeId == recipe.id)
+                {
+                    return station;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -119,9 +136,11 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Assign <paramref name="recipe"/> to its station, displacing whatever
-        /// the station was working (an in-flight batch's inputs are refunded —
-        /// switching is never a punishment). No-op if it's already assigned.
+        /// Assign <paramref name="recipe"/> to its station. It takes an idle
+        /// slot, or opens one while <see cref="OrderCapacity"/> allows —
+        /// otherwise it displaces the station's first order (an in-flight
+        /// batch's inputs are refunded — switching is never a punishment).
+        /// No-op if it's already assigned to any slot.
         /// </summary>
         public static void Assign(GameState state, GameDataAsset data, RecipeData recipe)
         {
@@ -130,20 +149,38 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            var station = StationFor(state, recipe.station);
-            if (station == null)
-            {
-                station = new StationState { stationId = recipe.station };
-                state.stations.Add(station);
-            }
-
-            if (station.recipeId == recipe.id)
+            if (ActiveStationFor(state, recipe) != null)
             {
                 return;
             }
 
-            RefundInFlight(state, data, station);
-            station.recipeId = recipe.id;
+            StationState first = null;
+            var slots = 0;
+            foreach (var station in state.stations)
+            {
+                if (station.stationId != recipe.station)
+                {
+                    continue;
+                }
+
+                if (station.recipeId == null)
+                {
+                    station.recipeId = recipe.id;
+                    return;
+                }
+
+                first = first ?? station;
+                slots++;
+            }
+
+            if (slots < OrderCapacity(state))
+            {
+                state.stations.Add(new StationState { stationId = recipe.station, recipeId = recipe.id });
+                return;
+            }
+
+            RefundInFlight(state, data, first);
+            first.recipeId = recipe.id;
         }
 
         /// <summary>Stop the station working this recipe, refunding any in-flight batch.</summary>
@@ -213,9 +250,19 @@ namespace Wildgrove.Sim
             HashSet<string> unlockedSkills = null;
             HashSet<string> unlockedRecipes = null;
 
-            foreach (var station in state.stations)
+            for (var slotIndex = 0; slotIndex < state.stations.Count; slotIndex++)
             {
+                var station = state.stations[slotIndex];
                 if (station.recipeId == null || !data.RecipesById.TryGetValue(station.recipeId, out var recipe))
+                {
+                    continue;
+                }
+
+                // A slot past the station's capacity sits idle rather than
+                // crafting — a restored save (or a fold) can hold more orders
+                // than the run has bought, and working them would hand out the
+                // second queue for free.
+                if (SlotRank(state, slotIndex) >= OrderCapacity(state))
                 {
                     continue;
                 }
@@ -312,6 +359,21 @@ namespace Wildgrove.Sim
             }
 
             return null;
+        }
+
+        /// <summary>How many earlier entries share this slot's station id — its position in the station's own order, 0 first.</summary>
+        private static int SlotRank(GameState state, int slotIndex)
+        {
+            var rank = 0;
+            for (var earlier = 0; earlier < slotIndex; earlier++)
+            {
+                if (state.stations[earlier].stationId == state.stations[slotIndex].stationId)
+                {
+                    rank++;
+                }
+            }
+
+            return rank;
         }
 
         private static void SpendInputs(GameState state, RecipeData recipe)

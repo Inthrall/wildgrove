@@ -873,6 +873,67 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void TryMigrate_V44_ClimbsToCurrentWithAnUnnamedCamp()
+        {
+            // v45 added the camp's bought name. A save written before it
+            // describes a camp that was never named, and null is exactly how
+            // an un-named v45 run reads — so the migration invents nothing.
+            var save = new SaveData { version = 44 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.campName, Is.Null);
+        }
+
+        [Test]
+        public void Capture_RoundTripsTheCampName()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.campName = "Thistledown";
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.campName, Is.EqualTo("Thistledown"),
+                "a name that didn't survive the save would be bought again every launch");
+        }
+
+        [Test]
+        public void Capture_RoundTripsTheKeepsakes()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.keepsakes.Add(new KeepsakeState
+            {
+                migrationCount = 2,
+                regionId = "misted",
+                campName = "Thistledown",
+                versesSung = 3,
+                setAtUnixMs = 123_456L,
+            });
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.keepsakes, Has.Count.EqualTo(1),
+                "a page set in amber that didn't survive the save would be bought again every launch");
+            Assert.That(restored.keepsakes[0].migrationCount, Is.EqualTo(2));
+            Assert.That(restored.keepsakes[0].regionId, Is.EqualTo("misted"));
+            Assert.That(restored.keepsakes[0].campName, Is.EqualTo("Thistledown"));
+            Assert.That(restored.keepsakes[0].versesSung, Is.EqualTo(3));
+            Assert.That(restored.keepsakes[0].setAtUnixMs, Is.EqualTo(123_456L));
+        }
+
+        [Test]
+        public void Restore_BlankCampName_ReadsAsNoNameRatherThanACampCalledNothing()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.campName = "   ";
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(state.campName, Is.Null);
+            Assert.That(Camp.DisplayName(state), Is.EqualTo(Camp.Anonymous));
+        }
+
+        [Test]
         public void TryMigrate_CurrentVersion_NeedsNoRung()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);

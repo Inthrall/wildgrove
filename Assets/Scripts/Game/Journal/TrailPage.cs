@@ -374,6 +374,11 @@ namespace Wildgrove.Game
                         : "you left a pile of " + target.resourceId + " and stepped back. something said yes.");
                     _dirty = true;
                 }
+                else if (_loop.GiftWaitsOnAmber(target))
+                {
+                    SetNote("the pile is ready, but the asking is " + NumberFormat.Short(_loop.GiftCallingCost())
+                            + " amber. it will wait.");
+                }
                 else
                 {
                     SetNote("not enough " + target.resourceId + " for a proper pile. keep picking.");
@@ -396,6 +401,10 @@ namespace Wildgrove.Game
                 intro.text = "<i>a " + species.displayName + " is drawn to the " + target.resourceId
                              + ". leave a pile and it stays.</i>";
                 var pile = NumberFormat.Short(_loop.GiftPileCost()) + " " + target.resourceId;
+                if (_loop.GiftCallingCost() > 0.0)
+                {
+                    pile += " · " + NumberFormat.Short(_loop.GiftCallingCost()) + " amber";
+                }
                 if (_loop.CanLeaveGift(target))
                 {
                     // Moss — an invitation; ochre stays with costs and halts.

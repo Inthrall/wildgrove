@@ -343,6 +343,143 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Exchange.OfferAt(DiscoveredState(), _data, 0L), Is.Null);
         }
 
+        // ──────── A consideration for the drover (design §9's sink slate) ────
+
+        /// <summary>Arm the consideration alongside the rotating offer — three goods so a re-deal has room to move.</summary>
+        private GameState BribableState()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            _data.economy.amber = new EconomyData.AmberData { considerationCostAmber = 5 };
+            _data.resources.Add(new ResourceData { id = "fibres", sellValue = 5 });
+            var state = DiscoveredState();
+            Compendium.RecordGather(state, "fibres", new BigDouble(1.0));
+            return state;
+        }
+
+        [Test]
+        public void PressConsideration_RedealsAtOnceAndSpendsTheAmber()
+        {
+            var state = BribableState();
+            state.amber = 12.0;
+            const long now = 900_000L;
+            var standing = Exchange.OfferAt(state, _data, now);
+
+            var redealt = Exchange.PressConsideration(state, _data, now);
+
+            Assert.That(redealt, Is.Not.Null);
+            Assert.That(redealt.from == standing.from && redealt.to == standing.to, Is.False,
+                "the coin must always change something — a repeat of the standing deal is nudged apart");
+            Assert.That(state.amber, Is.EqualTo(7.0).Within(Tolerance), "the consideration is spent");
+
+            var read = Exchange.OfferAt(state, _data, now);
+            Assert.That(read.from, Is.EqualTo(redealt.from), "the re-dealt offer is now the standing one");
+            Assert.That(read.to, Is.EqualTo(redealt.to));
+        }
+
+        [Test]
+        public void PressConsideration_AReloadCannotRerollTheBribedDeal()
+        {
+            // Restore rebuilds the run from a fresh NewGame, which needs the
+            // starting zone this fixture otherwise does without.
+            _data.zones = new List<ZoneData>
+            {
+                new ZoneData
+                {
+                    id = GameStateFactory.StartingZoneId,
+                    order = 1,
+                    resources = new List<string> { "berries" },
+                    unlocks = new List<string> { "foraging" },
+                },
+            };
+            var state = BribableState();
+            state.amber = 12.0;
+            const long now = 900_000L;
+            var redealt = Exchange.PressConsideration(state, _data, now);
+
+            var restored = Saves.SaveCodec.Restore(Saves.SaveCodec.Capture(state, now), _data);
+            var read = Exchange.OfferAt(restored, _data, now);
+
+            Assert.That(read.from, Is.EqualTo(redealt.from),
+                "(window, considerations) → deal — the pair rides the save, so a reload lands on the same deal");
+            Assert.That(read.to, Is.EqualTo(redealt.to));
+        }
+
+        [Test]
+        public void PressConsideration_TheWindowTurnClearsTheBribe()
+        {
+            var state = BribableState();
+            state.amber = 100.0;
+            const long now = 900_000L;
+            Exchange.PressConsideration(state, _data, now);
+
+            var nextWindow = now + 5L * 60_000L;
+            var unbribed = Exchange.OfferAt(DiscoveredStateWithFibres(), _data, nextWindow);
+            var read = Exchange.OfferAt(state, _data, nextWindow);
+
+            Assert.That(read.from, Is.EqualTo(unbribed.from),
+                "a stale count belongs to a window that has closed — the new window opens on its own plain deal");
+            Assert.That(read.to, Is.EqualTo(unbribed.to));
+        }
+
+        /// <summary>A never-bribed state knowing the same three goods — the window-turn test's control.</summary>
+        private GameState DiscoveredStateWithFibres()
+        {
+            var state = DiscoveredState();
+            Compendium.RecordGather(state, "fibres", new BigDouble(1.0));
+            return state;
+        }
+
+        [Test]
+        public void PressConsideration_RepeatedPressesKeepChangingTheDeal()
+        {
+            var state = BribableState();
+            state.amber = 100.0;
+            const long now = 900_000L;
+
+            var previous = Exchange.OfferAt(state, _data, now);
+            for (var press = 0; press < 10; press++)
+            {
+                var redealt = Exchange.PressConsideration(state, _data, now);
+                Assert.That(redealt.from == previous.from && redealt.to == previous.to, Is.False,
+                    "press " + press + " repeated the deal it replaced");
+                previous = redealt;
+            }
+
+            Assert.That(state.amber, Is.EqualTo(50.0).Within(Tolerance), "ten considerations at 5 apiece");
+        }
+
+        [Test]
+        public void PressConsideration_TwoGoodsRedealToTheReverse()
+        {
+            _data.exchange.offerMinutes = 5.0;
+            _data.economy.amber = new EconomyData.AmberData { considerationCostAmber = 5 };
+            var state = DiscoveredState(); // berries and nuts only
+            state.amber = 100.0;
+            const long now = 900_000L;
+            var standing = Exchange.OfferAt(state, _data, now);
+
+            var redealt = Exchange.PressConsideration(state, _data, now);
+
+            Assert.That(redealt.from, Is.EqualTo(standing.to),
+                "two goods hold exactly two deals — the re-deal can only be the reverse");
+            Assert.That(redealt.to, Is.EqualTo(standing.from));
+        }
+
+        [Test]
+        public void PressConsideration_RefusedWhenShortOrUnconfigured()
+        {
+            var state = BribableState();
+            state.amber = 4.0; // one short of the 5-amber asking
+            Assert.That(Exchange.CanPressConsideration(state, _data, 900_000L), Is.False);
+            Assert.That(Exchange.PressConsideration(state, _data, 900_000L), Is.Null);
+            Assert.That(state.amber, Is.EqualTo(4.0).Within(Tolerance), "nothing spent on a refusal");
+
+            _data.economy.amber = null; // the sink unconfigured — the row hides, pressing is refused
+            state.amber = 100.0;
+            Assert.That(Exchange.CanPressConsideration(state, _data, 900_000L), Is.False);
+            Assert.That(Exchange.PressConsideration(state, _data, 900_000L), Is.Null);
+        }
+
         [Test]
         public void OfferSecondsRemaining_CountsDownTheWindow()
         {

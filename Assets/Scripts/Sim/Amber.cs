@@ -128,6 +128,94 @@ namespace Wildgrove.Sim
             state.timeSkipBudgetStampUnixMs = nowUnixMs;
         }
 
+        // ───────────── Settle the ledger (design §9's sink slate) ────────────
+        //
+        // When an absence outruns the away cap, the hours beyond it are simply
+        // lost. The welcome-back sheet may offer to settle them: credit the
+        // uncovered remainder at the FULL live rate for Amber. That is exactly
+        // what a paid skip sells, so the hours draw from the same leaky budget
+        // (the ×2 pin holds with no new rule) and the price is pro-rata on the
+        // skip's own rate — the ledger can never be a cheaper skip, only a
+        // right-sized one. The offer is a moment, not a debt: it lives only as
+        // long as the summary that measured the absence, and nothing about it
+        // is persisted.
+
+        /// <summary>The hours an absence left uncredited — real time beyond the away cap; 0 for a covered absence.</summary>
+        public static double UncoveredHours(OfflineSummary summary)
+        {
+            if (summary == null)
+            {
+                return 0.0;
+            }
+
+            var uncovered = (summary.realSeconds - summary.creditedSeconds) / 3600.0;
+            return uncovered > 0.0 ? uncovered : 0.0;
+        }
+
+        /// <summary>Amber per settled hour — the paid skip's own rate, so the ledger can never undercut the skip.</summary>
+        public static double LedgerRatePerHour(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.timeSkipHours > 0.0 && amber.timeSkipCostAmber > 0.0
+                ? amber.timeSkipCostAmber / amber.timeSkipHours
+                : 0.0;
+        }
+
+        /// <summary>
+        /// The hours a settle would credit right now: the uncovered remainder,
+        /// held to what the paid-skip budget still allows. 0 when the amber
+        /// system is inert.
+        /// </summary>
+        public static double LedgerHoursOnOffer(GameState state, GameDataAsset data, double uncoveredHours, long nowUnixMs)
+        {
+            if (state == null || uncoveredHours <= 0.0 || !Configured(data?.economy))
+            {
+                return 0.0;
+            }
+
+            var budget = SkipBudgetHours(state, data, nowUnixMs);
+            return uncoveredHours < budget ? uncoveredHours : budget;
+        }
+
+        /// <summary>What settling <paramref name="hours"/> costs, in whole Amber — fractions round up, never down.</summary>
+        public static double LedgerCostAmber(GameDataAsset data, double hours)
+        {
+            if (hours <= 0.0)
+            {
+                return 0.0;
+            }
+
+            return System.Math.Ceiling(hours * LedgerRatePerHour(data));
+        }
+
+        /// <summary>Whether the offer stands and is affordable — the settle button's enabled state.</summary>
+        public static bool CanSettleLedger(GameState state, GameDataAsset data, double uncoveredHours, long nowUnixMs)
+        {
+            var hours = LedgerHoursOnOffer(state, data, uncoveredHours, nowUnixMs);
+            return hours > 0.0 && state.amber >= LedgerCostAmber(data, hours);
+        }
+
+        /// <summary>
+        /// Settle the ledger: spend the Amber and the skip budget, and credit
+        /// the offered hours at the full live rate — no cap, no offline
+        /// multiplier, exactly as <see cref="TryTimeSkip"/> credits its own.
+        /// Returns the hours credited, or 0 when refused (nothing uncovered,
+        /// the budget dry, or the warden short).
+        /// </summary>
+        public static double TrySettleLedger(GameState state, GameDataAsset data, double uncoveredHours, long nowUnixMs)
+        {
+            if (!CanSettleLedger(state, data, uncoveredHours, nowUnixMs))
+            {
+                return 0.0;
+            }
+
+            var hours = LedgerHoursOnOffer(state, data, uncoveredHours, nowUnixMs);
+            SpendSkipBudget(state, data, nowUnixMs, hours);
+            state.amber -= LedgerCostAmber(data, hours);
+            Simulation.Advance(state, data, hours * 3600.0);
+            return hours;
+        }
+
         /// <summary>
         /// The Amber a familiar's rename asks (design §4: rename any time), or 0
         /// when the amber system is inert — a rename is free then, never blocked.
@@ -223,6 +311,115 @@ namespace Wildgrove.Sim
             state.wardenName = trimmed;
             state.amber -= WardenRenameCost(data);
             return true;
+        }
+
+        /// <summary>
+        /// The Amber naming this run's camp asks (design §9's sink slate) —
+        /// between a companion's price and the warden's, and unlike either it
+        /// is paid once per RUN: the name folds with the camp, so naming is a
+        /// ritual of each region. 0 when the amber system is inert, so
+        /// fixtures and a pre-amber save name for free rather than being
+        /// blocked.
+        /// </summary>
+        public static double CampNameCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.campNameCostAmber > 0.0 ? amber.campNameCostAmber : 0.0;
+        }
+
+        /// <summary>Whether naming the camp is affordable right now — free (cost 0), or enough Amber in hand for the price.</summary>
+        public static bool CanNameCamp(GameState state, GameDataAsset data)
+        {
+            return state != null && state.amber >= CampNameCost(data);
+        }
+
+        /// <summary>
+        /// Name this run's camp for its Amber price. Charged on a change only,
+        /// like the warden's: re-typing the same name, or typing blank, is a
+        /// free no-op rather than a purchase — so a mis-tap can never silently
+        /// spend the price undoing a name. Returns whether the name changed.
+        /// </summary>
+        public static bool TryNameCamp(GameState state, GameDataAsset data, string name)
+        {
+            if (state == null || string.IsNullOrWhiteSpace(name))
+            {
+                return false;
+            }
+
+            var trimmed = name.Trim();
+            if (trimmed == Camp.DisplayName(state))
+            {
+                return false;
+            }
+
+            if (!CanNameCamp(state, data))
+            {
+                return false;
+            }
+
+            state.campName = trimmed;
+            state.amber -= CampNameCost(data);
+            return true;
+        }
+
+        /// <summary>
+        /// The Amber this run's second craft-queue slot asks (design §9's sink
+        /// slate), or 0 when the sink is unconfigured — the row hides then;
+        /// nothing a player relies on is lost by its absence.
+        /// </summary>
+        public static double SecondQueueCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.secondQueueCostAmber > 0.0 ? amber.secondQueueCostAmber : 0.0;
+        }
+
+        /// <summary>Whether the second queue can be bought right now — configured, not already this run's, and affordable.</summary>
+        public static bool CanBuySecondQueue(GameState state, GameDataAsset data)
+        {
+            var cost = SecondQueueCost(data);
+            return cost > 0.0
+                && state != null
+                && !state.secondQueueBought
+                && state.amber >= cost;
+        }
+
+        /// <summary>
+        /// Buy this run's second craft-queue slot (design §9): each station
+        /// may then hold two standing orders (<see cref="Crafting.OrderCapacity"/>).
+        /// Per run — it lapses at the fold, which is what makes it a recurring
+        /// sink. Returns whether the purchase happened.
+        /// </summary>
+        public static bool TryBuySecondQueue(GameState state, GameDataAsset data)
+        {
+            if (!CanBuySecondQueue(state, data))
+            {
+                return false;
+            }
+
+            state.secondQueueBought = true;
+            state.amber -= SecondQueueCost(data);
+            return true;
+        }
+
+        /// <summary>
+        /// The Amber a gift pile's answer asks alongside the pile itself
+        /// (design §4's calling gift — the sink slate's early-game entry), or 0
+        /// when the amber system is inert, so fixtures and a pre-amber save
+        /// call for free rather than being blocked. Charged only through
+        /// <see cref="Gifts.LeavePile"/>: unasked arrivals — the first vole and
+        /// raven, a bonded companion crossing the fold, the Drover's pony —
+        /// never route through a pile, so they never pay it.
+        /// </summary>
+        public static double CallingGiftCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.callingGiftAmber > 0.0 ? amber.callingGiftAmber : 0.0;
+        }
+
+        /// <summary>Whether the calling gift is affordable right now — free (cost 0), or enough Amber in hand for the asking.</summary>
+        public static bool CanPayCallingGift(GameState state, GameDataAsset data)
+        {
+            return state != null && state.amber >= CallingGiftCost(data);
         }
 
         /// <summary>Whether the rewarded Amber drip is configured and off cooldown — gates the "Watch" button on both the ad and the ad-free (Remove Ads) paths.</summary>

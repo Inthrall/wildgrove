@@ -38,7 +38,10 @@ namespace Wildgrove.Sim.Tests
                 // certain find — the chance test would flake otherwise.
                 // The two rename prices are deliberately different numbers here,
                 // so a test that read the wrong one could not pass by accident.
-                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20, renameCostAmber = 5, wardenRenameCostAmber = 20 },
+                // The naming prices are deliberately three different numbers
+                // here, so a test that read the wrong knob could not pass by
+                // accident: familiar 5, warden 20, camp 40.
+                amber = new EconomyData.AmberData { digFindsPerHour = 36000, perFind = 2, timeSkipHours = 0.01, timeSkipCostAmber = 15, adDripAmber = 3, weeklyCacheAmber = 20, renameCostAmber = 5, wardenRenameCostAmber = 20, campNameCostAmber = 40, secondQueueCostAmber = 25 },
                 store = new EconomyData.StoreData { starterBundleAmber = 30, amberPackSmall = 50, amberPackLarge = 150 },
             };
             _data.resources = new List<ResourceData>
@@ -483,6 +486,307 @@ namespace Wildgrove.Sim.Tests
             Assert.That(next, Is.Not.Null, "the sung rite lets the fold happen at all");
             Assert.That(Warden.DisplayName(next), Is.EqualTo("Rowan"),
                 "a bought name crosses the fold — a warden does not forget their name by migrating");
+        }
+
+        /// <summary>An absence summary in hours — the ledger's input, as the welcome-back flow would hold it.</summary>
+        private static OfflineSummary AbsenceOf(double realHours, double creditedHours)
+        {
+            return new OfflineSummary
+            {
+                realSeconds = realHours * 3600.0,
+                creditedSeconds = creditedHours * 3600.0,
+            };
+        }
+
+        [Test]
+        public void Ledger_UncoveredHours_IsTheRemainderBeyondTheCap()
+        {
+            Assert.That(Amber.UncoveredHours(AbsenceOf(20.0, 12.0)), Is.EqualTo(8.0).Within(Tolerance));
+            Assert.That(Amber.UncoveredHours(AbsenceOf(3.0, 3.0)), Is.EqualTo(0.0).Within(Tolerance),
+                "a covered absence leaves nothing to settle");
+            Assert.That(Amber.UncoveredHours(null), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Ledger_SettlesTheUncoveredHoursAtFullLiveRate()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+            state.amber = 100.0;
+
+            var hours = Amber.TrySettleLedger(state, _data, 0.02, Now);
+
+            Assert.That(hours, Is.EqualTo(0.02).Within(Tolerance), "the whole uncovered remainder is settled");
+            Assert.That(state.amber, Is.EqualTo(70.0).Within(Tolerance),
+                "priced pro-rata on the skip's own rate (15 per 0.01h) — the ledger is never a cheaper skip");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(72.0).Within(Tolerance),
+                "credited at the full live rate — no away cap, no offline multiplier");
+        }
+
+        [Test]
+        public void Ledger_FractionOfAnAmberRoundsUpNeverDown()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            var hours = Amber.TrySettleLedger(state, _data, 0.005, Now);
+
+            Assert.That(hours, Is.EqualTo(0.005).Within(Tolerance));
+            Assert.That(state.amber, Is.EqualTo(92.0).Within(Tolerance),
+                "7.5 amber owed reads as 8 — a fraction rounds against the buyer here, never silently under");
+        }
+
+        [Test]
+        public void Ledger_HeldToTheSkipBudget()
+        {
+            // Cap = three skips' worth; two paid skips leave 0.01h of budget,
+            // so a 0.02h ledger settles only what the budget still allows —
+            // the x2 pace pin holds across both sinks with no second rule.
+            _data.economy.amber.timeSkipDailyCapHours = 0.03;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.GreaterThan(0.0));
+            Assert.That(Amber.TryTimeSkip(state, _data, Now), Is.GreaterThan(0.0));
+
+            var hours = Amber.TrySettleLedger(state, _data, 0.02, Now);
+
+            Assert.That(hours, Is.EqualTo(0.01).Within(Tolerance), "the offer is held to the budget's remainder");
+            Assert.That(state.amber, Is.EqualTo(55.0).Within(Tolerance), "two skips at 15 and a half-size settle at 15");
+            Assert.That(Amber.SkipBudgetHours(state, _data, Now), Is.EqualTo(0.0).Within(Tolerance),
+                "the settle drew down the same leaky bucket the skips did");
+        }
+
+        [Test]
+        public void Ledger_RefusedWhenShortAndSpendsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+            state.amber = 29.0; // one short of the 0.02h settle's 30
+
+            Assert.That(Amber.CanSettleLedger(state, _data, 0.02, Now), Is.False);
+            Assert.That(Amber.TrySettleLedger(state, _data, 0.02, Now), Is.EqualTo(0.0));
+            Assert.That(state.amber, Is.EqualTo(29.0).Within(Tolerance), "nothing spent on a refusal");
+            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance),
+                "and no hours were credited");
+        }
+
+        [Test]
+        public void Ledger_RefusedWhenUnconfigured()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            Assert.That(Amber.TrySettleLedger(state, _data, 8.0, Now), Is.EqualTo(0.0));
+        }
+
+        [Test]
+        public void SecondQueue_BuysOncePerRunAndSpendsTheAmber()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 60.0;
+
+            Assert.That(Amber.CanBuySecondQueue(state, _data), Is.True);
+            Assert.That(Amber.TryBuySecondQueue(state, _data), Is.True);
+            Assert.That(state.secondQueueBought, Is.True);
+            Assert.That(Crafting.OrderCapacity(state), Is.EqualTo(2));
+            Assert.That(state.amber, Is.EqualTo(35.0).Within(Tolerance), "the queue's own 25-amber price is spent");
+
+            Assert.That(Amber.CanBuySecondQueue(state, _data), Is.False, "the run already owns it");
+            Assert.That(Amber.TryBuySecondQueue(state, _data), Is.False);
+            Assert.That(state.amber, Is.EqualTo(35.0).Within(Tolerance), "never double-charged");
+        }
+
+        [Test]
+        public void SecondQueue_RefusedWhenShortOrUnconfigured()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 24.0; // one short of the queue's 25-amber price
+
+            Assert.That(Amber.CanBuySecondQueue(state, _data), Is.False);
+            Assert.That(Amber.TryBuySecondQueue(state, _data), Is.False);
+            Assert.That(state.amber, Is.EqualTo(24.0).Within(Tolerance), "nothing spent on a refusal");
+
+            _data.economy.amber = null; // the sink unconfigured — the row hides, buying is refused
+            state.amber = 100.0;
+            Assert.That(Amber.TryBuySecondQueue(state, _data), Is.False);
+        }
+
+        [Test]
+        public void CampName_ReadsAsTheCampUntilOneIsBought()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Camp.IsNamed(state), Is.False);
+            Assert.That(Camp.DisplayName(state), Is.EqualTo("the camp"),
+                "an un-named run must read exactly as it did before naming existed");
+        }
+
+        [Test]
+        public void CampNaming_ChargesItsOwnPriceAndNamesThePage()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 45.0;
+
+            Assert.That(Amber.CanNameCamp(state, _data), Is.True);
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.True);
+
+            Assert.That(state.campName, Is.EqualTo("Thistledown"));
+            Assert.That(Camp.DisplayName(state), Is.EqualTo("Thistledown"));
+            Assert.That(state.amber, Is.EqualTo(5.0).Within(Tolerance),
+                "the camp's own 40-amber price is spent — not the warden's 20, not the familiar's 5");
+        }
+
+        [Test]
+        public void CampNaming_RefusedAndSpendsNothingWhenShort()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 39.0; // one short of the camp's 40-amber price
+
+            Assert.That(Amber.CanNameCamp(state, _data), Is.False);
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.False);
+            Assert.That(Camp.DisplayName(state), Is.EqualTo("the camp"), "the anonymity holds");
+            Assert.That(state.amber, Is.EqualTo(39.0).Within(Tolerance), "nothing spent on a refusal");
+        }
+
+        [Test]
+        public void CampNaming_UnchangedOrBlankNameSpendsNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 100.0;
+
+            Assert.That(Amber.TryNameCamp(state, _data, "  "), Is.False, "blank is a free no-op");
+            Assert.That(Amber.TryNameCamp(state, _data, "the camp"), Is.False,
+                "typing the anonymous name back is no change — and must never be charged for");
+
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.True);
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.False, "no change, no charge");
+            Assert.That(Amber.TryNameCamp(state, _data, " Thistledown "), Is.False,
+                "the same name in whitespace is still the same name");
+            Assert.That(state.amber, Is.EqualTo(60.0).Within(Tolerance), "exactly one naming was paid for");
+        }
+
+        [Test]
+        public void CampNaming_IsFreeWhenAmberIsInert()
+        {
+            _data.economy.amber = null;
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 0.0;
+
+            Assert.That(Amber.CampNameCost(_data), Is.EqualTo(0.0));
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.True,
+                "no amber economy — naming is free, never blocked");
+            Assert.That(Camp.DisplayName(state), Is.EqualTo("Thistledown"));
+        }
+
+        [Test]
+        public void CampName_FoldsWithTheCamp()
+        {
+            // The same one-verse rite WardenName_SurvivesTheFold stands up —
+            // the two names cross the fold in opposite directions on purpose.
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData> { new RiteData { id = "first-rite", migration = 0, verses = { verse } } },
+            };
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+            state.amber = 45.0;
+            Assert.That(Amber.TryNameCamp(state, _data, "Thistledown"), Is.True);
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next, Is.Not.Null, "the sung rite lets the fold happen at all");
+            Assert.That(next.campName, Is.Null, "the camp's name is the run's — it folds with the camp");
+            Assert.That(Camp.DisplayName(next), Is.EqualTo("the camp"),
+                "the next region's camp waits to be named — naming is each region's own ritual");
+        }
+
+        // ───────────── The keepsake page (design §9's sink slate) ────────────
+
+        /// <summary>Arm the keepsake sink — the fixture's amber section carries no keepsake price by default.</summary>
+        private void ConfigureKeepsakes(double asking)
+        {
+            _data.economy.amber.keepsakePageCostAmber = asking;
+        }
+
+        [Test]
+        public void Keepsake_MountsOncePerRunAndSpendsTheAmber()
+        {
+            ConfigureKeepsakes(20.0);
+            var state = GameStateFactory.NewGame(_data);
+            state.campName = "Thistledown";
+            state.amber = 50.0;
+
+            Assert.That(Keepsakes.CanMount(state, _data), Is.True);
+            var keepsake = Keepsakes.TryMount(state, _data, Now);
+
+            Assert.That(keepsake, Is.Not.Null);
+            Assert.That(keepsake.migrationCount, Is.EqualTo(0), "the page remembers which run it was");
+            Assert.That(keepsake.campName, Is.EqualTo("Thistledown"), "and what the camp was called");
+            Assert.That(keepsake.setAtUnixMs, Is.EqualTo(Now));
+            Assert.That(state.amber, Is.EqualTo(30.0).Within(Tolerance), "the page's own price is spent");
+
+            Assert.That(Keepsakes.CanMount(state, _data), Is.False, "one page per run");
+            Assert.That(Keepsakes.TryMount(state, _data, Now), Is.Null);
+            Assert.That(state.amber, Is.EqualTo(30.0).Within(Tolerance), "a refusal charges nothing");
+        }
+
+        [Test]
+        public void Keepsake_RefusedWhenShortOrUnconfigured()
+        {
+            ConfigureKeepsakes(20.0);
+            var state = GameStateFactory.NewGame(_data);
+            state.amber = 19.0; // one short of the page's 20-amber price
+
+            Assert.That(Keepsakes.CanMount(state, _data), Is.False);
+            Assert.That(Keepsakes.TryMount(state, _data, Now), Is.Null);
+            Assert.That(state.amber, Is.EqualTo(19.0).Within(Tolerance));
+
+            _data.economy.amber = null; // the sink unconfigured — the page hides, mounting is refused
+            state.amber = 100.0;
+            Assert.That(Keepsakes.TryMount(state, _data, Now), Is.Null);
+        }
+
+        [Test]
+        public void Keepsake_CrossesTheFoldAndTheNextRunMountsItsOwn()
+        {
+            // The same one-verse rite the naming fold tests stand up.
+            var verse = new RiteVerseData
+            {
+                id = "verse-sunfield",
+                zone = GameStateFactory.StartingZoneId,
+                slots = { new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 10 } },
+            };
+            _data.rites = new RitesBundle
+            {
+                chooseCount = 1,
+                rites = new List<RiteData> { new RiteData { id = "first-rite", migration = 0, verses = { verse } } },
+            };
+            ConfigureKeepsakes(20.0);
+            var state = GameStateFactory.NewGame(_data);
+            state.AddResource("berries", 10);
+            Rite.DeliverResource(state, _data, verse, 0);
+            state.amber = 50.0;
+            var mounted = Keepsakes.TryMount(state, _data, Now);
+            Assert.That(mounted, Is.Not.Null);
+            Assert.That(mounted.versesSung, Is.EqualTo(1), "the page counts the verses this run had sung when it was set");
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next, Is.Not.Null);
+            Assert.That(Keepsakes.All(next), Has.Count.EqualTo(1),
+                "a keepsake is journal content — set in amber, it crosses the fold like a recorded plate");
+            Assert.That(Keepsakes.MountedThisRun(next), Is.False,
+                "the new run's page is its own to mount — the sink recurs");
+            Assert.That(Keepsakes.CanMount(next, _data), Is.True);
         }
 
         [Test]

@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 44;
+        public const int CurrentVersion = 48;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -29,7 +29,7 @@ namespace Wildgrove.Sim.Saves
         /// deleting them.
         /// <para>
         /// It stays at 42 while the ladder grows above it: a v42 save climbs
-        /// 42→43→44 and is read whole. It moves only when the bottom rungs are
+        /// every rung to the current version and is read whole. It moves only when the bottom rungs are
         /// deliberately retired, which is a decision about whose saves stop
         /// working — never a side effect of adding a rung on top.
         /// </para>
@@ -49,6 +49,7 @@ namespace Wildgrove.Sim.Saves
                 fixedResources = new List<string>(state.fixedResources),
                 wardenPostNodeId = state.wardenPostNodeId,
                 wardenName = state.wardenName,
+                campName = state.campName,
                 amber = state.amber,
                 foldedVersesSung = state.foldedVersesSung,
                 purchasedKithSlots = state.purchasedKithSlots,
@@ -60,6 +61,9 @@ namespace Wildgrove.Sim.Saves
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
                 timeSkipBudgetHours = state.timeSkipBudgetHours,
                 timeSkipBudgetStampUnixMs = state.timeSkipBudgetStampUnixMs,
+                exchangeConsiderationWindowIndex = state.exchangeConsiderationWindowIndex,
+                exchangeConsiderationsThisWindow = state.exchangeConsiderationsThisWindow,
+                secondQueueBought = state.secondQueueBought,
                 clockHighWaterUnixMs = state.clockHighWaterUnixMs,
                 playedMs = state.playedMs,
                 deepAmberFound = state.deepAmberFound,
@@ -142,6 +146,18 @@ namespace Wildgrove.Sim.Saves
                     recipeId = station.recipeId,
                     inFlight = station.inFlight,
                     progressSeconds = station.progressSeconds,
+                });
+            }
+
+            foreach (var keepsake in state.keepsakes)
+            {
+                save.keepsakes.Add(new SavedKeepsake
+                {
+                    migrationCount = keepsake.migrationCount,
+                    regionId = keepsake.regionId,
+                    campName = keepsake.campName,
+                    versesSung = keepsake.versesSung,
+                    setAtUnixMs = keepsake.setAtUnixMs,
                 });
             }
 
@@ -307,6 +323,10 @@ namespace Wildgrove.Sim.Saves
             // as a warden called " " — the display falls back to "the warden",
             // which is the same thing an un-renamed run reads.
             state.wardenName = string.IsNullOrWhiteSpace(save.wardenName) ? null : save.wardenName.Trim();
+            // The camp's name restores under the same rule as the warden's:
+            // blank or whitespace is no name at all, and the display falls
+            // back to "the camp".
+            state.campName = string.IsNullOrWhiteSpace(save.campName) ? null : save.campName.Trim();
             state.amber = save.amber;
             state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
@@ -320,6 +340,15 @@ namespace Wildgrove.Sim.Saves
             state.timeSkipBudgetHours = state.timeSkipBudgetStampUnixMs > 0L && save.timeSkipBudgetHours > 0.0
                 ? save.timeSkipBudgetHours
                 : 0.0;
+            // The considerations pair is meaningful only whole: a negative
+            // count (or one with no window to belong to) reads as none pressed.
+            state.exchangeConsiderationWindowIndex = save.exchangeConsiderationWindowIndex > 0L
+                ? save.exchangeConsiderationWindowIndex
+                : 0L;
+            state.exchangeConsiderationsThisWindow = state.exchangeConsiderationWindowIndex > 0L && save.exchangeConsiderationsThisWindow > 0
+                ? save.exchangeConsiderationsThisWindow
+                : 0;
+            state.secondQueueBought = save.secondQueueBought;
             // The ratchet can only ever move forward, so a save carrying a
             // negative or absent mark reads as "never told the time" rather
             // than as a mark in the past — a past mark would be no guard at all.
@@ -424,6 +453,28 @@ namespace Wildgrove.Sim.Saves
                             recipeId = station.recipeId,
                             inFlight = station.inFlight,
                             progressSeconds = station.progressSeconds,
+                        });
+                    }
+                }
+            }
+
+            state.keepsakes.Clear();
+            if (save.keepsakes != null)
+            {
+                foreach (var keepsake in save.keepsakes)
+                {
+                    // A region id the current data no longer names is kept —
+                    // the page renders what it can, same policy as unknown
+                    // resource ids. Negative counts read as zero.
+                    if (keepsake != null)
+                    {
+                        state.keepsakes.Add(new KeepsakeState
+                        {
+                            migrationCount = keepsake.migrationCount > 0 ? keepsake.migrationCount : 0,
+                            regionId = keepsake.regionId,
+                            campName = string.IsNullOrWhiteSpace(keepsake.campName) ? null : keepsake.campName.Trim(),
+                            versesSung = keepsake.versesSung > 0 ? keepsake.versesSung : 0,
+                            setAtUnixMs = keepsake.setAtUnixMs > 0L ? keepsake.setAtUnixMs : 0L,
                         });
                     }
                 }
@@ -869,6 +920,42 @@ namespace Wildgrove.Sim.Saves
                         // un-renamed v44 run reads — every line falls back to
                         // "the warden", which is what that save already said.
                         save.version = 44;
+                        break;
+
+                    case 44:
+                        // v45 added the camp's bought name (design §9's sink
+                        // slate). Left null for the same reason as the
+                        // warden's: a save written before camp naming existed
+                        // describes a camp that was never named, and null is
+                        // exactly how that reads — "the camp", as every line
+                        // already said.
+                        save.version = 45;
+                        break;
+
+                    case 45:
+                        // v46 added the drover's consideration pair (window
+                        // index + count). Left zero: no consideration was ever
+                        // pressed on a save from before bribes existed, and a
+                        // zero pair reads exactly as that — the window's plain
+                        // first deal.
+                        save.version = 46;
+                        break;
+
+                    case 46:
+                        // v47 added the run's second craft-queue purchase.
+                        // Left false: a save from before the queue could be
+                        // bought describes a run that never bought it, and
+                        // false is exactly how that reads — one order per
+                        // station, as it always was.
+                        save.version = 47;
+                        break;
+
+                    case 47:
+                        // v48 added the keepsake pages. Left empty: no page
+                        // was ever set on a save from before keepsakes
+                        // existed, and an empty shelf is exactly how that
+                        // reads.
+                        save.version = 48;
                         break;
 
                     default:

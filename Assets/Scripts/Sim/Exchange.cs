@@ -24,6 +24,8 @@ namespace Wildgrove.Sim
     /// quality tier of the from-good is taken — Decent and Choice at their
     /// value multipliers — and the caravan always pays in plain goods, so
     /// excess high-quality stock trades down into more units of something else.
+    /// A pressed <b>consideration</b> in Amber re-deals the standing offer at
+    /// once (design §9's sink slate) — see <see cref="PressConsideration"/>.
     /// </para>
     /// </summary>
     public static class Exchange
@@ -78,8 +80,9 @@ namespace Wildgrove.Sim
         /// <summary>
         /// The deal standing at <paramref name="nowUnixMs"/>: one from-good and
         /// one to-good, drawn deterministically from the wall-clock window's
-        /// index — the generator's idiom (nothing persisted, so a reload cannot
-        /// reroll the caravan; the deal turns on the same beat for everyone).
+        /// index and the considerations pressed this window — the generator's
+        /// idiom ((window, considerations) → deal, so a reload cannot reroll
+        /// the caravan; an un-bribed deal turns on the same beat for everyone).
         /// Null while unconfigured or the camp knows fewer than two goods.
         /// </summary>
         public static ExchangeOffer OfferAt(GameState state, GameDataAsset data, long nowUnixMs)
@@ -96,9 +99,51 @@ namespace Wildgrove.Sim
                 return null;
             }
 
-            // The window index seeds its own throwaway rng — the run's saved
-            // stream is never drawn, so browsing the caravan can't shift a roll.
-            var seed = Rng.Sanitise((ulong)(nowUnixMs / periodMs));
+            var windowIndex = nowUnixMs / periodMs;
+            return OfferFor(goods, windowIndex, ConsiderationsAt(state, windowIndex));
+        }
+
+        /// <summary>Considerations pressed in <paramref name="windowIndex"/> — a count stored under any other window is stale, and reads as none.</summary>
+        private static int ConsiderationsAt(GameState state, long windowIndex)
+        {
+            return state != null
+                   && state.exchangeConsiderationWindowIndex == windowIndex
+                   && state.exchangeConsiderationsThisWindow > 0
+                ? state.exchangeConsiderationsThisWindow
+                : 0;
+        }
+
+        /// <summary>
+        /// The deal for a window after <paramref name="considerations"/>
+        /// re-deals. Each re-deal draws fresh from its own seed, then is
+        /// nudged apart from the deal it replaces when the draw repeats it —
+        /// a pressed consideration must always change something. Walked from
+        /// the window's first deal so the whole chain is a pure function of
+        /// (window, considerations).
+        /// </summary>
+        private static ExchangeOffer OfferFor(List<string> goods, long windowIndex, int considerations)
+        {
+            ExchangeOffer offer = null;
+            for (var redeal = 0; redeal <= considerations; redeal++)
+            {
+                var drawn = Draw(goods, windowIndex, redeal);
+                offer = offer != null && drawn.from == offer.from && drawn.to == offer.to
+                    ? NudgeApart(goods, drawn, offer)
+                    : drawn;
+            }
+
+            return offer;
+        }
+
+        /// <summary>
+        /// One deal from its own throwaway rng — the run's saved stream is
+        /// never drawn, so browsing (or bribing) the caravan can't shift a
+        /// roll. Re-deal 0 seeds exactly as the pre-consideration code did, so
+        /// an un-bribed window's deal is unchanged across the feature.
+        /// </summary>
+        private static ExchangeOffer Draw(List<string> goods, long windowIndex, int redeal)
+        {
+            var seed = Rng.Sanitise((ulong)windowIndex ^ (ulong)redeal * 0x9E3779B97F4A7C15UL);
             var fromIndex = (int)(Rng.NextDouble(ref seed) * goods.Count);
             var toIndex = (int)(Rng.NextDouble(ref seed) * (goods.Count - 1));
             if (toIndex >= fromIndex)
@@ -107,6 +152,71 @@ namespace Wildgrove.Sim
             }
 
             return new ExchangeOffer { from = goods[fromIndex], to = goods[toIndex] };
+        }
+
+        /// <summary>
+        /// Move a repeated draw off the deal it replaces: step the to-good
+        /// forward (past the from-good); when only two goods exist that lands
+        /// back on the same deal, so the one other deal — the reverse — is it.
+        /// </summary>
+        private static ExchangeOffer NudgeApart(List<string> goods, ExchangeOffer drawn, ExchangeOffer previous)
+        {
+            var fromIndex = goods.IndexOf(drawn.from);
+            var toIndex = goods.IndexOf(drawn.to);
+            do
+            {
+                toIndex = (toIndex + 1) % goods.Count;
+            }
+            while (toIndex == fromIndex);
+
+            var nudged = new ExchangeOffer { from = drawn.from, to = goods[toIndex] };
+            if (nudged.from == previous.from && nudged.to == previous.to)
+            {
+                return new ExchangeOffer { from = previous.to, to = previous.from };
+            }
+
+            return nudged;
+        }
+
+        // ──────── A consideration for the drover (design §9's sink slate) ────
+
+        /// <summary>The Amber a pressed consideration asks, or 0 when the sink is unconfigured — the row hides then; there is nothing a player loses by its absence.</summary>
+        public static double ConsiderationCost(GameDataAsset data)
+        {
+            var amber = data?.economy?.amber;
+            return amber != null && amber.considerationCostAmber > 0.0 ? amber.considerationCostAmber : 0.0;
+        }
+
+        /// <summary>Whether a consideration can be pressed right now — configured, affordable, and a caravan standing to press it on.</summary>
+        public static bool CanPressConsideration(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            var cost = ConsiderationCost(data);
+            return cost > 0.0
+                && state != null
+                && state.amber >= cost
+                && OfferAt(state, data, nowUnixMs) != null;
+        }
+
+        /// <summary>
+        /// Press a consideration on the drover: spend the Amber and the
+        /// standing deal re-draws at once, never repeating the deal it
+        /// replaces. The re-deal count persists with the run and mixes into
+        /// the window's seed, so a reload still cannot reroll — and it resets
+        /// when the window turns. Returns the new deal, or null when refused
+        /// (unconfigured, short, or no caravan to press it on).
+        /// </summary>
+        public static ExchangeOffer PressConsideration(GameState state, GameDataAsset data, long nowUnixMs)
+        {
+            if (!CanPressConsideration(state, data, nowUnixMs))
+            {
+                return null;
+            }
+
+            var windowIndex = nowUnixMs / OfferPeriodMs(data);
+            state.exchangeConsiderationsThisWindow = ConsiderationsAt(state, windowIndex) + 1;
+            state.exchangeConsiderationWindowIndex = windowIndex;
+            state.amber -= ConsiderationCost(data);
+            return OfferAt(state, data, nowUnixMs);
         }
 
         /// <summary>Seconds until the standing deal turns (0 when no deal rotates).</summary>

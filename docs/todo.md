@@ -231,25 +231,32 @@ wired to nothing. The settings row lands with the audio pass.
   any post; Roosts comfort and Kinship are the only XP-rate levers.
 - **No observation skill XP.** Sketches are too rare for per-unit XP; decide a
   grant when tool-tier or level gates need the level.
-- **Of the 2026-08-06 amber-sink slate (design §9), only the time-skip and the
-  two namings are built.** UNBUILT, in rough build order:
-  - **the calling gift** — `economy.amber.callingGiftAmber` charged when a gift
-    pile is answered (`Gifts`); exemptions per design §4 (unasked arrivals free,
-    a short warden's pile waits, unconsumed);
-  - **name the camp** — per-run naming (`state`, folds with the run), read by the
-    fold forecast, welcome-back sheet, and journal page headers;
-  - **settle the ledger** — welcome-back offer pricing an absence's uncovered
-    hours pro-rata on the skip, drawn through the existing
-    `Amber.SkipBudgetHours` so the ×2 pin holds;
-  - **the drover's consideration** — immediate Exchange re-deal: persist a
-    per-window re-deal count and mix it into `Exchange.OfferAt`'s window seed
-    (reload still can't reroll), excluding the deal it replaces;
-  - **the second queue** — +1 craft-queue slot for the run, lapsing at the fold;
-  - **the keepsake page** — a mounted per-run journal page (region, season,
-    verses, an authored line) that crosses the fold like any recorded page.
+- **The 2026-08-06 amber-sink slate (design §9): the SIM layer is built
+  (2026-08-06)** — every sink, its economy keys, its save rungs (44→48, one per
+  shape change), its GameLoop API, and EditMode coverage. What remains is the
+  UI surface for each:
+  - **the calling gift** — DONE end-to-end: the pile line prices it and the
+    refusal note says the pile waits (`TrailPage`);
+  - **name the camp** — needs the naming sheet plus the read-outs (fold
+    forecast, welcome-back sheet, journal page headers). `Camp.DisplayName` is
+    the one answer every surface reads; `GameLoop` has no wrapper yet — add it
+    with the sheet;
+  - **settle the ledger** — needs its welcome-back sheet row; the plumbing is
+    `GameLoop.LedgerHoursOnOffer/LedgerCost/CanSettleLedger/SettleLedger`, and
+    the row shows when `LedgerHoursOnOffer(summary) > 0`;
+  - **the drover's consideration** — needs its row beside the Exchange deal
+    (`GameLoop.PressConsideration`, cost from `ConsiderationCost`); wording in
+    register — the caravan is dry, not petty ("bribe" is the design word only);
+  - **the second queue** — needs a buy row at the stations
+    (`GameLoop.BuySecondQueue`) and a station page that shows both orders:
+    `Crafting.WorkingRecipe` still names only the FIRST slot, so the page will
+    want a both-slots read before the row ships;
+  - **the keepsake page** — needs the journal surface: the shelf
+    (`Keepsakes.All`), the mount row (`GameLoop.MountKeepsake`), and the line
+    in the land's voice rendered from `KeepsakeState`'s facts (never stored —
+    the narrative pass owns the wording).
 
-  Each needs its economy.json keys + save fields (SaveCodec version bump per
-  rung). Cosmetics stay retired — still **no substrate at all** (no skin/wardrobe
+  Cosmetics stay retired — still **no substrate at all** (no skin/wardrobe
   system, no warden or familiar sprite); that absence is what retired the
   cosmetic reward cloak.
 - **The kit bag has nothing to reward.** With Pitch Torch and Clay-Lined Creel

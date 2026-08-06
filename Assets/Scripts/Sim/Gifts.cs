@@ -12,6 +12,12 @@ namespace Wildgrove.Sim
     /// where no specialist exists. Piles answered are counted from the roster
     /// (the gifted flag), so a retuned save self-heals. No-ops when
     /// economy.gifts is absent (fixtures).
+    /// <para>
+    /// An answer also asks the Amber calling gift (design §4, 2026-08-06;
+    /// <see cref="Amber.CallingGiftCost"/>) — the pile stays the gate, the
+    /// gift prices the yes. A short warden's pile waits, unconsumed: nothing
+    /// is spent until the whole answer can happen.
+    /// </para>
     /// </summary>
     public static class Gifts
     {
@@ -114,17 +120,19 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// True when camp stock covers a pile at this node and someone new would
-        /// answer it. Slot room is deliberately NOT a gate: the arrival joins the
-        /// collection (never slot-capped) and simply rests until posted from the
-        /// node UI — leaving a pile never asks the player to rest a companion first.
+        /// True when camp stock covers a pile at this node, the calling gift is
+        /// in hand, and someone new would answer it. Slot room is deliberately
+        /// NOT a gate: the arrival joins the collection (never slot-capped) and
+        /// simply rests until posted from the node UI — leaving a pile never
+        /// asks the player to rest a companion first.
         /// </summary>
         public static bool CanLeavePile(GameState state, GameDataAsset data, NodeState node)
         {
             return node != null
                 && IsAvailable(state, data)
                 && NodeCanCall(state, data, node)
-                && state.GetResource(node.resourceId) >= PileCost(data.economy);
+                && state.GetResource(node.resourceId) >= PileCost(data.economy)
+                && Amber.CanPayCallingGift(state, data);
         }
 
         /// <summary>
@@ -150,6 +158,7 @@ namespace Wildgrove.Sim
 
             familiar.gifted = true;
             state.resources[node.resourceId] = state.GetResource(node.resourceId) - PileCost(data.economy);
+            state.amber -= Amber.CallingGiftCost(data);
             return familiar;
         }
     }

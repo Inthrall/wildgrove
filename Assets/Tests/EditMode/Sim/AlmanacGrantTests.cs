@@ -271,6 +271,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_TheFireRemembers_CarriesOneOrderPerStation()
+        {
+            // The second queue is bought per run (design §9's sink slate) and
+            // lapses at the fold — a second slot's order folds with the queue
+            // that held it, or the new run inherits a capacity it hasn't bought.
+            var state = StateWithTheRiteSung();
+            state.almanacNodeIds.Add("fire-remembers");
+            state.secondQueueBought = true;
+            state.stations.Add(new StationState { stationId = "fire", recipeId = "berry-preserve" });
+            state.stations.Add(new StationState { stationId = "fire", recipeId = "second-order" });
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.secondQueueBought, Is.False, "the queue is the run's, and the run folded");
+            Assert.That(next.stations, Has.Count.EqualTo(1), "one order per station crosses");
+            Assert.That(next.stations[0].recipeId, Is.EqualTo("berry-preserve"), "the first slot's order is the one remembered");
+        }
+
+        [Test]
         public void Migrate_WithoutTheFireRemembers_TheStationsStandDown()
         {
             var state = StateWithTheRiteSung();

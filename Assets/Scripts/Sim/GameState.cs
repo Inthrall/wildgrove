@@ -68,6 +68,16 @@ namespace Wildgrove.Sim
         /// </summary>
         public string wardenName;
 
+        /// <summary>
+        /// What this run's camp is called, bought once per run for Amber
+        /// (design §9's sink slate, 2026-08-06). Null until named, and
+        /// <see cref="Camp.DisplayName"/> reads that as "the camp". Unlike the
+        /// warden's name it belongs to the run, not the player — the camp
+        /// folds at Migration and the name folds with it, which is what makes
+        /// naming it a ritual of each region rather than a purchase.
+        /// </summary>
+        public string campName;
+
         /// <summary>Amber (design §10) — the premium currency; observation sites surface it free, and it survives Migration.</summary>
         public double amber;
 
@@ -94,6 +104,23 @@ namespace Wildgrove.Sim
 
         /// <summary>UTC unix ms of the last rewarded time-skip — 0 = never; re-arms after Amber.TimeSkipCooldownMs. Persisted for the same reason as the drip.</summary>
         public long timeSkipClaimedUnixMs;
+
+        /// <summary>
+        /// True once this run's second craft-queue slot is bought (design §9's
+        /// sink slate): each station may then hold two standing orders. Per
+        /// run on purpose — it lapses at the fold with the camp, which is what
+        /// makes it a recurring sink rather than a one-time unlock.
+        /// </summary>
+        public bool secondQueueBought;
+
+        /// <summary>Keepsake pages set into the journal (design §9's sink slate) — one per run, permanent: the list crosses Migration with the rest of the book. See <see cref="Keepsakes"/>.</summary>
+        public List<KeepsakeState> keepsakes = new List<KeepsakeState>();
+
+        /// <summary>The exchange window the considerations below were pressed in (design §9's sink slate) — a count stored under any other window is stale, and reads as none.</summary>
+        public long exchangeConsiderationWindowIndex;
+
+        /// <summary>Considerations pressed on the drover this window — mixed into the offer's seed (Exchange.OfferAt), and persisted so a reload cannot reroll the deal a bribe bought.</summary>
+        public int exchangeConsiderationsThisWindow;
 
         /// <summary>Paid-skip budget hours left when it was last stamped (Amber.SkipBudgetHours refills from here at timeSkipDailyCapHours/24 per wall hour). Meaningful only alongside the stamp below.</summary>
         public double timeSkipBudgetHours;
@@ -366,6 +393,30 @@ namespace Wildgrove.Sim
 
         /// <summary>Seconds of progress into the in-flight batch.</summary>
         public double progressSeconds;
+    }
+
+    /// <summary>
+    /// One keepsake page (design §9's sink slate): the facts a run's page
+    /// remembers, snapshotted when the amber was set. Permanent journal
+    /// content — the page's prose is rendered from these, never stored.
+    /// </summary>
+    [Serializable]
+    public sealed class KeepsakeState
+    {
+        /// <summary>The run this page remembers (its migration count).</summary>
+        public int migrationCount;
+
+        /// <summary>The region the run wore, or null before regions were configured.</summary>
+        public string regionId;
+
+        /// <summary>What the camp was called when the page was set — null while unnamed.</summary>
+        public string campName;
+
+        /// <summary>Verses this run had sung by the time the page was set.</summary>
+        public int versesSung;
+
+        /// <summary>UTC unix ms the page was set — the page's date line.</summary>
+        public long setAtUnixMs;
     }
 
     /// <summary>

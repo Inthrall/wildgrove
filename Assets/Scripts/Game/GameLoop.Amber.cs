@@ -240,6 +240,121 @@ namespace Wildgrove.Game
             return hours;
         }
 
+        // ───────────── The keepsake page (design §9's sink slate) ────────────
+
+        /// <summary>The Amber a keepsake page asks — 0 hides the page.</summary>
+        public double KeepsakeCost()
+        {
+            return Keepsakes.Cost(Data);
+        }
+
+        /// <summary>Whether this run's keepsake can be set right now — the row's enabled state.</summary>
+        public bool CanMountKeepsake()
+        {
+            return Keepsakes.CanMount(State, Data);
+        }
+
+        /// <summary>Set a piece of amber into the journal as this run's page (design §9). Returns the mounted keepsake, or null when refused.</summary>
+        public KeepsakeState MountKeepsake()
+        {
+            var keepsake = Keepsakes.TryMount(State, Data, NowUnixMs());
+            if (keepsake != null)
+            {
+                Telemetry.LogEvent("keepsake_mounted", ("run", keepsake.migrationCount), ("amber_cost", Keepsakes.Cost(Data)));
+                SaveNow();
+            }
+
+            return keepsake;
+        }
+
+        // ───────────── The second queue (design §9's sink slate) ─────────────
+
+        /// <summary>The Amber this run's second craft-queue slot asks — 0 hides the row.</summary>
+        public double SecondQueueCost()
+        {
+            return Amber.SecondQueueCost(Data);
+        }
+
+        /// <summary>Whether this run already holds its second queue — the row reads "held" then, rather than a price.</summary>
+        public bool SecondQueueOwned => State != null && State.secondQueueBought;
+
+        /// <summary>Whether the second queue can be bought right now — the row's enabled state.</summary>
+        public bool CanBuySecondQueue()
+        {
+            return Amber.CanBuySecondQueue(State, Data);
+        }
+
+        /// <summary>Buy this run's second craft-queue slot (design §9). Returns whether the purchase happened.</summary>
+        public bool BuySecondQueue()
+        {
+            var bought = Amber.TryBuySecondQueue(State, Data);
+            if (bought)
+            {
+                Telemetry.LogEvent("second_queue_bought", ("amber_cost", Amber.SecondQueueCost(Data)));
+            }
+
+            return bought;
+        }
+
+        // ───────────── Settle the ledger (design §9's sink slate) ────────────
+
+        /// <summary>The absence already settled, so one summary can never be paid for twice — the offer is a moment, not a tap.</summary>
+        private OfflineSummary _ledgerSettledFor;
+
+        /// <summary>
+        /// The hours "settle the ledger" would credit for this absence: the
+        /// uncovered remainder held to the skip budget, or 0 when there is no
+        /// offer to make (covered absence, stale or already-settled summary).
+        /// The welcome-back sheet shows its row on this.
+        /// </summary>
+        public double LedgerHoursOnOffer(OfflineSummary summary)
+        {
+            if (summary == null || State == null || summary == _ledgerSettledFor
+                || !_announce.IsOfflineSummaryCurrent(summary))
+            {
+                return 0.0;
+            }
+
+            return Amber.LedgerHoursOnOffer(State, Data, Amber.UncoveredHours(summary), NowUnixMs());
+        }
+
+        /// <summary>What the standing offer costs in Amber — for the row's label.</summary>
+        public double LedgerCost(OfflineSummary summary)
+        {
+            return Amber.LedgerCostAmber(Data, LedgerHoursOnOffer(summary));
+        }
+
+        /// <summary>Whether the offer stands and is affordable — the settle button's enabled state.</summary>
+        public bool CanSettleLedger(OfflineSummary summary)
+        {
+            var hours = LedgerHoursOnOffer(summary);
+            return hours > 0.0 && State.amber >= Amber.LedgerCostAmber(Data, hours);
+        }
+
+        /// <summary>
+        /// Settle the absence's ledger (design §9): spend Amber and the skip
+        /// budget to credit the uncovered hours at the full live rate. Returns
+        /// the hours credited (0 = refused). Guarded like
+        /// <see cref="GrantOfflineBonus"/> — a stale summary from a run that
+        /// adoption set aside settles nothing — and each summary settles once.
+        /// </summary>
+        public double SettleLedger(OfflineSummary summary)
+        {
+            if (LedgerHoursOnOffer(summary) <= 0.0)
+            {
+                return 0.0;
+            }
+
+            var hours = Amber.TrySettleLedger(State, Data, Amber.UncoveredHours(summary), NowUnixMs());
+            if (hours > 0.0)
+            {
+                _ledgerSettledFor = summary;
+                Telemetry.LogEvent("ledger_settled", ("hours", hours), ("amber_cost", Amber.LedgerCostAmber(Data, hours)));
+            }
+
+            return hours;
+        }
+
         /// <summary>
         /// Credit the rewarded-ad Amber drip (design §10). The caller shows the
         /// ad and calls this only on the reward; returns the amount granted.
