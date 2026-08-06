@@ -231,10 +231,27 @@ wired to nothing. The settings row lands with the audio pass.
   any post; Roosts comfort and Kinship are the only XP-rate levers.
 - **No observation skill XP.** Sketches are too rare for per-unit XP; decide a
   grant when tool-tier or level gates need the level.
-- **The amber sink is the time-skip alone.** Cosmetics and extra craft queues were
-  the other two, and cosmetics have **no substrate at all** — no skin/wardrobe
-  system, no warden or familiar sprite. That absence is what retired the cosmetic
-  reward cloak.
+- **Of the 2026-08-06 amber-sink slate (design §9), only the time-skip and the
+  two namings are built.** UNBUILT, in rough build order:
+  - **the calling gift** — `economy.amber.callingGiftAmber` charged when a gift
+    pile is answered (`Gifts`); exemptions per design §4 (unasked arrivals free,
+    a short warden's pile waits, unconsumed);
+  - **name the camp** — per-run naming (`state`, folds with the run), read by the
+    fold forecast, welcome-back sheet, and journal page headers;
+  - **settle the ledger** — welcome-back offer pricing an absence's uncovered
+    hours pro-rata on the skip, drawn through the existing
+    `Amber.SkipBudgetHours` so the ×2 pin holds;
+  - **the drover's consideration** — immediate Exchange re-deal: persist a
+    per-window re-deal count and mix it into `Exchange.OfferAt`'s window seed
+    (reload still can't reroll), excluding the deal it replaces;
+  - **the second queue** — +1 craft-queue slot for the run, lapsing at the fold;
+  - **the keepsake page** — a mounted per-run journal page (region, season,
+    verses, an authored line) that crosses the fold like any recorded page.
+
+  Each needs its economy.json keys + save fields (SaveCodec version bump per
+  rung). Cosmetics stay retired — still **no substrate at all** (no skin/wardrobe
+  system, no warden or familiar sprite); that absence is what retired the
+  cosmetic reward cloak.
 - **The kit bag has nothing to reward.** With Pitch Torch and Clay-Lined Creel
   moved into the Almanac, the kit is back to one piece per slot, so the swap is
   inert until new gear ships.
