@@ -1,8 +1,8 @@
 #if UNITY_ANDROID
 using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
 using GooglePlayGames;
 using GooglePlayGames.BasicApi;
 using GooglePlayGames.BasicApi.SavedGame;
@@ -253,13 +253,29 @@ namespace Wildgrove.Game.Services
 
             PlayGamesPlatform.Instance.LoadUsers(ids, profiles =>
             {
+                // Names are lifted into a map keyed by id before anything else:
+                // GPGS leaves a null hole where a single lookup failed, and its
+                // profile type is Unity's deprecated Social API one, which the
+                // rest of the method then never has to name.
+                var names = new Dictionary<string, string>();
+                if (profiles != null)
+                {
+                    for (var i = 0; i < profiles.Length; i++)
+                    {
+                        if (profiles[i] != null)
+                        {
+                            names[profiles[i].id] = profiles[i].userName;
+                        }
+                    }
+                }
+
                 var entries = new LeaderboardEntry[scores.Length];
                 for (var i = 0; i < scores.Length; i++)
                 {
                     entries[i] = new LeaderboardEntry
                     {
                         rank = scores[i].rank,
-                        name = NameFor(profiles, scores[i].userID),
+                        name = names.TryGetValue(scores[i].userID, out var name) ? name : "a warden",
                         score = scores[i].value,
                         isPlayer = playerId != null && scores[i].userID == playerId,
                     };
@@ -267,22 +283,6 @@ namespace Wildgrove.Game.Services
 
                 onLoaded?.Invoke(entries);
             });
-        }
-
-        private static string NameFor(IUserProfile[] profiles, string userId)
-        {
-            if (profiles != null)
-            {
-                for (var i = 0; i < profiles.Length; i++)
-                {
-                    if (profiles[i] != null && profiles[i].id == userId)
-                    {
-                        return profiles[i].userName;
-                    }
-                }
-            }
-
-            return "a warden";
         }
 
         /// <summary>

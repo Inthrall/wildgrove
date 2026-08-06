@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GoogleMobileAds.Api;
+using GoogleMobileAds.Common;
 using GoogleMobileAds.Ump.Api;
 using UnityEngine;
 
@@ -74,10 +75,16 @@ namespace Wildgrove.Game.Services
 
             _initialised = true;
             _adsWanted = adsWanted;
-            // Marshal SDK callbacks to the main thread so reward handlers can
-            // touch the simulation and UI safely. A property set on the wrapper —
-            // no JNI, nothing sent, so it costs a player who wants no ads nothing.
-            MobileAds.RaiseAdEventsOnUnityMainThread = true;
+            // SDK callbacks arrive on whatever thread the SDK is on, so every one
+            // below hands its body to this executor to run on the next Unity
+            // Update: reward handlers touch the simulation and UI, and the load
+            // throttle reads Time. Stood up here rather than left to
+            // MobileAds.Initialize (which stands it up too) because the consent
+            // callbacks below run before that on a first launch — ExecuteInUpdate
+            // only queues, so with no executor up their work would never run and
+            // ads would never start. Making the object costs a player who wants no
+            // ads one hidden GameObject and no JNI.
+            MobileAdsEventExecutor.Initialize();
 
             // A consent answer given on an earlier launch is already held by the
             // SDK, so ads start now rather than waiting on the network round
@@ -107,33 +114,42 @@ namespace Wildgrove.Game.Services
         /// </summary>
         private void GatherConsent()
         {
-            ConsentInformation.Update(new ConsentRequestParameters(), updateError =>
+            ConsentInformation.Update(
+                new ConsentRequestParameters(),
+                updateError => MobileAdsEventExecutor.ExecuteInUpdate(() => OnConsentUpdated(updateError)));
+        }
+
+        /// <summary>Regional requirements are known — show the form if one is owed.</summary>
+        private void OnConsentUpdated(FormError updateError)
+        {
+            if (updateError != null)
             {
-                if (updateError != null)
-                {
-                    Debug.LogWarning("[ads] consent update failed: " + updateError.Message);
-                }
+                Debug.LogWarning("[ads] consent update failed: " + updateError.Message);
+            }
 
-                ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
-                {
-                    if (formError != null)
-                    {
-                        Debug.LogWarning("[ads] consent form failed: " + formError.Message);
-                    }
+            ConsentForm.LoadAndShowConsentFormIfRequired(
+                formError => MobileAdsEventExecutor.ExecuteInUpdate(() => OnConsentFormClosed(formError)));
+        }
 
-                    // Published either way — a refusal is an answer, and the
-                    // sink it also binds has no other way to hear it.
-                    PublishConsent();
-                    if (ConsentInformation.CanRequestAds())
-                    {
-                        StartAds();
-                    }
-                    else
-                    {
-                        Debug.Log("[ads] consent withheld — no ads requested");
-                    }
-                });
-            });
+        /// <summary>The form is done with (or was never owed) — act on the answer.</summary>
+        private void OnConsentFormClosed(FormError formError)
+        {
+            if (formError != null)
+            {
+                Debug.LogWarning("[ads] consent form failed: " + formError.Message);
+            }
+
+            // Published either way — a refusal is an answer, and the
+            // sink it also binds has no other way to hear it.
+            PublishConsent();
+            if (ConsentInformation.CanRequestAds())
+            {
+                StartAds();
+            }
+            else
+            {
+                Debug.Log("[ads] consent withheld — no ads requested");
+            }
         }
 
         public void SetAdsWanted(bool adsWanted)
@@ -181,7 +197,7 @@ namespace Wildgrove.Game.Services
             }
 
             _adsStarted = true;
-            MobileAds.Initialize(_ =>
+            MobileAds.Initialize(_ => MobileAdsEventExecutor.ExecuteInUpdate(() =>
             {
                 // Only now may an ad be requested — and the retry path checks
                 // this too, so a poll arriving between StartAds and here can't
@@ -190,7 +206,7 @@ namespace Wildgrove.Game.Services
                 RequestLoad(RewardedPlacement.OfflineBoost);
                 RequestLoad(RewardedPlacement.TimeSkip);
                 RequestLoad(RewardedPlacement.AmberDrip);
-            });
+            }));
         }
 
         public bool PrivacyOptionsAvailable =>
@@ -198,7 +214,7 @@ namespace Wildgrove.Game.Services
 
         public void ShowPrivacyOptions(Action onClosed = null)
         {
-            ConsentForm.ShowPrivacyOptionsForm(error =>
+            ConsentForm.ShowPrivacyOptionsForm(error => MobileAdsEventExecutor.ExecuteInUpdate(() =>
             {
                 if (error != null)
                 {
@@ -209,7 +225,7 @@ namespace Wildgrove.Game.Services
                 // of re-opening the form — so the new answer goes out too.
                 PublishConsent();
                 onClosed?.Invoke();
-            });
+            }));
         }
 
         public void ShowRewarded(RewardedPlacement placement, Action onReward, Action onClosed = null)
@@ -239,11 +255,11 @@ namespace Wildgrove.Game.Services
                 RequestLoad(placement); // preload the next one
             }
 
-            ad.OnAdFullScreenContentClosed += Finish;
+            ad.OnAdFullScreenContentClosed += () => MobileAdsEventExecutor.ExecuteInUpdate(Finish);
             // Without this, a presentation failure after Show() would strand the
             // reward flow — no reward, and the button never re-enables.
-            ad.OnAdFullScreenContentFailed += _ => Finish();
-            ad.Show(_ => onReward?.Invoke());
+            ad.OnAdFullScreenContentFailed += _ => MobileAdsEventExecutor.ExecuteInUpdate(Finish);
+            ad.Show(_ => MobileAdsEventExecutor.ExecuteInUpdate(() => onReward?.Invoke()));
         }
 
         /// <summary>
@@ -269,7 +285,7 @@ namespace Wildgrove.Game.Services
 
             load.InFlight = true;
             var unit = Debug.isDebugBuild ? TestRewardedUnit : UnitFor(placement);
-            RewardedAd.Load(unit, new AdRequest(), (ad, error) =>
+            RewardedAd.Load(unit, new AdRequest(), (ad, error) => MobileAdsEventExecutor.ExecuteInUpdate(() =>
             {
                 load.InFlight = false;
                 if (error != null || ad == null)
@@ -286,7 +302,7 @@ namespace Wildgrove.Game.Services
 
                 load.Backoff = FirstRetryBackoffSeconds;
                 Store(placement, ad);
-            });
+            }));
         }
 
         private LoadState LoadStateFor(RewardedPlacement placement)

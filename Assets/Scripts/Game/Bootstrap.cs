@@ -21,7 +21,7 @@ namespace Wildgrove.Game
             // argues for an adaptive cap.
             Application.targetFrameRate = 60;
 
-            if (Object.FindFirstObjectByType<GameLoop>() != null)
+            if (Object.FindAnyObjectByType<GameLoop>() != null)
             {
                 return;
             }

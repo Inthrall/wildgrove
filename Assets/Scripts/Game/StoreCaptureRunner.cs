@@ -39,7 +39,7 @@ namespace Wildgrove.Game
             GameHud hud = null;
             while (hud == null)
             {
-                hud = FindFirstObjectByType<GameHud>();
+                hud = FindAnyObjectByType<GameHud>();
                 yield return null;
             }
 
