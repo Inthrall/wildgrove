@@ -5,10 +5,10 @@ namespace Wildgrove.Game.World
 {
     /// <summary>
     /// One windfall adrift in the node strip: the resource's own naturalist
-    /// plate, risen from a worked node on a dandelion clock and turning slowly
-    /// as it goes — a pressed cutting carried on the wind. Caught with a tap
-    /// for a burst of that node's goods, and the clock lets its seed go as it
-    /// does (see <see cref="Wildgrove.Sim.Bubbles"/>).
+    /// plate, mounted on a page and risen from a worked node on a dandelion
+    /// clock, turning slowly as it goes — a pressed cutting carried on the
+    /// wind. Caught with a tap for a burst of that node's goods, and the clock
+    /// lets its seed go as it does (see <see cref="Wildgrove.Sim.Bubbles"/>).
     /// Purely ephemeral — nothing here persists. <see cref="WorldView"/> owns
     /// spawn timing, the float path, expiry and the hit test; this is just
     /// the sprite.
@@ -28,6 +28,16 @@ namespace Wildgrove.Game.World
         private const float SwayDegrees = 7f;
         private const float SwaySpeed = 1.1f;
 
+        // The clock carries a page, and the cutting is mounted on that. Without
+        // it the plate is a transparency held up against whatever the drift is
+        // crossing — a node's own plate, a badge, a rock — and at the moment it
+        // passes one, neither reads. Sized to reach the tuft ring (the hairs
+        // stop at 0.86 of the mount, so 1.12 across) and drawn UNDER the clock,
+        // so the hairs radiate over the page rather than being buried by it:
+        // an opaque disc over the mount is a coin with a fringe, not a
+        // dandelion.
+        private const float PaperFit = 1.06f;
+
         // Sepia ink, NOT paper. The world camera clears to the journal's own
         // page colour, so a warm parchment differs from the background by about
         // three percent — survivable for a solid disc's glow, invisible for
@@ -35,6 +45,12 @@ namespace Wildgrove.Game.World
         // drawn in.
         private static readonly Color MountColour = new Color(0.404f, 0.345f, 0.259f, MountAlpha);
         private static readonly Color ShineColour = new Color(1f, 1f, 1f, 0.55f);
+
+        // The page the camera itself clears to (JournalTheme.PagePaper), so it
+        // vanishes against the empty band and only does its one job: hide the
+        // strip behind the cutting. Not quite opaque — a hard disc drifting
+        // over a plate reads as a hole punched in the page.
+        private static readonly Color PaperColour = new Color(0.949f, 0.918f, 0.839f, 0.94f);
 
         /// <summary>The node this windfall rose from — what a catch pays out in.</summary>
         public NodeState Node { get; private set; }
@@ -71,6 +87,7 @@ namespace Wildgrove.Game.World
         private static readonly Color SpentSeedColour = new Color(0.5f, 0.47f, 0.42f, 1f);
 
         private SpriteRenderer _mount;
+        private SpriteRenderer _paper;
         private SpriteRenderer _plate;
         private SpriteRenderer _skin;
         private SpriteRenderer _shine;
@@ -108,7 +125,11 @@ namespace Wildgrove.Game.World
                 view._hint.characterSize = 0.06f;
             }
 
-            // The clock the windfall rides on, whatever it's carrying.
+            // The page the windfall carries, and the clock it rides on — in
+            // that order, bottom of the stack up.
+            view._paper = CreateSprite(go.transform, "Paper", PlaceholderArt.Disc, PaperColour, StripLayers.WindfallPaper);
+            view._paper.transform.localScale = Vector3.one * PaperFit;
+
             view._mount = CreateSprite(go.transform, "Seedhead", PlaceholderArt.Seedhead, MountColour, StripLayers.WindfallMount);
             view._mount.transform.localScale = Vector3.one * MountFit;
 
@@ -158,6 +179,7 @@ namespace Wildgrove.Game.World
             ScreenRadius = screenRadius;
 
             SetAlpha(_mount, MountColour, MountColour.a * fade);
+            SetAlpha(_paper, PaperColour, PaperColour.a * fade);
             SetAlpha(_plate, Color.white, fade);
             SetAlpha(_skin, _colour, SkinAlpha * fade);
             SetAlpha(_shine, ShineColour, ShineColour.a * fade);
@@ -231,6 +253,7 @@ namespace Wildgrove.Game.World
                 // Ochre rather than pale gold, for the same reason the clock is
                 // drawn in ink: a lit flash has to out-read the paper behind it.
                 SetAlpha(_mount, SeedColour, (MountAlpha + 0.35f) * fade);
+                SetAlpha(_paper, PaperColour, PaperColour.a * fade);
                 SetAlpha(_plate, Color.white, fade);
                 SetAlpha(_skin, _colour, SkinAlpha * fade);
                 SetAlpha(_shine, ShineColour, ShineColour.a * fade);
@@ -240,6 +263,7 @@ namespace Wildgrove.Game.World
                 // Empty: grey out and deflate — visibly not a jackpot.
                 var grey = new Color(0.6f, 0.58f, 0.53f, 1f);
                 SetAlpha(_mount, grey, MountAlpha * fade);
+                SetAlpha(_paper, Color.Lerp(PaperColour, grey, t * 0.5f), PaperColour.a * fade);
                 SetAlpha(_plate, Color.Lerp(Color.white, grey, t), fade * 0.8f);
                 SetAlpha(_skin, Color.Lerp(_colour, grey, t), SkinAlpha * fade * 0.8f);
                 SetAlpha(_shine, grey, 0.2f * fade);

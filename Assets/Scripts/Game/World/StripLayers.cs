@@ -45,25 +45,28 @@ namespace Wildgrove.Game.World
         /// <summary>The caption naming the plate — topmost on the strip, so nothing pinned to a plate can clip its glyphs.</summary>
         public const int NodeCaption = 5;
 
+        /// <summary>The page a windfall carries, hiding the strip it drifts across — UNDER the clock, so the hairs still radiate over it.</summary>
+        public const int WindfallPaper = 6;
+
         /// <summary>The seedhead a windfall rides on.</summary>
-        public const int WindfallMount = 6;
+        public const int WindfallMount = 7;
 
         /// <summary>The tinted bead a windfall wears when its resource has no plate.</summary>
-        public const int WindfallSkin = 7;
+        public const int WindfallSkin = 8;
 
         /// <summary>The windfall's authored plate — never drawn alongside <see cref="WindfallShine"/>, which belongs to the bead.</summary>
-        public const int WindfallPlate = 8;
+        public const int WindfallPlate = 9;
 
         /// <summary>The bead's off-centre highlight.</summary>
-        public const int WindfallShine = 8;
+        public const int WindfallShine = 9;
 
         /// <summary>The first-run "tap to catch" tag under a windfall.</summary>
-        public const int WindfallHint = 9;
+        public const int WindfallHint = 10;
 
         /// <summary>Seed scattered from a caught windfall.</summary>
-        public const int WindfallSeed = 10;
+        public const int WindfallSeed = 11;
 
         /// <summary>The "+N" rising from a catch — the last thing drawn, at the finger.</summary>
-        public const int CatchText = 11;
+        public const int CatchText = 12;
     }
 }

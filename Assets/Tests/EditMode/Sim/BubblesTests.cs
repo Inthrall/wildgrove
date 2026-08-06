@@ -8,12 +8,13 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins the windfall bubbles — the active-play reward that replaced
-    /// tap-to-tend: a worked node's bubble pays a FLAT haul (rewardSeconds of
-    /// a notional rewardRatePerSecond gatherer) straight to camp, credits XP
-    /// like any handled goods, and tends the node (so the Rite's tend deeds
-    /// and the tend-burst gear stay live). The haul is the same at every node
-    /// whoever works it and however developed it is; a fallow node still
-    /// drifts nothing, and no config means the system is inert.
+    /// tap-to-tend: a bubble from any node the run can reach pays a FLAT haul
+    /// (rewardSeconds of a notional rewardRatePerSecond gatherer) straight to
+    /// camp, credits XP like any handled goods, and tends the node (so the
+    /// Rite's tend deeds and the tend-burst gear stay live). The haul is the
+    /// same at every node whoever works it and however developed it is, a
+    /// fallow node drifts and pays like any other (2026-08-06 — the staffing
+    /// gate is gone), and no config means the system is inert.
     /// </summary>
     public class BubblesTests
     {
@@ -85,15 +86,35 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RewardFor_FallowNode_IsZero()
+        public void RewardFor_FallowNode_PaysTheSameFlatWindfall()
         {
             var state = GameStateFactory.NewGame(_data);
 
             // No warden economy section and no familiar — nothing works the
-            // second node, so nothing drifts up from it. The haul is flat; the
-            // bubble itself still has to be earned.
-            Assert.That(Bubbles.RewardFor(state, _data, state.nodes[1]), Is.EqualTo(BigDouble.Zero));
-            Assert.That(Bubbles.IsEligible(state, _data, state.nodes[1]), Is.False);
+            // second node. It drifts and pays anyway: a windfall comes off the
+            // land, not off whoever is standing on it (2026-08-06, reopening
+            // design §2). Nothing is staffed here at all, which is exactly the
+            // camp the old gate left with no windfalls whatsoever.
+            Assert.That(Bubbles.IsEligible(state, _data, state.nodes[1]), Is.True,
+                "an unstaffed but reachable node is still eligible");
+            Assert.That(Bubbles.RewardFor(state, _data, state.nodes[1]).ToDouble(),
+                Is.EqualTo(Windfall).Within(Tolerance),
+                "and pays the same flat haul as a worked one");
+        }
+
+        [Test]
+        public void RewardFor_ANodeTheRunCannotReach_IsZero()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // The one thing left that can refuse a catch: a node that is not
+            // this run's ground. A fold rebuilds state.nodes, so a windfall
+            // still holding a node from the run before it must pay nothing
+            // rather than mint goods out of a stale reference.
+            var stale = new NodeState { id = "folded:berries", resourceId = "berries", skill = "foraging" };
+
+            Assert.That(Bubbles.IsEligible(state, _data, stale), Is.False);
+            Assert.That(Bubbles.RewardFor(state, _data, stale), Is.EqualTo(BigDouble.Zero));
         }
 
         [Test]
@@ -273,15 +294,31 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Pop_FallowNode_IsARefusedNoOp()
+        public void Pop_FallowNode_PaysAndTendsLikeAnyOther()
         {
             var state = GameStateFactory.NewGame(_data);
 
             var gained = Bubbles.Pop(state, _data, state.nodes[1]);
 
+            Assert.That(gained.ToDouble(), Is.EqualTo(Windfall).Within(Tolerance));
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(Windfall).Within(Tolerance));
+            // The catch is still the warden tending the ground, so an unworked
+            // node gets the burst too — which is the point of catching one
+            // there before anybody is posted.
+            Assert.That(state.nodes[1].tendBurstRemaining, Is.EqualTo(_data.economy.tending.burstDurationSec));
+        }
+
+        [Test]
+        public void Pop_ANodeTheRunCannotReach_IsARefusedNoOp()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var stale = new NodeState { id = "folded:wildflowers", resourceId = "wildflowers", skill = "foraging" };
+
+            var gained = Bubbles.Pop(state, _data, stale);
+
             Assert.That(gained, Is.EqualTo(BigDouble.Zero));
             Assert.That(state.GetResource("wildflowers"), Is.EqualTo(BigDouble.Zero));
-            Assert.That(state.nodes[1].tendBurstRemaining, Is.EqualTo(0.0));
+            Assert.That(stale.tendBurstRemaining, Is.EqualTo(0.0));
         }
 
         [Test]

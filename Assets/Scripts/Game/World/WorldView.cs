@@ -388,23 +388,12 @@ namespace Wildgrove.Game.World
         }
 
         /// <summary>True while <paramref name="node"/>'s plate is one of the strip's.</summary>
-        private bool OnStrip(NodeState node)
-        {
-            foreach (var view in _onStrip)
-            {
-                if (view.Node == node)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         // ─────────────────────── Windfall bubbles ────────────────────────
-        // A worked node drifts a bubble up the strip now and then; catching
-        // it pays a burst of that node's goods (Sim.Bubbles). All ephemeral —
-        // spawn timing, float path and expiry live here, nothing persists.
+        // Any node the run can reach drifts a bubble up into the band now and
+        // then — the strip is where they are CAUGHT, not where they all come
+        // from; catching one pays a burst of that node's goods (Sim.Bubbles).
+        // All ephemeral — spawn timing, float path and expiry live here,
+        // nothing persists.
 
         /// <summary>
         /// The bubble under the screen point, removed and returned as its
@@ -583,12 +572,19 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            // Expired bubbles drift off the top and go — and so do any whose
-            // post has since lost its body: the plate they rise from is off
-            // the strip, so there is nowhere left for them to rise from.
+            // Expired bubbles go, having already faded out wherever the wind
+            // left them. So do any whose node the run can no longer reach — a
+            // fold rebuilds the land, and a windfall holding a node from the
+            // run before it would pay nothing if it were caught.
+            //
+            // This used to retire a windfall whose post lost its body, back
+            // when the strip WAS the pool. It cannot any more: most windfalls
+            // now rise from ground that was never on the strip, and a body
+            // test would destroy each one on the frame it spawned.
             for (var i = _bubbles.Count - 1; i >= 0; i--)
             {
-                if (now - _bubbles[i].SpawnTime >= config.lifetimeSec || !OnStrip(_bubbles[i].Node))
+                if (now - _bubbles[i].SpawnTime >= config.lifetimeSec
+                    || !Bubbles.IsEligible(state, _loop.Data, _bubbles[i].Node))
                 {
                     Destroy(_bubbles[i].gameObject);
                     _bubbles.RemoveAt(i);
@@ -604,20 +600,59 @@ namespace Wildgrove.Game.World
             {
                 var age = now - bubble.SpawnTime;
                 var progress = Mathf.Clamp01(age / (float)config.lifetimeSec);
-                var home = NodeCentre(bubble.Node);
+                var home = BubbleOrigin(bubble.Node, bubbleDiameterPx);
 
-                // Rise from the node toward the strip's top edge, with a
-                // gentle per-bubble wobble; fade out over the last stretch.
-                // In two rows a bottom-row windfall stops at the midline —
-                // rising the full band would bulldoze across the top row.
+                // The band a windfall may wander in. In two rows each row is
+                // its own band — a bottom-row windfall stops at the midline and
+                // a top-row one starts there, or the drift would bulldoze
+                // across the other row's plates.
                 var ceiling = StripScreenRect.yMax - bubbleDiameterPx * 0.5f;
-                if (twoRows && home.y < StripScreenRect.center.y)
+                var floor = StripScreenRect.yMin + bubbleDiameterPx * 0.5f;
+                if (twoRows)
                 {
-                    ceiling = StripScreenRect.center.y;
+                    if (home.y < StripScreenRect.center.y)
+                    {
+                        ceiling = StripScreenRect.center.y;
+                    }
+                    else
+                    {
+                        floor = StripScreenRect.center.y;
+                    }
                 }
 
-                var y = Mathf.Lerp(home.y, ceiling, progress);
-                var x = home.x + Mathf.Sin(age * 1.5f + bubble.Seed) * bubbleDiameterPx * 0.6f;
+                floor = Mathf.Min(floor, ceiling);
+
+                // The rise from the node to the ceiling is only the spine of
+                // the path; the wind is the rest. Two sines per axis, at
+                // periods that don't divide into each other, so the loop never
+                // closes and the seed wanders the band instead of swinging
+                // through the same arc — and one on the way along, so it isn't
+                // climbing at a constant rate either. This is what "blown"
+                // costs: a single sine on x reads as a pendulum, which is a
+                // thing on a string, not a thing on the wind.
+                var wanderX = Mathf.Sin(age * 0.43f + bubble.Seed) * 0.68f
+                              + Mathf.Sin(age * 1.07f + bubble.Seed * 1.7f) * 0.32f;
+                var wanderY = Mathf.Sin(age * 0.61f + bubble.Seed * 2.3f) * 0.7f
+                              + Mathf.Sin(age * 1.49f + bubble.Seed) * 0.3f;
+
+                // The wind takes it further the longer it's up: a windfall
+                // starts hugging the post it rose from — which is the one thing
+                // its plate has to say — and only then wanders off across the
+                // band. Roomy enough to cross a few plates, never so wide that
+                // a narrow strip throws it against its own edges every pass.
+                var freedom = Mathf.Lerp(0.3f, 1f, Mathf.Min(progress * 2.5f, 1f));
+                var reach = Mathf.Min(StripScreenRect.width * 0.42f, bubbleDiameterPx * 3f) * freedom;
+                var lift = Mathf.Min((ceiling - floor) * 0.3f, bubbleDiameterPx * 0.7f) * freedom;
+
+                var x = Mathf.Clamp(home.x + wanderX * reach,
+                    StripScreenRect.xMin + bubbleDiameterPx * 0.5f,
+                    StripScreenRect.xMax - bubbleDiameterPx * 0.5f);
+                // The spine stops a bob short of the ceiling. Aimed at the
+                // ceiling itself, the last third of the drift is spent pinned
+                // against the clamp with the wander flattened out of it — the
+                // one stretch where the wind is meant to be most obvious.
+                var top = Mathf.Max(ceiling - lift, floor);
+                var y = Mathf.Clamp(Mathf.Lerp(home.y, top, progress) + wanderY * lift, floor, ceiling);
                 var screen = new Vector2(x, y);
                 var fade = progress > 0.8f ? Mathf.InverseLerp(1f, 0.8f, progress) : 1f;
 
@@ -641,11 +676,22 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            // Round-robin over the strip so every worked post gets its turn.
-            for (var step = 0; step < _onStrip.Count; step++)
+            if (_views.Count == 0)
             {
-                var index = (_bubbleCursor + step) % _onStrip.Count;
-                var node = _onStrip[index].Node;
+                return;
+            }
+
+            // Round-robin over the WHOLE land — every node the run can reach,
+            // not just the posts drawn on the strip. A windfall is the land
+            // handing something over; gating the pool on the strip meant every
+            // one of them rose from the two or three plates already under the
+            // player's eye, and an unposted camp drifted nothing at all. The
+            // interval and maxLive still meter the reward, so this changes
+            // WHERE a windfall comes from, not how much the run is paid.
+            for (var step = 0; step < _views.Count; step++)
+            {
+                var index = (_bubbleCursor + step) % _views.Count;
+                var node = _views[index].Node;
                 if (!Bubbles.IsEligible(state, _loop.Data, node))
                 {
                     continue;
@@ -662,12 +708,23 @@ namespace Wildgrove.Game.World
                 return;
             }
 
-            // Nothing worked anywhere — look again shortly rather than
-            // banking a full interval against an empty camp.
+            // Nothing eligible anywhere — the run holds no reachable ground at
+            // all, or the section is inert. Look again shortly rather than
+            // banking a full interval against it.
             _nextBubbleAt = now + 2f;
         }
 
-        private Vector2 NodeCentre(NodeState node)
+        /// <summary>
+        /// Where a windfall from <paramref name="node"/> starts. A post drawn
+        /// on the strip drifts up off its own plate, as it always has. Every
+        /// other reachable node is ground the player cannot see, so its
+        /// windfall blows in along the foot of the band instead — at a spot
+        /// fixed by that node's own place in the land, so the same ground
+        /// always sends from the same side of the strip. That is as much of a
+        /// map as a band of plates can carry, and it beats the old fallback,
+        /// which put every unseen node's windfall at the dead centre.
+        /// </summary>
+        private Vector2 BubbleOrigin(NodeState node, float diameterPx)
         {
             for (var i = 0; i < _onStrip.Count && FirstNodeCentre + i < _centres.Length; i++)
             {
@@ -677,7 +734,23 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            return StripScreenRect.center;
+            var place = 0;
+            for (var i = 0; i < _views.Count; i++)
+            {
+                if (_views[i].Node == node)
+                {
+                    place = i;
+                    break;
+                }
+            }
+
+            // Golden-ratio stride rather than an even split: the land's order
+            // groups a zone's nodes together, so an even split would send a
+            // whole zone in from the same handspan of the band.
+            var across = Mathf.Repeat(place * 0.618f + 0.191f, 1f);
+            return new Vector2(
+                Mathf.Lerp(StripScreenRect.xMin + diameterPx * 0.5f, StripScreenRect.xMax - diameterPx * 0.5f, across),
+                StripScreenRect.yMin + diameterPx * 0.5f);
         }
 
         private static Sprite IconFor(Familiar familiar)

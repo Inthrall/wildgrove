@@ -130,9 +130,12 @@ namespace Wildgrove.Game
             var gained = _loop.PopBubble(node);
             if (gained <= BigDouble.Zero)
             {
-                // The node went fallow while the bubble drifted — it pops
-                // empty, and the strip itself says so (grey deflate), not
-                // just a sentence elsewhere.
+                // The ground went out from under the drift — a fold rebuilt
+                // the land while this one was in the air, so the node it holds
+                // is not this run's any more. (It used to mean the node went
+                // fallow mid-drift; a fallow node pays like any other since
+                // 2026-08-06.) It pops empty, and the strip itself says so
+                // with a grey deflate, not just a sentence elsewhere.
                 _world?.ResolveCatch("nothing inside", false);
                 SetNote("the windfall bursts over the " + node.resourceId + ", with nothing inside.");
                 return;

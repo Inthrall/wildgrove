@@ -49,9 +49,9 @@ namespace Wildgrove.Sim
         ///
         /// This asks who is STANDING here, not whether the ground earns. A
         /// wandering body pays a share into every node at once, so a yield test
-        /// (<see cref="Bubbles.IsWorked"/>) answers true everywhere the moment
-        /// anyone roams — the right question for a windfall, the wrong one for
-        /// the strip, which draws one post per body.
+        /// (<see cref="Simulation.TotalYieldPerSecond"/>) answers true
+        /// everywhere the moment anyone roams — the wrong question for the
+        /// strip, which draws one post per body.
         /// </summary>
         public static bool HasBodyAt(GameState state, string stationId)
         {

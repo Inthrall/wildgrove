@@ -5,8 +5,9 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// Windfall bubbles — the active-play reward that replaced tap-to-tend:
-    /// a worked node drifts a bubble up into the strip now and then, and
-    /// catching it pockets a burst of that node's goods straight to camp.
+    /// a node the run can reach drifts a bubble up into the strip now and
+    /// then, and catching it pockets a burst of that node's goods straight to
+    /// camp.
     /// Catching one still counts as the warden tending the node (the Rite's
     /// tend deeds and the Cordage Wraps' burst bonus stay live), so the tend
     /// burst and Choice window ride along with the goods. The bubbles
@@ -20,8 +21,10 @@ namespace Wildgrove.Sim
     /// how developed it is. Scaling it to the node's own live output instead
     /// makes most windfalls worth 1–2 units — a node worked only by the
     /// wandering warden earns gatherPerSecond/nodeCount, so the payout would
-    /// shrink every time a zone opened. Whether a bubble rises at all is still
-    /// earned (see <see cref="IsWorked"/>); only its size is fixed.
+    /// shrink every time a zone opened. Nor is the bubble earned by staffing
+    /// the ground it rises from (see <see cref="IsEligible"/>, reopened
+    /// 2026-08-06): any node the run can reach drifts one, and what meters the
+    /// reward is the spawn interval, not how much of the land is posted.
     /// </summary>
     public static class Bubbles
     {
@@ -34,23 +37,6 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// True when someone — a stationed familiar or the warden's own hands —
-        /// works <paramref name="node"/>. A fallow node drifts nothing, so the
-        /// bubble still has to be earned even though its size does not vary.
-        /// </summary>
-        public static bool IsWorked(GameState state, GameDataAsset data, NodeState node)
-        {
-            if (state == null || node == null || data?.economy == null)
-            {
-                return false;
-            }
-
-            // The same union the node's own plate reads — both lanes in one
-            // number, so "worked" and the rate the plate shows can't drift.
-            return Simulation.TotalYieldPerSecond(node, state, data, data.economy) > BigDouble.Zero;
-        }
-
-        /// <summary>
         /// What catching a bubble at <paramref name="node"/> pays: rewardSeconds
         /// of the notional gatherer's rewardRatePerSecond hands — the same haul
         /// at every node, whoever works it — fattened by one additive
@@ -59,7 +45,8 @@ namespace Wildgrove.Sim
         /// is posted, so she is a property of the kith rather than of this
         /// node) summed with the effect sources (the Almanac's Long Reach, the
         /// endless line that keeps a flat haul worth catching as the run's
-        /// passive income outgrows it). Zero at a fallow node.
+        /// passive income outgrows it). Zero at ground this run cannot reach —
+        /// which, on a live windfall, means the fold moved under it mid-drift.
         /// </summary>
         public static BigDouble RewardFor(GameState state, GameDataAsset data, NodeState node)
         {
@@ -73,10 +60,28 @@ namespace Wildgrove.Sim
             return new BigDouble(bubbles.rewardRatePerSecond * bubbles.rewardSeconds) * (1.0 + bonus);
         }
 
-        /// <summary>True when a bubble can rise here — someone (kith or warden) is working the node.</summary>
+        /// <summary>
+        /// True when a bubble can rise here: the system is configured and the
+        /// node is ground this run can actually reach. Reachable is the whole
+        /// test — <c>state.nodes</c> only ever holds the unlocked zones' nodes
+        /// (<see cref="GameStateFactory.SyncUnlockedZones"/>), so being in that
+        /// list IS being accessible, and a node from a folded-away run fails it
+        /// by reference.
+        ///
+        /// It asked whether anyone WORKED the node until 2026-08-06 (design §2,
+        /// "a fallow node drifts nothing — the bubble is still earned").
+        /// Reopened because of what that gate did in practice: the only nodes
+        /// staffed are the two or three already drawn on the strip, so every
+        /// windfall in the game rose from the handful of plates the player was
+        /// already looking at, and a camp with nobody posted got none at all. A
+        /// windfall is the LAND handing something over, not a wage — it comes
+        /// off any ground the run can walk to. The pace is unchanged: spawn
+        /// interval and maxLive still meter it, so this widens where a windfall
+        /// comes from without paying out any faster.
+        /// </summary>
         public static bool IsEligible(GameState state, GameDataAsset data, NodeState node)
         {
-            return Configured(data) && IsWorked(state, data, node);
+            return Configured(data) && state != null && node != null && state.nodes.Contains(node);
         }
 
         /// <summary>

@@ -57,7 +57,7 @@ namespace Wildgrove.Game
         /// replaced tap-to-tend: a burst of the node's goods lands as camp
         /// stock and the node is tended (burst + Choice window + Rite deed).
         /// Returns the amount granted (zero = nothing was due, e.g. the node
-        /// went fallow while the bubble drifted).
+        /// is no longer this run's ground — a fold landed while it drifted).
         /// </summary>
         public BigDouble PopBubble(NodeState node)
         {

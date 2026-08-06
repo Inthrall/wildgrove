@@ -8,9 +8,8 @@ namespace Wildgrove.Sim.Tests
     ///
     /// Deliberately not a yield test. A wandering body pays a share into every
     /// node at once, so asking "does this ground earn" answers yes everywhere
-    /// the moment anyone roams — right for a windfall
-    /// (<see cref="Bubbles.IsWorked"/>), wrong for a band that is supposed to
-    /// show only the posts being worked.
+    /// the moment anyone roams — wrong for a band that is supposed to show only
+    /// the posts being worked.
     /// </summary>
     public class StationingTests
     {
