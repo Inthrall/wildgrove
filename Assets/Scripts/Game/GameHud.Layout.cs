@@ -95,13 +95,6 @@ namespace Wildgrove.Game
             NeverDim(ledgerButton);
             _ledgerRule = MakeHairline(root);
 
-            // Margin note — the handwritten aside. Hidden while it has nothing
-            // to say (ShowNote), and on a spread it stands in the tracker's row
-            // rather than owning a line of its own.
-            _note = MakeText(root, string.Empty, 24, TextAnchor.MiddleLeft, Ink2, _hand);
-            FlexibleWidth(_note.gameObject, 1f);
-            _note.gameObject.SetActive(false);
-
             // Pinned tracker — verse progress before the Rite consents, the
             // Fold forecast (with its button) after. It sits in a row of its own
             // so a spread can stand the margin note beside it (ApplyNoteFold).
@@ -145,6 +138,13 @@ namespace Wildgrove.Game
             KeyAction(_foldButton);
             _foldButton.gameObject.SetActive(false);
 
+            // Margin note — the handwritten aside, UNDER the tracker. Hidden
+            // while it has nothing to say (ShowNote), and on a spread it stands
+            // in the tracker's row rather than owning a line of its own.
+            _note = MakeText(root, string.Empty, 24, TextAnchor.MiddleLeft, Ink2, _hand);
+            FlexibleWidth(_note.gameObject, 1f);
+            _note.gameObject.SetActive(false);
+
             // World gap — the WorldView strip draws here. Capped rather than
             // flexible: on tall screens the slack goes to the page (more cards
             // visible), not to empty paper around the node strip. The height
@@ -153,19 +153,19 @@ namespace Wildgrove.Game
             _worldGap = gap;
             _worldGapElement = gap.gameObject.AddComponent<LayoutElement>();
 
-            // Slots-in-use counter, pinned inside the strip band's top-right
-            // corner — it counts the badges below it, so it belongs with them
+            // Slots-in-use counter, pinned inside the strip band's bottom-right
+            // corner — it counts the badges beside it, so it belongs with them
             // rather than up in the page head. Never a raycast target: the
             // whole band is the posting/catching surface.
             _slotCounter = MakeText(gap, string.Empty, 17, TextAnchor.MiddleRight, Ink2, _smallCaps);
             _slotCounter.gameObject.name = "SlotCounter";
             _slotCounter.raycastTarget = false;
             var counterRect = (RectTransform)_slotCounter.transform;
-            counterRect.anchorMin = Vector2.one;
-            counterRect.anchorMax = Vector2.one;
-            counterRect.pivot = Vector2.one;
+            counterRect.anchorMin = new Vector2(1f, 0f);
+            counterRect.anchorMax = new Vector2(1f, 0f);
+            counterRect.pivot = new Vector2(1f, 0f);
             counterRect.sizeDelta = new Vector2(380f, 44f);
-            counterRect.anchoredPosition = new Vector2(-6f, -4f);
+            counterRect.anchoredPosition = new Vector2(-6f, 4f);
 
             // Nothing else pins here, between the strip and the page: the
             // trail-home line and the camp actions each head their own page
@@ -298,8 +298,9 @@ namespace Wildgrove.Game
                 if (_note.transform.parent != _trackerRow)
                 {
                     _note.transform.SetParent(_trackerRow, false);
-                    // Left of the tracker plate — the margin it is named for.
-                    _note.transform.SetAsFirstSibling();
+                    // Right of the tracker plate — the same order the column
+                    // reads top-to-bottom, turned on its side.
+                    _note.transform.SetAsLastSibling();
                 }
 
                 return;
@@ -308,8 +309,8 @@ namespace Wildgrove.Game
             if (_note.transform.parent != _root)
             {
                 _note.transform.SetParent(_root, false);
-                // Back to its own line, immediately above the tracker's row.
-                _note.transform.SetSiblingIndex(_trackerRow.GetSiblingIndex());
+                // Back to its own line, immediately below the tracker's row.
+                _note.transform.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
             }
         }
 
