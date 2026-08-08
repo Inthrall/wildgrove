@@ -327,9 +327,12 @@ lean is a regression, not a phase. Build order:
   inside cover (locked mid-tide). Containment is structural — the keeping
   never enters `CurrentRite` or `verseProgress`, pinned by
   `Keeping_NeverTouchesTheRitesLedgers`. Suite 1048/1048 on 2026-08-08.
-  Still open within it: the tracker's tide row doesn't scroll to the
-  keeping card (the » link is the verse's), and tier crossings celebrate
-  only in the tracker word — a PumpSheets moment can ride with the plates.
+  Finished same day: the tracker's tide row deep-links to the keeping card
+  (the row's tap follows what it shows), tier crossings get their PumpSheets
+  moment (`OpenKeepingSheet`, ahead of the stones, behind the kith beats),
+  and the plate hooks are live — drop `sabbat-{id}` plates into the
+  ArtLibrary and the keeping card, the tier sheet and the Record shelf
+  (kept sabbats only) pick them up with zero code.
 - **Word/art debts**: eight sabbat margin lines (drafted in `sabbats.json`,
   the narrative pass re-voices), eight plates in the template (fire
   festivals first is the fallback split) — the plates are what turns the

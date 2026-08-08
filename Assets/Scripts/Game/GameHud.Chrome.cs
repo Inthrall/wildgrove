@@ -118,8 +118,13 @@ namespace Wildgrove.Game
                            + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">»</color></size>";
         }
 
+        // Where the tracker row's tap lands — Layout wires the button once,
+        // and RefreshTracker points it at whatever the row is showing.
+        private string _trackerTarget = "verse";
+
         private void RefreshTracker()
         {
+            _trackerTarget = "verse";
             if (_loop.CanMigrate())
             {
                 var gain = System.Math.Max(0.0, _loop.VerdureAfterMigration() - _loop.State.verdurePoints);
@@ -180,12 +185,14 @@ namespace Wildgrove.Game
             }
 
             // With no verse pinned, an open tide takes the row alone — the
-            // keeping is the one clock left running (design §15).
+            // keeping is the one clock left running (design §15), and the
+            // guillemet links to its card at the head of the Trail.
             var tide = _loop.OpenTide();
             if (tide != null)
             {
+                _trackerTarget = "keeping";
                 _trackerText.text = "<b>" + tide.displayName + "-tide</b> · " + KeepingWord()
-                                    + " · " + TideCloseWord();
+                                    + " · " + TideCloseWord() + "  »";
                 _trackerPanel.SetActive(true);
                 return;
             }

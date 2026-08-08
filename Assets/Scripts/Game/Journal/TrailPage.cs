@@ -243,6 +243,17 @@ namespace Wildgrove.Game
             }
 
             var card = Card("THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE");
+            // The tracker's tide row deep-links here.
+            _firstKeepingCard = card;
+
+            // The sabbat's plate, the day the art pass paints it — until then
+            // the card is the words alone.
+            var plate = ArtLibrary.ForJournal("sabbat-" + tide.id);
+            if (plate != null)
+            {
+                PlateImage(card, plate, 200f);
+            }
+
             var standing = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {

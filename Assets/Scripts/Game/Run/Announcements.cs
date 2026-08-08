@@ -159,6 +159,39 @@ namespace Wildgrove.Game
             return bond;
         }
 
+        /// <summary>The sabbat whose tier just landed, owed its moment — null when none is.</summary>
+        public string PendingKeepingSabbatId { get; private set; }
+
+        /// <summary>The tier that landed (1..3), meaningful only beside the id above.</summary>
+        public int PendingKeepingTier { get; private set; }
+
+        /// <summary>
+        /// A keeping's tier landed (design §15) — the fire's answer. Tiers only
+        /// cross at a live offer, never offline, so an in-memory mark is whole:
+        /// nothing can be owed from an absence. A later tier in the same tide
+        /// overwrites an unshown earlier one — the deeper word carries both.
+        /// </summary>
+        public void CelebrateKeeping(string sabbatId, int tier)
+        {
+            if (string.IsNullOrEmpty(sabbatId) || tier <= 0)
+            {
+                return;
+            }
+
+            PendingKeepingSabbatId = sabbatId;
+            PendingKeepingTier = tier;
+        }
+
+        /// <summary>Claim the pending keeping celebration (clears it) — null when none is owed.</summary>
+        public string TakeKeepingCelebration(out int tier)
+        {
+            tier = PendingKeepingTier;
+            var sabbatId = PendingKeepingSabbatId;
+            PendingKeepingSabbatId = null;
+            PendingKeepingTier = 0;
+            return sabbatId;
+        }
+
         /// <summary>
         /// Offer a credited absence for the welcome-back sheet. An unshown summary
         /// from a previous absence keeps priority — it credited earlier, larger
@@ -224,6 +257,8 @@ namespace Wildgrove.Game
             _outstandingOfflineSummary = null;
             PendingBondCelebration = null;
             PendingSlotCelebration = 0;
+            PendingKeepingSabbatId = null;
+            PendingKeepingTier = 0;
         }
     }
 }

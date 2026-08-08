@@ -259,9 +259,19 @@ namespace Wildgrove.Game
             if (after > before)
             {
                 Telemetry.LogEvent("sabbat_kept", ("sabbat", State.keeping.sabbatId), ("tier", after));
+                // The fire's answer — PumpSheets shows it once the journal is
+                // free. Live-only by nature: tiers cross at a button, never
+                // during an absence.
+                _announce.CelebrateKeeping(State.keeping.sabbatId, after);
             }
 
             return true;
+        }
+
+        /// <summary>Claim the pending keeping celebration (clears it) — the sabbat id, or null; the tier that landed via <paramref name="tier"/>.</summary>
+        public string TakePendingKeepingCelebration(out int tier)
+        {
+            return _announce.TakeKeepingCelebration(out tier);
         }
 
         /// <summary>

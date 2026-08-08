@@ -194,6 +194,8 @@ namespace Wildgrove.Game
         internal Transform ModalLayer => _modalLayer;
         internal GameObject Sheet { get => _sheet; set => _sheet = value; }
         internal RectTransform FirstVerseCard { get => _firstVerseCard; set => _firstVerseCard = value; }
+        internal RectTransform FirstKeepingCard { get => _firstKeepingCard; set => _firstKeepingCard = value; }
+        private RectTransform _firstKeepingCard;
         internal List<Action> LiveUpdaters => _liveUpdaters;
         internal List<Action> FrameUpdaters => _frameUpdaters;
         internal Dictionary<string, float> FlashAges => _flashAges;

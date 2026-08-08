@@ -82,6 +82,7 @@ namespace Wildgrove.Game
             var landmark = _pendingScroll;
             _pendingScroll = null;
             _firstVerseCard = null;
+            _firstKeepingCard = null;
             FoldedHeading = null;
 
             // Where the focus mark stood, before the page under it is destroyed.
@@ -229,6 +230,8 @@ namespace Wildgrove.Game
             {
                 case "verse":
                     return _firstVerseCard;
+                case "keeping":
+                    return _firstKeepingCard;
                 case ZoneLandmark:
                     return FoldedHeading;
                 default:

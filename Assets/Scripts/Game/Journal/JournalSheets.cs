@@ -173,6 +173,17 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // A kept tier is earned news, so it goes ahead of the ambient
+            // stones — but after the kith beats: a companion is always the
+            // bigger moment than a page.
+            var keptSabbat = _loop.TakePendingKeepingCelebration(out var keptTier);
+            if (keptSabbat != null)
+            {
+                OpenKeepingSheet(keptSabbat, keptTier);
+                AddTapGuard(PumpedSheetGuardSeconds);
+                return;
+            }
+
             var waystoneZone = Narrative.NextUnreadWaystone(_loop.State, _loop.Data);
             if (waystoneZone != null)
             {
@@ -368,6 +379,42 @@ namespace Wildgrove.Game
 
             var accept = Button(sheet, "Continue", 320, CloseSheet);
             KeyAction(accept);
+        }
+
+        /// <summary>
+        /// A keeping's tier landed (design §15) — the fire's answer, said
+        /// plainly and once. The sabbat's plate joins the sheet the day the
+        /// art pass paints it ("sabbat-{id}" in the ArtLibrary); until then
+        /// the words carry it. Draft wording, the narrative pass re-voices.
+        /// </summary>
+        private void OpenKeepingSheet(string sabbatId, int tier)
+        {
+            SabbatData sabbat = null;
+            var sabbats = _loop.Data.wheel?.sabbats;
+            for (var i = 0; sabbats != null && i < sabbats.Count; i++)
+            {
+                if (sabbats[i].id == sabbatId)
+                {
+                    sabbat = sabbats[i];
+                    break;
+                }
+            }
+
+            var name = sabbat?.displayName ?? sabbatId;
+            var sheet = BeginSheet();
+            MakeText(sheet, name + "-tide", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            var plate = ArtLibrary.ForJournal("sabbat-" + sabbatId);
+            if (plate != null)
+            {
+                PlateImage(sheet, plate, 220f);
+            }
+
+            var word = tier >= 3 ? "The wheel is kept." : tier == 2 ? "The day is kept." : "The eve is kept.";
+            MakeText(sheet, word, 24, TextAnchor.UpperCenter, Ink, _serif);
+            MakeText(sheet, "<i>set down at the fire, and counted. the year remembers a keeping.</i>",
+                18, TextAnchor.MiddleCenter, Ink2, _hand);
+            Button(sheet, "Walk on", 320, CloseSheet);
         }
 
         private void OpenBondSheet(BondData bond)

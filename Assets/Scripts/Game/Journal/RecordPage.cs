@@ -178,7 +178,19 @@ namespace Wildgrove.Game
                 15, TextAnchor.MiddleCenter, Ink2, _serif);
             foreach (var sabbat in wheel.sabbats)
             {
+                // The plate turns the line into a page when the art pass
+                // paints it — kept sabbats only, so the shelf stays a record
+                // rather than a poster wall.
                 var years = Keeping.KeptYears(_loop.State, sabbat.id);
+                if (years.Count > 0)
+                {
+                    var plate = ArtLibrary.ForJournal("sabbat-" + sabbat.id);
+                    if (plate != null)
+                    {
+                        PlateImage(card, plate, 140f);
+                    }
+                }
+
                 var ticks = years.Count == 0
                     ? "<color=" + Ink2Hex + "><i>unkept</i></color>"
                     : "<color=" + Ink2Hex + ">kept " + string.Join(" · ", years) + "</color>";
