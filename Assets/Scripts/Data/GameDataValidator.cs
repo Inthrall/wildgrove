@@ -1147,6 +1147,51 @@ namespace Wildgrove.Data
                 issues.Add($"Wheel openDaysBefore must be 1..60 (was {wheel.OpenDaysBefore})");
             }
 
+            if (wheel.Observance != null)
+            {
+                var observance = wheel.Observance;
+                if (observance.SlotCount < 2 || observance.SlotCount > 8)
+                {
+                    issues.Add($"Wheel observance slotCount must be 2..8 (was {observance.SlotCount})");
+                }
+
+                if (observance.TierSlots == null || observance.TierSlots.Count == 0)
+                {
+                    issues.Add("Wheel observance has no tierSlots — a keeping with no tiers pays nothing");
+                }
+                else
+                {
+                    for (var i = 0; i < observance.TierSlots.Count; i++)
+                    {
+                        if (observance.TierSlots[i] < 1 || observance.TierSlots[i] > observance.SlotCount
+                            || (i > 0 && observance.TierSlots[i] <= observance.TierSlots[i - 1]))
+                        {
+                            issues.Add("Wheel observance tierSlots must climb within 1..slotCount — each tier asks more than the last");
+                            break;
+                        }
+                    }
+
+                    if (observance.TierAmber == null || observance.TierAmber.Count != observance.TierSlots.Count)
+                    {
+                        issues.Add("Wheel observance tierAmber must pair one grant with each tier");
+                    }
+                    else if (observance.TierAmber.Any(amount => amount < 0.0))
+                    {
+                        issues.Add("Wheel observance tierAmber grants must not be negative");
+                    }
+                }
+
+                if (observance.SlotValueMult <= 0.0)
+                {
+                    issues.Add("Wheel observance slotValueMult must be positive");
+                }
+
+                if (observance.SpecimenRenown < 0L)
+                {
+                    issues.Add("Wheel observance specimenRenown must not be negative");
+                }
+            }
+
             CheckIds(wheel.Sabbats.Select(s => s.Id), "sabbat", issues);
 
             foreach (var sabbat in wheel.Sabbats)
@@ -1187,6 +1232,16 @@ namespace Wildgrove.Data
                         {
                             issues.Add($"Sabbat '{sabbat.Id}' yieldMult touch must target a resource — the Wheel's grain is the resource");
                         }
+                    }
+                }
+
+                // The keeping's theme must name real goods, or the generator's
+                // bias silently applies to nothing (the target-less-effect trap).
+                foreach (var lean in sabbat.VerseLean ?? new List<string>())
+                {
+                    if (!resourceIds.Contains(lean))
+                    {
+                        issues.Add($"Sabbat '{sabbat.Id}' verseLean references unknown goods '{lean}'");
                     }
                 }
 

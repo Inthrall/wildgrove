@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 49;
+        public const int CurrentVersion = 50;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -88,6 +88,29 @@ namespace Wildgrove.Sim.Saves
                     year = claim.year,
                     hemisphere = claim.hemisphere,
                 });
+            }
+
+            if (state.keeping != null)
+            {
+                save.keeping = new SavedKeeping
+                {
+                    sabbatId = state.keeping.sabbatId,
+                    year = state.keeping.year,
+                    hemisphere = state.keeping.hemisphere,
+                    generatedForMigration = state.keeping.generatedForMigration,
+                    tierGranted = state.keeping.tierGranted,
+                };
+                foreach (var slot in state.keeping.slots)
+                {
+                    save.keeping.slots.Add(new SavedKeepingSlot
+                    {
+                        kind = slot.kind,
+                        goodsId = slot.goodsId,
+                        target = slot.target,
+                        delivered = slot.delivered,
+                        renownGrant = slot.renownGrant,
+                    });
+                }
             }
 
             foreach (var familiar in state.roster)
@@ -386,6 +409,45 @@ namespace Wildgrove.Sim.Saves
                             sabbatId = claim.sabbatId,
                             year = claim.year,
                             hemisphere = claim.hemisphere,
+                        });
+                    }
+                }
+            }
+
+            // The keeping restores as the facts it stored — unknown goods ids
+            // are kept (a retune must not orphan an answered slot; an unknown
+            // ask simply can't be offered into), and only a shapeless page
+            // (no sabbat) is dropped whole. Keeping.Current re-keys it against
+            // the live tide, so a stale page is inert, never wrong.
+            state.keeping = null;
+            if (save.keeping != null && !string.IsNullOrEmpty(save.keeping.sabbatId))
+            {
+                state.keeping = new KeepingState
+                {
+                    sabbatId = save.keeping.sabbatId,
+                    year = save.keeping.year > 0 ? save.keeping.year : 0,
+                    hemisphere = save.keeping.hemisphere,
+                    generatedForMigration = save.keeping.generatedForMigration,
+                    tierGranted = save.keeping.tierGranted > 0 ? save.keeping.tierGranted : 0,
+                };
+                if (save.keeping.slots != null)
+                {
+                    foreach (var slot in save.keeping.slots)
+                    {
+                        if (slot == null)
+                        {
+                            continue;
+                        }
+
+                        state.keeping.slots.Add(new KeepingSlotState
+                        {
+                            kind = slot.kind == KeepingSlotState.SpecimenKind
+                                ? KeepingSlotState.SpecimenKind
+                                : KeepingSlotState.ResourceKind,
+                            goodsId = slot.goodsId,
+                            target = slot.target > 0.0 ? slot.target : 0.0,
+                            delivered = slot.delivered > 0.0 ? slot.delivered : 0.0,
+                            renownGrant = slot.renownGrant > 0L ? slot.renownGrant : 0L,
                         });
                     }
                 }
@@ -1003,6 +1065,14 @@ namespace Wildgrove.Sim.Saves
                         // is, and no sabbat was ever kept on a save from
                         // before the Wheel turned.
                         save.version = 49;
+                        break;
+
+                    case 49:
+                        // v50 added the keeping — the tide's own verse. Left
+                        // null: no keeping had begun on a save from before it
+                        // existed, and Keeping.Current generates one the
+                        // moment an open tide is next read.
+                        save.version = 50;
                         break;
 
                     default:

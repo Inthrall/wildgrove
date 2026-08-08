@@ -371,7 +371,29 @@ namespace Wildgrove.Data
         /// <summary>Days before the sabbat night that its tide opens.</summary>
         public int openDaysBefore = 14;
 
+        /// <summary>The keeping's shape (design §15) — a zeroed section reads as "no verse"; Keeping.Configured is the liveness check.</summary>
+        public ObservanceData observance;
+
         public List<SabbatData> sabbats = new List<SabbatData>();
+    }
+
+    /// <summary>The keeping: the tide's own offering verse and tier rewards (design §15).</summary>
+    [Serializable]
+    public sealed class ObservanceData
+    {
+        public int slotCount = 5;
+
+        /// <summary>Slots answered per tier: kept the eve / the day / the wheel.</summary>
+        public List<int> tierSlots = new List<int>();
+
+        /// <summary>Amber granted as each tier is crossed.</summary>
+        public List<double> tierAmber = new List<double>();
+
+        /// <summary>Each goods slot's value against the candidates' average worth.</summary>
+        public double slotValueMult = 2.0;
+
+        /// <summary>The specimen slot's fixed Renown grant.</summary>
+        public long specimenRenown;
     }
 
     /// <summary>One sabbat: a real-world festival day, hemisphere-mirrored, and its tide's ambient touch.</summary>
@@ -391,6 +413,9 @@ namespace Wildgrove.Data
 
         /// <summary>The ambient touch: one narrow lean, live while the tide is open.</summary>
         public List<EffectData> touch = new List<EffectData>();
+
+        /// <summary>Goods the keeping's generator favours — the tide's theme.</summary>
+        public List<string> verseLean = new List<string>();
 
         /// <summary>Sabbat nights as days-since-Unix-epoch (date-only), parsed from the authored "yyyy-MM-dd" at import.</summary>
         public List<int> northNightDays = new List<int>();

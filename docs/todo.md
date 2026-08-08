@@ -318,13 +318,22 @@ lean is a regression, not a phase. Build order:
 - ~~**Fold forecast names the next sabbat**~~ ✅ RESOLVED 2026-08-08 —
   "{sabbat}-tide is open." / "{sabbat}, N days off." on the fold sheet; the
   Trail page's head line is now the warden's tide line + touch label.
-- **The observance layer** (sabbat verse via the Rite generator, tiers,
-  the eight plates, tide tracker row in `GameHud.RefreshTracker`, the
-  hemisphere toggle, margin lines through `dialogue.json`/`Narrative`):
-  design-settled in §15, build-pending — the remaining half of the Wheel.
+- ~~**The observance layer**~~ ✅ RESOLVED 2026-08-08 — the keeping:
+  `Keeping.cs` + `RiteGenerator.GenerateKeeping/RedrawKeeping` (persisted
+  facts, whole-ask offers, Renown at trade value, one-shot tier Amber
+  5/10/10, claim at the first tier, fold redraw keeps answered slots),
+  save rung 49→50, THE KEEPING card on the Trail, the tracker's tide
+  row/tail, THE WHEEL shelf on the Record, the hemisphere toggle on the
+  inside cover (locked mid-tide). Containment is structural — the keeping
+  never enters `CurrentRite` or `verseProgress`, pinned by
+  `Keeping_NeverTouchesTheRitesLedgers`. Suite 1048/1048 on 2026-08-08.
+  Still open within it: the tracker's tide row doesn't scroll to the
+  keeping card (the » link is the verse's), and tier crossings celebrate
+  only in the tracker word — a PumpSheets moment can ride with the plates.
 - **Word/art debts**: eight sabbat margin lines (drafted in `sabbats.json`,
   the narrative pass re-voices), eight plates in the template (fire
-  festivals first is the fallback split).
+  festivals first is the fallback split) — the plates are what turns the
+  Record's year-tick lines into pages.
 
 ---
 

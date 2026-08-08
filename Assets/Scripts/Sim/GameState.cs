@@ -203,8 +203,18 @@ namespace Wildgrove.Sim
         /// </summary>
         public int hemisphere;
 
-        /// <summary>Sabbats kept, one claim per (sabbat, year, hemisphere) — the observance layer's ledger (design §15); empty until it lands. Saved.</summary>
+        /// <summary>Sabbats kept, one claim per (sabbat, year, hemisphere) — the keeping's ledger (design §15). Saved.</summary>
         public List<SabbatClaim> sabbatClaims = new List<SabbatClaim>();
+
+        /// <summary>
+        /// The current tide's keeping (design §15): its generated slots and
+        /// their progress, snapshotted as facts like a keepsake page — a reload
+        /// never rerolls because nothing is re-derived. Survives the fold
+        /// (answered slots are kept; the rest redraw against the new run) and
+        /// stays behind as the record once its tide closes, until the next tide
+        /// replaces it. Saved.
+        /// </summary>
+        public KeepingState keeping;
 
         /// <summary>Cached tide window — see Wheel. Never saved.</summary>
         public WheelCache wheelCache;
@@ -453,10 +463,9 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One kept sabbat (design §15): the observance layer's ledger entry.
-    /// Claims key on (sabbat, year, hemisphere) so clock or hemisphere games
-    /// move hours, never rewards. Written by the observance layer (build-
-    /// pending); persisted from day one so the save rung is paid once.
+    /// One kept sabbat (design §15): the keeping's ledger entry, written when
+    /// the first tier lands. Claims key on (sabbat, year, hemisphere) so clock
+    /// or hemisphere games move hours, never rewards.
     /// </summary>
     [Serializable]
     public sealed class SabbatClaim
@@ -468,6 +477,54 @@ namespace Wildgrove.Sim
 
         /// <summary>The hemisphere the claim was made under (1 north, 2 south).</summary>
         public int hemisphere;
+    }
+
+    /// <summary>
+    /// One tide's keeping (design §15): the generated offering slots and their
+    /// progress. The slots are stored as FACTS (goods, target, delivered) the
+    /// way a keepsake stores its page — never re-derived from content, so a
+    /// reload cannot reroll them and a data retune cannot orphan an answered
+    /// slot. Deliberately NOT a Rite verse: it lives outside CurrentRite and
+    /// verseProgress, so no verse milestone, gift pile, zone opening,
+    /// achievement or stat can ever see it.
+    /// </summary>
+    [Serializable]
+    public sealed class KeepingState
+    {
+        public string sabbatId;
+
+        /// <summary>The calendar year of the tide's sabbat night.</summary>
+        public int year;
+
+        public int hemisphere;
+
+        /// <summary>The fold the open slots were drawn against — a fold mid-tide redraws only what is unanswered.</summary>
+        public int generatedForMigration = -1;
+
+        /// <summary>Tiers already paid (0..tierSlots.Count) — grants are one-shot however the slots move.</summary>
+        public int tierGranted;
+
+        public List<KeepingSlotState> slots = new List<KeepingSlotState>();
+    }
+
+    /// <summary>One keeping slot: a whole-ask offering, answered in one act or not at all (the Rite's own rule).</summary>
+    [Serializable]
+    public sealed class KeepingSlotState
+    {
+        public const string ResourceKind = "resource";
+        public const string SpecimenKind = "specimen";
+
+        /// <summary>"resource" or "specimen".</summary>
+        public string kind;
+
+        /// <summary>The goods asked for — null for the specimen slot (any Decent find answers it).</summary>
+        public string goodsId;
+
+        public double target;
+        public double delivered;
+
+        /// <summary>Authored Renown for value-less materials (the Rite's GoodsSlot rule) — 0 means credit trade value on delivery.</summary>
+        public long renownGrant;
     }
 
     /// <summary>

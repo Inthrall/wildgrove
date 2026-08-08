@@ -27,6 +27,7 @@ namespace Wildgrove.Game
         internal void BuildTrailPage()
         {
             BuildTideLine();
+            BuildKeepingCard();
             BuildTrailHomeLine();
             BuildRecruitBar();
 
@@ -221,9 +222,115 @@ namespace Wildgrove.Game
             var gives = EffectsLabel(tide.touch);
             if (gives.Length > 0)
             {
-                MakeText(_body, gives + " · while " + tide.displayName + "-tide holds — the verse asks none of it",
+                MakeText(_body, gives + " · while " + tide.displayName + "-tide holds — the Rite's verses ask none of it",
                     15, TextAnchor.MiddleCenter, Ink2);
             }
+        }
+
+        /// <summary>
+        /// The keeping's page (design §15): the tide's own offering slots,
+        /// beside the Rite and never of it — no verse count, no gift pile, no
+        /// ground moves with it. Tiers pay a little Amber; the first writes
+        /// the year's claim. Nothing here through the fallow weeks.
+        /// </summary>
+        private void BuildKeepingCard()
+        {
+            var keeping = _loop.CurrentKeeping();
+            var tide = _loop.OpenTide();
+            if (keeping == null || tide == null)
+            {
+                return;
+            }
+
+            var card = Card("THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE");
+            var standing = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
+            _liveUpdaters.Add(() =>
+            {
+                if (_loop.CurrentKeeping() == null)
+                {
+                    standing.text = "<i>the tide has closed; the fire keeps what it was given</i>";
+                    return;
+                }
+
+                var closeMs = _loop.OpenTideCloseMs();
+                var days = (long)System.Math.Ceiling((closeMs - _loop.NowUnixMs()) / 86400000.0);
+                var tier = _loop.KeepingTierReached();
+                var word = tier == 1 ? "kept the eve" : tier == 2 ? "kept the day" : tier == 3 ? "kept the wheel" : "unkept yet";
+                standing.text = word + " · " + (days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days");
+            });
+
+            for (var i = 0; i < keeping.slots.Count; i++)
+            {
+                BuildKeepingSlotRow(card, i);
+            }
+        }
+
+        private void BuildKeepingSlotRow(RectTransform card, int slotIndex)
+        {
+            var row = Row(card);
+            var label = MakeText(row.transform, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
+            FlexibleWidth(label.gameObject, 1f);
+
+            Button offer = null;
+            offer = Button(row.transform, "Set down", 180, () =>
+            {
+                if (_loop.OfferKeeping(slotIndex))
+                {
+                    Flash(offer, "set down", true);
+                    SetNote("set it down at the fire. the day is a little more kept.");
+                }
+                else
+                {
+                    Flash(offer, "not the whole offering", false);
+                    SetNote("the whole offering, or none at all. the stores are short.");
+                }
+            });
+
+            _liveUpdaters.Add(() =>
+            {
+                var keeping = _loop.CurrentKeeping();
+                if (keeping == null || slotIndex >= keeping.slots.Count)
+                {
+                    row.gameObject.SetActive(false);
+                    return;
+                }
+
+                row.gameObject.SetActive(true);
+                var slot = keeping.slots[slotIndex];
+                var specimen = slot.kind == KeepingSlotState.SpecimenKind;
+                var name = specimen ? "a Decent find" : (slot.goodsId ?? string.Empty).Replace('-', ' ');
+                if (Keeping.IsSlotComplete(slot))
+                {
+                    label.text = "<color=" + MossDeepHex + ">" + name + ", set down</color>";
+                }
+                else
+                {
+                    var held = specimen ? DecentFindsInHand() : _loop.State.GetResource(slot.goodsId).ToDouble();
+                    var inHand = System.Math.Min(held, slot.target);
+                    label.text = name + "  <color=" + Ink2Hex + ">" + NumberFormat.ShortFloor(System.Math.Floor(inHand))
+                                 + " / " + NumberFormat.Short(slot.target) + "</color>";
+                }
+
+                var open = !Keeping.IsSlotComplete(slot);
+                offer.gameObject.SetActive(open);
+                if (open)
+                {
+                    var ok = _loop.CanOfferKeeping(slotIndex);
+                    offer.interactable = ok;
+                    SetButtonTint(offer, ok);
+                }
+            });
+        }
+
+        private double DecentFindsInHand()
+        {
+            var total = 0.0;
+            foreach (var pair in _loop.State.decentResources)
+            {
+                total += pair.Value.ToDouble();
+            }
+
+            return total;
         }
 
         /// <summary>

@@ -1,6 +1,14 @@
 {
   "$comment": "The Wheel (design §15): eight real-world sabbats a year, hemisphere-mirrored, each opening a ~two-week tide that closes at the sabbat night. The calendar is the warden's, not the land's — 'sign' is the warden's margin line ('…, by my count'), draft wording owed to the narrative pass. The tide's 'touch' is the world's ONE ambient lean (it replaced the drawn region season, design §8, 2026-08-08): read live by Wheel.cs from the sim clock cursor, NEVER joined into the cached active-effect union, never entering verseDemand, and never touching the Amber faucet. Values are unplaytested first guesses; every lean stays inside one mastery band (~+25%) — the no-gate rule. Nights are authored dates (no astronomy code; solstice drift is data), per hemisphere, several years ahead so an un-updated install keeps the wheel turning — top up around 2029. openDaysBefore sets when each tide opens ahead of its night. Windows within one hemisphere must never overlap (validator-enforced).",
   "openDaysBefore": 14,
+  "observance": {
+    "$note": "The keeping (design §15): the tide's own verse — choose-any-of-5 offering slots generated from the run's unlocked content, NEVER a Rite verse (no gift pile, no verse milestone, no ground). Tiers are slots answered: kept the eve / kept the day / kept the wheel. All values are unplaytested first guesses for the sitting: slotValueMult prices each goods slot against the candidates' average worth (the Rite's verse-1 anchor ≈ 1.0, so 2.0 ≈ a second-verse-sized ask, flat at every fold — the wheel greets every warden the same); tierAmber pays 5/10/10 as tiers are crossed (25 for a full keep, ~once per 6.5 weeks, read against the ~120/week diligent lean and the weekly cache's 20 — §9); specimenRenown is the specimen slot's fixed grant, small against the goods slots.",
+    "slotCount": 5,
+    "tierSlots": [1, 3, 5],
+    "tierAmber": [5, 10, 10],
+    "slotValueMult": 2.0,
+    "specimenRenown": 40
+  },
   "sabbats": [
     {
       "id": "samhain",
@@ -10,6 +18,7 @@
       "touch": [
         { "type": "digSpeedMult", "value": 1.2 }
       ],
+      "verseLean": ["berry-preserve", "smoked-trout", "mushroom-skewer"],
       "nights": {
         "north": ["2026-10-31", "2027-10-31", "2028-10-31", "2029-10-31", "2030-10-31"],
         "south": ["2026-05-01", "2027-05-01", "2028-05-01", "2029-05-01", "2030-05-01"]
@@ -23,6 +32,7 @@
       "touch": [
         { "type": "craftSpeedMult", "skill": "firecraft", "value": 1.2 }
       ],
+      "verseLean": ["charcoal", "mushroom-skewer", "berry-preserve"],
       "nights": {
         "north": ["2026-12-21", "2027-12-21", "2028-12-21", "2029-12-21", "2030-12-21"],
         "south": ["2026-06-21", "2027-06-21", "2028-06-20", "2029-06-21", "2030-06-21"]
@@ -37,6 +47,7 @@
         { "type": "yieldMult", "resource": "fibres", "value": 1.2 },
         { "type": "yieldMult", "resource": "herbs", "value": 1.2 }
       ],
+      "verseLean": ["fibres", "herbs", "cordage"],
       "nights": {
         "north": ["2026-02-01", "2027-02-01", "2028-02-01", "2029-02-01", "2030-02-01"],
         "south": ["2026-08-01", "2027-08-01", "2028-08-01", "2029-08-01", "2030-08-01"]
@@ -50,6 +61,7 @@
       "touch": [
         { "type": "replantCostMult", "value": 0.8 }
       ],
+      "verseLean": ["wildflowers", "fibres", "herbs"],
       "nights": {
         "north": ["2026-03-20", "2027-03-20", "2028-03-20", "2029-03-20", "2030-03-20"],
         "south": ["2026-09-23", "2027-09-23", "2028-09-22", "2029-09-22", "2030-09-22"]
@@ -64,6 +76,7 @@
         { "type": "yieldMult", "resource": "wildflowers", "value": 1.2 },
         { "type": "yieldMult", "resource": "berries", "value": 1.2 }
       ],
+      "verseLean": ["wildflowers", "berries", "berry-preserve"],
       "nights": {
         "north": ["2026-05-01", "2027-05-01", "2028-05-01", "2029-05-01", "2030-05-01"],
         "south": ["2026-10-31", "2027-10-31", "2028-10-31", "2029-10-31", "2030-10-31"]
@@ -77,6 +90,7 @@
       "touch": [
         { "type": "bubbleRewardBonus", "value": 0.2 }
       ],
+      "verseLean": ["berries", "fish", "smoked-trout"],
       "nights": {
         "north": ["2026-06-21", "2027-06-21", "2028-06-20", "2029-06-21", "2030-06-21"],
         "south": ["2026-12-21", "2027-12-21", "2028-12-21", "2029-12-21", "2030-12-21"]
@@ -91,6 +105,7 @@
         { "type": "yieldMult", "resource": "nuts", "value": 1.2 },
         { "type": "yieldMult", "resource": "mushrooms", "value": 1.2 }
       ],
+      "verseLean": ["nuts", "mushrooms", "reed-baskets"],
       "nights": {
         "north": ["2026-08-01", "2027-08-01", "2028-08-01", "2029-08-01", "2030-08-01"],
         "south": ["2026-02-01", "2027-02-01", "2028-02-01", "2029-02-01", "2030-02-01"]
@@ -104,6 +119,7 @@
       "touch": [
         { "type": "exchangeSpreadEase", "value": 0.05 }
       ],
+      "verseLean": ["reed-baskets", "berry-preserve", "smoked-trout"],
       "nights": {
         "north": ["2026-09-23", "2027-09-23", "2028-09-22", "2029-09-22", "2030-09-22"],
         "south": ["2026-03-20", "2027-03-20", "2028-03-20", "2029-03-20", "2030-03-20"]

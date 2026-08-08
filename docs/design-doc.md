@@ -750,7 +750,7 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 
 ## 15 · The Wheel (draft)
 
-*Added 2026-08-08; **in build from the same day (Mo's call, superseding the v1.1 queue position): the Wheel replaces the drawn region season (§8) as the world's one lean, and construction starts now.** The naming calls are decided (real names; the day is the sabbat); the ambient touch is in; the observance layer above it (sabbat verse, tiers, plates) is design-settled but build-pending — the work list is todo §1.8. Nothing in Level Up asks for any of this (§12's Leagues note covers Google's own events). "League" is the dev-facing word for the genre shelf this sits on; no player ever reads it.*
+*Added 2026-08-08; **built the same day (Mo's call, superseding the v1.1 queue position): the Wheel replaced the drawn region season (§8) as the world's one lean, and the keeping — the tide's verse, tiers and claims — landed with it (todo §1.8).** The naming calls are decided (real names; the day is the sabbat). What remains is the art and voice pass: the eight plates behind the Record's year ticks, and the narrative re-voicing of the drafted margin lines. Nothing in Level Up asks for any of this (§12's Leagues note covers Google's own events). "League" is the dev-facing word for the genre shelf this sits on; no player ever reads it.*
 
 ### The shape: observances, not brackets
 

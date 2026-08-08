@@ -218,6 +218,52 @@ namespace Wildgrove.Game
             return Wheel.NextSabbat(State, Data, out nightStartUnixMs);
         }
 
+        /// <summary>When the open tide closes (UTC unix ms) — 0 in the fallow weeks.</summary>
+        public long OpenTideCloseMs()
+        {
+            return Wheel.OpenTideCloseMs(State, Data);
+        }
+
+        /// <summary>The open tide's keeping (design §15) — generated on first read, null through the fallow weeks.</summary>
+        public KeepingState CurrentKeeping()
+        {
+            return Keeping.Current(State, Data);
+        }
+
+        /// <summary>Tiers the keeping has reached (0..3) — the tracker's word.</summary>
+        public int KeepingTierReached()
+        {
+            return Keeping.TierReached(Data, Keeping.Current(State, Data));
+        }
+
+        public bool CanOfferKeeping(int slotIndex)
+        {
+            return Keeping.CanOffer(State, Data, slotIndex);
+        }
+
+        /// <summary>
+        /// Set a keeping slot's whole ask down. Deliberately NOT the Rite's
+        /// AfterOffering path: no verse stat, no rite event — the keeping is
+        /// beside the Rite, never of it. Its own telemetry fires only when a
+        /// tier lands.
+        /// </summary>
+        public bool OfferKeeping(int slotIndex)
+        {
+            var before = State.keeping?.tierGranted ?? 0;
+            if (!Keeping.TryOffer(State, Data, slotIndex))
+            {
+                return false;
+            }
+
+            var after = State.keeping?.tierGranted ?? 0;
+            if (after > before)
+            {
+                Telemetry.LogEvent("sabbat_kept", ("sabbat", State.keeping.sabbatId), ("tier", after));
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Roster familiars whose Kinship gain at a fold right now would cross
         /// a signature milestone (design §4) — the fold sheet names them, so

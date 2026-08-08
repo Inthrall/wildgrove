@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalWidgets;
 
@@ -51,6 +52,7 @@ namespace Wildgrove.Game
                 17, TextAnchor.UpperCenter, Ink2, _hand);
 
             BuildKeeping(sheet);
+            BuildWheel(sheet);
             BuildTelling(sheet);
             BuildBought(sheet);
             BuildColophon(sheet);
@@ -133,6 +135,51 @@ namespace Wildgrove.Game
                     Flash(signIn, "Play Games didn't answer", false);
                 });
             });
+        }
+
+        /// <summary>
+        /// The warden's reckoning (design §15): which half of the world's wheel
+        /// the sabbats keep. Locale guessed it once; the equator chooses, a
+        /// traveller keeps their own. Locked while a tide is open — the
+        /// opposite sabbat sits on the same dates, and a mid-tide flip would be
+        /// a double-claim vector. Sheets are snapshots, so the row re-reads
+        /// itself in its own handler.
+        /// </summary>
+        private void BuildWheel(Transform sheet)
+        {
+            if (!Wheel.Configured(_loop.Data))
+            {
+                return;
+            }
+
+            SheetSection(sheet, "THE WHEEL");
+            MakeText(sheet,
+                "The reckoning of the sabbats — Beltane, Samhain and the rest — turns with the half of"
+                + " the world the warden keeps it by. While a tide is open, its page waits on the Trail.",
+                16, TextAnchor.UpperLeft, Ink2, _serif);
+
+            Button reckoning = null;
+            reckoning = Button(sheet, ReckoningLabel(), 460, () =>
+            {
+                if (_loop.OpenTide() != null)
+                {
+                    Flash(reckoning, "the tide holds the reckoning", false);
+                    return;
+                }
+
+                _loop.State.hemisphere = _loop.State.hemisphere == Wheel.HemisphereSouth
+                    ? Wheel.HemisphereNorth
+                    : Wheel.HemisphereSouth;
+                SetButtonLabel(reckoning, ReckoningLabel());
+                Flash(reckoning, "the wheel turned", true);
+            });
+        }
+
+        private string ReckoningLabel()
+        {
+            return _loop.State.hemisphere == Wheel.HemisphereSouth
+                ? "The reckoning: the south's wheel"
+                : "The reckoning: the north's wheel";
         }
 
         /// <summary>

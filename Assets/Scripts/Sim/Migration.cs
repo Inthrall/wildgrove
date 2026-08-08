@@ -193,6 +193,20 @@ namespace Wildgrove.Sim
             // region's own ritual (design §9's sink slate).
             next.wardenName = state.wardenName;
 
+            // The Wheel is the warden's, not the run's (design §15): the
+            // hemisphere is the warden's reckoning and the claims are sabbats
+            // already kept — a fold that dropped either would flip a chosen
+            // calendar back to the locale guess and let a kept sabbat be kept
+            // twice. The clock cursor deliberately does NOT cross: it is the
+            // host's runtime stamp, re-taken every frame.
+            next.hemisphere = state.hemisphere;
+            next.sabbatClaims.AddRange(state.sabbatClaims);
+
+            // The open tide's keeping crosses too: it is calendar-keyed, not
+            // run-keyed (design §15) — answered slots stay answered, and
+            // Keeping.Current redraws the rest against the new run's country.
+            next.keeping = state.keeping;
+
             // Lore stays read: run 2 re-unlocks the zones without re-showing
             // every stone the warden has already stood before. (NewGame marks
             // the starting stone itself, so add without duplicating.)

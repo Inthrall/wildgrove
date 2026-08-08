@@ -946,6 +946,59 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Capture_RoundTripsTheKeeping()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.keeping = new KeepingState
+            {
+                sabbatId = "beltane",
+                year = 2026,
+                hemisphere = Wheel.HemisphereNorth,
+                generatedForMigration = 2,
+                tierGranted = 1,
+            };
+            state.keeping.slots.Add(new KeepingSlotState
+            {
+                kind = KeepingSlotState.ResourceKind,
+                goodsId = "wildflowers",
+                target = 120.0,
+                delivered = 120.0,
+                renownGrant = 0L,
+            });
+            state.keeping.slots.Add(new KeepingSlotState
+            {
+                kind = KeepingSlotState.SpecimenKind,
+                target = 1.0,
+                renownGrant = 40L,
+            });
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.keeping, Is.Not.Null, "a keeping that didn't survive the save would reroll on relaunch");
+            Assert.That(restored.keeping.sabbatId, Is.EqualTo("beltane"));
+            Assert.That(restored.keeping.year, Is.EqualTo(2026));
+            Assert.That(restored.keeping.generatedForMigration, Is.EqualTo(2));
+            Assert.That(restored.keeping.tierGranted, Is.EqualTo(1));
+            Assert.That(restored.keeping.slots, Has.Count.EqualTo(2));
+            Assert.That(restored.keeping.slots[0].goodsId, Is.EqualTo("wildflowers"));
+            Assert.That(restored.keeping.slots[0].delivered, Is.EqualTo(120.0));
+            Assert.That(restored.keeping.slots[1].kind, Is.EqualTo(KeepingSlotState.SpecimenKind));
+            Assert.That(restored.keeping.slots[1].renownGrant, Is.EqualTo(40L));
+        }
+
+        [Test]
+        public void Restore_ShapelessKeeping_IsDroppedWhole()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.keeping = new SavedKeeping { sabbatId = "" };
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(state.keeping, Is.Null,
+                "a page with no sabbat is shapeless — dropped whole, and the next tide simply generates fresh");
+        }
+
+        [Test]
         public void Restore_ShapelessWheelFields_ReadAsUnsetAndDropped()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);

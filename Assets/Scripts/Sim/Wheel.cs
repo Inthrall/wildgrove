@@ -48,6 +48,20 @@ namespace Wildgrove.Sim
             return Cache(state, data)?.open;
         }
 
+        /// <summary>The open tide's sabbat night as a days-since-epoch date, or -1 — the keeping keys its year on this.</summary>
+        public static int OpenNightDay(GameState state, GameDataAsset data)
+        {
+            var cache = Cache(state, data);
+            return cache?.open != null ? cache.openNightDay : -1;
+        }
+
+        /// <summary>When the open tide closes (UTC unix ms) — the fire's own midnight; 0 when no tide is open.</summary>
+        public static long OpenTideCloseMs(GameState state, GameDataAsset data)
+        {
+            var cache = Cache(state, data);
+            return cache?.open != null ? cache.toMs : 0L;
+        }
+
         /// <summary>
         /// The sabbat night at or ahead of the cursor — the open tide's own
         /// night while one is open, else the next to come. Null when the Wheel
@@ -167,6 +181,7 @@ namespace Wildgrove.Sim
             cache.hemisphere = state.hemisphere;
             cache.utcOffsetMinutes = state.utcOffsetMinutes;
             cache.open = null;
+            cache.openNightDay = -1;
             cache.fromMs = long.MinValue;
             cache.toMs = long.MaxValue;
             cache.digSpeedMult = 1.0;
@@ -203,6 +218,7 @@ namespace Wildgrove.Sim
                     if (now >= openMs && now < closeMs)
                     {
                         cache.open = sabbat;
+                        cache.openNightDay = nightDay;
                         cache.fromMs = openMs;
                         cache.toMs = closeMs;
                         BuildTouch(cache, sabbat);
@@ -304,6 +320,7 @@ namespace Wildgrove.Sim
         public long fromMs = long.MinValue;
         public long toMs = long.MinValue;
         public SabbatData open;
+        public int openNightDay = -1;
 
         public double digSpeedMult = 1.0;
         public double craftSpeedGlobal = 1.0;

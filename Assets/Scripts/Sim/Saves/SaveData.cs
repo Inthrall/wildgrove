@@ -98,8 +98,11 @@ namespace Wildgrove.Sim.Saves
         /// <summary>The warden's hemisphere for the Wheel (design §15, v49): 0 unset, 1 north, 2 south.</summary>
         public int hemisphere;
 
-        /// <summary>Sabbats kept — the observance layer's ledger (design §15, v49); empty until it lands.</summary>
+        /// <summary>Sabbats kept — the keeping's ledger (design §15, v49).</summary>
         public List<SavedSabbatClaim> sabbatClaims = new List<SavedSabbatClaim>();
+
+        /// <summary>The current tide's keeping — its generated slots and progress (design §15, v50); null when none has begun.</summary>
+        public SavedKeeping keeping;
 
         /// <summary>Accumulated foreground play time in ms. Monotonic; the basis cloud saves are compared on.</summary>
         public long playedMs;
@@ -319,6 +322,28 @@ namespace Wildgrove.Sim.Saves
         public string sabbatId;
         public int year;
         public int hemisphere;
+    }
+
+    /// <summary>The current tide's keeping (design §15, v50): slots stored as facts, like a keepsake page.</summary>
+    [Serializable]
+    public sealed class SavedKeeping
+    {
+        public string sabbatId;
+        public int year;
+        public int hemisphere;
+        public int generatedForMigration = -1;
+        public int tierGranted;
+        public List<SavedKeepingSlot> slots = new List<SavedKeepingSlot>();
+    }
+
+    [Serializable]
+    public sealed class SavedKeepingSlot
+    {
+        public string kind;
+        public string goodsId;
+        public double target;
+        public double delivered;
+        public long renownGrant;
     }
 
     [Serializable]

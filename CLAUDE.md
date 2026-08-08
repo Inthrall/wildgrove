@@ -73,12 +73,13 @@ sequential migration `switch`, and make sure `Restore` copes with the old data
 (clamping, dedupe, resting things that no longer fit). Test saves from before a
 migration are the cheapest way to find what `Restore` missed.
 
-**The ladder runs 42→49.** `CurrentVersion` is 49 and `EarliestReadableVersion` is
+**The ladder runs 42→50.** `CurrentVersion` is 50 and `EarliestReadableVersion` is
 42: a v42 save climbs every rung — the clock ratchet (43), the warden's name (44),
 the camp's name (45), the consideration pair (46), the second queue (47), the
-keepsakes (48), the Wheel's hemisphere + claims (49) — and is read whole. Every
-rung adds nothing but a version, which is the shape to copy: a migration fills in
-only what its version predates, and never reaches for current content data.
+keepsakes (48), the Wheel's hemisphere + claims (49), the keeping (50) — and is
+read whole. Every rung adds nothing but a version, which is the shape to copy: a
+migration fills in only what its version predates, and never reaches for current
+content data.
 Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
 `EarliestReadableVersion` where it is**. It moves again only when bottom rungs are
 deliberately dropped, and raising it is a decision about whose saves stop working.

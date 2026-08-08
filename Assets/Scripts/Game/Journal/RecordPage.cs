@@ -26,6 +26,7 @@ namespace Wildgrove.Game
             BuildFolioCard();
             BuildDeepPagesCard();
             BuildKeepsakesCard();
+            BuildWheelCard();
             BuildAlmanacCard();
             BuildStandingCard();
             BuildInsideCoverCard();
@@ -156,6 +157,33 @@ namespace Wildgrove.Game
         private string LegacySeason(string regionId)
         {
             return string.IsNullOrEmpty(regionId) ? string.Empty : ", a " + regionId + " season";
+        }
+
+        /// <summary>
+        /// The Wheel's shelf (design §15): the eight sabbats by the warden's
+        /// count, each with a year tick per keeping — a gap in the record is a
+        /// gap, never a wound. The plates themselves are the art pass's debt;
+        /// until they land, the record is the line.
+        /// </summary>
+        private void BuildWheelCard()
+        {
+            var wheel = _loop.Data.wheel;
+            if (wheel?.sabbats == null || wheel.sabbats.Count == 0)
+            {
+                return;
+            }
+
+            var card = Card("THE WHEEL");
+            MakeText(card, "<i>the sabbats, by the warden's count — a year tick for every keeping</i>",
+                15, TextAnchor.MiddleCenter, Ink2, _serif);
+            foreach (var sabbat in wheel.sabbats)
+            {
+                var years = Keeping.KeptYears(_loop.State, sabbat.id);
+                var ticks = years.Count == 0
+                    ? "<color=" + Ink2Hex + "><i>unkept</i></color>"
+                    : "<color=" + Ink2Hex + ">kept " + string.Join(" · ", years) + "</color>";
+                MakeText(card, "<b>" + sabbat.displayName + "</b>  " + ticks, 18, TextAnchor.MiddleLeft, Ink);
+            }
         }
 
         /// <summary>

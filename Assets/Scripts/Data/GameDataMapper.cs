@@ -168,6 +168,14 @@ namespace Wildgrove.Data
             return w == null ? null : new WheelData
             {
                 openDaysBefore = w.OpenDaysBefore,
+                observance = w.Observance == null ? null : new ObservanceData
+                {
+                    slotCount = w.Observance.SlotCount,
+                    tierSlots = new List<int>(w.Observance.TierSlots),
+                    tierAmber = new List<double>(w.Observance.TierAmber),
+                    slotValueMult = w.Observance.SlotValueMult,
+                    specimenRenown = w.Observance.SpecimenRenown
+                },
                 sabbats = w.Sabbats.Select(MapSabbat).ToList()
             };
         }
@@ -181,6 +189,7 @@ namespace Wildgrove.Data
                 kind = s.Kind,
                 sign = s.Sign,
                 touch = s.Touch.Select(MapEffect).ToList(),
+                verseLean = new List<string>(s.VerseLean),
                 northNightDays = MapNights(s.Nights?.North),
                 southNightDays = MapNights(s.Nights?.South)
             };

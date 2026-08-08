@@ -172,16 +172,55 @@ namespace Wildgrove.Game
                     // The trailing guillemet marks the banner as a link — it
                     // jumps to the verse card, far down the Trail page.
                     _trackerText.text = "Verse of " + _labels.ZoneName(verse.zone) + ": <b>"
-                                        + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
+                                        + Mathf.Min(done, need) + " of " + need + "</b> answered  »"
+                                        + TideTail();
                     _trackerPanel.SetActive(true);
                     return;
                 }
+            }
+
+            // With no verse pinned, an open tide takes the row alone — the
+            // keeping is the one clock left running (design §15).
+            var tide = _loop.OpenTide();
+            if (tide != null)
+            {
+                _trackerText.text = "<b>" + tide.displayName + "-tide</b> · " + KeepingWord()
+                                    + " · " + TideCloseWord();
+                _trackerPanel.SetActive(true);
+                return;
             }
 
             // Nothing pinned — hide the panel outright; an empty bordered
             // strip reads as a rendering bug.
             _trackerText.text = string.Empty;
             _trackerPanel.SetActive(false);
+        }
+
+        /// <summary>The short reminder an open tide adds to a busier banner.</summary>
+        private string TideTail()
+        {
+            var tide = _loop.OpenTide();
+            return tide != null
+                ? "  <color=" + Ink2Hex + ">· " + tide.displayName + "-tide</color>"
+                : string.Empty;
+        }
+
+        private string KeepingWord()
+        {
+            switch (_loop.KeepingTierReached())
+            {
+                case 1: return "kept the eve";
+                case 2: return "kept the day";
+                case 3: return "kept the wheel";
+                default: return "unkept";
+            }
+        }
+
+        private string TideCloseWord()
+        {
+            var closeMs = _loop.OpenTideCloseMs();
+            var days = (long)System.Math.Ceiling((closeMs - _loop.NowUnixMs()) / 86400000.0);
+            return days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days";
         }
 
         internal void SetNote(string text)

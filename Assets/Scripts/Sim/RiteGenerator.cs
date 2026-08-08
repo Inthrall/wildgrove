@@ -160,6 +160,160 @@ namespace Wildgrove.Sim
             return rite;
         }
 
+        /// <summary>
+        /// The keeping's verse (design §15): the tide's own offering slots,
+        /// drawn from what THIS run can reach — the union of every unlocked
+        /// zone's candidates, under the same order- and stationing-aware
+        /// reachability the Rite's verses carry — leaning first to the
+        /// sabbat's authored goods, priced flat against the picked set's own
+        /// average worth (the wheel greets every warden the same), and closed
+        /// by the one Decent-specimen slot. Deterministic from
+        /// (sabbat, year, hemisphere, fold): a reload never rerolls, and a
+        /// fold redraws only what is not yet answered.
+        /// </summary>
+        public static KeepingState GenerateKeeping(GameState state, GameDataAsset data, SabbatData sabbat, int year, int hemisphere)
+        {
+            var keeping = new KeepingState
+            {
+                sabbatId = sabbat.id,
+                year = year,
+                hemisphere = hemisphere,
+                generatedForMigration = state.migrationCount,
+            };
+            FillOpenKeepingSlots(state, data, sabbat, keeping);
+            return keeping;
+        }
+
+        /// <summary>A fold mid-tide keeps answered slots whole and redraws the rest against the new run's country.</summary>
+        public static void RedrawKeeping(GameState state, GameDataAsset data, SabbatData sabbat, KeepingState keeping)
+        {
+            keeping.generatedForMigration = state.migrationCount;
+            keeping.slots.RemoveAll(slot => slot.delivered < slot.target);
+            FillOpenKeepingSlots(state, data, sabbat, keeping);
+        }
+
+        private static void FillOpenKeepingSlots(GameState state, GameDataAsset data, SabbatData sabbat, KeepingState keeping)
+        {
+            var observance = data.wheel.observance;
+            var seed = Rng.Sanitise(KeepingSeed(sabbat.id, keeping.year, keeping.hemisphere, keeping.generatedForMigration));
+
+            // The union of every unlocked zone's candidates — a keeping asks
+            // only for the country this run has actually opened.
+            var candidates = new List<string>();
+            foreach (var zoneId in Upgrades.UnlockedZoneIds(state, data))
+            {
+                if (!data.ZonesById.TryGetValue(zoneId, out var zone))
+                {
+                    continue;
+                }
+
+                foreach (var goods in CandidateGoods(data, zone))
+                {
+                    if (!candidates.Contains(goods))
+                    {
+                        candidates.Add(goods);
+                    }
+                }
+            }
+
+            // Slots already answered keep their goods off the fresh draw — a
+            // page never asks for the same offering twice.
+            var goodsHeld = 0;
+            var specimenHeld = false;
+            foreach (var slot in keeping.slots)
+            {
+                candidates.Remove(slot.goodsId);
+                if (slot.kind == KeepingSlotState.SpecimenKind)
+                {
+                    specimenHeld = true;
+                }
+                else
+                {
+                    goodsHeld++;
+                }
+            }
+
+            // The tide's own goods first (the authored lean), the rest from
+            // anywhere reachable — theme is a bias, never a wall.
+            var leaned = new List<string>();
+            var rest = new List<string>();
+            foreach (var goods in candidates)
+            {
+                (sabbat.verseLean != null && sabbat.verseLean.Contains(goods) ? leaned : rest).Add(goods);
+            }
+
+            var chosen = new List<string>();
+            var goodsWanted = Math.Max(0, observance.slotCount - 1 - goodsHeld);
+            for (var i = 0; i < goodsWanted; i++)
+            {
+                var source = leaned.Count > 0 ? leaned : rest;
+                if (source.Count == 0)
+                {
+                    break;
+                }
+
+                chosen.Add(TakeFreshestRandom(data, source, ref seed));
+            }
+
+            if (chosen.Count > 0)
+            {
+                // Flat pricing: each slot carries the picked set's own average
+                // worth × the authored mult — no fold scale, no zone ramp.
+                var anchor = 0.0;
+                foreach (var goods in chosen)
+                {
+                    anchor += Economy.NotionalUnitValue(data, goods).ToDouble();
+                }
+
+                anchor /= chosen.Count;
+                var config = data.rites?.generator ?? new RiteGeneratorConfigData();
+                var targets = new List<double>();
+                for (var i = 0; i < chosen.Count; i++)
+                {
+                    targets.Add(anchor * observance.slotValueMult);
+                }
+
+                foreach (var priced in PriceGoods(data, config, chosen, targets))
+                {
+                    keeping.slots.Add(new KeepingSlotState
+                    {
+                        kind = KeepingSlotState.ResourceKind,
+                        goodsId = priced.resource,
+                        target = priced.amount,
+                        renownGrant = priced.renownGrant,
+                    });
+                }
+            }
+
+            if (!specimenHeld)
+            {
+                // The specimen slot stays last, and stays the cheap one — the
+                // luck lane must never become the wall (design §8's own rule).
+                keeping.slots.Add(new KeepingSlotState
+                {
+                    kind = KeepingSlotState.SpecimenKind,
+                    target = 1.0,
+                    renownGrant = observance.specimenRenown,
+                });
+            }
+        }
+
+        // FNV-1a over the keeping's whole key — a different sabbat, year,
+        // hemisphere or fold is a different draw, and nothing else is.
+        private static ulong KeepingSeed(string sabbatId, int year, int hemisphere, int migration)
+        {
+            var hash = 14695981039346656037UL;
+            foreach (var ch in sabbatId ?? string.Empty)
+            {
+                hash = (hash ^ ch) * 1099511628211UL;
+            }
+
+            hash = (hash ^ (uint)year) * 1099511628211UL;
+            hash = (hash ^ (uint)hemisphere) * 1099511628211UL;
+            hash = (hash ^ (uint)migration) * 1099511628211UL;
+            return hash;
+        }
+
         private static RiteVerseData GenerateVerse(GameDataAsset data, RiteVerseData template,
             RiteGeneratorConfigData config, int migration, double scale, int extraSlots, ref ulong seed)
         {
