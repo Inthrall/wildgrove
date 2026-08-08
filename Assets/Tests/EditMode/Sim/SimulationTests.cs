@@ -342,7 +342,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_WardenWandering_GathersAShareOfEveryNodeStraightToCamp()
+        public void Advance_WardenWandering_GathersNothing()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.9 };
             var state = GameStateFactory.NewGame(_data);
@@ -351,12 +351,13 @@ namespace Wildgrove.Sim.Tests
 
             Simulation.Advance(state, _data, 10.0);
 
-            // The warden roams three nodes: 0.9/s split evenly is 0.3/s each,
-            // pocketed straight to camp (no basket, like any warden pickings).
+            // Wandering is the watch and only the watch: a wandering warden
+            // picks nothing at any node (the gather-share retired 2026-08-09 —
+            // a roamer who also gathered read as two jobs on one post).
             Assert.That(Warden.IsWandering(state), Is.True);
             foreach (var node in state.nodes)
             {
-                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
+                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
                 Assert.That(node.basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
             }
         }
@@ -377,7 +378,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_AWanderer_GathersAShareOfEveryNode()
+        public void Advance_AWanderer_GathersNothing()
         {
             var state = GameStateFactory.NewGame(_data);
             TestKith.ClearStations(state);
@@ -385,11 +386,12 @@ namespace Wildgrove.Sim.Tests
 
             Simulation.Advance(state, _data, 9.0);
 
-            // One wanderer roams three nodes — a third of a gatherer at each,
-            // landed at camp by the delivery cadence.
+            // Wandering is the watch and only the watch: a wandering familiar
+            // gathers at no node (the gather-share retired 2026-08-09 — a
+            // roamer who also gathered read as two jobs on one post).
             foreach (var node in state.nodes)
             {
-                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(3.0).Within(Tolerance), node.id);
+                Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
             }
         }
 
@@ -550,20 +552,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TotalYieldPerSecond_AddsTheWanderingWardensShareToTheKithsLane()
+        public void TotalYieldPerSecond_AWanderingWarden_AddsNothingToTheKithsLane()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear();
             TestKith.Station(state, state.nodes[0].id, 1);
-            // One body per post, so a familiar and the warden can never share a
-            // node — the wander post is where both lanes land on the same one.
             Warden.Wander(state);
 
+            // Wandering is the watch and only the watch (the gather-share
+            // retired 2026-08-09): the node's rate is the kith's lane alone.
             var node = state.nodes[0];
             var kith = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
+            Assert.That(kith, Is.GreaterThan(0.0), "the stationed familiar's lane still runs");
             Assert.That(Simulation.TotalYieldPerSecond(node, state, _data, _data.economy).ToDouble(),
-                Is.EqualTo(kith + 0.5 / state.nodes.Count).Within(Tolerance));
+                Is.EqualTo(kith).Within(Tolerance));
         }
 
         [Test]

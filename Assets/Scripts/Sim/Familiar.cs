@@ -31,10 +31,11 @@ namespace Wildgrove.Sim
         public const string PonySpecies = "fell-pony";
 
         /// <summary>
-        /// The wander-post station id: its holder roams the run's nodes,
-        /// gathering a little of everything and watching the small lives at
-        /// every observation site along the way (the watch is not a post of its
-        /// own).
+        /// The wander-post station id: its holder walks the run watching the
+        /// small lives at every observation site (the watch is not a post of
+        /// its own). Watching is ALL the post does — a wanderer gathers
+        /// nothing (a roamer who also gathered read as two jobs on one post,
+        /// and players couldn't say what the post was for).
         /// </summary>
         public const string WanderStation = "wander";
 
@@ -96,7 +97,7 @@ namespace Wildgrove.Sim
         /// </summary>
         public bool IsPony => speciesId == PonySpecies;
 
-        /// <summary>True when stationed at the wander post (roaming every node and watch site).</summary>
+        /// <summary>True when stationed at the wander post (walking the watch — every observation site, no gathering).</summary>
         public bool IsWandering => stationId == WanderStation;
     }
 }

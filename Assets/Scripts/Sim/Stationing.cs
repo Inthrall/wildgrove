@@ -47,11 +47,10 @@ namespace Wildgrove.Sim
         /// True when a body stands at <paramref name="stationId"/> — the warden
         /// or a stationed familiar (a node id, or <see cref="Familiar.WanderStation"/>).
         ///
-        /// This asks who is STANDING here, not whether the ground earns. A
-        /// wandering body pays a share into every node at once, so a yield test
-        /// (<see cref="Simulation.TotalYieldPerSecond"/>) answers true
-        /// everywhere the moment anyone roams — the wrong question for the
-        /// strip, which draws one post per body.
+        /// This asks who is STANDING here, not whether the ground earns — the
+        /// strip draws one post per body, and a yield test
+        /// (<see cref="Simulation.TotalYieldPerSecond"/>) can read zero for
+        /// reasons that are nothing to do with standing.
         /// </summary>
         public static bool HasBodyAt(GameState state, string stationId)
         {
@@ -100,14 +99,14 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Effective gatherers contributing to a node this tick: the familiar
-        /// assigned to it counts as one, scaled by its trait when it matches —
-        /// plus the wanderer's share, an even split of one gatherer across
-        /// every node (roaming, averaged out).
+        /// assigned to it counts as one, scaled by its trait when it matches.
+        /// A wanderer contributes nothing here — wandering is the watch and
+        /// only the watch (a roamer who also gathered read as two jobs on one
+        /// post, and players couldn't say what the post was for).
         /// </summary>
         public static double GatherAgentsAt(GameState state, GameDataAsset data, NodeState node)
         {
             var sum = 0.0;
-            var nodeCount = state.nodes.Count;
             foreach (var familiar in state.roster)
             {
                 if (familiar.IsResting)
@@ -118,10 +117,6 @@ namespace Wildgrove.Sim
                 if (familiar.stationId == node.id)
                 {
                     sum += Traits.NodeYieldFactor(familiar, node, data);
-                }
-                else if (familiar.IsWandering && nodeCount > 0)
-                {
-                    sum += Traits.NodeYieldFactor(familiar, node, data) / nodeCount;
                 }
             }
 

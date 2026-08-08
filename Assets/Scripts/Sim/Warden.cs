@@ -98,8 +98,8 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Send the warden to the wander post — roaming every node and watch
-        /// site (design §2). One body per post: a familiar already wandering
+        /// Send the warden to the wander post — walking the watch, gathering
+        /// nothing (design §2). One body per post: a familiar already wandering
         /// steps back to camp (its slot frees), same as taking a node.
         /// </summary>
         public static void Wander(GameState state)
@@ -123,10 +123,10 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The warden's own gather rate at <paramref name="node"/> before any
-        /// burst boost — the full rate at their posted node, an even share of
-        /// that rate across every node while wandering (roaming, averaged out
-        /// like a wandering familiar), and zero at camp or when unconfigured
-        /// (pre-warden fixtures stay inert).
+        /// burst boost — the full rate at their posted node, and zero anywhere
+        /// else: at camp, while wandering (the wander post is the watch and
+        /// only the watch), or when unconfigured (pre-warden fixtures stay
+        /// inert).
         /// </summary>
         public static double GatherPerSecond(GameState state, EconomyData economy, NodeState node)
         {
@@ -135,18 +135,7 @@ namespace Wildgrove.Sim
                 return 0.0;
             }
 
-            if (IsPosted(state, node))
-            {
-                return economy.warden.gatherPerSecond;
-            }
-
-            var nodeCount = state.nodes.Count;
-            if (IsWandering(state) && nodeCount > 0)
-            {
-                return economy.warden.gatherPerSecond / nodeCount;
-            }
-
-            return 0.0;
+            return IsPosted(state, node) ? economy.warden.gatherPerSecond : 0.0;
         }
 
         /// <summary>

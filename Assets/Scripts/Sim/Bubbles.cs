@@ -19,9 +19,11 @@ namespace Wildgrove.Sim
     /// The payout is a FLAT haul: rewardSeconds of a notional gatherer's hands
     /// (rewardRatePerSecond), the same at every node no matter who works it or
     /// how developed it is. Scaling it to the node's own live output instead
-    /// makes most windfalls worth 1–2 units — a node worked only by the
-    /// wandering warden earns gatherPerSecond/nodeCount, so the payout would
-    /// shrink every time a zone opened. Nor is the bubble earned by staffing
+    /// makes most windfalls worth 1–2 units — at the time, a node worked only
+    /// by the wandering warden earned gatherPerSecond/nodeCount (the wander
+    /// gather-share, retired 2026-08-09 when wandering became watch-only), so
+    /// the payout would have shrunk every time a zone opened. Nor is the
+    /// bubble earned by staffing
     /// the ground it rises from (see <see cref="IsEligible"/>, reopened
     /// 2026-08-06): any node the run can reach drifts one, and what meters the
     /// reward is the spawn interval, not how much of the land is posted.

@@ -311,9 +311,9 @@ namespace Wildgrove.Game.World
         /// Choose the plates the strip carries this frame — the posts with a
         /// body standing on them — and switch the rest off.
         ///
-        /// "A body is here" rather than "this ground earns": a wandering body
-        /// pays a share into every node at once, so a yield test would put the
-        /// whole land back on the strip the moment anyone roams (see
+        /// "A body is here" rather than "this ground earns": the strip is a
+        /// statement of who stands where, and a rate can read zero for reasons
+        /// that are nothing to do with standing (see
         /// <see cref="Stationing.HasBodyAt"/>).
         /// </summary>
         private void GatherStrip(GameState state)

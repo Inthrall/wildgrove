@@ -688,20 +688,14 @@ namespace Wildgrove.Game
                 var rich = captured.richnessLevel > 0 ? " · richness " + Roman(captured.richnessLevel) : string.Empty;
 
                 // Who stands here — the card must say fallow when it is, or
-                // "0.0/s" is a riddle with the answer hidden on the strip. An
-                // unheld node is not necessarily idle: whoever holds the wander
-                // post passes every node, so "fallow" is reserved for ground
-                // nobody so much as walks over.
+                // "0.0/s" is a riddle with the answer hidden on the strip.
                 var occupant = Stationing.OccupantOf(state, captured.id);
                 var wardenHere = Warden.PostNodeId(state) == captured.id;
-                var roamed = Stationing.Wandering(state) > 0 || Warden.IsWandering(state);
                 var standing = occupant != null
                     ? "<color=" + MossDeepHex + ">" + occupant.name + " posted</color>"
                     : wardenHere
                         ? "<color=" + MossDeepHex + ">" + _loop.WardenName() + " posted</color>"
-                        : roamed
-                            ? "<color=" + Ink2Hex + ">no one posted · a wanderer passes</color>"
-                            : "<color=" + OchreInkHex + ">fallow: no one posted</color>";
+                        : "<color=" + OchreInkHex + ">fallow: no one posted</color>";
 
                 // The warden's own hands are part of this ground's rate — they
                 // pocket theirs straight to camp rather than into the basket,

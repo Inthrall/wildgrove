@@ -142,10 +142,11 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void RewardFor_AWanderingWarden_PaysTheSameFlatWindfall()
         {
-            // The case that drove the change: a wandering warden spreads their
-            // hands across every node (gatherPerSecond / node count), so the
-            // old output-proportional haul paid 1-2 units and shrank with every
-            // zone opened. Eligible, and now worth a full windfall.
+            // The case that drove the flat haul: back when a wandering warden
+            // spread their hands across every node (the wander gather-share,
+            // retired 2026-08-09), the old output-proportional haul paid 1-2
+            // units and shrank with every zone opened. A wandering warden's
+            // ground stays eligible, and worth a full windfall.
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             Warden.Wander(state);
