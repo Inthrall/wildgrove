@@ -171,6 +171,25 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void EverySabbat_HasItsOwnPlate()
+        {
+            // The keeping card, the tier sheet and the Record shelf all ask by
+            // "sabbat-{id}" (design §15) — and each mark must be its own: a
+            // mis-keyed plate still loads a plate, so distinctness is the pin.
+            var seen = new System.Collections.Generic.HashSet<UnityEngine.Sprite>();
+            foreach (var id in new[]
+                     {
+                         "sabbat-samhain", "sabbat-yule", "sabbat-imbolc", "sabbat-ostara",
+                         "sabbat-beltane", "sabbat-litha", "sabbat-lughnasadh", "sabbat-mabon",
+                     })
+            {
+                var plate = ArtLibrary.ForJournal(id);
+                Assert.That(plate, Is.Not.Null, "sabbat plate " + id);
+                Assert.That(seen.Add(plate), Is.True, id + " must be its own plate, not a neighbour's");
+            }
+        }
+
+        [Test]
         public void TheWarden_HasTheirOwnMark()
         {
             // Keyed off no data id at all — there is one warden — so nothing in

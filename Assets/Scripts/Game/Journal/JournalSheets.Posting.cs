@@ -36,8 +36,11 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// Step one of the strip's (+): which ground? Every node in the run,
-        /// plus the wander post, each wearing whoever stands there now. Picking
-        /// one asks who walks it (<see cref="OpenBodyPickSheet"/>).
+        /// each wearing whoever stands there now. Picking one asks who walks it
+        /// (<see cref="OpenBodyPickSheet"/>). The wander post is not among them:
+        /// it stands over no crop, so it has no place in a drawer of gathering
+        /// grounds — the watch card and a companion's own station sheet are
+        /// where a wanderer is sent.
         /// </summary>
         internal void OpenGroundPickSheet()
         {
@@ -46,7 +49,7 @@ namespace Wildgrove.Game
             MakeText(sheet, "posts walked " + _loop.KithWalking() + " of " + _loop.KithSlots(),
                 14, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            BuildGroundGrid(sheet, OpenBodyPickSheet);
+            BuildGroundGrid(sheet, OpenBodyPickSheet, includeWanderPost: false);
         }
 
         /// <summary>
@@ -79,7 +82,9 @@ namespace Wildgrove.Game
 
             MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            BuildGroundGrid(sheet, WalkWardenTo);
+            // The warden keeps the wander post among their grounds — roaming is
+            // tending, not gathering, and the run is watched by whoever walks it.
+            BuildGroundGrid(sheet, WalkWardenTo, includeWanderPost: true);
         }
 
         /// <summary>
@@ -170,14 +175,19 @@ namespace Wildgrove.Game
             Button(sheet, "Choose another ground", 380, OpenGroundPickSheet);
         }
 
-        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then the wander post.</summary>
-        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick)
+        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then — when asked for — the wander post.</summary>
+        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick, bool includeWanderPost)
         {
             var grid = SheetGrid(sheet);
             foreach (var node in _loop.State.nodes)
             {
                 var captured = node.id;
                 GroundTile(grid, captured, ArtLibrary.ForResource(node.resourceId), () => onPick(captured));
+            }
+
+            if (!includeWanderPost)
+            {
+                return;
             }
 
             // The wander post stands over no crop, so it borrows the watch's own

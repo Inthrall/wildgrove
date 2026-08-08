@@ -201,6 +201,21 @@ namespace Wildgrove.Game
             { "caravan", Ui + "Journal/ui-caravan" },
             { "waystone", Ui + "Journal/ui-waystone" },
             { "almanac", Ui + "Journal/ui-almanac-tree" },
+
+            // The Wheel's plates (design §15) — the warden's own almanac
+            // marks, not the land's naturalist pages: the calendar is the
+            // warden's, so the mark is an almanac ornament in the warden's
+            // ink. Authored originals (tools/make-sabbat-plates provenance in
+            // repo history) — no licence owed, and a painted plate can land
+            // over the same id any time.
+            { "sabbat-samhain", Plates + "Wheel/sabbat-samhain" },
+            { "sabbat-yule", Plates + "Wheel/sabbat-yule" },
+            { "sabbat-imbolc", Plates + "Wheel/sabbat-imbolc" },
+            { "sabbat-ostara", Plates + "Wheel/sabbat-ostara" },
+            { "sabbat-beltane", Plates + "Wheel/sabbat-beltane" },
+            { "sabbat-litha", Plates + "Wheel/sabbat-litha" },
+            { "sabbat-lughnasadh", Plates + "Wheel/sabbat-lughnasadh" },
+            { "sabbat-mabon", Plates + "Wheel/sabbat-mabon" },
         };
 
         // The warden's own mark. Keyed off nothing because there is exactly one

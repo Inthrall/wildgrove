@@ -333,10 +333,14 @@ lean is a regression, not a phase. Build order:
   and the plate hooks are live — drop `sabbat-{id}` plates into the
   ArtLibrary and the keeping card, the tier sheet and the Record shelf
   (kept sabbats only) pick them up with zero code.
-- **Word/art debts**: eight sabbat margin lines (drafted in `sabbats.json`,
-  the narrative pass re-voices), eight plates in the template (fire
-  festivals first is the fallback split) — the plates are what turns the
-  Record's year-tick lines into pages.
+- **Word/art debts**: the eight plates ~~in the template~~ landed 2026-08-08
+  as **authored almanac marks** (`Art/Plates/Wheel/sabbat-*.jpg`) — the
+  warden's calendar ornament rather than a naturalist page, deliberately:
+  the calendar is the warden's (§15's naming device), the set is original
+  work (no licence owed, `ArtCredits` untouched), and a painted plate can
+  land over the same id any time. `EverySabbat_HasItsOwnPlate` pins each to
+  its own mark. Still owed: the narrative pass re-voices the eight margin
+  lines drafted in `sabbats.json` and the keeping sheet's wording.
 
 ---
 
