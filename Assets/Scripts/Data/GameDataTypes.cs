@@ -360,22 +360,41 @@ namespace Wildgrove.Data
     }
 
     /// <summary>
-    /// A region modifier (design §8): the flavour a run-2+ region arrives
-    /// with, drawn deterministically from the migration count (Regions.cs).
-    /// Its effects join the run's active-effect union for the whole run.
+    /// The Wheel (design §15): the eight sabbats and the tide-open lead time.
+    /// The world's one ambient lean since the drawn region season retired
+    /// (design §8, 2026-08-08). Read live by the sim's Wheel from the sim
+    /// clock cursor — its touch effects never join the cached effect union.
     /// </summary>
     [Serializable]
-    public sealed class RegionData
+    public sealed class WheelData
+    {
+        /// <summary>Days before the sabbat night that its tide opens.</summary>
+        public int openDaysBefore = 14;
+
+        public List<SabbatData> sabbats = new List<SabbatData>();
+    }
+
+    /// <summary>One sabbat: a real-world festival day, hemisphere-mirrored, and its tide's ambient touch.</summary>
+    [Serializable]
+    public sealed class SabbatData
     {
         public string id;
 
-        /// <summary>Completes the fold forecast's "ahead: …" line — authored with its article ("a misted region").</summary>
+        /// <summary>The real name, kept (design §15) — "Beltane". The tide span reads "{name}-tide".</summary>
         public string displayName;
 
-        /// <summary>The land's one line about the season, spoken with the Migration vignette.</summary>
+        /// <summary>"fire" (cross-quarter) or "quarter" (solstice/equinox).</summary>
+        public string kind;
+
+        /// <summary>The warden's margin line — the calendar is the warden's, never the land's.</summary>
         public string sign;
 
-        public List<EffectData> effects = new List<EffectData>();
+        /// <summary>The ambient touch: one narrow lean, live while the tide is open.</summary>
+        public List<EffectData> touch = new List<EffectData>();
+
+        /// <summary>Sabbat nights as days-since-Unix-epoch (date-only), parsed from the authored "yyyy-MM-dd" at import.</summary>
+        public List<int> northNightDays = new List<int>();
+        public List<int> southNightDays = new List<int>();
     }
 
     /// <summary>

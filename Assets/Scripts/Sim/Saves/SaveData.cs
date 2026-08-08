@@ -95,6 +95,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>The latest UTC unix ms the run has ever been told it is — the clock ratchet (v43). 0 = never read.</summary>
         public long clockHighWaterUnixMs;
 
+        /// <summary>The warden's hemisphere for the Wheel (design §15, v49): 0 unset, 1 north, 2 south.</summary>
+        public int hemisphere;
+
+        /// <summary>Sabbats kept — the observance layer's ledger (design §15, v49); empty until it lands.</summary>
+        public List<SavedSabbatClaim> sabbatClaims = new List<SavedSabbatClaim>();
+
         /// <summary>Accumulated foreground play time in ms. Monotonic; the basis cloud saves are compared on.</summary>
         public long playedMs;
 
@@ -297,10 +303,22 @@ namespace Wildgrove.Sim.Saves
     public sealed class SavedKeepsake
     {
         public int migrationCount;
+
+        /// <summary>Legacy: the drawn season the page was mounted under, before the Wheel replaced it (design §8, 2026-08-08). New pages write null; old ids are kept — a mounted page never loses its facts.</summary>
         public string regionId;
+
         public string campName;
         public int versesSung;
         public long setAtUnixMs;
+    }
+
+    /// <summary>One kept sabbat (design §15, v49) — keyed (sabbat, year, hemisphere) so clock or hemisphere games move hours, never rewards.</summary>
+    [Serializable]
+    public sealed class SavedSabbatClaim
+    {
+        public string sabbatId;
+        public int year;
+        public int hemisphere;
     }
 
     [Serializable]

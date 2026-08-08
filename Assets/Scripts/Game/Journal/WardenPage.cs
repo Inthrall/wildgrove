@@ -76,7 +76,7 @@ namespace Wildgrove.Game
         private void BuildFavoursCard()
         {
             var card = Card("THE FAVOURS");
-            MakeText(card, "<i>gear, plates, spreads, the Almanac, the season and any live tincture, folded into one reckoning</i>",
+            MakeText(card, "<i>gear, plates, spreads, the Almanac, an open tide and any live tincture, folded into one reckoning</i>",
                 15, TextAnchor.MiddleCenter, Ink2, _serif);
             var lines = MakeText(card, string.Empty, 18, TextAnchor.MiddleLeft, Ink);
             _liveUpdaters.Add(() =>

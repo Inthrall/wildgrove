@@ -20,6 +20,7 @@
 12. [Level Up compliance](#12--level-up-compliance)
 13. [MVP development plan](#13--mvp-development-plan)
 14. [Open questions](#14--open-questions)
+15. [The Wheel — sabbat observances (draft)](#15--the-wheel-draft)
 
 ---
 
@@ -181,7 +182,7 @@ There is no carrier type — and since 2026-07-31 no carrying at all: deliveries
 | tawny owl      | Grove-and-river hunter · +40% at timber & fish  | works the wood's edge and the shallows |
 | pack raven     | Deep pockets · windfall bubbles pay +25%        | cheeks like saddlebags (she fetches the windfalls home) |
 
-**Collection > slots.** The **roster** is every familiar ever befriended — the seeds, the gift piles, the bonds — each its own species with its own plate. Only slotted familiars work; the rest rest at camp. Fielding two of six is a real choice, informed by the region modifier and the run's plan: the collection becomes something you *play* — the berry specialist walks when berries are the plan.
+**Collection > slots.** The **roster** is every familiar ever befriended — the seeds, the gift piles, the bonds — each its own species with its own plate. Only slotted familiars work; the rest rest at camp. Fielding two of six is a real choice, informed by the open tide (§15) and the run's plan: the collection becomes something you *play* — the berry specialist walks when berries are the plan, and Beltane-tide is her fortnight.
 
 ### Familiar power across Migration — the two-track model (DECIDED 2026-07-18)
 
@@ -366,7 +367,7 @@ Long before the game begins, a civilization — *Those Who Planted* — worked t
 - **How much it asks grows through the Rite, not just across folds (2026-07-31).** Goods amounts carry a geometric zone ramp of ×3.5 per zone order (`rites.json`, pinned flat for zones 1–2 by the hour-one targets), against a within-run power curve of about ×2.5 per zone step — so each verse costs roughly half again as long as the one before it, and verse 7 is the run's event rather than its seventh errand. This pushes the full-map estimates out past the FTP ~9–12 d / paid ~4–6 d the ×2.5 pass was measured against; the run-3-to-run-6 sitting judges both.
 - **The specimen slot ramps too, on a curve of its own (2026-08-03).** It used to ask for exactly one specimen at every verse that had one, which meant that as the goods beside it climbed ×3.5 a zone the slot quietly stopped being an ask at all — a fair quarter of the river bend's verse, and about a fifteen-hundredth of the peaks'. Any warden who had ever caught a windfall had one in the drawer, so a choose-3-of-5 at depth was really a choose-2. It cannot take the goods ramp either: Choice comes from a per-batch roll (§5), so specimens accrue **linearly** in posted familiars × time × Choice chance while the goods economy compounds — ×3.5 would ask 150 of them at the peaks and wall the verse for good. The ask therefore carries ×1.6 per zone order, anchored at 1 on the river bend: **1 · 2 · 3 · 5 · 8** across zones 4–8, roughly tracking what the Choice-chance stack and the earned kith slots are worth by each zone's point in a run, so a deep specimen slot costs ~20–30 min of node time. It stays the *cheap* slot at depth on purpose — the luck lane must never become the wall — and the Folio wants the same specimens, which is the tension the ramp exists to create. Renown grants scale with the counts (per-specimen worth unchanged) and stay small against the goods slots, because a slot this cheap in wall-clock paying goods-slot Renown would simply win every verse. Zones 1–2 ask for a Decent and stay pinned at 1 with the rest of the hour-one table. Model-derived, not playtested.
 - **Offerings are whole (BUILT 2026-07-31).** A slot takes its entire ask in one act or not at all: the button stays shut until the stores hold all of it, and the row reads **have / asked** so the gap is the thing you watch. Holding part of an ask is not progress, and no part-answer is banked for the verses behind it to inherit — what a verse asks, it asks in full. *Why:* dribbling stock into five slots made the size of an ask meaningless, since a slot filled a grain at a time costs only patience; the decision the Rite is meant to pose is which whole ask this run can actually reach. Offerings are consumed on delivery and **credit Renown at full trade value** (§9): you give up liquidity, never prestige progress. Deed, specimen, and field-sketch slots carry fixed Renown grants — the sketch's is the largest, as the steepest thing a warden can give (§6). Gifts and replanting earn no Renown — feeding the spirits is remembered; feeding the voles is lunch.
-- **Authored once, generated after.** Run 1 hand-authored (`rites.json`) as the tutorial; from run 2 a generator builds each Rite from migration count × region modifier × unlocked content — validator-guaranteed ≥3 reachable slots per verse, where *reachable* means satisfiable under plausible stationing with the current kith size (§2), not merely unlocked.
+- **Authored once, generated after.** Run 1 hand-authored (`rites.json`) as the tutorial; from run 2 a generator builds each Rite from migration count × unlocked content (the region-modifier input retired with the drawn season — 2026-08-08, Migration below) — validator-guaranteed ≥3 reachable slots per verse, where *reachable* means satisfiable under plausible stationing with the current kith size (§2), not merely unlocked.
 - **The counts are readable side by side (`valueSpread`, 2026-07-31).** Dividing a slot's target value straight through by a good's own worth is honest and unreadable: 260 of a rich salve beside 20000 of a cheap preserve, the same offering twice over in two numbers that say nothing to each other. The division is softened towards each verse's own middle worth, closing that gap to about a fifth of what it was, and the set is rescaled so the softening only ever *redistributes* value between a verse's slots — difficulty stays the zone ramp's job alone. The cost is real and deliberate: a dear slot is no longer worth the same as a cheap one (about ×4 at the shipped 0.7), so expect the cheapest slots to be the popular answer and watch whether choose-3-of-5 still poses a decision.
 - **Not for sale.** Amber never fills a verse slot.
 
@@ -377,7 +378,7 @@ When the Rite completes and the region slows, the camp folds. Levels, builds, ri
 - **Verdure** — from lifetime Renown (§9) — permanent, stacking **+2% all yields**.
 - **The Almanac** — the permanent Verdure tree: offline caps, starting tool tiers, trail-post efficiency, Choice chance, observation speed, auto-craft, zone skips, The Old Friend's bond, *The First Planting*. ~12 nodes MVP, ~40 by 1.1. **No familiar-power nodes** (§4).
 - **Bonded familiars** cross the fold, present and Kinship-strong from minute one — much of why run 2 feels faster.
-- **Region modifiers** (lush: +herbs · misted: +fish, +glow-moss, −flowers · ashen: +observation speed, +ashglass · windswept: +trail, +peat) flavour each run — every gatherable zone is touched by at least one season, so the marsh and the Hollows feel the year too (zones 4–6 balance pass) — and feed the Rite generator (**built 2026-07-28**, `regions.json`): the draw is deterministic from the migration count — nothing persists, a reload never rerolls a season — run 1 is always home ground (the authored tutorial Rite assumes it), the fold forecast names the region ahead, and the vignette speaks the arriving season's one-line sign.
+- **Region modifiers — RETIRED (DECIDED 2026-08-08, superseding 2026-07-28).** The per-fold drawn season (lush / misted / ashen / windswept, `regions.json`) is replaced by **the Wheel (§15)**: the world's lean now comes from the real calendar's tide, not a per-run draw — one season system, not two, and the one that keeps a real calendar. What the draw used to do passes over or lapses: the fold forecast names **the next sabbat** instead of the region ahead; the vignette keeps its twelve words without the season's sign; the Rite generator prices from migration count × unlocked content alone (`modifierWeight` and `regionSeed` retire with the draw); run 1 no longer needs a home-ground guarantee — every run is home ground now; and fielding reads the tide instead (§15 — Beltane is the vole's fortnight). One honest loss: folding no longer changes the world's flavour, so "a better season ahead" stops being an argument for the fold — the forecast's case rests on the permanent tracks alone. **The per-run randomness is parked, not condemned** (todo Appendix A): if the Wheel alone leaves runs too samey across a fallow month, a drawn overlay can return — but as the *second* flavour, judged beside the one that keeps the calendar.
 - Rebuilding the kit in the first minutes stays deliberate — the survival ritual that makes each region feel inhabited.
 
 ### The fold gate — content that arrives over runs (BUILT 2026-07-30)
@@ -402,9 +403,9 @@ Costs (6/10/14/22 up the granted chain, 8 for the Fire Remembers; the one-off tr
 
 Once the Rite completes, the pinned tracker becomes the **fold forecast** — **every permanent gain in one panel, nothing hidden**:
 
-> *+7 Verdure · Bramble +2 Kinship · Fern +1 · the 8th Verdure is ~40 min away at current pace · ahead: a misted region*
+> *+7 Verdure · Bramble +2 Kinship · Fern +1 · the 8th Verdure is ~40 min away at current pace · Beltane, twelve days off*
 
-The √ curves do the design work: each Verdure point costs more Renown than the last, each Kinship level more XP — **both permanent tracks flatten together**, so the forecast visibly decelerates while the fresh-run alternative (fast early points, compounding Almanac bonuses, the previewed modifier) grows relatively better the longer you linger. Renown lands in **chunks** as well as trickle — verse completions, familiar level-ups, Folio fixings, sketched portions carry fixed grants — so "stay for one more level-up" gives the curve texture. **Guard rail: the forecast sets timing only.** The Rite remains the sole gate; no minimum-Verdure or minimum-Kinship requirement, ever.
+The √ curves do the design work: each Verdure point costs more Renown than the last, each Kinship level more XP — **both permanent tracks flatten together**, so the forecast visibly decelerates while the fresh-run alternative (fast early points, compounding Almanac bonuses) grows relatively better the longer you linger (the previewed modifier left with the drawn season, 2026-08-08 — the Wheel turns whether or not the camp folds). Renown lands in **chunks** as well as trickle — verse completions, familiar level-ups, Folio fixings, sketched portions carry fixed grants — so "stay for one more level-up" gives the curve texture. **Guard rail: the forecast sets timing only.** The Rite remains the sole gate; no minimum-Verdure or minimum-Kinship requirement, ever.
 
 ---
 
@@ -441,7 +442,7 @@ The √ curves do the design work: each Verdure point costs more Renown than the
 One repeatable sink against four faucets left a free player converging on a pile with nothing to want — and a pile is what kills Amber-pack IAP, since nobody buys a currency they can't spend. The rule that shapes the slate: **every Amber sink is one of three lanes** — **expressive** (names, memory; no power), **convenience** (removes friction, never walls), or **pace routed through the paid-skip budget** (so the ×2 pin holds without a new rule) — and a proposed sink that fits none of the three is a leak, not a lane. The slate (prices are first guesses against the **diligent lean, ~120/week** — the accounting decision below):
 
 - **Name the camp** *(expressive · 40 · once per run)* — the sibling of the warden's naming. It reads on the fold forecast, the welcome-back sheet, and the journal's page headers, and it folds with the camp — a naming ritual each region rather than a purchase, and the first *recurring* expressive sink.
-- **The keepsake page** *(expressive · 20 · per run)* — Amber is resin; set a piece into the journal as a mounted page that remembers the run: the region and its season, the verses sung, a line in the land's voice. Recorded pages already cross the fold, which is what makes it permanent for free (the Wayfarer's Plate idiom). **Commemorative only** — no multiplier, no Renown: a keepsake that paid score would be selling the score.
+- **The keepsake page** *(expressive · 20 · per run)* — Amber is resin; set a piece into the journal as a mounted page that remembers the run: the region and the tides it kept (§15), the verses sung, a line in the land's voice. Recorded pages already cross the fold, which is what makes it permanent for free (the Wayfarer's Plate idiom). **Commemorative only** — no multiplier, no Renown: a keepsake that paid score would be selling the score.
 - **The second queue** *(convenience · 20 · per run)* — one extra craft-queue slot at the stations, lapsing at the fold so it recurs. It removes craft *latency*, never material walls — a queue cannot mint inputs — and it stays at **+1**: this is the one convenience that adds throughput outside the skip budget, and breadth here would be pace by another name.
 - **A consideration for the drover** *(convenience · 5 · repeatable)* — press a little Amber on the caravan and the standing deal **re-draws now**, excluding the deal it replaces so the coin always changes something. Mechanically: a per-window re-deal count persists in the save and mixes into the window's seed, so the reload-never-rerolls invariant holds as (window, considerations) → deal, and the count resets when the window turns. *Rating note (checked 2026-08-06):* bribing a fictional trader is not an IARC/PEGI/ESRB questionnaire item; the line to stay clear of is Play's loot-box disclosure rule, and a re-dealt *offer* grants no item — the purchase changes what the caravan asks, not what the player receives — with the draw uniform over discovered goods if disclosure is ever wanted anyway. "Bribe" is the design word, not the page's: the caravan is dry, not petty — the in-game wording is the narrative pass's, in register (*a consideration*, *sweeten the deal*).
 - **Settle the ledger** *(pace · through the budget)* — when an absence outran the offline cap, the welcome-back sheet offers to credit the **uncovered hours** of gathering and production at the **full live rate**, priced pro-rata on the skip (15 per 4 h ≈ 3.75/h) and **drawn from the same leaky skip budget**, so the ×2 pin holds unchanged and no new throttle rule exists. The moment of loss on return is the game's best-converting placement — it is why doubled offline earnings is the best ad slot — and this ships on plumbing that already exists (`SkipBudgetHours`).
@@ -454,13 +455,14 @@ One repeatable sink against four faucets left a free player converging on a pile
 - **The built prices (skip 15, namings 30/50) now read cheap against the anchor.** Left deliberately — generosity is the posture — but they are the first candidates to raise if the diligent player's pile still grows unchecked in playtest.
 - The economy.json `$note`s still cite the ~40/week lean; refresh them when the slate's keys land.
 
-**Considered and rejected (2026-08-06), so the boundary is written down:** a Rite slot re-roll or offering discount (sells the Rite's decision — "never sold" is spirit, not letter) · Amber→gifts (buys a creature with one hop of indirection; the calling gift deliberately prices the *answer*, never adds a pile) · choosing the next region's season (breaks the deterministic draw; sells run flavour) · any Amber→Verdure/Renown bridge (sells score and permanence; the money-clean XP rule exists for this).
+**Considered and rejected (2026-08-06), so the boundary is written down:** a Rite slot re-roll or offering discount (sells the Rite's decision — "never sold" is spirit, not letter) · Amber→gifts (buys a creature with one hop of indirection; the calling gift deliberately prices the *answer*, never adds a pile) · choosing the next region's season (breaks the deterministic draw; sells run flavour — moot since the drawn season retired, 2026-08-08 §8, but the boundary stands: run flavour is never sold) · any Amber→Verdure/Renown bridge (sells score and permanence; the money-clean XP rule exists for this).
 
 ### Formulas
 
 ```
 yield/sec         = Σ stationed agents · specMult · richnessMult(node) · planterMult
-                    · toolMult · gearMult · (1 + 0.05·mastery) · global
+                    · toolMult · gearMult · (1 + 0.05·mastery) · tideMult(node) · global
+tideMult(node)    = 1 outside a tide; the sabbat's authored lean inside (§15)
 global            = (1 + 0.02·Verdure) · almanac · museumSets · insects · boosts
 richnessMult(node)= 1 + 0.10 · richnessLevel
 replantCost(n, L) = base · r^L                      node's own resource; per node, per run
@@ -484,9 +486,9 @@ verdureGain       = floor( √( Renown / K ) )        K tuned to the XP scale
 offlineEarn       = Σ per node: min(gather, trail rate) · min(t, cap)   wanderers ×0.5; unheld trail ×0.5 lane
 choiceChance      = (0.5% + fieldPress + almanac) · (1 + tendingBonus)
 sketchProgress    = watchers · siteSpeed · rarity              pity: portion sketched / 4 h watched
-verseDemand(m)    = baseQty · d^m · modifierWeight    d = 1.45
+verseDemand(m)    = baseQty · d^m                     d = 1.45; modifierWeight retired with the drawn season (2026-08-08)
 verseSlots(m)     = chooseCount + ⌊m / 2⌋, capped     the breadth ramp
-spotlight(m)      = rotate(crafts, m + regionSeed)
+spotlight(m)      = rotate(crafts, m)                 regionSeed retired with the drawn season (2026-08-08)
 almanacLevel(L)   = baseCost · 1.25^L                 the endless line
 ```
 
@@ -691,8 +693,8 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 
 - Migration flow gated by the completed Rite: the **fold forecast** (Verdure + per-familiar Kinship + next-point ETA + region preview, one panel), the vignette, a deliberate confirm — players fear their first prestige; sell it hard
 - **Kinship**: conversion at the fold, perk application (starting level, XP rate), roster persistence and the reunion beat
-- **Rite generator** (behind the authored Rite as fallback): demands from migration count × region modifier × unlocked content; spreadsheet-verify runs 2–5 before wiring UI
-- Almanac tree (12 nodes, incl. Gatherer 3 and The First Planting); region modifiers; first bonded familiar; kit re-craft tuned to ~2 minutes
+- **Rite generator** (behind the authored Rite as fallback): demands from migration count × unlocked content (region-modifier input retired 2026-08-08 — §8); spreadsheet-verify runs 2–5 before wiring UI
+- Almanac tree (12 nodes, incl. Gatherer 3 and The First Planting); ~~region modifiers~~ (retired 2026-08-08 — the Wheel is the world's lean, §15); first bonded familiar; kit re-craft tuned to ~2 minutes
 - Second-run tuning: run 2 reaches the old wall in ~⅓ the time
 
 **Gate:** testers migrate voluntarily; run 2 feels faster, worth it, and asks something different; the kith's return feels like a reunion, not a re-grind; and testers can articulate what staying another hour would have bought — the unified forecast doing its job.
@@ -743,3 +745,107 @@ Solo, part-time. Each phase ends at a **gate** — a concrete question answered 
 **Carried**
 - **Narrative volume:** 1,200 words is a ceiling. If playtesters want more story, the answer is more insects, not more words per insect.
 - **Waystone vs. verse-site legibility:** the past and the present must read as distinct objects on a zone screen. Check in the Phase 3 playtest.
+
+---
+
+## 15 · The Wheel (draft)
+
+*Added 2026-08-08; **in build from the same day (Mo's call, superseding the v1.1 queue position): the Wheel replaces the drawn region season (§8) as the world's one lean, and construction starts now.** The naming calls are decided (real names; the day is the sabbat); the ambient touch is in; the observance layer above it (sabbat verse, tiers, plates) is design-settled but build-pending — the work list is todo §1.8. Nothing in Level Up asks for any of this (§12's Leagues note covers Google's own events). "League" is the dev-facing word for the genre shelf this sits on; no player ever reads it.*
+
+### The shape: observances, not brackets
+
+Eight real-world sabbats a year — the **Wheel of the Year**, hemisphere-mirrored — each a time-boxed **observance**: a sabbat verse to answer while the window is open, personal tiers, a commemorative plate. Deliberately **not** cohort leagues (weekly 30-player brackets, promotion/relegation), for four reasons that are each sufficient: there is no backend and PGS has no cohort API, so brackets mean a server and a standing ops tax on a solo project; an indie-scale population deals ghost brackets, which read worse than nothing; an offline idle game's scores are forgeable, and head-to-head stakes maximise the incentive while personal thresholds delete it; and a most-gathered race pays extraction in a game whose first pillar is tend-don't-take — §1's ore-veins guard rail, failed by design. Competition stays where §12 already put it (the weekly-resources leaderboard; Google's own Play Games Leagues if they ever pick the game) — garnish beside the observance, never its spine.
+
+### The calendar
+
+The practice's own terms — now the game's (naming below): the eight are **sabbats** — four Gaelic **fire festivals** on fixed cross-quarter dates and four **quarter days** on the solstices and equinoxes — collectively the Wheel of the Year, itself a modern braid (standardised mid-20th century; *Ostara*, *Litha* and *Mabon* are 20th-century coinages). The wheel is **self-dual under the hemisphere flip**: every sabbat sits on its opposite's date — Samhain↔Beltane, Imbolc↔Lughnasadh, Yule↔Litha, Ostara↔Mabon — so at any moment the world holds exactly two sabbats, always the opposite pair. *Elsewhere, the wheel turns the other way* is a line the journal should get to say.
+
+| Sabbat | Kind | North | South | The tide leans (generator bias — first guesses) |
+| --- | --- | --- | --- | --- |
+| **Samhain** | fire festival | Oct 31 – Nov 1 | Apr 30 – May 1 | remembrance — preserves, smoked trout, amber |
+| **Yule** | quarter day · midwinter | ~Dec 21 | ~Jun 21 | the fire — charcoal, torches, cooked meals |
+| **Imbolc** | fire festival | Feb 1 – 2 | Aug 1 – 2 | first stirrings — fibres, herbs, the year's early greens |
+| **Ostara** | quarter day · spring equinox | ~Mar 20 | ~Sep 22 | sowing — replant deeds (the tend-deed idiom extended), wildflowers |
+| **Beltane** | fire festival | Apr 30 – May 1 | Oct 31 – Nov 1 | blossom and flame — wildflowers, fire-goods, tend deeds |
+| **Litha** | quarter day · midsummer | ~Jun 21 | ~Dec 21 | the long light — berries, the meadow's plenty |
+| **Lughnasadh** | fire festival | Aug 1 – 2 | Feb 1 – 2 | first harvest — nuts, baskets, the gathering-in |
+| **Mabon** | quarter day · autumn equinox | ~Sep 22 | ~Mar 20 | the balance — trade goods, paired offerings, the Exchange |
+
+The leans are the spotlight idiom (§8), not requirements — reachability holds regardless, and the generator draws only from the run's unlocked content.
+
+### Names — real, and the warden's — **DECIDED 2026-08-08 (Mo: keep the real names; the day is the sabbat)**
+
+The device that keeps the world sealed: **the calendar is the warden's, not the land's.** The warden came from somewhere with a reckoning; the journal margin writes *"Beltane, by my count"*; no spirit is named, none appears, and the land answers the observance as it answers everything — with signs, never words (§7 holds whole). The land has no calendar; it has weather and memory. §7's proper-noun rule survives intact: the wheel arrives as the one set of proper nouns the *player's* world explains instead.
+
+Vocabulary — settled 2026-08-08:
+
+- The day is **the sabbat** (Mo's call). The practice's own word, carried the same way *Beltane* is: the warden's inheritance, a word from the place the warden came from, written in the margin in their hand. The land still never says it. The occult weight the word carries was weighed and kept — it is the one word in the game that admits the warden *had* a tradition.
+- The cycle is **the Wheel**; the open span is **the tide** — *Beltane-tide* — the old word English already uses for a festival's span (Yuletide; *tīd*).
+- **Never "season."** The word is taken twice over: the fold's drawn weather (§8 — *an ashen season*) and, colloquially, the run itself (*third season she has found me*). A third calendar sharing it would be §6's firefly basket — a vocabulary self-contradiction. And the sabbats are days, not seasons, in the practice too; "tide" is the span-word that stays honest in both worlds.
+- **"League" stays dev-facing** — the genre shelf, never the page.
+
+### The observance
+
+- **Window:** the tide opens ~two weeks before the sabbat night and **closes at the fire** — sabbat midnight, warden-local. Four-odd fallow weeks follow; eight tides a year; at FTP pace roughly one per fold.
+- **The sabbat verse is the scored verb.** The §8 machinery whole: choose-3-of-5 offering slots, generated from the run's unlocked content under the existing reachability rule (*satisfiable under plausible stationing with the current kith size*), themed by the tide's lean the way spotlights already lean. It stands at the fire circle — no new world object, no tab (the Rite's own rule).
+- **It is not a Rite verse.** It earns **no gift pile**, counts toward **no verse milestone** (§4's 2/5/10 — the lifetime ledger is the Rite's alone), and opens **no ground.** This is the cross-system leak to guard in review: one flag, checked everywhere "verses sung" is read.
+- Offerings **credit Renown at trade value**, exactly as the Rite's do (§8) — the wheel never taxes prestige either, and it is no new faucet: the goods were gathered by play; the credit is the standard one.
+- **A fold mid-tide** keeps completed slots (the observance is calendar-keyed, not run-keyed); open slots **redraw** against the new run's content, deterministic from (fold count, festival, year) — reload never rerolls, a fold redraws honestly.
+- **Tiers are personal thresholds** on slots answered — working names *kept the eve · kept the day · kept the wheel* — offline-verifiable, no cohort, no rank, no relegation. A forged clock or save cheats its owner and nobody else, which is the entire anti-cheat budget this needs while nothing competitive pays.
+
+### What a tide pays
+
+- **The sabbat plate** — the prize is a page: the tide's plate drawn into the journal, commemorative, crossing folds as every recorded page does (the Wayfarer's Plate idiom, §11). It **recurs annually**; each keeping adds a margin **year-tick** in the warden's hand, so a missed year is a gap in a record, never a wound. **No multiplier, ever** — the keepsake rule (§9): a sabbat page that paid yield would be selling attendance.
+- **A little Amber by tier**, priced against the ~120/week diligent lean (§9), so a kept sabbat reads as a good week — not a second cache; the weekly cadence is Play's (§11).
+- **Never:** Verdure, Renown grants, Kinship, creatures, gift piles, slots, Rite progress. §9's rejected-sinks list already walks this exact boundary; the wheel inherits the never side whole and adds nothing to it.
+- **The ambient touch** rides with the tide — its own section below.
+
+### The ambient touch — the tide felt at the nodes (**in — 2026-08-08; the world's only lean, replacing the drawn season**)
+
+While a tide is open, the world leans a little toward its sabbat — one authored effect per sabbat, small enough to miss without loss, present enough that the calendar lives in the grove and not only in the margin. Mechanically it is one more term in the §9 stack: a `tideMult` that is 1.0 outside a tide and a single narrow lean inside, standing where the drawn region season used to stand (§8 — retired 2026-08-08) but keyed to the calendar rather than the fold. The gathering leans deliberately echo the specialists' pairs (§4), so a tide is also a fielding question — Beltane is the vole's fortnight.
+
+| Sabbat | First-guess touch — one lane each |
+| --- | --- |
+| **Samhain** | the watch leans close — sketch progress +20% (never the resin; below) |
+| **Yule** | the fire burns willing — fire-station craft speed +20% |
+| **Imbolc** | first stirrings — fibre & herb nodes +20% |
+| **Ostara** | sowing weather — replanting costs −20% |
+| **Beltane** | blossom — wildflower & berry nodes +20% |
+| **Litha** | the long light — windfall bubbles pay +20% |
+| **Lughnasadh** | the gathering-in — nut & mushroom nodes +20% |
+| **Mabon** | the balance — the Exchange's spread eases 5 pts (the caravan keeps the day too, in its way) |
+
+The rules that keep it a touch — the world's only lean now, and still never a wall:
+
+- **It never gates.** Nothing is reachable only inside a tide, no content keys on it, and every lean stays inside one mastery band (~+25%) — a missed sabbat is flavour missed, never power lost. This is the FOMO line, and holding it is what makes the touch safe to ship at all.
+- **It never multiplies the Amber faucet.** The 2026-08-02 decision flattened the amber roll precisely because innocent multipliers had compounded on the premium currency; the tide does not reopen that door. Samhain's lean is therefore the watch's *sketching*, never its resin — safe by construction now the amber roll sits outside the watch stack (§9). Where it grazes the Deep Amber's authored walk, that walk keeps its stack by design: lore pacing, not a leak.
+- **It never enters `verseDemand`.** The drawn region season used to feed the Rite generator's asks; the tide never does — with the draw retired (§8) the generator prices from migration count × unlocked content alone, and a two-week overlay baked into a verse's quantities would price the sabbat *against* the warden keeping it. The sabbat verse takes the tide's lean as theme; its quantities price off the ordinary tables.
+- **Offline stays honest across the boundary.** `OfflineCatchUp` already sub-steps in whole seconds; the touch is read per-step from the stepped clock, so an absence spanning a tide's edge earns the tide's rate for exactly the seconds inside it. The sliced-equals-unsliced property (`OfflineCatchUpTests`) is the test that pins it.
+- **Deterministic by construction.** (ratcheted now, hemisphere) → open tide → authored touch. No draw, nothing persisted, nothing to reroll — reload-never-rerolls holds without new machinery.
+- **Seen as a sign, taught in the margin (§7's pattern).** The touched node's plate takes a small mark for the span, and the sabbat's margin line is the instruction — *"Beltane, by my count. The meadow keeps it too; the flowers come readier."* Two lines, and they are that sabbat's share of the word budget — the same lines the Costs section counts, not additions.
+
+Cost, once the calendar service exists for the observance itself: one multiplier hook in the yield path (plus the two odd ducks — a cost factor for Ostara, a spread ease for Mabon — each one line where those numbers are already computed), eight authored entries in `sabbats.json`, the boundary tests, and the margin lines. The risk is tuning, not plumbing.
+
+### Hemisphere, clock, and data
+
+- **`design/data/sabbats.json`** — windows authored as dates per hemisphere, **3+ years ahead**. No astronomy code: solstice drift is data, and an un-updated install keeps the wheel turning. That is the **evergreen rule**: live-ops may lapse; the game must not care.
+- **Hemisphere defaults from locale/timezone; a journal setting flips it.** The equator simply chooses; a traveller keeps their own reckoning — the calendar is the warden's. The setting **locks while a tide is open** (the opposite sabbat sits on the same dates, so a mid-tide flip is a double-claim vector); claims key on (sabbat, year, hemisphere) regardless, so clock or timezone games move hours, never rewards.
+- **Every window read goes through `GameLoop.NowUnixMs()`** — the ratchet stays the only clock (todo Appendix B's standing rule). A wound-forward clock celebrates alone, permanently ahead of the real wheel: spent, not minted. With no server, that plus personal-only stakes *is* the integrity story — one more reason the tiers pay pages, not power.
+- The Wheel's state lives in the sim (pure C#, windows fed in as data, tested without the editor); the save grows tier progress, claims and the hemisphere choice — one `SaveCodec` rung, per the ladder rules.
+- **In-journal UI only** — Appendix B bars the Play overlay anyway. The tide rides the pinned-tracker idiom (§8); the plate lives in the Record.
+
+### Costs, honestly
+
+- **Eight plates** in the one template — a bounded batch, reused every year. Scope pressure cuts count, never quality (§1): the four fire festivals alone are a coherent first ship (they carry the hemisphere mirror whole), quarters at the next pass.
+- **~150–200 words** across eight tides, each sabbat's line doubling as its teaching note (§7's pattern; the touch's margin line is the same line, not an addition), sized deliberately against the post-MVP word budget.
+- **A live-ops posture,** however mild: the calendar wants topping up every few years; each year's plates want nothing. The evergreen rule is what makes both true.
+
+### Open questions (the v1.1 sitting)
+
+- Tide length: two weeks against a ~9–12 d FTP fold — should one fold always be able to keep one festival whole?
+- Does the sabbat verse scale with fold count at all? §9's rule says at most linearly; **flat** is simplest and probably right — the wheel greets every warden the same.
+- Amber tier sizes against the weekly cache and the drip (§9's anchor).
+- The ambient touch's sizes: the table's leans are unplaytested first guesses; the no-gate rule and the one-mastery-band ceiling are the lines to hold.
+- With the drawn season retired (§8), do fallow-week runs read too alike? The parked per-run randomness (todo Appendix A) is the lever if so — and it returns as a second flavour beside the Wheel, never instead of it.
+- Plate recurrence: identical each year (evergreen-safe) vs year-stamped variants (a bigger record, an unbounded art tail).
+- Whether the PGS surface wants anything at v1.1 at all — the weekly-resources board already exists beside the wheel, and PGS resets offer no custom fortnights (§12's Leagues note covers Google's own events).

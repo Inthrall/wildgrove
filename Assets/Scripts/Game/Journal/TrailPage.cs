@@ -26,7 +26,7 @@ namespace Wildgrove.Game
 
         internal void BuildTrailPage()
         {
-            BuildSeasonLine();
+            BuildTideLine();
             BuildTrailHomeLine();
             BuildRecruitBar();
 
@@ -198,30 +198,30 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The season's one line (design §8): a run 2+ living in a modified
-        /// region names it at the head of the Trail — the land's business
-        /// belongs on the land's page. Home ground (run 1) shows nothing.
+        /// The tide's line (design §15): while a sabbat's tide is open, the
+        /// warden's margin names it at the head of the Trail — the calendar is
+        /// the warden's, the land's answer belongs on the land's page. The
+        /// fallow weeks show nothing.
         /// </summary>
-        private void BuildSeasonLine()
+        private void BuildTideLine()
         {
-            var region = _loop.CurrentRegion();
-            if (region == null)
+            var tide = _loop.OpenTide();
+            if (tide == null)
             {
                 return;
             }
 
-            MakeText(_body, "<i>the season: " + region.displayName + ". " + region.sign + "</i>",
-                17, TextAnchor.MiddleCenter, Ink2, _hand);
+            MakeText(_body, "<i>" + tide.sign + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _hand);
 
-            // What the season actually does — and the half of it that reads as
-            // a tax unless it's said out loud: the Rite weights its asks by the
-            // very same number (Regions.DemandWeight, §9's modifierWeight), so
-            // a generous season also asks for more of what it gives. Without
-            // this line a misted run just looks like a more expensive verse.
-            var gives = EffectsLabel(region.effects);
+            // What the tide actually does — said out loud, so the lean doesn't
+            // read as a bug when it lapses at the fire. And the half that
+            // matters after the drawn season's DemandWeight retired (design
+            // §8): the verse's asks are NOT scaled by it — keeping the sabbat
+            // never raises the Rite's price.
+            var gives = EffectsLabel(tide.touch);
             if (gives.Length > 0)
             {
-                MakeText(_body, gives + " · the verse asks in the same measure, so a season changes what the work is, not how long it takes",
+                MakeText(_body, gives + " · while " + tide.displayName + "-tide holds — the verse asks none of it",
                     15, TextAnchor.MiddleCenter, Ink2);
             }
         }

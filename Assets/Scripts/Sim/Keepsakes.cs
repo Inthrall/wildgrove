@@ -53,11 +53,13 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Set a piece of amber into the journal: spend the price and mount
-        /// this run's page — the run number, the region it wore, what the camp
-        /// was called (null while unnamed), and the verses sung so far. The
-        /// facts are snapshotted at mounting; the page's line in the land's
-        /// voice is the renderer's, from these. Returns the mounted keepsake,
-        /// or null when refused.
+        /// this run's page — the run number, what the camp was called (null
+        /// while unnamed), and the verses sung so far. The facts are
+        /// snapshotted at mounting; the page's line in the land's voice is the
+        /// renderer's, from these. The regionId stays unset — the drawn season
+        /// retired with the Wheel (design §8), and the tides a run kept are the
+        /// observance layer's to record (design §15, build-pending). Returns
+        /// the mounted keepsake, or null when refused.
         /// </summary>
         public static KeepsakeState TryMount(GameState state, GameDataAsset data, long nowUnixMs)
         {
@@ -69,7 +71,6 @@ namespace Wildgrove.Sim
             var keepsake = new KeepsakeState
             {
                 migrationCount = state.migrationCount,
-                regionId = Regions.Current(state, data)?.id,
                 campName = state.campName,
                 versesSung = VersesThisRun(state, data),
                 setAtUnixMs = nowUnixMs,

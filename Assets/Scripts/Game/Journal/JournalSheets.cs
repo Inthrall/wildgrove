@@ -868,11 +868,22 @@ namespace Wildgrove.Game
                             + " the trails you opened, and every skill level. <i>They were never yours</i>.",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
 
-            // The §8 forecast's region preview — the fold names where it leads.
-            var ahead = _loop.NextRegion();
-            if (ahead != null)
+            // The forecast names the Wheel, not a drawn region (design §8,
+            // 2026-08-08) — the Wheel turns whether or not the camp folds.
+            var tide = _loop.OpenTide();
+            if (tide != null)
             {
-                MakeText(sheet, "<i>Ahead: " + ahead.displayName + ".</i>", 19, TextAnchor.MiddleCenter, Ink2, _serif);
+                MakeText(sheet, "<i>" + tide.displayName + "-tide is open.</i>", 19, TextAnchor.MiddleCenter, Ink2, _serif);
+            }
+            else
+            {
+                var next = _loop.NextSabbat(out var nightStartMs);
+                if (next != null)
+                {
+                    var days = (long)System.Math.Ceiling((nightStartMs - _loop.NowUnixMs()) / 86400000.0);
+                    MakeText(sheet, "<i>" + next.displayName + ", " + days + (days == 1 ? " day off." : " days off.") + "</i>",
+                        19, TextAnchor.MiddleCenter, Ink2, _serif);
+                }
             }
 
             // Where Verdure comes from. The "how close is the next point"
@@ -940,15 +951,9 @@ namespace Wildgrove.Game
                 MakeText(dim.transform, "<i>" + line + "</i>", 30, TextAnchor.MiddleCenter, NightText, _serif);
             }
 
-            // The land's one line about the season just arrived in (§8) —
-            // Migrate has already run, so the CURRENT region is the new one.
-            var region = _loop.CurrentRegion();
-            if (region != null && !string.IsNullOrEmpty(region.sign))
-            {
-                MakeText(dim.transform, "<i>" + region.sign + "</i>", 22, TextAnchor.MiddleCenter,
-                    new Color(NightText.r, NightText.g, NightText.b, 0.75f), _serif);
-            }
-
+            // The vignette keeps its twelve words alone — the drawn season's
+            // sign retired with the region draw (design §8, 2026-08-08); the
+            // Wheel's margin lines live on the Trail page, in the warden's hand.
             MakeText(dim.transform, "+" + Mathf.FloorToInt((float)verdureGained) + " VERDURE", 20,
                 TextAnchor.MiddleCenter, new Color(0.624f, 0.682f, 0.494f, 1f), _smallCaps);
             // The hint appears with the armed dismissal, not before it.

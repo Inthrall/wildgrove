@@ -132,38 +132,30 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// One shelf line: the camp by name (or its namelessness), which run it
-        /// was and the season it wore, and the verses it had sung when the
-        /// page was set. Rendered from the keepsake's facts — the prose is
-        /// never stored, so a wording pass costs no save.
+        /// was, and the verses it had sung when the page was set. Rendered from
+        /// the keepsake's facts — the prose is never stored, so a wording pass
+        /// costs no save. Pages mounted before the drawn season retired
+        /// (design §8, 2026-08-08) still carry a region id; it reads as the
+        /// season word it was, so an old shelf keeps its old lines.
         /// </summary>
         private string KeepsakeLine(KeepsakeState page)
         {
             var name = page.campName != null
                 ? "<b>" + page.campName + "</b>"
                 : "an unnamed camp";
-            var season = RegionName(page.regionId);
             var verses = page.versesSung == 1 ? "one verse sung" : page.versesSung + " verses sung";
-            return name + "  ·  run " + (page.migrationCount + 1) + ", " + season + "  ·  " + verses;
+            var run = "run " + (page.migrationCount + 1) + LegacySeason(page.regionId);
+            return name + "  ·  " + run + "  ·  " + verses;
         }
 
-        /// <summary>The region's authored name ("a misted region"), "home ground" for run 1's null, or the raw id when the data no longer names it.</summary>
-        private string RegionName(string regionId)
+        /// <summary>
+        /// The season word an old page was mounted under — the drawn region
+        /// season is retired and its authored names left the data, so the
+        /// stored id itself is the record ("misted"). New pages carry none.
+        /// </summary>
+        private string LegacySeason(string regionId)
         {
-            if (regionId == null)
-            {
-                return "home ground";
-            }
-
-            var regions = _loop.Data.regions;
-            for (var i = 0; regions != null && i < regions.Count; i++)
-            {
-                if (regions[i].id == regionId)
-                {
-                    return regions[i].displayName;
-                }
-            }
-
-            return regionId;
+            return string.IsNullOrEmpty(regionId) ? string.Empty : ", a " + regionId + " season";
         }
 
         /// <summary>

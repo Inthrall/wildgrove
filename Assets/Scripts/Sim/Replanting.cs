@@ -28,6 +28,16 @@ namespace Wildgrove.Sim
             return economy.replant.baseCost * BigDouble.Pow(economy.replant.growth, node.richnessLevel);
         }
 
+        /// <summary>
+        /// The cost as the run actually pays it: the base curve, eased by an
+        /// open Ostara tide (design §15's sowing weather). The economy-only
+        /// overload above stays the un-leaned curve for tools and tests.
+        /// </summary>
+        public static BigDouble ReplantCost(GameState state, GameDataAsset data, NodeState node)
+        {
+            return ReplantCost(node, data?.economy) * Wheel.ReplantCostMult(state, data);
+        }
+
         /// <summary>The node's richness yield multiplier: 1 + richnessPerLevel · richnessLevel.</summary>
         public static double RichnessMultiplier(NodeState node, EconomyData economy)
         {
@@ -47,7 +57,7 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            return state.GetResource(node.resourceId) >= ReplantCost(node, data.economy);
+            return state.GetResource(node.resourceId) >= ReplantCost(state, data, node);
         }
 
         /// <summary>
@@ -62,7 +72,7 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            var cost = ReplantCost(node, data.economy);
+            var cost = ReplantCost(state, data, node);
             state.resources[node.resourceId] = state.GetResource(node.resourceId) - cost;
             node.richnessLevel += 1;
             return true;

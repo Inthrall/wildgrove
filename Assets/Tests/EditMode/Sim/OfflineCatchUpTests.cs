@@ -116,6 +116,104 @@ namespace Wildgrove.Sim.Tests
                 + "whose position proves the quality rolls fell in the same order");
         }
 
+        [TestCase(1.0)]
+        [TestCase(60.0)]
+        [TestCase(999.0)]
+        public void Advance_AcrossATideEdge_LandsWhereOneCallWould(double sliceSeconds)
+        {
+            // A tide (design §15) closes one hour into a three-hour absence:
+            // the leaned find must earn tide-rate for exactly the hour it was
+            // open, however the catch-up is sliced. The sim clock cursor is
+            // what carries the edge — Simulation.Step walks it per sub-step.
+            const double away = 3 * 3600.0;
+            const long dayMs = 86400000L;
+            const int nightDay = 20000;
+            var closeMs = (nightDay + 1) * dayMs;
+            var leaveMs = closeMs - 3600000L;
+            _data.wheel = new WheelData
+            {
+                openDaysBefore = 14,
+                sabbats = new List<SabbatData>
+                {
+                    new SabbatData
+                    {
+                        id = "beltane",
+                        displayName = "Beltane",
+                        kind = "fire",
+                        sign = "by my count",
+                        touch = new List<EffectData>
+                        {
+                            new EffectData { type = EffectType.YieldMult, resource = "wildflowers", value = 1.2 },
+                        },
+                        northNightDays = new List<int> { nightDay },
+                        southNightDays = new List<int> { nightDay },
+                    },
+                },
+            };
+
+            var whole = StaffedInTide(12345UL, leaveMs);
+            Simulation.AdvanceOffline(whole, _data, away);
+
+            var sliced = StaffedInTide(12345UL, leaveMs);
+            var catchUp = OfflineCatchUp.Begin(sliced, _data, away);
+            var guard = 0;
+            while (!catchUp.IsComplete && guard++ < 100_000)
+            {
+                catchUp.Advance(sliceSeconds);
+            }
+
+            Assert.That(catchUp.IsComplete, "the catch-up must terminate, whatever the slice");
+            Assert.That(sliced.simNowUnixMs, Is.EqualTo(whole.simNowUnixMs),
+                "the cursor is part of the grove now — slicing must land it on the same ms");
+            Assert.That(whole.simNowUnixMs, Is.EqualTo(leaveMs + (long)(away * 1000.0)),
+                "the whole absence ticked, so the cursor stands at the return");
+            Assert.That(Holdings(sliced), Is.EqualTo(Holdings(whole)).Within(Tolerance),
+                "a tide edge mid-absence must fall on the same sub-step for every slice size");
+
+            // And the edge did real work: the leaned hour beat a wheel-less
+            // run on the leaned find alone, and moved nothing else.
+            _data.wheel = null;
+            var plain = StaffedInTide(12345UL, leaveMs);
+            Simulation.AdvanceOffline(plain, _data, away);
+            Assert.That(TotalOf(whole, "wildflowers"), Is.GreaterThan(TotalOf(plain, "wildflowers")),
+                "one leaned hour must show on the leaned find");
+            Assert.That(TotalOf(whole, "berries"), Is.EqualTo(TotalOf(plain, "berries")).Within(Tolerance),
+                "a find the sabbat never named must not move at all");
+        }
+
+        private GameState StaffedInTide(ulong seed, long cursorMs)
+        {
+            var state = Staffed(seed);
+            // Staffed() can only station the roster NewGame seeded, and this
+            // fixture authors no species or bonds — so put one staged gatherer
+            // on every node, or the leaned-hour probe below compares 0 to 0.
+            foreach (var node in state.nodes)
+            {
+                TestKith.Station(state, node.id, 1);
+            }
+
+            state.hemisphere = Wheel.HemisphereNorth;
+            state.utcOffsetMinutes = 0;
+            state.simNowUnixMs = cursorMs;
+            return state;
+        }
+
+        private static double TotalOf(GameState state, string resourceId)
+        {
+            var total = state.GetResource(resourceId).ToDouble()
+                        + state.GetDecent(resourceId).ToDouble()
+                        + state.GetChoice(resourceId).ToDouble();
+            foreach (var node in state.nodes)
+            {
+                if (node.resourceId == resourceId)
+                {
+                    total += node.basket.ToDouble();
+                }
+            }
+
+            return total;
+        }
+
         [Test]
         public void Advance_ASliceUnderASecond_StillFinishes()
         {

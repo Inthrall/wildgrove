@@ -45,7 +45,11 @@ namespace Wildgrove.Sim
             }
 
             var hoursWatched = deltaSeconds / 3600.0;
-            var digMult = Upgrades.DigSpeedMultiplier(state, data);
+            // Samhain's tide leans on the watch (design §15) — it joins the
+            // sketch walk's stack below, and deliberately NOT the amber roll:
+            // the 2026-08-02 flattening took every multiplier off the premium
+            // faucet, and the tide does not reopen that door.
+            var digMult = Upgrades.DigSpeedMultiplier(state, data) * Wheel.DigSpeedMult(state, data);
 
             // Amber (design §10) is the round's renewable find — old resin with
             // an ancient insect kept in it, the one thing takeable. Rolled ONCE

@@ -138,10 +138,16 @@ namespace Wildgrove.Game
             // welcome-back figure the sheet is about to quote.
             if (_catchUp != null)
             {
+                // The catch-up owns the sim clock cursor while it runs — it was
+                // back-dated to leave-time in CreditAbsence and walks forward a
+                // sub-step at a time, so stamping "now" here would teleport the
+                // Wheel (design §15) past the very tide edges the slicing exists
+                // to honour.
                 PumpCatchUp();
             }
             else
             {
+                StampWheelClock(0.0);
                 Simulation.Advance(State, Data, Time.deltaTime);
             }
 
@@ -452,6 +458,13 @@ namespace Wildgrove.Game
             // or its gains would be diffed against a moved baseline.
             FinishCatchUp();
 
+            // Back-date the Wheel's cursor to leave-time: the catch-up walks
+            // it forward per sub-step, so a tide that opened or closed while
+            // the player was away pays exactly the seconds it was open. The
+            // capped remainder of a very long absence is never ticked, and so
+            // never paid — same as every other system.
+            StampWheelClock(awaySeconds);
+
             var catchUp = OfflineCatchUp.Begin(State, Data, awaySeconds);
             if (catchUp.Summary.creditedSeconds < OfflineCatchUp.DeferThresholdSeconds)
             {
@@ -613,6 +626,26 @@ namespace Wildgrove.Game
         public long NowUnixMs()
         {
             return ClockGuard.Now(State, _clock.NowUnixMs());
+        }
+
+        /// <summary>
+        /// Stamp the sim clock cursor the Wheel (design §15) reads: the
+        /// ratcheted now, back-dated by <paramref name="backdateSeconds"/> for
+        /// an offline catch-up so the cursor walks the absence from leave-time
+        /// and crosses each tide edge where it truly fell. Also keeps the
+        /// device's UTC offset current (windows close at warden-local
+        /// midnight) and defaults the hemisphere from locale the first time —
+        /// the journal's setting can overrule it later.
+        /// </summary>
+        private void StampWheelClock(double backdateSeconds)
+        {
+            State.simNowUnixMs = NowUnixMs() - (long)System.Math.Round(backdateSeconds * 1000.0);
+            State.utcOffsetMinutes = (int)System.TimeZoneInfo.Local
+                .GetUtcOffset(System.DateTimeOffset.FromUnixTimeMilliseconds(State.simNowUnixMs)).TotalMinutes;
+            if (State.hemisphere == Wheel.HemisphereUnset)
+            {
+                State.hemisphere = HemisphereGuess.FromLocale();
+            }
         }
 
         /// <summary>

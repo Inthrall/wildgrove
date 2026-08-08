@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 48;
+        public const int CurrentVersion = 49;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -65,6 +65,7 @@ namespace Wildgrove.Sim.Saves
                 exchangeConsiderationsThisWindow = state.exchangeConsiderationsThisWindow,
                 secondQueueBought = state.secondQueueBought,
                 clockHighWaterUnixMs = state.clockHighWaterUnixMs,
+                hemisphere = state.hemisphere,
                 playedMs = state.playedMs,
                 deepAmberFound = state.deepAmberFound,
                 deepAmberPityHours = state.deepAmberPityHours,
@@ -78,6 +79,16 @@ namespace Wildgrove.Sim.Saves
                 rngState = state.rngState,
                 purchasedUpgradeIds = new List<string>(state.purchasedUpgradeIds),
             };
+
+            foreach (var claim in state.sabbatClaims)
+            {
+                save.sabbatClaims.Add(new SavedSabbatClaim
+                {
+                    sabbatId = claim.sabbatId,
+                    year = claim.year,
+                    hemisphere = claim.hemisphere,
+                });
+            }
 
             foreach (var familiar in state.roster)
             {
@@ -353,6 +364,32 @@ namespace Wildgrove.Sim.Saves
             // negative or absent mark reads as "never told the time" rather
             // than as a mark in the past — a past mark would be no guard at all.
             state.clockHighWaterUnixMs = save.clockHighWaterUnixMs > 0L ? save.clockHighWaterUnixMs : 0L;
+            // Anything but the two real hemispheres reads as unset — the host
+            // re-derives it from locale, which is also what a fresh run gets.
+            state.hemisphere = save.hemisphere == Wheel.HemisphereNorth || save.hemisphere == Wheel.HemisphereSouth
+                ? save.hemisphere
+                : Wheel.HemisphereUnset;
+            // Claims guard double-keeping (design §15), so a structurally whole
+            // claim is kept even when the data no longer names its sabbat — the
+            // run doesn't lose its record because content moved. Only shapeless
+            // entries (no id, no year, or a hemisphere that never existed) drop.
+            state.sabbatClaims = new List<SabbatClaim>();
+            if (save.sabbatClaims != null)
+            {
+                foreach (var claim in save.sabbatClaims)
+                {
+                    if (claim != null && !string.IsNullOrEmpty(claim.sabbatId) && claim.year > 0
+                        && (claim.hemisphere == Wheel.HemisphereNorth || claim.hemisphere == Wheel.HemisphereSouth))
+                    {
+                        state.sabbatClaims.Add(new SabbatClaim
+                        {
+                            sabbatId = claim.sabbatId,
+                            year = claim.year,
+                            hemisphere = claim.hemisphere,
+                        });
+                    }
+                }
+            }
             state.playedMs = save.playedMs > 0 ? save.playedMs : 0L;
             state.deepAmberFound = save.deepAmberFound > 0 ? save.deepAmberFound : 0;
             state.deepAmberPityHours = save.deepAmberPityHours > 0.0 ? save.deepAmberPityHours : 0.0;
@@ -956,6 +993,16 @@ namespace Wildgrove.Sim.Saves
                         // existed, and an empty shelf is exactly how that
                         // reads.
                         save.version = 48;
+                        break;
+
+                    case 48:
+                        // v49 added the Wheel (design §15): the hemisphere
+                        // choice and the kept-sabbat claims. Both left at
+                        // their defaults — an unset hemisphere is re-derived
+                        // from locale by the host, exactly as a fresh run's
+                        // is, and no sabbat was ever kept on a save from
+                        // before the Wheel turned.
+                        save.version = 49;
                         break;
 
                     default:

@@ -139,6 +139,17 @@ namespace Wildgrove.Sim
             // that also feeds Renown (§9). Runs each sub-step so offline
             // catch-up credits it too.
             AccrueFamiliarXp(state, data, deltaSeconds);
+
+            // The sim clock cursor walks with the step, AFTER the step has been
+            // evaluated at its start time — this is what carries a tide edge
+            // (design §15) through an offline catch-up at the exact second it
+            // would have passed live. Whole-second offline slices make the
+            // rounding exact there; live play re-stamps every frame, so the
+            // fractional rounding never accumulates.
+            if (state.simNowUnixMs > 0L)
+            {
+                state.simNowUnixMs += (long)System.Math.Round(deltaSeconds * 1000.0);
+            }
         }
 
         private static void AccrueFamiliarXp(GameState state, GameDataAsset data, double deltaSeconds)
@@ -424,8 +435,11 @@ namespace Wildgrove.Sim
             var baseRate = economy.kith != null && economy.kith.gatherPerSecond > 0.0
                 ? economy.kith.gatherPerSecond
                 : 1.0;
+            // The open tide's lean on this node's find (design §15) — read live
+            // from the sim clock cursor, never from the cached effect union.
+            var tide = Wheel.YieldMult(state, data, node.resourceId);
 
-            return new BigDouble(agents * baseRate) * node.yieldMultiplier * masteryBonus * richness * planters * global;
+            return new BigDouble(agents * baseRate) * node.yieldMultiplier * masteryBonus * richness * planters * tide * global;
         }
 
         /// <summary>

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: bd7c04e64b095ed1745279652ef3acb56e7878933168efb314ac4a3801ac92ca
+  sourceHash: a27e1312a6f0383752aa0388175ed5c92b376110658988866d20b02de985da4b
   economy:
     costGrowth:
       building: 1.25
@@ -2436,144 +2436,159 @@ MonoBehaviour:
     materials:
     - id: reeds
       amount: 20
-  regions:
-  - id: lush
-    displayName: a lush region
-    sign: Green past the waterline. Take less than is offered.
-    effects:
-    - type: 0
-      skill: 
-      zone: 
-      resource: herbs
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
-    - type: 0
-      skill: 
-      zone: 
-      resource: rare-herbs
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
-    - type: 0
-      skill: 
-      zone: 
-      resource: berries
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: sky-blossoms
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-  - id: misted
-    displayName: a misted region
-    sign: The river speaks under the fog. The flowers keep their heads down.
-    effects:
-    - type: 0
-      skill: 
-      zone: 
-      resource: fish
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
-    - type: 0
-      skill: 
-      zone: 
-      resource: reeds
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: glow-moss
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: glacier-ice
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: wildflowers
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0.75
-  - id: ashen
-    displayName: an ashen region
-    sign: Something burned here, long before you. What lives now holds still, and
-      lets itself be seen.
-    effects:
-    - type: 4
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
-    - type: 0
-      skill: 
-      zone: 
-      resource: ashglass
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.5
-    - type: 0
-      skill: 
-      zone: 
-      resource: lichen
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-  - id: windswept
-    displayName: a windswept region
-    sign: The trail lies swept and the going is quick. Nothing about that is a kindness.
-    effects:
-    - type: 10
-      skill: 
-      zone: 
-      resource: 
-      recipe: 
-      species: 
-      upgrade: 
-      value: 0.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: peat
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
-    - type: 0
-      skill: 
-      zone: 
-      resource: wool
-      recipe: 
-      species: 
-      upgrade: 
-      value: 1.25
+  wheel:
+    openDaysBefore: 14
+    sabbats:
+    - id: samhain
+      displayName: Samhain
+      kind: fire
+      sign: "Samhain, by my count. The quiet things hold still longer tonight \u2014
+        the pencil keeps up."
+      touch:
+      - type: 4
+        skill: 
+        zone: 
+        resource: 
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      northNightDays: 1551000082520000f05300005d550000ca560000
+      southNightDays: 5e500000cb51000039530000a654000013560000
+    - id: yule
+      displayName: Yule
+      kind: quarter
+      sign: Yule, by my count. The fire wants little and gives much; the pots come
+        off early.
+      touch:
+      - type: 3
+        skill: firecraft
+        zone: 
+        resource: 
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      northNightDays: 48510000b55200002354000090550000fd560000
+      southNightDays: 91500000fe5100006b530000d954000046560000
+    - id: imbolc
+      displayName: Imbolc
+      kind: fire
+      sign: "Imbolc, by my count. First stirrings under the frost \u2014 the hedge
+        hands over more than it shows."
+      touch:
+      - type: 0
+        skill: 
+        zone: 
+        resource: fibres
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      - type: 0
+        skill: 
+        zone: 
+        resource: herbs
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      northNightDays: 0550000072510000df5200004d540000ba550000
+      southNightDays: ba5000002752000095530000025500006f560000
+    - id: ostara
+      displayName: Ostara
+      kind: quarter
+      sign: Ostara, by my count. Sowing weather; the ground takes what is given back,
+        and asks less of it.
+      touch:
+      - type: 19
+        skill: 
+        zone: 
+        resource: 
+        recipe: 
+        species: 
+        upgrade: 
+        value: 0.8
+      northNightDays: 34500000a15100000f5300007c540000e9550000
+      southNightDays: ef5000005c520000c953000036550000a3560000
+    - id: beltane
+      displayName: Beltane
+      kind: fire
+      sign: Beltane, by my count. The meadow keeps it too; the flowers come readier.
+      touch:
+      - type: 0
+        skill: 
+        zone: 
+        resource: wildflowers
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      - type: 0
+        skill: 
+        zone: 
+        resource: berries
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      northNightDays: 5e500000cb51000039530000a654000013560000
+      southNightDays: 1551000082520000f05300005d550000ca560000
+    - id: litha
+      displayName: Litha
+      kind: quarter
+      sign: Litha, by my count. The light stays long past its hour, and more comes
+        drifting on it.
+      touch:
+      - type: 11
+        skill: 
+        zone: 
+        resource: 
+        recipe: 
+        species: 
+        upgrade: 
+        value: 0.2
+      northNightDays: 91500000fe5100006b530000d954000046560000
+      southNightDays: 48510000b55200002354000090550000fd560000
+    - id: lughnasadh
+      displayName: Lughnasadh
+      kind: fire
+      sign: Lughnasadh, by my count. First harvest; the wood is generous with its
+        keeping.
+      touch:
+      - type: 0
+        skill: 
+        zone: 
+        resource: nuts
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      - type: 0
+        skill: 
+        zone: 
+        resource: mushrooms
+        recipe: 
+        species: 
+        upgrade: 
+        value: 1.2
+      northNightDays: ba5000002752000095530000025500006f560000
+      southNightDays: 0550000072510000df5200004d540000ba550000
+    - id: mabon
+      displayName: Mabon
+      kind: quarter
+      sign: Mabon, by my count. Even the caravan weighs fairer, this once.
+      touch:
+      - type: 20
+        skill: 
+        zone: 
+        resource: 
+        recipe: 
+        species: 
+        upgrade: 
+        value: 0.05
+      northNightDays: ef5000005c520000c953000036550000a3560000
+      southNightDays: 34500000a15100000f5300007c540000e9550000
   tinctures:
   - id: wardens-tonic
     displayName: Warden's Tonic

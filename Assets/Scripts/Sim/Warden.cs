@@ -163,7 +163,10 @@ namespace Wildgrove.Sim
                 return rate;
             }
 
-            return rate * (1.0 + Traits.WardenYieldBonus(state, data) + Upgrades.WardenYieldBonus(state, data));
+            // The tide's lean is the node's, not the agent's — the warden's
+            // hands feel Beltane at a flower node the same as the kith's do.
+            return rate * (1.0 + Traits.WardenYieldBonus(state, data) + Upgrades.WardenYieldBonus(state, data))
+                        * Wheel.YieldMult(state, data, node.resourceId);
         }
     }
 }

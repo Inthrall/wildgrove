@@ -38,7 +38,8 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Bonds, Is.Not.Empty);
             Assert.That(data.Species, Is.Not.Empty, "design §4 defines the familiar species");
             Assert.That(data.Planters, Is.Not.Empty, "design §3 defines the planters");
-            Assert.That(data.Regions, Is.Not.Empty, "design §8 defines the region modifiers");
+            Assert.That(data.Wheel, Is.Not.Null, "design §15 defines the Wheel");
+            Assert.That(data.Wheel.Sabbats, Has.Count.EqualTo(8), "design §15 defines the eight sabbats");
             Assert.That(data.Tinctures, Is.Not.Empty, "design §5 defines the Apothecary's tinctures");
             Assert.That(data.DeepAmber, Is.Not.Null, "design §6 defines the deep amber window");
             Assert.That(data.Exchange, Is.Not.Null, "design §9 the Exchange spread");
@@ -127,11 +128,15 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Rites.ChooseCount, Is.EqualTo(3));
             Assert.That(data.Rites.Rites.Single().Verses.First().Slots.First().Type, Is.EqualTo(RiteSlotType.Resource));
             Assert.That(data.Rites.Rites.Single().Verses.First().Slots.Last().Type, Is.EqualTo(RiteSlotType.Specimen));
-            Assert.That(data.Regions.Single(r => r.Id == "misted").Effects
-                    .Any(e => e.Type == EffectType.YieldMult && e.Resource == "fish" && e.Value > 1.0),
-                Is.True, "a misted region favours the river (design §8)");
-            Assert.That(data.Regions.All(r => !string.IsNullOrWhiteSpace(r.Sign)), Is.True,
-                "every season gets its one line");
+            Assert.That(data.Wheel.Sabbats.Single(s => s.Id == "beltane").Touch
+                    .Any(e => e.Type == EffectType.YieldMult && e.Resource == "wildflowers" && e.Value > 1.0),
+                Is.True, "Beltane-tide leans the flowers (design §15)");
+            Assert.That(data.Wheel.Sabbats.All(s => !string.IsNullOrWhiteSpace(s.Sign)), Is.True,
+                "every sabbat gets the warden's margin line");
+            Assert.That(data.Wheel.Sabbats.Single(s => s.Id == "samhain").Nights.North, Does.Contain("2026-10-31"),
+                "the wheel is hemisphere-mirrored: NH Samhain sits on SH Beltane's date (design §15)");
+            Assert.That(data.Wheel.Sabbats.Single(s => s.Id == "beltane").Nights.South, Does.Contain("2026-10-31"),
+                "the wheel is hemisphere-mirrored: NH Samhain sits on SH Beltane's date (design §15)");
             Assert.That(data.Economy.FamiliarXp.SignatureMilestones, Is.EqualTo(new[] { 2, 4, 7 }),
                 "Kinship signature milestones (design §4)");
             Assert.That(data.Economy.FamiliarXp.SignatureDeepening, Is.EqualTo(0.25));
@@ -248,17 +253,33 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_RegionEffectWithUnknownResource_IsCaught()
+        public void Validate_SabbatTouchWithUnknownResource_IsCaught()
         {
             var sources = LoadSources();
-            sources.RegionsJson = sources.RegionsJson.Replace(
-                "\"resource\": \"herbs\"",
+            sources.SabbatsJson = sources.SabbatsJson.Replace(
+                "\"resource\": \"wildflowers\"",
                 "\"resource\": \"moon-cheese\"");
-            Assert.That(sources.RegionsJson, Does.Contain("moon-cheese"), "the corruption must land, or this test proves nothing");
+            Assert.That(sources.SabbatsJson, Does.Contain("moon-cheese"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues, Has.Some.Contains("moon-cheese"));
+        }
+
+        [Test]
+        public void Validate_SabbatNightsTooClose_IsCaught()
+        {
+            var sources = LoadSources();
+            // Slide NH Imbolc onto NH Beltane's tide (Apr 30 is inside the
+            // May 1 window) — overlapping tides would silently drop one.
+            sources.SabbatsJson = sources.SabbatsJson.Replace(
+                "\"2027-02-01\"",
+                "\"2027-04-30\"");
+            Assert.That(sources.SabbatsJson, Does.Contain("2027-04-30"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("opens before"));
         }
 
         [Test]

@@ -144,10 +144,6 @@ namespace Wildgrove.Sim
             // independent of gameplay rng, identical on every regeneration.
             var seed = Rng.Sanitise((ulong)migration * 0x9E3779B97F4A7C15UL);
 
-            // The region the run wakes in scales what the land asks for —
-            // §9's modifierWeight: more of what the season gives freely.
-            var region = Regions.ForMigration(data, migration);
-
             // The gate widens with the fold, so the verse widens with it: each
             // extra required slot brings an extra goods slot, keeping the
             // choice margin the authored Rite has (five slots, choose three).
@@ -158,14 +154,14 @@ namespace Wildgrove.Sim
             var rite = new RiteData { id = $"rite-m{migration}", migration = migration };
             foreach (var verse in template.verses)
             {
-                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, region, extraSlots, ref seed));
+                rite.verses.Add(GenerateVerse(data, verse, config, migration, scale, extraSlots, ref seed));
             }
 
             return rite;
         }
 
         private static RiteVerseData GenerateVerse(GameDataAsset data, RiteVerseData template,
-            RiteGeneratorConfigData config, int migration, double scale, RegionData region, int extraSlots, ref ulong seed)
+            RiteGeneratorConfigData config, int migration, double scale, int extraSlots, ref ulong seed)
         {
             data.ZonesById.TryGetValue(template.zone, out var zone);
             var candidates = CandidateGoods(data, zone);
@@ -221,9 +217,13 @@ namespace Wildgrove.Sim
 
                 var goods = TakeFreshestRandom(data, source, ref seed);
                 chosen.Add(goods);
+                // Priced from migration count × unlocked content alone — the
+                // drawn season's DemandWeight retired with it (design §8,
+                // 2026-08-08), and the tide never enters a verse's quantities
+                // (design §15: a two-week overlay baked into an ask would price
+                // the sabbat against the warden keeping it).
                 targets.Add(anchor * scale
-                    * (fromSpotlight ? config.spotlightDiscount : config.offSpotlightPremium)
-                    * Regions.DemandWeight(region, goods));
+                    * (fromSpotlight ? config.spotlightDiscount : config.offSpotlightPremium));
             }
 
             var picks = PriceGoods(data, config, chosen, targets);

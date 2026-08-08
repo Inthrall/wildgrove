@@ -56,7 +56,10 @@ namespace Wildgrove.Sim
             }
 
             var bubbles = data.economy.bubbles;
-            var bonus = Traits.BubbleRewardBonus(state, data) + Upgrades.BubbleRewardBonus(state, data);
+            // Litha's tide (design §15) joins the same additive band as the
+            // raven's trait and the Almanac's line — the long light drifts more in.
+            var bonus = Traits.BubbleRewardBonus(state, data) + Upgrades.BubbleRewardBonus(state, data)
+                        + Wheel.BubbleRewardBonus(state, data);
             return new BigDouble(bubbles.rewardRatePerSecond * bubbles.rewardSeconds) * (1.0 + bonus);
         }
 

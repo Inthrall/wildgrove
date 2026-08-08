@@ -181,6 +181,34 @@ namespace Wildgrove.Sim
             modifierVersion++;
         }
 
+        /// <summary>
+        /// The sim clock cursor (UTC unix ms): where in wall-clock time the sim
+        /// currently stands. The host stamps it from the ratchet before each
+        /// live advance and back-dates it to leave-time before an offline
+        /// catch-up; <see cref="Simulation"/> advances it per sub-step, which is
+        /// what lets a tide edge (design §15) land mid-absence exactly where it
+        /// would have landed live. 0 = never stamped (the Wheel reads it as "no
+        /// tide"). Never saved — the ratchet's high water is the persisted clock.
+        /// </summary>
+        public long simNowUnixMs;
+
+        /// <summary>Device UTC offset in minutes, stamped by the host alongside the cursor — the Wheel's windows close at warden-local midnight. Never saved.</summary>
+        public int utcOffsetMinutes;
+
+        /// <summary>
+        /// The warden's hemisphere for the Wheel (design §15): 0 unset (the
+        /// Wheel is inert until the host defaults it from locale), 1 north,
+        /// 2 south. A warden property — it survives Migration and starting the
+        /// book again in spirit, so it is saved.
+        /// </summary>
+        public int hemisphere;
+
+        /// <summary>Sabbats kept, one claim per (sabbat, year, hemisphere) — the observance layer's ledger (design §15); empty until it lands. Saved.</summary>
+        public List<SabbatClaim> sabbatClaims = new List<SabbatClaim>();
+
+        /// <summary>Cached tide window — see Wheel. Never saved.</summary>
+        public WheelCache wheelCache;
+
         /// <summary>Zones whose waystone inscription has been read (design §6) — lore stays read across Migration.</summary>
         public List<string> seenWaystoneZoneIds = new List<string>();
 
@@ -406,7 +434,12 @@ namespace Wildgrove.Sim
         /// <summary>The run this page remembers (its migration count).</summary>
         public int migrationCount;
 
-        /// <summary>The region the run wore, or null before regions were configured.</summary>
+        /// <summary>
+        /// The region the run wore — a legacy field: the drawn region season
+        /// retired with the Wheel (design §8, 2026-08-08), so new pages leave
+        /// it null (RecordPage reads that as "home ground"). Kept because
+        /// existing saves carry the old ids on mounted pages.
+        /// </summary>
         public string regionId;
 
         /// <summary>What the camp was called when the page was set — null while unnamed.</summary>
@@ -417,6 +450,24 @@ namespace Wildgrove.Sim
 
         /// <summary>UTC unix ms the page was set — the page's date line.</summary>
         public long setAtUnixMs;
+    }
+
+    /// <summary>
+    /// One kept sabbat (design §15): the observance layer's ledger entry.
+    /// Claims key on (sabbat, year, hemisphere) so clock or hemisphere games
+    /// move hours, never rewards. Written by the observance layer (build-
+    /// pending); persisted from day one so the save rung is paid once.
+    /// </summary>
+    [Serializable]
+    public sealed class SabbatClaim
+    {
+        public string sabbatId;
+
+        /// <summary>The calendar year of the sabbat night that was kept.</summary>
+        public int year;
+
+        /// <summary>The hemisphere the claim was made under (1 north, 2 south).</summary>
+        public int hemisphere;
     }
 
     /// <summary>

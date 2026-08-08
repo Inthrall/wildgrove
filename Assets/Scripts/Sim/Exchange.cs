@@ -275,7 +275,11 @@ namespace Wildgrove.Sim
                 return BigDouble.Zero;
             }
 
-            return valueFrom / valueTo * new BigDouble(1.0 - data.exchange.spread);
+            // Mabon's tide eases the spread a few points (design §15) — the
+            // caravan keeps the day too, in its way. Clamped so an authored
+            // ease can never push the spread negative and mint value.
+            var spread = System.Math.Max(0.0, data.exchange.spread - Wheel.SpreadEase(state, data));
+            return valueFrom / valueTo * new BigDouble(1.0 - spread);
         }
 
         /// <summary>

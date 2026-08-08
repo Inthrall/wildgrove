@@ -385,7 +385,8 @@ namespace Wildgrove.Sim
                 : data.economy.crafting.baseCraftSeconds;
             return authored
                    / Upgrades.CraftSpeedMultiplier(state, data, recipe.skill)
-                   / Buildings.StationSpeedMultiplier(state, data, recipe.station);
+                   / Buildings.StationSpeedMultiplier(state, data, recipe.station)
+                   / Wheel.CraftSpeedMult(state, data, recipe.skill);
         }
 
         private static StationState StationFor(GameState state, string stationId)

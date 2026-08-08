@@ -201,16 +201,21 @@ namespace Wildgrove.Game
             return Migration.RenownForNextVerdure(State, Data);
         }
 
-        /// <summary>The region this run is living in (design §8) — null on home ground (run 1) or with no regions authored.</summary>
-        public RegionData CurrentRegion()
+        /// <summary>The sabbat whose tide is open right now (design §15) — null through the fallow weeks, or while the Wheel is inert.</summary>
+        public SabbatData OpenTide()
         {
-            return Regions.Current(State, Data);
+            return Wheel.OpenTide(State, Data);
         }
 
-        /// <summary>The region the next fold wakes in — the fold forecast's "ahead: …" line. Null when no regions are authored.</summary>
-        public RegionData NextRegion()
+        /// <summary>
+        /// The sabbat night at or ahead of now — the fold forecast's line since
+        /// the drawn season retired (design §8): the Wheel turns whether or not
+        /// the camp folds. Null while the Wheel is inert or the calendar has
+        /// run out.
+        /// </summary>
+        public SabbatData NextSabbat(out long nightStartUnixMs)
         {
-            return Regions.Next(State, Data);
+            return Wheel.NextSabbat(State, Data, out nightStartUnixMs);
         }
 
         /// <summary>

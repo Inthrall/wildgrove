@@ -27,7 +27,7 @@ namespace Wildgrove.Data
         public string ExchangeJson { get; set; }
         public string DialogueJson { get; set; }
         public string PlantersJson { get; set; }
-        public string RegionsJson { get; set; }
+        public string SabbatsJson { get; set; }
         public string TincturesJson { get; set; }
         public string AmbersJson { get; set; }
     }
@@ -64,7 +64,7 @@ namespace Wildgrove.Data
         public IReadOnlyList<BondDef> Bonds { get; private set; }
         public IReadOnlyList<SpeciesDef> Species { get; private set; }
         public IReadOnlyList<PlanterDef> Planters { get; private set; }
-        public IReadOnlyList<RegionDef> Regions { get; private set; }
+        public WheelDef Wheel { get; private set; }
         public IReadOnlyList<TinctureDef> Tinctures { get; private set; }
         public DeepAmberDef DeepAmber { get; private set; }
         public ExchangeConfig Exchange { get; private set; }
@@ -107,7 +107,7 @@ namespace Wildgrove.Data
                 Bonds = JsonConvert.DeserializeObject<BondsFile>(sources.BondsJson, settings).Bonds,
                 Species = JsonConvert.DeserializeObject<SpeciesFile>(sources.SpeciesJson, settings).Species,
                 Planters = JsonConvert.DeserializeObject<PlantersFile>(sources.PlantersJson, settings).Planters,
-                Regions = JsonConvert.DeserializeObject<RegionsFile>(sources.RegionsJson, settings).Regions,
+                Wheel = JsonConvert.DeserializeObject<WheelDef>(sources.SabbatsJson, settings),
                 Tinctures = JsonConvert.DeserializeObject<TincturesFile>(sources.TincturesJson, settings).Tinctures,
                 DeepAmber = JsonConvert.DeserializeObject<AmbersFile>(sources.AmbersJson, settings).DeepAmber,
                 Exchange = JsonConvert.DeserializeObject<ExchangeConfig>(sources.ExchangeJson, settings),
@@ -144,7 +144,7 @@ namespace Wildgrove.Data
                 ExchangeJson = File.ReadAllText(Path.Combine(directory, "exchange.json")),
                 DialogueJson = File.ReadAllText(Path.Combine(directory, "dialogue.json")),
                 PlantersJson = File.ReadAllText(Path.Combine(directory, "planters.json")),
-                RegionsJson = File.ReadAllText(Path.Combine(directory, "regions.json")),
+                SabbatsJson = File.ReadAllText(Path.Combine(directory, "sabbats.json")),
                 TincturesJson = File.ReadAllText(Path.Combine(directory, "tinctures.json")),
                 AmbersJson = File.ReadAllText(Path.Combine(directory, "ambers.json"))
             };
@@ -167,7 +167,7 @@ namespace Wildgrove.Data
                 sources.EconomyJson, sources.ResourcesJson, sources.ZonesJson, sources.UpgradesJson,
                 sources.RecipesJson, sources.BuildingsJson, sources.GearJson, sources.InsectsJson, sources.RitesJson,
                 sources.AlmanacJson, sources.FolioJson, sources.BondsJson, sources.SpeciesJson, sources.ExchangeJson, sources.DialogueJson,
-                sources.PlantersJson, sources.RegionsJson, sources.TincturesJson, sources.AmbersJson);
+                sources.PlantersJson, sources.SabbatsJson, sources.TincturesJson, sources.AmbersJson);
             using (var sha = SHA256.Create())
             {
                 var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(combined));
@@ -277,11 +277,6 @@ namespace Wildgrove.Data
         private sealed class PlantersFile
         {
             public List<PlanterDef> Planters { get; set; }
-        }
-
-        private sealed class RegionsFile
-        {
-            public List<RegionDef> Regions { get; set; }
         }
 
         private sealed class TincturesFile

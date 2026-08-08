@@ -915,10 +915,57 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.keepsakes, Has.Count.EqualTo(1),
                 "a page set in amber that didn't survive the save would be bought again every launch");
             Assert.That(restored.keepsakes[0].migrationCount, Is.EqualTo(2));
-            Assert.That(restored.keepsakes[0].regionId, Is.EqualTo("misted"));
+            Assert.That(restored.keepsakes[0].regionId, Is.EqualTo("misted"),
+                "a page mounted under the retired drawn season keeps its record — legacy ids survive whole");
             Assert.That(restored.keepsakes[0].campName, Is.EqualTo("Thistledown"));
             Assert.That(restored.keepsakes[0].versesSung, Is.EqualTo(3));
             Assert.That(restored.keepsakes[0].setAtUnixMs, Is.EqualTo(123_456L));
+        }
+
+        [Test]
+        public void Capture_RoundTripsTheWheel()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.hemisphere = Wheel.HemisphereSouth;
+            state.sabbatClaims.Add(new SabbatClaim
+            {
+                sabbatId = "beltane",
+                year = 2026,
+                hemisphere = Wheel.HemisphereSouth,
+            });
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.hemisphere, Is.EqualTo(Wheel.HemisphereSouth),
+                "the warden's reckoning survives the save");
+            Assert.That(restored.sabbatClaims, Has.Count.EqualTo(1),
+                "a kept sabbat that didn't survive the save could be kept twice");
+            Assert.That(restored.sabbatClaims[0].sabbatId, Is.EqualTo("beltane"));
+            Assert.That(restored.sabbatClaims[0].year, Is.EqualTo(2026));
+            Assert.That(restored.sabbatClaims[0].hemisphere, Is.EqualTo(Wheel.HemisphereSouth));
+        }
+
+        [Test]
+        public void Restore_ShapelessWheelFields_ReadAsUnsetAndDropped()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0L);
+            save.hemisphere = 9;
+            save.sabbatClaims = new System.Collections.Generic.List<SavedSabbatClaim>
+            {
+                null,
+                new SavedSabbatClaim { sabbatId = "", year = 2026, hemisphere = Wheel.HemisphereNorth },
+                new SavedSabbatClaim { sabbatId = "yule", year = 0, hemisphere = Wheel.HemisphereNorth },
+                new SavedSabbatClaim { sabbatId = "yule", year = 2026, hemisphere = 7 },
+                new SavedSabbatClaim { sabbatId = "yule", year = 2026, hemisphere = Wheel.HemisphereNorth },
+            };
+
+            var state = SaveCodec.Restore(save, _data);
+
+            Assert.That(state.hemisphere, Is.EqualTo(Wheel.HemisphereUnset),
+                "a hemisphere that never existed reads as unset — the host re-derives it from locale");
+            Assert.That(state.sabbatClaims, Has.Count.EqualTo(1),
+                "only the structurally whole claim survives — the run keeps its real record and nothing shapeless");
+            Assert.That(state.sabbatClaims[0].sabbatId, Is.EqualTo("yule"));
         }
 
         [Test]

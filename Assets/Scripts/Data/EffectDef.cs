@@ -30,7 +30,13 @@ namespace Wildgrove.Data
         GrantUpgrade,
 
         /// <summary>The camp's stations keep their standing orders across the fold, taking each up again as the new run re-earns it (design §8's auto-craft). Almanac nodes only.</summary>
-        KeepCraftOrders
+        KeepCraftOrders,
+
+        /// <summary>Scales the replant cost (Ostara's sowing weather, value below 1 = cheaper). Read only by the Wheel's sabbat touch (design §15) — nothing else consumes it.</summary>
+        ReplantCostMult,
+
+        /// <summary>Eases the Exchange's spread by this many points (Mabon's balance). Read only by the Wheel's sabbat touch (design §15) — nothing else consumes it.</summary>
+        ExchangeSpreadEase
     }
 
     /// <summary>

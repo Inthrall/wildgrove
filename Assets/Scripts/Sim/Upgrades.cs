@@ -592,20 +592,15 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Purchased upgrade effects, completed insects', owned Almanac nodes',
-        /// worn gear's, and the run's region modifier (design §8) — everything
-        /// currently modifying the run. The RAW walk (the Museum leg clones) —
-        /// per-tick consumers read the <see cref="Modifiers"/> snapshot instead.
+        /// and worn gear's — everything currently modifying the run. The RAW
+        /// walk (the Museum leg clones) — per-tick consumers read the
+        /// <see cref="Modifiers"/> snapshot instead. The Wheel's tide touch
+        /// (design §15) is deliberately NOT in this union: it turns on
+        /// wall-clock, which the snapshot cache can never see — the hook sites
+        /// read <see cref="Wheel"/>'s live accessors instead.
         /// </summary>
         internal static IEnumerable<EffectData> ActiveEffects(GameState state, GameDataAsset data)
         {
-            // The region's flavour is fixed for the whole run (it derives from
-            // the migration count), so it can never invalidate a snapshot
-            // mid-run — a fold always builds a fresh state.
-            foreach (var effect in Regions.ActiveEffects(state, data))
-            {
-                yield return effect;
-            }
-
             foreach (var effect in Gear.EquippedEffects(state, data))
             {
                 yield return effect;

@@ -33,7 +33,10 @@ namespace Wildgrove.Data
         public List<BondData> bonds = new List<BondData>();
         public List<SpeciesData> species = new List<SpeciesData>();
         public List<PlanterData> planters = new List<PlanterData>();
-        public List<RegionData> regions = new List<RegionData>();
+
+        /// <summary>The Wheel (design §15) — authored-empty reads as unconfigured; Wheel.Configured is the liveness check.</summary>
+        public WheelData wheel;
+
         public List<TinctureData> tinctures = new List<TinctureData>();
 
         /// <summary>The deep amber window (design §6) — Unity serializes an authored-empty section as a zeroed object; DeepAmber.Configured is the liveness check, never a null test.</summary>

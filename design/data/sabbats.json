@@ -1,0 +1,113 @@
+{
+  "$comment": "The Wheel (design §15): eight real-world sabbats a year, hemisphere-mirrored, each opening a ~two-week tide that closes at the sabbat night. The calendar is the warden's, not the land's — 'sign' is the warden's margin line ('…, by my count'), draft wording owed to the narrative pass. The tide's 'touch' is the world's ONE ambient lean (it replaced the drawn region season, design §8, 2026-08-08): read live by Wheel.cs from the sim clock cursor, NEVER joined into the cached active-effect union, never entering verseDemand, and never touching the Amber faucet. Values are unplaytested first guesses; every lean stays inside one mastery band (~+25%) — the no-gate rule. Nights are authored dates (no astronomy code; solstice drift is data), per hemisphere, several years ahead so an un-updated install keeps the wheel turning — top up around 2029. openDaysBefore sets when each tide opens ahead of its night. Windows within one hemisphere must never overlap (validator-enforced).",
+  "openDaysBefore": 14,
+  "sabbats": [
+    {
+      "id": "samhain",
+      "name": "Samhain",
+      "kind": "fire",
+      "sign": "Samhain, by my count. The quiet things hold still longer tonight — the pencil keeps up.",
+      "touch": [
+        { "type": "digSpeedMult", "value": 1.2 }
+      ],
+      "nights": {
+        "north": ["2026-10-31", "2027-10-31", "2028-10-31", "2029-10-31", "2030-10-31"],
+        "south": ["2026-05-01", "2027-05-01", "2028-05-01", "2029-05-01", "2030-05-01"]
+      }
+    },
+    {
+      "id": "yule",
+      "name": "Yule",
+      "kind": "quarter",
+      "sign": "Yule, by my count. The fire wants little and gives much; the pots come off early.",
+      "touch": [
+        { "type": "craftSpeedMult", "skill": "firecraft", "value": 1.2 }
+      ],
+      "nights": {
+        "north": ["2026-12-21", "2027-12-21", "2028-12-21", "2029-12-21", "2030-12-21"],
+        "south": ["2026-06-21", "2027-06-21", "2028-06-20", "2029-06-21", "2030-06-21"]
+      }
+    },
+    {
+      "id": "imbolc",
+      "name": "Imbolc",
+      "kind": "fire",
+      "sign": "Imbolc, by my count. First stirrings under the frost — the hedge hands over more than it shows.",
+      "touch": [
+        { "type": "yieldMult", "resource": "fibres", "value": 1.2 },
+        { "type": "yieldMult", "resource": "herbs", "value": 1.2 }
+      ],
+      "nights": {
+        "north": ["2026-02-01", "2027-02-01", "2028-02-01", "2029-02-01", "2030-02-01"],
+        "south": ["2026-08-01", "2027-08-01", "2028-08-01", "2029-08-01", "2030-08-01"]
+      }
+    },
+    {
+      "id": "ostara",
+      "name": "Ostara",
+      "kind": "quarter",
+      "sign": "Ostara, by my count. Sowing weather; the ground takes what is given back, and asks less of it.",
+      "touch": [
+        { "type": "replantCostMult", "value": 0.8 }
+      ],
+      "nights": {
+        "north": ["2026-03-20", "2027-03-20", "2028-03-20", "2029-03-20", "2030-03-20"],
+        "south": ["2026-09-23", "2027-09-23", "2028-09-22", "2029-09-22", "2030-09-22"]
+      }
+    },
+    {
+      "id": "beltane",
+      "name": "Beltane",
+      "kind": "fire",
+      "sign": "Beltane, by my count. The meadow keeps it too; the flowers come readier.",
+      "touch": [
+        { "type": "yieldMult", "resource": "wildflowers", "value": 1.2 },
+        { "type": "yieldMult", "resource": "berries", "value": 1.2 }
+      ],
+      "nights": {
+        "north": ["2026-05-01", "2027-05-01", "2028-05-01", "2029-05-01", "2030-05-01"],
+        "south": ["2026-10-31", "2027-10-31", "2028-10-31", "2029-10-31", "2030-10-31"]
+      }
+    },
+    {
+      "id": "litha",
+      "name": "Litha",
+      "kind": "quarter",
+      "sign": "Litha, by my count. The light stays long past its hour, and more comes drifting on it.",
+      "touch": [
+        { "type": "bubbleRewardBonus", "value": 0.2 }
+      ],
+      "nights": {
+        "north": ["2026-06-21", "2027-06-21", "2028-06-20", "2029-06-21", "2030-06-21"],
+        "south": ["2026-12-21", "2027-12-21", "2028-12-21", "2029-12-21", "2030-12-21"]
+      }
+    },
+    {
+      "id": "lughnasadh",
+      "name": "Lughnasadh",
+      "kind": "fire",
+      "sign": "Lughnasadh, by my count. First harvest; the wood is generous with its keeping.",
+      "touch": [
+        { "type": "yieldMult", "resource": "nuts", "value": 1.2 },
+        { "type": "yieldMult", "resource": "mushrooms", "value": 1.2 }
+      ],
+      "nights": {
+        "north": ["2026-08-01", "2027-08-01", "2028-08-01", "2029-08-01", "2030-08-01"],
+        "south": ["2026-02-01", "2027-02-01", "2028-02-01", "2029-02-01", "2030-02-01"]
+      }
+    },
+    {
+      "id": "mabon",
+      "name": "Mabon",
+      "kind": "quarter",
+      "sign": "Mabon, by my count. Even the caravan weighs fairer, this once.",
+      "touch": [
+        { "type": "exchangeSpreadEase", "value": 0.05 }
+      ],
+      "nights": {
+        "north": ["2026-09-23", "2027-09-23", "2028-09-22", "2029-09-22", "2030-09-22"],
+        "south": ["2026-03-20", "2027-03-20", "2028-03-20", "2029-03-20", "2030-03-20"]
+      }
+    }
+  ]
+}

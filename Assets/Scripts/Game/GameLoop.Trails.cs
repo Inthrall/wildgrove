@@ -103,7 +103,7 @@ namespace Wildgrove.Game
         /// <summary>The node's next replant cost, in units of its own resource (design §3) — for the button label.</summary>
         public BigDouble ReplantCost(NodeState node)
         {
-            return Replanting.ReplantCost(node, Data.economy);
+            return Replanting.ReplantCost(State, Data, node);
         }
 
         /// <summary>True when camp stock covers the node's next replant — the button's enabled state.</summary>

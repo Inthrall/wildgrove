@@ -68,7 +68,7 @@ namespace Wildgrove.Data
             ValidateBonds(data, issues);
             ValidateSpecies(data, issues);
             ValidatePlanters(data, resourceIds, issues);
-            ValidateRegions(data, resourceIds, issues);
+            ValidateWheel(data, resourceIds, issues);
             ValidateTinctures(data, resourceIds, issues);
             ValidateDeepAmber(data, resourceIds, issues);
             ValidateExchange(data, issues);
@@ -1133,35 +1133,124 @@ namespace Wildgrove.Data
             }
         }
 
-        private static void ValidateRegions(GameData data, HashSet<string> resourceIds, List<string> issues)
+        private static void ValidateWheel(GameData data, HashSet<string> resourceIds, List<string> issues)
         {
-            CheckIds(data.Regions.Select(r => r.Id), "region", issues);
-
-            foreach (var region in data.Regions)
+            var wheel = data.Wheel;
+            if (wheel == null || wheel.Sabbats == null || wheel.Sabbats.Count == 0)
             {
-                // The fold forecast prints "ahead: {name}" and the vignette
-                // speaks the sign — a nameless or silent region reads as a bug.
-                if (string.IsNullOrWhiteSpace(region.Name))
+                // The Wheel is optional data (fixtures) — absent is inert, not wrong.
+                return;
+            }
+
+            if (wheel.OpenDaysBefore < 1 || wheel.OpenDaysBefore > 60)
+            {
+                issues.Add($"Wheel openDaysBefore must be 1..60 (was {wheel.OpenDaysBefore})");
+            }
+
+            CheckIds(wheel.Sabbats.Select(s => s.Id), "sabbat", issues);
+
+            foreach (var sabbat in wheel.Sabbats)
+            {
+                // The forecast prints the name and the margin says the sign —
+                // a nameless or silent sabbat reads as a bug.
+                if (string.IsNullOrWhiteSpace(sabbat.Name))
                 {
-                    issues.Add($"Region '{region.Id}' has no name — the fold forecast prints it");
+                    issues.Add($"Sabbat '{sabbat.Id}' has no name — the forecast prints it");
                 }
 
-                if (string.IsNullOrWhiteSpace(region.Sign))
+                if (string.IsNullOrWhiteSpace(sabbat.Sign))
                 {
-                    issues.Add($"Region '{region.Id}' has no sign — the land says one line about every season");
+                    issues.Add($"Sabbat '{sabbat.Id}' has no sign — the warden's margin says one line per tide");
                 }
 
-                // An effect-less region is indistinguishable from home ground —
-                // it would silently eat one slot of the migration draw.
-                if (region.Effects == null || region.Effects.Count == 0)
+                if (sabbat.Kind != "fire" && sabbat.Kind != "quarter")
                 {
-                    issues.Add($"Region '{region.Id}' has no effects — a region with no flavour is home ground");
-                    continue;
+                    issues.Add($"Sabbat '{sabbat.Id}' kind must be 'fire' or 'quarter' (was '{sabbat.Kind}')");
                 }
 
-                foreach (var effect in region.Effects)
+                // A touch-less tide is just a date — the ambient touch is the
+                // world's one lean now (design §8, §15).
+                if (sabbat.Touch == null || sabbat.Touch.Count == 0)
                 {
-                    ValidateEffect($"Region '{region.Id}'", effect, data, resourceIds, issues);
+                    issues.Add($"Sabbat '{sabbat.Id}' has no touch — a tide with no lean is a bare date");
+                }
+                else
+                {
+                    foreach (var effect in sabbat.Touch)
+                    {
+                        ValidateEffect($"Sabbat '{sabbat.Id}'", effect, data, resourceIds, issues, sabbatTouch: true);
+
+                        // The Wheel matches yield leans by resource alone — a
+                        // skill- or zone-targeted lean would silently apply to
+                        // nothing (the same trap the target-less rule guards).
+                        if (effect.Type == EffectType.YieldMult && effect.Resource == null)
+                        {
+                            issues.Add($"Sabbat '{sabbat.Id}' yieldMult touch must target a resource — the Wheel's grain is the resource");
+                        }
+                    }
+                }
+
+                ValidateHemisphereNights(sabbat, "north", sabbat.Nights?.North, issues);
+                ValidateHemisphereNights(sabbat, "south", sabbat.Nights?.South, issues);
+            }
+
+            ValidateNoOverlappingTides(wheel, "north", s => s.Nights?.North, issues);
+            ValidateNoOverlappingTides(wheel, "south", s => s.Nights?.South, issues);
+        }
+
+        /// <summary>
+        /// Within one hemisphere, no two tides may be open at once — the sim
+        /// carries a single open tide, and an overlap would silently drop one.
+        /// Windows are [night − openDaysBefore, night + 1), so consecutive
+        /// nights need a gap of at least openDaysBefore + 1 days.
+        /// </summary>
+        private static void ValidateNoOverlappingTides(WheelDef wheel, string hemisphere,
+            System.Func<SabbatDef, List<string>> nightsOf, List<string> issues)
+        {
+            var nights = new List<(System.DateTime day, string sabbat)>();
+            foreach (var sabbat in wheel.Sabbats)
+            {
+                foreach (var night in nightsOf(sabbat) ?? new List<string>())
+                {
+                    if (System.DateTime.TryParseExact(night, "yyyy-MM-dd",
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None, out var day))
+                    {
+                        nights.Add((day, sabbat.Id));
+                    }
+                }
+            }
+
+            nights.Sort((a, b) => a.day.CompareTo(b.day));
+            for (var i = 1; i < nights.Count; i++)
+            {
+                var gap = (nights[i].day - nights[i - 1].day).TotalDays;
+                if (gap < wheel.OpenDaysBefore + 1)
+                {
+                    issues.Add($"Sabbat '{nights[i].sabbat}' ({hemisphere}, {nights[i].day:yyyy-MM-dd}) opens before"
+                               + $" '{nights[i - 1].sabbat}' closes — nights need a gap of at least {wheel.OpenDaysBefore + 1} days");
+                }
+            }
+        }
+
+        private static void ValidateHemisphereNights(SabbatDef sabbat, string hemisphere, List<string> nights, List<string> issues)
+        {
+            // Both hemispheres must be authored — the mirror is the design
+            // (design §15), and a one-sided sabbat would silently never fire
+            // for half the world.
+            if (nights == null || nights.Count == 0)
+            {
+                issues.Add($"Sabbat '{sabbat.Id}' has no {hemisphere} nights — both hemispheres must be authored");
+                return;
+            }
+
+            foreach (var night in nights)
+            {
+                if (!System.DateTime.TryParseExact(night, "yyyy-MM-dd",
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out _))
+                {
+                    issues.Add($"Sabbat '{sabbat.Id}' {hemisphere} night '{night}' is not a yyyy-MM-dd date");
                 }
             }
         }
@@ -1952,7 +2041,7 @@ namespace Wildgrove.Data
             return value >= 0 && value <= 1;
         }
 
-        private static void ValidateEffect(string owner, EffectDef effect, GameData data, HashSet<string> resourceIds, List<string> issues, bool almanacNode = false)
+        private static void ValidateEffect(string owner, EffectDef effect, GameData data, HashSet<string> resourceIds, List<string> issues, bool almanacNode = false, bool sabbatTouch = false)
         {
             switch (effect.Type)
             {
@@ -1963,7 +2052,7 @@ namespace Wildgrove.Data
                     // A target-less craftSpeedMult is global — the sim applies
                     // it to every skill's recipes (Patient Hands). Yield
                     // effects still need a target — a skill, a zone, or a
-                    // single resource (the region modifiers' grain): the sim
+                    // single resource (the sabbat touch's grain): the sim
                     // would silently apply a bare one to nothing.
                     if (effect.Skill == null && effect.Zone == null && effect.Resource == null
                         && effect.Type != EffectType.CraftSpeedMult)
@@ -2073,6 +2162,18 @@ namespace Wildgrove.Data
                     if (!almanacNode)
                     {
                         issues.Add($"{owner} carries a keepCraftOrders effect — only the Almanac crosses the fold");
+                    }
+
+                    break;
+
+                case EffectType.ReplantCostMult:
+                case EffectType.ExchangeSpreadEase:
+                    // Only the Wheel's live accessors read these — anywhere else
+                    // they would silently do nothing (design §15).
+                    RequirePositiveValue(owner, effect, issues);
+                    if (!sabbatTouch)
+                    {
+                        issues.Add($"{owner} carries a {effect.Type} effect — only the Wheel's sabbat touch reads it (design §15)");
                     }
 
                     break;

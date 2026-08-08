@@ -21,7 +21,7 @@ namespace Wildgrove.Data
             asset.bonds = data.Bonds.Select(MapBond).ToList();
             asset.species = data.Species.Select(MapSpecies).ToList();
             asset.planters = data.Planters.Select(MapPlanter).ToList();
-            asset.regions = data.Regions.Select(MapRegion).ToList();
+            asset.wheel = MapWheel(data.Wheel);
             asset.tinctures = data.Tinctures.Select(MapTincture).ToList();
             asset.deepAmber = MapDeepAmber(data.DeepAmber);
             asset.exchange = data.Exchange == null ? null : new ExchangeData
@@ -163,15 +163,46 @@ namespace Wildgrove.Data
             };
         }
 
-        private static RegionData MapRegion(RegionDef r)
+        private static WheelData MapWheel(WheelDef w)
         {
-            return new RegionData
+            return w == null ? null : new WheelData
             {
-                id = r.Id,
-                displayName = r.Name,
-                sign = r.Sign,
-                effects = r.Effects.Select(MapEffect).ToList()
+                openDaysBefore = w.OpenDaysBefore,
+                sabbats = w.Sabbats.Select(MapSabbat).ToList()
             };
+        }
+
+        private static SabbatData MapSabbat(SabbatDef s)
+        {
+            return new SabbatData
+            {
+                id = s.Id,
+                displayName = s.Name,
+                kind = s.Kind,
+                sign = s.Sign,
+                touch = s.Touch.Select(MapEffect).ToList(),
+                northNightDays = MapNights(s.Nights?.North),
+                southNightDays = MapNights(s.Nights?.South)
+            };
+        }
+
+        // Authored "yyyy-MM-dd" nights become days-since-epoch ints, sorted, so
+        // the sim's window scan never parses a string. The validator has already
+        // vouched for the format — a bad date fails validation before mapping.
+        private static List<int> MapNights(List<string> nights)
+        {
+            if (nights == null)
+            {
+                return new List<int>();
+            }
+
+            var epoch = new System.DateTime(1970, 1, 1);
+            return nights
+                .Select(night => (int)(System.DateTime.ParseExact(night, "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None) - epoch).TotalDays)
+                .OrderBy(day => day)
+                .ToList();
         }
 
         private static TinctureData MapTincture(TinctureDef t)

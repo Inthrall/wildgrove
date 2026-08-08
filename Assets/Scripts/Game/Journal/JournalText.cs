@@ -140,6 +140,10 @@ namespace Wildgrove.Game
                     return "every fold begins with " + UpgradeName(effect.upgrade);
                 case EffectType.KeepCraftOrders:
                     return "the stations keep their orders across the fold";
+                case EffectType.ReplantCostMult:
+                    return "replanting asks ×" + PlainNumber(effect.value);
+                case EffectType.ExchangeSpreadEase:
+                    return "the caravan's spread eases " + Percent(effect.value);
                 default:
                     return string.Empty;
             }

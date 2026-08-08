@@ -40,7 +40,7 @@ Knobs the sitting is allowed to move, by file:
 | `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
 | `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |
 | `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
-| `regions.json` | four regions, all effect values |
+| `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); top the calendar up ~2029 |
 | `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
 | `exchange.json` | `offerMinutes` 5; flat spread across quality tiers |
 | `folio.json` | spread/effect sizes |
@@ -289,6 +289,42 @@ first replant, the first fielding choice) that stay inside the no-popup,
 two-lines-on-screen tone. The gate it feeds: the first-hour funnel must be
 green before ship (§3.5). Sequenced after the playtest sitting and the
 narrative pass — the nudges point at whatever those two settle.
+
+### 1.8 The Wheel — in build (2026-08-08, design §15)
+
+The Wheel replaced the drawn region season the day it was decided (design §8),
+so the retirement and the replacement's core land together — a run with neither
+lean is a regression, not a phase. Build order:
+
+- ~~**Retire the drawn season**~~ ✅ RESOLVED 2026-08-08 — `regions.json`,
+  `Regions.cs`, `RegionDef.cs`, the draw, the effect-union feed, the
+  generator's `DemandWeight`, the forecast's region line, the vignette's
+  sign and `RegionsTests` all removed; keepsakes keep legacy region ids as
+  text. The parked idea itself is recorded in Appendix A.
+- ~~**The calendar core**~~ ✅ RESOLVED 2026-08-08 — `sabbats.json` (both
+  hemispheres, 2026–2030), defs/importer/validator (incl. tide-overlap and
+  date-format rules), `Wheel.cs` (O(1) window cache off the sim clock
+  cursor), `HemisphereGuess` locale default. **Still owed here: the visible
+  hemisphere toggle on the inside cover (locked mid-tide)** — rides with the
+  observance layer; until then the locale guess is the only source.
+- ~~**The ambient touch**~~ ✅ RESOLVED 2026-08-08 — live reads at all six
+  hook sites (kith yield, warden's hands, sketch walk — never the amber
+  roll, bubbles, replant cost, Exchange spread); the sim clock cursor is
+  stamped by GameLoop, back-dated for absences, advanced per sub-step, and
+  `Advance_AcrossATideEdge_LandsWhereOneCallWould` pins sliced-equals-
+  unsliced across a tide edge. Suite 1038/1038 on 2026-08-08.
+- ~~**Save**~~ ✅ RESOLVED 2026-08-08 — rung 48→49: hemisphere + claims,
+  both default-filled; round-trip and shapeless-claim clamps tested.
+- ~~**Fold forecast names the next sabbat**~~ ✅ RESOLVED 2026-08-08 —
+  "{sabbat}-tide is open." / "{sabbat}, N days off." on the fold sheet; the
+  Trail page's head line is now the warden's tide line + touch label.
+- **The observance layer** (sabbat verse via the Rite generator, tiers,
+  the eight plates, tide tracker row in `GameHud.RefreshTracker`, the
+  hemisphere toggle, margin lines through `dialogue.json`/`Narrative`):
+  design-settled in §15, build-pending — the remaining half of the Wheel.
+- **Word/art debts**: eight sabbat margin lines (drafted in `sabbats.json`,
+  the narrative pass re-voices), eight plates in the template (fire
+  festivals first is the fallback split).
 
 ---
 
@@ -627,6 +663,13 @@ for:
 - **x86-64 ABI** stays off. Play Games on PC runs ARM64 through translation, which
   is ample for a 2D URP idle game, and a third ABI costs the IL2CPP build-time
   doubling that got ARMv7 dropped. Revisit only if PC vitals show it.
+- **Per-run drawn randomness (the retired region season)** — parked 2026-08-08
+  when the Wheel (design §15, todo §1.8) replaced the drawn region modifier as
+  the world's one lean (design §8 records the retirement). If playtest finds
+  fallow-week runs read too alike, a drawn overlay may return — as a *second*
+  flavour beside the calendar, never instead of it, and re-judged from scratch
+  (the old lush/misted/ashen/windswept table and its `regions.json` shape
+  survive in repo history, not as a live spec).
 
 ## Appendix B — standing constraints
 
