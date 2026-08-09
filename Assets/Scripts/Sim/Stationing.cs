@@ -91,7 +91,13 @@ namespace Wildgrove.Sim
             return count;
         }
 
-        /// <summary>Familiars holding the wander post (0 or 1 — one body per post).</summary>
+        /// <summary>
+        /// Familiars holding the wander post (0 or 1 — one body per post).
+        /// A probe, kept for the tests and for anything diagnosing the watch:
+        /// its last production caller went with the gather-share (2026-08-09),
+        /// so don't hunt for one. <see cref="WanderAgents"/> is what the tick
+        /// asks — it counts the warden too, and scales by watch traits.
+        /// </summary>
         public static int Wandering(GameState state)
         {
             return CountAssignedTo(state, Familiar.WanderStation);

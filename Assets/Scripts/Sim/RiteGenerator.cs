@@ -34,6 +34,15 @@ namespace Wildgrove.Sim
         /// so the generator never asks for it and the reachability proof (§8)
         /// doesn't count it.
         /// </summary>
+        /// <remarks>
+        /// An authored constant, deliberately blind to the run's actual
+        /// stationing — and it assumes the WARDEN is one of those hands: they
+        /// hold a post at no kith-slot cost, which is what keeps a verse
+        /// answerable for a run whose slots are all spoken for. That assumption
+        /// became load-bearing when the wander post went watch-only
+        /// (2026-08-09): a warden sent to watch is a gather post spent, and the
+        /// generator cannot see it.
+        /// </remarks>
         public static int KithGatherPosts(GameDataAsset data)
         {
             var posts = data?.economy?.kith != null ? data.economy.kith.generatorGatherPosts : 0;

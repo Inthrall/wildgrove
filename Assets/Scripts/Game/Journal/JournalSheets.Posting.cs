@@ -83,7 +83,9 @@ namespace Wildgrove.Game
             MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
             // The warden keeps the wander post among their grounds — roaming is
-            // tending, not gathering, and the run is watched by whoever walks it.
+            // watching, not gathering, and the sites are watched by whoever
+            // walks them. ("Tending" is the windfall catch and nothing else —
+            // a wanderer never does it.)
             BuildGroundGrid(sheet, WalkWardenTo, includeWanderPost: true);
         }
 
