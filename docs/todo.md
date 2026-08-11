@@ -352,19 +352,22 @@ lean is a regression, not a phase. Build order:
   shelf) was eight identical "unkept"s with no dates, so a player in a fallow
   week met no evidence the system existed. Four changes, together:
   `openDaysBefore` 14→30 (design §15 — the tightest authored pair is 38 days,
-  so ~37 is the ceiling); the Record's shelf reads forward, soonest first,
-  every line dated, with the reckoning named on the card; the Trail's head
+  so ~37 is the ceiling); the Record's shelf was re-cut (dated and
+  soonest-first on the day, then **cut back to a count and the kept names on
+  2026-08-12** — the dates are read on the rail and the Trail's head, which is
+  where a player acts on them; design §15 records both turns); the Trail's head
   counts the next tide's opening down through the fallow weeks; and the
   **events rail** (`EventRail.cs`, `GameHud.Events.cs`,
   `JournalSheets.Events.cs`) stands cells down the world strip's left edge —
-  on screen at every tab, paid for in the STRIP's width rather than the page's
-  height. `EventRailTests` pins the ordering and, more importantly, the cells
-  that must NOT stand: no plate before a tide opens, never both Wheel cells,
-  nothing at all while the Wheel is inert, and no cache promised to a
-  signed-out player. The strip's own rect is inset off the rail's right edge
-  (`ReportWorldStrip`), which is what keeps the plates and the drifting
-  windfalls out from under it, and `HandleWorldTap` stands down over the rail
-  so a cell tap cannot also pop a bubble.
+  on screen at every tab, paid for out of the band's left MARGIN rather than
+  the page's height. `EventRailTests` pins the ordering and, more importantly,
+  the cells that must NOT stand: no plate before a tide opens, never both Wheel
+  cells, nothing at all while the Wheel is inert, and no cache promised to a
+  signed-out player. `HandleWorldTap` stands down over the rail so a cell tap
+  cannot also pop a bubble. The strip's rect was briefly inset off the rail's
+  right edge to clear it (`ReportWorldStrip`); that was **reverted 2026-08-12**
+  because every plate centre is a fraction of that rect, so the inset moved all
+  six over and shrank them to buy room the rail was already standing in.
 - **The rail wants a third inhabitant before it can be judged.** Two cells (the
   Wheel and the weekly cache) is enough to prove it is a list rather than a
   Wheel widget, and not enough to know whether the seat count, the urgency
