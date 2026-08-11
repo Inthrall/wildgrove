@@ -325,6 +325,52 @@ jobs:
           # stops reading the archive, unzip it and pass the directory instead.
           firebase crashlytics:symbols:upload --app="$app_id" "$SYMBOLS"
 
+      # The Java half of the same problem, and a separate upload because the
+      # firebase CLI has no command for it. Without this every Java frame in the
+      # dashboard stays obfuscated, and the ones R8 synthesised (outlines, lambda
+      # holders) name no real class at all, so issues group on a name that
+      # reshuffles whenever the class set changes. Four issues appeared to be
+      # "fresh" at 0.1.144 for exactly that reason: 0.1.143 dropped a package.
+      #
+      # Nothing has to be injected into the build to make the match. R8 stamps a
+      # pg_map_id into both the map file and the app, Crashlytics reads it back,
+      # and an issue it cannot deobfuscate is labelled "r8-map-id-<hash>" in the
+      # console. That hash is the id to upload under.
+      #
+      # Verified by hand against v153's map, 2026-08-12: the prefixed form the
+      # console displays is a 400, the bare 64-hex hash is a 200.
+      #
+      # No credential is involved. The endpoint is keyed on the Firebase app id
+      # and the request carries no auth header, which is how the Crashlytics
+      # Gradle plugin uploads from an ordinary developer machine. The service
+      # account above is only for the CLI's symbols command.
+      - name: Upload R8 mapping to Crashlytics
+        if: ${{ steps.files.outputs.mapping != '' }}
+        env:
+          MAPPING: ${{ steps.files.outputs.mapping }}
+        run: |
+          set -euo pipefail
+          map_id=$(sed -n 's/^# pg_map_id: \(.*\)$/\1/p' "$MAPPING" | head -1)
+          if [ -z "$map_id" ]; then
+            echo "::error::No pg_map_id header in $MAPPING. Uploading without it would store a mapping under an id no crash will ever report, which succeeds and achieves nothing."
+            exit 1
+          fi
+          app_id=$(jq -er '.client[] | select(.client_info.android_client_info.package_name == "com.inthrall.wildgrove") | .client_info.mobilesdk_app_id' Assets/google-services.json)
+          echo "Uploading mapping $map_id for $app_id"
+
+          # The same jar the CLI fetches for the symbols step, taken straight
+          # from maven and pinned, rather than reached for inside the CLI's cache.
+          jar="$RUNNER_TEMP/crashlytics-buildtools.jar"
+          curl -fsSL -o "$jar" \
+            "https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-crashlytics-buildtools/3.0.3/firebase-crashlytics-buildtools-3.0.3.jar"
+
+          # -uploadMappingFile takes the path as its OWN argument; there is no
+          # -mappingFile option, and passing one feeds it the flag name instead.
+          java -jar "$jar" -uploadMappingFile "$MAPPING" \
+            -googleAppId "$app_id" \
+            -androidApplicationId com.inthrall.wildgrove \
+            -mappingFileId "$map_id"
+
       # Pinned by SHA — this action receives the Play service-account key.
       - name: Upload to Google Play
         if: ${{ steps.channel.outputs.upload == 'true' }}
