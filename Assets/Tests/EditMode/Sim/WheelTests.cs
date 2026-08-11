@@ -204,6 +204,59 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void NextNightOf_GivesTheNightAndItsTideOpening()
+        {
+            var state = Fallow();
+            var beltane = _data.wheel.sabbats[0];
+
+            Assert.That(Wheel.NextNightOf(state, _data, beltane, out var nightMs, out var opensMs), Is.True);
+            Assert.That(nightMs, Is.EqualTo(NightDay * DayMs), "the night itself");
+            Assert.That(opensMs, Is.EqualTo(OpenMs),
+                "and when its tide opens — the shelf and the rail both count down to the OPENING, "
+                + "which is the moment anything can be done about it");
+        }
+
+        [Test]
+        public void NextNightOf_StillNamesTheNightFromInsideItsOwnTide()
+        {
+            // The Record's shelf asks about every sabbat, the open one included,
+            // and a window the cursor is already inside must not be skipped as
+            // past — the night has not fallen yet.
+            var state = InTide();
+            var beltane = _data.wheel.sabbats[0];
+
+            Assert.That(Wheel.NextNightOf(state, _data, beltane, out var nightMs, out _), Is.True);
+            Assert.That(nightMs, Is.EqualTo(NightDay * DayMs));
+        }
+
+        [Test]
+        public void NextNightOf_RunsOutHonestly_AndStaysInertWhenTheWheelIs()
+        {
+            var state = Fallow();
+            var beltane = _data.wheel.sabbats[0];
+
+            state.simNowUnixMs = CloseMs + DayMs;
+            Assert.That(Wheel.NextNightOf(state, _data, beltane, out _, out _), Is.False,
+                "past the authored nights it must say so rather than extrapolate a calendar");
+
+            var unset = Fallow();
+            unset.hemisphere = Wheel.HemisphereUnset;
+            unset.wheelCache = null;
+            Assert.That(Wheel.NextNightOf(unset, _data, beltane, out _, out _), Is.False,
+                "an unset hemisphere has no dates — the mirror is the whole calendar");
+        }
+
+        [Test]
+        public void OpenDaysBefore_FallsBackToTheShippedMonth()
+        {
+            Assert.That(Wheel.OpenDaysBefore(_data), Is.EqualTo(14), "authored data wins");
+
+            _data.wheel.openDaysBefore = 0;
+            Assert.That(Wheel.OpenDaysBefore(_data), Is.EqualTo(30),
+                "unauthored falls back to the shipped month, not to the fortnight it used to be");
+        }
+
+        [Test]
         public void YieldMult_LeansOnlyTheNamedResource_AndOnlyWhileTheTideHolds()
         {
             var open = InTide();

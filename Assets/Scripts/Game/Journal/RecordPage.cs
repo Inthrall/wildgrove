@@ -52,10 +52,18 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The Wheel's shelf (design §15): the eight sabbats by the warden's
-        /// count, each with a year tick per keeping — a gap in the record is a
-        /// gap, never a wound. The plates themselves are the art pass's debt;
-        /// until they land, the record is the line.
+        /// The Wheel's shelf (design §15): the eight sabbats of the warden's
+        /// year, each with a year tick per keeping — a gap in the record is a
+        /// gap, never a wound.
+        /// <para>
+        /// It reads FORWARD, soonest first, and every line says when its sabbat
+        /// next comes round. The first shelf was the eight in authored order
+        /// with nothing but "unkept" against each, which is the same eight
+        /// words whatever the date is: it looked like a checklist of things
+        /// already missed rather than a calendar, and gave a player no way at
+        /// all to find out when the next one was. The order IS the information
+        /// — whatever is open or nearest sits at the top.
+        /// </para>
         /// </summary>
         private void BuildWheelCard()
         {
@@ -66,28 +74,109 @@ namespace Wildgrove.Game
             }
 
             var card = Card("THE WHEEL");
-            MakeText(card, "<i>the sabbats, by the warden's count — a year tick for every keeping</i>",
-                15, TextAnchor.MiddleCenter, Ink2, _serif);
-            foreach (var sabbat in wheel.sabbats)
-            {
-                // The plate turns the line into a page when the art pass
-                // paints it — kept sabbats only, so the shelf stays a record
-                // rather than a poster wall.
-                var years = Keeping.KeptYears(_loop.State, sabbat.id);
-                if (years.Count > 0)
-                {
-                    var plate = ArtLibrary.ForJournal("sabbat-" + sabbat.id);
-                    if (plate != null)
-                    {
-                        PlateImage(card, plate, 140f);
-                    }
-                }
+            MakeText(card, "<i>the eight sabbats of the warden's year, soonest first. a keeping is written"
+                           + " here and stays written; a year missed is a gap in the record, not a wound.</i>",
+                15, TextAnchor.UpperLeft, Ink2, _serif);
 
-                var ticks = years.Count == 0
-                    ? "<color=" + Ink2Hex + "><i>unkept</i></color>"
-                    : "<color=" + Ink2Hex + ">kept " + string.Join(" · ", years) + "</color>";
-                MakeText(card, "<b>" + sabbat.displayName + "</b>  " + ticks, 18, TextAnchor.MiddleLeft, Ink);
+            // Which half of the world these dates belong to, and where it is
+            // changed. Without it the shelf is eight dates with no stated
+            // reckoning, and the setting that moves them all sits unmentioned
+            // three cards below on the inside cover.
+            var open = _loop.OpenTide();
+            MakeText(card, "by the " + (_loop.State.hemisphere == Wheel.HemisphereSouth ? "south" : "north")
+                           + "'s reckoning · <i>elsewhere the wheel turns the other way</i>"
+                           + (open != null ? " · <i>the reckoning holds while a tide is open</i>" : string.Empty),
+                14, TextAnchor.UpperLeft, Ink2, _smallCaps);
+
+            foreach (var sabbat in ShelfOrder(wheel.sabbats))
+            {
+                BuildWheelShelfRow(card, sabbat, open);
             }
+        }
+
+        /// <summary>
+        /// The eight in the order they next come round. Sabbats the calendar
+        /// can no longer place (authored nights run out, or the Wheel is inert
+        /// before the clock is stamped) keep the authored order behind those it
+        /// can — a shelf that cannot say "when" still has to say "whether".
+        /// </summary>
+        private List<SabbatData> ShelfOrder(List<SabbatData> sabbats)
+        {
+            var whenByIndex = new long[sabbats.Count];
+            var order = new List<int>(sabbats.Count);
+            for (var index = 0; index < sabbats.Count; index++)
+            {
+                whenByIndex[index] = _loop.NextNightOf(sabbats[index], out var night, out _)
+                    ? night
+                    : long.MaxValue;
+                order.Add(index);
+            }
+
+            // Ties break on the authored position, which makes the sort stable
+            // where List.Sort is not: an inert Wheel dates none of the eight,
+            // and they would otherwise shuffle on every rebuild of the page.
+            order.Sort((left, right) => whenByIndex[left] != whenByIndex[right]
+                ? whenByIndex[left].CompareTo(whenByIndex[right])
+                : left.CompareTo(right));
+
+            var ordered = new List<SabbatData>(sabbats.Count);
+            foreach (var index in order)
+            {
+                ordered.Add(sabbats[index]);
+            }
+
+            return ordered;
+        }
+
+        private void BuildWheelShelfRow(RectTransform card, SabbatData sabbat, SabbatData open)
+        {
+            var years = Keeping.KeptYears(_loop.State, sabbat.id);
+
+            // The plate is the keeping's prize (design §15), so it hangs here
+            // for a sabbat that has earned one — and for the open tide, whose
+            // plate is already on the Trail's keeping card while it holds.
+            if (years.Count > 0 || (open != null && open.id == sabbat.id))
+            {
+                var plate = ArtLibrary.ForJournal("sabbat-" + sabbat.id);
+                if (plate != null)
+                {
+                    PlateImage(card, plate, 140f);
+                }
+            }
+
+            var ticks = years.Count == 0
+                ? "<i>not yet kept</i>"
+                : "kept " + string.Join(" · ", years);
+            MakeText(card, "<b>" + sabbat.displayName + "</b>  <color=" + Ink2Hex + ">" + WhenLine(sabbat, open)
+                           + "</color>\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + ticks + "</color></size>",
+                18, TextAnchor.UpperLeft, Ink);
+        }
+
+        /// <summary>
+        /// When this sabbat next comes round, in the shelf's own clause: the
+        /// tide's closing while it holds, the tide's opening while it is the
+        /// one being waited for, and the night itself otherwise.
+        /// </summary>
+        private string WhenLine(SabbatData sabbat, SabbatData open)
+        {
+            var now = _loop.NowUnixMs();
+            if (open != null && open.id == sabbat.id)
+            {
+                var closes = (_loop.OpenTideCloseMs() - now) / 1000.0;
+                return "<color=" + MossDeepHex + ">the tide is open · closes in " + NumberFormat.Countdown(closes)
+                       + "</color>";
+            }
+
+            if (!_loop.NextNightOf(sabbat, out var nightMs, out var tideOpenMs))
+            {
+                // Past the authored calendar (top up sabbats.json — the
+                // evergreen rule keeps the rest of the wheel turning meanwhile).
+                return "not yet in the warden's almanac";
+            }
+
+            return tideOpenMs > now
+                ? "the tide opens in " + NumberFormat.Countdown((tideOpenMs - now) / 1000.0)
+                : "the night falls in " + NumberFormat.Countdown((nightMs - now) / 1000.0);
         }
 
         /// <summary>

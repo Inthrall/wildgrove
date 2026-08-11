@@ -169,6 +169,10 @@ namespace Wildgrove.Game
             counterRect.sizeDelta = new Vector2(380f, 44f);
             counterRect.anchoredPosition = new Vector2(-6f, 4f);
 
+            // The events rail down the band's other edge — the strip gives it
+            // width rather than the page giving it height (see GameHud.Events).
+            BuildEventRail(gap);
+
             // Nothing else pins here, between the strip and the page: the
             // trail-home line and the camp actions each head their own page
             // instead. Both are page chrome wearing a global badge — the

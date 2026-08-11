@@ -5,7 +5,7 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The Wheel (design §15): eight real-world sabbats a year, hemisphere-
-    /// mirrored. Each opens a tide ~two weeks ahead of its night and closes at
+    /// mirrored. Each opens a tide a month ahead of its night and closes at
     /// warden-local midnight after it; while a tide is open its sabbat's
     /// ambient touch leans the world a little — the world's ONE lean since the
     /// drawn region season retired (design §8, 2026-08-08).
@@ -70,8 +70,7 @@ namespace Wildgrove.Sim
         public static SabbatData NextSabbat(GameState state, GameDataAsset data, out long nightStartUnixMs)
         {
             nightStartUnixMs = 0L;
-            if (state == null || !Configured(data)
-                || state.hemisphere == HemisphereUnset || state.simNowUnixMs <= 0L)
+            if (state == null || !Configured(data))
             {
                 return null;
             }
@@ -80,20 +79,69 @@ namespace Wildgrove.Sim
             var bestStart = long.MaxValue;
             foreach (var sabbat in data.wheel.sabbats)
             {
-                foreach (var nightDay in NightsFor(sabbat, state.hemisphere))
+                if (NextNightOf(state, data, sabbat, out var nightStart, out _) && nightStart < bestStart)
                 {
-                    var nightStart = LocalDayStartMs(nightDay, state.utcOffsetMinutes);
-                    var nightEnd = LocalDayStartMs(nightDay + 1, state.utcOffsetMinutes);
-                    if (nightEnd > state.simNowUnixMs && nightStart < bestStart)
-                    {
-                        best = sabbat;
-                        bestStart = nightStart;
-                    }
+                    best = sabbat;
+                    bestStart = nightStart;
                 }
             }
 
             nightStartUnixMs = best != null ? bestStart : 0L;
             return best;
+        }
+
+        /// <summary>
+        /// ONE sabbat's next turn: the soonest of its authored nights still at
+        /// or ahead of the cursor, and the moment that night's tide opens.
+        /// False when the Wheel is inert or this sabbat's authored nights have
+        /// run out while others still have theirs — which is why the Record's
+        /// shelf asks per sabbat rather than reading the calendar itself.
+        /// <para>
+        /// Uncached on purpose: <see cref="Cache"/> answers "what is open now"
+        /// in O(1) for the hook sites that read it every step, and this walks
+        /// the calendar for a page that is redrawn a few times a minute at
+        /// worst. A second cache keyed by sabbat would be the expensive answer
+        /// to the cheap question.
+        /// </para>
+        /// </summary>
+        public static bool NextNightOf(GameState state, GameDataAsset data, SabbatData sabbat,
+            out long nightStartUnixMs, out long tideOpenUnixMs)
+        {
+            nightStartUnixMs = 0L;
+            tideOpenUnixMs = 0L;
+            if (state == null || sabbat == null || !Configured(data)
+                || state.hemisphere == HemisphereUnset || state.simNowUnixMs <= 0L)
+            {
+                return false;
+            }
+
+            var openDays = OpenDaysBefore(data);
+            var bestStart = long.MaxValue;
+            foreach (var nightDay in NightsFor(sabbat, state.hemisphere))
+            {
+                var nightStart = LocalDayStartMs(nightDay, state.utcOffsetMinutes);
+                var nightEnd = LocalDayStartMs(nightDay + 1, state.utcOffsetMinutes);
+                if (nightEnd > state.simNowUnixMs && nightStart < bestStart)
+                {
+                    bestStart = nightStart;
+                    tideOpenUnixMs = LocalDayStartMs(nightDay - openDays, state.utcOffsetMinutes);
+                }
+            }
+
+            if (bestStart == long.MaxValue)
+            {
+                return false;
+            }
+
+            nightStartUnixMs = bestStart;
+            return true;
+        }
+
+        /// <summary>How far ahead of its night a tide opens — authored, with the shipped month as the fallback for data that omits it.</summary>
+        public static int OpenDaysBefore(GameDataAsset data)
+        {
+            var authored = data?.wheel != null ? data.wheel.openDaysBefore : 0;
+            return authored > 0 ? authored : 30;
         }
 
         /// <summary>The open tide's yield lean on one resource — 1.0 for everything a tide doesn't name, and through the fallow weeks.</summary>
@@ -205,7 +253,7 @@ namespace Wildgrove.Sim
             }
 
             var now = state.simNowUnixMs;
-            var openDays = data.wheel.openDaysBefore > 0 ? data.wheel.openDaysBefore : 14;
+            var openDays = OpenDaysBefore(data);
             var previousEdge = long.MinValue;
             var nextEdge = long.MaxValue;
 

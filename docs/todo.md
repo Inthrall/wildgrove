@@ -40,7 +40,7 @@ Knobs the sitting is allowed to move, by file:
 | `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
 | `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |
 | `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
-| `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); top the calendar up ~2029 |
+| `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); `openDaysBefore` 30 leaves the world leaning ~68% of the year, so the touch is now the number under watch, not the window; top the calendar up ~2029 |
 | `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
 | `exchange.json` | `offerMinutes` 5; flat spread across quality tiers |
 | `folio.json` | spread/effect sizes |
@@ -346,6 +346,29 @@ lean is a regression, not a phase. Build order:
   and the plate hooks are live — drop `sabbat-{id}` plates into the
   ArtLibrary and the keeping card, the tier sheet and the Record shelf
   (kept sabbats only) pick them up with zero code.
+- ~~**The Wheel had no always-on surface**~~ ✅ RESOLVED 2026-08-11 — four of
+  its five surfaces drew nothing outside a tide and the fifth (the Record's
+  shelf) was eight identical "unkept"s with no dates, so a player in a fallow
+  week met no evidence the system existed. Four changes, together:
+  `openDaysBefore` 14→30 (design §15 — the tightest authored pair is 38 days,
+  so ~37 is the ceiling); the Record's shelf reads forward, soonest first,
+  every line dated, with the reckoning named on the card; the Trail's head
+  counts the next tide's opening down through the fallow weeks; and the
+  **events rail** (`EventRail.cs`, `GameHud.Events.cs`,
+  `JournalSheets.Events.cs`) stands cells down the world strip's left edge —
+  on screen at every tab, paid for in the STRIP's width rather than the page's
+  height. `EventRailTests` pins the ordering and, more importantly, the cells
+  that must NOT stand: no plate before a tide opens, never both Wheel cells,
+  nothing at all while the Wheel is inert, and no cache promised to a
+  signed-out player. The strip's own rect is inset off the rail's right edge
+  (`ReportWorldStrip`), which is what keeps the plates and the drifting
+  windfalls out from under it, and `HandleWorldTap` stands down over the rail
+  so a cell tap cannot also pop a bubble.
+- **The rail wants a third inhabitant before it can be judged.** Two cells (the
+  Wheel and the weekly cache) is enough to prove it is a list rather than a
+  Wheel widget, and not enough to know whether the seat count, the urgency
+  order or the drop-from-the-tail rule are right. The band's floor seats two;
+  a third event is where `TrimRailToBand` starts making real decisions.
 - **Word/art debts**: the eight plates ~~in the template~~ landed 2026-08-08
   as **authored almanac marks** (`Art/Plates/Wheel/sabbat-*.jpg`) — the
   warden's calendar ornament rather than a naturalist page, deliberately:

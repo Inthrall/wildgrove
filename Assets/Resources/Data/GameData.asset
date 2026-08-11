@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 3af387166f46fe13a21c83d03103da8fdd1cfbfbe6f0e0bbdb7c5e21814e1d7e
+  sourceHash: 8a7aa3b00e156ad635bf573619171f085c18d81216a65634d15c4e8e22a525f7
   economy:
     costGrowth:
       building: 1.25
@@ -2436,7 +2436,7 @@ MonoBehaviour:
     - id: reeds
       amount: 20
   wheel:
-    openDaysBefore: 14
+    openDaysBefore: 30
     observance:
       slotCount: 5
       tierSlots: 010000000300000005000000

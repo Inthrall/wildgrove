@@ -37,6 +37,9 @@ namespace Wildgrove.Game
             RefreshLedger();
             RefreshTracker();
             UpdateWorldGap();
+            // After the gap: the rail seats as many cells as the band's height
+            // allows, so it must be asked once the band has this cadence's size.
+            RefreshEventRail();
         }
 
         private void RefreshHeader()

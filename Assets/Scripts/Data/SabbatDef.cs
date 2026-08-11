@@ -4,14 +4,14 @@ namespace Wildgrove.Data
 {
     /// <summary>
     /// The Wheel's authoring model (design §15): eight real-world sabbats,
-    /// hemisphere-mirrored, each with a ~two-week tide and one small ambient
+    /// hemisphere-mirrored, each with a month-long tide and one small ambient
     /// touch — the world's one lean since the drawn region season retired
     /// (design §8, 2026-08-08). Nights are authored dates, not astronomy.
     /// </summary>
     public sealed class WheelDef
     {
         /// <summary>Days before the sabbat night that its tide opens.</summary>
-        public int OpenDaysBefore { get; set; } = 14;
+        public int OpenDaysBefore { get; set; } = 30;
 
         /// <summary>The keeping's shape (design §15) — absent means the tide has no verse (touch only).</summary>
         public ObservanceDef Observance { get; set; }

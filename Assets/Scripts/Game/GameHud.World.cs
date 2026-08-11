@@ -25,6 +25,20 @@ namespace Wildgrove.Game
             _worldGap.GetWorldCorners(Corners);
             var min = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
             var max = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
+
+            // The events rail stands on the band's left edge, so the strip is
+            // told about a narrower band. Everything the strip does — plate
+            // sizing, the wrap to two rows, the hit circles, where the windfalls
+            // drift — is a function of this one rect (see WorldStrip), so
+            // insetting it here is the whole of keeping the plates out from
+            // under the rail. Off the rail's own right edge rather than a
+            // shared constant: this is screen pixels and that is canvas units.
+            if (EventRailStanding())
+            {
+                _eventRail.GetWorldCorners(Corners);
+                min.x = Mathf.Max(min.x, RectTransformUtility.WorldToScreenPoint(null, Corners[2]).x);
+            }
+
             _world.StripScreenRect = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         }
 
@@ -55,6 +69,16 @@ namespace Wildgrove.Game
             {
                 if (screenPosition.HasValue)
                 {
+                    // The events rail's cells are ordinary uGUI Buttons and take
+                    // their own clicks; this path knows nothing about them, so
+                    // without the guard a tap on a cell would ALSO catch a
+                    // windfall drifting over it — a free reward for opening a
+                    // popup, and a windfall spent without the player seeing it.
+                    if (PointerOverEventRail(screenPosition.Value))
+                    {
+                        return;
+                    }
+
                     // A drifting bubble floats over everything — the catch
                     // wins before any plate or badge underneath it.
                     var caught = _world != null ? _world.PopBubbleAt(screenPosition.Value) : null;

@@ -224,6 +224,24 @@ namespace Wildgrove.Game
             return Wheel.OpenTideCloseMs(State, Data);
         }
 
+        /// <summary>
+        /// One named sabbat's next turn: the night, and when its tide opens
+        /// (both UTC unix ms). False when the Wheel is inert or that sabbat's
+        /// authored nights have run out. The Record's shelf and the events rail
+        /// ask this; everything watching only "what is open now" asks
+        /// <see cref="OpenTide"/>, which is the cached read.
+        /// </summary>
+        public bool NextNightOf(SabbatData sabbat, out long nightStartUnixMs, out long tideOpensUnixMs)
+        {
+            return Wheel.NextNightOf(State, Data, sabbat, out nightStartUnixMs, out tideOpensUnixMs);
+        }
+
+        /// <summary>How far ahead of its night a tide opens, in days — authored on the Wheel (design §15).</summary>
+        public int TideOpenDays()
+        {
+            return Wheel.OpenDaysBefore(Data);
+        }
+
         /// <summary>The open tide's keeping (design §15) — generated on first read, null through the fallow weeks.</summary>
         public KeepingState CurrentKeeping()
         {

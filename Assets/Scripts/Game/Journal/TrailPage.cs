@@ -201,14 +201,23 @@ namespace Wildgrove.Game
         /// <summary>
         /// The tide's line (design §15): while a sabbat's tide is open, the
         /// warden's margin names it at the head of the Trail — the calendar is
-        /// the warden's, the land's answer belongs on the land's page. The
-        /// fallow weeks show nothing.
+        /// the warden's, the land's answer belongs on the land's page.
+        /// <para>
+        /// Through the fallow weeks it counts the next one down instead of
+        /// showing nothing. Showing nothing was the whole of the Wheel's
+        /// presence outside a tide: the tracker row, this line and the keeping
+        /// card all stand down together, and the only surface left naming a
+        /// sabbat was the fold sheet — which a player has no reason to open.
+        /// The countdown is a margin aside, not a card: a tide that is not open
+        /// is not something to act on.
+        /// </para>
         /// </summary>
         private void BuildTideLine()
         {
             var tide = _loop.OpenTide();
             if (tide == null)
             {
+                BuildNextSabbatLine();
                 return;
             }
 
@@ -225,6 +234,47 @@ namespace Wildgrove.Game
                 MakeText(_body, gives + " · while " + tide.displayName + "-tide holds — the Rite's verses ask none of it",
                     15, TextAnchor.MiddleCenter, Ink2);
             }
+        }
+
+        /// <summary>
+        /// The fallow weeks' one line: which sabbat is coming, and how long
+        /// until its tide opens. Live-updated, because a countdown that only
+        /// moves when the page is rebuilt is a countdown that reads as stuck.
+        /// </summary>
+        private void BuildNextSabbatLine()
+        {
+            if (_loop.NextSabbat(out _) == null)
+            {
+                return;
+            }
+
+            var line = MakeText(_body, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _hand);
+            void Reread()
+            {
+                // Re-read the sabbat, not just the clock: a tide that opens
+                // while this page is up makes the whole line wrong, and the
+                // rebuild that replaces it with the warden's sign is a beat
+                // behind the cadence that notices.
+                var ahead = _loop.NextSabbat(out _);
+                if (ahead == null || _loop.OpenTide() != null)
+                {
+                    line.gameObject.SetActive(false);
+                    return;
+                }
+
+                line.gameObject.SetActive(true);
+                var away = _loop.NextNightOf(ahead, out _, out var opensMs)
+                    ? (opensMs - _loop.NowUnixMs()) / 1000.0
+                    : 0.0;
+                line.text = away > 0
+                    ? "<i>" + ahead.displayName + " is coming — the tide opens in " + NumberFormat.Countdown(away) + ".</i>"
+                    : "<i>" + ahead.displayName + " is coming.</i>";
+            }
+
+            // Drawn once now rather than a quarter-second later: the page must
+            // never appear with a blank line standing where this one goes.
+            Reread();
+            _liveUpdaters.Add(Reread);
         }
 
         /// <summary>

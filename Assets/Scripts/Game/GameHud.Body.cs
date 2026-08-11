@@ -200,6 +200,13 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// <see cref="ScrollToOnTrail"/> for the sheets — an event popup ends
+        /// in the card that answers it, and the Trail is a long scroll to be
+        /// dropped into the top of.
+        /// </summary>
+        internal void GoToTrail(string landmark) => ScrollToOnTrail(landmark);
+
+        /// <summary>
         /// Open the Trail tab and bring a landmark card ("verse") into view —
         /// the tracker deep-links into a page that is otherwise a long scroll.
         /// </summary>

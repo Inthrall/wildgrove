@@ -369,7 +369,7 @@ namespace Wildgrove.Data
     public sealed class WheelData
     {
         /// <summary>Days before the sabbat night that its tide opens.</summary>
-        public int openDaysBefore = 14;
+        public int openDaysBefore = 30;
 
         /// <summary>The keeping's shape (design §15) — a zeroed section reads as "no verse"; Keeping.Configured is the liveness check.</summary>
         public ObservanceData observance;
