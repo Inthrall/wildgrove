@@ -15,6 +15,11 @@ name: Android Release
 #                                when uploading to Play). The service account must
 #                                be linked in the Play Console with "Release apps
 #                                to testing tracks" (and production, if used).
+#   FIREBASE_SERVICE_ACCOUNT_JSON - Google Cloud service-account key JSON for the
+#                                wildgrove-ed59a Firebase project, holding the
+#                                "Firebase Crashlytics Symbol Uploader" role. Only
+#                                needed to symbolicate IL2CPP crashes; unset, the
+#                                upload step warns and the release still ships.
 # The signing key MUST stay the original upload key (alias wildgrove-upload) -
 # Play registers it from the first upload and rejects anything else after that.
 
@@ -270,6 +275,51 @@ jobs:
 
           Uploaded to Play track: ${{ steps.channel.outputs.upload == 'true' && steps.channel.outputs.track || 'not uploaded' }}."
           fi
+
+      # Before the Play upload on purpose: Crashlytics symbolicates a report when
+      # it arrives and never revisits it, so a crash that beats its symbols into
+      # the dashboard stays unreadable for good. Play is what puts the build in
+      # front of players, so the symbols have to land first.
+      #
+      # A failure here stops the release. That is the same stance the mapping.txt
+      # check takes above, and it costs little: re-dispatching the same
+      # versionCode is idempotent, so a transient Firebase outage is a re-run
+      # rather than a burnt version number.
+      - name: Upload IL2CPP symbols to Crashlytics
+        if: ${{ steps.files.outputs.symbols != '' }}
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          SYMBOLS: ${{ steps.files.outputs.symbols }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_JSON is not set. This build's native crashes will arrive in Crashlytics unsymbolicated, and cannot be symbolicated later."
+            exit 0
+          fi
+
+          # The app id is not a secret (it ships inside the bundle), so read it
+          # from the committed google-services.json rather than a second secret
+          # that could drift from the one the build actually reports as.
+          app_id=$(jq -er '.client[] | select(.client_info.android_client_info.package_name == "com.inthrall.wildgrove") | .client_info.mobilesdk_app_id' Assets/google-services.json)
+          echo "Uploading symbols for $app_id"
+
+          key="$RUNNER_TEMP/firebase-service-account.json"
+          # RUNNER_TEMP, not the workspace: nothing under build/ is swept before
+          # the GitHub Release step globs it, and a key attached to a public
+          # release asset is a key that has to be rotated.
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$key"
+          trap 'rm -f "$key"' EXIT
+          export GOOGLE_APPLICATION_CREDENTIALS="$key"
+
+          # Pinned to a major: --token is deprecated in firebase-tools and the
+          # service-account path is what replaced it, so a major bump is the one
+          # that could take the credential route out from under this step.
+          npm install -g firebase-tools@15
+
+          # Unity's symbols.zip is what the CLI documents for a build made by the
+          # editor rather than exported to Android Studio. If a future firebase-tools
+          # stops reading the archive, unzip it and pass the directory instead.
+          firebase crashlytics:symbols:upload --app="$app_id" "$SYMBOLS"
 
       # Pinned by SHA — this action receives the Play service-account key.
       - name: Upload to Google Play
