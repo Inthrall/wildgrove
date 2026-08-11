@@ -14,12 +14,16 @@ namespace Wildgrove.Game
     // It lives INSIDE the world gap for the same reason the slot counter does:
     // the chrome budget rule (see GameHud) says a pinned bar has to earn its
     // line of the page, and the rail earns nothing of the kind — it is read
-    // twice a session. Taking its space out of the strip's WIDTH instead costs
-    // the page nothing at all, and the band is the one row on screen with width
-    // to spare (the plates spread across the middle of it).
+    // twice a session. Standing in the band costs the page nothing at all, and
+    // the band's left margin is empty room: the plates spread across the middle
+    // of it, and a row of three leaves the rail's width clear at each end.
+    //
+    // The margin is the whole of what it takes. The strip is NOT told about a
+    // narrower band (see ReportWorldStrip) — it was, and every plate moved over
+    // and shrank to pay for a rail standing in space they were never using.
     public sealed partial class GameHud
     {
-        /// <summary>What the rail takes out of the strip's width, in canvas units — cell, border and the breath either side.</summary>
+        /// <summary>The rail's own width in canvas units — cell, border and the breath either side.</summary>
         private const float RailWidth = 152f;
 
         private const float RailCellWidth = 138f;
@@ -66,9 +70,8 @@ namespace Wildgrove.Game
             _eventRail.anchorMin = new Vector2(0f, 0f);
             _eventRail.anchorMax = new Vector2(0f, 1f);
             _eventRail.pivot = new Vector2(0f, 0.5f);
-            // The rail's rect IS the width the strip gives up, cell and gutter
-            // together — so the inset the strip reads is the rail's own right
-            // edge rather than a second constant that could drift from it.
+            // Cell and gutter together, which is also the rect the tap guard
+            // tests — one width for what the rail covers, drawn and tapped.
             _eventRail.sizeDelta = new Vector2(RailWidth, 0f);
             _eventRail.anchoredPosition = Vector2.zero;
 
@@ -302,12 +305,6 @@ namespace Wildgrove.Game
             }
 
             return RectTransformUtility.RectangleContainsScreenPoint(_eventRail, screenPoint, null);
-        }
-
-        /// <summary>True while the rail is standing on the strip's left edge and the strip must give way.</summary>
-        private bool EventRailStanding()
-        {
-            return _eventRail != null && _eventRail.gameObject.activeSelf && _railEntries.Count > 0;
         }
     }
 }

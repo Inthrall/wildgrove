@@ -26,19 +26,16 @@ namespace Wildgrove.Game
             var min = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
             var max = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
 
-            // The events rail stands on the band's left edge, so the strip is
-            // told about a narrower band. Everything the strip does — plate
-            // sizing, the wrap to two rows, the hit circles, where the windfalls
-            // drift — is a function of this one rect (see WorldStrip), so
-            // insetting it here is the whole of keeping the plates out from
-            // under the rail. Off the rail's own right edge rather than a
-            // shared constant: this is screen pixels and that is canvas units.
-            if (EventRailStanding())
-            {
-                _eventRail.GetWorldCorners(Corners);
-                min.x = Mathf.Max(min.x, RectTransformUtility.WorldToScreenPoint(null, Corners[2]).x);
-            }
-
+            // The WHOLE band, rail or no rail. The strip's plates are spread
+            // across it at width * (i + 1) / (count + 1), so insetting the rect
+            // off the rail's right edge moved every plate over and shrank them
+            // all: the rail was paid for out of the plates rather than out of
+            // the margin it stands in. At the portrait cap of three a row the
+            // leftmost centre sits at a quarter of the band, which clears the
+            // rail's 152 units by a plate's radius over, and the tap guard in
+            // HandleWorldTap covers the rest. A landscape band seating five or
+            // six a row would bring that centre in toward the rail, and the
+            // answer then is a shorter rail, not a narrower strip.
             _world.StripScreenRect = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
         }
 
