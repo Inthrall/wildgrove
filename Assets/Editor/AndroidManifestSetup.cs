@@ -10,7 +10,9 @@ namespace Wildgrove.EditorTools
     /// <summary>
     /// Writes Wildgrove's input declarations into the generated Android app
     /// manifest on every build (see <see cref="AndroidInputManifest"/> for what
-    /// and why). Unity owns that manifest — it composes it from Player Settings
+    /// and why), and withdraws the plugin-declared activities the game can never
+    /// start (see <see cref="AndroidWithdrawnActivities"/>). Unity owns that
+    /// manifest — it composes it from Player Settings
     /// and the installed plugins' library manifests — so this patches the output
     /// rather than replacing it with a hand-kept copy in
     /// <c>Assets/Plugins/Android/</c>: a copy would silently stop tracking the
@@ -42,7 +44,7 @@ namespace Wildgrove.EditorTools
             }
 
             var before = File.ReadAllText(manifestPath);
-            var after = AndroidInputManifest.Declare(before);
+            var after = AndroidWithdrawnActivities.Withdraw(AndroidInputManifest.Declare(before));
             if (after != before)
             {
                 // No BOM: aapt2 reads the manifest as plain UTF-8.
@@ -51,7 +53,9 @@ namespace Wildgrove.EditorTools
 
             Debug.Log("AndroidManifestSetup: declared "
                       + string.Join(", ", AndroidInputManifest.OptionalFeatures)
-                      + " as optional in " + manifestPath);
+                      + " as optional, and withdrew "
+                      + string.Join(", ", AndroidWithdrawnActivities.Withdrawn)
+                      + ", in " + manifestPath);
         }
 
         /// <summary>

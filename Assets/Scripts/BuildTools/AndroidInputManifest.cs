@@ -170,7 +170,12 @@ namespace Wildgrove.BuildTools
             return Serialise(document);
         }
 
-        private static void DeclareToolsNamespace(XmlDocument document, XmlElement root)
+        /// <summary>
+        /// Internal rather than private so <see cref="AndroidWithdrawnActivities"/>
+        /// shares it: two transforms patching the same manifest must agree on the
+        /// tools prefix, or the second declares a redundant second namespace.
+        /// </summary>
+        internal static void DeclareToolsNamespace(XmlDocument document, XmlElement root)
         {
             // GetAttribute by qualified name returns "" when absent, which is the
             // whole idempotency check — re-declaring would append a second one.
@@ -228,7 +233,7 @@ namespace Wildgrove.BuildTools
         /// <c>p1:name</c> plus a redundant namespace declaration — valid XML
         /// that no one reviewing a manifest wants to read.
         /// </summary>
-        private static void SetPrefixed(
+        internal static void SetPrefixed(
             XmlDocument document,
             XmlElement element,
             string prefix,
@@ -246,7 +251,7 @@ namespace Wildgrove.BuildTools
             attribute.Value = value;
         }
 
-        private static string Serialise(XmlDocument document)
+        internal static string Serialise(XmlDocument document)
         {
             var settings = new XmlWriterSettings
             {
