@@ -16,6 +16,14 @@ namespace Wildgrove.EditorTools
     /// (default Builds/wildgrove.apk — git-ignored). Uses whatever signing the
     /// project is configured with (debug keystore when none) — release
     /// signing stays a CI concern.
+    ///
+    /// A build rewrites three committed files in place, none of which is a
+    /// source: Crashlytics stamps a fresh random build id and the editor
+    /// version into its androidlib res/values, and the AdMob plugin rewrites
+    /// its AndroidManifest to inject the app id and its own version stamp.
+    /// Expect them in git status afterwards and revert them — they are build
+    /// output that predates this entry point, and committing one only replaces
+    /// whatever the last person's build happened to write.
     /// </summary>
     public static class CiBuild
     {

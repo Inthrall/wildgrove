@@ -139,15 +139,23 @@ deletion. Note that everything under `Resources/` ships whether or not code refe
 
 ## Third-party Android packages
 
-The Google/Firebase tarballs in `Packages/manifest.json` are **not committed** — run
-`tools/fetch-google-packages.sh` after cloning, and CI runs it before every Unity
-invocation.
+The Google/Firebase tarballs in `Packages/manifest.json` are **not committed**, and
+neither is `Assets/GeneratedLocalRepo/Firebase` (22 MB), the maven repo every Android
+build resolves Firebase from. Both come from `tools/fetch-google-packages.sh` — run it
+after cloning, and CI runs it before every Unity invocation.
 
-`Assets/GeneratedLocalRepo/Firebase` **is** committed (22 MB) and is what every Android
-build resolves against — no CI job runs the EDM4U resolver, so deleting those `.aar`s
-breaks the build rather than regenerating them. The fetch script checks them against the
-tarballs they came from and fails on drift. **After bumping a package version in
-`fetch-google-packages.sh`, re-resolve** or the build silently links the old Firebase:
+The script generates that repo rather than checking a committed copy, because what
+EDM4U's Force Resolve does for these three artifacts is a byte-for-byte copy of the
+`.srcaar` inside each package. Generating it is what makes a version bump safe: change
+`firebase_version` in the script and the matching lines in `manifest.json`, re-run, and
+the repo follows. **The `.meta` files it writes are load-bearing** — an `.aar` under
+`Assets/` with no `.meta` is imported as a plugin as well as resolved by Gradle, and the
+build fails on duplicate classes. `FirebaseRepoGuard` fails an Android build whose repo
+is missing, stale against the manifest, or has lost those metas.
+
+`AndroidResolverRunner.ForceResolve` still exists for the resolvers that write nothing
+here (Play Games, AdMob), which resolve from `maven.google.com` at build time rather than
+from a local repo:
 
 ```bash
 Unity -batchmode -quit -projectPath . -executeMethod Wildgrove.EditorTools.AndroidResolverRunner.ForceResolve

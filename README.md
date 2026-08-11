@@ -27,7 +27,9 @@ Unity 6 LTS · URP 2D · Vulkan-primary · Play Games Services v2 · AdMob
 ## After cloning
 
 The Google/Firebase Unity packages referenced by `Packages/manifest.json` are
-not committed (61 MB of tarballs). Fetch them once before opening the project:
+not committed (61 MB of tarballs), and neither is the maven repo the Android
+build resolves Firebase from (a further 22 MB, generated from those tarballs).
+One script does both, and it has to run before the project is opened:
 
 ```bash
 tools/fetch-google-packages.sh
