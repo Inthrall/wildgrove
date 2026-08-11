@@ -105,7 +105,15 @@ namespace Wildgrove.Game
             return (RectTransform)go.transform;
         }
 
-        /// <summary>The action strip along a plate's bottom edge.</summary>
+        /// <summary>
+        /// The action strip along a plate's bottom edge — what can be bought
+        /// here, centred. Centre rather than left because the strip holds whole
+        /// purchases of its own rather than continuing the rows above it: pinned
+        /// left, two plates of different widths left a ragged gutter down the
+        /// right of every card that had one. The plates size themselves to their
+        /// words (childControlWidth, no force-expand), so centring keeps the
+        /// strip balanced whichever of them is showing.
+        /// </summary>
         internal static Transform ActionRow(RectTransform card)
         {
             var go = MakeRect("Actions", card).gameObject;
@@ -114,7 +122,7 @@ namespace Wildgrove.Game
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childAlignment = TextAnchor.MiddleCenter;
             layout.spacing = 8;
             return go.transform;
         }
