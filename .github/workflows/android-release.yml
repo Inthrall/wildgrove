@@ -15,15 +15,11 @@ name: Android Release
 #                                when uploading to Play). The service account must
 #                                be linked in the Play Console with "Release apps
 #                                to testing tracks" (and production, if used).
-#   FIREBASE_SERVICE_ACCOUNT_JSON - Google Cloud service-account key JSON for the
-#                                wildgrove-ed59a Firebase project, holding "Firebase
-#                                Crash Symbol Uploader" (roles/firebasecrash.symbol
-#                                MappingsAdmin - note the legacy firebasecrash
-#                                prefix, there is no crashlytics-named equivalent).
-#                                Add "Firebase Viewer" as well if the CLI 403s
-#                                resolving the project. Only needed to symbolicate
-#                                IL2CPP crashes; unset, the upload step warns and
-#                                the release still ships.
+# Crashlytics needs no secret. Symbol and mapping uploads are keyed on the
+# Firebase app id in the committed google-services.json and send no auth header,
+# so there is deliberately nothing here for them. A FIREBASE_SERVICE_ACCOUNT_JSON
+# was required only while the native half went through the firebase CLI; if that
+# secret still exists on the repo, nothing reads it and it can be deleted.
 # The signing key MUST stay the original upload key (alias wildgrove-upload) -
 # Play registers it from the first upload and rejects anything else after that.
 
@@ -280,89 +276,76 @@ jobs:
           Uploaded to Play track: ${{ steps.channel.outputs.upload == 'true' && steps.channel.outputs.track || 'not uploaded' }}."
           fi
 
+      # Everything Crashlytics needs to render a crash in this build: the native
+      # symbols behind the IL2CPP frames, and the R8 map behind the Java ones.
+      # Without the map, frames R8 synthesised (outlines, lambda holders) name no
+      # real class at all, so issues group on a label that reshuffles whenever
+      # the class set moves. Four issues looked new at 0.1.144 for exactly that
+      # reason: 0.1.143 dropped a package.
+      #
+      # Both go through the buildtools jar, both are keyed on the Firebase app
+      # id, and neither request carries an auth header. That is how the
+      # Crashlytics Gradle plugin uploads from an ordinary developer machine, and
+      # it is why this step takes no credential. The firebase CLI can do the
+      # native half and wants a service-account key for it; it has no command for
+      # the map at all, so using the jar for both is one tool and no secret.
+      #
       # Before the Play upload on purpose: Crashlytics symbolicates a report when
       # it arrives and never revisits it, so a crash that beats its symbols into
       # the dashboard stays unreadable for good. Play is what puts the build in
-      # front of players, so the symbols have to land first.
+      # front of players, so this has to land first.
       #
-      # A failure here stops the release. That is the same stance the mapping.txt
-      # check takes above, and it costs little: re-dispatching the same
-      # versionCode is idempotent, so a transient Firebase outage is a re-run
-      # rather than a burnt version number.
-      - name: Upload IL2CPP symbols to Crashlytics
-        if: ${{ steps.files.outputs.symbols != '' }}
+      # A failure here stops the release, the same stance the mapping.txt check
+      # takes above, and it costs little: re-dispatching a versionCode is
+      # idempotent, so a transient outage is a re-run rather than a burnt number.
+      - name: Upload symbols and mapping to Crashlytics
         env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           SYMBOLS: ${{ steps.files.outputs.symbols }}
-        run: |
-          set -euo pipefail
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ]; then
-            echo "::warning::FIREBASE_SERVICE_ACCOUNT_JSON is not set. This build's native crashes will arrive in Crashlytics unsymbolicated, and cannot be symbolicated later."
-            exit 0
-          fi
-
-          # The app id is not a secret (it ships inside the bundle), so read it
-          # from the committed google-services.json rather than a second secret
-          # that could drift from the one the build actually reports as.
-          app_id=$(jq -er '.client[] | select(.client_info.android_client_info.package_name == "com.inthrall.wildgrove") | .client_info.mobilesdk_app_id' Assets/google-services.json)
-          echo "Uploading symbols for $app_id"
-
-          key="$RUNNER_TEMP/firebase-service-account.json"
-          # RUNNER_TEMP, not the workspace: nothing under build/ is swept before
-          # the GitHub Release step globs it, and a key attached to a public
-          # release asset is a key that has to be rotated.
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$key"
-          trap 'rm -f "$key"' EXIT
-          export GOOGLE_APPLICATION_CREDENTIALS="$key"
-
-          # Pinned to a major: --token is deprecated in firebase-tools and the
-          # service-account path is what replaced it, so a major bump is the one
-          # that could take the credential route out from under this step.
-          npm install -g firebase-tools@15
-
-          # Unity's symbols.zip is what the CLI documents for a build made by the
-          # editor rather than exported to Android Studio. If a future firebase-tools
-          # stops reading the archive, unzip it and pass the directory instead.
-          firebase crashlytics:symbols:upload --app="$app_id" "$SYMBOLS"
-
-      # The Java half of the same problem, and a separate upload because the
-      # firebase CLI has no command for it. Without this every Java frame in the
-      # dashboard stays obfuscated, and the ones R8 synthesised (outlines, lambda
-      # holders) name no real class at all, so issues group on a name that
-      # reshuffles whenever the class set changes. Four issues appeared to be
-      # "fresh" at 0.1.144 for exactly that reason: 0.1.143 dropped a package.
-      #
-      # Nothing has to be injected into the build to make the match. R8 stamps a
-      # pg_map_id into both the map file and the app, Crashlytics reads it back,
-      # and an issue it cannot deobfuscate is labelled "r8-map-id-<hash>" in the
-      # console. That hash is the id to upload under.
-      #
-      # Verified by hand against v153's map, 2026-08-12: the prefixed form the
-      # console displays is a 400, the bare 64-hex hash is a 200.
-      #
-      # No credential is involved. The endpoint is keyed on the Firebase app id
-      # and the request carries no auth header, which is how the Crashlytics
-      # Gradle plugin uploads from an ordinary developer machine. The service
-      # account above is only for the CLI's symbols command.
-      - name: Upload R8 mapping to Crashlytics
-        if: ${{ steps.files.outputs.mapping != '' }}
-        env:
           MAPPING: ${{ steps.files.outputs.mapping }}
         run: |
           set -euo pipefail
-          map_id=$(sed -n 's/^# pg_map_id: \(.*\)$/\1/p' "$MAPPING" | head -1)
-          if [ -z "$map_id" ]; then
-            echo "::error::No pg_map_id header in $MAPPING. Uploading without it would store a mapping under an id no crash will ever report, which succeeds and achieves nothing."
-            exit 1
-          fi
-          app_id=$(jq -er '.client[] | select(.client_info.android_client_info.package_name == "com.inthrall.wildgrove") | .client_info.mobilesdk_app_id' Assets/google-services.json)
-          echo "Uploading mapping $map_id for $app_id"
 
-          # The same jar the CLI fetches for the symbols step, taken straight
-          # from maven and pinned, rather than reached for inside the CLI's cache.
+          # The app id is not a secret (it ships inside the bundle), so read it
+          # from the committed google-services.json rather than a secret that
+          # could drift from the one the build actually reports as.
+          app_id=$(jq -er '.client[] | select(.client_info.android_client_info.package_name == "com.inthrall.wildgrove") | .client_info.mobilesdk_app_id' Assets/google-services.json)
+
           jar="$RUNNER_TEMP/crashlytics-buildtools.jar"
           curl -fsSL -o "$jar" \
             "https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-crashlytics-buildtools/3.0.3/firebase-crashlytics-buildtools-3.0.3.jar"
+
+          # Native. generateNativeSymbols reads a directory of <abi>/lib*.so and
+          # not the archive, so Unity's zip is expanded first; the CLI only
+          # looked like it took a zip because it unpacked one internally.
+          # uploadNativeSymbols deletes each .sym as it sends it, so the cache
+          # directory empties itself and is never stale.
+          if [ -n "$SYMBOLS" ]; then
+            mkdir -p "$RUNNER_TEMP/symbols" "$RUNNER_TEMP/symcache"
+            unzip -q "$SYMBOLS" -d "$RUNNER_TEMP/symbols"
+            java -jar "$jar" -generateNativeSymbols \
+              -unstrippedLibrariesDir "$RUNNER_TEMP/symbols" \
+              -symbolFileCacheDir "$RUNNER_TEMP/symcache" \
+              -googleAppId "$app_id" \
+              -symbolGenerator breakpad
+            java -jar "$jar" -uploadNativeSymbols \
+              -symbolFileCacheDir "$RUNNER_TEMP/symcache" \
+              -googleAppId "$app_id"
+          else
+            echo "::warning::No symbols.zip was produced, so this build's IL2CPP crashes will arrive unsymbolicated and cannot be fixed later."
+          fi
+
+          # Java. The map is matched to a crash by R8's own pg_map_id, which AGP
+          # already stamps into both the map file and the app, so nothing has to
+          # be injected into the build. An issue Crashlytics cannot deobfuscate
+          # is labelled "r8-map-id-<hash>" in the console; that hash is the id.
+          # Checked by hand against v153's map, 2026-08-12: uploading under the
+          # prefixed form the console displays is a 400, under the bare hash 200.
+          map_id=$(sed -n 's/^# pg_map_id: \(.*\)$/\1/p' "$MAPPING" | head -1)
+          if [ -z "$map_id" ]; then
+            echo "::error::No pg_map_id header in $MAPPING. Uploading without it would store a map under an id no crash will ever report, which succeeds and achieves nothing."
+            exit 1
+          fi
+          echo "Uploading mapping $map_id for $app_id"
 
           # -uploadMappingFile takes the path as its OWN argument; there is no
           # -mappingFile option, and passing one feeds it the flag name instead.
