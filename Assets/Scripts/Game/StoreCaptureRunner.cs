@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Wildgrove.Sim;
 
 namespace Wildgrove.Game
 {
@@ -45,6 +46,8 @@ namespace Wildgrove.Game
 
             yield return new WaitForSeconds(1.5f);
 
+            WarnIfNotTheShowcase();
+
             foreach (var page in Pages)
             {
                 hud.OpenTab(page);
@@ -59,12 +62,49 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Shut whatever sheet is standing before the shutter. The staged save
-        /// is stamped in the past, so the first thing every capture photographed
-        /// was the welcome-back sheet — over all five pages, since the scrim
-        /// outlives a tab change. Dismissing is the player's own way out of it
-        /// (the scrim tap), and PumpSheets can raise a second one behind the
-        /// first, so this drains rather than dismisses once.
+        /// Say so when the session is about to photograph a run that isn't the
+        /// showcase. The harness stages a save and enters Play, and nothing
+        /// between the two ever checked that the save it staged is the save the
+        /// session woke from — so a listing shot of an early camp (two
+        /// companions on one slot, a welcome-back sheet the freshly-stamped
+        /// showcase could never raise) looked exactly like a successful
+        /// capture. The camp is staged a second time here purely to be counted;
+        /// it is a few hundred objects, and the alternative is trusting the
+        /// thing that was already wrong once.
+        /// </summary>
+        private static void WarnIfNotTheShowcase()
+        {
+            var loop = FindAnyObjectByType<GameLoop>();
+            if (loop?.State == null || loop.Data == null)
+            {
+                return;
+            }
+
+            var showcase = ShowcaseState.Stage(loop.Data);
+            var wanted = Kith.Count(showcase);
+            var got = Kith.Count(loop.State);
+            if (wanted == got)
+            {
+                return;
+            }
+
+            Debug.LogError("[store-shots] this is not the showcase — staged " + wanted
+                           + " companions, the session woke with " + got
+                           + ". The save that was staged is not the save that was loaded; the shots are of another run.");
+        }
+
+        /// <summary>
+        /// Shut whatever sheet is standing before the shutter: the first thing
+        /// every capture photographed was a welcome-back sheet, over all five
+        /// pages, since the scrim outlives a tab change. Dismissing is the
+        /// player's own way out of it (the scrim tap), and PumpSheets can raise
+        /// a second one behind the first, so this drains rather than dismisses
+        /// once. The reason first written here — that the staged save is
+        /// stamped in the past — was wrong: it is stamped `UtcNow`, and 60 s of
+        /// credited absence is the bar that sheet needs, so a welcome-back
+        /// sheet in front of a capture means the session woke from ANOTHER
+        /// save. That is what <see cref="WarnIfNotTheShowcase"/> now says out
+        /// loud; draining is still right, because any sheet can stand here.
         /// </summary>
         private static IEnumerator ClearSheets(GameHud hud)
         {

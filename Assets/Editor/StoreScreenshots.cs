@@ -1,10 +1,7 @@
-using System.Linq;
-using BreakInfinity;
 using UnityEditor;
 using UnityEngine;
 using Wildgrove.Data;
 using Wildgrove.Game;
-using Wildgrove.Sim;
 using Wildgrove.Sim.Saves;
 
 namespace Wildgrove.EditorTools
@@ -63,7 +60,7 @@ namespace Wildgrove.EditorTools
                 System.IO.File.WriteAllText(SaveFile.Path + NoneMarkerSuffix, string.Empty);
             }
 
-            var save = SaveCodec.Capture(StageShowcaseState(data),
+            var save = SaveCodec.Capture(ShowcaseState.Stage(data),
                 System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(SaveFile.Path));
             System.IO.File.WriteAllText(SaveFile.Path, SaveCodec.ToJson(save));
@@ -131,102 +128,6 @@ namespace Wildgrove.EditorTools
             }
         }
 
-        /// <summary>
-        /// A camp worth photographing: three zones open, flocks working,
-        /// specimens banked, an insect plate half-sketched, the Rite part-sung.
-        /// </summary>
-        private static GameState StageShowcaseState(GameDataAsset data)
-        {
-            var state = GameStateFactory.NewGame(data);
-
-            // Skill XP up front so the §9 ladder's skill gates open (money→XP).
-            if (data.economy?.xp != null)
-            {
-                Skills.AddGatherXp(state, data, "foraging", new BigDouble(200000));
-                Skills.AddGatherXp(state, data, "mining", new BigDouble(80000));
-                Skills.AddGatherXp(state, data, "logging", new BigDouble(60000));
-                Skills.AddGatherXp(state, data, "firecraft", new BigDouble(60000));
-                Skills.AddGatherXp(state, data, "forgecraft", new BigDouble(60000));
-                Skills.AddGatherXp(state, data, "bushcraft", new BigDouble(60000));
-            }
-
-            // March up the ladder, granting the materials each rung asks for.
-            foreach (var upgrade in data.upgrades.OrderBy(u => u.order).Take(16))
-            {
-                foreach (var material in upgrade.materials)
-                {
-                    state.AddResource(material.id, new BigDouble(material.amount));
-                }
-
-                Upgrades.TryPurchase(state, data, upgrade);
-            }
-
-            state.renown = new BigDouble(1250);
-            state.amber = 12;
-
-            // A kith worth photographing: the two seeds plus four staged
-            // companions, each its own species (the collection model — one
-            // familiar per species, ever), on a fully-opened ladder. Restore
-            // rests anything past the earned slots, so open them all: ten
-            // verses sung plus both store slots. The showcase isn't a legal
-            // run, it's a photograph.
-            state.foldedVersesSung = 10;
-            state.purchasedKithSlots = 2;
-            var staged = new[]
-            {
-                ("sedge-linnet", state.nodes.Count > 1 ? state.nodes[1].id : state.nodes[0].id),
-                ("red-squirrel", state.nodes.Count > 2 ? state.nodes[2].id : state.nodes[0].id),
-                ("bramble-hare", Familiar.WanderStation),
-                ("tawny-owl", state.digSites.Count > 0 ? Familiar.DigStationPrefix + state.digSites[0].zoneId : state.nodes[0].id),
-            };
-            for (var i = 0; i < staged.Length; i++)
-            {
-                var (species, station) = staged[i];
-
-                // Loud, because the quiet version shipped: a retired species id
-                // resolves to no plate and no name list, so SuggestName falls
-                // back to "Familiar N" and the store screenshots go out with a
-                // blank-faced companion in them. Nothing else here would say so.
-                if (!data.SpeciesById.ContainsKey(species))
-                {
-                    throw new System.InvalidOperationException(
-                        "[store-shots] staged species '" + species + "' is not in species.json");
-                }
-
-                state.roster.Add(new Familiar
-                {
-                    id = state.NextFamiliarId(),
-                    speciesId = species,
-                    name = Roster.SuggestName(state, data, species),
-                    stationId = station,
-                    xp = 900 + i * 400,
-                    kinshipXp = i == 0 ? 4200 : 0,
-                });
-            }
-
-            for (var i = 0; i < state.nodes.Count; i++)
-            {
-                var node = state.nodes[i];
-                node.masteryXp = 1800 + i * 700;
-                node.basket = new BigDouble(12 + i * 7);
-                state.AddResource(node.resourceId, new BigDouble(900 + i * 2100));
-            }
-
-            state.AddResource("copper-ingot", new BigDouble(14));
-            state.AddResource("charcoal", new BigDouble(22));
-            state.AddChoice("berries", new BigDouble(3));
-            state.AddChoice("wildflowers", new BigDouble(1));
-            state.AddDecent("nuts", new BigDouble(45));
-            Folio.TryFix(state, data, "wildflowers");
-
-
-            state.insectSketches["stags-herald"] = 2;
-            state.deedCounts["tend"] = 14;
-            state.wardenPostNodeId = state.nodes.Count > 1 ? state.nodes[1].id : null;
-
-            Upgrades.RecomputeYieldMultipliers(state, data);
-            return state;
-        }
     }
 
     /// <summary>

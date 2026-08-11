@@ -373,25 +373,50 @@ lean is a regression, not a phase. Build order:
   changes, so unlocks in the field are unaffected either way. Re-upload
   `store/play-games/achievement-choice-512.png` in the same visit (icons are a
   manual upload — see the tool's header). Batch with the drifted-step visit above.
-- **The store-screenshot harness stages a camp it doesn't get.** Found 2026-08-06
-  while using it to look at the new roster drawer. Two faults, both in
-  `StoreScreenshots.StageShowcaseState`, and both cosmetic-but-visible in a
-  published listing shot:
-  - **`kinshipXp = 4200` is a Kinship LEVEL, not XP.** `Kinship.Level` returns
-    `(int)familiar.kinshipXp` directly — the field stores the level, the √
-    conversion happens at Migration — so the showcase's first companion reads
-    "KINSHIP MMMMCC" and begins every run at level 4200. A sane figure (4, say)
-    is the whole fix; it is in the staging only, never in a real save.
-  - **Six companions are staged and two arrive.** The showcase opens the ladder
-    (`foldedVersesSung = 10`, `purchasedKithSlots = 2`) and adds four staged
-    companions to the two seeds, but the captured page reads "1 of 1 posts
-    walked · 2 companions" — so `SaveCodec.Capture`/`Restore` is dropping four
-    of them and clamping the ladder to one slot, not merely resting them (which
-    is what the standing note in Appendix B describes). Cause unconfirmed;
-    it means neither the store shots nor a visual check ever sees a full drawer.
-  - The third fault — every shot photographed the welcome-back sheet, since the
-    staged save is stamped in the past and a scrim outlives a tab change — is
-    fixed (`StoreCaptureRunner.ClearSheets`).
+- **The store-screenshot harness photographs a run that is not the showcase.**
+  Found 2026-08-06 while using it to look at the new roster drawer; diagnosed
+  2026-08-11, and the diagnosis it was filed under was wrong.
+  - ~~**`kinshipXp = 4200` is a Kinship LEVEL, not XP.**~~ ✅ RESOLVED
+    2026-08-11. `Kinship.Level` returns `(int)familiar.kinshipXp` directly (the
+    field stores the level; the √ conversion happens at Migration), so the
+    showcase's first companion read "KINSHIP MMMMCC" in every listing shot
+    taken since. Staged at 4 now, and `Stage_KinshipIsALevelACompanionCouldHold`
+    pins every staged companion inside a level a plate can hold.
+  - ~~**Six companions are staged and two arrive.**~~ ✅ NOT A SAVE FAULT
+    2026-08-11. `SaveCodec.Capture`/`Restore` was not dropping anyone:
+    `Stage_ThroughTheSaveSlot_ArrivesAsTheCampItStaged` walks the whole launch
+    path (stage, capture, write the slot, load it, restore) against the real
+    data and the camp arrives whole, six companions on the open ladder. Nothing
+    in `Restore` can drop four familiars of four distinct species: the only
+    reducer is the one-per-species dedupe, and the slot trim rests bodies
+    rather than removing them.
+    <br>What the captured page was reading is **another save entirely**. Two
+    independent tells: "1 of 1 posts walked · 2 companions" is a ladder with no
+    verses sung and no purchased slots, which the showcase sets to 10 and 2;
+    and the welcome-back sheet cannot fire under 60 s of credited absence
+    (`SessionLog.WelcomeBackMinSeconds`), which a save stamped `UtcNow` seconds
+    before Play can never reach. **The mechanism is still unproven** (the
+    staged write and the session's read both go through `SaveFile.Path`, and
+    the poller's set-aside restore is gated behind the done marker), so the
+    next capture is instrumented to say so instead: `WarnIfNotTheShowcase`
+    counts the woken run against a freshly staged showcase and logs an error
+    naming both. Read the log before trusting a shot.
+  - ~~**The owl was staged at a dig post.**~~ ✅ RESOLVED 2026-08-11. A
+    `dig:{zone}` station is retired, and `SaveCodec.StationValid` rests whoever
+    carries one on load (deliberately, per `Familiar.DigStationPrefix`), so the
+    fourth staged companion was at camp in every shot. It stands on a ground
+    now, and `Stage_PostsOnlyGroundsAndTheWatch` pins that the showcase posts
+    nothing the save cannot carry. This was the only remaining use of the
+    prefix anywhere in the project.
+  - **The staging moved out of the editor harness** to
+    `Assets/Scripts/Game/ShowcaseState.cs`, beside `StoreCaptureRunner`, which
+    is what let any of it be tested: `Assets/Editor` compiles into
+    Assembly-CSharp-Editor and no test asmdef can reference that.
+  - The welcome-back fault is fixed (`StoreCaptureRunner.ClearSheets`), but the
+    reason recorded for it was wrong: the staged save is stamped `UtcNow`, not
+    in the past. Draining is still right (any sheet can stand, and a scrim
+    outlives a tab change) but a welcome-back sheet in front of a capture is a
+    symptom of the wrong-run fault above, not of the stamp.
 - **Sim purity is a convention with nothing enforcing it.** `CLAUDE.md` states
   `Wildgrove.Sim` = `noEngineReferences: true`; the asmdef flag is **`false`**, and
   flipping it does not compile — Sim takes `GameDataAsset` in nearly every
