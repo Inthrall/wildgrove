@@ -734,6 +734,46 @@ namespace Wildgrove.Game
         };
 
         /// <summary>
+        /// The portion chips, 200 apiece (was 170). MEASURED against
+        /// IMFellEnglishSC at the 38px uGUI renders a 19pt label: "a quarter" is
+        /// 158 where a 170 plate leaves 150 usable, so it wrapped to two lines
+        /// beside a one-line "half" (71) and "all" (50) and the row sat at three
+        /// different heights.
+        /// <para>
+        /// Worse, it wrapped ON SELECTION. SetButtonChosen switches the label to
+        /// bold, which takes "a quarter" from 158 to 164, so the row could change
+        /// height as the player tapped between the three. 184 is the floor that
+        /// holds the widest chosen label; 200 leaves a little air. Three at 200
+        /// plus spacing is 616, inside both a portrait card (~906) and a 4:3
+        /// spread column (~748).
+        /// </para>
+        /// </summary>
+        private const float ExchangeChipPlate = 200f;
+
+        /// <summary>
+        /// The trade plates run the card's full measure — this is the primary act
+        /// and it earns the width.
+        /// </summary>
+        private const float ExchangeTradePlate = 800f;
+
+        /// <summary>
+        /// The consideration plate, 320 (was the trade plates' 800). The comment
+        /// that set it to 800 wanted the card to end in plates of one size, and
+        /// the cost was a control that read as two unrelated marks: PictureStrip
+        /// lays out glyph, then a label with flexible width, then an empty slot
+        /// standing in for the trail picture — so at 800 the arrows sat at the far
+        /// left with the price adrift about 690 away in the middle of the plate.
+        /// At 320 the strip needs 248 for "5 amber", leaving 72 of slack, so the
+        /// arrows and their price read as one thing. It also stops a 5-amber
+        /// reroll carrying the same visual weight as the trade itself. Reverting
+        /// is this one number.
+        /// </summary>
+        private const float ExchangeConsiderationPlate = 320f;
+
+        /// <summary>The traded goods' own plates, either side of the arrow on the deal row.</summary>
+        private const float ExchangeGoodGlyph = 72f;
+
+        /// <summary>
         /// The caravan (design §9): goods for goods, but the deal is the
         /// caravan's to name now — one give-good for one take-good, drawn from
         /// the wall-clock window and turning every few minutes. The player
@@ -759,6 +799,24 @@ namespace Wildgrove.Game
             }
 
             var deal = MakeText(card, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);
+
+            // The trade itself, in pictures: the asked good, the arrow, the paid
+            // good. The card named the pair twice in words (the deal line above
+            // and the rate line's "reeds → clay" below) and showed neither, while
+            // the only picture on it was the caravan — decoration, the same
+            // whatever is being traded. Both plates are guaranteed: the caravan
+            // only ever offers a discovered resource or a "trade" recipe output
+            // (Exchange.TradeableGoods), and ArtLibraryTests pins a plate to
+            // every one of both. The sprites still swap on the refresh cadence,
+            // because the deal turns on its own every few minutes.
+            var goodsRow = Row(card);
+            goodsRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+            var fromPlate = IconImage(goodsRow.transform, null, ExchangeGoodGlyph, Color.white)
+                .GetComponent<Image>();
+            var arrow = MakeText(goodsRow.transform, "→", 26, TextAnchor.MiddleCenter, Ink2, _serif);
+            var toPlate = IconImage(goodsRow.transform, null, ExchangeGoodGlyph, Color.white)
+                .GetComponent<Image>();
+
             var rate = MakeText(card, string.Empty, 16, TextAnchor.MiddleCenter, Ink2);
 
             System.Action refresh = null;
@@ -768,7 +826,7 @@ namespace Wildgrove.Game
             foreach (var amount in ExchangeAmounts)
             {
                 var fraction = amount.Fraction;
-                chips.Add((Button(amountRow.transform, amount.Label, 170, () =>
+                chips.Add((Button(amountRow.transform, amount.Label, ExchangeChipPlate, () =>
                 {
                     _exchangeFraction = fraction;
                     refresh();
@@ -785,7 +843,7 @@ namespace Wildgrove.Game
                 var row = Row(card);
                 row.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
                 Button trade = null;
-                trade = Button(row.transform, "Trade", 800, () => OfferTrade(trade, captured));
+                trade = Button(row.transform, "Trade", ExchangeTradePlate, () => OfferTrade(trade, captured));
                 if (captured == QualityTier.Poor)
                 {
                     KeyAction(trade);
@@ -820,7 +878,7 @@ namespace Wildgrove.Game
                 // which is where a cost belongs when the tap it prices is the
                 // whole row.
                 press = PictureButton(considerationRow.transform, JournalSprites.RerollSprite(),
-                    considerationCost + " amber", null, 800, 44f, () =>
+                    considerationCost + " amber", null, ExchangeConsiderationPlate, 44f, () =>
                 {
                     // Amber is premium and hard-won — never spend it on a stray tap.
                     _hud.Sheets.OpenConfirmSheet(
@@ -850,6 +908,7 @@ namespace Wildgrove.Game
                 var offer = _loop.CurrentExchangeOffer();
                 var open = offer != null;
                 deal.gameObject.SetActive(open);
+                goodsRow.SetActive(open);
                 rate.gameObject.SetActive(open);
                 amountRow.SetActive(open);
                 if (considerationRow != null)
@@ -877,14 +936,36 @@ namespace Wildgrove.Game
                 }
 
                 deal.text = "the caravan asks " + GoodName(offer.from) + ", and pays in " + GoodName(offer.to);
+
+                // A plate with no sprite draws a plain white square, so the
+                // picture is switched off rather than emptied — the same guard
+                // the post plates use for content added ahead of its art.
+                var fromArt = ArtLibrary.ForGood(offer.from);
+                var toArt = ArtLibrary.ForGood(offer.to);
+                fromPlate.sprite = fromArt;
+                fromPlate.enabled = fromArt != null;
+                toPlate.sprite = toArt;
+                toPlate.enabled = toArt != null;
+                arrow.gameObject.SetActive(fromArt != null || toArt != null);
+
                 // Per-unit, the caravan's cut, and the deal's clock — this card
                 // is the game's only price signal, and a deal that turns on its
                 // own must say when.
-                rate.text = GoodName(offer.from) + " → " + GoodName(offer.to) + " at "
-                            + NumberFormat.Rate(_loop.ExchangeRate(offer.from, offer.to)) + " each"
+                //
+                // Two lines, and both changes are about a measure that would not
+                // hold. The good names left it because the plates above and the
+                // deal line already say the pair twice; that alone took the line
+                // from 1207px to 882 against a ~906 portrait measure, which is
+                // 2px of slack at the widest real values ("123.46 each · the
+                // caravan keeps 15% · a new deal in 12m 34s" is 904) — a line
+                // that wraps for SOME deals and not others, which reads worse
+                // than one that always did. So the clock, the only fact here
+                // that moves every second, takes the second line: 543 and 318 at
+                // their widest, inside a 4:3 spread column's ~748 as well.
+                rate.text = NumberFormat.Rate(_loop.ExchangeRate(offer.from, offer.to)) + " each"
                             + "  ·  <color=" + OchreInkHex + ">the caravan keeps "
                             + Percent(_loop.Data.exchange.spread) + "</color>"
-                            + "  ·  a new deal in " + NumberFormat.Duration(_loop.ExchangeOfferSecondsRemaining());
+                            + "\n" + "a new deal in " + NumberFormat.Duration(_loop.ExchangeOfferSecondsRemaining());
 
                 foreach (var chip in chips)
                 {
