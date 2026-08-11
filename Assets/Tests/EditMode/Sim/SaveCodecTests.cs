@@ -731,18 +731,35 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.roster[0].bondId, Is.EqualTo("sootwing"), "the bonded companion is the one kept");
         }
 
-        [Test]
-        public void Restore_MoreStationedThanSlots_RestsTheExtras_BondedKeepingTheirPosts()
+        /// <summary>
+        /// Narrow the fixture's deliberately wide-open ladder to the authored
+        /// shape — one place to start, three named verses, two purchasable.
+        /// <para>
+        /// Any test that asserts on <see cref="Kith.Slots"/> MUST call this. The
+        /// fixture opens with slotsBase == slotsMax == 6 on purpose (see SetUp:
+        /// the round-trip tests stage stationed crowds and want no clamp), which
+        /// pins Slots at its ceiling and answers 6 to every question — so a
+        /// ladder assertion left on the fixture's data passes or fails for
+        /// reasons that have nothing to do with the ladder.
+        /// </para>
+        /// </summary>
+        private void NarrowToTheNamedVerseLadder()
         {
-            // Slots cap who holds a post, not who belongs. A save from a wider
-            // ladder restores with the extras resting at camp — restore against
-            // the authored one-slot ladder, not the fixture's wide-open one.
             _data.economy.kith = new EconomyData.KithData
             {
                 slotsBase = 1,
                 slotsMax = 6,
                 slotVerseZones = new List<string> { "hedgerow", "marsh", "crags" },
             };
+        }
+
+        [Test]
+        public void Restore_MoreStationedThanSlots_RestsTheExtras_BondedKeepingTheirPosts()
+        {
+            // Slots cap who holds a post, not who belongs. A save from a wider
+            // ladder restores with the extras resting at camp — restore against
+            // the authored one-slot ladder, not the fixture's wide-open one.
+            NarrowToTheNamedVerseLadder();
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
             save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "meadow-vole", stationId = "sunfield-meadow:berries" });
@@ -761,6 +778,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void RoundTrip_KeepsTheVersesThatOpenedThePlaces()
         {
+            NarrowToTheNamedVerseLadder();
             var state = GameStateFactory.NewGame(_data);
             state.sungVerseZones.Add("hedgerow");
             state.sungVerseZones.Add("marsh");
@@ -802,6 +820,7 @@ namespace Wildgrove.Sim.Tests
             // v52 moved the ladder off the lifetime tally onto named verses. A
             // v51 save cannot say WHICH verses it sang, so the rung records how
             // many places were standing and Kith.Slots floors on that.
+            NarrowToTheNamedVerseLadder();
             var save = new SaveData { version = 51, foldedVersesSung = 5 };
 
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
