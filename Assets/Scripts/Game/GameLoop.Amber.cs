@@ -240,33 +240,6 @@ namespace Wildgrove.Game
             return hours;
         }
 
-        // ───────────── The keepsake page (design §9's sink slate) ────────────
-
-        /// <summary>The Amber a keepsake page asks — 0 hides the page.</summary>
-        public double KeepsakeCost()
-        {
-            return Keepsakes.Cost(Data);
-        }
-
-        /// <summary>Whether this run's keepsake can be set right now — the row's enabled state.</summary>
-        public bool CanMountKeepsake()
-        {
-            return Keepsakes.CanMount(State, Data);
-        }
-
-        /// <summary>Set a piece of amber into the journal as this run's page (design §9). Returns the mounted keepsake, or null when refused.</summary>
-        public KeepsakeState MountKeepsake()
-        {
-            var keepsake = Keepsakes.TryMount(State, Data, NowUnixMs());
-            if (keepsake != null)
-            {
-                Telemetry.LogEvent("keepsake_mounted", ("run", keepsake.migrationCount), ("amber_cost", Keepsakes.Cost(Data)));
-                SaveNow();
-            }
-
-            return keepsake;
-        }
-
         // ───────────── The second queue (design §9's sink slate) ─────────────
 
         /// <summary>The Amber this run's second craft-queue slot asks — 0 hides the row.</summary>

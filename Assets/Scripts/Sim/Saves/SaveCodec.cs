@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 50;
+        public const int CurrentVersion = 51;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -180,18 +180,6 @@ namespace Wildgrove.Sim.Saves
                     recipeId = station.recipeId,
                     inFlight = station.inFlight,
                     progressSeconds = station.progressSeconds,
-                });
-            }
-
-            foreach (var keepsake in state.keepsakes)
-            {
-                save.keepsakes.Add(new SavedKeepsake
-                {
-                    migrationCount = keepsake.migrationCount,
-                    regionId = keepsake.regionId,
-                    campName = keepsake.campName,
-                    versesSung = keepsake.versesSung,
-                    setAtUnixMs = keepsake.setAtUnixMs,
                 });
             }
 
@@ -552,28 +540,6 @@ namespace Wildgrove.Sim.Saves
                             recipeId = station.recipeId,
                             inFlight = station.inFlight,
                             progressSeconds = station.progressSeconds,
-                        });
-                    }
-                }
-            }
-
-            state.keepsakes.Clear();
-            if (save.keepsakes != null)
-            {
-                foreach (var keepsake in save.keepsakes)
-                {
-                    // A region id the current data no longer names is kept —
-                    // the page renders what it can, same policy as unknown
-                    // resource ids. Negative counts read as zero.
-                    if (keepsake != null)
-                    {
-                        state.keepsakes.Add(new KeepsakeState
-                        {
-                            migrationCount = keepsake.migrationCount > 0 ? keepsake.migrationCount : 0,
-                            regionId = keepsake.regionId,
-                            campName = string.IsNullOrWhiteSpace(keepsake.campName) ? null : keepsake.campName.Trim(),
-                            versesSung = keepsake.versesSung > 0 ? keepsake.versesSung : 0,
-                            setAtUnixMs = keepsake.setAtUnixMs > 0L ? keepsake.setAtUnixMs : 0L,
                         });
                     }
                 }
@@ -1050,10 +1016,9 @@ namespace Wildgrove.Sim.Saves
                         break;
 
                     case 47:
-                        // v48 added the keepsake pages. Left empty: no page
-                        // was ever set on a save from before keepsakes
-                        // existed, and an empty shelf is exactly how that
-                        // reads.
+                        // v48 added the keepsake pages, and v51 removed them
+                        // again — the rung stays because the ladder must not
+                        // gap, and there is nothing left to fill in.
                         save.version = 48;
                         break;
 
@@ -1073,6 +1038,17 @@ namespace Wildgrove.Sim.Saves
                         // existed, and Keeping.Current generates one the
                         // moment an open tide is next read.
                         save.version = 50;
+                        break;
+
+                    case 50:
+                        // v51 dropped the keepsake pages: the sink was removed
+                        // (the shelf's whole payoff was one line naming a camp
+                        // whose name folds anyway). Nothing to fill in — the
+                        // field is gone from SaveData, so a v50 save's
+                        // "keepsakes" array is simply not deserialized. The
+                        // rung exists so an older build refuses a save this one
+                        // wrote rather than reading it a field short.
+                        save.version = 51;
                         break;
 
                     default:

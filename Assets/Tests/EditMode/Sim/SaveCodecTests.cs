@@ -898,31 +898,6 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Capture_RoundTripsTheKeepsakes()
-        {
-            var state = GameStateFactory.NewGame(_data);
-            state.keepsakes.Add(new KeepsakeState
-            {
-                migrationCount = 2,
-                regionId = "misted",
-                campName = "Thistledown",
-                versesSung = 3,
-                setAtUnixMs = 123_456L,
-            });
-
-            var restored = RoundTrip(state);
-
-            Assert.That(restored.keepsakes, Has.Count.EqualTo(1),
-                "a page set in amber that didn't survive the save would be bought again every launch");
-            Assert.That(restored.keepsakes[0].migrationCount, Is.EqualTo(2));
-            Assert.That(restored.keepsakes[0].regionId, Is.EqualTo("misted"),
-                "a page mounted under the retired drawn season keeps its record — legacy ids survive whole");
-            Assert.That(restored.keepsakes[0].campName, Is.EqualTo("Thistledown"));
-            Assert.That(restored.keepsakes[0].versesSung, Is.EqualTo(3));
-            Assert.That(restored.keepsakes[0].setAtUnixMs, Is.EqualTo(123_456L));
-        }
-
-        [Test]
         public void Capture_RoundTripsTheWheel()
         {
             var state = GameStateFactory.NewGame(_data);

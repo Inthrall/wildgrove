@@ -239,13 +239,24 @@ wired to nothing. The settings row lands with the audio pass.
   welcome-back sheet carries the settle-the-ledger offer; the Exchange card
   carries the drover's consideration row; the Amber card sells the second
   queue and the station rule lines say the new count (`CraftWouldDisplace`
-  keeps "Craft instead" honest with the spare slot open); the Record page
-  keeps THE KEEPSAKES shelf and its mount row. Still owed:
+  keeps "Craft instead" honest with the spare slot open).
+
+  **The keepsake page was CUT 2026-08-11** — the one item of the slate that
+  did not survive contact. The Record page's THE KEEPSAKES shelf, its mount
+  row, `Sim/Keepsakes.cs`, `KeepsakeState`/`SavedKeepsake`, the GameLoop APIs,
+  `keepsakePageCostAmber` and the fold's carry-forward are all removed, and
+  save rung **v51** drops the persisted array (old saves simply stop carrying
+  it — Newtonsoft ignores the unknown property, and no shipped build ever had
+  it). Design §9 records the reasoning and the "do not re-raise as a
+  page-with-a-line" note; the short version is that the shelf line's only
+  distinctive content was the camp's name, so it read as "an unnamed camp"
+  unless the separate 40-Amber naming came first, and the name was snapshotted
+  at mounting so the wrong order bought a permanently blank page. Still owed
+  on the rest of the slate:
   - **a device click-through** of every new row — the suite proves the sim,
     not the layout;
   - **the narrative pass owns the wording** — every new line is a first draft
-    in register, and the keepsake line especially is rendered from
-    `KeepsakeState`'s facts precisely so a wording pass costs no save;
+    in register;
   - **the chrome fold banner deliberately does NOT carry the camp name** —
     it is a count, not a route; the name reads on the Camp page head, the
     welcome-back sheet, and the fold sheet instead. Revisit only if playtest
@@ -299,8 +310,10 @@ lean is a regression, not a phase. Build order:
 - ~~**Retire the drawn season**~~ ✅ RESOLVED 2026-08-08 — `regions.json`,
   `Regions.cs`, `RegionDef.cs`, the draw, the effect-union feed, the
   generator's `DemandWeight`, the forecast's region line, the vignette's
-  sign and `RegionsTests` all removed; keepsakes keep legacy region ids as
-  text. The parked idea itself is recorded in Appendix A.
+  sign and `RegionsTests` all removed. Keepsake pages were the last carrier of
+  legacy region ids, and they went with the cut keepsake sink (2026-08-11), so
+  no live type holds a drawn-season id any more. The parked idea itself is
+  recorded in Appendix A.
 - ~~**The calendar core**~~ ✅ RESOLVED 2026-08-08 — `sabbats.json` (both
   hemispheres, 2026–2030), defs/importer/validator (incl. tide-overlap and
   date-format rules), `Wheel.cs` (O(1) window cache off the sim clock

@@ -56,9 +56,6 @@ namespace Wildgrove.Sim.Saves
         /// <summary>Whether this run bought its second craft-queue slot (v47) — per run; lapses at the fold.</summary>
         public bool secondQueueBought;
 
-        /// <summary>Keepsake pages set into the journal (v48) — permanent; they cross Migration with the rest of the book.</summary>
-        public List<SavedKeepsake> keepsakes = new List<SavedKeepsake>();
-
         /// <summary>Amber held (design §10).</summary>
         public double amber;
 
@@ -302,19 +299,6 @@ namespace Wildgrove.Sim.Saves
         public double progressSeconds;
     }
 
-    [Serializable]
-    public sealed class SavedKeepsake
-    {
-        public int migrationCount;
-
-        /// <summary>Legacy: the drawn season the page was mounted under, before the Wheel replaced it (design §8, 2026-08-08). New pages write null; old ids are kept — a mounted page never loses its facts.</summary>
-        public string regionId;
-
-        public string campName;
-        public int versesSung;
-        public long setAtUnixMs;
-    }
-
     /// <summary>One kept sabbat (design §15, v49) — keyed (sabbat, year, hemisphere) so clock or hemisphere games move hours, never rewards.</summary>
     [Serializable]
     public sealed class SavedSabbatClaim
@@ -324,7 +308,7 @@ namespace Wildgrove.Sim.Saves
         public int hemisphere;
     }
 
-    /// <summary>The current tide's keeping (design §15, v50): slots stored as facts, like a keepsake page.</summary>
+    /// <summary>The current tide's keeping (design §15, v50): slots stored as facts, never re-derived from content.</summary>
     [Serializable]
     public sealed class SavedKeeping
     {

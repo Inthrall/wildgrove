@@ -25,7 +25,6 @@ namespace Wildgrove.Game
             BuildCompendiumCard();
             BuildFolioCard();
             BuildDeepPagesCard();
-            BuildKeepsakesCard();
             BuildWheelCard();
             BuildAlmanacCard();
             BuildStandingCard();
@@ -50,113 +49,6 @@ namespace Wildgrove.Game
                 reading.text = "This book is " + (total > 0 ? Percent(recorded / (double)total) : "0%") + " written";
                 detail.text = recorded + " of " + total + " across these pages";
             });
-        }
-
-        /// <summary>
-        /// The keepsake shelf (design §9's sink slate): the pages set in
-        /// amber, one per run, each remembering the camp that folded — and the
-        /// row that sets this run's own. The card hides while the sink is
-        /// unconfigured and no page has ever been set, so an inert economy
-        /// shows no empty shelf.
-        /// </summary>
-        private void BuildKeepsakesCard()
-        {
-            var cost = Mathf.FloorToInt((float)_loop.KeepsakeCost());
-            var pages = Keepsakes.All(_loop.State);
-            if (cost <= 0 && pages.Count == 0)
-            {
-                return;
-            }
-
-            var card = Card("THE KEEPSAKES");
-            MakeText(card, "<i>old resin holds what the fold would take. one page a camp, set in amber.</i>",
-                16, TextAnchor.MiddleCenter, Ink2, _serif);
-
-            if (pages.Count == 0)
-            {
-                MakeText(card, "no pages set yet.", 17, TextAnchor.MiddleCenter, Ink2);
-            }
-
-            foreach (var page in pages)
-            {
-                MakeText(card, KeepsakeLine(page), 18, TextAnchor.MiddleLeft, Ink, _serif);
-            }
-
-            if (cost <= 0)
-            {
-                return;
-            }
-
-            var row = Row(card);
-            var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-            FlexibleWidth(label.gameObject, 1f);
-            var offer = "set this camp's page"
-                        + SizeOpen(15) + "<color=" + OchreHex + ">  " + cost + " amber</color></size>";
-            Button mount = null;
-            mount = Button(row.transform, "Set", 170, () =>
-            {
-                if (!_loop.CanMountKeepsake())
-                {
-                    return;
-                }
-
-                // Amber is premium and hard-won — never spend it on a stray tap.
-                _hud.Sheets.OpenConfirmSheet(
-                    "Spend " + cost + " amber",
-                    "Set this camp's page in amber? The journal keeps it past every fold.",
-                    "Spend " + cost + " amber",
-                    () =>
-                    {
-                        if (_loop.MountKeepsake() != null)
-                        {
-                            SetNote("a piece of amber, set over the page. the fold will not take this one.");
-                            _dirty = true;
-                        }
-                    });
-            });
-
-            _liveUpdaters.Add(() =>
-            {
-                var mounted = Keepsakes.MountedThisRun(_loop.State);
-                label.text = mounted
-                    ? "this camp's page is set" + SizeOpen(15) + "<color=" + MossDeepHex + ">  kept past the fold</color></size>"
-                    : offer;
-                mount.gameObject.SetActive(!mounted);
-                if (!mounted)
-                {
-                    var ok = _loop.CanMountKeepsake();
-                    mount.interactable = ok;
-                    SetButtonTint(mount, ok);
-                }
-            });
-        }
-
-        /// <summary>
-        /// One shelf line: the camp by name (or its namelessness), which run it
-        /// was, and the verses it had sung when the page was set. Rendered from
-        /// the keepsake's facts — the prose is never stored, so a wording pass
-        /// costs no save. Pages mounted before the drawn season retired
-        /// (design §8, 2026-08-08) still carry a region id; it reads as the
-        /// season word it was, so an old shelf keeps its old lines.
-        /// </summary>
-        private string KeepsakeLine(KeepsakeState page)
-        {
-            var name = page.campName != null
-                ? "<b>" + page.campName + "</b>"
-                : "an unnamed camp";
-            var verses = page.versesSung == 1 ? "one verse sung" : page.versesSung + " verses sung";
-            var run = "run " + (page.migrationCount + 1) + LegacySeason(page.regionId);
-            return name + "  ·  " + run + "  ·  " + verses;
-        }
-
-        /// <summary>
-        /// The season word an old page was mounted under — the drawn region
-        /// season is retired and its authored names left the data, so the
-        /// stored id itself is the record ("misted"). New pages carry none.
-        /// </summary>
-        private string LegacySeason(string regionId)
-        {
-            return string.IsNullOrEmpty(regionId) ? string.Empty : ", a " + regionId + " season";
         }
 
         /// <summary>

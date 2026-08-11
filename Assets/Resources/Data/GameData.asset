@@ -111,7 +111,6 @@ MonoBehaviour:
       campNameCostAmber: 40
       considerationCostAmber: 5
       secondQueueCostAmber: 20
-      keepsakePageCostAmber: 20
     store:
       starterBundleAmber: 30
       amberPackSmall: 50

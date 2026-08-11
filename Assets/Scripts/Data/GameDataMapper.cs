@@ -477,8 +477,7 @@ namespace Wildgrove.Data
                     callingGiftAmber = e.Amber.CallingGiftAmber,
                     campNameCostAmber = e.Amber.CampNameCostAmber,
                     considerationCostAmber = e.Amber.ConsiderationCostAmber,
-                    secondQueueCostAmber = e.Amber.SecondQueueCostAmber,
-                    keepsakePageCostAmber = e.Amber.KeepsakePageCostAmber
+                    secondQueueCostAmber = e.Amber.SecondQueueCostAmber
                 },
                 store = e.Store == null ? null : new EconomyData.StoreData
                 {

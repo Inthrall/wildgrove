@@ -264,11 +264,6 @@ namespace Wildgrove.Sim
                 }
             }
 
-            // Keepsake pages are journal content — set in amber, kept like the
-            // plates. The page remembering THIS run is the reason the sink is
-            // worth its price: the fold is exactly what it survives.
-            next.keepsakes.AddRange(state.keepsakes);
-
             // "You keep … the Folio" — fixed specimens and their spread bonuses too.
             next.fixedResources.AddRange(state.fixedResources);
 

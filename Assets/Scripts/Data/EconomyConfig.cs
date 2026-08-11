@@ -142,9 +142,6 @@ namespace Wildgrove.Data
 
             /// <summary>The Amber this run's second craft-queue slot asks (design §9 sink slate) — per run; lapses at the fold.</summary>
             public double SecondQueueCostAmber { get; set; }
-
-            /// <summary>The Amber a keepsake page asks (design §9 sink slate) — one per run, permanent journal content; commemorative only.</summary>
-            public double KeepsakePageCostAmber { get; set; }
         }
 
         /// <summary>Real-money catalogue constants: the starter bundle's one-time Amber grant and the consumable amber-pack piles.</summary>

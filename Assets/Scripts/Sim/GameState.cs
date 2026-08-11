@@ -113,9 +113,6 @@ namespace Wildgrove.Sim
         /// </summary>
         public bool secondQueueBought;
 
-        /// <summary>Keepsake pages set into the journal (design §9's sink slate) — one per run, permanent: the list crosses Migration with the rest of the book. See <see cref="Keepsakes"/>.</summary>
-        public List<KeepsakeState> keepsakes = new List<KeepsakeState>();
-
         /// <summary>The exchange window the considerations below were pressed in (design §9's sink slate) — a count stored under any other window is stale, and reads as none.</summary>
         public long exchangeConsiderationWindowIndex;
 
@@ -208,7 +205,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The current tide's keeping (design §15): its generated slots and
-        /// their progress, snapshotted as facts like a keepsake page — a reload
+        /// their progress, snapshotted as facts rather than re-derived — a reload
         /// never rerolls because nothing is re-derived. Survives the fold
         /// (answered slots are kept; the rest redraw against the new run) and
         /// stays behind as the record once its tide closes, until the next tide
@@ -434,35 +431,6 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One keepsake page (design §9's sink slate): the facts a run's page
-    /// remembers, snapshotted when the amber was set. Permanent journal
-    /// content — the page's prose is rendered from these, never stored.
-    /// </summary>
-    [Serializable]
-    public sealed class KeepsakeState
-    {
-        /// <summary>The run this page remembers (its migration count).</summary>
-        public int migrationCount;
-
-        /// <summary>
-        /// The region the run wore — a legacy field: the drawn region season
-        /// retired with the Wheel (design §8, 2026-08-08), so new pages leave
-        /// it null (RecordPage reads that as "home ground"). Kept because
-        /// existing saves carry the old ids on mounted pages.
-        /// </summary>
-        public string regionId;
-
-        /// <summary>What the camp was called when the page was set — null while unnamed.</summary>
-        public string campName;
-
-        /// <summary>Verses this run had sung by the time the page was set.</summary>
-        public int versesSung;
-
-        /// <summary>UTC unix ms the page was set — the page's date line.</summary>
-        public long setAtUnixMs;
-    }
-
-    /// <summary>
     /// One kept sabbat (design §15): the keeping's ledger entry, written when
     /// the first tier lands. Claims key on (sabbat, year, hemisphere) so clock
     /// or hemisphere games move hours, never rewards.
@@ -481,10 +449,9 @@ namespace Wildgrove.Sim
 
     /// <summary>
     /// One tide's keeping (design §15): the generated offering slots and their
-    /// progress. The slots are stored as FACTS (goods, target, delivered) the
-    /// way a keepsake stores its page — never re-derived from content, so a
-    /// reload cannot reroll them and a data retune cannot orphan an answered
-    /// slot. Deliberately NOT a Rite verse: it lives outside CurrentRite and
+    /// progress. The slots are stored as FACTS (goods, target, delivered) —
+    /// never re-derived from content, so a reload cannot reroll them and a data
+    /// retune cannot orphan an answered slot. Deliberately NOT a Rite verse: it lives outside CurrentRite and
     /// verseProgress, so no verse milestone, gift pile, zone opening,
     /// achievement or stat can ever see it.
     /// </summary>
