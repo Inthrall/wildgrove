@@ -16,10 +16,14 @@ name: Android Release
 #                                be linked in the Play Console with "Release apps
 #                                to testing tracks" (and production, if used).
 #   FIREBASE_SERVICE_ACCOUNT_JSON - Google Cloud service-account key JSON for the
-#                                wildgrove-ed59a Firebase project, holding the
-#                                "Firebase Crashlytics Symbol Uploader" role. Only
-#                                needed to symbolicate IL2CPP crashes; unset, the
-#                                upload step warns and the release still ships.
+#                                wildgrove-ed59a Firebase project, holding "Firebase
+#                                Crash Symbol Uploader" (roles/firebasecrash.symbol
+#                                MappingsAdmin - note the legacy firebasecrash
+#                                prefix, there is no crashlytics-named equivalent).
+#                                Add "Firebase Viewer" as well if the CLI 403s
+#                                resolving the project. Only needed to symbolicate
+#                                IL2CPP crashes; unset, the upload step warns and
+#                                the release still ships.
 # The signing key MUST stay the original upload key (alias wildgrove-upload) -
 # Play registers it from the first upload and rejects anything else after that.
 
