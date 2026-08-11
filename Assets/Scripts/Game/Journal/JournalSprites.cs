@@ -19,6 +19,7 @@ namespace Wildgrove.Game
         private static Sprite _crossSprite;
         private static Sprite _plusSprite;
         private static Sprite _foldArrowSprite;
+        private static Sprite _rerollSprite;
         private static Sprite _discSprite;
 
         /// <summary>
@@ -112,6 +113,113 @@ namespace Wildgrove.Game
             }
 
             return _foldArrowSprite;
+        }
+
+        /// <summary>
+        /// Two circular arrows chasing each other: the re-deal, on the
+        /// caravan's consideration button. The turn is the whole message a
+        /// reroll needs, and every game a player has met says it with this
+        /// mark, so the exchange card spends a glyph on it instead of the
+        /// sentence it used to.
+        /// <para>
+        /// Drawn white, like <see cref="DiscSprite"/> and unlike the other
+        /// glyphs here: the button dims with the rest of its plate when the
+        /// amber isn't there, and a baked ink can't be walked back to Ink2.
+        /// </para>
+        /// </summary>
+        internal static Sprite RerollSprite()
+        {
+            if (_rerollSprite == null)
+            {
+                const int size = 64;
+                const float radius = 18f;
+                // A little over a third of the turn each, which leaves the two
+                // gaps the arrowheads stand in; a pair of arcs any closer
+                // reads as one broken circle.
+                const float sweep = 140f;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                var centre = new Vector2(size * 0.5f, size * 0.5f);
+                var starts = new[] { 170f, -10f };
+
+                for (var y = 0; y < size; y++)
+                {
+                    for (var x = 0; x < size; x++)
+                    {
+                        var point = new Vector2(x + 0.5f, y + 0.5f);
+                        var offset = point - centre;
+                        var fromCentre = offset.magnitude;
+                        var bearing = Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg;
+                        var alpha = 0f;
+                        foreach (var start in starts)
+                        {
+                            // Both arcs run clockwise, which is falling bearing,
+                            // so how far along its arc a pixel lies is simply the
+                            // turn from that arc's start.
+                            var travelled = Mathf.Repeat(start - bearing, 360f);
+                            if (travelled <= sweep)
+                            {
+                                // Light where the stroke sets out and heaviest
+                                // where it runs into the head, the same nib the
+                                // quill and the cross are drawn with.
+                                var halfWidth = Mathf.Lerp(1.5f, 2.6f, travelled / sweep);
+                                alpha = Mathf.Max(alpha,
+                                    Mathf.Clamp01(halfWidth - Mathf.Abs(fromCentre - radius) + 0.5f));
+                            }
+
+                            // The head at the arc's end: a filled triangle, not
+                            // two strokes. A tapered chevron this small closed up
+                            // into a smudge, and an arrow that doesn't read as an
+                            // arrow leaves the mark as a plain broken ring.
+                            var head = (start - sweep) * Mathf.Deg2Rad;
+                            var outward = new Vector2(Mathf.Cos(head), Mathf.Sin(head));
+                            var onward = new Vector2(outward.y, -outward.x);
+                            var seat = centre + (outward * radius);
+                            // The base sits a pixel and a half back down the arc
+                            // rather than on the seat: flush, the stroke's last
+                            // pixel and the head's first met at a half-covered
+                            // seam that read as a nick in the arrow.
+                            var seam = seat - (onward * 1.5f);
+                            alpha = Mathf.Max(alpha, TriangleAlpha(point,
+                                seat + (onward * 8f),
+                                seam + (outward * 5.2f),
+                                seam - (outward * 5.2f)));
+                        }
+
+                        texture.SetPixel(x, y, alpha <= 0f ? Color.clear : new Color(1f, 1f, 1f, alpha));
+                    }
+                }
+
+                texture.Apply();
+                texture.filterMode = FilterMode.Bilinear;
+                _rerollSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            }
+
+            return _rerollSprite;
+        }
+
+        /// <summary>How solidly a pixel sits inside a triangle, with the half-pixel feather every mark here is drawn with.</summary>
+        private static float TriangleAlpha(Vector2 point, Vector2 first, Vector2 second, Vector2 third)
+        {
+            var inside = Mathf.Min(InsideEdge(point, first, second, third),
+                Mathf.Min(InsideEdge(point, second, third, first), InsideEdge(point, third, first, second)));
+            return Mathf.Clamp01(inside + 0.5f);
+        }
+
+        /// <summary>
+        /// How far a point lies on the inner side of one edge, taking the side
+        /// the triangle's third corner sits on as the inside, so the caller
+        /// need not name its corners in any particular winding.
+        /// </summary>
+        private static float InsideEdge(Vector2 point, Vector2 from, Vector2 to, Vector2 opposite)
+        {
+            var along = to - from;
+            var normal = new Vector2(-along.y, along.x).normalized;
+            if (Vector2.Dot(opposite - from, normal) < 0f)
+            {
+                normal = -normal;
+            }
+
+            return Vector2.Dot(point - from, normal);
         }
 
         /// <summary>

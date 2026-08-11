@@ -802,15 +802,19 @@ namespace Wildgrove.Game
             var considerationCost = Mathf.FloorToInt((float)_loop.ConsiderationCost());
             GameObject considerationRow = null;
             Button press = null;
+            Image pressGlyph = null;
             if (considerationCost > 0)
             {
                 considerationRow = Row(card);
-                var considerationLabel = MakeText(considerationRow.transform,
-                    "<i>press a consideration on the drover — the deal turns now</i>"
-                    + SizeOpen(15) + "<color=" + OchreHex + ">  " + considerationCost + " amber</color></size>",
-                    17, TextAnchor.MiddleLeft, Ink2, _serif);
-                FlexibleWidth(considerationLabel.gameObject, 1f);
-                press = Button(considerationRow.transform, "Press", 170, () =>
+                considerationRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+
+                // Two circular arrows and the price beside them, where a line of
+                // prose and a "Press" plate used to sit. A reroll is the one
+                // idiom every player already reads at a glance, and the words
+                // belong to the confirm sheet anyway: that is the one that has
+                // to be sure before amber leaves the pouch.
+                press = GlyphButton(considerationRow.transform, JournalSprites.RerollSprite(),
+                    "Turn the deal", 170, 56f, () =>
                 {
                     // Amber is premium and hard-won — never spend it on a stray tap.
                     _hud.Sheets.OpenConfirmSheet(
@@ -827,6 +831,18 @@ namespace Wildgrove.Game
                             }
                         });
                 });
+
+                // The arrows carry the dead-plate ink as well. SetButtonTint
+                // reaches a plate, its rule and its label; a glyph left at full
+                // strength is the one channel that would still read live.
+                pressGlyph = press.transform.Find("Glyph").GetComponent<Image>();
+                pressGlyph.color = Ink;
+
+                // The price still stands in the open: amber is premium, and the
+                // one thing a glyph cannot say is what it costs.
+                MakeText(considerationRow.transform,
+                    "<color=" + OchreHex + ">" + considerationCost + " amber</color>",
+                    17, TextAnchor.MiddleLeft, Ink2, _serif);
             }
 
             refresh = () =>
@@ -844,6 +860,7 @@ namespace Wildgrove.Game
                         var canPress = _loop.CanPressConsideration();
                         press.interactable = canPress;
                         SetButtonTint(press, canPress);
+                        pressGlyph.color = canPress ? Ink : Ink2;
                     }
                 }
 
