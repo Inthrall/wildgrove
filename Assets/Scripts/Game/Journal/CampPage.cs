@@ -808,13 +808,19 @@ namespace Wildgrove.Game
                 considerationRow = Row(card);
                 considerationRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
 
-                // Two circular arrows and the price beside them, where a line of
+                // Two circular arrows and the price they ask, where a line of
                 // prose and a "Press" plate used to sit. A reroll is the one
                 // idiom every player already reads at a glance, and the words
                 // belong to the confirm sheet anyway: that is the one that has
                 // to be sure before amber leaves the pouch.
-                press = GlyphButton(considerationRow.transform, JournalSprites.RerollSprite(),
-                    "Turn the deal", 170, 56f, () =>
+                //
+                // The trade plates' own width, so the card ends in four plates
+                // of one size rather than three and a chip. The price rides
+                // inside the plate like the sheets' "Save · 30 amber" does,
+                // which is where a cost belongs when the tap it prices is the
+                // whole row.
+                press = PictureButton(considerationRow.transform, JournalSprites.RerollSprite(),
+                    considerationCost + " amber", null, 800, 44f, () =>
                 {
                     // Amber is premium and hard-won — never spend it on a stray tap.
                     _hud.Sheets.OpenConfirmSheet(
@@ -837,12 +843,6 @@ namespace Wildgrove.Game
                 // strength is the one channel that would still read live.
                 pressGlyph = press.transform.Find("Glyph").GetComponent<Image>();
                 pressGlyph.color = Ink;
-
-                // The price still stands in the open: amber is premium, and the
-                // one thing a glyph cannot say is what it costs.
-                MakeText(considerationRow.transform,
-                    "<color=" + OchreHex + ">" + considerationCost + " amber</color>",
-                    17, TextAnchor.MiddleLeft, Ink2, _serif);
             }
 
             refresh = () =>
