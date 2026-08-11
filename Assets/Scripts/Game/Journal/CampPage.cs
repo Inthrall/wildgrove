@@ -757,18 +757,24 @@ namespace Wildgrove.Game
         private const float ExchangeTradePlate = 800f;
 
         /// <summary>
-        /// The consideration plate, 320 (was the trade plates' 800). The comment
-        /// that set it to 800 wanted the card to end in plates of one size, and
-        /// the cost was a control that read as two unrelated marks: PictureStrip
-        /// lays out glyph, then a label with flexible width, then an empty slot
-        /// standing in for the trail picture — so at 800 the arrows sat at the far
-        /// left with the price adrift about 690 away in the middle of the plate.
-        /// At 320 the strip needs 248 for "5 amber", leaving 72 of slack, so the
-        /// arrows and their price read as one thing. It also stops a 5-amber
-        /// reroll carrying the same visual weight as the trade itself. Reverting
-        /// is this one number.
+        /// The consideration's plate, and the arrows on it — a square mark, not
+        /// a line of the card. Every width this had before (800, then 320) was
+        /// still a plate in a row of its own at the foot of the card, which gave
+        /// a 5-amber re-draw a whole line of the measure the trades are asking
+        /// for, and ended the card on a purchase rather than on the deal.
         /// </summary>
-        private const float ExchangeConsiderationPlate = 320f;
+        private const float ExchangeConsiderationPlate = 120f;
+        private const float ExchangeConsiderationGlyph = 56f;
+
+        /// <summary>
+        /// The corner the consideration stands in: the plate, and the price on
+        /// the line under it. 160 wide so "25 amber" in small caps at 13 keeps
+        /// one line beneath a 120 plate; the inset holds the pair off the top
+        /// right of the caravan's own plate, so the mark reads as pinned to the
+        /// picture rather than balanced on its edge.
+        /// </summary>
+        private const float ExchangeConsiderationMeasure = 160f;
+        private const float ExchangeConsiderationInset = 10f;
 
         /// <summary>The traded goods' own plates, either side of the arrow on the deal row.</summary>
         private const float ExchangeGoodGlyph = 72f;
@@ -787,10 +793,12 @@ namespace Wildgrove.Game
             var card = Card("THE EXCHANGE");
             MakeText(card, "<i>a caravan idles at the camp edge. it trades; it does not sell.</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
             var caravan = ArtLibrary.ForJournal("caravan");
-            if (caravan != null)
-            {
-                PlateImage(card, caravan, 200f);
-            }
+            // The plate is kept hold of because the consideration is pinned into
+            // its corner — a 200-deep band of art with nothing else in it is the
+            // one place on this card a mark can stand without landing on a line
+            // of words. ArtLibraryTests pins the caravan, so the null arm is for
+            // art not yet drawn rather than a state the game reaches.
+            var caravanPlate = caravan != null ? PlateImage(card, caravan, 200f) : null;
 
             if (!Exchange.Configured(_loop.Data))
             {
@@ -856,29 +864,50 @@ namespace Wildgrove.Game
 
             // A consideration for the drover (design §9's sink slate): a
             // little amber and the deal re-draws now, never repeating itself.
-            // The row hides while the sink is unconfigured or no deal stands.
+            // The corner hides while the sink is unconfigured or no deal stands.
             var considerationCost = Mathf.FloorToInt((float)_loop.ConsiderationCost());
-            GameObject considerationRow = null;
+            GameObject considerationCorner = null;
             Button press = null;
             Image pressGlyph = null;
+            Text pressCost = null;
             if (considerationCost > 0)
             {
-                considerationRow = Row(card);
-                considerationRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+                // Pinned into the top-right of the caravan's plate rather than
+                // laid out with the rows: a reroll is a mark ON the deal, and
+                // the card's own lines are the deal, the pair, the rate, the
+                // portions and the trades. Anchored by hand the way the tile's
+                // corner mark and the focus ring are; ignoreLayout is what keeps
+                // it out of the flow in the plateless fallback, where the card
+                // itself is the host.
+                var cornerHost = caravanPlate != null ? (RectTransform)caravanPlate.transform : card;
+                considerationCorner = MakeRect("Consideration", cornerHost).gameObject;
+                considerationCorner.AddComponent<LayoutElement>().ignoreLayout = true;
+                var cornerRect = (RectTransform)considerationCorner.transform;
+                cornerRect.anchorMin = Vector2.one;
+                cornerRect.anchorMax = Vector2.one;
+                cornerRect.pivot = Vector2.one;
+                cornerRect.anchoredPosition = new Vector2(-ExchangeConsiderationInset, -ExchangeConsiderationInset);
+                cornerRect.sizeDelta = new Vector2(ExchangeConsiderationMeasure, 0f);
+                var cornerLayout = considerationCorner.AddComponent<VerticalLayoutGroup>();
+                cornerLayout.childControlWidth = true;
+                cornerLayout.childControlHeight = true;
+                cornerLayout.childForceExpandWidth = false;
+                cornerLayout.childForceExpandHeight = false;
+                cornerLayout.childAlignment = TextAnchor.UpperCenter;
+                cornerLayout.spacing = 2;
+                // Nothing outside sizes this rect — anchored to a point, its
+                // height is its own to state, so the plate and the price both
+                // have somewhere to stand.
+                var cornerFitter = considerationCorner.AddComponent<ContentSizeFitter>();
+                cornerFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-                // Two circular arrows and the price they ask, where a line of
-                // prose and a "Press" plate used to sit. A reroll is the one
-                // idiom every player already reads at a glance, and the words
-                // belong to the confirm sheet anyway: that is the one that has
-                // to be sure before amber leaves the pouch.
-                //
-                // The trade plates' own width, so the card ends in four plates
-                // of one size rather than three and a chip. The price rides
-                // inside the plate like the sheets' "Save · 30 amber" does,
-                // which is where a cost belongs when the tap it prices is the
-                // whole row.
-                press = PictureButton(considerationRow.transform, JournalSprites.RerollSprite(),
-                    considerationCost + " amber", null, ExchangeConsiderationPlate, 44f, () =>
+                // Two circular arrows, where a line of prose and a "Press" plate
+                // used to sit. A reroll is the one idiom every player already
+                // reads at a glance, and the words belong to the confirm sheet
+                // anyway: that is the one that has to be sure before amber leaves
+                // the pouch.
+                press = GlyphButton(considerationCorner.transform, JournalSprites.RerollSprite(),
+                    "Turn", ExchangeConsiderationPlate, ExchangeConsiderationGlyph, () =>
                 {
                     // Amber is premium and hard-won — never spend it on a stray tap.
                     _hud.Sheets.OpenConfirmSheet(
@@ -901,6 +930,13 @@ namespace Wildgrove.Game
                 // strength is the one channel that would still read live.
                 pressGlyph = press.transform.Find("Glyph").GetComponent<Image>();
                 pressGlyph.color = Ink;
+
+                // The price on the line after the arrows, outside the plate: it
+                // is what the mark costs, not what it says. Ochre is the cost
+                // ink every amber line on this page already wears — and it is
+                // outside the button, so SetButtonTint never reaches it.
+                pressCost = MakeText(considerationCorner.transform, considerationCost + " amber",
+                    13, TextAnchor.MiddleCenter, Ochre, SmallCapsFont);
             }
 
             refresh = () =>
@@ -911,15 +947,16 @@ namespace Wildgrove.Game
                 goodsRow.SetActive(open);
                 rate.gameObject.SetActive(open);
                 amountRow.SetActive(open);
-                if (considerationRow != null)
+                if (considerationCorner != null)
                 {
-                    considerationRow.SetActive(open);
+                    considerationCorner.SetActive(open);
                     if (open)
                     {
                         var canPress = _loop.CanPressConsideration();
                         press.interactable = canPress;
                         SetButtonTint(press, canPress);
                         pressGlyph.color = canPress ? Ink : Ink2;
+                        pressCost.color = canPress ? Ochre : Ink2;
                     }
                 }
 
