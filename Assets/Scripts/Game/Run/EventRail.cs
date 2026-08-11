@@ -28,9 +28,6 @@ namespace Wildgrove.Game
         /// <summary>The words the cell falls back on where it has no plate, and the popup's heading.</summary>
         public string title;
 
-        /// <summary>ArtLibrary journal key for the cell's face, or null for a cell that names itself.</summary>
-        public string plateKey;
-
         /// <summary>Seconds until this turns over, or a negative when there is nothing to count.</summary>
         public double remainingSeconds;
 
@@ -111,10 +108,6 @@ namespace Wildgrove.Game
                     id = OpenTideId,
                     kind = EventRailKind.OpenTide,
                     title = open.displayName,
-                    // The plate arrives WITH the tide, and only then: it is the
-                    // keeping's own prize (design §15), and the Trail's keeping
-                    // card already shows it while the tide holds.
-                    plateKey = "sabbat-" + open.id,
                     sabbatId = open.id,
                     remainingSeconds = (Wheel.OpenTideCloseMs(state, data) - nowUnixMs) / 1000.0,
                     ready = offerable,
@@ -134,10 +127,6 @@ namespace Wildgrove.Game
                 id = ComingSabbatId,
                 kind = EventRailKind.ComingSabbat,
                 title = coming.displayName,
-                // Deliberately faceless. The plate is what a keeping earns, so
-                // showing it before the tide has even opened spends the reveal
-                // for nothing; the cell carries the name instead.
-                plateKey = null,
                 sabbatId = coming.id,
                 remainingSeconds = (opensMs - nowUnixMs) / 1000.0,
                 ready = false,

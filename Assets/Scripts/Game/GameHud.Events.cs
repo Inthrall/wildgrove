@@ -24,9 +24,14 @@ namespace Wildgrove.Game
     public sealed partial class GameHud
     {
         /// <summary>The rail's own width in canvas units — cell, border and the breath either side.</summary>
-        private const float RailWidth = 152f;
+        private const float RailWidth = 134f;
 
-        private const float RailCellWidth = 138f;
+        // 120 units ≈ 48dp, Android's touch floor, and the cell is held at it
+        // in BOTH axes rather than only in height. It was 138 to seat a two-unit
+        // countdown ("11d 16h") plus a wrapped name; with an icon and a
+        // one-unit clock (NumberFormat.CountdownCoarse) neither is there to
+        // carry, so the rail gives the band back the difference.
+        private const float RailCellWidth = 120f;
 
         // 126 units ≈ 50dp at the 1080×1920 reference scale, just over Android's
         // 48dp touch floor. The caption is INSIDE the cell rather than under it
@@ -40,7 +45,10 @@ namespace Wildgrove.Game
         private const float RailPadding = 8f;
 
         /// <summary>The countdown strip along the cell's bottom edge.</summary>
-        private const float RailCaptionHeight = 30f;
+        private const float RailCaptionHeight = 26f;
+
+        /// <summary>The icon's side. Larger than it was now that no name shares the plate with it.</summary>
+        private const float RailGlyph = 72f;
 
         private RectTransform _eventRail;
         private readonly List<EventRailEntry> _railEntries = new List<EventRailEntry>();
@@ -224,13 +232,14 @@ namespace Wildgrove.Game
             // The face — a plate where the event has one, the words where it
             // doesn't. Only ever one of the two is showing, the same way
             // GlyphButton does it.
-            var glyph = IconImage(go.transform, null, 62f, Color.white).GetComponent<Image>();
+            var glyph = IconImage(go.transform, null, RailGlyph, Color.white).GetComponent<Image>();
             var glyphRect = (RectTransform)glyph.transform;
             glyphRect.anchorMin = new Vector2(0.5f, 1f);
             glyphRect.anchorMax = new Vector2(0.5f, 1f);
             glyphRect.pivot = new Vector2(0.5f, 1f);
-            glyphRect.sizeDelta = new Vector2(62f, 62f);
-            glyphRect.anchoredPosition = new Vector2(0f, -12f);
+            glyphRect.sizeDelta = new Vector2(RailGlyph, RailGlyph);
+            // Centred in what the caption leaves, rather than hung off the top.
+            glyphRect.anchoredPosition = new Vector2(0f, -(RailCellHeight - RailCaptionHeight - RailGlyph) * 0.5f);
 
             var title = MakeText(go.transform, string.Empty, 16, TextAnchor.MiddleCenter, Ink, _smallCaps);
             var titleRect = (RectTransform)title.transform;
@@ -261,7 +270,7 @@ namespace Wildgrove.Game
 
         private void PaintRailCell(RailCell cell, EventRailEntry entry)
         {
-            var art = entry.plateKey != null ? ArtLibrary.ForJournal(entry.plateKey) : null;
+            var art = RailIcon(entry);
             cell.glyph.sprite = art;
             // An Image holding no sprite draws a plain white square.
             cell.glyph.enabled = art != null;
@@ -284,9 +293,40 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // ONE unit, never two: see NumberFormat.CountdownCoarse. A cell
+            // this size cannot hold "11d 16h", and the hour is not what anyone
+            // is reading eleven days out anyway.
             cell.caption.text = entry.remainingSeconds > 0.0
-                ? NumberFormat.Countdown(entry.remainingSeconds)
+                ? NumberFormat.CountdownCoarse(entry.remainingSeconds)
                 : string.Empty;
+        }
+
+        /// <summary>
+        /// The face a cell wears. Resolved here rather than named on the entry:
+        /// which art library a picture comes out of is the HUD's business, and
+        /// <see cref="EventRail"/> stays a pure statement of what is running.
+        /// <para>
+        /// The sabbat plates carry a coming tide as well as an open one. That
+        /// was not always so — the plate is what a keeping EARNS (design §15),
+        /// so the coming cell was deliberately faceless and wore its name in
+        /// words instead. Two cells of wrapped small-caps is what the rail
+        /// actually looked like, and the reveal it was protecting is the full
+        /// plate on the Record's shelf and the keeping's card, which a
+        /// 72-unit mark on a countdown does not spend.
+        /// </para>
+        /// </summary>
+        private Sprite RailIcon(EventRailEntry entry)
+        {
+            switch (entry.kind)
+            {
+                case EventRailKind.OpenTide:
+                case EventRailKind.ComingSabbat:
+                    return entry.sabbatId != null ? ArtLibrary.ForJournal("sabbat-" + entry.sabbatId) : null;
+                case EventRailKind.WeeklyCache:
+                    return ArtLibrary.ForJournal("amber");
+                default:
+                    return null;
+            }
         }
 
         /// <summary>

@@ -202,6 +202,14 @@ namespace Wildgrove.Game
             { "waystone", Ui + "Journal/ui-waystone" },
             { "almanac", Ui + "Journal/ui-almanac-tree" },
 
+            // The Amber pile's own plate, for the events rail's cache cell.
+            // Keyed here rather than in Resource because Amber is a currency
+            // and has no resource id to look it up by, and NOT reusing Line's
+            // "deep-amber" (a fly held in the resin): that is the collectible
+            // set on the Record's deep pages, and the two must not read as
+            // the same thing on a page where one of them is money.
+            { "amber", Plates + "Resources/res-amber" },
+
             // The Wheel's plates (design §15) — the warden's own almanac
             // marks, not the land's naturalist pages: the calendar is the
             // warden's, so the mark is an almanac ornament in the warden's

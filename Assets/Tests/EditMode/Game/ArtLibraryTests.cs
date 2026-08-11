@@ -159,7 +159,7 @@ namespace Wildgrove.Game.Tests
         {
             // Keyed by plain name rather than a data id, so nothing but this
             // would notice a renamed file.
-            foreach (var name in new[] { "paper", "cairn", "caravan", "waystone", "almanac" })
+            foreach (var name in new[] { "paper", "cairn", "caravan", "waystone", "almanac", "amber" })
             {
                 Assert.That(ArtLibrary.ForJournal(name), Is.Not.Null, "journal furnishing " + name);
             }

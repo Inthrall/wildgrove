@@ -119,8 +119,7 @@ namespace Wildgrove.Game.Tests
             Assert.That(_entries[0].id, Is.EqualTo(EventRail.OpenTideId), "the open tide leads the rail");
             Assert.That(_entries[0].kind, Is.EqualTo(EventRailKind.OpenTide));
             Assert.That(_entries[0].title, Is.EqualTo("Beltane"));
-            Assert.That(_entries[0].plateKey, Is.EqualTo("sabbat-beltane"),
-                "the plate arrives with the tide — the cell wears it while it holds");
+            Assert.That(_entries[0].sabbatId, Is.EqualTo("beltane"), "which the cell's face is resolved from");
             Assert.That(_entries[0].remainingSeconds,
                 Is.EqualTo((Wheel.OpenTideCloseMs(state, _data) - state.simNowUnixMs) / 1000.0).Within(1e-6));
         }
@@ -135,8 +134,7 @@ namespace Wildgrove.Game.Tests
             var coming = Find(_entries, EventRail.ComingSabbatId);
             Assert.That(coming, Is.Not.Null, "the fallow weeks are exactly when the rail has to speak up");
             Assert.That(coming.Value.title, Is.EqualTo("Beltane"));
-            Assert.That(coming.Value.plateKey, Is.Null,
-                "no plate before the tide opens — the plate is what a keeping earns");
+            Assert.That(coming.Value.sabbatId, Is.EqualTo("beltane"));
             Assert.That(coming.Value.ready, Is.False);
             Assert.That(coming.Value.remainingSeconds,
                 Is.EqualTo((OpenMs - state.simNowUnixMs) / 1000.0).Within(1e-6),
