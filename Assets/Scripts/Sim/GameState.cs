@@ -81,8 +81,25 @@ namespace Wildgrove.Sim
         /// <summary>Amber (design §10) — the premium currency; observation sites surface it free, and it survives Migration.</summary>
         public double amber;
 
-        /// <summary>Verses sung in runs already folded (design §4 ladder) — the current run's completed verses add on top; see Kith.TotalVersesSung.</summary>
+        /// <summary>Verses sung in runs already folded — the current run's completed verses add on top; see Kith.TotalVersesSung. Feeds the gift piles and the verse achievements; the kith ladder left this tally for named verses on 2026-08-11.</summary>
         public int foldedVersesSung;
+
+        /// <summary>
+        /// Zones whose verse this warden has EVER sung (design §4 ladder) —
+        /// the kith's earned places open off this, one per
+        /// economy.kith.slotVerseZones entry. A set, not a tally: a verse sung
+        /// is never unsung, so it survives the fold and is never removed.
+        /// </summary>
+        public List<string> sungVerseZones = new List<string>();
+
+        /// <summary>
+        /// Earned kith places a save had already won under the old
+        /// lifetime-tally ladder, kept as a floor so the change to named
+        /// verses (2026-08-11, save rung 52) could never take a place back.
+        /// Written once by the migration and never again — 0 on every save
+        /// written since, and overtaken the moment the named verses are sung.
+        /// </summary>
+        public int grandfatheredKithSlots;
 
         /// <summary>Kith slots owned through the store (0–2: the starter bundle, the plain slot). Synced from entitlements at startup and after purchase; survives Migration.</summary>
         public int purchasedKithSlots;

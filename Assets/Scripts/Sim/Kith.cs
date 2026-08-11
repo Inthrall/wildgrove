@@ -4,11 +4,21 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The kith's slot ladder (design §4): a slot is the right to hold a post.
-    /// One slot from minute one; one more as lifetime verses sung cross each
-    /// economy.kith.verseMilestones entry; the last two are store purchases
-    /// (GameState.purchasedKithSlots). The roster itself is the collection —
-    /// at most one familiar per species, never capped by slots — and
-    /// companions past the slots rest at camp.
+    /// One slot from minute one; one more the FIRST time each
+    /// economy.kith.slotVerseZones verse is sung; the last two are store
+    /// purchases (GameState.purchasedKithSlots). The roster itself is the
+    /// collection — at most one familiar per species, never capped by slots —
+    /// and companions past the slots rest at camp.
+    /// <para>
+    /// Named verses rather than a lifetime tally since 2026-08-11. The tally
+    /// (2 / 5 / 10 verses sung across every run) paid for folding early and
+    /// often, which is the opposite of what the ladder is for: a place at the
+    /// warden's side should mark having walked a trail to its end, not having
+    /// walked the first stretch of one three times. It also put the second
+    /// place in run 2 rather than run 1 (design §8's known consequence). The
+    /// tally itself survives, in <see cref="TotalVersesSung"/> — the gift
+    /// piles and the verse achievements still count that way, and should.
+    /// </para>
     /// </summary>
     public static class Kith
     {
@@ -16,7 +26,8 @@ namespace Wildgrove.Sim
         // economy.kith values so sim tests exercise the real ladder shape.
         private const int FallbackSlotsBase = 1;
         private const int FallbackSlotsMax = 6;
-        private static readonly int[] FallbackVerseMilestones = { 2, 5, 10 };
+        private static readonly string[] FallbackSlotVerseZones =
+            { "bramble-hedgerows", "mistfen-marsh", "cloudreach-peaks" };
 
         /// <summary>The ladder's hard ceiling: base + every milestone + both purchases.</summary>
         public static int SlotsMax(GameDataAsset data)
@@ -26,7 +37,16 @@ namespace Wildgrove.Sim
                 : FallbackSlotsMax;
         }
 
-        /// <summary>Lifetime verses sung (§4 ladder): every verse completed in folded runs plus the current run's.</summary>
+        /// <summary>The verses that open a place, in the order they are meant to land — authored, with the shipped three as the fixture fallback.</summary>
+        public static System.Collections.Generic.IReadOnlyList<string> SlotVerseZones(GameDataAsset data)
+        {
+            var kith = data?.economy?.kith;
+            return kith?.slotVerseZones != null && kith.slotVerseZones.Count > 0
+                ? (System.Collections.Generic.IReadOnlyList<string>)kith.slotVerseZones
+                : FallbackSlotVerseZones;
+        }
+
+        /// <summary>Lifetime verses sung: every verse completed in folded runs plus the current run's. The gift piles and the verse achievements read this; the slot ladder no longer does.</summary>
         public static int TotalVersesSung(GameState state, GameDataAsset data)
         {
             if (state == null)
@@ -37,27 +57,14 @@ namespace Wildgrove.Sim
             return state.foldedVersesSung + Rite.CompletedVerseCount(state, data);
         }
 
-        /// <summary>Active slots right now: base + verse milestones passed + purchased, never above slotsMax.</summary>
+        /// <summary>Active slots right now: base + the named verses sung + purchased, never above slotsMax.</summary>
         public static int Slots(GameState state, GameDataAsset data)
         {
             var kith = data?.economy?.kith;
             var slotsBase = kith != null && kith.slotsBase > 0 ? kith.slotsBase : FallbackSlotsBase;
             var slotsMax = SlotsMax(data);
 
-            var slots = slotsBase;
-
-            var versesSung = TotalVersesSung(state, data);
-            var milestones = kith != null && kith.verseMilestones != null && kith.verseMilestones.Count > 0
-                ? (System.Collections.Generic.IReadOnlyList<int>)kith.verseMilestones
-                : FallbackVerseMilestones;
-            foreach (var milestone in milestones)
-            {
-                if (versesSung >= milestone)
-                {
-                    slots++;
-                }
-            }
-
+            var slots = slotsBase + EarnedSlots(state, data);
             if (state != null)
             {
                 slots += state.purchasedKithSlots;
@@ -66,24 +73,54 @@ namespace Wildgrove.Sim
             return slots < slotsMax ? slots : slotsMax;
         }
 
-        /// <summary>The next verse-milestone still ahead, or 0 when every earned slot is open.</summary>
-        public static int NextVerseMilestone(GameState state, GameDataAsset data)
+        /// <summary>
+        /// The earned rungs standing: one per named verse this warden has ever
+        /// sung, floored by <see cref="GameState.grandfatheredKithSlots"/> so
+        /// that a save written under the old lifetime-tally ladder can never
+        /// come back with fewer places than it went away with (save rung 52).
+        /// The floor is overtaken and forgotten as the named verses land.
+        /// </summary>
+        private static int EarnedSlots(GameState state, GameDataAsset data)
         {
-            var kith = data?.economy?.kith;
-            var milestones = kith != null && kith.verseMilestones != null && kith.verseMilestones.Count > 0
-                ? (System.Collections.Generic.IReadOnlyList<int>)kith.verseMilestones
-                : FallbackVerseMilestones;
-
-            var versesSung = TotalVersesSung(state, data);
-            foreach (var milestone in milestones)
+            if (state == null)
             {
-                if (versesSung < milestone)
+                return 0;
+            }
+
+            var earned = 0;
+            foreach (var zoneId in SlotVerseZones(data))
+            {
+                if (state.sungVerseZones.Contains(zoneId))
                 {
-                    return milestone;
+                    earned++;
                 }
             }
 
-            return 0;
+            return earned > state.grandfatheredKithSlots ? earned : state.grandfatheredKithSlots;
+        }
+
+        /// <summary>
+        /// The zone whose verse opens the next place, or null when every earned
+        /// place is already open. The Warden page names it — "a place opens
+        /// when the marsh's verse is sung" tells a player where to walk, which
+        /// a bare count never did.
+        /// </summary>
+        public static string NextSlotVerseZone(GameState state, GameDataAsset data)
+        {
+            if (state == null)
+            {
+                return null;
+            }
+
+            foreach (var zoneId in SlotVerseZones(data))
+            {
+                if (!state.sungVerseZones.Contains(zoneId))
+                {
+                    return zoneId;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>How many companions the warden keeps altogether — the collection, unbounded by slots.</summary>

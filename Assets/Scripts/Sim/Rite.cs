@@ -666,6 +666,44 @@ namespace Wildgrove.Sim
             GameStateFactory.SyncUnlockedZones(state, data);
             Upgrades.RecomputeYieldMultipliers(state, data);
             SyncDeedSlots(state, data);
+            RecordSungVerseZones(state, data);
+        }
+
+        /// <summary>
+        /// Write every currently-answered verse's zone into the warden's
+        /// lifetime record (design §4 ladder) — what the kith's earned places
+        /// open off since 2026-08-11.
+        /// <para>
+        /// A sweep rather than an event, and deliberately: it hangs off
+        /// <see cref="Settle"/>, which is already the one funnel every path
+        /// that can sing a verse runs through (a delivered slot, a recorded
+        /// deed, a zone unlock, a restore). Being idempotent is what lets it
+        /// sit there — the extra calls cost a walk of the rite's verses and
+        /// write nothing. The alternative, a hook at each completion site, is
+        /// three call sites to keep in step and a fourth to forget.
+        /// </para>
+        /// <para>
+        /// It records the answered verse's zone whether or not that zone is
+        /// still in play: a verse sung is never unsung, and a warden who sang
+        /// it does not owe it again because the trail was later re-gated.
+        /// </para>
+        /// </summary>
+        private static void RecordSungVerseZones(GameState state, GameDataAsset data)
+        {
+            var rite = CurrentRite(state, data);
+            if (rite?.verses == null)
+            {
+                return;
+            }
+
+            foreach (var verse in rite.verses)
+            {
+                if (verse.zone != null && IsVerseComplete(state, data, verse)
+                    && !state.sungVerseZones.Contains(verse.zone))
+                {
+                    state.sungVerseZones.Add(verse.zone);
+                }
+            }
         }
 
         /// <summary>

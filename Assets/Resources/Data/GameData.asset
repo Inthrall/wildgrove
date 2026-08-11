@@ -26,7 +26,10 @@ MonoBehaviour:
     kith:
       slotsBase: 1
       slotsMax: 6
-      verseMilestones: 02000000050000000a000000
+      slotVerseZones:
+      - bramble-hedgerows
+      - mistfen-marsh
+      - cloudreach-peaks
       generatorGatherPosts: 2
       gatherPerSecond: 0.3
     crafting:

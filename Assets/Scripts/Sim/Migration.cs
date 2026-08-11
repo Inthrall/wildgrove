@@ -149,6 +149,15 @@ namespace Wildgrove.Sim
             // fold (§4): verses sung this run bank into the lifetime count,
             // and a purchase is a purchase.
             next.foldedVersesSung = state.foldedVersesSung + Rite.CompletedVerseCount(state, data);
+            // The ladder itself: which verses have ever been sung. A verse sung
+            // is never unsung (§4), so this only ever grows — and it is what
+            // stops the fold taking an earned place back, now that the places
+            // are named verses rather than a count.
+            next.sungVerseZones = new List<string>(state.sungVerseZones);
+            // And the floor under them, or a save carried over from the old
+            // tally ladder would lose its places on its very next fold — which
+            // is the one moment the ladder is meant to be safest.
+            next.grandfatheredKithSlots = state.grandfatheredKithSlots;
             next.purchasedKithSlots = state.purchasedKithSlots;
             next.starterBundleAmberGranted = state.starterBundleAmberGranted;
             next.droversHalterOwned = state.droversHalterOwned;

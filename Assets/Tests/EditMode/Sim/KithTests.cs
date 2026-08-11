@@ -7,10 +7,16 @@ namespace Wildgrove.Sim.Tests
 {
     /// <summary>
     /// Pins the kith's slot ladder (design §4): one slot from minute one,
-    /// three earned as lifetime verses sung cross the milestones, two more
-    /// from the store. Slots cap who holds a post — the roster itself is the
-    /// collection (one familiar per species, ever) and companions past the
-    /// slots rest at camp.
+    /// three earned the first time each NAMED verse is sung, two more from the
+    /// store. Slots cap who holds a post — the roster itself is the collection
+    /// (one familiar per species, ever) and companions past the slots rest at
+    /// camp.
+    /// <para>
+    /// The ladder read a lifetime verse TALLY until 2026-08-11. The cases that
+    /// matter most here are the ones that separate the two: a warden with a
+    /// pile of verses sung and none of the named ones earns nothing, and the
+    /// fold never takes an earned place back.
+    /// </para>
     /// </summary>
     public class KithTests
     {
@@ -26,7 +32,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     slotsBase = 1,
                     slotsMax = 6,
-                    verseMilestones = new List<int> { 2, 5, 10 },
+                    slotVerseZones = new List<string> { "hedgerow", "marsh", "crags" },
                 },
             };
             _data.resources = new List<ResourceData>
@@ -64,31 +70,82 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Slots_VersesSung_OpenTheEarnedRungs()
+        public void Slots_NamedVersesSung_OpenTheEarnedRungs()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            state.foldedVersesSung = 1;
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(1), "the first milestone asks for two verses");
-
-            state.foldedVersesSung = 2;
+            state.sungVerseZones.Add("hedgerow");
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(2));
 
-            state.foldedVersesSung = 5;
+            state.sungVerseZones.Add("marsh");
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(3));
 
-            state.foldedVersesSung = 10;
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(4));
+            state.sungVerseZones.Add("crags");
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(4), "every earned rung - the rest belong to the store");
+        }
 
+        [Test]
+        public void Slots_OrderTheNamedVersesLandIn_DoesNotMatter()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // The list is authored early/mid/late, but nothing enforces that a
+            // warden meets them in that order - a zone can open ahead of its
+            // turn off a bought tool tier. Each verse is worth its own place
+            // whenever it lands.
+            state.sungVerseZones.Add("crags");
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Slots_VersesThatOpenNoPlace_EarnNothing()
+        {
+            var state = GameStateFactory.NewGame(_data);
             state.foldedVersesSung = 99;
-            Assert.That(Kith.Slots(state, _data), Is.EqualTo(4), "every milestone passed — the rest belong to the store");
+            state.sungVerseZones.Add("sunfield-meadow");
+            state.sungVerseZones.Add("old-growth-wood");
+
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(1),
+                "a hundred verses sung and none of them a named one - the ladder is not a tally any more, "
+                + "which is the whole of the 2026-08-11 change");
+        }
+
+        [Test]
+        public void Slots_ASungVerseIsNeverUnsung()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.sungVerseZones.Add("hedgerow");
+            state.sungVerseZones.Add("hedgerow");
+
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(2),
+                "and a duplicate in the record is still one verse, so still one place");
+        }
+
+        [Test]
+        public void Slots_GrandfatheredPlaces_AreAFloorTheNamedVersesOvertake()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            // What save rung 52 writes for a save that had earned two places
+            // under the old lifetime tally: it cannot know WHICH verses were
+            // sung, only how many places were standing.
+            state.grandfatheredKithSlots = 2;
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(3), "no save comes back with fewer places");
+
+            state.sungVerseZones.Add("hedgerow");
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(3),
+                "the first named verse is inside the floor, so it adds nothing yet");
+
+            state.sungVerseZones.Add("marsh");
+            state.sungVerseZones.Add("crags");
+            Assert.That(Kith.Slots(state, _data), Is.EqualTo(4), "and the floor is overtaken, never added to");
         }
 
         [Test]
         public void Slots_PurchasedSlots_StackOnTheEarnedLadder()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.foldedVersesSung = 10;
+            state.sungVerseZones.AddRange(new[] { "hedgerow", "marsh", "crags" });
 
             state.purchasedKithSlots = 1;
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(5));
@@ -101,7 +158,7 @@ namespace Wildgrove.Sim.Tests
         public void Slots_NeverClimbAboveSlotsMax()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.foldedVersesSung = 99;
+            state.sungVerseZones.AddRange(new[] { "hedgerow", "marsh", "crags" });
             state.purchasedKithSlots = 9;
 
             Assert.That(Kith.Slots(state, _data), Is.EqualTo(6), "slotsMax is the ceiling however generous the counters");
@@ -111,7 +168,7 @@ namespace Wildgrove.Sim.Tests
         public void Resting_CountsTheIdleAndLeavesThePonyOut()
         {
             var state = GameStateFactory.NewGame(_data);
-            state.foldedVersesSung = 2;
+            state.sungVerseZones.Add("hedgerow");
             Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
             Roster.Recruit(state, _data, "pack-raven", null);
             state.droversHalterOwned = true;
@@ -124,20 +181,30 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NextVerseMilestone_WalksTheTable()
+        public void NextSlotVerseZone_WalksTheAuthoredOrder()
         {
             var state = GameStateFactory.NewGame(_data);
 
-            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(2));
+            Assert.That(Kith.NextSlotVerseZone(state, _data), Is.EqualTo("hedgerow"));
 
-            state.foldedVersesSung = 2;
-            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(5));
+            state.sungVerseZones.Add("hedgerow");
+            Assert.That(Kith.NextSlotVerseZone(state, _data), Is.EqualTo("marsh"));
 
-            state.foldedVersesSung = 7;
-            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(10));
+            state.sungVerseZones.Add("marsh");
+            Assert.That(Kith.NextSlotVerseZone(state, _data), Is.EqualTo("crags"));
 
-            state.foldedVersesSung = 10;
-            Assert.That(Kith.NextVerseMilestone(state, _data), Is.EqualTo(0), "every earned slot is open");
+            state.sungVerseZones.Add("crags");
+            Assert.That(Kith.NextSlotVerseZone(state, _data), Is.Null, "every earned place is open");
+        }
+
+        [Test]
+        public void NextSlotVerseZone_SkipsOneAlreadySungOutOfOrder()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.sungVerseZones.Add("marsh");
+
+            Assert.That(Kith.NextSlotVerseZone(state, _data), Is.EqualTo("hedgerow"),
+                "it names what is still owed, not where the warden got to");
         }
 
         [Test]
@@ -146,8 +213,11 @@ namespace Wildgrove.Sim.Tests
             var bare = ScriptableObject.CreateInstance<GameDataAsset>();
             try
             {
-                var state = new GameState { foldedVersesSung = 2 };
-                Assert.That(Kith.Slots(state, bare), Is.EqualTo(2), "fallback = base 1 + the first authored milestone");
+                var state = new GameState();
+                state.sungVerseZones.Add("bramble-hedgerows");
+                Assert.That(Kith.Slots(state, bare), Is.EqualTo(2),
+                    "fallback = base 1 + the first authored verse, so a fixture with no economy still "
+                    + "exercises the real ladder shape");
             }
             finally
             {

@@ -40,7 +40,7 @@ namespace Wildgrove.Sim.Tests
                 {
                     slotsBase = 1,
                     slotsMax = 6,
-                    verseMilestones = new List<int> { 2, 5, 10 },
+                    slotVerseZones = new List<string> { "hedgerow", "marsh", "crags" },
                 },
             };
             _data.resources = new List<ResourceData>

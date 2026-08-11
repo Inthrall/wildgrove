@@ -40,6 +40,7 @@ Knobs the sitting is allowed to move, by file:
 | `upgrades.json` | haul rungs stag-harness 8 / wagon 14 (moved down 2026-07-28, unconfirmed); building `perLevel` 5% tapers |
 | `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |
 | `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
+| `economy.json` kith | `slotVerseZones` — WHICH three verses open a place (design §4, named rather than tallied since 2026-08-11). Chosen off the zones' `minMigration` gates for mid-run-1 / run 3 / run 6; the pacing is a first guess and the honest test is a run-1-to-run-5 sitting. Changing one is a data edit, but moving a verse EARLIER hands the place to saves that already sang it, and moving one later takes nothing back — a verse sung is never unsung. |
 | `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); `openDaysBefore` 30 leaves the world leaning ~68% of the year, so the touch is now the number under watch, not the window; top the calendar up ~2029 |
 | `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
 | `exchange.json` | `offerMinutes` 5; flat spread across quality tiers |

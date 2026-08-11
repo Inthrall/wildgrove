@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 51;
+        public const int CurrentVersion = 52;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -52,6 +52,8 @@ namespace Wildgrove.Sim.Saves
                 campName = state.campName,
                 amber = state.amber,
                 foldedVersesSung = state.foldedVersesSung,
+                sungVerseZones = new List<string>(state.sungVerseZones),
+                grandfatheredKithSlots = state.grandfatheredKithSlots,
                 purchasedKithSlots = state.purchasedKithSlots,
                 starterBundleAmberGranted = state.starterBundleAmberGranted,
                 droversHalterOwned = state.droversHalterOwned,
@@ -351,6 +353,24 @@ namespace Wildgrove.Sim.Saves
             state.campName = string.IsNullOrWhiteSpace(save.campName) ? null : save.campName.Trim();
             state.amber = save.amber;
             state.foldedVersesSung = save.foldedVersesSung > 0 ? save.foldedVersesSung : 0;
+            // Deduped and emptied of blanks on the way in: the ladder counts
+            // membership, so a duplicate would be a free place and a null would
+            // be a rung nothing can ever match. Ids for zones this build no
+            // longer has are KEPT — a verse sung is never unsung, and content
+            // renamed underneath a save is not the warden's doing.
+            state.sungVerseZones.Clear();
+            if (save.sungVerseZones != null)
+            {
+                foreach (var zoneId in save.sungVerseZones)
+                {
+                    if (!string.IsNullOrWhiteSpace(zoneId) && !state.sungVerseZones.Contains(zoneId))
+                    {
+                        state.sungVerseZones.Add(zoneId);
+                    }
+                }
+            }
+
+            state.grandfatheredKithSlots = save.grandfatheredKithSlots > 0 ? save.grandfatheredKithSlots : 0;
             state.purchasedKithSlots = save.purchasedKithSlots > 0 ? save.purchasedKithSlots : 0;
             state.starterBundleAmberGranted = save.starterBundleAmberGranted;
             state.droversHalterOwned = save.droversHalterOwned;
@@ -1049,6 +1069,42 @@ namespace Wildgrove.Sim.Saves
                         // rung exists so an older build refuses a save this one
                         // wrote rather than reading it a field short.
                         save.version = 51;
+                        break;
+
+                    case 51:
+                        // v52 moved the kith ladder off the lifetime verse
+                        // tally and onto three NAMED verses
+                        // (economy.kith.slotVerseZones). A save written before
+                        // this has no record of WHICH verses it sang — only how
+                        // many — so sungVerseZones is left empty, which is the
+                        // honest shape: it says "unknown", not "none".
+                        //
+                        // What it does know is how many places the old ladder
+                        // had earned, and that must not be taken away. The old
+                        // milestones were 2 / 5 / 10 lifetime verses; they are
+                        // written out here rather than read from the current
+                        // economy because a migration must hold for a save
+                        // opened years after those numbers stopped existing.
+                        // Kith.Slots floors the earned rungs on the result, and
+                        // the named verses overtake it as they are sung.
+                        //
+                        // foldedVersesSung alone undercounts a save folded
+                        // mid-run, which can only ever grandfather FEWER places
+                        // than were standing — and Restore's own Rite.Settle
+                        // sweep records that run's answered verses immediately
+                        // after, so the shortfall closes on the first load
+                        // wherever those verses were named ones.
+                        var earnedUnderTheOldLadder = 0;
+                        foreach (var milestone in new[] { 2, 5, 10 })
+                        {
+                            if (save.foldedVersesSung >= milestone)
+                            {
+                                earnedUnderTheOldLadder++;
+                            }
+                        }
+
+                        save.grandfatheredKithSlots = earnedUnderTheOldLadder;
+                        save.version = 52;
                         break;
 
                     default:

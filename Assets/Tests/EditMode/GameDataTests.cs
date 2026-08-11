@@ -60,7 +60,10 @@ namespace Wildgrove.Data.Tests
             Assert.That(data.Economy.Crafting.BaseCraftSeconds, Is.EqualTo(5.0));
             Assert.That(data.Economy.Kith.SlotsBase, Is.EqualTo(1), "design §4 ladder: one slot from minute one");
             Assert.That(data.Economy.Kith.SlotsMax, Is.EqualTo(6), "design §4 ladder: six kith slots total");
-            Assert.That(data.Economy.Kith.VerseMilestones, Is.EqualTo(new[] { 2, 5, 10 }), "verses sung earn the middle rungs");
+            Assert.That(data.Economy.Kith.SlotVerseZones,
+                Is.EqualTo(new[] { "bramble-hedgerows", "mistfen-marsh", "cloudreach-peaks" }),
+                "design §4 ladder: three NAMED verses earn the middle rungs, chosen early/mid/late off the "
+                + "zones' minMigration gates — mid-run-1, run 3, run 6");
             Assert.That(data.Economy.Kith.GeneratorGatherPosts, Is.EqualTo(2), "the run-2+ generator's stationing assumption");
             Assert.That(data.Economy.Kith.GatherPerSecond, Is.EqualTo(0.3), "a familiar's base hands — cut to a tenth when hauling retired (2026-07-31), raised to 0.3 when that overshot (2026-08-03)");
             Assert.That(data.Economy.Store.StarterBundleAmber, Is.GreaterThan(0), "the starter bundle's one-time Amber pile");
@@ -264,6 +267,36 @@ namespace Wildgrove.Data.Tests
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
             Assert.That(issues, Has.Some.Contains("moon-cheese"));
+        }
+
+        [Test]
+        public void Validate_SlotVerseZoneThatIsNotAZone_IsCaught()
+        {
+            var sources = LoadSources();
+            // A zone id that does not exist opens NOTHING, and does it in
+            // silence: the ladder just stops a place short for the life of the
+            // build, with no symptom pointing back at economy.json.
+            sources.EconomyJson = sources.EconomyJson.Replace("\"mistfen-marsh\"", "\"mistfen-mash\"");
+            Assert.That(sources.EconomyJson, Does.Contain("mistfen-mash"), "the corruption must land, or this test proves nothing");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("mistfen-mash"));
+        }
+
+        [Test]
+        public void Validate_SlotVerseZonesOffTheCeiling_IsCaught()
+        {
+            var sources = LoadSources();
+            // Drop a rung: slotsBase + slotVerseZones + 2 purchasable must
+            // land exactly on slotsMax, or a place is unreachable forever.
+            sources.EconomyJson = sources.EconomyJson.Replace(
+                "[\"bramble-hedgerows\", \"mistfen-marsh\", \"cloudreach-peaks\"]",
+                "[\"bramble-hedgerows\", \"mistfen-marsh\"]");
+
+            var issues = GameDataValidator.Validate(GameData.Parse(sources));
+
+            Assert.That(issues, Has.Some.Contains("kith ladder is off"));
         }
 
         [Test]

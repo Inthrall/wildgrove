@@ -48,7 +48,7 @@ namespace Wildgrove.Data
         {
             public int SlotsBase { get; set; }
             public int SlotsMax { get; set; }
-            public List<int> VerseMilestones { get; set; }
+            public List<string> SlotVerseZones { get; set; }
             public int GeneratorGatherPosts { get; set; }
             public double GatherPerSecond { get; set; }
         }

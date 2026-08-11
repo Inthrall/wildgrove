@@ -583,8 +583,14 @@ namespace Wildgrove.Data
             public int slotsBase;
             public int slotsMax;
 
-            /// <summary>Lifetime verses-sung counts at which the earned slots open (design §4 ladder).</summary>
-            public List<int> verseMilestones = new List<int>();
+            /// <summary>
+            /// Zone ids whose VERSE opens an earned slot the first time it is
+            /// sung, ever (design §4 ladder) — one entry per earned place, in
+            /// the order they are meant to land. Not a count: the ladder was a
+            /// lifetime tally until 2026-08-11, which rewarded folding early
+            /// and often rather than walking a trail to its end.
+            /// </summary>
+            public List<string> slotVerseZones = new List<string>();
 
             /// <summary>Gather posts the Rite generator assumes a plausible kith holds at once (run-2+ reachability).</summary>
             public int generatorGatherPosts;

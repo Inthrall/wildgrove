@@ -741,7 +741,7 @@ namespace Wildgrove.Sim.Tests
             {
                 slotsBase = 1,
                 slotsMax = 6,
-                verseMilestones = new List<int> { 2, 5, 10 },
+                slotVerseZones = new List<string> { "hedgerow", "marsh", "crags" },
             };
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
@@ -756,6 +756,73 @@ namespace Wildgrove.Sim.Tests
             var raven = restored.roster.Single(f => f.speciesId == "pack-raven");
             Assert.That(raven.stationId, Is.EqualTo(Familiar.WanderStation), "the bonded companion keeps its post");
             Assert.That(restored.roster.Single(f => f.speciesId == "meadow-vole").IsResting, Is.True);
+        }
+
+        [Test]
+        public void RoundTrip_KeepsTheVersesThatOpenedThePlaces()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            state.sungVerseZones.Add("hedgerow");
+            state.sungVerseZones.Add("marsh");
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.sungVerseZones, Is.EquivalentTo(new[] { "hedgerow", "marsh" }));
+            Assert.That(Kith.Slots(restored, _data), Is.EqualTo(3), "and the places they opened stand");
+        }
+
+        [Test]
+        public void Restore_DedupesAndDropsBlanksFromTheSungVerses()
+        {
+            // The ladder counts membership, so a duplicate would be a free
+            // place and a blank a rung nothing can ever match.
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.sungVerseZones = new List<string> { "hedgerow", "hedgerow", " ", null, "marsh" };
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.sungVerseZones, Is.EquivalentTo(new[] { "hedgerow", "marsh" }));
+        }
+
+        [Test]
+        public void Restore_KeepsASungVerseForAZoneThisBuildNoLongerHas()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.sungVerseZones = new List<string> { "a-trail-that-was-renamed" };
+
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.sungVerseZones, Is.EquivalentTo(new[] { "a-trail-that-was-renamed" }),
+                "a verse sung is never unsung - content renamed underneath a save is not the warden's doing");
+        }
+
+        [Test]
+        public void TryMigrate_V51_KeepsThePlacesTheOldTallyHadEarned()
+        {
+            // v52 moved the ladder off the lifetime tally onto named verses. A
+            // v51 save cannot say WHICH verses it sang, so the rung records how
+            // many places were standing and Kith.Slots floors on that.
+            var save = new SaveData { version = 51, foldedVersesSung = 5 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(save.grandfatheredKithSlots, Is.EqualTo(2),
+                "5 lifetime verses cleared the old 2 and 5 milestones, so two earned places were standing");
+            Assert.That(save.sungVerseZones, Is.Empty,
+                "empty says \"unknown\", which is true - it must not invent three verse names");
+
+            var restored = SaveCodec.Restore(save, _data);
+            Assert.That(Kith.Slots(restored, _data), Is.EqualTo(3), "base one plus the two it came in with");
+        }
+
+        [Test]
+        public void TryMigrate_V51_WithNothingEarned_GrandfathersNothing()
+        {
+            var save = new SaveData { version = 51, foldedVersesSung = 1 };
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.grandfatheredKithSlots, Is.EqualTo(0),
+                "one verse never cleared the old first milestone, so there is no place to keep");
         }
 
         [Test]

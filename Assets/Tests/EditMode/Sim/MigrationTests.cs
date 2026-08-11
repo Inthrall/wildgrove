@@ -224,6 +224,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_KeepsTheVersesThatOpenedThePlaces_AndTheirFloor()
+        {
+            var state = StateWithTheRiteSung();
+            state.sungVerseZones.Add("a-verse-from-an-older-run");
+            state.grandfatheredKithSlots = 2;
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.sungVerseZones, Contains.Item("a-verse-from-an-older-run"),
+                "a verse sung is never unsung - the fold must not take an earned place back");
+            Assert.That(next.grandfatheredKithSlots, Is.EqualTo(2),
+                "and neither must it drop the floor under a save carried over from the old tally ladder");
+        }
+
+        [Test]
         public void Migrate_KeepsFolioFixings_AndTheirSpreadBonuses()
         {
             _data.folioSpreads = new List<FolioSpreadData>

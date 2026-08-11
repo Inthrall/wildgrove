@@ -69,10 +69,10 @@ namespace Wildgrove.Game
             return Kith.Resting(State);
         }
 
-        /// <summary>The next verse-milestone still ahead of the ladder, or 0 when every earned slot is open.</summary>
-        public int NextKithVerseMilestone()
+        /// <summary>The zone whose verse opens the next place (design §4 ladder), or null when every earned place is open.</summary>
+        public string NextKithSlotVerseZone()
         {
-            return Kith.NextVerseMilestone(State, Data);
+            return Kith.NextSlotVerseZone(State, Data);
         }
 
         /// <summary>Lifetime verses sung (design §4 ladder) — folded runs plus this one.</summary>

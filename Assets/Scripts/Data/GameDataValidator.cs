@@ -74,7 +74,7 @@ namespace Wildgrove.Data
             ValidateExchange(data, issues);
             ValidateRites(data, resourceIds, issues);
             ValidateDialogue(data, issues);
-            ValidateEconomy(data.Economy, issues);
+            ValidateEconomy(data, issues);
             ValidateSkillGatesAreEarnable(data, issues);
 
             return issues;
@@ -1765,8 +1765,9 @@ namespace Wildgrove.Data
             }
         }
 
-        private static void ValidateEconomy(EconomyConfig economy, List<string> issues)
+        private static void ValidateEconomy(GameData data, List<string> issues)
         {
+            var economy = data.Economy;
             if (economy == null)
             {
                 issues.Add("Economy config is missing");
@@ -1831,27 +1832,45 @@ namespace Wildgrove.Data
 
             if (economy.Kith != null)
             {
-                var milestones = economy.Kith.VerseMilestones;
-                if (milestones == null || milestones.Count == 0)
+                var slotVerses = economy.Kith.SlotVerseZones;
+                if (slotVerses == null || slotVerses.Count == 0)
                 {
-                    issues.Add("Economy kith.verseMilestones is empty — the earned slots need their verse counts");
+                    issues.Add("Economy kith.slotVerseZones is empty — the earned slots need the verses that open them");
                 }
                 else
                 {
-                    for (var i = 0; i < milestones.Count; i++)
+                    // A zone id that does not exist opens NOTHING, silently and
+                    // for the life of the build: the ladder simply stops one
+                    // place short and there is no symptom to trace back here.
+                    var zoneIds = new HashSet<string>();
+                    if (data.Zones != null)
                     {
-                        if (milestones[i] <= 0 || (i > 0 && milestones[i] <= milestones[i - 1]))
+                        foreach (var zone in data.Zones)
                         {
-                            issues.Add("Economy kith.verseMilestones must be positive and strictly ascending");
-                            break;
+                            zoneIds.Add(zone.Id);
                         }
                     }
 
-                    // The ladder must land exactly on the ceiling: base + earned
-                    // milestones + the two store purchases (§4).
-                    if (economy.Kith.SlotsBase + milestones.Count + 2 != economy.Kith.SlotsMax)
+                    var seenZones = new HashSet<string>();
+                    foreach (var zoneId in slotVerses)
                     {
-                        issues.Add("Economy kith ladder is off: slotsBase + verseMilestones + 2 purchasable must equal slotsMax");
+                        if (string.IsNullOrWhiteSpace(zoneId) || !zoneIds.Contains(zoneId))
+                        {
+                            issues.Add($"Economy kith.slotVerseZones names '{zoneId}', which is not a zone");
+                        }
+                        else if (!seenZones.Add(zoneId))
+                        {
+                            // One verse, one place. A repeat cannot be sung
+                            // twice, so it costs the ladder a rung outright.
+                            issues.Add($"Economy kith.slotVerseZones names '{zoneId}' twice — a verse opens one place");
+                        }
+                    }
+
+                    // The ladder must land exactly on the ceiling: base + the
+                    // named verses + the two store purchases (§4).
+                    if (economy.Kith.SlotsBase + slotVerses.Count + 2 != economy.Kith.SlotsMax)
+                    {
+                        issues.Add("Economy kith ladder is off: slotsBase + slotVerseZones + 2 purchasable must equal slotsMax");
                     }
                 }
 

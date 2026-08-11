@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using BreakInfinity;
 using Wildgrove.Data;
@@ -59,9 +60,12 @@ namespace Wildgrove.Game
             // A kith worth photographing: four staged companions on top of the
             // ladder's two, each its own species (the collection model — one
             // familiar per species, ever), on a fully-opened ladder. Restore
-            // rests anything past the earned slots, so open them all: ten
-            // verses sung plus both store slots.
+            // rests anything past the earned slots, so open them all: every
+            // named verse sung (design §4 — the ladder stopped being a tally on
+            // 2026-08-11, and a staged foldedVersesSung now opens nothing)
+            // plus both store slots.
             state.foldedVersesSung = 10;
+            state.sungVerseZones = new List<string>(Kith.SlotVerseZones(data));
             state.purchasedKithSlots = 2;
             // Grounds and the watch, and nothing else: a dig-site post
             // ("dig:{zone}") is retired — SaveCodec rests whoever carries one on

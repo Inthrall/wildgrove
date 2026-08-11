@@ -407,9 +407,9 @@ namespace Wildgrove.Data
                 {
                     slotsBase = e.Kith.SlotsBase,
                     slotsMax = e.Kith.SlotsMax,
-                    verseMilestones = e.Kith.VerseMilestones != null
-                        ? new List<int>(e.Kith.VerseMilestones)
-                        : new List<int>(),
+                    slotVerseZones = e.Kith.SlotVerseZones != null
+                        ? new List<string>(e.Kith.SlotVerseZones)
+                        : new List<string>(),
                     generatorGatherPosts = e.Kith.GeneratorGatherPosts,
                     gatherPerSecond = e.Kith.GatherPerSecond
                 },

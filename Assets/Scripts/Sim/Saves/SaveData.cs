@@ -62,6 +62,12 @@ namespace Wildgrove.Sim.Saves
         /// <summary>Verses sung in folded runs.</summary>
         public int foldedVersesSung;
 
+        /// <summary>Zones whose verse the warden has ever sung (design §4 ladder) — what the earned kith places open off since save rung 52.</summary>
+        public List<string> sungVerseZones = new List<string>();
+
+        /// <summary>Places the old lifetime-tally ladder had already earned, kept as a floor by rung 52's migration so no save loses one. 0 on anything written since.</summary>
+        public int grandfatheredKithSlots;
+
         /// <summary>Kith slots owned through the store. Bridges sessions that start before billing resolves.</summary>
         public int purchasedKithSlots;
 

@@ -533,13 +533,16 @@ namespace Wildgrove.Game
                 // to be sung while there is one, then nothing more to say once
                 // every place is open. The store's own rows speak for
                 // themselves below.
-                var next = _loop.NextKithVerseMilestone();
+                // The verse is NAMED, not counted (design §4, 2026-08-11): a
+                // number told a player to grind, where a trail tells them where
+                // to walk. The zone's own display name, so the line reads in
+                // the journal's voice rather than in ids.
+                var next = _loop.NextKithSlotVerseZone();
                 var full = open >= max;
-                verseLine.gameObject.SetActive(next > 0 || full);
-                if (next > 0)
+                verseLine.gameObject.SetActive(next != null || full);
+                if (next != null)
                 {
-                    verseLine.text = "<i>a place opens when " + next + " verses are sung: "
-                                     + _loop.TotalVersesSung() + " so far</i>";
+                    verseLine.text = "<i>a place opens when the verse of " + ZoneName(next) + " is sung</i>";
                 }
                 else if (full)
                 {
