@@ -24,6 +24,13 @@ namespace Wildgrove.Game
         internal static readonly Color NightInk = new Color(0.09f, 0.075f, 0.051f, 1f);        // #17130D
         internal static readonly Color NightText = new Color(0.91f, 0.863f, 0.753f, 1f);       // #E8DCC0
 
+        // The band a working plate fills as its batch runs. Deeper and cooler
+        // than DeepPaper so the filled part reads as filled at a glance, and
+        // light enough that Ink over it stays a black-on-parchment label rather
+        // than white-on-green — a button whose text changes colour halfway
+        // across is the thing this was drawn to avoid.
+        internal static readonly Color MossFill = new Color(0.757f, 0.776f, 0.639f, 1f);       // #C1C6A3
+
         internal const string InkHex = "#3A3126";
         internal const string Ink2Hex = "#6E6047";
         internal const string OchreHex = "#A05A36";

@@ -516,6 +516,14 @@ namespace Wildgrove.Game
                    + " and " + others[last] + " keep their own.";
         }
 
+        /// <summary>
+        /// The height every recipe row holds, in every state. The button is the
+        /// tallest thing in it (120 units, the touch minimum) and neither the
+        /// two lines of words nor the cost chips beside them reach that, so the
+        /// row has one height and keeps it.
+        /// </summary>
+        private const float CraftRowHeight = 132f;
+
         private void BuildStationCard(string stationId, List<RecipeData> recipes,
             List<KeyValuePair<string, List<RecipeData>>> stations)
         {
@@ -535,17 +543,29 @@ namespace Wildgrove.Game
             foreach (var recipe in recipes)
             {
                 var captured = recipe;
-                var row = Row(card);
-                var goodArt = ArtLibrary.ForGood(captured.output);
-                if (goodArt != null)
-                {
-                    IconImage(row.transform, goodArt, 56f, Color.white);
-                }
+                // Fixed at the height of its own tallest piece (the button), so
+                // the row is the same shape working, idle, halted or blocked.
+                // It used to be sized by a label that gained a clause the moment
+                // a batch started — the row grew, and every card below it moved,
+                // while the finger that started the batch was still on the glass.
+                var row = Row(card, CraftRowHeight);
+                // A slot rather than a plate: a good whose art is missing must
+                // still cost the row its picture's width, or that one row's
+                // words start somewhere the others' don't.
+                PictureSlot(row.transform, ArtLibrary.ForGood(captured.output), 56f);
 
-                var label = MakeText(row.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
-                FlexibleWidth(label.gameObject, 1f);
+                var column = Column(row.transform);
+                FlexibleWidth(column, 1f);
+                var title = MakeText(column.transform, string.Empty, 19, TextAnchor.MiddleLeft, Ink);
+                // Always built, always one line, whether or not it has anything
+                // to say — the line is the row's shape, and its words are only
+                // what happens to be in it.
+                var state = MakeText(column.transform, string.Empty, 15, TextAnchor.MiddleLeft, Ink2);
+
+                var costs = BuildCostStrip(row.transform, captured);
+
                 // Wide enough for the longest thing this plate ever says
-                // ("Stop crafting"). At 210 that label wrapped to two lines and
+                // ("Craft instead"). At 210 that label wrapped to two lines and
                 // took the whole row down with it.
                 var toggle = Button(row.transform, "Craft", 300, () =>
                 {
@@ -566,76 +586,46 @@ namespace Wildgrove.Game
                     _dirty = true;
                 });
 
+                var fill = ButtonFill(toggle);
+
                 _liveUpdaters.Add(() =>
                 {
                     var crafting = _loop.IsCrafting(captured);
                     var halted = crafting && _loop.IsCraftHalted(captured);
-                    var progress = string.Empty;
-                    if (halted)
-                    {
-                        // A frozen bar at 0% looked identical to a slow one. Say
-                        // it plainly, and name the good that stopped it.
-                        var missing = _loop.MissingCraftInput(captured);
-                        progress = "  <color=" + AlarmHex + "><b>Crafting halted</b>"
-                                   + (missing != null ? ", out of " + missing : string.Empty) + "</color>";
-                    }
-                    else if (crafting)
-                    {
-                        // Three characters wide throughout, so climbing 7% → 43%
-                        // → 100% doesn't shift where the line wraps mid-craft.
-                        progress = "  <color=" + MossDeepHex + ">crafting · "
-                                   + Mathf.RoundToInt((float)_loop.CraftProgress(captured) * 100f).ToString().PadLeft(3)
-                                   + "%</color>";
-                    }
 
-                    var need = string.Empty;
-                    if (!_loop.IsRecipeLevelMet(captured))
-                    {
-                        need += "  <color=" + OchreInkHex + "><b>needs " + captured.skill + " " + captured.skillLevel + "</b></color>";
-                    }
+                    // The OUTPUT's own count, which nothing else on the page
+                    // carries — the one number you want while deciding whether
+                    // to keep a batch running.
+                    title.text = captured.output + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">(have "
+                                 + NumberFormat.Short(_loop.State.GetResource(captured.output)) + ")</color></size>";
+                    state.text = CraftStateLine(captured, crafting, halted);
+                    RefreshCostStrip(costs);
 
-                    if (!Crafting.StationLevelMet(_loop.State, _loop.Data, captured))
-                    {
-                        // The one gate the bundle line can't explain — a cold
-                        // station looks ready when every input is in stock.
-                        var line = _loop.Data.BuildingsById.TryGetValue(captured.station, out var building)
-                            ? building.displayName
-                            : captured.station;
-                        need += "  <color=" + OchreInkHex + "><b>needs " + line + " level " + captured.stationLevel + "</b></color>";
-                    }
-
-                    // One shape in every state: every input, always with what's
-                    // held. A line that switches between "needs 5 timber" and
-                    // an itemised shortfall changes length — and often wraps —
-                    // every time stock crosses a recipe's cost, which during a
-                    // busy camp is constantly. What's blocking is said in ochre
-                    // rather than by rewriting the line.
-                    var inputs = new List<string>();
-                    foreach (var input in captured.inputs)
-                    {
-                        var have = _loop.State.GetResource(input.id);
-                        var held = "(have " + NumberFormat.Short(have) + ")";
-                        inputs.Add(input.amount + " " + input.id + " "
-                                   + (have >= input.amount ? held : "<color=" + OchreInkHex + ">" + held + "</color>"));
-                    }
-
-                    var inputsLine = "needs " + string.Join(", ", inputs);
-
-                    // The inputs already say what the camp holds of each; the
-                    // OUTPUT didn't, so the one number you want while deciding
-                    // whether to keep a batch running was the missing one.
-                    label.text = captured.output + "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">(have "
-                                 + NumberFormat.Short(_loop.State.GetResource(captured.output)) + ")</color></size>" + progress + need
-                                 + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + inputsLine + "</color></size>";
-                    // "Stop" alone read as a state ("it is stopped"), not an
-                    // action — the row's own status line is what reports state.
+                    // The count rides the plate rather than the row's words, so
+                    // the only thing on the row that moves four times a second
+                    // is the thing already being watched. It keeps its verb
+                    // though: "Stop" alone read as a state ("it is stopped")
+                    // rather than an action, and a plate reading only "49%" is a
+                    // readout — a readout is not something a thumb reaches for.
+                    // Three characters wide throughout, so climbing 7% → 43% →
+                    // 100% never moves the word in front of it. A halted order
+                    // drops the count entirely: it is standing at nothing, and
+                    // "0%" beside "halted" reads as a batch that has barely
+                    // begun rather than one that has stopped.
                     // "Craft instead" is the tap that costs you something: the
                     // station is full and this would displace an order, which
                     // the plain "Craft" gave no warning of. With the second
                     // queue's slot free, starting costs nothing to set aside —
                     // so it reads "Craft".
+                    var progress = crafting && !halted ? (float)_loop.CraftProgress(captured) : 0f;
                     var wouldDisplace = !crafting && _loop.CraftWouldDisplace(captured) != null;
-                    SetButtonLabel(toggle, crafting ? "Stop crafting" : wouldDisplace ? "Craft instead" : "Craft");
+                    SetButtonLabel(toggle, crafting
+                        ? halted ? "Stop crafting" : "Stop · " + Mathf.RoundToInt(progress * 100f).ToString().PadLeft(3) + "%"
+                        : wouldDisplace ? "Craft instead" : "Craft");
+                    // A halted plate empties rather than freezing part-filled: a
+                    // band stopped at 12% looks like a slow batch, and the row
+                    // has already said "halted" in alarm ink.
+                    SetButtonFill(fill, progress);
                     // Stopping is always allowed; starting needs the gates AND
                     // a batch of inputs in camp stock.
                     var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));
@@ -643,6 +633,129 @@ namespace Wildgrove.Game
                     SetButtonTint(toggle, ok);
                 });
             }
+        }
+
+        /// <summary>
+        /// One chip per input, and the tap that reads the whole bundle aloud.
+        /// The chips carry what a batch COSTS and nothing else — what the camp
+        /// holds is on the note line, one tap away, and in the row's own state
+        /// line the moment a shortfall is what's stopping the work. A number
+        /// that is only worth reading when it's short does not need to be on
+        /// the page while it isn't.
+        /// </summary>
+        private CostStripBinding BuildCostStrip(Transform row, RecipeData recipe)
+        {
+            var binding = new CostStripBinding { Recipe = recipe, Captions = new List<Text>() };
+            binding.Root = CostStrip(row, () => SetNote(CostReading(recipe)));
+            foreach (var input in recipe.inputs)
+            {
+                CostChip(binding.Root.transform, ArtLibrary.ForGood(input.id), GoodName(input.id), out var caption);
+                binding.Captions.Add(caption);
+            }
+
+            RefreshCostStrip(binding);
+            return binding;
+        }
+
+        /// <summary>
+        /// Repaint the chips: the numbers hold still, and their ink says whether
+        /// the stores cover them. Ochre is the journal's "this is what's
+        /// stopping you" everywhere else on the page, so a glance down a station
+        /// card finds the short recipe without reading a word of it.
+        /// </summary>
+        private void RefreshCostStrip(CostStripBinding binding)
+        {
+            var inputs = binding.Recipe.inputs;
+            for (var index = 0; index < binding.Captions.Count && index < inputs.Count; index++)
+            {
+                var input = inputs[index];
+                var covered = _loop.State.GetResource(input.id) >= input.amount;
+                var amount = PlainNumber(input.amount);
+                binding.Captions[index].text = covered
+                    ? amount
+                    : "<color=" + OchreInkHex + "><b>" + amount + "</b></color>";
+            }
+        }
+
+        /// <summary>The whole bundle said in words, for the note line the cost strip taps into.</summary>
+        private string CostReading(RecipeData recipe)
+        {
+            var parts = new List<string>();
+            foreach (var input in recipe.inputs)
+            {
+                parts.Add(PlainNumber(input.amount) + " " + GoodName(input.id)
+                          + " (" + NumberFormat.Short(_loop.State.GetResource(input.id)) + " in the stores)");
+            }
+
+            return "a batch of " + GoodName(recipe.output) + " takes " + string.Join(", ", parts) + ".";
+        }
+
+        /// <summary>
+        /// What the recipe is doing, in ONE line that is always present. Only
+        /// the most pressing thing is said: a station can be short of two goods
+        /// and under-levelled at once, and a row that listed all of it would be
+        /// back to wrapping. The chips already mark every shortfall — this line
+        /// is for the one the player would act on, and for the gates no chip can
+        /// show.
+        /// </summary>
+        private string CraftStateLine(RecipeData recipe, bool crafting, bool halted)
+        {
+            if (halted)
+            {
+                // A band frozen part-way looked identical to a slow one. Say it
+                // plainly, and name the good that stopped it.
+                var missing = _loop.MissingCraftInput(recipe);
+                return "<color=" + AlarmHex + "><b>halted</b>"
+                       + (missing != null ? ", out of " + GoodName(missing) : string.Empty) + "</color>";
+            }
+
+            if (crafting)
+            {
+                return "<color=" + MossDeepHex + ">working</color>";
+            }
+
+            if (!_loop.IsRecipeLevelMet(recipe))
+            {
+                return "<color=" + OchreInkHex + "><b>needs " + recipe.skill + " " + recipe.skillLevel + "</b></color>";
+            }
+
+            if (!Crafting.StationLevelMet(_loop.State, _loop.Data, recipe))
+            {
+                // The one gate no chip can explain — a cold station looks ready
+                // when every input is in stock.
+                return "<color=" + OchreInkHex + "><b>needs the "
+                       + CraftStationName(recipe.station).ToLowerInvariant()
+                       + " at level " + recipe.stationLevel + "</b></color>";
+            }
+
+            foreach (var input in recipe.inputs)
+            {
+                var have = _loop.State.GetResource(input.id);
+                if (have < input.amount)
+                {
+                    return "<color=" + OchreInkHex + ">short of " + GoodName(input.id) + ", "
+                           + NumberFormat.Short(have) + " of " + PlainNumber(input.amount) + " in the stores</color>";
+                }
+            }
+
+            // Why the plate below says "Craft instead" rather than "Craft" —
+            // the warning is on the button, the reason for it is here.
+            var displaced = _loop.CraftWouldDisplace(recipe);
+            if (displaced != null)
+            {
+                return "the " + CraftStationName(recipe.station).ToLowerInvariant()
+                       + " is working the " + GoodName(displaced.output);
+            }
+
+            return "ready";
+        }
+
+        /// <summary>A recipe's cost chips and the recipe they were built for, so the live pass can repaint them.</summary>
+        private sealed class CostStripBinding
+        {
+            internal RecipeData Recipe;
+            internal GameObject Root;
+            internal List<Text> Captions;
         }
 
         private void BuildBuildingsCard()

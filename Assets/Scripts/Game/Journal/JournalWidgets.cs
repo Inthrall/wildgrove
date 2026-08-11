@@ -132,6 +132,18 @@ namespace Wildgrove.Game
 
         internal static GameObject Row(RectTransform parent)
         {
+            return Row(parent, RowFloor);
+        }
+
+        /// <summary>
+        /// A row that opens at a height of its own rather than the shared floor —
+        /// for rows built from fixed furniture (a plate, a cost strip, a button)
+        /// whose tallest piece is known at build time. Handed the height it will
+        /// hold anyway, the row never has to grow into it while the player is
+        /// reading, which is what growing looks like from the outside: a lurch.
+        /// </summary>
+        internal static GameObject Row(RectTransform parent, float floorHeight)
+        {
             var go = MakeRect("Row", parent).gameObject;
             var layout = go.AddComponent<HorizontalLayoutGroup>();
             layout.childControlWidth = true;
@@ -142,13 +154,32 @@ namespace Wildgrove.Game
             layout.padding = new RectOffset(0, 0, 6, 6);
             layout.spacing = 8;
             var fitter = go.AddComponent<LayoutElement>();
-            fitter.minHeight = RowFloor;
+            fitter.minHeight = floorHeight;
             // Grow-only, so a label that rewrites itself four times a second
             // can't drag every card below it up and down the page. The
             // LayoutElement above stays as the fallback if this goes unwired.
             var settled = go.AddComponent<HeightSettledElement>();
             settled.source = layout;
-            settled.floorHeight = RowFloor;
+            settled.floorHeight = floorHeight;
+            return go;
+        }
+
+        /// <summary>
+        /// A stack of lines inside a row — a name over the state it is in. The
+        /// pieces are separate <see cref="Text"/> objects rather than one label
+        /// with a newline in it so that a clause appearing or leaving changes
+        /// only its own line, never where the line above it wraps.
+        /// </summary>
+        internal static GameObject Column(Transform parent)
+        {
+            var go = MakeRect("Column", (RectTransform)parent).gameObject;
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.spacing = 2;
             return go;
         }
 
@@ -306,7 +337,7 @@ namespace Wildgrove.Game
         }
 
         /// <summary>One picture's worth of room — the plate when there is one, blank space when there isn't.</summary>
-        private static void PictureSlot(Transform parent, Sprite sprite, float glyph)
+        internal static void PictureSlot(Transform parent, Sprite sprite, float glyph)
         {
             if (sprite != null)
             {
@@ -345,6 +376,98 @@ namespace Wildgrove.Game
             }
 
             return marks;
+        }
+
+        // ── Cost strips ───────────────────────────────────────────────────
+
+        /// <summary>The room one cost chip holds, plate and number together.</summary>
+        internal const float CostChipGlyph = 44f;
+        private const float CostChipWidth = CostChipGlyph + 12f;
+
+        /// <summary>
+        /// A strip of what something SPENDS, in the Stores drawer's language:
+        /// plates with a number under each. Written out as prose ("needs 4
+        /// berries (have 1.81K), 2 nuts (have 33)") the same fact is the longest
+        /// thing on its row, it re-wraps every time a stock count gains a digit,
+        /// and it buries the one number being decided on — how many a batch
+        /// costs — inside a sentence. As plates it is read at a glance, and it
+        /// is the same width in every state.
+        /// <para>
+        /// Tapped as a whole rather than chip by chip: a single chip is 56 units
+        /// across, well under the 120 that makes a fingertip target, and it
+        /// would sit inches from the row's real button. The strip is the target,
+        /// and what it says is the caller's to write.
+        /// </para>
+        /// </summary>
+        internal static GameObject CostStrip(Transform parent, UnityEngine.Events.UnityAction onTap)
+        {
+            var go = MakeRect("Costs", (RectTransform)parent).gameObject;
+            var layout = go.AddComponent<HorizontalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 4;
+
+            if (onTap != null)
+            {
+                // Invisible paper: the strip has no plate of its own to look at
+                // — chips on card stock, not a panel — but a Button still needs
+                // a graphic to be hit.
+                var image = go.AddComponent<Image>();
+                image.color = Color.clear;
+                var button = go.AddComponent<Button>();
+                button.targetGraphic = image;
+                button.transition = Selectable.Transition.None;
+                button.onClick.AddListener(onTap);
+            }
+
+            return go;
+        }
+
+        /// <summary>
+        /// One material in a <see cref="CostStrip"/>: the plate, with what it
+        /// costs written under it. The caption is handed back rather than set,
+        /// because the number holds still while its INK reports whether the
+        /// stores can cover it — a chip that rewrote its number would be saying
+        /// two different things with one mark.
+        /// <para>
+        /// <paramref name="fallback"/> stands in where <see cref="ArtLibrary"/>
+        /// has no plate: the good's own name, in the picture's room, so the
+        /// strip keeps its width and the chip still says what it is.
+        /// </para>
+        /// </summary>
+        internal static GameObject CostChip(Transform parent, Sprite plate, string fallback, out Text caption)
+        {
+            var go = MakeRect("Cost", (RectTransform)parent).gameObject;
+            var layout = go.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 2;
+            var element = go.AddComponent<LayoutElement>();
+            element.minWidth = CostChipWidth;
+            element.preferredWidth = CostChipWidth;
+
+            if (plate != null)
+            {
+                IconImage(go.transform, plate, CostChipGlyph, Color.white);
+            }
+            else
+            {
+                var word = MakeText(go.transform, fallback, 11, TextAnchor.MiddleCenter, Ink2);
+                var wordElement = word.gameObject.AddComponent<LayoutElement>();
+                wordElement.minWidth = CostChipWidth;
+                wordElement.preferredWidth = CostChipWidth;
+                wordElement.minHeight = CostChipGlyph;
+                wordElement.preferredHeight = CostChipGlyph;
+            }
+
+            caption = MakeText(go.transform, string.Empty, 13, TextAnchor.MiddleCenter, Ink);
+            return go;
         }
 
         // ── Plate tiles ───────────────────────────────────────────────────
@@ -637,6 +760,54 @@ namespace Wildgrove.Game
             var navigation = selectable.navigation;
             navigation.mode = Navigation.Mode.None;
             selectable.navigation = navigation;
+        }
+
+        /// <summary>
+        /// Give a plate a band that fills as the work it started runs. The
+        /// progress belongs ON the control because the control is the one thing
+        /// on the row a player is already watching, and because a bar anywhere
+        /// else in the row is another piece of furniture whose appearing and
+        /// leaving moves the row. Behind the border and the label, never in
+        /// front — this is the plate colouring in, not a second thing drawn on
+        /// top of it. Drive it with <see cref="SetButtonFill"/>.
+        /// </summary>
+        internal static GameObject ButtonFill(Button button)
+        {
+            var go = MakePanel("Fill", (RectTransform)button.transform, MossFill);
+            go.GetComponent<Image>().raycastTarget = false;
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            // Inside the ruled edge, so the band never paints over the border
+            // that carries the plate's live/dead state.
+            rect.offsetMin = new Vector2(2f, 2f);
+            rect.offsetMax = new Vector2(0f, -2f);
+            go.transform.SetAsFirstSibling();
+            go.SetActive(false);
+            return go;
+        }
+
+        /// <summary>
+        /// Paint the band to a fraction of the plate, or take it off the plate
+        /// entirely at zero — an empty band still draws a two-unit seam down the
+        /// left edge, which on an idle button reads as a rendering fault.
+        /// </summary>
+        internal static void SetButtonFill(GameObject fill, float fraction)
+        {
+            if (fill == null)
+            {
+                return;
+            }
+
+            var showing = fraction > 0f;
+            if (fill.activeSelf != showing)
+            {
+                fill.SetActive(showing);
+            }
+
+            var rect = (RectTransform)fill.transform;
+            rect.anchorMax = new Vector2(Mathf.Clamp01(fraction), 1f);
         }
 
         internal static void SetButtonLabel(Button button, string text)
