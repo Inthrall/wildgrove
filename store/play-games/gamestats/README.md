@@ -33,10 +33,28 @@ Read that carefully, because this file used to say something firmer than the gui
 does. GA is dated to *this month* without a day, and the overview never promises a
 month for the **Play Console upload experience** at all.
 
+**Uploaded and accepted 2026-08-13.** All seven events and all seven stats sit in
+the console as **Draft — available to testers**, icons rendering in the stat list,
+which is the third place today where the console runs ahead of its own
+documentation: the guide dates draft-config testing to September 2026 and the
+console is offering it now. Two things follow, and they are the opposite of the
+obvious ones:
+
+- **Do not publish yet.** Draft is already testable by a test account, so
+  publishing buys nothing before launch and costs the cheap-iteration window: in
+  draft every row still has a `Delete`, and this config needed three corrections on
+  its first day. (Tester access is the PGS project's own testers list, not the
+  `Settings → License testing` list todo §3.2 tracks for purchases.)
+- **Publish is project-wide, so it couples this to the achievements.** Publishing
+  the three drifted achievement step counts (§2) would promote this stats draft to
+  production in the same act. If stats should stay in draft, the achievement visit
+  has to be a separate one — which is the reverse of batching them, and the reason
+  is recorded here because the console gives no hint of it.
+
 **Settled 2026-08-13: the screen is there, and it validates.** The question above
-was answered by walking into the console. The half that is still not ready before
-September is proving the draft config against a test account, which batches with
-the Sep 1 rewards-association visit.
+was answered by walking into the console. What September still owns, as far as
+anything published says, is **players** seeing stats on the Gamer profile; the
+tester half turned out not to be waiting for it at all.
 
 ## What the validator actually enforces — 2026-08-13, the expensive way
 

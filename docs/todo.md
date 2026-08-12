@@ -818,8 +818,13 @@ for:
     read as a duration format) and the `Min limit`/`Max limit` pair, which is
     required when `Is Competitive` is `true` and forbidden when it is `false`. All
     fixed, the ZIP is rebuilt, and the whole account with the reasoning is in
-    `store/play-games/gamestats/README.md`. **Next: re-upload and see what a clean
-    pass looks like.** The guide's own wording never did promise this: it still
+    `store/play-games/gamestats/README.md`. **Re-uploaded clean the same day: all
+    seven events and seven stats are in as Draft, available to testers.** Next is
+    a tester read, *not* a publish — draft is already testable, publishing before
+    launch buys nothing, and it would end the window in which a row can still be
+    deleted. **It would also drag the achievements along:** publish is project-wide,
+    so applying §2's drifted step counts promotes this stats draft to production
+    too, which is why those two console visits should stay separate. The guide's own wording never did promise this: it still
     calls the API "available for early feedback", dates GA to "starting August
     2026" with no day, and names no month at all for the upload experience, so the
     console is running ahead of its documentation. **September 2026** is the date
