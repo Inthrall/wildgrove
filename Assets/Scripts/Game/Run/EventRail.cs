@@ -144,8 +144,8 @@ namespace Wildgrove.Game
         /// price the Camp row's greyed-out Look was already paying.
         /// </para>
         /// <para>
-        /// What it counts while it stands is OUR week turning over, not the
-        /// cache arriving. "Due" is only this clock saying the week is up, and
+        /// What it counts while it stands is the warden's week turning over, not
+        /// the cache arriving. Being due is only our own week saying so, and
         /// whether Play has set anything out is known by looking
         /// (<see cref="Amber.WeeklyCacheDue"/> says as much itself) — so the
         /// countdown is the one number that is honest either way: how long is
@@ -186,7 +186,7 @@ namespace Wildgrove.Game
                 id = WeeklyCacheId,
                 kind = EventRailKind.WeeklyCache,
                 title = "the cache",
-                remainingSeconds = (Wheel.NextWeekStartMs(nowUnixMs, state.utcOffsetMinutes) - nowUnixMs) / 1000.0,
+                remainingSeconds = Amber.WeeklyCacheNextDueInMs(state, nowUnixMs) / 1000.0,
                 ready = true,
             });
         }

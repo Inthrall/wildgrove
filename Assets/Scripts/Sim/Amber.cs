@@ -13,9 +13,6 @@ namespace Wildgrove.Sim
     /// </summary>
     public static class Amber
     {
-        /// <summary>Milliseconds in the weekly-cache cooldown (design §11: one claim per week).</summary>
-        public const long WeeklyCacheCooldownMs = 7L * 24L * 60L * 60L * 1000L;
-
         /// <summary>
         /// Cooldown between rewarded Amber-drip claims — the throttle that does
         /// not depend on the ad-watch, so the drip still can't be tapped without
@@ -492,7 +489,20 @@ namespace Wildgrove.Sim
             return remaining > 0L ? remaining : 0L;
         }
 
-        /// <summary>Whether the weekly Amber cache is configured and its week has elapsed since the last one arrived — the card's "ready" reading, not a gate (see <see cref="ReceiveWeeklyCache"/>).</summary>
+        /// <summary>
+        /// Whether the weekly Amber cache is configured and none has been taken
+        /// in the week the run is standing in — the card's "ready" reading, not
+        /// a gate (see <see cref="ReceiveWeeklyCache"/>).
+        /// <para>
+        /// The week is the calendar's, not a seven-day cooldown counted off the
+        /// last claim (which is what this was until 2026-08-12). Two reasons,
+        /// and the second is the one that decided it: a cooldown has no anchor
+        /// at all before the first ever claim, so a countdown drawn from it had
+        /// nothing to say to a new run; and a claim taken late in the week used
+        /// to push the next one late as well, walking the cache slowly around
+        /// the calendar and away from whatever day Play sets its own out on.
+        /// </para>
+        /// </summary>
         public static bool WeeklyCacheDue(GameState state, GameDataAsset data, long nowUnixMs)
         {
             var amber = data?.economy?.amber;
@@ -501,21 +511,21 @@ namespace Wildgrove.Sim
                 return false;
             }
 
-            return state.weeklyCacheClaimedUnixMs <= 0L
-                || nowUnixMs - state.weeklyCacheClaimedUnixMs >= WeeklyCacheCooldownMs;
+            // An unstamped claim is 0, which is before every week the game will
+            // ever be played in — so a new run is due one, as it should be.
+            return state.weeklyCacheClaimedUnixMs < Wheel.WeekStartMs(nowUnixMs, state.utcOffsetMinutes);
         }
 
-        /// <summary>Milliseconds until the weekly Amber cache is next due, or 0 when it's due now — drives the amber card's countdown.</summary>
-        public static long WeeklyCacheCooldownRemainingMs(GameState state, GameDataAsset data, long nowUnixMs)
+        /// <summary>
+        /// Milliseconds until the next weekly cache is due: the warden's week
+        /// turning over. Never zero and never anchored on a claim, so the one
+        /// number serves both readings a surface can want of it — how long the
+        /// player has left to go and look for the cache this week, and how long
+        /// until the next one is set out.
+        /// </summary>
+        public static long WeeklyCacheNextDueInMs(GameState state, long nowUnixMs)
         {
-            var amber = data?.economy?.amber;
-            if (amber == null || amber.weeklyCacheAmber <= 0.0 || state.weeklyCacheClaimedUnixMs <= 0L)
-            {
-                return 0L;
-            }
-
-            var remaining = WeeklyCacheCooldownMs - (nowUnixMs - state.weeklyCacheClaimedUnixMs);
-            return remaining > 0L ? remaining : 0L;
+            return Wheel.NextWeekStartMs(nowUnixMs, state.utcOffsetMinutes) - nowUnixMs;
         }
 
         /// <summary>

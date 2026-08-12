@@ -357,15 +357,16 @@ namespace Wildgrove.Game
         public double TimeSkipRewardCooldownRemaining => Amber.RewardedTimeSkipCooldownRemainingMs(State, NowUnixMs()) / 1000.0;
 
         /// <summary>
-        /// Whether a week has turned since the last Amber cache arrived — the
-        /// card's "due" reading only. The cache is not a tap the game can grant
-        /// itself: it is a Play Games Reward, set out by Play and received
-        /// through <see cref="CheckPlayRewards"/> or on launch (design §11).
+        /// Whether no Amber cache has been taken in the week the run is standing
+        /// in — the card's "due" reading only. The cache is not a tap the game
+        /// can grant itself: it is a Play Games Reward, set out by Play and
+        /// received through <see cref="CheckPlayRewards"/> or on launch
+        /// (design §11).
         /// </summary>
         public bool WeeklyCacheDue => Amber.WeeklyCacheDue(State, Data, NowUnixMs());
 
-        /// <summary>Seconds until the weekly Amber cache is next due, or 0 when it's due now — the amber card counts down from this.</summary>
-        public double WeeklyCacheCooldownRemaining => Amber.WeeklyCacheCooldownRemainingMs(State, Data, NowUnixMs()) / 1000.0;
+        /// <summary>Seconds until the warden's week turns over and the next Amber cache is due — every surface that counts the cache counts this.</summary>
+        public double WeeklyCacheNextDueIn => Amber.WeeklyCacheNextDueInMs(State, NowUnixMs()) / 1000.0;
 
         /// <summary>
         /// Buy a consumable Amber pack (design §10) and credit its pile on success.

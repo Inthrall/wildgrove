@@ -226,6 +226,8 @@ namespace Wildgrove.Game.Tests
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
             var state = Fallow();
             var now = state.simNowUnixMs;
+            // Yesterday — the Saturday of the same Monday-to-Sunday week `now`
+            // stands in, so this is a cache already taken for THIS week.
             state.weeklyCacheClaimedUnixMs = now - DayMs;
 
             EventRail.Collect(state, _data, now, true, _entries);

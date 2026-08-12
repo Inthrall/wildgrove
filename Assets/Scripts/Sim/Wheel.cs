@@ -354,25 +354,34 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Warden-local midnight opening the next Monday, as UTC unix ms — the
-        /// week the events rail counts the amber cache down to.
+        /// Warden-local midnight opening the Monday of the week a moment falls
+        /// in, as UTC unix ms — the amber cache's week (see <see cref="Amber"/>).
         /// <para>
         /// A plain week is no business of the Wheel's, but midnight is: the
         /// tides close at the warden's own, and a week turning over at UTC's
         /// instead would run somewhere between an hour and half a day out of
         /// step with every other clock in the journal.
         /// </para>
-        /// <para>
-        /// Always strictly ahead of <paramref name="nowUnixMs"/> — asked on a
-        /// Monday it answers with the one after, never with today.
-        /// </para>
         /// </summary>
-        public static long NextWeekStartMs(long nowUnixMs, int utcOffsetMinutes)
+        public static long WeekStartMs(long nowUnixMs, int utcOffsetMinutes)
         {
             var today = LocalEpochDay(nowUnixMs, utcOffsetMinutes);
             // 1970-01-01 fell on a Thursday, so the epoch's first Monday is day 4.
             var sinceMonday = ((today - 4) % 7 + 7) % 7;
-            return LocalDayStartMs(today - sinceMonday + 7, utcOffsetMinutes);
+            return LocalDayStartMs(today - sinceMonday, utcOffsetMinutes);
+        }
+
+        /// <summary>
+        /// Warden-local midnight opening the NEXT Monday. Always strictly ahead
+        /// of <paramref name="nowUnixMs"/> — asked on a Monday it answers with
+        /// the one after, never with today, so a countdown drawn from it never
+        /// reads zero.
+        /// </summary>
+        public static long NextWeekStartMs(long nowUnixMs, int utcOffsetMinutes)
+        {
+            // A whole week on from this week's own start, which is exact: the
+            // offset is one stamped value, so both midnights share it.
+            return WeekStartMs(nowUnixMs, utcOffsetMinutes) + 7L * DayMs;
         }
 
         /// <summary>

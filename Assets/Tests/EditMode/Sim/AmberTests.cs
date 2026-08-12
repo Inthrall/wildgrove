@@ -771,19 +771,25 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void WeeklyCacheCooldownRemaining_CountsDownAndReadsZeroWhenReady()
+        public void WeeklyCacheNextDue_CountsToTheWardensNextMonday_ClaimedOrNot()
         {
             var state = GameStateFactory.NewGame(_data);
+            // Epoch day 11574 is a Sunday and `now` stands 1h 46m 40s into it at
+            // offset 0, so the warden's week turns over 22h 13m 20s out.
             const long now = 1_000_000_000_000L;
+            const long tillMonday = 80_000_000L;
 
-            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now), Is.EqualTo(0L), "none yet — due now");
+            Assert.That(Amber.WeeklyCacheNextDueInMs(state, now), Is.EqualTo(tillMonday),
+                "never claimed, and it still answers: the week is a calendar fact, not a cooldown "
+                + "counted off a claim that may not have happened yet");
 
             Amber.ReceiveWeeklyCache(state, _data, now);
-            var oneDay = 24L * 60L * 60L * 1000L;
-            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now + oneDay),
-                Is.EqualTo(Amber.WeeklyCacheCooldownMs - oneDay), "six days left after one");
-            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, now + Amber.WeeklyCacheCooldownMs), Is.EqualTo(0L),
-                "the week has turned");
+            Assert.That(Amber.WeeklyCacheNextDueInMs(state, now), Is.EqualTo(tillMonday),
+                "and taking one does not move it — that is the whole point of a calendar week");
+            Assert.That(Amber.WeeklyCacheNextDueInMs(state, now + tillMonday),
+                Is.EqualTo(7L * 24L * 60L * 60L * 1000L),
+                "the moment it turns, the next is a whole week out — never zero, so no surface "
+                + "ever draws an empty countdown");
         }
 
         [Test]
@@ -795,7 +801,9 @@ namespace Wildgrove.Sim.Tests
             state.weeklyCacheClaimedUnixMs = 1L;
 
             Assert.That(Amber.AdDripCooldownRemainingMs(state, _data, 1_000_000_000_000L), Is.EqualTo(0L));
-            Assert.That(Amber.WeeklyCacheCooldownRemainingMs(state, _data, 1_000_000_000_000L), Is.EqualTo(0L));
+            // The cache's week has nothing left to configure, so its inertness is
+            // caught where it still counts: nothing is ever due.
+            Assert.That(Amber.WeeklyCacheDue(state, _data, 1_000_000_000_000L), Is.False);
         }
 
         [Test]
@@ -826,26 +834,34 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void WeeklyCache_ReadsNotDueBeforeAWeekElapses()
+        public void WeeklyCache_ReadsNotDueForTheRestOfTheWeekItWasTakenIn()
         {
             var state = GameStateFactory.NewGame(_data);
+            // A Sunday (see WeeklyCacheNextDue_...), so this claim is the last of
+            // its week and every hour left in it must still read "taken".
             const long now = 1_000_000_000_000L;
             Amber.ReceiveWeeklyCache(state, _data, now);
 
-            var sixDays = now + (6L * 24L * 60L * 60L * 1000L);
-            Assert.That(Amber.WeeklyCacheDue(state, _data, sixDays), Is.False, "the week has not turned");
+            var tillMonday = Amber.WeeklyCacheNextDueInMs(state, now);
+            Assert.That(Amber.WeeklyCacheDue(state, _data, now + tillMonday - 1L), Is.False,
+                "the last millisecond of the week it was taken in");
         }
 
         [Test]
-        public void WeeklyCache_ComesDueAgainAfterAWeek()
+        public void WeeklyCache_ComesDueAgainWhenTheWeekTurns_NotAWeekAfterTheClaim()
         {
             var state = GameStateFactory.NewGame(_data);
             const long now = 1_000_000_000_000L;
             Amber.ReceiveWeeklyCache(state, _data, now);
 
-            var aWeekOn = now + Amber.WeeklyCacheCooldownMs;
-            Assert.That(Amber.WeeklyCacheDue(state, _data, aWeekOn), Is.True, "the cache comes due a week later");
-            Assert.That(Amber.ReceiveWeeklyCache(state, _data, aWeekOn), Is.EqualTo(20.0).Within(Tolerance));
+            // Taken late on a Sunday, so the next is hours away, not seven days.
+            // A cooldown counted off the claim would have said Sunday again, and
+            // the week after that a little later still.
+            var monday = now + Amber.WeeklyCacheNextDueInMs(state, now);
+            Assert.That(monday - now, Is.LessThan(24L * 60L * 60L * 1000L),
+                "the calendar's Monday, not seven days off the stamp");
+            Assert.That(Amber.WeeklyCacheDue(state, _data, monday), Is.True, "the cache comes due when the week turns");
+            Assert.That(Amber.ReceiveWeeklyCache(state, _data, monday), Is.EqualTo(20.0).Within(Tolerance));
             Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance), "two weeks, two caches");
         }
 
@@ -859,12 +875,13 @@ namespace Wildgrove.Sim.Tests
             const long now = 1_000_000_000_000L;
             Amber.ReceiveWeeklyCache(state, _data, now);
 
-            var nextDay = now + (24L * 60L * 60L * 1000L);
-            Assert.That(Amber.WeeklyCacheDue(state, _data, nextDay), Is.False, "the page still says it isn't due");
-            Assert.That(Amber.ReceiveWeeklyCache(state, _data, nextDay), Is.EqualTo(20.0).Within(Tolerance),
+            // Later the same day, so still inside the week that was just claimed.
+            var sameEvening = now + (6L * 60L * 60L * 1000L);
+            Assert.That(Amber.WeeklyCacheDue(state, _data, sameEvening), Is.False, "the page still says it isn't due");
+            Assert.That(Amber.ReceiveWeeklyCache(state, _data, sameEvening), Is.EqualTo(20.0).Within(Tolerance),
                 "but a delivery is never turned away");
             Assert.That(state.amber, Is.EqualTo(40.0).Within(Tolerance));
-            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(nextDay), "and it re-stamps from the latest");
+            Assert.That(state.weeklyCacheClaimedUnixMs, Is.EqualTo(sameEvening), "and it re-stamps from the latest");
         }
 
         [Test]

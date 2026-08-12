@@ -291,20 +291,21 @@ namespace Wildgrove.Game
                 label.text = signedIn
                     ? text + (due
                         ? SizeOpen(15) + "<color=" + Ink2Hex + ">  set out by Play Games</color></size>"
-                        : WaitingTail(_loop.WeeklyCacheCooldownRemaining))
+                        : WaitingTail(_loop.WeeklyCacheNextDueIn))
                     : text + SizeOpen(15) + "<color=" + Ink2Hex + ">  Play Games isn't signed in</color></size>";
                 if (!checking)
                 {
                     SetButtonLabel(look, signedIn ? "Look" : "Sign in");
                 }
 
-                // Greys out once the week has turned back over, like the drip's
-                // Watch — a live button that only ever answers "nothing set out
-                // yet" teaches the player to stop reading the row. Signed out it
-                // stays live, because there it is the sign-in. Cost of greying:
-                // an off-cadence delivery (Play's week need not start where our
-                // stamp did) waits for the next launch's purchase fetch, which
-                // receives it unprompted — deferred, never lost.
+                // Greys out once this week's cache has been taken, like the
+                // drip's Watch — a live button that only ever answers "nothing
+                // set out yet" teaches the player to stop reading the row.
+                // Signed out it stays live, because there it is the sign-in.
+                // Cost of greying: an off-cadence delivery (Play's week need not
+                // start on the warden's Monday) waits for the next launch's
+                // purchase fetch, which receives it unprompted — deferred,
+                // never lost.
                 var live = !checking && (!signedIn || due);
                 look.interactable = live;
                 SetButtonTint(look, live);

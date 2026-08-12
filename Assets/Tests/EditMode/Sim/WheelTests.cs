@@ -190,6 +190,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void WeekStartMs_IsTheMondayTheMomentFallsIn()
+        {
+            // Epoch day 4 is 1970-01-05, the epoch's first Monday; day 10 is the
+            // Sunday that closes its week.
+            Assert.That(Wheel.WeekStartMs(4L * DayMs, 0), Is.EqualTo(4L * DayMs), "a Monday is its own week's start");
+            Assert.That(Wheel.WeekStartMs(10L * DayMs + 3600000L, 0), Is.EqualTo(4L * DayMs),
+                "and the Sunday six days later belongs to the same week — which is what makes a claim "
+                + "taken then read as taken, right up to midnight");
+            Assert.That(Wheel.WeekStartMs(11L * DayMs, 0), Is.EqualTo(11L * DayMs), "the next Monday starts the next");
+            Assert.That(Wheel.WeekStartMs(11L * DayMs - 1L, 780), Is.EqualTo(11L * DayMs - 780L * 60000L),
+                "the instant before UTC's Monday, a warden at UTC+13 is already half a day into it — "
+                + "the boundary moves with the offset, like every other midnight here");
+        }
+
+        [Test]
         public void NextWeekStartMs_IsTheWardensNextMonday_AndNeverToday()
         {
             // Epoch day 4 is 1970-01-05, the epoch's first Monday.

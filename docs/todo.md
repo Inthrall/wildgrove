@@ -368,17 +368,23 @@ lean is a regression, not a phase. Build order:
   right edge to clear it (`ReportWorldStrip`); that was **reverted 2026-08-12**
   because every plate centre is a fraction of that rect, so the inset moved all
   six over and shrank them to buy room the rail was already standing in.
-- **The cache is counted by two different weeks.** The rail's cell counts down
-  to the warden's next Monday and stands down entirely once the week is claimed
-  (2026-08-12, `Wheel.NextWeekStartMs` + `EventRail.CollectWeeklyCache`); the
-  Camp row and the cache sheet still count the journal's own rolling week from
-  the last cache that arrived (`Amber.WeeklyCacheCooldownRemainingMs`, and the
-  sheet explains it in as many words). The two numbers never appear together —
-  the sheet's rolling line only draws in the state the rail cell is now hidden
-  in — but they are two weeks in one game, and the next pass over the Camp card
-  should pick one. The calendar week is the honest choice if Play's own reset is
-  calendar-based; that is unconfirmed, and worth checking while §3.2's Play
-  Console visits are open.
+- ~~**The cache's week is the calendar's now, not a rolling cooldown**~~
+  ✅ RESOLVED 2026-08-12 — the weekly cache was counted off the last claim, which
+  had two faults: before the first ever claim there was no anchor at all, so a
+  countdown had nothing to say to a new run; and a cache taken late in the week
+  pushed the next one later still, walking it around the calendar and away from
+  whatever day Play sets its own out on. `Wheel.WeekStartMs` /
+  `NextWeekStartMs` give the warden-local Monday (the midnight the tides already
+  close on), `Amber.WeeklyCacheDue` asks whether one has been taken inside this
+  week, and `Amber.WeeklyCacheNextDueInMs` is the single countdown every surface
+  reads — the rail cell, the Camp row's "ready in", and the sheet. No save
+  change: the claim stamp is the same field, read against a different week.
+  Landed with the rail cell's own turn — it counts the week out where it used to
+  say "look", and stands down entirely once the week's cache is taken. **Still
+  owed: whether Play's own weekly reset is calendar-based, and on which day.**
+  Ours is Monday on the guess that it is; worth confirming while §3.2's Play
+  Console visits are open, because a mismatch is what puts an off-cadence
+  delivery a day early or late against the row's own reading.
 - **The rail wants a third inhabitant before it can be judged.** Two cells (the
   Wheel and the weekly cache) is enough to prove it is a list rather than a
   Wheel widget, and not enough to know whether the seat count, the urgency
