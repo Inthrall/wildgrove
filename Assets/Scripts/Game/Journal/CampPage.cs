@@ -622,15 +622,30 @@ namespace Wildgrove.Game
                     SetButtonLabel(toggle, crafting
                         ? halted ? "Stop crafting" : "Stop · " + Mathf.RoundToInt(progress * 100f).ToString().PadLeft(3) + "%"
                         : wouldDisplace ? "Craft instead" : "Craft");
-                    // A halted plate empties rather than freezing part-filled: a
-                    // band stopped at 12% looks like a slow batch, and the row
-                    // has already said "halted" in alarm ink.
-                    SetButtonFill(fill, progress);
                     // Stopping is always allowed; starting needs the gates AND
                     // a batch of inputs in camp stock.
                     var ok = crafting || (_loop.IsRecipeWorkable(captured) && _loop.CanCraft(captured));
                     toggle.interactable = ok;
                     SetButtonTint(toggle, ok);
+                });
+
+                // The band alone walks per frame, like the trail's carrier dot.
+                // The sim advances it every frame, so painting it on the page's
+                // quarter-second cadence stepped it four times a second — a
+                // stutter on the one thing whose whole job is to look like time
+                // passing. Nothing else on the row moves with it: the words and
+                // the plate's own count stay on the cadence, where they cost a
+                // string a quarter-second rather than a string a frame.
+                // A halted plate empties rather than freezing part-filled: a
+                // band stopped at 12% looks like a slow batch, and the row has
+                // already said "halted" in alarm ink.
+                _frameUpdaters.Add(() =>
+                {
+                    // Reading the fraction costs a batch-time lookup, so an idle
+                    // row is turned away on the cheap test first — every row on
+                    // the card runs this, and at most a couple are working.
+                    var running = _loop.IsCrafting(captured) && !_loop.IsCraftHalted(captured);
+                    SetButtonFill(fill, running ? (float)_loop.CraftProgress(captured) : 0f);
                 });
             }
         }
@@ -723,7 +738,9 @@ namespace Wildgrove.Game
             {
                 // The one gate no chip can explain — a cold station looks ready
                 // when every input is in stock.
-                return "<color=" + OchreInkHex + "><b>needs the "
+                // No article of our own: the building line's display name
+                // carries one ("The Fire"), and adding a second read "the the".
+                return "<color=" + OchreInkHex + "><b>needs "
                        + CraftStationName(recipe.station).ToLowerInvariant()
                        + " at level " + recipe.stationLevel + "</b></color>";
             }
@@ -733,8 +750,12 @@ namespace Wildgrove.Game
                 var have = _loop.State.GetResource(input.id);
                 if (have < input.amount)
                 {
-                    return "<color=" + OchreInkHex + ">short of " + GoodName(input.id) + ", "
-                           + NumberFormat.Short(have) + " of " + PlainNumber(input.amount) + " in the stores</color>";
+                    // What a batch costs is already on the chip below, in ink
+                    // that has gone ochre — repeating it here said the same
+                    // number twice and pushed the one thing this line adds,
+                    // what the camp actually holds, to the end of a clause.
+                    return "<color=" + OchreInkHex + ">need more " + GoodName(input.id)
+                           + ", have " + NumberFormat.Short(have) + "</color>";
                 }
             }
 
@@ -743,8 +764,12 @@ namespace Wildgrove.Game
             var displaced = _loop.CraftWouldDisplace(recipe);
             if (displaced != null)
             {
-                return "the " + CraftStationName(recipe.station).ToLowerInvariant()
-                       + " is working the " + GoodName(displaced.output);
+                // Not "the fire is working the jam" — the card this row sits on
+                // is headed THE FIRE, and every recipe a row can displace is one
+                // of its own. Naming the station again was a word the reader had
+                // just read, and it doubled the article the display name already
+                // carries ("The Fire" → "the the fire").
+                return "busy with the " + GoodName(displaced.output);
             }
 
             return "ready";

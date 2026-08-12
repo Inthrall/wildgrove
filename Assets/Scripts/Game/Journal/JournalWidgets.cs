@@ -806,8 +806,16 @@ namespace Wildgrove.Game
                 fill.SetActive(showing);
             }
 
+            // Driven per frame, and a band that isn't moving is the common case
+            // — every idle row on a card runs through here. Writing the same
+            // anchor back still dirties the layout, so an unchanged one is left
+            // alone rather than re-laid out sixty times a second.
             var rect = (RectTransform)fill.transform;
-            rect.anchorMax = new Vector2(Mathf.Clamp01(fraction), 1f);
+            var edge = Mathf.Clamp01(fraction);
+            if (!Mathf.Approximately(rect.anchorMax.x, edge))
+            {
+                rect.anchorMax = new Vector2(edge, 1f);
+            }
         }
 
         internal static void SetButtonLabel(Button button, string text)
