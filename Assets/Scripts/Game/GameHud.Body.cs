@@ -77,7 +77,10 @@ namespace Wildgrove.Game
         {
             // A structure change mid-read shouldn't snap the reader back to
             // the top of the page — keep the scroll unless the tab changed.
-            var keepPosition = _builtTab == _tab && _scroll != null ? _scroll.verticalNormalizedPosition : 1f;
+            // In the page's own units rather than as a fraction of it: see
+            // JournalNav.KeptPosition for why the fraction was the page
+            // sliding out from under the tap that changed it.
+            var keepOffset = _builtTab == _tab ? ScrolledOffset() : 0f;
             _builtTab = _tab;
             var landmark = _pendingScroll;
             _pendingScroll = null;
@@ -135,7 +138,45 @@ namespace Wildgrove.Game
             // The page has drawn its headings, so the fold has found its
             // landmark (or the zone is gone) — the id has done its job.
             PendingZoneFold = null;
-            StartCoroutine(SettleScroll(keepPosition, landmark));
+            // The page's words before its measure. A great many labels are
+            // built EMPTY and take their text from the live pass — every
+            // building line and every rung of the ladder is two or three
+            // unwritten lines at this point — so a page measured before that
+            // pass has run is missing most of its height. The settle below
+            // would pin the scroll against a page far shorter than the one
+            // about to be drawn, and the words arriving would shove it
+            // somewhere else a frame later: the lurch this used to give.
+            RunLiveUpdaters();
+            StartCoroutine(SettleScroll(keepOffset, landmark));
+        }
+
+        /// <summary>Repaint every live label and plate on the open page.</summary>
+        private void RunLiveUpdaters()
+        {
+            for (var i = 0; i < _liveUpdaters.Count; i++)
+            {
+                _liveUpdaters[i]();
+            }
+        }
+
+        /// <summary>
+        /// How far down the page the window's top edge sits, in the page's own
+        /// units — what <see cref="JournalNav.KeptPosition"/> puts back.
+        /// </summary>
+        private float ScrolledOffset()
+        {
+            if (_scroll == null || _body == null)
+            {
+                return 0f;
+            }
+
+            var range = _body.rect.height - _scroll.viewport.rect.height;
+            if (range <= 0f)
+            {
+                return 0f;
+            }
+
+            return (1f - Mathf.Clamp01(_scroll.verticalNormalizedPosition)) * range;
         }
 
         /// <summary>Build one page into whichever column is currently open.</summary>
@@ -180,10 +221,7 @@ namespace Wildgrove.Game
             PendingZoneFold = zoneId;
             _zoneFoldOffset = HeadingViewportOffset(heading);
             _pendingScroll = ZoneLandmark;
-            // Answer the tap on the next frame, not at the next cadence tick —
-            // a quarter second between press and movement reads as a stutter.
-            _refreshCountdown = 0f;
-            _dirty = true;
+            Dirty = true;
         }
 
         /// <summary>Distance from the viewport's top edge down to <paramref name="heading"/>'s top edge — where the fold's settle puts it back.</summary>
@@ -217,7 +255,7 @@ namespace Wildgrove.Game
             if (!_dirty)
             {
                 // Already on the Trail with no rebuild coming — jump now.
-                StartCoroutine(SettleScroll(_scroll.verticalNormalizedPosition, _pendingScroll));
+                StartCoroutine(SettleScroll(ScrolledOffset(), _pendingScroll));
                 _pendingScroll = null;
             }
         }
@@ -246,13 +284,13 @@ namespace Wildgrove.Game
             }
         }
 
-        private System.Collections.IEnumerator SettleScroll(float normalized, string landmark)
+        private System.Collections.IEnumerator SettleScroll(float offsetFromTop, string landmark)
         {
             // Once now — the rebuild switches its stale children off before
             // Destroy, so the fresh page's height is already real and the
             // scroll can land before this frame ever draws...
             Canvas.ForceUpdateCanvases();
-            ApplyScroll(normalized, landmark);
+            ApplyScroll(offsetFromTop, landmark);
 
             // ...and once a frame later, for anything the first layout pass
             // settled late.
@@ -263,14 +301,14 @@ namespace Wildgrove.Game
             }
 
             Canvas.ForceUpdateCanvases();
-            ApplyScroll(normalized, landmark);
+            ApplyScroll(offsetFromTop, landmark);
 
             // The fresh page has its real height now, so the mark can go back
             // where it was — and RevealFocused can measure honestly.
             RestoreFocus();
         }
 
-        private void ApplyScroll(float normalized, string landmark)
+        private void ApplyScroll(float offsetFromTop, string landmark)
         {
             if (_scroll == null || _body == null)
             {
@@ -286,7 +324,8 @@ namespace Wildgrove.Game
             }
             else
             {
-                _scroll.verticalNormalizedPosition = Mathf.Clamp01(normalized);
+                _scroll.verticalNormalizedPosition = JournalNav.KeptPosition(
+                    offsetFromTop, _body.rect.height - _scroll.viewport.rect.height);
             }
         }
 

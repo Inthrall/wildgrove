@@ -387,7 +387,7 @@ namespace Wildgrove.Game
             {
                 // The page count changed under the reader — rebuild both columns.
                 _builtTab = null;
-                _dirty = true;
+                Dirty = true;
             }
         }
 

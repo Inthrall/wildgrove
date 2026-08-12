@@ -189,7 +189,24 @@ namespace Wildgrove.Game
         // through these; see JournalSection.
 
         internal GameLoop Loop => _loop;
-        internal bool Dirty { get => _dirty; set => _dirty = value; }
+        /// <summary>
+        /// A rebuild is owed. Setting it answers on the next frame rather than
+        /// at the next cadence tick: a quarter second between the press and the
+        /// page changing under it reads as the page moving of its own accord,
+        /// not as an answer to the tap.
+        /// </summary>
+        internal bool Dirty
+        {
+            get => _dirty;
+            set
+            {
+                _dirty = value;
+                if (value)
+                {
+                    _refreshCountdown = 0f;
+                }
+            }
+        }
         internal RectTransform Body => _pageColumn != null ? _pageColumn : _body;
         internal Transform ModalLayer => _modalLayer;
         internal GameObject Sheet { get => _sheet; set => _sheet = value; }
@@ -448,12 +465,14 @@ namespace Wildgrove.Game
                 {
                     _dirty = false;
                     _structureSignature = signature;
+                    // Runs the live pass itself, before it measures the fresh
+                    // page — a page is as tall as its words, and most of them
+                    // are written by that pass.
                     RebuildBody();
                 }
-
-                for (var i = 0; i < _liveUpdaters.Count; i++)
+                else
                 {
-                    _liveUpdaters[i]();
+                    RunLiveUpdaters();
                 }
             }
         }
@@ -494,7 +513,7 @@ namespace Wildgrove.Game
             }
 
             _tab = tab;
-            _dirty = true;
+            Dirty = true;
             foreach (var id in Tabs)
             {
                 StyleTab(id, id == _tab);

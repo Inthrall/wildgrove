@@ -61,6 +61,33 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void KeptPosition_HoldsTheSamePlaceWhenThePageGrows()
+        {
+            // Reading 300 down a page, and the rebuilt page is 200 taller. The
+            // fraction that was 300 down the old page is 375 down the new one —
+            // keeping the place means keeping the 300.
+            Assert.That(JournalNav.KeptPosition(300f, 800f), Is.EqualTo(1f - (300f / 800f)).Within(1e-4f),
+                "the same row of the page, not the same fraction of it");
+        }
+
+        [Test]
+        public void KeptPosition_ClampsAtBothEnds()
+        {
+            Assert.That(JournalNav.KeptPosition(0f, 600f), Is.EqualTo(1f), "the top of the page stays the top");
+            Assert.That(JournalNav.KeptPosition(900f, 600f), Is.EqualTo(0f),
+                "a page that lost more than was below the reader lands on its last line, not past it");
+        }
+
+        [Test]
+        public void KeptPosition_AShortPageCannotScroll()
+        {
+            // The rebuilt page fits the window — there is nowhere to be but the
+            // top, and asking must not divide by a zero range.
+            Assert.That(JournalNav.KeptPosition(300f, 0f), Is.EqualTo(1f));
+            Assert.That(JournalNav.KeptPosition(300f, -50f), Is.EqualTo(1f));
+        }
+
+        [Test]
         public void RevealPosition_LeavesAVisibleControlAlone()
         {
             // A 1000-tall page in a 400-tall window, scrolled to the top: a

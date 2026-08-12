@@ -82,6 +82,32 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The scroll position that keeps the reader's place across a rebuild.
+        /// <para>
+        /// The fresh page is rarely the height the old one was — a rung leaves
+        /// the ladder, a station card arrives, a line gains a clause. Keeping
+        /// the <em>normalised</em> position keeps the same fraction of a
+        /// different page, which is a different place: the page slides under
+        /// the finger that has just tapped it. So the distance scrolled is
+        /// kept in the page's own pixels and converted back against the new
+        /// height, and only a change ABOVE the reader moves anything.
+        /// </para>
+        /// </summary>
+        /// <param name="offsetFromTop">How far down the page the window's top edge sat, in the page's own units.</param>
+        /// <param name="range">The new page's height less the window's — how far there is to scroll at all.</param>
+        public static float KeptPosition(float offsetFromTop, float range)
+        {
+            if (range <= 0f)
+            {
+                // The whole page fits the window, so the top is the only place
+                // it can be — and dividing by the range would be a divide by zero.
+                return 1f;
+            }
+
+            return 1f - Mathf.Clamp01(offsetFromTop / range);
+        }
+
+        /// <summary>
         /// The scroll position that brings a control into view, or the current
         /// position when it is already visible. Scrolls the shortest distance
         /// that works — a focused control one row below the fold should bring
