@@ -74,18 +74,18 @@ namespace Wildgrove.Sim.Tests
             Object.DestroyImmediate(_data);
         }
 
-        private GameState StateWithAWanderer()
+        private GameState StateWithAWatcher()
         {
             var state = GameStateFactory.NewGame(_data);
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation(GameStateFactory.StartingZoneId), 1);
             return state;
         }
 
         [Test]
         public void Digging_SurfacesAmber()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -95,7 +95,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void FullyDugGround_KeepsSurfacingAmber()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             state.insectSketches["stags-herald"] = 3; // nothing left to find
 
             Simulation.Advance(state, _data, 1.0);
@@ -117,7 +117,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Digging_RollsOnceForTheRound_NotOncePerSite()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             state.digSites.Add(new DigSiteState { zoneId = "silverrun-river" });
             state.digSites.Add(new DigSiteState { zoneId = "the-hollows" });
 
@@ -146,7 +146,7 @@ namespace Wildgrove.Sim.Tests
                 },
             };
 
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             SilenceTheSketchChannel(state);
             state.purchasedUpgradeIds.Add("brush-screens");
             Assert.That(Upgrades.DigSpeedMultiplier(state, _data), Is.EqualTo(2.0).Within(Tolerance),
@@ -163,7 +163,7 @@ namespace Wildgrove.Sim.Tests
         public void UnconfiguredAmber_BurnsNoRng()
         {
             _data.economy.amber = null;
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             state.insectSketches["stags-herald"] = 3; // the sketch channel is quiet too
             var rngBefore = state.rngState;
             state.roster.RemoveAll(f => f.stationId == state.nodes[0].id);
@@ -918,7 +918,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void Digging_BanksAmberForTelemetry()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
 
             Simulation.Advance(state, _data, 1.0);
 

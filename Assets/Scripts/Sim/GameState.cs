@@ -177,6 +177,9 @@ namespace Wildgrove.Sim
         /// <summary>Reusable scratch for the observation tick's eligible-insect walk — see Observation.Advance. Never saved.</summary>
         public List<Wildgrove.Data.InsectData> insectScratch;
 
+        /// <summary>Reusable scratch for the observation tick's per-site watcher counts, parallel to digSites — see Observation.Advance. Never saved.</summary>
+        public List<double> watcherScratch;
+
         /// <summary>Amber surfaced by observation sites but not yet reported to telemetry — GameLoop flushes it after each advance so an offline catch-up logs one aggregate find. Never saved.</summary>
         public double amberFoundUnlogged;
 
@@ -560,11 +563,11 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One zone's observation site (design §6: the wanderer passes it as it
-    /// roams, watching what lives there and recording it as field sketches).
-    /// Sketches land in GameState.insectSketches; the site itself only tracks
-    /// how long since the last sketch. Not a post — the watching comes from
-    /// the wander station (see <see cref="Stationing.WanderAgents"/>).
+    /// One zone's observation site (design §6: a body posted here watches what
+    /// lives there and records it as field sketches). Sketches land in
+    /// GameState.insectSketches; the site itself only tracks how long since the
+    /// last sketch. Its post is <see cref="Familiar.WatchStation"/> for this
+    /// zone (see <see cref="Stationing.WatchAgentsAt"/>).
     /// </summary>
     [Serializable]
     public sealed class DigSiteState

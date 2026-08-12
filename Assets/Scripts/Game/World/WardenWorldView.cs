@@ -24,9 +24,9 @@ namespace Wildgrove.Game.World
     /// what ran into its neighbour's caption before.
     /// </para>
     /// <para>
-    /// Camp only. A wandering warden holds the wander post, which is no single
-    /// node and so has no plate here either — but drawing them on an empty
-    /// ground would say they had no work, when roaming IS the work
+    /// Camp only. A watching warden holds an observation site's post, which is
+    /// no node and so has no plate here either — but drawing them on an empty
+    /// ground would say they had no work, when watching IS the work
     /// (decided 2026-08-06: one slot meaning one thing).
     /// </para>
     /// Placement is driven by <see cref="WorldView"/>; nothing here changes

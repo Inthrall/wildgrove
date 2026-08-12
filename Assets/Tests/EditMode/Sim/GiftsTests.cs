@@ -162,7 +162,7 @@ namespace Wildgrove.Sim.Tests
         public void CanLeavePile_WithNoSlotOpen_StillAllowsAnArrivalThatRests()
         {
             var state = GameStateFactory.NewGame(_data);
-            Roster.Recruit(state, _data, "meadow-vole", Familiar.WanderStation);
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.WatchStation("old-growth-wood"));
             AnswerFirstVerse(state);
             state.resources["nuts"] = 25;
             Assert.That(Kith.HasRoom(state, _data), Is.False, "the one slot is walked");

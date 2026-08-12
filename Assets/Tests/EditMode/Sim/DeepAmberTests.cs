@@ -71,18 +71,18 @@ namespace Wildgrove.Sim.Tests
             Object.DestroyImmediate(_data);
         }
 
-        private GameState StateWithAWanderer()
+        private GameState StateWithAWatcher()
         {
             var state = GameStateFactory.NewGame(_data);
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation(GameStateFactory.StartingZoneId), 1);
             return state;
         }
 
         [Test]
         public void Watching_SurfacesThePiecesInAuthoredOrder()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
 
             Simulation.Advance(state, _data, 1.0);
             Assert.That(DeepAmber.FoundCount(state), Is.EqualTo(1), "one certain find per step");
@@ -99,7 +99,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void CompletedSet_GrantsThePlateEffectsAtOnce()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
 
             Simulation.Advance(state, _data, 1.0);
             Assert.That(DeepAmber.IsComplete(state, _data), Is.False);
@@ -115,7 +115,7 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void CompleteSet_DrawsNoFurtherRng()
         {
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             Simulation.Advance(state, _data, 1.0);
             Simulation.Advance(state, _data, 1.0);
             Assert.That(DeepAmber.IsComplete(state, _data), Is.True);
@@ -145,7 +145,7 @@ namespace Wildgrove.Sim.Tests
         public void UnconfiguredWindow_IsInert()
         {
             _data.deepAmber = null;
-            var state = StateWithAWanderer();
+            var state = StateWithAWatcher();
             var rngBefore = state.rngState;
 
             DeepAmber.AdvanceSite(state, _data, GameStateFactory.StartingZoneId, 1.0, 1.0, 1.0);

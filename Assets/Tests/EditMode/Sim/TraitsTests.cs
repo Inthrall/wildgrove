@@ -94,7 +94,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(Traits.BubbleRewardBonus(state, _data),
                 Is.EqualTo(0.25).Within(Tolerance), "the raven fattens windfalls from any post");
-            Assert.That(Traits.DigSpeedFactor(At("tawny-owl", Familiar.WanderStation), _data),
+            Assert.That(Traits.DigSpeedFactor(At("tawny-owl", Familiar.WatchStation("old-growth-wood")), _data),
                 Is.EqualTo(1.4).Within(Tolerance));
         }
 

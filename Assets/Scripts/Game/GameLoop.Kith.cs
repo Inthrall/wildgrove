@@ -180,10 +180,10 @@ namespace Wildgrove.Game
             Warden.Post(State, node);
         }
 
-        /// <summary>Send the warden to the wander post — walking the watch, gathering nothing (design §2), evicting any familiar wandering there.</summary>
-        public void WanderWarden()
+        /// <summary>Stand the warden at a site's watch — watching that site, gathering nothing (design §2/§6), evicting any familiar keeping it.</summary>
+        public void WatchWarden(string zoneId)
         {
-            Warden.Wander(State);
+            Warden.Watch(State, zoneId);
         }
 
         /// <summary>Send the warden back to camp — no post, no picking.</summary>

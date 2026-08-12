@@ -67,15 +67,17 @@ namespace Wildgrove.Game
             state.foldedVersesSung = 10;
             state.sungVerseZones = new List<string>(Kith.SlotVerseZones(data));
             state.purchasedKithSlots = 2;
-            // Grounds and the watch, and nothing else: a dig-site post
-            // ("dig:{zone}") is retired — SaveCodec rests whoever carries one on
-            // load — so the owl staged at one photographed as a body idling at
-            // camp, on a page whose whole subject is a full drawer.
+            // Grounds and a site's watch, and nothing else: a post must be one
+            // the ladder above actually opened, or SaveCodec rests whoever
+            // carries it on load and the body photographs as idling at camp, on
+            // a page whose whole subject is a full drawer. The hare's watch is
+            // read off the staged sites rather than named, so a retuned ladder
+            // that opens a different site first cannot silently rest her.
             var staged = new[]
             {
                 ("sedge-linnet", NodeAt(state, 1)),
                 ("red-squirrel", NodeAt(state, 2)),
-                ("bramble-hare", Familiar.WanderStation),
+                ("bramble-hare", FirstWatch(state)),
                 ("tawny-owl", NodeAt(state, 3)),
             };
             for (var i = 0; i < staged.Length; i++)
@@ -135,6 +137,18 @@ namespace Wildgrove.Game
         private static string NodeAt(GameState state, int index)
         {
             return state.nodes.Count > index ? state.nodes[index].id : state.nodes[0].id;
+        }
+
+        /// <summary>
+        /// The watch at the first observation site the ladder opened, or the
+        /// first node when the staged map has no site at all (hand-built data) —
+        /// a photograph must never contain a body standing nowhere.
+        /// </summary>
+        private static string FirstWatch(GameState state)
+        {
+            return state.digSites.Count > 0
+                ? Familiar.WatchStation(state.digSites[0].zoneId)
+                : state.nodes[0].id;
         }
     }
 }

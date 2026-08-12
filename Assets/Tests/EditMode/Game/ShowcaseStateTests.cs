@@ -65,16 +65,30 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
-        public void Stage_PostsOnlyGroundsAndTheWatch()
+        public void Stage_PostsOnlyGroundsAndSitesTheLadderOpened()
         {
             var state = ShowcaseState.Stage(_data);
 
-            // A dig-site post is retired: SaveCodec rests whoever carries one
-            // on load, so staging it puts a body at camp in the photograph and
+            // Every staged post has to be one this run actually holds: SaveCodec
+            // rests a body whose station resolves to nothing, so a post the
+            // ladder never opened puts a companion at camp in the photograph and
             // says nothing about it.
-            Assert.That(state.roster.Any(familiar =>
-                    familiar.stationId != null && familiar.stationId.StartsWith(Familiar.DigStationPrefix)),
-                Is.False, "a station the save cannot carry is a companion resting in the listing shot");
+            foreach (var familiar in state.roster)
+            {
+                var watchZone = Familiar.WatchZoneOf(familiar.stationId);
+                if (watchZone != null)
+                {
+                    Assert.That(state.digSites.Any(site => site.zoneId == watchZone), Is.True,
+                        "a watch at a site this run never opened is a companion resting in the listing shot");
+                    continue;
+                }
+
+                Assert.That(familiar.IsResting || state.nodes.Any(node => node.id == familiar.stationId), Is.True,
+                    familiar.speciesId + " stands at " + familiar.stationId + ", which is no ground this run holds");
+            }
+
+            Assert.That(state.roster.Any(familiar => familiar.IsWatching), Is.True,
+                "and the watch itself is staged — an unwatched map is a photograph of unfinished work");
         }
 
         [Test]

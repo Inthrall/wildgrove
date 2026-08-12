@@ -5,8 +5,8 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Applies a species' single fixed trait (design §4) where its familiar is
     /// stationed. Kinds: nodeYieldBonus (a node of the trait's resource),
-    /// choiceBonus (points at its node), digSpeedBonus (watching the sites
-    /// while wandering), bubbleRewardBonus (windfall bubbles pay more while it
+    /// choiceBonus (points at its node), digSpeedBonus (watching the site it
+    /// keeps), bubbleRewardBonus (windfall bubbles pay more while it
     /// walks), wardenYieldBonus (the warden's own hands work faster while it
     /// walks). Resting familiars contribute nothing, and everything no-ops
     /// when species data is absent (fixtures).

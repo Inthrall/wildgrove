@@ -1245,14 +1245,13 @@ namespace Wildgrove.Game
             var occupantHere = Stationing.OccupantOf(state, stationId);
             var hasRoom = Kith.HasRoom(state, _loop.Data);
 
-            // The warden stands at a node, or now takes the wander post and
-            // roams (design §2) — but never the trail: the warden tends, the
-            // kith carries.
+            // The warden stands at a node, or takes a site's watch (design §2) —
+            // but never the trail: the warden tends, the kith carries.
             var node = FindNode(stationId);
-            var isWanderPost = stationId == Familiar.WanderStation;
-            var wardenCanStand = node != null || isWanderPost;
+            var watchZone = Familiar.WatchZoneOf(stationId);
+            var wardenCanStand = node != null || watchZone != null;
             var wardenHere = wardenCanStand
-                && (node != null ? Warden.PostNodeId(state) == node.id : Warden.IsWandering(state));
+                && (node != null ? Warden.PostNodeId(state) == node.id : Warden.PostNodeId(state) == stationId);
 
             // The post itself, drawn the way the rows below it are drawn: its
             // crop on the left, whoever holds it on the right, the words
@@ -1302,17 +1301,16 @@ namespace Wildgrove.Game
             {
                 // Moss verbs — these are the actions the sheet exists for;
                 // ochre made them read as warnings.
-                var wardenVerb = isWanderPost
-                    ? "Send " + _loop.WardenName() + " wandering"
+                var wardenVerb = watchZone != null
+                    ? "Set " + _loop.WardenName() + " watching here"
                     : "Walk " + _loop.WardenName() + " here";
                 // Drawn like the companion rows below it, because it is the same
                 // offer: the body's own plate leads, the ground they stand on
                 // now trails. It was the one candidate row with no pictures at
                 // all, which read as a different KIND of choice rather than the
                 // same choice about a different body. The whereabouts stay in
-                // words only where no crop can stand in for them — camp, the
-                // trail and the wander post have no plate (the companion rows'
-                // rule).
+                // words only where no plate can stand in for them — camp and the
+                // trail (the companion rows' rule).
                 var wardenGround = StationPlate(Warden.PostNodeId(state));
                 var whereTail = wardenGround != null
                     ? string.Empty
@@ -1321,10 +1319,10 @@ namespace Wildgrove.Game
                     "<color=" + MossDeepHex + ">" + wardenVerb + "</color>" + whereTail,
                     wardenGround, 740, 120f, () =>
                 {
-                    if (isWanderPost)
+                    if (watchZone != null)
                     {
-                        _loop.WanderWarden();
-                        SetNote(_loop.WardenName() + " sets off to wander the run.");
+                        _loop.WatchWarden(watchZone);
+                        SetNote(_loop.WardenName() + " settles in to watch " + ZoneName(watchZone) + ".");
                     }
                     else
                     {
@@ -1362,7 +1360,7 @@ namespace Wildgrove.Game
                 // The pony is never offered anywhere (§11): she walks her own
                 // lane and cannot be posted, so listing her would only be a row
                 // that refuses. This covers every post — nodes, the trail and
-                // the wander post all open this sheet.
+                // the watch posts all open this sheet.
                 if (!PostMatches(familiar.stationId, stationId) && !familiar.IsPony)
                 {
                     ordered.Add(familiar);
@@ -1393,8 +1391,8 @@ namespace Wildgrove.Game
                 // companion at camp trails nothing at all — an empty hand is
                 // the plainest way to say "resting". Species and station names
                 // only appear where there is no plate to show instead (the
-                // trail and the wander post have no crop, and unmapped art
-                // falls back to its word rather than vanishing).
+                // trail has no plate, and unmapped art falls back to its word
+                // rather than vanishing).
                 var portrait = ArtLibrary.ForSpecies(captured.speciesId);
                 var working = resting ? null : StationPlate(captured.stationId);
                 var speciesTail = portrait != null
@@ -1560,7 +1558,12 @@ namespace Wildgrove.Game
                 AddStationChoice(sheet, familiar, node.id);
             }
 
-            AddStationChoice(sheet, familiar, Familiar.WanderStation);
+            // One choice per open site: the watch is a place now, so "go and
+            // watch" is as many offers as there are places to watch from.
+            foreach (var site in _loop.State.digSites)
+            {
+                AddStationChoice(sheet, familiar, Familiar.WatchStation(site.zoneId));
+            }
         }
 
         /// <summary>
@@ -1643,8 +1646,8 @@ namespace Wildgrove.Game
             // post trails nothing — the plainest way to say "stands empty" —
             // and since only one of each species walks with you, the plate
             // names the individual it would replace. Words fill in only where
-            // no plate can: the trail and the wander post have no crop, and a
-            // species without art keeps its name.
+            // no plate can: the trail has none, and a species without art keeps
+            // its name.
             var where = StationPlate(stationId);
             var held = occupant != null ? ArtLibrary.ForSpecies(occupant.speciesId) : null;
             var replaces = occupant != null && held == null

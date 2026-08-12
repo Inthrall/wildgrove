@@ -58,22 +58,28 @@ namespace Wildgrove.Sim
             return !string.IsNullOrWhiteSpace(state?.wardenName);
         }
 
-        /// <summary>The warden's post — a node id, <see cref="Familiar.WanderStation"/>, or null while they stand at camp.</summary>
+        /// <summary>The warden's post — a node id, a watch post, or null while they stand at camp.</summary>
         public static string PostNodeId(GameState state)
         {
             return string.IsNullOrEmpty(state.wardenPostNodeId) ? null : state.wardenPostNodeId;
         }
 
-        /// <summary>Whether the warden stands at <paramref name="node"/> (never true while wandering — the wander post is no single node).</summary>
+        /// <summary>Whether the warden stands at <paramref name="node"/> (never true at a watch post — a site is not a node).</summary>
         public static bool IsPosted(GameState state, NodeState node)
         {
             return node != null && node.id == PostNodeId(state);
         }
 
-        /// <summary>Whether the warden roams the wander post (design §2: the warden may now take it, like any familiar).</summary>
-        public static bool IsWandering(GameState state)
+        /// <summary>Whether the warden keeps some site's watch (design §2: the warden may take one, like any familiar).</summary>
+        public static bool IsWatching(GameState state)
         {
-            return state.wardenPostNodeId == Familiar.WanderStation;
+            return Familiar.IsWatchStation(state.wardenPostNodeId);
+        }
+
+        /// <summary>Whether the warden keeps <paramref name="zoneId"/>'s watch in particular.</summary>
+        public static bool IsWatchingAt(GameState state, string zoneId)
+        {
+            return state.wardenPostNodeId == Familiar.WatchStation(zoneId);
         }
 
         /// <summary>
@@ -98,19 +104,21 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Send the warden to the wander post — walking the watch, gathering
-        /// nothing (design §2). One body per post: a familiar already wandering
-        /// steps back to camp (its slot frees), same as taking a node.
+        /// Stand the warden at <paramref name="zoneId"/>'s watch — watching that
+        /// one site, gathering nothing (design §2/§6). One body per post: a
+        /// familiar already keeping this watch steps back to camp (its slot
+        /// frees), same as taking a node.
         /// </summary>
-        public static void Wander(GameState state)
+        public static void Watch(GameState state, string zoneId)
         {
-            var occupant = Stationing.OccupantOf(state, Familiar.WanderStation);
+            var station = Familiar.WatchStation(zoneId);
+            var occupant = Stationing.OccupantOf(state, station);
             if (occupant != null)
             {
                 occupant.stationId = null;
             }
 
-            state.wardenPostNodeId = Familiar.WanderStation;
+            state.wardenPostNodeId = station;
             state.BumpModifiers();
         }
 
@@ -124,7 +132,7 @@ namespace Wildgrove.Sim
         /// <summary>
         /// The warden's own gather rate at <paramref name="node"/> before any
         /// burst boost — the full rate at their posted node, and zero anywhere
-        /// else: at camp, while wandering (the wander post is the watch and
+        /// else: at camp, while keeping a watch (a watch post is the watch and
         /// only the watch), or when unconfigured (pre-warden fixtures stay
         /// inert).
         /// </summary>

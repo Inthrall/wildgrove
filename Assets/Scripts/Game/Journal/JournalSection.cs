@@ -97,10 +97,11 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The plate for what a post yields — the resource of the node it is.
-        /// Null for camp (no station at all), the trail, the wander post and
-        /// dig stations: none of those stand over a crop, so there is no
-        /// picture to show and the caller falls back to naming them.
+        /// The plate for what a post yields — the resource of the node it is, or
+        /// the watch's own mark at an observation site (it stands over no crop,
+        /// but it is a place, and every picker draws a post as a picture).
+        /// Null for camp (no station at all) and the trail: neither is a place
+        /// with a face, so the caller falls back to naming them.
         /// <para>
         /// Shared rather than the sheets' own: the Warden page's roster tiles
         /// wear the ground each companion works, and a second lookup would be
@@ -110,6 +111,11 @@ namespace Wildgrove.Game
         /// </summary>
         protected Sprite StationPlate(string stationId)
         {
+            if (Familiar.IsWatchStation(stationId))
+            {
+                return ArtLibrary.ForSkill("observation");
+            }
+
             var node = FindNode(stationId);
             return node == null ? null : ArtLibrary.ForResource(node.resourceId);
         }

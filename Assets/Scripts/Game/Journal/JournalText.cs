@@ -193,9 +193,14 @@ namespace Wildgrove.Game
                 return "resting at camp";
             }
 
-            if (stationId == Familiar.WanderStation)
+            // A watch post is named by its place, not by the work: "the marsh
+            // watch" is where a body IS, which is the question every caller here
+            // is asking. "watching" alone was true of six sites at once and told
+            // the player nothing about which one they had just filled.
+            var watchZone = Familiar.WatchZoneOf(stationId);
+            if (watchZone != null)
             {
-                return "wandering";
+                return ZoneName(watchZone).ToLowerInvariant() + " watch";
             }
 
             if (stationId == Familiar.PonyStation)

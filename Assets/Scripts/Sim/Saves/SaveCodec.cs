@@ -20,7 +20,7 @@ namespace Wildgrove.Sim.Saves
     public static class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 52;
+        public const int CurrentVersion = 53;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused
@@ -304,7 +304,7 @@ namespace Wildgrove.Sim.Saves
                         speciesId = saved.speciesId,
                         xp = saved.xp,
                         kinshipXp = saved.kinshipXp,
-                        stationId = StationValid(state, saved.stationId) ? saved.stationId : null,
+                        stationId = RestoreStation(state, saved.stationId),
                         bonded = saved.bonded,
                         bondId = saved.bondId,
                         gifted = saved.gifted,
@@ -337,12 +337,11 @@ namespace Wildgrove.Sim.Saves
             // A post at a node the current data no longer builds (zone or
             // resource retuned) would strand the warden, matching no node at
             // all. Dangling post ids self-correct on restore like nodes do:
-            // cleared, so the warden stands at camp until re-posted. The wander
-            // post is always a valid warden post — it binds to no single node.
-            state.wardenPostNodeId = save.wardenPostNodeId == Familiar.WanderStation
-                                     || NodeExists(state, save.wardenPostNodeId)
-                ? save.wardenPostNodeId
-                : null;
+            // cleared, so the warden stands at camp until re-posted. A warden at
+            // a watch post follows the kith's rule exactly — the same mapping,
+            // so a wandering warden lands at the first site's watch rather than
+            // being sent home.
+            state.wardenPostNodeId = RestoreWardenPost(state, save.wardenPostNodeId);
             // A blank or whitespace name restores as no name at all rather than
             // as a warden called " " — the display falls back to "the warden",
             // which is the same thing an un-renamed run reads.
@@ -858,21 +857,80 @@ namespace Wildgrove.Sim.Saves
         }
 
         /// <summary>
+        /// The post a saved station id restores to: itself when it still
+        /// resolves under the current data, the first site's watch for the
+        /// retired roaming post, and null (resting at camp) for anything left —
+        /// so a familiar is never stranded as a silent no-op.
+        /// </summary>
+        private static string RestoreStation(GameState state, string stationId)
+        {
+            // The roaming watch retired in v53 (one post that watched every
+            // site) — its holder keeps working, at the first site's own watch.
+            // Which site cannot be guessed by TryMigrate: a migration must
+            // never reach for the current content data, and only the restored
+            // state knows which sites this build opens.
+            if (stationId == Familiar.LegacyWanderStation)
+            {
+                return FirstWatchStation(state);
+            }
+
+            return StationValid(state, stationId) ? stationId : null;
+        }
+
+        /// <summary>
+        /// The warden's post, restored: the kith's rule with one place taken off
+        /// it — the pony's lane is bijective with the pony (§11), so a save
+        /// naming it as the warden's post is a corruption, not a whereabouts.
+        /// </summary>
+        private static string RestoreWardenPost(GameState state, string stationId)
+        {
+            return stationId == Familiar.PonyStation ? null : RestoreStation(state, stationId);
+        }
+
+        /// <summary>
         /// Whether a saved familiar's station id still resolves under the
-        /// current data (else it's cleared to resting, so the familiar isn't
-        /// stranded as a silent no-op). A "dig:" station fails here by design:
-        /// the watch is not a post, so anyone still carrying one is rested.
+        /// current data (else it's cleared to resting). A watch post resolves
+        /// only while its site is one this build opens — a save from a wider
+        /// map must not leave a body watching a place that isn't there.
         /// </summary>
         private static bool StationValid(GameState state, string stationId)
         {
-            if (string.IsNullOrEmpty(stationId)
-                || stationId == Familiar.WanderStation
-                || stationId == Familiar.PonyStation)
+            if (string.IsNullOrEmpty(stationId) || stationId == Familiar.PonyStation)
             {
                 return true;
             }
 
+            if (Familiar.IsWatchStation(stationId))
+            {
+                return SiteExists(state, Familiar.WatchZoneOf(stationId));
+            }
+
             return NodeExists(state, stationId);
+        }
+
+        /// <summary>Whether this build's restored run holds an observation site at <paramref name="zoneId"/>.</summary>
+        private static bool SiteExists(GameState state, string zoneId)
+        {
+            foreach (var site in state.digSites)
+            {
+                if (site.zoneId == zoneId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// The watch post at the run's first open site (sites are synced in zone
+        /// order), or null while no site is open at all. Where the retired
+        /// roaming watch's holder is put down: the oldest site is the one every
+        /// save that had a wanderer is certain to have opened.
+        /// </summary>
+        private static string FirstWatchStation(GameState state)
+        {
+            return state.digSites.Count > 0 ? Familiar.WatchStation(state.digSites[0].zoneId) : null;
         }
 
         /// <summary>
@@ -1105,6 +1163,20 @@ namespace Wildgrove.Sim.Saves
 
                         save.grandfatheredKithSlots = earnedUnderTheOldLadder;
                         save.version = 52;
+                        break;
+
+                    case 52:
+                        // v53 made the watch a place: one watch post per
+                        // observation site ("dig:{zone}") in place of the single
+                        // roaming post that watched every site at once. The
+                        // station ids are left exactly as written — Restore is
+                        // where "wander" is put down at the first open site's
+                        // watch, because only the restored run knows which sites
+                        // this build opens and a migration must never reach for
+                        // the current content data. The rung exists so an older
+                        // build refuses a save this one wrote rather than
+                        // reading a watch post it would rest on sight.
+                        save.version = 53;
                         break;
 
                     default:

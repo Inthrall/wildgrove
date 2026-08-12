@@ -5,9 +5,10 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim
 {
     /// <summary>
-    /// The observation tick (design §6): the wanderer passes every zone's
-    /// observation site as it roams (the watch is not a post of its own),
-    /// watching what lives there and recording it — adding a field
+    /// The observation tick (design §6): a body posted to a zone's observation
+    /// site watches what lives THERE and records it (one watch post per site —
+    /// revised 2026-08-12, from a single roaming post that watched every site
+    /// at once) — adding a field
     /// sketch at watchers · baseSketchesPerHour · digSpeedMult · the site's
     /// summed unrecorded rarity; a pity timer guarantees a sketch once
     /// pityTimerHoursWatched hours pass without one. Which insect the sketch
@@ -19,7 +20,8 @@ namespace Wildgrove.Sim
     /// (design §10) is the exception: one flat roll per tick for the whole
     /// round, outside the site walk and untouched by digSpeedMult, because
     /// per-site × multiplicative-stack compounded into a login payout many
-    /// times the design lean. Watching also
+    /// times the design lean — so it is rolled off the round's watchers rather
+    /// than site by site. Watching also
     /// trains the observation craft (economy.observation.skill), which is the
     /// only thing that earns that skill's XP — it is a watched-hours trickle, not
     /// a per-sketch award, so it keeps paying at a fully-recorded site.
@@ -34,12 +36,27 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            // The wander post supplies the watching (design §2) — one roaming
-            // familiar covers every unlocked site, its dig-speed trait folded
-            // in via Stationing.WanderAgents. No wanderer, no sketches (and no
-            // rng drawn, so sequences match the idle-site behaviour).
-            var watchers = Stationing.WanderAgents(state, data);
-            if (watchers <= 0.0)
+            // Each site's own post supplies its watching (design §2/§6), its
+            // holder's dig-speed trait folded in via Stationing.WatchAgentsAt.
+            // Counted once for the whole round, into reused scratch: the amber
+            // roll below needs the round's total (one roll, not one per site),
+            // an unwatched map has to return before any rng is drawn so
+            // sequences match the idle-site behaviour, and each count costs a
+            // pass over the roster — asking again inside the walk would pay for
+            // the same question twice per site per 1 s substep, which an offline
+            // catch-up multiplies by tens of thousands.
+            state.watcherScratch = state.watcherScratch ?? new List<double>();
+            var siteWatchers = state.watcherScratch;
+            siteWatchers.Clear();
+            var roundWatchers = 0.0;
+            foreach (var site in state.digSites)
+            {
+                var watching = Stationing.WatchAgentsAt(state, data, site.zoneId);
+                siteWatchers.Add(watching);
+                roundWatchers += watching;
+            }
+
+            if (roundWatchers <= 0.0)
             {
                 return;
             }
@@ -57,13 +74,15 @@ namespace Wildgrove.Sim
             // channel's dig-speed stack deliberately does not touch it. Both
             // used to, and both compounded — six sites against a multiplicative
             // ×10 stack put one login's catch-up near 70 amber where the design
-            // lean is ~40 a week. Rolled before the sketch walk, so a
-            // fully-recorded map keeps surfacing it. No draw when unconfigured
-            // or before the first site opens: pre-amber rng sequences must not
+            // lean is ~40 a week. It scales with the round's WATCHERS, which is
+            // a real cost (every watch post spends one of the kith's slots) and
+            // not with how much ground stands open, which was the leak. Rolled
+            // before the sketch walk, so a fully-recorded map keeps surfacing
+            // it. No draw when unconfigured: pre-amber rng sequences must not
             // shift.
             var amber = data.economy.amber;
-            if (amber != null && amber.digFindsPerHour > 0.0 && state.digSites.Count > 0
-                && Rng.NextDouble(ref state.rngState) < watchers * amber.digFindsPerHour * hoursWatched)
+            if (amber != null && amber.digFindsPerHour > 0.0
+                && Rng.NextDouble(ref state.rngState) < roundWatchers * amber.digFindsPerHour * hoursWatched)
             {
                 state.amber += amber.perFind;
                 // Banked for GameLoop to report once per advance — the sim
@@ -72,8 +91,26 @@ namespace Wildgrove.Sim
                 state.amberFoundUnlogged += amber.perFind;
             }
 
-            foreach (var site in state.digSites)
+            for (var siteIndex = 0; siteIndex < state.digSites.Count; siteIndex++)
             {
+                var site = state.digSites[siteIndex];
+
+                // An unwatched site does nothing at all — no sketch, no craft
+                // XP, no deep amber — and draws no rng, so the sites a player
+                // has not posted anyone to cannot shift the sequence at the
+                // ones they have.
+                var watchers = siteWatchers[siteIndex];
+                if (watchers <= 0.0)
+                {
+                    // Its pity clock is left exactly where it stood rather than
+                    // wiped: those hours WERE watched, and this is the same
+                    // freeze an unwatched map has always had (the roaming post
+                    // returned before touching a site when nobody held it).
+                    // Moving a watcher between sites must not burn their banked
+                    // patience at the one they left.
+                    continue;
+                }
+
                 // Reed-screen planters (design §3) steady this site's sketching.
                 var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
 

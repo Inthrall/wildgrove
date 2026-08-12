@@ -37,10 +37,10 @@ namespace Wildgrove.Game
         /// <summary>
         /// Step one of the strip's (+): which ground? Every node in the run,
         /// each wearing whoever stands there now. Picking one asks who walks it
-        /// (<see cref="OpenBodyPickSheet"/>). The wander post is not among them:
-        /// it stands over no crop, so it has no place in a drawer of gathering
-        /// grounds — the watch card and a companion's own station sheet are
-        /// where a wanderer is sent.
+        /// (<see cref="OpenBodyPickSheet"/>). The watch posts are not among them:
+        /// they stand over no crop, so they have no place in a drawer of
+        /// gathering grounds — each site's own watch card and a companion's
+        /// station sheet are where a watcher is sent.
         /// </summary>
         internal void OpenGroundPickSheet()
         {
@@ -49,7 +49,7 @@ namespace Wildgrove.Game
             MakeText(sheet, "posts walked " + _loop.KithWalking() + " of " + _loop.KithSlots(),
                 14, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            BuildGroundGrid(sheet, OpenBodyPickSheet, includeWanderPost: false);
+            BuildGroundGrid(sheet, OpenBodyPickSheet, includeWatchPosts: false);
         }
 
         /// <summary>
@@ -82,11 +82,11 @@ namespace Wildgrove.Game
 
             MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            // The warden keeps the wander post among their grounds — roaming is
-            // watching, not gathering, and the sites are watched by whoever
-            // walks them. ("Tending" is the windfall catch and nothing else —
-            // a wanderer never does it.)
-            BuildGroundGrid(sheet, WalkWardenTo, includeWanderPost: true);
+            // The warden keeps the watch posts among their grounds — watching is
+            // work, not gathering, and a site is watched by whoever stands at
+            // it. ("Tending" is the windfall catch and nothing else — a watcher
+            // never does it.)
+            BuildGroundGrid(sheet, WalkWardenTo, includeWatchPosts: true);
         }
 
         /// <summary>
@@ -100,9 +100,11 @@ namespace Wildgrove.Game
             var sheet = BeginSheet();
             var state = _loop.State;
             var occupantHere = Stationing.OccupantOf(state, stationId);
-            var isWanderPost = stationId == Familiar.WanderStation;
+            var isWatchPost = Familiar.IsWatchStation(stationId);
             var node = FindNode(stationId);
-            var wardenHere = node != null ? Warden.PostNodeId(state) == node.id : isWanderPost && Warden.IsWandering(state);
+            var wardenHere = node != null
+                ? Warden.PostNodeId(state) == node.id
+                : isWatchPost && Warden.PostNodeId(state) == stationId;
             var hasRoom = Kith.HasRoom(state, _loop.Data);
 
             MakeText(sheet, "Who walks here?", 32, TextAnchor.UpperCenter, Ink, _serif);
@@ -122,7 +124,7 @@ namespace Wildgrove.Game
 
             if (occupantHere == null)
             {
-                var notice = EmptyPostNotice(node != null || isWanderPost);
+                var notice = EmptyPostNotice(node != null || isWatchPost);
                 if (notice != null)
                 {
                     var line = MakeText(sheet, "<i>" + notice + "</i>", 16, TextAnchor.UpperCenter, Ink2);
@@ -134,10 +136,10 @@ namespace Wildgrove.Game
 
             var grid = SheetGrid(sheet);
 
-            // The warden takes a node or the wander post, never the trail: they
+            // The warden takes a node or a watch post, never the trail: they
             // tend, the kith carries. Nothing to offer when they already stand
             // here — the post's own sheet is where a holder stands down.
-            if (!wardenHere && (node != null || isWanderPost))
+            if (!wardenHere && (node != null || isWatchPost))
             {
                 // Wearing the ground they stand on now, exactly as the companion
                 // tiles below do — the warden is a body like any other here.
@@ -177,8 +179,8 @@ namespace Wildgrove.Game
             Button(sheet, "Choose another ground", 380, OpenGroundPickSheet);
         }
 
-        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then — when asked for — the wander post.</summary>
-        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick, bool includeWanderPost)
+        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then — when asked for — one watch post per open site.</summary>
+        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick, bool includeWatchPosts)
         {
             var grid = SheetGrid(sheet);
             foreach (var node in _loop.State.nodes)
@@ -187,15 +189,18 @@ namespace Wildgrove.Game
                 GroundTile(grid, captured, ArtLibrary.ForResource(node.resourceId), () => onPick(captured));
             }
 
-            if (!includeWanderPost)
+            if (!includeWatchPosts)
             {
                 return;
             }
 
-            // The wander post stands over no crop, so it borrows the watch's own
-            // mark — the same one it wore when it had a plate on the strip.
-            GroundTile(grid, Familiar.WanderStation, ArtLibrary.ForSkill("observation"),
-                () => onPick(Familiar.WanderStation));
+            // A watch post stands over no crop, so every one of them borrows the
+            // watch's own mark; the tile's caption is what says which site it is.
+            foreach (var site in _loop.State.digSites)
+            {
+                var captured = Familiar.WatchStation(site.zoneId);
+                GroundTile(grid, captured, ArtLibrary.ForSkill("observation"), () => onPick(captured));
+            }
         }
 
         /// <summary>One ground's tile — its crop, its name, and the mark of whoever stands there now.</summary>
@@ -215,13 +220,14 @@ namespace Wildgrove.Game
             PlateTile(grid, plate, StationLabel(stationId), held, onPick);
         }
 
-        /// <summary>Send the warden to the ground picked — the wander post included — and say so in the margin.</summary>
+        /// <summary>Send the warden to the ground picked — a site's watch included — and say so in the margin.</summary>
         private void WalkWardenTo(string stationId)
         {
-            if (stationId == Familiar.WanderStation)
+            var watchZone = Familiar.WatchZoneOf(stationId);
+            if (watchZone != null)
             {
-                _loop.WanderWarden();
-                SetNote(_loop.WardenName() + " sets off to wander the run.");
+                _loop.WatchWarden(watchZone);
+                SetNote(_loop.WardenName() + " settles in to watch " + ZoneName(watchZone) + ".");
                 CloseSheet();
                 return;
             }

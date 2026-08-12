@@ -29,9 +29,10 @@ namespace Wildgrove.Game.World
     /// badge of its holder, and this class answers both tap questions — which
     /// node a tap tends, and which post's badge a tap assigns. While any kith
     /// slot stands unfilled a (+) mark closes the strip; tapping it opens the
-    /// picker — a ground, then a body. The wander post keeps no plate of its own
-    /// here — it would wear a node's face without being one — and is assigned
-    /// from the watch card, the pickers and the familiars' own sheets.
+    /// picker — a ground, then a body. A site's watch post keeps no plate of its
+    /// own here — it would wear a node's face without being one — and is
+    /// assigned from that zone's watch card, the pickers and the familiars' own
+    /// sheets.
     /// Placeholder tier: shapes in a strip for now; a real region scene replaces
     /// the layout when the art lands, but the camera/world seam and hit-testing
     /// stay.
@@ -238,9 +239,9 @@ namespace Wildgrove.Game.World
             GatherStrip(state);
 
             // A warden at camp has no plate among the grounds, so their own empty
-            // ground leads the strip instead. Camp only — a wandering warden also
-            // has no plate here (the wander post is no single node), but an empty
-            // ground would say they had no work when roaming IS the work.
+            // ground leads the strip instead. Camp only — a watching warden also
+            // has no plate here (a site's watch is no node), but an empty ground
+            // would say they had no work when watching IS the work.
             _wardenPlaceShown = postNodeId == null;
             if (_wardenPlace.gameObject.activeSelf != _wardenPlaceShown)
             {
@@ -258,7 +259,7 @@ namespace Wildgrove.Game.World
             // A fresh camp with nothing posted anywhere would otherwise render
             // the whole strip at idle-dim — reading as "disabled" exactly when
             // the first tap must happen. Dim only once dim can mean something.
-            var anyPosted = postNodeId != null || Warden.IsWandering(state);
+            var anyPosted = postNodeId != null || Warden.IsWatching(state);
             if (!anyPosted)
             {
                 foreach (var familiar in state.roster)
@@ -327,8 +328,8 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            // A camp with no node held keeps the whole board — a wanderer-only
-            // camp included, since the wander post has no plate of its own.
+            // A camp with no node held keeps the whole board — a watch-only camp
+            // included, since a site's watch has no plate of its own.
             // Hiding every plate would take the assignment surface away at
             // exactly the moment the first posting has to happen. The strip
             // collapses to the worked posts on the first node posting.
@@ -363,7 +364,7 @@ namespace Wildgrove.Game.World
         /// reads at the head of the board, without being a plate of its own —
         /// the strip stays a row of grounds, and which one is theirs is said by
         /// the badge under it, as it is for every companion. A warden at camp or
-        /// wandering holds no ground, so the order is the land's own.
+        /// keeping a watch holds no ground, so the order is the land's own.
         /// </summary>
         private void LeadWithTheWarden(GameState state)
         {

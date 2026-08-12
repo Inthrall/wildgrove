@@ -342,19 +342,19 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_WardenWandering_GathersNothing()
+        public void Advance_WardenWatching_GathersNothing()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.9 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear(); // only the warden works
-            Warden.Wander(state);
+            Warden.Watch(state, "old-growth-wood");
 
             Simulation.Advance(state, _data, 10.0);
 
-            // Wandering is the watch and only the watch: a wandering warden
+            // A watch post is the watch and only the watch: a watching warden
             // picks nothing at any node (the gather-share retired 2026-08-09 —
-            // a roamer who also gathered read as two jobs on one post).
-            Assert.That(Warden.IsWandering(state), Is.True);
+            // a body that also gathered read as two jobs on one post).
+            Assert.That(Warden.IsWatching(state), Is.True);
             foreach (var node in state.nodes)
             {
                 Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
@@ -363,32 +363,33 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void WardenWander_AFamiliarWanderingThere_StepsBackToCamp()
+        public void WardenWatch_AFamiliarKeepingThatWatch_StepsBackToCamp()
         {
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, Familiar.WanderStation, 1);
-            var holder = Stationing.OccupantOf(state, Familiar.WanderStation);
+            var watch = Familiar.WatchStation("old-growth-wood");
+            TestKith.Station(state, watch, 1);
+            var holder = Stationing.OccupantOf(state, watch);
 
-            Warden.Wander(state);
+            Warden.Watch(state, "old-growth-wood");
 
-            // One body per post: the warden takes the wander post, the familiar
+            // One body per post: the warden takes the site's watch, the familiar
             // that held it goes home — the same rule a node follows.
-            Assert.That(Warden.IsWandering(state), Is.True);
+            Assert.That(Warden.IsWatchingAt(state, "old-growth-wood"), Is.True);
             Assert.That(holder.IsResting, Is.True);
         }
 
         [Test]
-        public void Advance_AWanderer_GathersNothing()
+        public void Advance_AWatcher_GathersNothing()
         {
             var state = GameStateFactory.NewGame(_data);
             TestKith.ClearStations(state);
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
 
             Simulation.Advance(state, _data, 9.0);
 
-            // Wandering is the watch and only the watch: a wandering familiar
-            // gathers at no node (the gather-share retired 2026-08-09 — a
-            // roamer who also gathered read as two jobs on one post).
+            // A watch post is the watch and only the watch: a watching familiar
+            // gathers at no node (the gather-share retired 2026-08-09 — a body
+            // that also gathered read as two jobs on one post).
             foreach (var node in state.nodes)
             {
                 Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
@@ -552,15 +553,15 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TotalYieldPerSecond_AWanderingWarden_AddsNothingToTheKithsLane()
+        public void TotalYieldPerSecond_AWatchingWarden_AddsNothingToTheKithsLane()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear();
             TestKith.Station(state, state.nodes[0].id, 1);
-            Warden.Wander(state);
+            Warden.Watch(state, "old-growth-wood");
 
-            // Wandering is the watch and only the watch (the gather-share
+            // A watch post is the watch and only the watch (the gather-share
             // retired 2026-08-09): the node's rate is the kith's lane alone.
             var node = state.nodes[0];
             var kith = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();

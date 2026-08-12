@@ -254,7 +254,7 @@ namespace Wildgrove.Sim.Saves
         public bool deedBaselineSet;
     }
 
-    /// <summary>One observation site's pity progress (identity resyncs from owned unlockDigSite upgrades on restore; the watching itself comes from the wanderer, not from anyone posted here).</summary>
+    /// <summary>One observation site's pity progress (identity resyncs from owned unlockDigSite upgrades on restore; who keeps its watch rides on the roster's own station ids).</summary>
     [Serializable]
     public sealed class SavedDigSite
     {

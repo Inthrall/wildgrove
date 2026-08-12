@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 7fbcc12c0dc81dc5941aceebc854e184007682ed99b7130fc4559acc7c48933e
+  sourceHash: 85b89b81c089c0406ec35e61979a3955933a5e53746e495e61a9ff388aeee9da
   economy:
     costGrowth:
       building: 1.25

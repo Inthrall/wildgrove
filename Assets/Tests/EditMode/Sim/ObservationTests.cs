@@ -6,11 +6,11 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins design §6 observation: trail maps open observation sites, the
-    /// wanderer passes them all as it roams (the watch is not a post of its
-    /// own) and records field sketches (rate rolls + the pity guarantee, both
-    /// from the run's saved rng), sketches complete an insect plate whose
-    /// permanent effects go live at once, and a fully-recorded site falls quiet.
+    /// Pins design §6 observation: trail maps open observation sites, each with
+    /// its own watch post whose holder records field sketches THERE and nowhere
+    /// else (rate rolls + the pity guarantee, both from the run's saved rng),
+    /// sketches complete an insect plate whose permanent effects go live at once,
+    /// and a fully-recorded site falls quiet.
     /// </summary>
     public class ObservationTests
     {
@@ -97,15 +97,15 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(state.digSites, Has.Count.EqualTo(1));
             Assert.That(state.digSites[0].zoneId, Is.EqualTo("old-growth-wood"));
-            // Sites open unwatched — the wanderer is sent, never seeded.
-            Assert.That(Stationing.Wandering(state), Is.EqualTo(0));
+            // Sites open unwatched — a watcher is sent, never seeded.
+            Assert.That(Stationing.WatchersAt(state, "old-growth-wood"), Is.EqualTo(0));
         }
 
         [Test]
         public void Advance_WatcherAtACertainRate_SurfacesASketch()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
 
             Simulation.Advance(state, _data, 1.0);
 
@@ -130,7 +130,7 @@ namespace Wildgrove.Sim.Tests
             // Effectively-zero rate: only the pity guarantee can drop.
             _data.economy.observation.baseSketchesPerHour = 1e-12;
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
 
             Simulation.Advance(state, _data, 4.5 * 3600.0);
 
@@ -144,7 +144,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_CompletingAPlate_GrantsItsEffectsImmediately()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             state.insectSketches["stags-herald"] = 2;
 
             Simulation.Advance(state, _data, 1.0);
@@ -162,7 +162,7 @@ namespace Wildgrove.Sim.Tests
         public void Advance_FullyRecordedSite_FallsQuietWithoutBurningRng()
         {
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             state.insectSketches["stags-herald"] = 3; // already assembled
             var seedBefore = state.rngState;
 
@@ -193,7 +193,7 @@ namespace Wildgrove.Sim.Tests
         {
             EnableWatchXp();
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
 
             Simulation.Advance(state, _data, 3600.0);
 
@@ -206,7 +206,7 @@ namespace Wildgrove.Sim.Tests
         {
             EnableWatchXp();
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             state.purchasedUpgradeIds.Add("brush-screens"); // dig speed ×2
 
             Simulation.Advance(state, _data, 3600.0);
@@ -236,7 +236,7 @@ namespace Wildgrove.Sim.Tests
             // (entomology 8) unbuyable for the rest of the game.
             EnableWatchXp();
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             state.insectSketches["stags-herald"] = 3; // every plate here recorded
 
             Simulation.Advance(state, _data, 3600.0);
@@ -255,7 +255,7 @@ namespace Wildgrove.Sim.Tests
             _data.upgrades[1].gateSkill = "entomology";
             _data.upgrades[1].gateLevel = 8;
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             Assert.That(Upgrades.MeetsSkillGate(state, _data, _data.upgrades[1]), Is.False);
 
             Simulation.Advance(state, _data, 3600.0);
@@ -274,7 +274,7 @@ namespace Wildgrove.Sim.Tests
                 sketches = 5, habitats = new List<string> { "old-growth-wood" }, rarity = 0.35,
             });
             var state = NewGameWithDigSite();
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
             state.insectSketches["stags-herald"] = 3; // assembled — out of the pick
 
             Simulation.Advance(state, _data, 1.0);
@@ -349,17 +349,69 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TheWanderer_IsTheWatcher_AtEverySite()
+        public void TheSitesOwnPost_IsWhatWatchesIt()
         {
             var state = NewGameWithDigSite();
-            Assert.That(Stationing.WanderAgents(state, _data), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(Stationing.WatchAgentsAt(state, _data, "old-growth-wood"), Is.EqualTo(0.0).Within(Tolerance));
 
-            // The wander post supplies the watching (design §2) — one roaming
-            // familiar covers every unlocked site.
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            // A site is watched by the body standing at it (design §2/§6).
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
 
-            Assert.That(Stationing.Wandering(state), Is.EqualTo(1));
-            Assert.That(Stationing.WanderAgents(state, _data), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(Stationing.WatchersAt(state, "old-growth-wood"), Is.EqualTo(1));
+            Assert.That(Stationing.WatchAgentsAt(state, _data, "old-growth-wood"), Is.EqualTo(1.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void Advance_AWatcherAtOneSite_SketchesNothingAtAnother()
+        {
+            // The 2026-08-12 revision, pinned where a player met it: one body
+            // was posted to one site, and plates filled in across every site on
+            // the map — the watch was a single post whose reach was the whole
+            // world, so "assign a watcher here" quietly meant "everywhere".
+            _data.zones.Add(new ZoneData
+            {
+                id = "mistfen-marsh", order = 5,
+                resources = new List<string> { "peat" },
+                digSite = true,
+            });
+            _data.upgrades[0].effects.Add(new EffectData { type = EffectType.UnlockZone, zone = "mistfen-marsh" });
+            _data.upgrades[0].effects.Add(new EffectData { type = EffectType.UnlockDigSite, zone = "mistfen-marsh" });
+            _data.insects.Add(new InsectData
+            {
+                id = "lantern-bearers", displayName = "The Lantern Bearers",
+                sketches = 3, habitats = new List<string> { "mistfen-marsh" }, rarity = 1.0,
+            });
+
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
+
+            Simulation.Advance(state, _data, 1.0);
+
+            Assert.That(Insects.SketchCount(state, "stags-herald"), Is.EqualTo(1), "the watched site records");
+            Assert.That(Insects.SketchCount(state, "lantern-bearers"), Is.EqualTo(0),
+                "the site nobody stands at records nothing");
+        }
+
+        [Test]
+        public void Advance_MovingAWatcherOn_LeavesTheOldSitesPityHoursStanding()
+        {
+            // Those hours WERE watched. Wiping them would make rotating one
+            // companion around the map strictly worse than leaving them still,
+            // which is the opposite of the choice the per-site watch exists to
+            // pose.
+            _data.economy.observation.baseSketchesPerHour = 1e-12; // only pity can drop
+            var state = NewGameWithDigSite();
+            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
+
+            Simulation.Advance(state, _data, 3600.0);
+            var banked = state.digSites[0].pityHours;
+            Assert.That(banked, Is.EqualTo(1.0).Within(1e-3), "an hour banked toward the guarantee");
+
+            // Sent home: the site is unwatched, and the clock neither runs nor resets.
+            state.roster[0].stationId = null;
+            Simulation.Advance(state, _data, 3600.0);
+
+            Assert.That(state.digSites[0].pityHours, Is.EqualTo(banked).Within(1e-9));
         }
     }
 }

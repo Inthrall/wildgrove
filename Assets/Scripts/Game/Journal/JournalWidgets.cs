@@ -789,11 +789,50 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// A gauge of its own: a ruled track with a moss band that fills across
+        /// it, for a clock a player watches rather than a control they press.
+        /// Returns the track (hide or show that to take the whole gauge off a
+        /// card) and hands back the band as <paramref name="fill"/>, which
+        /// <see cref="SetFill"/> drives.
+        /// <para>
+        /// The band is the same object a plate's own fill is, and is painted by
+        /// the same call — a bar and a colouring-in plate are one mechanism, and
+        /// two of them would drift apart on the day one learned to ease.
+        /// </para>
+        /// </summary>
+        internal static GameObject Gauge(RectTransform parent, float height, out GameObject fill)
+        {
+            var track = MakePanel("Gauge", parent, RulePaper);
+            track.GetComponent<Image>().raycastTarget = false;
+            var element = track.AddComponent<LayoutElement>();
+            element.minHeight = height;
+            element.preferredHeight = height;
+            element.flexibleHeight = 0f;
+
+            fill = MakePanel("Fill", (RectTransform)track.transform, MossFill);
+            fill.GetComponent<Image>().raycastTarget = false;
+            var rect = (RectTransform)fill.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            fill.SetActive(false);
+            return track;
+        }
+
+        /// <summary>
         /// Paint the band to a fraction of the plate, or take it off the plate
         /// entirely at zero — an empty band still draws a two-unit seam down the
         /// left edge, which on an idle button reads as a rendering fault.
         /// </summary>
         internal static void SetButtonFill(GameObject fill, float fraction)
+        {
+            SetFill(fill, fraction);
+        }
+
+        /// <summary>Paint a band — a plate's fill or a gauge's — to a fraction of its track.</summary>
+        internal static void SetFill(GameObject fill, float fraction)
         {
             if (fill == null)
             {

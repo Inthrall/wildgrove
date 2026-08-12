@@ -45,7 +45,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// True when a body stands at <paramref name="stationId"/> — the warden
-        /// or a stationed familiar (a node id, or <see cref="Familiar.WanderStation"/>).
+        /// or a stationed familiar (a node id, or a watch post).
         ///
         /// This asks who is STANDING here, not whether the ground earns — the
         /// strip draws one post per body, and a yield test
@@ -92,22 +92,21 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Familiars holding the wander post (0 or 1 — one body per post).
-        /// A probe, kept for the tests and for anything diagnosing the watch:
-        /// its last production caller went with the gather-share (2026-08-09),
-        /// so don't hunt for one. <see cref="WanderAgents"/> is what the tick
+        /// Familiars keeping <paramref name="zoneId"/>'s watch (0 or 1 — one
+        /// body per post). A probe, kept for the tests and for anything
+        /// diagnosing the watch: <see cref="WatchAgentsAt"/> is what the tick
         /// asks — it counts the warden too, and scales by watch traits.
         /// </summary>
-        public static int Wandering(GameState state)
+        public static int WatchersAt(GameState state, string zoneId)
         {
-            return CountAssignedTo(state, Familiar.WanderStation);
+            return CountAssignedTo(state, Familiar.WatchStation(zoneId));
         }
 
         /// <summary>
         /// Effective gatherers contributing to a node this tick: the familiar
         /// assigned to it counts as one, scaled by its trait when it matches.
-        /// A wanderer contributes nothing here — wandering is the watch and
-        /// only the watch (a roamer who also gathered read as two jobs on one
+        /// A watcher contributes nothing here — a watch post is the watch and
+        /// only the watch (a body that also gathered read as two jobs on one
         /// post, and players couldn't say what the post was for).
         /// </summary>
         public static double GatherAgentsAt(GameState state, GameDataAsset data, NodeState node)
@@ -130,24 +129,28 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Effective watchers the wander post supplies to every observation
-        /// site (the watch is not a post of its own — the wanderer passes each
-        /// site as it roams), scaled by watch-speed traits.
+        /// Effective watchers at <paramref name="zoneId"/>'s observation site,
+        /// scaled by watch-speed traits — the site's own post and nobody else's.
+        /// A body watches the one place it stands (revised 2026-08-12): the
+        /// single roaming post it replaced sketched at every site at once, so a
+        /// player who sent one companion to one site saw plates filling in
+        /// across the whole map and had no way to ask why.
         /// </summary>
-        public static double WanderAgents(GameState state, GameDataAsset data)
+        public static double WatchAgentsAt(GameState state, GameDataAsset data, string zoneId)
         {
+            var station = Familiar.WatchStation(zoneId);
             var sum = 0.0;
             foreach (var familiar in state.roster)
             {
-                if (!familiar.IsResting && familiar.IsWandering)
+                if (!familiar.IsResting && familiar.stationId == station)
                 {
                     sum += Traits.DigSpeedFactor(familiar, data);
                 }
             }
 
-            // The warden may now take the wander post too, watching each site it
-            // passes at the base rate (the warden carries no species trait).
-            if (Warden.IsWandering(state))
+            // The warden may take a watch post like any familiar, watching that
+            // site at the base rate (the warden carries no species trait).
+            if (Warden.IsWatchingAt(state, zoneId))
             {
                 sum += 1.0;
             }

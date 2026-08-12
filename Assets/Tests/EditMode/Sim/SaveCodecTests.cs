@@ -177,17 +177,104 @@ namespace Wildgrove.Sim.Tests
             Assert.That(restored.wardenPostNodeId, Is.EqualTo(restored.nodes[0].id));
         }
 
-        [Test]
-        public void RoundTrip_RestoresAWanderingWarden()
+        /// <summary>
+        /// Open an observation site at the second zone and buy the map that
+        /// opens it — the watch tests need a real site, and the shared fixture
+        /// deliberately has none (a site would put a watch post into every
+        /// posting assertion in the file).
+        /// </summary>
+        private GameState StateWithASite()
         {
+            _data.zones[1].digSite = true;
+            _data.upgrades[1].effects.Add(new EffectData
+            {
+                type = EffectType.UnlockDigSite, zone = "bramble-hedgerows",
+            });
             var state = GameStateFactory.NewGame(_data);
-            Warden.Wander(state);
+            Assert.That(Upgrades.TryPurchase(state, _data, _data.upgrades[1]), Is.True);
+            Assert.That(state.digSites, Has.Count.EqualTo(1), "the site the watch tests stand at");
+            return state;
+        }
+
+        [Test]
+        public void RoundTrip_RestoresAWatchingWarden()
+        {
+            var state = StateWithASite();
+            Warden.Watch(state, "bramble-hedgerows");
 
             var restored = RoundTrip(state);
 
-            // The wander post is a valid warden post — the sentinel survives the
-            // save's node-existence scrub rather than dropping the warden to camp.
-            Assert.That(Warden.IsWandering(restored), Is.True);
+            // A watch post is a valid warden post — it survives the save's
+            // node-existence scrub rather than dropping the warden to camp.
+            Assert.That(Warden.IsWatchingAt(restored, "bramble-hedgerows"), Is.True);
+        }
+
+        [Test]
+        public void RoundTrip_AWatchPostAtASiteThisBuildDoesNotOpen_RestsTheWatcher()
+        {
+            // The mirror of the dangling-node rule: content retuned under a save
+            // can take a site away, and a body left watching a place that isn't
+            // there is a walked slot doing nothing, with nothing to say so.
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, Familiar.WatchStation("mistfen-marsh"), 1);
+
+            var restored = RoundTrip(state);
+
+            Assert.That(restored.roster[0].IsResting, Is.True, "the watcher comes home");
+        }
+
+        [Test]
+        public void TryMigrate_V52_ThenRestore_PutsARoamingWatcherDownAtTheFirstSite()
+        {
+            // v53 made the watch a place. The roaming post that watched every
+            // site is gone, and its holder must keep working rather than be
+            // quietly rested — which is what a bare station id would do, since
+            // "wander" resolves to no node and no site.
+            var state = StateWithASite();
+            TestKith.Station(state, Familiar.LegacyWanderStation, 1);
+            var save = SaveCodec.Capture(state, 0);
+            save.version = 52;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.roster[0].stationId,
+                Is.EqualTo(Familiar.WatchStation("bramble-hedgerows")),
+                "the wanderer keeps a watch — the first site's");
+        }
+
+        [Test]
+        public void TryMigrate_V52_ThenRestore_PutsARoamingWardenDownAtTheFirstSite()
+        {
+            var state = StateWithASite();
+            state.wardenPostNodeId = Familiar.LegacyWanderStation;
+            var save = SaveCodec.Capture(state, 0);
+            save.version = 52;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(Warden.IsWatchingAt(restored, "bramble-hedgerows"), Is.True);
+        }
+
+        [Test]
+        public void TryMigrate_V52_ThenRestore_WithNoSiteOpen_SendsARoamingWatcherHome()
+        {
+            // A save whose watcher roamed a map with no site on it (hand-built,
+            // or a build whose sites all moved) has nowhere to put them down, and
+            // camp is the honest answer — never a post id that resolves to
+            // nothing.
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, Familiar.LegacyWanderStation, 1);
+            state.wardenPostNodeId = Familiar.LegacyWanderStation;
+            var save = SaveCodec.Capture(state, 0);
+            save.version = 52;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.roster[0].IsResting, Is.True, "the companion rests");
+            Assert.That(Warden.PostNodeId(restored), Is.Null, "and the warden stands at camp");
         }
 
         [Test]
@@ -396,7 +483,7 @@ namespace Wildgrove.Sim.Tests
             };
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
-            TestKith.Station(state, Familiar.WanderStation, 1);
+            TestKith.Station(state, Familiar.WatchStation("bramble-hedgerows"), 1);
             state.digSites[0].pityHours = 1.5;
             state.insectSketches["stags-herald"] = 3; // assembled
 
@@ -404,7 +491,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(restored.digSites, Has.Count.EqualTo(1));
             Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
-            Assert.That(Stationing.Wandering(restored), Is.EqualTo(1));
+            Assert.That(Stationing.WatchersAt(restored, "bramble-hedgerows"), Is.EqualTo(1));
             Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
             Assert.That(Insects.SketchCount(restored, "stags-herald"), Is.EqualTo(3));
             // The completed insect's +10% all yields folds into the restored
@@ -763,7 +850,7 @@ namespace Wildgrove.Sim.Tests
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
             save.roster.Clear();
             save.roster.Add(new SavedFamiliar { id = "fam-1", speciesId = "meadow-vole", stationId = "sunfield-meadow:berries" });
-            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "pack-raven", stationId = Familiar.WanderStation, bonded = true, bondId = "sootwing" });
+            save.roster.Add(new SavedFamiliar { id = "fam-2", speciesId = "pack-raven", stationId = "sunfield-meadow:wildflowers", bonded = true, bondId = "sootwing" });
             save.nextFamiliarSeq = 3;
 
             var restored = SaveCodec.Restore(save, _data);
@@ -771,7 +858,7 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Kith.Slots(restored, _data), Is.EqualTo(1), "no verses sung, nothing purchased");
             Assert.That(Kith.Walking(restored), Is.EqualTo(1), "the extras rest at camp");
             var raven = restored.roster.Single(f => f.speciesId == "pack-raven");
-            Assert.That(raven.stationId, Is.EqualTo(Familiar.WanderStation), "the bonded companion keeps its post");
+            Assert.That(raven.stationId, Is.EqualTo("sunfield-meadow:wildflowers"), "the bonded companion keeps its post");
             Assert.That(restored.roster.Single(f => f.speciesId == "meadow-vole").IsResting, Is.True);
         }
 
