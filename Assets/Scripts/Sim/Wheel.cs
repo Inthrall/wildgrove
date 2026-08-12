@@ -352,6 +352,46 @@ namespace Wildgrove.Sim
         {
             return epochDay * DayMs - utcOffsetMinutes * MinuteMs;
         }
+
+        /// <summary>
+        /// Warden-local midnight opening the next Monday, as UTC unix ms — the
+        /// week the events rail counts the amber cache down to.
+        /// <para>
+        /// A plain week is no business of the Wheel's, but midnight is: the
+        /// tides close at the warden's own, and a week turning over at UTC's
+        /// instead would run somewhere between an hour and half a day out of
+        /// step with every other clock in the journal.
+        /// </para>
+        /// <para>
+        /// Always strictly ahead of <paramref name="nowUnixMs"/> — asked on a
+        /// Monday it answers with the one after, never with today.
+        /// </para>
+        /// </summary>
+        public static long NextWeekStartMs(long nowUnixMs, int utcOffsetMinutes)
+        {
+            var today = LocalEpochDay(nowUnixMs, utcOffsetMinutes);
+            // 1970-01-01 fell on a Thursday, so the epoch's first Monday is day 4.
+            var sinceMonday = ((today - 4) % 7 + 7) % 7;
+            return LocalDayStartMs(today - sinceMonday + 7, utcOffsetMinutes);
+        }
+
+        /// <summary>
+        /// The warden-local day a moment falls in, as days since the epoch.
+        /// Floors rather than truncating: integer division rounds toward zero,
+        /// which would file every local time before the epoch under the day
+        /// above its own.
+        /// </summary>
+        private static int LocalEpochDay(long unixMs, int utcOffsetMinutes)
+        {
+            var local = unixMs + utcOffsetMinutes * MinuteMs;
+            var day = local / DayMs;
+            if (local < 0L && local % DayMs != 0L)
+            {
+                day--;
+            }
+
+            return (int)day;
+        }
     }
 
     /// <summary>

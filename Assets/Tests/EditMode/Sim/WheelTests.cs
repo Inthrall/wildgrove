@@ -190,6 +190,32 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void NextWeekStartMs_IsTheWardensNextMonday_AndNeverToday()
+        {
+            // Epoch day 4 is 1970-01-05, the epoch's first Monday.
+            Assert.That(Wheel.NextWeekStartMs(4L * DayMs, 0), Is.EqualTo(11L * DayMs),
+                "asked ON a Monday it gives the one after — a week that could answer \"now\" would "
+                + "hand the rail a countdown of zero to draw");
+            Assert.That(Wheel.NextWeekStartMs(4L * DayMs + DayMs - 1L, 0), Is.EqualTo(11L * DayMs),
+                "and every moment of that Monday agrees");
+            Assert.That(Wheel.NextWeekStartMs(10L * DayMs, 0), Is.EqualTo(11L * DayMs),
+                "the Sunday before it is a day out, not eight");
+
+            // UTC+13: warden-local Monday midnight is 13 hours ahead of UTC's.
+            Assert.That(Wheel.NextWeekStartMs(10L * DayMs, 780), Is.EqualTo(11L * DayMs - 780L * 60000L),
+                "the week turns over at the warden's own midnight, like the tides");
+            Assert.That(Wheel.NextWeekStartMs(11L * DayMs - 780L * 60000L, 780), Is.EqualTo(18L * DayMs - 780L * 60000L),
+                "and the moment it turns, it is a whole week to the next");
+
+            // An hour into Sunday 1969-12-28 (epoch day −4). Truncating toward
+            // zero instead of flooring would file it under the Monday after,
+            // and answer with the Monday after THAT — a week wrong, and only
+            // ever wrong before the epoch, which is where nobody looks.
+            Assert.That(Wheel.NextWeekStartMs(-4L * DayMs + 3600000L, 0), Is.EqualTo(-3L * DayMs),
+                "a local day before the epoch is floored into its own day, not the one above it");
+        }
+
+        [Test]
         public void NextSabbat_NamesTheComingNight_AndRunsOutHonestly()
         {
             var state = Fallow();

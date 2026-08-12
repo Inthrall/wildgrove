@@ -137,12 +137,20 @@ namespace Wildgrove.Game
         /// The weekly Play Games cache (design §11) — the rail's second
         /// inhabitant, and the proof it is a rail rather than a Wheel widget.
         /// <para>
-        /// "Due" here is the Camp card's own reading: the week has turned over,
-        /// which is not the same as Play having actually set something out
-        /// (<see cref="Amber.WeeklyCacheDue"/> says so itself). So the cell
-        /// never promises the amber — it says "look", which is exactly what the
-        /// Camp row's button does, and signed out it says the one thing the
-        /// player can act on instead.
+        /// It stands only while the cache is unclaimed. Claimed, the cell goes
+        /// entirely rather than counting the next one down: a rail cell is a
+        /// thing to act on, and one that spends six days in seven saying "not
+        /// yet" is what teaches a player to stop reading the rail — the same
+        /// price the Camp row's greyed-out Look was already paying.
+        /// </para>
+        /// <para>
+        /// What it counts while it stands is OUR week turning over, not the
+        /// cache arriving. "Due" is only this clock saying the week is up, and
+        /// whether Play has set anything out is known by looking
+        /// (<see cref="Amber.WeeklyCacheDue"/> says as much itself) — so the
+        /// countdown is the one number that is honest either way: how long is
+        /// left to go and look. Signed out it says the one thing the player can
+        /// act on instead, and says it whether the week is up or not.
         /// </para>
         /// </summary>
         private static void CollectWeeklyCache(GameState state, GameDataAsset data, long nowUnixMs,
@@ -168,17 +176,18 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var due = Amber.WeeklyCacheDue(state, data, nowUnixMs);
+            if (!Amber.WeeklyCacheDue(state, data, nowUnixMs))
+            {
+                return;
+            }
+
             into.Add(new EventRailEntry
             {
                 id = WeeklyCacheId,
                 kind = EventRailKind.WeeklyCache,
                 title = "the cache",
-                remainingSeconds = due
-                    ? -1.0
-                    : Amber.WeeklyCacheCooldownRemainingMs(state, data, nowUnixMs) / 1000.0,
-                mark = due ? "look" : null,
-                ready = due,
+                remainingSeconds = (Wheel.NextWeekStartMs(nowUnixMs, state.utcOffsetMinutes) - nowUnixMs) / 1000.0,
+                ready = true,
             });
         }
 

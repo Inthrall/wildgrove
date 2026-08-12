@@ -199,13 +199,29 @@ namespace Wildgrove.Game.Tests
             EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
             var signedIn = Find(_entries, EventRail.WeeklyCacheId);
             Assert.That(signedIn.Value.ready, Is.True, "never claimed and signed in — the week is up");
-            Assert.That(signedIn.Value.mark, Is.EqualTo("look"),
-                "\"look\", not \"take\": the week turning over is OUR clock, and what Play has set out "
-                + "is only known by asking");
+            Assert.That(signedIn.Value.mark, Is.Null,
+                "and no word over the clock: the week turning over is OUR reckoning, and what Play has "
+                + "actually set out is only known by asking — so a word here would be promising for it");
         }
 
         [Test]
-        public void Collect_TheCache_CountsDownOnceTheWeekHasBeenClaimed()
+        public void Collect_TheCache_CountsTheWardensWeekOut()
+        {
+            _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
+            // Epoch day 19960 is a Sunday, and Fallow() stands on that day's own
+            // local midnight at offset 0 — so the week turns over a day out.
+            var state = Fallow();
+
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
+
+            var cache = Find(_entries, EventRail.WeeklyCacheId);
+            Assert.That(cache.Value.remainingSeconds, Is.EqualTo(86400.0).Within(1e-6),
+                "counted to the warden's next Monday, NOT to seven days from the last cache: a player "
+                + "who has never claimed has no such anchor, and that is the state every new run is in");
+        }
+
+        [Test]
+        public void Collect_TheCache_StandsDownOnceTheWeekHasBeenClaimed()
         {
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
             var state = Fallow();
@@ -214,10 +230,9 @@ namespace Wildgrove.Game.Tests
 
             EventRail.Collect(state, _data, now, true, _entries);
 
-            var cache = Find(_entries, EventRail.WeeklyCacheId);
-            Assert.That(cache.Value.ready, Is.False);
-            Assert.That(cache.Value.mark, Is.Null, "nothing to say — the clock speaks");
-            Assert.That(cache.Value.remainingSeconds, Is.EqualTo(6 * 86400.0).Within(1.0));
+            Assert.That(Find(_entries, EventRail.WeeklyCacheId), Is.Null,
+                "the week is claimed, so there is nothing to act on — and a cell that spends six days "
+                + "in seven saying \"not yet\" is what teaches a player to stop reading the rail");
         }
 
         [Test]
