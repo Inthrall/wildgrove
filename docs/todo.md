@@ -811,15 +811,21 @@ for:
     the support lib is a plain AAR under `Runtime/Plugins/Android`, and
     `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` are
     declared direct — 2.1.0 got both transitively, at games-v2 **21.0.0**.)
-  - **Console:** upload the authored CSVs from `store/play-games/gamestats/`.
-    **Whether that is possible yet is itself unconfirmed, re-checked against the
-    guide on 2026-08-12:** it still says the API and SDK are "available for early
-    feedback and will be Generally Available (GA) starting August 2026", and it
-    names no month at all for the Play Console upload experience. **September
-    2026** is the date it does give, for players seeing stats on the Gamer profile
-    and for testing a draft config with test accounts, so that half batches with
-    the Sep 1 rewards visit either way. The cheap answer is a look for Play Games
-    Services → Game Stats on the next visit: if the screen is there, upload.
+  - **Console: the screen exists and the CSVs have been through its validator
+    once — 2026-08-13.** Rejected on content, not shape: the header row was taken
+    as authored, and the twelve errors were all `Unit` (a closed physical-unit
+    enum, and mandatorily empty on a `STRING`/`BOOL` property, where a value is
+    read as a duration format) and the `Min limit`/`Max limit` pair, which is
+    required when `Is Competitive` is `true` and forbidden when it is `false`. All
+    fixed, the ZIP is rebuilt, and the whole account with the reasoning is in
+    `store/play-games/gamestats/README.md`. **Next: re-upload and see what a clean
+    pass looks like.** The guide's own wording never did promise this: it still
+    calls the API "available for early feedback", dates GA to "starting August
+    2026" with no day, and names no month at all for the upload experience, so the
+    console is running ahead of its documentation. **September 2026** is the date
+    Google does give, for players seeing stats on the Gamer profile and for testing
+    a draft config with test accounts, so that half still batches with the Sep 1
+    rewards visit.
     **The format spec was found the same day, on a page nothing here had read:**
     [Integrate Game Stats](https://developer.android.com/games/pgs/integrate-gamestats),
     which also gives the console path (**Grow users → Play Games Services → Setup
@@ -831,10 +837,11 @@ for:
     512 × 512, PNG or JPEG, ≤1 MB, in the ZIP's root — and **the seven were drawn
     2026-08-12** (`make-store-art.py`, keyed off the CSVs so a stat cannot exist
     without an icon), which means nothing on this side is owed any more: the ZIP
-    is `store/play-games/gamestats/`'s own contents. One caution recorded in the CSVs' own README: the page's
-    formal format lines and its worked example disagree about the config headers,
-    ours now follow the format lines, and the example's shape is the second
-    attempt if the console rejects the first.
+    is `store/play-games/gamestats/`'s own contents. The page's formal format lines
+    and its worked example disagree about the config headers; **the format lines
+    are the ones the console implements**, proven by the 2026-08-13 upload taking
+    that header row without complaint, so the example's shape is not a fallback we
+    need to keep in hand any more.
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
     CSV drift, because Play drops undeclared events silently.
   - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its
