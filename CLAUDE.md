@@ -53,6 +53,31 @@ reaches the scene back through the `IRunHost` seam `GameLoop` implements explici
 step goes into that sequence with a `RunSwapTests` assertion pinning where it sits,
 never into `GameLoop`.
 
+## Long classes are split into partials, not left to grow
+
+The big classes are one class across several files, named `Type.Topic.cs`, and the
+bare `Type.cs` keeps the entry point and a doc comment listing the parts. `GameHud`
+(7 files), `GameLoop` (6), `JournalSheets` (11), `GameDataValidator` (10), `TrailPage`
+(6), `CampPage` (4) and `SaveCodec` (4) all follow it.
+
+- **Put a new member in the partial that owns its topic**, not in the bare `Type.cs`.
+  That file is an index; it grows only when the thing being added really is the entry
+  point.
+- **The base type and the constructor live in the bare `Type.cs`** — every other
+  partial declares the class name alone. Only one file may name the base, so a split
+  that moves the declaration silently drops `: JournalSection` from the whole class,
+  and the errors then land in whichever *other* partial happens to use an inherited
+  member first.
+- Nothing enforces the topic grouping. It survives by the doc comment at the head of
+  each partial saying what belongs there, so update that comment when the shape of the
+  file changes.
+- Asmdefs glob by folder, so a new partial needs no project edit — only its `.meta`,
+  which Unity writes on next editor load.
+
+A method too long to read is a different problem and a partial does not solve it:
+`SaveCodec.Restore` is 553 lines in a file of its own, and splitting it means finding
+real seams in a single pass over every field of the save, not moving it.
+
 ## Content is data, not code
 
 Resources, upgrades, recipes, gear, rites, species, dialogue and the economy are
@@ -64,22 +89,39 @@ editor load and build, or **Wildgrove → Import Design Data**.
 - `GameData.asset` is committed. **A JSON or schema change and its re-imported
   `GameData.asset` belong in the same commit**, or the running game and the authored
   data disagree.
+- **`sourceHash` is not reproducible, so a dirty `GameData.asset` is not evidence of
+  drift.** Merely opening the editor rewrites that one line while leaving every
+  imported value byte-identical (seen 2026-08-13, against a JSON and asset committed
+  together in `f3832eb`). Diff the file before assuming a re-import changed anything:
+  if `sourceHash` is the only hunk, discard it rather than committing it as a data
+  change.
 
 ## Saves
 
-`SaveCodec` (`Assets/Scripts/Sim/Saves/`) owns the versioned save. Any change to the
-persisted shape means: bump `SaveCodec.CurrentVersion`, add the matching case to the
-sequential migration `switch`, and make sure `Restore` copes with the old data
-(clamping, dedupe, resting things that no longer fit). Test saves from before a
-migration are the cheapest way to find what `Restore` missed.
+`SaveCodec` (`Assets/Scripts/Sim/Saves/`) owns the versioned save, split across
+`SaveCodec.cs` (the two version constants and the JSON pair), `.Capture`, `.Restore`
+and `.Migrations`. Any change to the persisted shape means all three of the latter:
+bump `SaveCodec.CurrentVersion`, add the matching case to the sequential migration
+`switch`, and make sure `Restore` copes with the old data (clamping, dedupe, resting
+things that no longer fit). Test saves from before a migration are the cheapest way
+to find what `Restore` missed.
 
-**The ladder runs 42→50.** `CurrentVersion` is 50 and `EarliestReadableVersion` is
+**The ladder runs 42→53.** `CurrentVersion` is 53 and `EarliestReadableVersion` is
 42: a v42 save climbs every rung — the clock ratchet (43), the warden's name (44),
 the camp's name (45), the consideration pair (46), the second queue (47), the
-keepsakes (48), the Wheel's hemisphere + claims (49), the keeping (50) — and is
-read whole. Every rung adds nothing but a version, which is the shape to copy: a
-migration fills in only what its version predates, and never reaches for current
-content data.
+keepsakes (48), the Wheel's hemisphere + claims (49), the keeping (50), the
+keepsakes dropped again (51), the kith ladder onto named verses (52), the watch as
+a place (53) — and is read whole. Most rungs add nothing but a version, which is
+the shape to copy: a migration fills in only what its version predates, and never
+reaches for current content data.
+
+A rung that fills nothing in is still worth adding (51 and 53 are both this): it is
+what makes an older build refuse a save this one wrote, rather than read it a field
+short. 52 is the exception that shows the rule — it had to carry earned kith places
+forward, so it writes the *old* milestones out as literals rather than reading the
+current economy, because a migration has to hold for a save opened years after those
+numbers stopped existing.
+
 Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
 `EarliestReadableVersion` where it is**. It moves again only when bottom rungs are
 deliberately dropped, and raising it is a decision about whose saves stop working.
