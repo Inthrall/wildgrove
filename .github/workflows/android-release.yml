@@ -327,9 +327,37 @@ jobs:
               -symbolFileCacheDir "$RUNNER_TEMP/symcache" \
               -googleAppId "$app_id" \
               -symbolGenerator breakpad
+
+            # Both jar commands say nothing and exit 0 on an empty directory, so
+            # without this the native half can send nothing at all and read as a
+            # clean run. Count the output, and name the one library that matters:
+            # libil2cpp.so is where the game's own frames come from, and a symbol
+            # set missing it would still upload and still leave every Wildgrove
+            # frame unreadable.
+            generated=$(find "$RUNNER_TEMP/symcache" -name '*.sym' | wc -l)
+            echo "Generated $generated native symbol files:"
+            find "$RUNNER_TEMP/symcache" -name '*.sym' -printf '  %f\n'
+            if [ "$generated" -eq 0 ]; then
+              echo "::error::$SYMBOLS yielded no .sym files. The upload would succeed and send nothing."
+              exit 1
+            fi
+            if ! find "$RUNNER_TEMP/symcache" -name 'il2cpp-*.sym' | grep -q .; then
+              echo "::error::No il2cpp symbol file among the $generated generated. The game's own frames would stay unreadable."
+              exit 1
+            fi
+
             java -jar "$jar" -uploadNativeSymbols \
               -symbolFileCacheDir "$RUNNER_TEMP/symcache" \
               -googleAppId "$app_id"
+
+            # uploadNativeSymbols deletes each .sym as it sends it, so anything
+            # left behind was not accepted.
+            left=$(find "$RUNNER_TEMP/symcache" -name '*.sym' | wc -l)
+            if [ "$left" -ne 0 ]; then
+              echo "::error::$left of $generated symbol files were not uploaded."
+              exit 1
+            fi
+            echo "Uploaded all $generated native symbol files for $app_id"
           else
             echo "::warning::No symbols.zip was produced, so this build's IL2CPP crashes will arrive unsymbolicated and cannot be fixed later."
           fi
