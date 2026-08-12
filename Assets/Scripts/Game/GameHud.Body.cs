@@ -136,8 +136,8 @@ namespace Wildgrove.Game
 
             SetPageColumn(null);
             // The page has drawn its headings, so the fold has found its
-            // landmark (or the zone is gone) — the id has done its job.
-            PendingZoneFold = null;
+            // landmark (or the section is gone) — the id has done its job.
+            PendingFold = null;
             // The page's words before its measure. A great many labels are
             // built EMPTY and take their text from the live pass — every
             // building line and every rung of the ladder is two or three
@@ -218,9 +218,27 @@ namespace Wildgrove.Game
         internal void FoldZone(string zoneId, RectTransform heading)
         {
             JournalZones.Toggle(ZoneOpen, zoneId, _trail.NewestZoneId());
-            PendingZoneFold = zoneId;
-            _zoneFoldOffset = HeadingViewportOffset(heading);
-            _pendingScroll = ZoneLandmark;
+            FoldAround(zoneId, heading);
+        }
+
+        /// <summary>
+        /// Fold one of the Record page's cards open or shut. The landmark
+        /// matters more here than it does on the Trail, not less: the back pages
+        /// are the longest scroll in the book, and the Compendium alone changes
+        /// the page's height by a drawer of plates.
+        /// </summary>
+        internal void FoldCard(string cardId, RectTransform heading)
+        {
+            JournalRecordFolds.Toggle(RecordOpen, cardId);
+            FoldAround(cardId, heading);
+        }
+
+        /// <summary>Rebuild the page around the heading that was pressed, and put it back where it stood.</summary>
+        private void FoldAround(string foldId, RectTransform heading)
+        {
+            PendingFold = foldId;
+            _foldOffset = HeadingViewportOffset(heading);
+            _pendingScroll = FoldLandmark;
             Dirty = true;
         }
 
@@ -260,14 +278,14 @@ namespace Wildgrove.Game
             }
         }
 
-        /// <summary>The landmark name a zone fold scrolls back to.</summary>
-        private const string ZoneLandmark = "zone";
+        /// <summary>The landmark name a fold — a ground's or a card's — scrolls back to.</summary>
+        private const string FoldLandmark = "fold";
 
         /// <summary>The small breath a deep-linked landmark keeps from the viewport's top edge.</summary>
         private const float LandmarkMargin = 6f;
 
-        /// <summary>Where the pressed zone heading stood in the viewport — the fold's settle restores it there.</summary>
-        private float _zoneFoldOffset = LandmarkMargin;
+        /// <summary>Where the pressed heading stood in the viewport — the fold's settle restores it there.</summary>
+        private float _foldOffset = LandmarkMargin;
 
         private RectTransform LandmarkCard(string landmark)
         {
@@ -277,7 +295,7 @@ namespace Wildgrove.Game
                     return _firstVerseCard;
                 case "keeping":
                     return _firstKeepingCard;
-                case ZoneLandmark:
+                case FoldLandmark:
                     return FoldedHeading;
                 default:
                     return null;
@@ -320,7 +338,7 @@ namespace Wildgrove.Game
             {
                 // A fold's landmark goes back to where its heading stood; the
                 // deep links land theirs at the top of the view.
-                ScrollTo(target, landmark == ZoneLandmark ? _zoneFoldOffset : LandmarkMargin);
+                ScrollTo(target, landmark == FoldLandmark ? _foldOffset : LandmarkMargin);
             }
             else
             {

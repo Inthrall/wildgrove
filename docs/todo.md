@@ -194,8 +194,38 @@ wired to nothing. The settings row lands with the audio pass.
   are still the intent; the sheet stands in. The §14 legibility check rides on
   this: the waystone (the past) and the verse site (the present) must read as
   distinct objects on a zone screen.
-- **The Compendium has no plates or entry text** — the system layer with lifetime
-  counters and discovery is live, the art and words aren't.
+- ~~**The Compendium has no plates or entry text**~~ **— the plates landed
+  2026-08-13; the entry text has not.** The Compendium and the Crafts are drawers
+  of square plates now (`RecordPage.BuildFindTile`, on the shared
+  `JournalWidgets.Grid`), the Folio draws each spread as the strip of specimens it
+  asks for, and the Deep Pages draw the sketch ladder as marks. What design §6
+  still promises and the page still hasn't got is **"a line or two" per entry** —
+  the caption is a lifetime figure and the tap reads a name and a tally, so a
+  recorded entry says what it is worth and nothing about what it *is*. The words
+  belong to the narrative pass above; the room for them is a sheet the tile would
+  open, which is also where a full-size insect plate belongs (see below).
+- **The Record page's remainder, from the 2026-08-13 UX pass.** Four things were
+  deliberately left, each because it is somebody's decision and not a defect:
+  - **A tile opens nothing.** Tapping reads the entry into the note line, which
+    is the Stores drawer's idiom and enough for a figure — but a recorded insect
+    plate is still drawn full width in the card (260 units) because the
+    alternative is a plate sheet that does not exist. One sheet would serve both
+    it and the entry text above.
+  - **The world strip keeps a quarter of the screen on the Record tab.**
+    `JournalLayout.StripShareMax` is 0.26 of canvas height and the page floor is
+    0.32, so the longest reading page in the book gets under half the screen for
+    reading. The strip earns that band on the Trail and the Camp; here it shows
+    postings nothing on the page refers to. Making the share tab-dependent is a
+    change to the one piece of layout maths the tests pin, so it wants deciding
+    rather than doing.
+  - **An uncaught insect still keeps its haunt.** The marks say how far along a
+    plate is; nothing says where to send a watcher. Design §6 says a page not yet
+    earned keeps its secret — *no name, no haunt* — so revealing the habitat is a
+    narrative decision, not a UI one. The name should stay hidden either way.
+  - **The Almanac is on the Record page; design §677 says the Warden page.** It
+    leads the Record page now (it is the one card here with a currency to spend),
+    which makes the drift matter more, not less. Either the doc is stale or the
+    card is on the wrong tab.
 - **`design-doc.md` re-synced 2026-08-04** (windfall catch, the three-piece kit,
   the famXP formulas, the §12 achievement and Rewards rows). What remains there
   is voice, not accuracy: the §6 lore / §7 backstory were written for fossils

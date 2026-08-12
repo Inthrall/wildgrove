@@ -229,11 +229,20 @@ namespace Wildgrove.Game
         internal Dictionary<string, bool> ZoneOpen { get; } = new Dictionary<string, bool>();
 
         /// <summary>
-        /// The zone heading the page is being rebuilt around, and the heading
-        /// itself once the page has drawn it — the landmark that keeps a fold
-        /// under the finger that pressed it (see <see cref="FoldZone"/>).
+        /// The Record page's cards the player has folded open or shut, by id —
+        /// held and defaulted exactly as <see cref="ZoneOpen"/> is, against
+        /// <see cref="JournalRecordFolds.IsOpen"/>'s rule rather than the
+        /// Trail's.
         /// </summary>
-        internal string PendingZoneFold { get; private set; }
+        internal Dictionary<string, bool> RecordOpen { get; } = new Dictionary<string, bool>();
+
+        /// <summary>
+        /// The heading the page is being rebuilt around, and the heading itself
+        /// once the page has drawn it — the landmark that keeps a fold under the
+        /// finger that pressed it (see <see cref="FoldZone"/> and
+        /// <see cref="FoldCard"/>).
+        /// </summary>
+        internal string PendingFold { get; private set; }
 
         internal RectTransform FoldedHeading { get; set; }
         internal JournalText Labels => _labels;
