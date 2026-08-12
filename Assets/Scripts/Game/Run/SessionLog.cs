@@ -13,12 +13,15 @@ namespace Wildgrove.Game
     public sealed class SessionLog
     {
         /// <summary>
-        /// Below this much credited absence the welcome-back sheet stays quiet
-        /// (quick restarts and editor recompiles shouldn't greet the player).
-        /// The welcome_back telemetry event uses the same bar so the metric
-        /// counts what players actually saw.
+        /// Below this much credited absence the welcome-back sheet stays quiet.
+        /// Five minutes, so the greeting reads as a return rather than an
+        /// interruption: a quick restart, an editor recompile, or a minute spent
+        /// in another app is not an absence worth stopping the grove for, and at
+        /// the old one-minute bar it was firing on all three. The welcome_back
+        /// telemetry event uses the same bar so the metric counts what players
+        /// actually saw.
         /// </summary>
-        public const double WelcomeBackMinSeconds = 60.0;
+        public const double WelcomeBackMinSeconds = 300.0;
 
         private readonly ITelemetry _telemetry;
         private bool _open;

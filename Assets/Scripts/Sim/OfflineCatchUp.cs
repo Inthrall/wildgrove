@@ -28,12 +28,16 @@ namespace Wildgrove.Sim
     {
         /// <summary>
         /// Absences shorter than this are credited on the spot. Five minutes of
-        /// away time is at most 300 sub-steps — cheaper to run than to hold, and
-        /// short enough that the welcome-back sheet it feeds isn't waiting on
-        /// anything. Above it the work is worth spreading, and there is a sheet
-        /// to spread it behind (the bar the sheet itself appears at is
-        /// SessionLog.WelcomeBackMinSeconds, deliberately lower: a two-minute
-        /// absence is still greeted, just credited in one breath).
+        /// away time is at most 300 sub-steps, cheaper to run than to hold, and
+        /// nothing below the bar raises a sheet that could be waiting on it.
+        /// Above it the work is worth spreading, and there is a sheet to spread
+        /// it behind: the welcome-back sheet's own bar
+        /// (SessionLog.WelcomeBackMinSeconds) now sits at the same five minutes,
+        /// so an absence long enough to be sliced is exactly an absence the
+        /// player is greeted about. The pair may coincide but must never invert
+        /// (see OfflineCatchUpTests.DeferThreshold_IsFiveMinutes) — a sheet bar
+        /// above this one would spend frames slicing an absence and then say
+        /// nothing about it.
         /// </summary>
         public const double DeferThresholdSeconds = 300.0;
 

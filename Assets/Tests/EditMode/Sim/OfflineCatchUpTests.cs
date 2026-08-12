@@ -309,17 +309,21 @@ namespace Wildgrove.Sim.Tests
         public void DeferThreshold_IsFiveMinutes()
         {
             // The bar GameLoop reads to decide inline-or-sliced, and the bar the
-            // welcome-back sheet's own (lower) one is set against — pinned so a
-            // tuning nudge to one doesn't silently invert the pair.
+            // welcome-back sheet's own is set against — pinned so a tuning nudge
+            // to one doesn't silently invert the pair. The two coincide now that
+            // the sheet waits five minutes, which is allowed: an absence sliced
+            // across frames is exactly one the sheet will greet. A sheet bar
+            // ABOVE this one is not — that spends frames crediting an absence
+            // and then says nothing about it.
             Assert.That(OfflineCatchUp.DeferThresholdSeconds, Is.EqualTo(300.0));
             Assert.That(OfflineCatchUp.DeferThresholdSeconds,
-                Is.GreaterThan(SessionLogWelcomeBar),
-                "the sheet must appear for absences that are still credited inline");
+                Is.GreaterThanOrEqualTo(SessionLogWelcomeBar),
+                "an absence worth slicing must be one the sheet greets");
         }
 
         // SessionLog lives in Wildgrove.Game, which the sim tests don't reference —
         // the bar is restated rather than imported, and the assertion above is
         // what keeps the restatement honest if either moves.
-        private const double SessionLogWelcomeBar = 60.0;
+        private const double SessionLogWelcomeBar = 300.0;
     }
 }
