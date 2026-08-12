@@ -1,2 +1,2 @@
 Stat Id,Event Property Name,Stat Display Name,Stat Description,Icon File Name,Good value direction,Unit
-trails_walked,currentProgress,Trails walked,How much of the wildgrove this warden has stood in. Waystones cross a Migration so the count only climbs.,stat-trails-walked.png,INCREASING,trails
+trails_walked,currentProgress,Trails walked,How much of the wildgrove this warden has stood in. Waystones cross a Migration so the count only climbs.,stat-trails-walked.png,INCREASING,

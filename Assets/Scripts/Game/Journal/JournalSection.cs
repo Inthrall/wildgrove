@@ -34,6 +34,7 @@ namespace Wildgrove.Game
         protected Dictionary<string, float> _flashAges => _hud.FlashAges;
         protected Dictionary<string, Text> _tendFlashes => _hud.TendFlashes;
         protected Dictionary<string, bool> _zoneOpen => _hud.ZoneOpen;
+        protected Dictionary<string, bool> _recordOpen => _hud.RecordOpen;
         protected RectTransform _firstVerseCard { get => _hud.FirstVerseCard; set => _hud.FirstVerseCard = value; }
         protected RectTransform _firstKeepingCard { get => _hud.FirstKeepingCard; set => _hud.FirstKeepingCard = value; }
         protected GameObject _sheet { get => _hud.Sheet; set => _hud.Sheet = value; }

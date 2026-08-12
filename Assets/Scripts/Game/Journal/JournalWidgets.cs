@@ -106,6 +106,23 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The square grid a drawer of plates is laid out on, sized to whatever
+        /// width the page has. Shared by the Stores drawer and the Record page's
+        /// collections because they are the same object seen twice — a drawer of
+        /// specimens — and a grid that fitted its cells differently on one of
+        /// them would read as a different kind of thing.
+        /// </summary>
+        internal static RectTransform Grid(RectTransform card, float idealCell)
+        {
+            var go = MakeRect("Grid", card).gameObject;
+            var grid = go.AddComponent<SquareCellGrid>();
+            grid.idealCell = idealCell;
+            grid.spacing = new Vector2(8f, 8f);
+            grid.childAlignment = TextAnchor.UpperLeft;
+            return (RectTransform)go.transform;
+        }
+
+        /// <summary>
         /// The action strip along a plate's bottom edge — what can be bought
         /// here, centred. Centre rather than left because the strip holds whole
         /// purchases of its own rather than continuing the rows above it: pinned
@@ -189,6 +206,57 @@ namespace Wildgrove.Game
             FixedHeight(go, 2);
             go.GetComponent<Image>().raycastTarget = false;
             return go;
+        }
+
+        /// <summary>The width of a fold heading's left margin, and the chevron standing in it.</summary>
+        private const float FoldArrowLane = 56f;
+        private const float FoldArrowGlyph = 34f;
+
+        /// <summary>
+        /// Pin the fold chevron into a heading's left margin — down while the
+        /// section is open, turned a quarter to the right while it is shut.
+        /// <para>
+        /// The mark ignores the layout and the name is inset by the same lane on
+        /// BOTH sides, so a centred heading stays centred over its contents
+        /// instead of shunting right by half an arrow.
+        /// </para>
+        /// <para>
+        /// Shared by the Trail's grounds and the Record page's cards: which way
+        /// a section is folded is legible only by inference otherwise — from
+        /// whether anything follows the heading — and a section with nothing
+        /// under it then reads as an unresponsive button rather than an empty
+        /// open one.
+        /// </para>
+        /// </summary>
+        internal static void AddFoldArrow(Button heading, bool open)
+        {
+            var label = heading.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                var labelRect = (RectTransform)label.transform;
+                labelRect.offsetMin = new Vector2(FoldArrowLane, labelRect.offsetMin.y);
+                labelRect.offsetMax = new Vector2(-FoldArrowLane, labelRect.offsetMax.y);
+            }
+
+            var go = new GameObject("FoldArrow", typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(heading.transform, false);
+            go.GetComponent<LayoutElement>().ignoreLayout = true;
+            var image = go.GetComponent<Image>();
+            image.sprite = FoldArrowSprite();
+            image.preserveAspect = true;
+            // The plate takes the tap; a chevron that swallowed it would leave a
+            // dead spot in the middle of the control it describes.
+            image.raycastTarget = false;
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = new Vector2(0f, 0.5f);
+            rect.anchorMax = new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(FoldArrowGlyph, FoldArrowGlyph);
+            rect.anchoredPosition = new Vector2(FoldArrowLane * 0.5f, 0f);
+            // Drawn pointing down; a quarter turn anticlockwise points it at the
+            // name, which is where a shut section's contents have gone.
+            rect.localRotation = Quaternion.Euler(0f, 0f, open ? 0f : 90f);
         }
 
         internal static Button Button(Transform parent, string text, float width, UnityEngine.Events.UnityAction onClick)

@@ -64,7 +64,7 @@ namespace Wildgrove.Game
             MakeText(card, "<i>what the ground gave and the fire made</i>",
                 15, TextAnchor.MiddleCenter, Ink2, _serif);
 
-            var grid = Grid(card);
+            var grid = Grid(card, IdealTile);
             var empty = MakeText(card, "<i>the stores are bare. work a node and the drawer fills.</i>",
                 17, TextAnchor.MiddleCenter, Ink2, _serif);
 
@@ -166,7 +166,7 @@ namespace Wildgrove.Game
             var card = Card("THE TINCTURES");
             MakeText(card, "<i>tap a bottle to drink it</i>", 15, TextAnchor.MiddleCenter, Ink2, _serif);
 
-            var grid = Grid(card);
+            var grid = Grid(card, IdealTile);
             foreach (var tincture in _loop.Data.tinctures)
             {
                 BuildBrewTile(grid, tincture);
@@ -320,17 +320,6 @@ namespace Wildgrove.Game
         }
 
         // ── Furniture ─────────────────────────────────────────────────────
-
-        /// <summary>The square grid a drawer is laid out on, sized to whatever width the page has.</summary>
-        private static RectTransform Grid(RectTransform card)
-        {
-            var go = MakeRect("Grid", card).gameObject;
-            var grid = go.AddComponent<SquareCellGrid>();
-            grid.idealCell = IdealTile;
-            grid.spacing = new Vector2(8f, 8f);
-            grid.childAlignment = TextAnchor.UpperLeft;
-            return (RectTransform)go.transform;
-        }
 
         /// <summary>
         /// One square: the plate filling it, a grade rule around it, and a

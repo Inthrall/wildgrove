@@ -194,8 +194,38 @@ wired to nothing. The settings row lands with the audio pass.
   are still the intent; the sheet stands in. The §14 legibility check rides on
   this: the waystone (the past) and the verse site (the present) must read as
   distinct objects on a zone screen.
-- **The Compendium has no plates or entry text** — the system layer with lifetime
-  counters and discovery is live, the art and words aren't.
+- ~~**The Compendium has no plates or entry text**~~ **— the plates landed
+  2026-08-13; the entry text has not.** The Compendium and the Crafts are drawers
+  of square plates now (`RecordPage.BuildFindTile`, on the shared
+  `JournalWidgets.Grid`), the Folio draws each spread as the strip of specimens it
+  asks for, and the Deep Pages draw the sketch ladder as marks. What design §6
+  still promises and the page still hasn't got is **"a line or two" per entry** —
+  the caption is a lifetime figure and the tap reads a name and a tally, so a
+  recorded entry says what it is worth and nothing about what it *is*. The words
+  belong to the narrative pass above; the room for them is a sheet the tile would
+  open, which is also where a full-size insect plate belongs (see below).
+- **The Record page's remainder, from the 2026-08-13 UX pass.** Four things were
+  deliberately left, each because it is somebody's decision and not a defect:
+  - **A tile opens nothing.** Tapping reads the entry into the note line, which
+    is the Stores drawer's idiom and enough for a figure — but a recorded insect
+    plate is still drawn full width in the card (260 units) because the
+    alternative is a plate sheet that does not exist. One sheet would serve both
+    it and the entry text above.
+  - **The world strip keeps a quarter of the screen on the Record tab.**
+    `JournalLayout.StripShareMax` is 0.26 of canvas height and the page floor is
+    0.32, so the longest reading page in the book gets under half the screen for
+    reading. The strip earns that band on the Trail and the Camp; here it shows
+    postings nothing on the page refers to. Making the share tab-dependent is a
+    change to the one piece of layout maths the tests pin, so it wants deciding
+    rather than doing.
+  - **An uncaught insect still keeps its haunt.** The marks say how far along a
+    plate is; nothing says where to send a watcher. Design §6 says a page not yet
+    earned keeps its secret — *no name, no haunt* — so revealing the habitat is a
+    narrative decision, not a UI one. The name should stay hidden either way.
+  - **The Almanac is on the Record page; design §677 says the Warden page.** It
+    leads the Record page now (it is the one card here with a currency to spend),
+    which makes the drift matter more, not less. Either the doc is stale or the
+    card is on the wrong tab.
 - **`design-doc.md` re-synced 2026-08-04** (windfall catch, the three-piece kit,
   the famXP formulas, the §12 achievement and Rewards rows). What remains there
   is voice, not accuracy: the §6 lore / §7 backstory were written for fossils
@@ -781,15 +811,26 @@ for:
     the support lib is a plain AAR under `Runtime/Plugins/Android`, and
     `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` are
     declared direct — 2.1.0 got both transitively, at games-v2 **21.0.0**.)
-  - **Console:** upload the authored CSVs from `store/play-games/gamestats/`.
-    **Whether that is possible yet is itself unconfirmed, re-checked against the
-    guide on 2026-08-12:** it still says the API and SDK are "available for early
-    feedback and will be Generally Available (GA) starting August 2026", and it
-    names no month at all for the Play Console upload experience. **September
-    2026** is the date it does give, for players seeing stats on the Gamer profile
-    and for testing a draft config with test accounts, so that half batches with
-    the Sep 1 rewards visit either way. The cheap answer is a look for Play Games
-    Services → Game Stats on the next visit: if the screen is there, upload.
+  - **Console: the screen exists and the CSVs have been through its validator
+    once — 2026-08-13.** Rejected on content, not shape: the header row was taken
+    as authored, and the twelve errors were all `Unit` (a closed physical-unit
+    enum, and mandatorily empty on a `STRING`/`BOOL` property, where a value is
+    read as a duration format) and the `Min limit`/`Max limit` pair, which is
+    required when `Is Competitive` is `true` and forbidden when it is `false`. All
+    fixed, the ZIP is rebuilt, and the whole account with the reasoning is in
+    `store/play-games/gamestats/README.md`. **Re-uploaded clean the same day: all
+    seven events and seven stats are in as Draft, available to testers.** Next is
+    a tester read, *not* a publish — draft is already testable, publishing before
+    launch buys nothing, and it would end the window in which a row can still be
+    deleted. **It would also drag the achievements along:** publish is project-wide,
+    so applying §2's drifted step counts promotes this stats draft to production
+    too, which is why those two console visits should stay separate. The guide's own wording never did promise this: it still
+    calls the API "available for early feedback", dates GA to "starting August
+    2026" with no day, and names no month at all for the upload experience, so the
+    console is running ahead of its documentation. **September 2026** is the date
+    Google does give, for players seeing stats on the Gamer profile and for testing
+    a draft config with test accounts, so that half still batches with the Sep 1
+    rewards visit.
     **The format spec was found the same day, on a page nothing here had read:**
     [Integrate Game Stats](https://developer.android.com/games/pgs/integrate-gamestats),
     which also gives the console path (**Grow users → Play Games Services → Setup
@@ -801,10 +842,11 @@ for:
     512 × 512, PNG or JPEG, ≤1 MB, in the ZIP's root — and **the seven were drawn
     2026-08-12** (`make-store-art.py`, keyed off the CSVs so a stat cannot exist
     without an icon), which means nothing on this side is owed any more: the ZIP
-    is `store/play-games/gamestats/`'s own contents. One caution recorded in the CSVs' own README: the page's
-    formal format lines and its worked example disagree about the config headers,
-    ours now follow the format lines, and the example's shape is the second
-    attempt if the console rejects the first.
+    is `store/play-games/gamestats/`'s own contents. The page's formal format lines
+    and its worked example disagree about the config headers; **the format lines
+    are the ones the console implements**, proven by the 2026-08-13 upload taking
+    that header row without complaint, so the example's shape is not a fallback we
+    need to keep in hand any more.
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
     CSV drift, because Play drops undeclared events silently.
   - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its

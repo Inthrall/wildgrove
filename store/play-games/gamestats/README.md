@@ -33,15 +33,76 @@ Read that carefully, because this file used to say something firmer than the gui
 does. GA is dated to *this month* without a day, and the overview never promises a
 month for the **Play Console upload experience** at all.
 
-The integration page below is the better evidence, and it points the other way: it
-gives a live console path and describes the upload as a thing you do, with no beta
-language anywhere on it. Against that, the Play Console **help** page for Play
-Games Services features still lists only achievements, leaderboards, saved games
-and translations, with no mention of Game Stats, so the help side has not caught
-up either way. On balance the screen is probably there; one look settles it, and
-nothing in the repo can. The half that is certainly not ready before September is
-proving the draft config against a test account, which batches with the Sep 1
-rewards-association visit.
+**Uploaded and accepted 2026-08-13.** All seven events and all seven stats sit in
+the console as **Draft — available to testers**, icons rendering in the stat list,
+which is the third place today where the console runs ahead of its own
+documentation: the guide dates draft-config testing to September 2026 and the
+console is offering it now. Two things follow, and they are the opposite of the
+obvious ones:
+
+- **Do not publish yet.** Draft is already testable by a test account, so
+  publishing buys nothing before launch and costs the cheap-iteration window: in
+  draft every row still has a `Delete`, and this config needed three corrections on
+  its first day. (Tester access is the PGS project's own testers list, not the
+  `Settings → License testing` list todo §3.2 tracks for purchases.)
+- **Publish is project-wide, so it couples this to the achievements.** Publishing
+  the three drifted achievement step counts (§2) would promote this stats draft to
+  production in the same act. If stats should stay in draft, the achievement visit
+  has to be a separate one — which is the reverse of batching them, and the reason
+  is recorded here because the console gives no hint of it.
+
+**Settled 2026-08-13: the screen is there, and it validates.** The question above
+was answered by walking into the console. What September still owns, as far as
+anything published says, is **players** seeing stats on the Gamer profile; the
+tester half turned out not to be waiting for it at all.
+
+## What the validator actually enforces — 2026-08-13, the expensive way
+
+The first upload was **rejected on content, not on shape**, which settles several
+guesses at once. The header row was accepted exactly as authored, so the page's
+formal format lines are what the console implements and dropping the worked
+example's `Sequence Number` column was right. `INT64`, `INCREASING`, lower-case
+`true`/`false` and the seven 512 × 512 icons all passed without comment.
+
+Twelve errors came back across six rows, and they reduce to two rules the page
+states thinly and one it does not explain at all:
+
+- **`Unit` is a closed enum of physical units, not a label.** Distance
+  (`METER`, `KILOMETER`, `MILE`, `FOOT`, …), speed (`KILOMETER_PER_HOUR`, …),
+  percentage, or empty/`UNITLESS`. Every stat here counts *things*, so **every
+  `Unit` is now empty**: `items`, `windfalls`, `specimens`, `verses`,
+  `migrations` and `trails` were display words, and this column was never for
+  those.
+- **On a `STRING` or `BOOL` property the `Unit` column must be empty**, and a
+  value there is read as a *formatting configuration*. That is what the console's
+  most confusing message means: "Invalid format — formatting configuration is
+  allowed only for duration-type stats" appeared on precisely the three rows that
+  count a string (`windfallCaught`, `specimenFixed`, `verseCompleted`), while the
+  three numeric rows got "Invalid unit" instead. Same mistake, two error messages,
+  told apart by the property's type.
+- **The limits invert on `Is Competitive`.** Both `Min limit` and `Max limit` are
+  **required** when it is `true`, and both must be **absent** when it is `false`.
+  A single `0` in every row was wrong in both directions simultaneously.
+
+**The competitive ceiling is a judgement, recorded so it can be revisited.**
+`resources_gathered` is the competitive stat (§12), and it sums a lifetime
+`BigDouble` total in a game that needs `BigDouble` precisely because Renown
+outgrows `long` early in an idle run, which is why the Renown leaderboard submits
+`log10 × 1e6` instead of a raw figure. Against that, a fixed "maximum allowable
+score" is an awkward fit. The declared range is **0 to 9007199254740991**, the
+largest integer a `double` holds exactly: it keeps §12 intact, it is one config
+edit to change, and Play documents nothing about what happens to a value above the
+ceiling — clamped, dropped or flagged is unknown. If it ever bites, the better
+answer is moving the competitive flag to a naturally bounded stat (`verses_sung`
+tops out near 37, `migrations` in the tens), which would also sidestep the
+extraction-race objection §12's Leagues note raises against ranking on
+most-gathered.
+
+*One loose thread:* the competitive-limits error named the offending stat as
+`""` rather than `resources_gathered`. Either the validator interpolates a field
+we leave blank, or it reads the stat's name from a column we are not filling the
+way it expects. If that empty name comes back on a later upload, it is worth
+chasing then; nothing else suggested a mapping problem.
 
 ## The spec exists after all, on a page this file had never read
 
@@ -77,8 +138,9 @@ The tool now prints `WHITE BOX` for any such card, which is also how it reports
 that **three published achievement icons** already look that way (see
 `docs/todo.md` §3.2).
 
-**A caution for the first upload: the page contradicts itself, and we have taken a
-side.** Its formal format lines and its worked example disagree about the config
+**~~A caution for the first upload~~ — settled 2026-08-13: the console took the
+format lines' shape without complaint, so the paragraph below is history rather
+than a live risk. Kept because it explains why the headers read as they do.** Its formal format lines and its worked example disagree about the config
 headers, and the CSVs here were originally authored from the *example*. They now
 follow the *format lines*, which drop the example's `Sequence number` column and
 spell things differently (`Stat Id` not `Stat ID`, `Event Property Name` not

@@ -1,7 +1,7 @@
 Stat Id,Event Name,Event Property Name,Aggregation Type,Stat Display Name,Stat Description,Filter Property,Filter Operator,Filter Value,Is Competitive,Min limit,Max limit,Icon File Name,Good value direction,Unit
-resources_gathered,haulArrived,amount,SUM,Resources gathered,Everything the flock has carried back to camp.,,,,true,0,,stat-resources-gathered.png,INCREASING,items
-goods_crafted,craftCompleted,amount,SUM,Goods crafted,Goods made at the fire the bench and the forge.,,,,false,0,,stat-goods-crafted.png,INCREASING,items
-windfalls_caught,windfallCaught,resource,COUNT,Windfalls caught,Windfalls taken from the trails before they drifted away.,,,,false,0,,stat-windfalls-caught.png,INCREASING,windfalls
-specimens_fixed,specimenFixed,resource,COUNT,Specimens fixed,Specimens pressed and fixed into the Folio.,,,,false,0,,stat-specimens-fixed.png,INCREASING,specimens
-verses_sung,verseCompleted,verse,COUNT,Verses sung,Verses of the Rite carried to their end.,,,,false,0,,stat-verses-sung.png,INCREASING,verses
-migrations,migrationCompleted,number,COUNT,Migrations,Camps folded and set down again further on.,,,,false,0,,stat-migrations.png,INCREASING,migrations
+resources_gathered,haulArrived,amount,SUM,Resources gathered,Everything the flock has carried back to camp.,,,,true,0,9007199254740991,stat-resources-gathered.png,INCREASING,
+goods_crafted,craftCompleted,amount,SUM,Goods crafted,Goods made at the fire the bench and the forge.,,,,false,,,stat-goods-crafted.png,INCREASING,
+windfalls_caught,windfallCaught,resource,COUNT,Windfalls caught,Windfalls taken from the trails before they drifted away.,,,,false,,,stat-windfalls-caught.png,INCREASING,
+specimens_fixed,specimenFixed,resource,COUNT,Specimens fixed,Specimens pressed and fixed into the Folio.,,,,false,,,stat-specimens-fixed.png,INCREASING,
+verses_sung,verseCompleted,verse,COUNT,Verses sung,Verses of the Rite carried to their end.,,,,false,,,stat-verses-sung.png,INCREASING,
+migrations,migrationCompleted,number,COUNT,Migrations,Camps folded and set down again further on.,,,,false,,,stat-migrations.png,INCREASING,
