@@ -714,7 +714,7 @@ namespace Wildgrove.Data
         [Serializable]
         public sealed class WardenData
         {
-            /// <summary>The warden's own gather rate at their post, straight to camp — the bare-node replant bootstrap.</summary>
+            /// <summary>The warden's own base hands at their post, in the same units as <c>kith.gatherPerSecond</c> and riding the same node multipliers — the bare-node replant bootstrap.</summary>
             public double gatherPerSecond;
         }
 

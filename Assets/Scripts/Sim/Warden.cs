@@ -7,10 +7,15 @@ namespace Wildgrove.Sim
     /// post is assigned from the node strip like any familiar's (design §2:
     /// every post holds at most one body), and the warden gathers at it
     /// passively: the early game's kickstart is being somewhere, not a tap
-    /// surge. Their pickings go straight to camp (no basket, no carrier —
-    /// they pocket what they pick), which is also how a bare node in a fresh
-    /// zone earns its first own-resource gift (design §13). An unassigned
-    /// warden stands at camp and gathers nothing.
+    /// surge. A bare node in a fresh zone earns its first own-resource gift
+    /// off these hands (design §13). An unassigned warden stands at camp and
+    /// gathers nothing.
+    ///
+    /// The hands are one pair among the kith's: they ride the node's whole
+    /// multiplier stack (tools, mastery, richness, planters, tide, Verdure)
+    /// exactly as a stationed familiar's do — see
+    /// <see cref="Simulation.YieldPerSecond"/>. What is the warden's alone is
+    /// the base rate and the wardenYieldBonus band below.
     /// </summary>
     public static class Warden
     {
@@ -130,40 +135,35 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The warden's own gather rate at <paramref name="node"/> before any
-        /// burst boost — the full rate at their posted node, and zero anywhere
-        /// else: at camp, while keeping a watch (a watch post is the watch and
-        /// only the watch), or when unconfigured (pre-warden fixtures stay
-        /// inert).
+        /// The warden's own hands at <paramref name="node"/>, in the same units
+        /// as a familiar's <c>economy.kith.gatherPerSecond</c>: their base rate
+        /// widened by whatever carries for them — the fell pony's
+        /// wardenYieldBonus trait (§11) and worn-gear wardenYieldBonus effects
+        /// (the Birch Frame Pack) sum into one additive band. Zero anywhere but
+        /// their posted node: at camp, while keeping a watch (a watch post is
+        /// the watch and only the watch), or when unconfigured (pre-warden
+        /// fixtures stay inert).
         /// </summary>
-        public static double GatherPerSecond(GameState state, EconomyData economy, NodeState node)
+        /// <remarks>
+        /// Deliberately NOT a finished per-second rate — the node's multiplier
+        /// stack is applied once, by <see cref="Simulation.YieldPerSecond"/>,
+        /// over the kith's hands and the warden's together. Reapplying any of
+        /// it here (the tide used to be) would double-count it.
+        /// </remarks>
+        public static double HandsAt(GameState state, GameDataAsset data, EconomyData economy, NodeState node)
         {
-            if (economy?.warden == null)
+            if (economy?.warden == null || !IsPosted(state, node))
             {
                 return 0.0;
             }
 
-            return IsPosted(state, node) ? economy.warden.gatherPerSecond : 0.0;
-        }
-
-        /// <summary>
-        /// Data-aware overload: the base rate, quickened by whatever carries
-        /// for the warden — the fell pony's wardenYieldBonus trait (§11) and
-        /// worn-gear wardenYieldBonus effects (the Birch Frame Pack) sum into
-        /// one additive band.
-        /// </summary>
-        public static double GatherPerSecond(GameState state, GameDataAsset data, EconomyData economy, NodeState node)
-        {
-            var rate = GatherPerSecond(state, economy, node);
-            if (rate <= 0.0 || data == null)
+            var hands = economy.warden.gatherPerSecond;
+            if (data == null)
             {
-                return rate;
+                return hands;
             }
 
-            // The tide's lean is the node's, not the agent's — the warden's
-            // hands feel Beltane at a flower node the same as the kith's do.
-            return rate * (1.0 + Traits.WardenYieldBonus(state, data) + Upgrades.WardenYieldBonus(state, data))
-                        * Wheel.YieldMult(state, data, node.resourceId);
+            return hands * (1.0 + Traits.WardenYieldBonus(state, data) + Upgrades.WardenYieldBonus(state, data));
         }
     }
 }

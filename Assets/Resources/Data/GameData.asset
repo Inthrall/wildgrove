@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: 85b89b81c089c0406ec35e61979a3955933a5e53746e495e61a9ff388aeee9da
+  sourceHash: cee830d5f490d1f9467e761c20d564ee256af207b197053c4a4fb1c4e02759e8
   economy:
     costGrowth:
       building: 1.25
@@ -78,7 +78,7 @@ MonoBehaviour:
       choiceBonusDurationSec: 30
       choiceChanceBonus: 1
     warden:
-      gatherPerSecond: 0.5
+      gatherPerSecond: 0.4
     bubbles:
       spawnIntervalSec: 25
       lifetimeSec: 55
@@ -1504,7 +1504,7 @@ MonoBehaviour:
       recipe: 
       species: 
       upgrade: 
-      value: 0.5
+      value: 0.2
   - id: oilskin-tarp
     displayName: Oilskin Tarp
     slot: camp
@@ -2412,9 +2412,9 @@ MonoBehaviour:
     trait:
       displayName: Half-broke
       description: Carries what the warden picks, so their hands never leave the
-        work. The warden's own gathering +50%
+        work. The warden's own gathering +20%
       kind: wardenYieldBonus
-      value: 0.5
+      value: 0.2
       resources: []
     minMigration: 0
     inscriptions:

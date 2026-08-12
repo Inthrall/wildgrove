@@ -70,14 +70,14 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void GatherPerSecond_WithThePonyOwned_RunsHalfAgain()
+        public void HandsAt_WithThePonyOwned_RunHalfAgain()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 1.0 };
             var state = Owned();
             state.nodes.Add(new NodeState { id = "n1", resourceId = "berries" });
             state.wardenPostNodeId = "n1";
 
-            Assert.That(Warden.GatherPerSecond(state, _data, _data.economy, state.nodes[0]),
+            Assert.That(Warden.HandsAt(state, _data, _data.economy, state.nodes[0]),
                 Is.EqualTo(1.5).Within(Tolerance));
         }
 

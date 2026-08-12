@@ -21,9 +21,10 @@ namespace Wildgrove.Sim
         private const double MaxStepSeconds = 1.0;
 
         /// <summary>
-        /// Advance the run by <paramref name="deltaSeconds"/>: familiars gather
-        /// at their posts and the day's pickings land at camp in periodic
-        /// deliveries (design §2 gather → camp; only camp stock is spendable).
+        /// Advance the run by <paramref name="deltaSeconds"/>: the kith and the
+        /// warden gather at their posts and the day's pickings land at camp in
+        /// periodic deliveries (design §2 gather → camp; only camp stock is
+        /// spendable).
         /// Nothing is ever lost on the way — the delivery cadence exists so
         /// quality rolls attach to discrete batches, not to keep score.
         /// Non-positive deltas are a no-op so a paused or clock-skewed tick
@@ -68,7 +69,8 @@ namespace Wildgrove.Sim
                     : 0.0;
 
                 // Gate on the rate, not the flock count: a bonded gatherer
-                // posted at an empty node (design §7) gathers alone.
+                // posted at an empty node (design §7) gathers alone, and so
+                // does a warden at theirs.
                 var baseRate = YieldPerSecond(node, state, data, economy);
                 if (baseRate > BigDouble.Zero)
                 {
@@ -95,22 +97,6 @@ namespace Wildgrove.Sim
                         // goods go straight to camp, un-batched.
                         state.AddResource(node.resourceId, gained);
                     }
-                }
-
-                // The warden's own hands, at their post — always on (being
-                // somewhere is the kickstart, not a tap surge), boosted while
-                // a burst is live, and straight to camp with no carrier (they
-                // pocket what they pick). This is how a bare node earns its
-                // first own-resource gift (design §13 decision).
-                var wardenRate = Warden.GatherPerSecond(state, data, economy, node);
-                if (wardenRate > 0.0)
-                {
-                    var wardenGathered = new BigDouble(wardenRate *
-                        (deltaSeconds - burstSeconds + burstSeconds * burstMult));
-                    state.AddResource(node.resourceId, wardenGathered);
-                    Skills.AddGatherXp(state, data, node.skill, wardenGathered);
-                    Mastery.AddGatherXp(node, economy, wardenGathered);
-                    Compendium.RecordGather(state, node.resourceId, wardenGathered);
                 }
 
                 if (node.tendBurstRemaining > 0.0)
@@ -405,7 +391,7 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// Gather rate for a node, per design doc §8:
-        /// yield/sec = familiars · tool/gear mult · (1 + masteryBonus·mastery) · global.
+        /// yield/sec = hands · tool/gear mult · (1 + masteryBonus·mastery) · global.
         /// Base rate is one unit per familiar per second; global folds in the
         /// permanent Verdure bonus (almanac / museum / insect / boost factors
         /// arrive with their systems and multiply in here later).
@@ -416,9 +402,17 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Data-aware overload: the stationed kith (design §2) does the
-        /// gathering — assigned familiars at full rate, scaled by their traits
-        /// (see <see cref="Stationing"/>). Resting familiars work nothing.
+        /// Data-aware overload: everyone standing on this ground gathers it
+        /// (design §2) — assigned familiars at full rate, scaled by their traits
+        /// (see <see cref="Stationing"/>), plus the warden if this is their post
+        /// (see <see cref="Warden.HandsAt"/>). Resting familiars work nothing.
+        ///
+        /// One lane, deliberately. The warden's hands used to be summed
+        /// downstream against a multiplier stack of their own, which in practice
+        /// meant no stack at all: they missed tools, mastery, richness, planters
+        /// and Verdure, so a warden who opened the game ahead of a familiar was
+        /// ~70x behind one by the midgame. Hands differ; the ground does not
+        /// care whose they are.
         /// </summary>
         public static BigDouble YieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
         {
@@ -435,32 +429,14 @@ namespace Wildgrove.Sim
             var baseRate = economy.kith != null && economy.kith.gatherPerSecond > 0.0
                 ? economy.kith.gatherPerSecond
                 : 1.0;
+            // The warden's own hands, already carrying their wardenYieldBonus
+            // band, in the same units as baseRate.
+            var warden = Warden.HandsAt(state, data, economy, node);
             // The open tide's lean on this node's find (design §15) — read live
             // from the sim clock cursor, never from the cached effect union.
             var tide = Wheel.YieldMult(state, data, node.resourceId);
 
-            return new BigDouble(agents * baseRate) * node.yieldMultiplier * masteryBonus * richness * planters * tide * global;
-        }
-
-        /// <summary>
-        /// Everything the node yields per second right now — the stationed
-        /// kith's lane plus the warden's own hands. <see cref="YieldPerSecond"/>
-        /// is deliberately the basket lane alone (the warden pockets theirs
-        /// straight to camp, so it never pools in a basket), but that is an
-        /// accounting seam and not something a reader of the node's plate
-        /// cares about: a posted warden read as "0.0/s" on the very node they
-        /// were standing on. Anything asking "how fast is this ground worked"
-        /// wants this one.
-        /// </summary>
-        public static BigDouble TotalYieldPerSecond(NodeState node, GameState state, GameDataAsset data, EconomyData economy)
-        {
-            if (node == null || state == null)
-            {
-                return BigDouble.Zero;
-            }
-
-            return YieldPerSecond(node, state, data, economy)
-                   + new BigDouble(Warden.GatherPerSecond(state, data, economy, node));
+            return new BigDouble(agents * baseRate + warden) * node.yieldMultiplier * masteryBonus * richness * planters * tide * global;
         }
     }
 

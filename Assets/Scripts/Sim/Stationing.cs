@@ -49,7 +49,7 @@ namespace Wildgrove.Sim
         ///
         /// This asks who is STANDING here, not whether the ground earns — the
         /// strip draws one post per body, and a yield test
-        /// (<see cref="Simulation.TotalYieldPerSecond"/>) can read zero for
+        /// (<see cref="Simulation.YieldPerSecond"/>) can read zero for
         /// reasons that are nothing to do with standing.
         /// </summary>
         public static bool HasBodyAt(GameState state, string stationId)
@@ -108,6 +108,11 @@ namespace Wildgrove.Sim
         /// A watcher contributes nothing here — a watch post is the watch and
         /// only the watch (a body that also gathered read as two jobs on one
         /// post, and players couldn't say what the post was for).
+        ///
+        /// The kith only. A posted warden's hands are added alongside these, in
+        /// the same units, by <see cref="Simulation.YieldPerSecond"/> — they
+        /// carry their own base rate and bonus band, so they cannot be counted
+        /// as a familiar here.
         /// </summary>
         public static double GatherAgentsAt(GameState state, GameDataAsset data, NodeState node)
         {

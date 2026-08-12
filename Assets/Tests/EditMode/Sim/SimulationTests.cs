@@ -229,24 +229,27 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_WardenAtBareNode_GathersStraightToCamp()
+        public void Advance_WardenAtBareNode_WorksTheGround()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            _data.economy.delivery.batchSeconds = 60.0; // longer than the tick: the pool can't land
             var state = GameStateFactory.NewGame(_data);
             state.wardenPostNodeId = state.nodes[1].id; // wildflowers: no familiars
 
             Simulation.Advance(state, _data, 2.0);
 
             // The warden's hands are the bare node's only source — 0.5/s just
-            // for standing there, bypassing basket and carriers (design §13).
-            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
-            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            // for standing there (design §13). It pools in the node's basket
+            // and lands on the delivery cadence like anyone else's picking;
+            // the straight-to-camp bypass retired 2026-08-13 with the flat rate.
+            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
         }
 
         [Test]
         public void Advance_WardenGather_IsBoostedWhileTheBurstLives()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            _data.economy.delivery.batchSeconds = 60.0;
             var state = GameStateFactory.NewGame(_data);
             state.wardenPostNodeId = state.nodes[1].id;
             Simulation.Tend(state.nodes[1], _data.economy);
@@ -254,25 +257,27 @@ namespace Wildgrove.Sim.Tests
             Simulation.Advance(state, _data, 8.0);
 
             // 5 bursted seconds at ×3 plus 3 plain seconds: 0.5 · (15 + 3) = 9.
-            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(9.0).Within(Tolerance));
+            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(9.0).Within(Tolerance));
         }
 
         [Test]
         public void Advance_WardenGather_OnlyAtThePost()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            _data.economy.delivery.batchSeconds = 60.0;
             var state = GameStateFactory.NewGame(_data);
             state.wardenPostNodeId = state.nodes[1].id;
             state.roster.Clear(); // only the warden works, and only at its post
 
             Simulation.Advance(state, _data, 2.0);
 
-            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
-            Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
+            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(0.0).Within(Tolerance),
+                "the node the warden is not standing at earns nothing");
         }
 
         [Test]
-        public void Advance_WardenGather_BypassesTheBasketTheFamiliarFills()
+        public void Advance_WardenGather_FillsTheSameBasketAFamiliarDoes()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             _data.economy.delivery.batchSeconds = 60.0; // longer than the tick: the pool can't land
@@ -283,12 +288,13 @@ namespace Wildgrove.Sim.Tests
 
             Simulation.Advance(state, _data, 2.0);
 
-            // The gatherer's bursted yield (2s · 3×) still waits on the next
-            // delivery, but the warden — at their own post next door —
-            // pockets 0.5 · 2 wildflowers straight to camp regardless.
+            // One lane, one basket, one delivery cadence: the gatherer's
+            // bursted yield (2s · 3×) and the warden's 0.5 · 2 next door both
+            // wait on the next delivery. Nothing reaches camp early.
             Assert.That(state.nodes[0].basket.ToDouble(), Is.EqualTo(6.0).Within(Tolerance));
+            Assert.That(state.nodes[1].basket.ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(1.0).Within(Tolerance));
+            Assert.That(state.GetResource("wildflowers").ToDouble(), Is.EqualTo(0.0).Within(Tolerance));
         }
 
         [Test]
@@ -537,49 +543,80 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TotalYieldPerSecond_WardenAlone_IsNotZero()
+        public void YieldPerSecond_WardenAlone_WorksTheGround()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear();
             Warden.Post(state, state.nodes[1]);
 
-            // The basket lane is empty — this is the reading that made a posted
-            // warden look inert on the node's own plate.
+            // One lane now: the posted warden IS the node's rate when the kith
+            // is elsewhere, on the node's own plate and in the tick alike.
             Assert.That(Simulation.YieldPerSecond(state.nodes[1], state, _data, _data.economy).ToDouble(),
-                Is.EqualTo(0.0).Within(Tolerance));
-            Assert.That(Simulation.TotalYieldPerSecond(state.nodes[1], state, _data, _data.economy).ToDouble(),
                 Is.EqualTo(0.5).Within(Tolerance));
         }
 
         [Test]
-        public void TotalYieldPerSecond_AWatchingWarden_AddsNothingToTheKithsLane()
+        public void YieldPerSecond_TheWardensHands_RideTheNodesMultipliers()
+        {
+            // The defect this redesign answers: the warden's hands were summed
+            // outside the node's stack, so they gathered a flat base rate for
+            // the whole run while a familiar beside them rode tools, mastery,
+            // richness, planters and Verdure. Same ground, same multipliers,
+            // whoever is standing on it.
+            _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
+            var state = GameStateFactory.NewGame(_data);
+            state.roster.Clear();
+            var node = state.nodes[1];
+            node.yieldMultiplier = 2.0;  // tools and upgrades
+            state.verdurePoints = 10;    // the permanent global
+            Warden.Post(state, node);
+
+            // 0.5 hands · 2.0 tools · (1 + 0.02·10) Verdure = 1.2 — two of the
+            // lanes the warden's flat rate used to sail straight past.
+            Assert.That(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(0.5 * 2.0 * 1.2).Within(Tolerance));
+        }
+
+        [Test]
+        public void YieldPerSecond_AWatchingWarden_AddsNothingToTheKithsLane()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear();
             TestKith.Station(state, state.nodes[0].id, 1);
+            var node = state.nodes[0];
+
+            // Baseline with the warden at camp, so the comparison isolates the
+            // watch rather than the walk off the node a new game starts them on.
+            Warden.Rest(state);
+            var resting = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
+
             Warden.Watch(state, "old-growth-wood");
+            var watching = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
 
             // A watch post is the watch and only the watch (the gather-share
             // retired 2026-08-09): the node's rate is the kith's lane alone.
-            var node = state.nodes[0];
-            var kith = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
-            Assert.That(kith, Is.GreaterThan(0.0), "the stationed familiar's lane still runs");
-            Assert.That(Simulation.TotalYieldPerSecond(node, state, _data, _data.economy).ToDouble(),
-                Is.EqualTo(kith).Within(Tolerance));
+            Assert.That(resting, Is.GreaterThan(0.0), "the stationed familiar's lane still runs");
+            Assert.That(watching, Is.EqualTo(resting).Within(Tolerance));
         }
 
         [Test]
-        public void TotalYieldPerSecond_WardenAtCamp_MatchesTheKithsLane()
+        public void YieldPerSecond_WardenAtCamp_AddsNothing()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            Warden.Rest(state);
+            state.roster.Clear();
+            var node = state.nodes[1];
 
-            var node = state.nodes[0];
-            Assert.That(Simulation.TotalYieldPerSecond(node, state, _data, _data.economy).ToDouble(),
-                Is.EqualTo(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble()).Within(Tolerance));
+            Warden.Post(state, node);
+            Assert.That(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(0.5).Within(Tolerance));
+
+            Warden.Rest(state);
+            Assert.That(Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble(),
+                Is.EqualTo(0.0).Within(Tolerance),
+                "the whole of the warden's contribution leaves with them");
         }
     }
 }

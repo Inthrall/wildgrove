@@ -2054,19 +2054,17 @@ namespace Wildgrove.Data
                 issues.Add("Economy bubbles values must all be positive");
             }
 
-            // The windfall's notional gatherer IS the warden's own hands — that
-            // is the whole justification for a flat haul (economy.json's bubbles
-            // note: a catch should read as "a minute of picking at that node").
-            // The two numbers were equal only because someone kept them so, and
-            // warden.gatherPerSecond is still labelled a first guess: retune it
-            // alone and the windfall quietly stops meaning what it says. If they
-            // are ever meant to part, delete this rule and the note together.
-            if (economy.Bubbles != null && economy.Warden != null
-                && System.Math.Abs(economy.Bubbles.RewardRatePerSecond - economy.Warden.GatherPerSecond) > 1e-9)
-            {
-                issues.Add($"Economy bubbles.rewardRatePerSecond {economy.Bubbles.RewardRatePerSecond} must match "
-                           + $"warden.gatherPerSecond {economy.Warden.GatherPerSecond} — the windfall is a minute of the warden's own picking");
-            }
+            // bubbles.rewardRatePerSecond used to be pinned equal to
+            // warden.gatherPerSecond here, on the reading that a windfall IS a
+            // minute of the warden's own picking. The two parted on 2026-08-13,
+            // as that rule's own comment said they might: rescaling the warden
+            // (0.5 → 0.4) when their hands began riding the node's multiplier
+            // stack would have dragged the windfall from 30 units to 24, which
+            // was never the intent of a warden change. The windfall's rate is
+            // its own tuning value now — a notional gatherer's hands, not any
+            // particular pair — so a warden retune no longer moves it and it can
+            // be weighed on its own against zone 6-8 income, which is what the
+            // bubbles note's standing warning has always asked for.
 
             if (economy.Observation != null
                 && (economy.Observation.PityTimerHoursWatched <= 0 || economy.Observation.BaseSketchesPerHour <= 0

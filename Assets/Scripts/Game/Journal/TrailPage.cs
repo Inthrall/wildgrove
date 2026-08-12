@@ -861,10 +861,7 @@ namespace Wildgrove.Game
                     ? " · <color=" + OchreInkHex + ">fallow</color>"
                     : string.Empty;
 
-                // The warden's own hands are part of this ground's rate — they
-                // pocket theirs straight to camp rather than into the basket,
-                // which is bookkeeping, not something the plate should hide.
-                var rate = Simulation.TotalYieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
+                var rate = Simulation.YieldPerSecond(captured, state, _loop.Data, _loop.Data.economy);
                 var stock = state.GetResource(captured.resourceId);
                 label.text = captured.resourceId + rich
                              + "\n" + SizeOpen(15) + "<color=" + Ink2Hex + ">" + NumberFormat.Rate(rate) + "/s · "

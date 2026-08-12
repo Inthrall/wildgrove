@@ -1260,9 +1260,12 @@ namespace Wildgrove.Data.Tests
             var sources = LoadSources();
             // Not a tuning value: the warden's hands are a bare node's only
             // route to its first own-resource gift.
-            sources.EconomyJson = sources.EconomyJson.Replace(
-                "\"gatherPerSecond\": 0.5,",
+            var zeroed = sources.EconomyJson.Replace(
+                "\"gatherPerSecond\": 0.4,",
                 "\"gatherPerSecond\": 0,");
+            Assert.That(zeroed, Is.Not.EqualTo(sources.EconomyJson),
+                "the warden's authored rate moved — retarget this replace, or the test passes on an unmodified fixture");
+            sources.EconomyJson = zeroed;
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
@@ -1704,7 +1707,7 @@ namespace Wildgrove.Data.Tests
             Assert.That(asset.economy.xp.baseXp, Is.EqualTo(100d));
             Assert.That(asset.ResourcesById["berries"].sellValue, Is.EqualTo(data.ResourcesById["berries"].SellValue));
             Assert.That(asset.economy.gifts.pileGoods.ToDouble(), Is.EqualTo(10d));
-            Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.5d));
+            Assert.That(asset.economy.warden.gatherPerSecond, Is.EqualTo(0.4d));
             Assert.That(asset.ZonesById["sunfield-meadow"].verseSite, Is.EqualTo("the fire circle"));
             Assert.That(asset.rites.chooseCount, Is.EqualTo(3));
             Assert.That(asset.rites.rites.Single().verses, Has.Count.EqualTo(8), "one verse per zone, the whole map");
