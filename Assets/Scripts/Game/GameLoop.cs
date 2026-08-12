@@ -212,6 +212,17 @@ namespace Wildgrove.Game
                 // the way out, making the last save the absence baseline).
                 CreditAbsence((NowUnixMs() - _persistence.LastSavedUnixMs) / 1000.0);
                 StartSession();
+
+                // A reward claimed in the Play Games app is set out for a process
+                // that is still alive and never told, so Google asks for the check
+                // on every foreground as well as at launch. The answer is
+                // deliberately dropped: a reward that landed announces itself
+                // through the confirmation sheet, and a store we could not reach
+                // must never be reported as nothing waiting.
+                if (Store != null)
+                {
+                    CheckPlayRewards(null);
+                }
             }
         }
 

@@ -23,6 +23,7 @@ Play's rules for these cards, worth not breaking:
 The parchment is deliberately off-white for that last reason.
 """
 import argparse
+import csv
 import json
 import random
 import sys
@@ -150,6 +151,77 @@ ACHIEVEMENT_PLATES = {
 }
 
 
+# One plate per Game Stat, on the same rule the achievements keep: Play asks for
+# "a unique icon representing the stat", and there is no reason to find out the
+# hard way whether it enforces that as strictly. Keyed by the Stat Id in the two
+# config CSVs, so a stat cannot be added without an icon to wear. None of these
+# plates is used by an achievement card either — both sets are read on the same
+# gamer profile, and a stat wearing an achievement's picture would look like a
+# mistake even where it is allowed.
+GAMESTAT_PLATES = {
+    # What the flock carried home, so the creel rather than the basket the
+    # "a-full-basket" achievement already wears.
+    "resources_gathered": "Gear/gear-creel",
+    # The forge is the one crafting building no achievement took.
+    "goods_crafted": "Buildings/building-forge",
+    # Lights caught in flight, for the windfall that drifts off if it isn't.
+    # (`insect-windborne` is the better word and the wrong file: it has no alpha
+    # at all, so it lands as a white box on the parchment. See the warning in
+    # build() — it is not the only plate cut that way.)
+    "windfalls_caught": "Insects/insect-lantern-bearers",
+    # The specimen fixed into the Folio, which is a court gone quiet.
+    # (`insect-parchment-wings` names the idea exactly and is the same white box.)
+    "specimens_fixed": "Insects/insect-quiet-court",
+    # A verse is answered by ground opening, which is what a keystone is.
+    "verses_sung": "Zones/keystone-sunburst-poppy",
+    # The camp set down again further on: a seed, not a tarp.
+    "migrations": "Zones/keystone-ancient-acorn",
+    # Ground stood in, told the way ground tells it: lichen is what grows on the
+    # waystones a warden has already read. (`gear-torch` was the first choice and
+    # renders as a lamp whose chimney is cropped flat by its own frame, which the
+    # elliptical fade cannot reach on a plate that tall.)
+    "trails_walked": "Resources/res-lichen",
+}
+
+GAMESTATS = ROOT / "store" / "play-games" / "gamestats"
+
+
+def gamestat_cards():
+    """A card per stat in the console configs, named by the CSV's own icon column.
+
+    Google's icon rules here are stricter than the store's: **exactly** 512x512,
+    PNG or JPEG, at most 1 MB, and the files sit in the root of the uploaded ZIP
+    beside the two config CSVs, which is where these are written. They keep the
+    achievements' circular inset and vignette because nothing published says what
+    shape a stat icon is displayed in, and an inset ring is harmless on a square
+    card while a sliced-off rule is not.
+    """
+    stats = []
+    for name in ("RepetitiveStatsConfig.csv", "ProgressionStatConfig.csv"):
+        with (GAMESTATS / name).open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                stats.append((row["Stat Id"], row["Icon File Name"]))
+
+    missing = [stat for stat, _ in stats if stat not in GAMESTAT_PLATES]
+    if missing:
+        raise SystemExit(
+            "No plate assigned for stat: " + ", ".join(missing)
+            + "\nAdd them to GAMESTAT_PLATES — every stat in the config needs its own icon."
+        )
+
+    plates = [GAMESTAT_PLATES[stat] for stat, _ in stats]
+    clashes = {plate for plate in plates if plates.count(plate) > 1}
+    if clashes:
+        raise SystemExit(
+            "Plate used by more than one stat: " + ", ".join(sorted(clashes))
+            + "\nPlay asks for a unique icon per stat."
+        )
+
+    return [Card("play-games/gamestats/" + icon, GAMESTAT_PLATES[stat],
+                 size=512, plate_fraction=0.50, inset=0.08, vignette=True)
+            for stat, icon in stats]
+
+
 def achievement_cards():
     """A card per achievement in the manifest, in its order."""
     manifest = json.loads(
@@ -183,6 +255,7 @@ def achievement_cards():
 
 
 CARDS += achievement_cards()
+CARDS += gamestat_cards()
 
 
 def foxing(size, rng):
@@ -230,6 +303,16 @@ def soften(plate):
     return plate
 
 
+def opaque_edged(plate):
+    """True when the plate's own border is solid, i.e. it was cut without alpha."""
+    alpha = plate.getchannel("A")
+    width, height = plate.size
+    px = alpha.load()
+    edge = ([px[x, 0] for x in range(width)] + [px[x, height - 1] for x in range(width)]
+            + [px[0, y] for y in range(height)] + [px[width - 1, y] for y in range(height)])
+    return sum(1 for value in edge if value > 200) > len(edge) // 2
+
+
 def build(card, check):
     src = PLATES / (card.plate + ".png")
     if not src.exists():
@@ -238,6 +321,15 @@ def build(card, check):
 
     plate = Image.open(src).convert("RGBA")
     if card.vignette:
+        # soften() fades the alpha it is given, so a plate cut with no alpha at
+        # all cannot be dissolved: it lands as a white rectangle on the parchment
+        # with softened corners, which is worse than a straight edge because it
+        # looks deliberate. Three achievement plates are cut that way and are
+        # already published under those cards, so this warns rather than fails —
+        # replacing a published achievement icon is a console decision, and Play
+        # will not accept two achievements sharing one.
+        if opaque_edged(plate):
+            print("WHITE BOX  %s  (%s has no alpha to fade)" % (card.out, card.plate))
         plate = soften(plate)
     longest = card.plate_fraction * card.size
     scale = longest / max(plate.size)

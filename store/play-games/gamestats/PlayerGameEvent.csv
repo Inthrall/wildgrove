@@ -4,5 +4,5 @@ craftCompleted,amount,DOUBLE
 windfallCaught,resource,STRING
 specimenFixed,resource,STRING
 verseCompleted,verse,STRING
-migrationCompleted,number,INT
-progressUpdate,currentProgress,INT
+migrationCompleted,number,INT64
+progressUpdate,currentProgress,INT64

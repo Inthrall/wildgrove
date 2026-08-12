@@ -441,23 +441,28 @@ lean is a regression, not a phase. Build order:
 
 ## 2. Bugs & fixes
 
-- **A reward delivered while the game sits in the background is not noticed on
-  the way back in.** Found 2026-08-12 re-reading Google's Rewards page, which
+- ~~**A reward delivered while the game sits in the background is not noticed on
+  the way back in**~~ ✅ RESOLVED 2026-08-12, the same day it was found. The
+  resume branch of `GameLoop.OnApplicationPause` now calls `CheckPlayRewards`
+  once the session is open, dropping the answer on purpose: a reward that landed
+  announces itself through the confirmation sheet, and an unreachable store must
+  not be reported as nothing waiting. No throttle, because a foreground check is
+  what Google asks for and `FetchPurchases` is the same call a launch makes. **No
+  test, deliberately:** nothing in EditMode instantiates `GameLoop`, which is the
+  point of keeping its lifecycle methods this thin, and the piece worth pinning
+  (`CheckPlayRewards` itself) was already only reachable through the
+  MonoBehaviour. The device check belongs with §3.3's reward pass: claim in the
+  Play Games app, switch back without killing the game, and the confirmation
+  should be waiting. What was wrong, kept for the reasoning: Google's Rewards page
   asks the game to check for unacknowledged rewards "when the game starts or is
-  foregrounded" and to grant them immediately. Ours does the first half only: the
-  first purchase fetch of a launch catches anything owed
-  (`UnityIapStore.ProcessPurchase` on connect), and `CheckPlayRewards` is wired
-  as a manual nudge on the inside cover, but the resume branch of
-  `GameLoop.OnApplicationPause` credits absence and reopens the session without
-  asking the store anything. That is the *common* path for this feature: the
-  player claims in the Play Games app and switches straight back to a live
-  process, which is exactly the case a foreground check exists for. It is not a
-  lost reward, since a cold start or the inside-cover button still finds it, and
-  the claim window is three days rather than a moment. The fix is one call to
-  `CheckPlayRewards` on the resume branch, with the callback's `null` (store
-  unreachable) staying silent rather than saying "none" — the same distinction
-  `CheckPlayRewards` already documents. Worth pinning with a test that a resume
-  asks the store, because nothing else in the game would ever notice it stopped.
+  foregrounded", and we did the first half only. A launch's first purchase fetch
+  caught anything owed (`UnityIapStore.ProcessPurchase` on connect) and the Camp
+  row's button asked on demand (`CampPage` → `CheckPlayRewards`), but a resume
+  credited absence and reopened the session without asking the store anything,
+  which is the *common* path for this feature: the player claims in the Play Games
+  app and switches straight back to a live process. It was never a lost reward,
+  since a cold start or the Camp row still found it inside the three-day claim
+  window, but it made the arrival wait on the player doing something arbitrary.
 - **Three published incremental achievements have drifted from the data they
   count.** Each needs the same three-place fix, landing together: Play Console
   step count → `store/play-games/achievements.json` → `Achievements.cs`. Batch
@@ -673,6 +678,19 @@ for:
   **Do not re-add either** without saying so on the privacy page and the Data Safety
   form first. UGS core still initialises whenever the store connects
   (`UnityIapStore.ConnectAsync`); that is fine, per the entry above.
+- **Three published achievement icons are white boxes on parchment**, found
+  2026-08-12 while drawing the Game Stats icons. `res-sky-blossoms`,
+  `keystone-cloudfleece-ram` and `res-glacier-ice` were cut with no alpha channel,
+  so the elliptical fade that dissolves a straight crop has nothing to work on and
+  the plate lands as a rectangle: *twenty-five-verses*, *ten-folds* and
+  *cloudreach* wear it. `make-store-art.py` now prints `WHITE BOX` for any such
+  card rather than failing, because the fix is a console decision and not a code
+  one: Play refuses a configuration where two achievements share an icon, so each
+  needs its own replacement plate, and all three are already uploaded. Cheapest
+  route if it is judged worth doing at all: cut an alpha channel into those three
+  plates (they are the game's art too, so the fix would improve both), rather than
+  reassigning three achievements to different subjects. Not urgent, and honestly
+  invisible unless the profile is read next to the tidier cards.
 - **Re-step the three drifted achievements** (§2) in the same visit.
 - **Add Mo as a license tester** (Settings → License testing) so test purchases
   aren't charged.
@@ -772,15 +790,21 @@ for:
     and for testing a draft config with test accounts, so that half batches with
     the Sep 1 rewards visit either way. The cheap answer is a look for Play Games
     Services → Game Stats on the next visit: if the screen is there, upload.
-    Two knowingly-unfinished parts stand: the **stat icons aren't drawn**
-    (Google has published no size spec — the guide asks only for "the exact icon
-    filename in the CSV file", re-checked 2026-08-12, so use
-    `tools/make-store-art.py` once the console says what shape), and the column
-    values (`HIGHER`, the free-text units) are **not** documented spellings after
-    all — the guide describes both columns in prose only ("whether an increasing
-    value or decreasing value is good", "a unit of measurement such as km, miles,
-    and seconds") and publishes no allowed set, so ours are inferred. Expect one
-    correction round.
+    **The format spec was found the same day, on a page nothing here had read:**
+    [Integrate Game Stats](https://developer.android.com/games/pgs/integrate-gamestats),
+    which also gives the console path (**Grow users → Play Games Services → Setup
+    and management → Game Stats**) and carries no beta caveat, unlike the
+    overview. It bounced three things in the authored CSVs, all now corrected:
+    `HIGHER` is not a value (the column takes `INCREASING`/`DECREASING`), `INT` is
+    not a type (`INT64`, `DOUBLE`, `STRING`, `BOOL`, case-sensitive), and
+    `Is Competitive` is lower-case `true`/`false`. **The icon spec exists too:**
+    512 × 512, PNG or JPEG, ≤1 MB, in the ZIP's root — and **the seven were drawn
+    2026-08-12** (`make-store-art.py`, keyed off the CSVs so a stat cannot exist
+    without an icon), which means nothing on this side is owed any more: the ZIP
+    is `store/play-games/gamestats/`'s own contents. One caution recorded in the CSVs' own README: the page's
+    formal format lines and its worked example disagree about the config headers,
+    ours now follow the format lines, and the example's shape is the second
+    attempt if the console rejects the first.
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
     CSV drift, because Play drops undeclared events silently.
   - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its
