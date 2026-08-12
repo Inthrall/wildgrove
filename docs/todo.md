@@ -162,12 +162,12 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
     moss (+) where the crop would be, their badge beneath it, captioned "at camp"
     (never the warden's name — that caption is what collided), and a tap that
     opens the walk sheet.
-  - **Wandering shows nothing here, deliberately** (2026-08-06). A roaming warden
-    holds the wander post, which is no single node and so has no plate on the
-    strip — but drawing them on an empty ground would say they had no work, when
-    roaming IS the work. One slot, one meaning. The cost is that the warden is
-    off the board while wandering; the watch card and the pickers are where that
-    posting is read.
+  - **A watching warden shows nothing here, deliberately** (2026-08-06; the watch
+    became per-site 2026-08-12). They hold an observation site's post, which is no
+    node and so has no plate on the strip — but drawing them on an empty ground
+    would say they had no work, when watching IS the work. One slot, one meaning.
+    The cost is that the warden is off the board while watching; that zone's watch
+    card and the pickers are where the posting is read.
 - **Zone folding, one beat to watch:** the moment the second zone unlocks, the
   meadow's plates disappear behind a heading for the first time. It names its
   resources and looks pressable, but that is the one place a player could think
@@ -385,6 +385,18 @@ lean is a regression, not a phase. Build order:
   Ours is Monday on the guess that it is; worth confirming while §3.2's Play
   Console visits are open, because a mismatch is what puts an off-cadence
   delivery a day early or late against the row's own reading.
+  **The public docs do not answer it — checked 2026-08-12, so don't re-read them.**
+  The Level Up guideline is the only place the cadence is written down at all
+  ("with a maximum of 1 reward per week per player", awarded after social
+  challenges); it defines no week, no start day and no timezone, and neither the
+  Rewards page nor the guideline says whether the developer can see or set the
+  cap. That leaves two routes, both console-side: ask on the Sep 1 visit, or read
+  the cadence off an actual test delivery once reward testing opens. Worth
+  knowing while it stands open: a mismatch cannot cost the player anything,
+  because the grant is unconditional by design (§11) and an early delivery is
+  taken rather than refused. The damage is confined to the countdown reading
+  "ready in 2d" on a row that has just been paid, which is a wrong sentence and
+  not a lost reward.
 - ~~**A windfall drawing over the rail's cells could not be caught there**~~
   ✅ RESOLVED 2026-08-12 (Mo's call: the catch wins) — the rail moved into a
   camera-space canvas of its own so the band's windfalls pass in FRONT of it
@@ -429,6 +441,23 @@ lean is a regression, not a phase. Build order:
 
 ## 2. Bugs & fixes
 
+- **A reward delivered while the game sits in the background is not noticed on
+  the way back in.** Found 2026-08-12 re-reading Google's Rewards page, which
+  asks the game to check for unacknowledged rewards "when the game starts or is
+  foregrounded" and to grant them immediately. Ours does the first half only: the
+  first purchase fetch of a launch catches anything owed
+  (`UnityIapStore.ProcessPurchase` on connect), and `CheckPlayRewards` is wired
+  as a manual nudge on the inside cover, but the resume branch of
+  `GameLoop.OnApplicationPause` credits absence and reopens the session without
+  asking the store anything. That is the *common* path for this feature: the
+  player claims in the Play Games app and switches straight back to a live
+  process, which is exactly the case a foreground check exists for. It is not a
+  lost reward, since a cold start or the inside-cover button still finds it, and
+  the claim window is three days rather than a moment. The fix is one call to
+  `CheckPlayRewards` on the resume branch, with the callback's `null` (store
+  unreachable) staying silent rather than saying "none" — the same distinction
+  `CheckPlayRewards` already documents. Worth pinning with a test that a resume
+  asks the store, because nothing else in the game would ever notice it stopped.
 - **Three published incremental achievements have drifted from the data they
   count.** Each needs the same three-place fix, landing together: Play Console
   step count → `store/play-games/achievements.json` → `Achievements.cs`. Batch
@@ -581,7 +610,12 @@ for:
   `reward_wayfarers_plate`) are created and activated. **The association UI and
   reward testing do not open until Sep 1 2026**, and the Level Up bar for ≥2
   single-use rewards is **Sep 30 2026** — a one-month window. (≥1 repeatable by
-  **Mar 1 2027**; the weekly cache is it.)
+  **Mar 1 2027**; the weekly cache is it.) **All three dates re-verified
+  2026-08-12** against the Rewards page and the Level Up guideline: adding,
+  removing and end-to-end delivery of a reward are each marked "available from
+  September 01, 2026", and the page says in as many words that the out-of-app
+  purchase flow can be integrated ahead of that date but only tested fully on or
+  after it — which is what we did, so nothing is waiting on us here.
 - **Do not create `reward_wayfarers_cloak`.** The cosmetic reward was retired
   unbuilt — it wanted a cosmetic substrate the game has never had. A test pins
   that the id is uncatalogued, so an award of it could never be acknowledged.
@@ -607,8 +641,13 @@ for:
   **collected *and shared*** for all four: IP address (→ *Location · Approximate
   location*, which the form must therefore declare), user product interactions (→
   *App activity · App interactions*), diagnostics (→ *App info and performance ·
-  Diagnostics*), and device/account identifiers (→ *Device or other IDs*). None is
-  ephemeral. Two consequences: **App interactions cannot be declared Optional** —
+  Diagnostics*), and device/account identifiers (→ *Device or other IDs*, the ad id
+  and the app set id). None is ephemeral, which is the *absence* of an ephemeral
+  marking on the page rather than a sentence saying so, and the form has to be
+  answered on the absence. **Re-verified 2026-08-12, and the page now names the
+  version it describes: GMA 25.4.0, which is the Android SDK our GoogleMobileAds
+  11.3.0 carries** — so the table is being read against what we actually ship.
+  Two consequences: **App interactions cannot be declared Optional** —
   Play notes governs our half, not AdMob's, and the row answers for the whole app —
   and **Diagnostics is Shared** even though Crashlytics alone wouldn't be (*Crash
   logs* stays unshared). The ad id could be blocked in the manifest to drop the
@@ -724,14 +763,24 @@ for:
     the support lib is a plain AAR under `Runtime/Plugins/Android`, and
     `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` are
     declared direct — 2.1.0 got both transitively, at games-v2 **21.0.0**.)
-  - **Console:** upload the authored CSVs from `store/play-games/gamestats/`
-    (the upload window opened August 2026; draft-config testing with test
-    accounts opens **September 2026** — batch with the Sep 1 rewards visit).
+  - **Console:** upload the authored CSVs from `store/play-games/gamestats/`.
+    **Whether that is possible yet is itself unconfirmed, re-checked against the
+    guide on 2026-08-12:** it still says the API and SDK are "available for early
+    feedback and will be Generally Available (GA) starting August 2026", and it
+    names no month at all for the Play Console upload experience. **September
+    2026** is the date it does give, for players seeing stats on the Gamer profile
+    and for testing a draft config with test accounts, so that half batches with
+    the Sep 1 rewards visit either way. The cheap answer is a look for Play Games
+    Services → Game Stats on the next visit: if the screen is there, upload.
     Two knowingly-unfinished parts stand: the **stat icons aren't drawn**
-    (Google has published no size spec — use `tools/make-store-art.py` once
-    the console says what shape), and the column values (`HIGHER`, the
-    free-text units) are the guide's documented spellings, not ones a console
-    has accepted. Expect one correction round.
+    (Google has published no size spec — the guide asks only for "the exact icon
+    filename in the CSV file", re-checked 2026-08-12, so use
+    `tools/make-store-art.py` once the console says what shape), and the column
+    values (`HIGHER`, the free-text units) are **not** documented spellings after
+    all — the guide describes both columns in prose only ("whether an increasing
+    value or decreasing value is good", "a unit of measurement such as km, miles,
+    and seconds") and publishes no allowed set, so ours are inferred. Expect one
+    correction round.
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` fails if code and
     CSV drift, because Play drops undeclared events silently.
   - **Plugin quirks, recorded so they don't read as our bugs:** 2.2.0 ships its
