@@ -216,7 +216,14 @@ namespace Wildgrove.Game
 
             var plate = go.GetComponent<Image>();
             plate.color = DeepPaper;
-            AddBorder(go, Ink2);
+            // Rounded, where the page's own panels are square. The rail's cells
+            // are the one chrome that stands ON the world band rather than on
+            // paper, and at a fingertip square they read as two cut tiles laid
+            // over the strip — a card the warden tucked into the margin is what
+            // they are meant to be.
+            plate.sprite = JournalSprites.RoundedPlateSprite();
+            plate.type = Image.Type.Sliced;
+            AddBorder(go, Ink2, 0f, JournalSprites.RoundedBorderSprite());
 
             var button = go.GetComponent<Button>();
             button.targetGraphic = plate;

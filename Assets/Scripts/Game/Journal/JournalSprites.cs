@@ -21,6 +21,8 @@ namespace Wildgrove.Game
         private static Sprite _foldArrowSprite;
         private static Sprite _rerollSprite;
         private static Sprite _discSprite;
+        private static Sprite _roundedPlateSprite;
+        private static Sprite _roundedBorderSprite;
 
         /// <summary>
         /// A plain filled circle, drawn white so a caller tints it. It backs a
@@ -437,6 +439,97 @@ namespace Wildgrove.Game
             }
 
             return _gradeBorderSprite;
+        }
+
+        /// <summary>
+        /// The corner radius the rounded pair is drawn at, in texture pixels —
+        /// one canvas unit each, the same 1:1 the ruled hairline is drawn at.
+        /// Both sprites read it so a plate and its outline round together: a
+        /// border rounded a hair tighter than its paper leaves the paper's
+        /// square corner showing past the ink.
+        /// </summary>
+        private const int RoundedRadius = 20;
+
+        /// <summary>The paper inside a rounded panel. Drawn white so the caller tints it, like <see cref="DiscSprite"/>.</summary>
+        internal static Sprite RoundedPlateSprite()
+        {
+            if (_roundedPlateSprite == null)
+            {
+                _roundedPlateSprite = RoundedSprite(0);
+            }
+
+            return _roundedPlateSprite;
+        }
+
+        /// <summary>The ruled outline of a rounded panel — <see cref="BorderSprite"/>'s 2-unit hairline, taken round the corners.</summary>
+        internal static Sprite RoundedBorderSprite()
+        {
+            if (_roundedBorderSprite == null)
+            {
+                _roundedBorderSprite = RoundedSprite(2);
+            }
+
+            return _roundedBorderSprite;
+        }
+
+        /// <summary>
+        /// One rounded rectangle: filled where <paramref name="thickness"/> is
+        /// 0, an outline that many pixels thick otherwise. Sliced on the radius
+        /// so the four corners draw at their texture size and only the straight
+        /// middles stretch — which is what lets one small texture round a cell
+        /// of any proportion without the arcs going oval.
+        /// <para>
+        /// Wrapping is clamped, unlike every other sprite here. A sliced corner
+        /// samples right up to the texture edge under bilinear filtering, and
+        /// the default repeat brings the opposite edge in as a bright thread
+        /// along two sides of the panel.
+        /// </para>
+        /// </summary>
+        private static Sprite RoundedSprite(int thickness)
+        {
+            // Two radii and a middle: four pixels is all the centre slice needs,
+            // and every pixel past that is one the corners never draw.
+            const int size = RoundedRadius * 2 + 4;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var distance = RoundedEdgeDistance(x, y, size);
+                    // Half a pixel either side of the edge — the feather that
+                    // keeps an arc from rendering as a staircase (DiscSprite's
+                    // lesson, in signed-distance form).
+                    var alpha = Mathf.Clamp01(0.5f - distance);
+                    if (thickness > 0)
+                    {
+                        alpha -= Mathf.Clamp01(0.5f - (distance + thickness));
+                    }
+
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(alpha)));
+                }
+            }
+
+            texture.Apply();
+            texture.filterMode = FilterMode.Bilinear;
+            texture.wrapMode = TextureWrapMode.Clamp;
+            return Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0,
+                SpriteMeshType.FullRect,
+                new Vector4(RoundedRadius, RoundedRadius, RoundedRadius, RoundedRadius));
+        }
+
+        /// <summary>
+        /// How far a pixel's centre falls outside the rounded rectangle's edge,
+        /// negative within it. The clamp is the whole trick: a point along the
+        /// straight zones pulls onto its own line and measures the radius
+        /// exactly, so only the four corners curve away from it.
+        /// </summary>
+        private static float RoundedEdgeDistance(int x, int y, int size)
+        {
+            var point = new Vector2(x + 0.5f, y + 0.5f);
+            var centre = new Vector2(
+                Mathf.Clamp(point.x, RoundedRadius, size - RoundedRadius),
+                Mathf.Clamp(point.y, RoundedRadius, size - RoundedRadius));
+            return Vector2.Distance(point, centre) - RoundedRadius;
         }
 
         /// <summary>The page's paper-grain noise — the mock's fractal-noise overlay, seeded for a stable look.</summary>
