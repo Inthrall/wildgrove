@@ -442,6 +442,27 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void SlotInHand_SpecimenSlot_ReportsTheWholeDrawer()
+        {
+            // The one row that is not clamped. A run's drawer runs to thousands
+            // against an ask of one or two, so the clamp pinned it at "1 / 1"
+            // from the first find onwards — the reading that says nothing, on
+            // the only slot whose stock the verse card doesn't otherwise give.
+            var state = GameStateFactory.NewGame(_data);
+
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 3), Is.EqualTo(0.0).Within(Tolerance));
+
+            state.AddDecent("berries", 400);
+            state.AddDecent("nuts", 50);
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 3), Is.EqualTo(450.0).Within(Tolerance),
+                "the whole matching-quality drawer, not the ask");
+
+            state.AddResource("berries", 500);
+            Assert.That(Rite.SlotInHand(state, _data, _sunfieldVerse, 0), Is.EqualTo(100.0).Within(Tolerance),
+                "a goods row keeps its clamp");
+        }
+
+        [Test]
         public void AnsweringAVerse_LeavesTheNextOneAskingInFull()
         {
             // No progress passes over: the bramble verse's own ask stands

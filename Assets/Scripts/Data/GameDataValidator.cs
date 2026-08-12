@@ -1500,6 +1500,14 @@ namespace Wildgrove.Data
                     issues.Add("Rites generator demandGrowth must exceed 1 — each Rite must ask more than the last");
                 }
 
+                // At or above 1 the specimen slot asks more than the verse's
+                // middling goods slot, and the drawer fills at a percent or two
+                // of what the stores do — the luck lane would become the wall.
+                if (generator.SpecimenSlotFraction < 0.0 || generator.SpecimenSlotFraction >= 1.0)
+                {
+                    issues.Add("Rites generator specimenSlotFraction must be in [0, 1) — a specimen slot is priced off its verse's goods asks and must stay under the middling one; 0 means the authored counts hold");
+                }
+
                 if (generator.SpotlightDiscount <= 0.0 || generator.SpotlightDiscount > 1.0)
                 {
                     issues.Add("Rites generator spotlightDiscount must be in (0, 1] — the spotlight is the cheap path");

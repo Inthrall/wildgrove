@@ -58,6 +58,14 @@ namespace Wildgrove.Data
         /// <summary>d in verseDemand(m) = baseQty · d^m — how much more each Rite asks than the last.</summary>
         public double DemandGrowth { get; set; }
 
+        /// <summary>
+        /// What a specimen slot asks, as a fraction of the geometric mean of
+        /// its verse's goods asks — the specimen ask is derived, not tabled,
+        /// so it carries the zone and fold ramps the goods already carry.
+        /// Zero or less leaves the authored counts.
+        /// </summary>
+        public double SpecimenSlotFraction { get; set; }
+
         /// <summary>Spotlight slots price at value × this (≤ 1 — the cheap path).</summary>
         public double SpotlightDiscount { get; set; }
 

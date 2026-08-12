@@ -332,6 +332,7 @@ namespace Wildgrove.Data
                 generator = r.Generator == null ? null : new RiteGeneratorConfigData
                 {
                     demandGrowth = r.Generator.DemandGrowth,
+                    specimenSlotFraction = r.Generator.SpecimenSlotFraction,
                     spotlightDiscount = r.Generator.SpotlightDiscount,
                     offSpotlightPremium = r.Generator.OffSpotlightPremium,
                     chooseCountPerMigrations = r.Generator.ChooseCountPerMigrations,

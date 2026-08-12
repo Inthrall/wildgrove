@@ -1262,17 +1262,21 @@ namespace Wildgrove.Game
                     });
                     break;
                 case RiteSlotType.Specimen:
-                    offer = Button(row.transform, "Offer one", 180, () =>
+                    offer = Button(row.transform, slot.count > 1 ? "Offer " + slot.count : "Offer one", 180, () =>
                     {
                         if (_loop.OfferSpecimen(verse, slotIndex))
                         {
                             Flash(offer, "set down", true);
-                            SetNote("set the perfect one down. it deserved better than a page, maybe.");
+                            SetNote(slot.count > 1
+                                ? "set the perfect ones down. they deserved better than a page, maybe."
+                                : "set the perfect one down. it deserved better than a page, maybe.");
                         }
                         else
                         {
-                            Flash(offer, "no such find in hand", false);
-                            SetNote("no such find in hand. the site is patient.");
+                            Flash(offer, slot.count > 1 ? "too few such finds in hand" : "no such find in hand", false);
+                            SetNote(slot.count > 1
+                                ? "the whole offering, or none at all. the drawer is short."
+                                : "no such find in hand. the site is patient.");
                         }
                     });
                     break;

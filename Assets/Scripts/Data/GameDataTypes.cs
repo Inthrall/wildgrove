@@ -448,6 +448,13 @@ namespace Wildgrove.Data
     public sealed class RiteGeneratorConfigData
     {
         public double demandGrowth;
+
+        /// <summary>
+        /// A specimen slot's ask as a fraction of its verse's goods asks.
+        /// Zero or less means no derivation — the authored counts hold.
+        /// </summary>
+        public double specimenSlotFraction;
+
         public double spotlightDiscount;
         public double offSpotlightPremium;
 

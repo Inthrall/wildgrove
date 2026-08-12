@@ -221,11 +221,23 @@ namespace Wildgrove.Sim
         /// honest number is what the camp is holding towards it (plus a deed's
         /// counted work, or whatever an older save part-filled). Clamped to the
         /// target: a full store reads "300 / 300", never "9000 / 300".
+        ///
+        /// A specimen slot is the exception and reports its whole pool. Its ask
+        /// is small next to a run's entire collection, so the clamp pinned the
+        /// row at "1 / 1" from the first Choice find onwards — the one reading
+        /// that tells the warden nothing, on the only row whose stock the page
+        /// doesn't otherwise say.
         /// </summary>
         public static double SlotInHand(GameState state, GameDataAsset data, RiteVerseData verse, int slotIndex)
         {
-            var target = SlotTarget(verse.slots[slotIndex]);
+            var slot = verse.slots[slotIndex];
+            var target = SlotTarget(slot);
             var inHand = SlotDelivered(state, verse, slotIndex) + SlotHeld(state, data, verse, slotIndex);
+            if (slot.type == RiteSlotType.Specimen)
+            {
+                return inHand;
+            }
+
             return inHand < target ? inHand : target;
         }
 

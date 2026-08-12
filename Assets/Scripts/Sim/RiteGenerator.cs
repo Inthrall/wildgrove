@@ -136,6 +136,68 @@ namespace Wildgrove.Sim
             return config.chooseCountMax > 0 ? Math.Min(scaled, config.chooseCountMax) : scaled;
         }
 
+        /// <summary>
+        /// The lowest zone order the derived specimen ask reaches. Below it the
+        /// hour-one table's pinned counts stand: zones 1-2 are paced against
+        /// verse 1 at ~30 minutes (design §8) and take no ramp of any kind.
+        /// </summary>
+        private const int SpecimenAnchorMinZoneOrder = 3;
+
+        /// <summary>
+        /// What a specimen slot asks — a fraction of the geometric mean of its
+        /// verse's own goods asks, floored at the authored count.
+        ///
+        /// Derived rather than tabled, because the premise under the table was
+        /// wrong. Design §8 priced the specimen slot as a lane that accrues
+        /// LINEARLY while the goods economy compounds, and gave it counts of
+        /// its own on a gentle curve to match. But <c>Simulation.Deliver</c>
+        /// gives the WHOLE delivery the rolled tier, so a Choice roll credits
+        /// the batch's full amount to the drawer: the pool is total gathering ×
+        /// Choice chance, which rides the goods curve exactly, a percent or two
+        /// behind it. Against that, any authored count decays into no ask at
+        /// all — which is what a fair quarter of the river bend's verse did,
+        /// answered out of a drawer holding thousands.
+        ///
+        /// A fraction cannot decay, because both sides of it carry the same
+        /// zone ramp and the same demandGrowth^m, at every fold, forever. It
+        /// also cannot wall: what it asks for is a slice of what the same run's
+        /// gathering already produced.
+        /// </summary>
+        public static int SpecimenCount(RitesBundle rites, ZoneData zone, int authoredCount, List<RiteSlotData> goodsPicks)
+        {
+            var fraction = rites?.generator != null ? rites.generator.specimenSlotFraction : 0.0;
+            if (fraction <= 0.0 || goodsPicks == null || zone == null || zone.order < SpecimenAnchorMinZoneOrder)
+            {
+                return authoredCount;
+            }
+
+            // The geometric mean, not the arithmetic one. valueSpread leaves a
+            // verse's counts spanning two orders of magnitude on purpose, and
+            // an average of 634 and 16370 is really just the 16370 — the
+            // specimen ask would then be priced off whichever cheap good
+            // happened to draw the biggest number.
+            var logSum = 0.0;
+            var counted = 0;
+            foreach (var pick in goodsPicks)
+            {
+                if (pick.amount <= 0)
+                {
+                    continue;
+                }
+
+                logSum += Math.Log(pick.amount);
+                counted++;
+            }
+
+            if (counted == 0)
+            {
+                return authoredCount;
+            }
+
+            var derived = (int)Math.Round(fraction * Math.Exp(logSum / counted), MidpointRounding.AwayFromZero);
+            return derived > authoredCount ? derived : authoredCount;
+        }
+
         /// <summary>The generated Rite for this migration, or null when the data has no generator or no template.</summary>
         public static RiteData Generate(GameDataAsset data, int migration)
         {
@@ -417,16 +479,27 @@ namespace Wildgrove.Sim
                 }
                 else
                 {
+                    // Deed and sketch counts stay authored — they price in taps
+                    // and patience, not goods; only the Renown they're worth
+                    // grows with the run. A specimen count is derived from the
+                    // picks beside it (see SpecimenCount), and its grant
+                    // follows that count so per-specimen worth is the one thing
+                    // neither ramp moves: a bigger ask must not be a quieter
+                    // one, and the slot is no longer cheap enough in wall-clock
+                    // for a proportionate grant to win every verse.
+                    var count = slot.type == RiteSlotType.Specimen
+                        ? SpecimenCount(data.rites, zone, slot.count, picks)
+                        : slot.count;
+                    var grant = slot.count > 0
+                        ? slot.renownGrant * scale * count / slot.count
+                        : slot.renownGrant * scale;
                     verse.slots.Add(new RiteSlotData
                     {
                         type = slot.type,
                         deed = slot.deed,
                         quality = slot.quality,
-                        // Deed/specimen/sketch counts stay authored — they
-                        // price in taps and luck, not goods; only the Renown
-                        // they're worth grows with the run.
-                        count = slot.count,
-                        renownGrant = ToLongSaturating(slot.renownGrant * scale)
+                        count = count,
+                        renownGrant = ToLongSaturating(grant)
                     });
                 }
             }

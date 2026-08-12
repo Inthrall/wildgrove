@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: bd4924c755385eb1ec8d77d16f8ae5bed0c037c235c8e162e80709788dbbe794
+  sourceHash: 7fbcc12c0dc81dc5941aceebc854e184007682ed99b7130fc4559acc7c48933e
   economy:
     costGrowth:
       building: 1.25
@@ -2726,6 +2726,7 @@ MonoBehaviour:
     chooseCount: 3
     generator:
       demandGrowth: 1.45
+      specimenSlotFraction: 0.4
       spotlightDiscount: 0.6
       offSpotlightPremium: 1.5
       chooseCountPerMigrations: 2

@@ -71,7 +71,12 @@ namespace Wildgrove.Game
                 case RiteSlotType.Deed:
                     return slot.deed;
                 case RiteSlotType.Specimen:
-                    return "one " + (string.IsNullOrEmpty(slot.quality) ? "decent" : slot.quality) + " find";
+                    // Named in the plural whatever the ask, because the count
+                    // column beside it carries the number — same as every goods
+                    // row. Writing "one" into the name was true only while the
+                    // ask was pinned at 1, and it survived the zone and fold
+                    // ramps as "one choice find  0 / 8".
+                    return (string.IsNullOrEmpty(slot.quality) ? "decent" : slot.quality) + " finds";
                 case RiteSlotType.Sketch:
                     return "a field sketch";
                 default:

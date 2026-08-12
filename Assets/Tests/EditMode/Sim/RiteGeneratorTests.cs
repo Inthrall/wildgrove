@@ -441,6 +441,70 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void SpecimenCount_IsAFractionOfTheVersesOwnGoodsAsks()
+        {
+            // The geometric mean of 100 / 1000 / 10000 is 1000, so a fifth of
+            // it is 200 — priced off the verse's middle, not its biggest good.
+            _data.rites.generator.specimenSlotFraction = 0.2;
+            var zone = new ZoneData { id = "peaks", order = 5 };
+            var picks = new List<RiteSlotData>
+            {
+                new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 100 },
+                new RiteSlotData { type = RiteSlotType.Resource, resource = "nuts", amount = 1000 },
+                new RiteSlotData { type = RiteSlotType.Resource, resource = "copper", amount = 10000 },
+            };
+
+            Assert.That(RiteGenerator.SpecimenCount(_data.rites, zone, 1, picks), Is.EqualTo(200));
+        }
+
+        [Test]
+        public void SpecimenCount_FloorsAtTheAuthoredCount_AndSparesTheHourOneZones()
+        {
+            _data.rites.generator.specimenSlotFraction = 0.2;
+            var picks = new List<RiteSlotData>
+            {
+                new RiteSlotData { type = RiteSlotType.Resource, resource = "berries", amount = 100 },
+            };
+
+            Assert.That(RiteGenerator.SpecimenCount(_data.rites, new ZoneData { order = 3 }, 1, picks), Is.EqualTo(20));
+            Assert.That(RiteGenerator.SpecimenCount(_data.rites, new ZoneData { order = 3 }, 50, picks), Is.EqualTo(50),
+                "a lean verse never asks less than the table wrote");
+            Assert.That(RiteGenerator.SpecimenCount(_data.rites, new ZoneData { order = 2 }, 1, picks), Is.EqualTo(1),
+                "zones 1-2 are paced against verse 1 at ~30 minutes and take no ramp");
+
+            _data.rites.generator.specimenSlotFraction = 0.0;
+            Assert.That(RiteGenerator.SpecimenCount(_data.rites, new ZoneData { order = 5 }, 1, picks), Is.EqualTo(1),
+                "absent tuning leaves the authored count");
+        }
+
+        [Test]
+        public void Generate_SpecimenSlot_IsPricedOffItsVerse_AndItsGrantFollowsTheCount()
+        {
+            // The drawer is total gathering x Choice chance — Simulation.Deliver
+            // gives the WHOLE delivery its rolled tier — so it rides the goods
+            // curve and any fixed count decays into no ask at all. A fraction of
+            // the goods beside it carries both ramps for free.
+            _data.rites.generator.specimenSlotFraction = 0.2;
+            // The fixture's specimen slot sits in the starting zone, which the
+            // hour-one pacing spares — stand it deeper so the pricing applies.
+            _data.zones[0].order = 3;
+
+            var verse = RiteGenerator.Generate(_data, 2).verses[0];
+            var specimen = verse.slots.Single(s => s.type == RiteSlotType.Specimen);
+            var deed = verse.slots.Single(s => s.type == RiteSlotType.Deed);
+            var goods = verse.slots.Where(s => s.type == RiteSlotType.Resource).ToList();
+
+            var mean = System.Math.Exp(goods.Average(s => System.Math.Log(s.amount)));
+            var expected = (int)System.Math.Round(0.2 * mean, System.MidpointRounding.AwayFromZero);
+
+            Assert.That(expected, Is.GreaterThan(1), "the fixture's asks must be big enough for the fraction to bite");
+            Assert.That(specimen.count, Is.EqualTo(expected), "a fifth of the verse's own geometric-mean ask");
+            Assert.That(specimen.renownGrant, Is.EqualTo(80L * 4 * expected),
+                "80 x 2^2 x the count — the grant follows, per-specimen worth unmoved");
+            Assert.That(deed.count, Is.EqualTo(10), "deeds are not priced off goods — they still count taps");
+        }
+
+        [Test]
         public void Generate_WidensTheGoodsSlotsInStepWithTheRamp()
         {
             GiveTheGeneratorABreadthRamp(2, 4);
