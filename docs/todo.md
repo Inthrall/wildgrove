@@ -385,6 +385,32 @@ lean is a regression, not a phase. Build order:
   Ours is Monday on the guess that it is; worth confirming while §3.2's Play
   Console visits are open, because a mismatch is what puts an off-cadence
   delivery a day early or late against the row's own reading.
+- ~~**A windfall drawing over the rail's cells could not be caught there**~~
+  ✅ RESOLVED 2026-08-12 (Mo's call: the catch wins) — the rail moved into a
+  camera-space canvas of its own so the band's windfalls pass in FRONT of it
+  (`GameHud.Events.cs`, `StripLayers.RailCell`), which left the tap saying the
+  opposite of the picture: `HandleWorldTap` stood the whole strip down over
+  the rail's rect, so a windfall drawn over a cell opened the cell's sheet
+  instead of being caught. The catch is tried first now, and a press that
+  catches over the rail sets a one-shot the cell's click consumes
+  (`_railTapCaught` → `OpenRailCell`) so the release cannot ALSO open the
+  sheet. It rests on the two arriving in a fixed order — the strip reads a
+  pointer PRESS (`InputSystemGameInput.TendTriggered` is
+  `wasPressedThisFrame`), uGUI raises a Button click on the RELEASE — so a
+  change to either end is what would break it, not a change to the rail. A
+  press that catches nothing still belongs to the cell, which is the same
+  rule the node plates keep.
+- **The rail's new canvas is unproven by anything but the eye.** EditMode tests
+  never build the HUD, so nothing pins the rail's placement (`PlaceEventRail`
+  converts the band's screen rect into the rail canvas's own units), the
+  sorting rung, the modal trap it now keeps for itself (`HandleFocus`), or the
+  press-then-release ordering the tap one-shot rests on. A camera-space canvas
+  whose `worldCamera` is null silently draws as an overlay — which is the exact
+  bug it was moved to fix, and it would look like nothing having happened.
+  Check on a device that a windfall crosses IN FRONT of a cell, that tapping it
+  there catches it and leaves the sheet shut, that a tap on bare plate still
+  opens the sheet, and that the rail still lands in the band's left margin on a
+  spread.
 - **The rail wants a third inhabitant before it can be judged.** Two cells (the
   Wheel and the weekly cache) is enough to prove it is a list rather than a
   Wheel widget, and not enough to know whether the seat count, the urgency

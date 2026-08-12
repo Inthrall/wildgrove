@@ -202,13 +202,13 @@ namespace Wildgrove.Game
             { "waystone", Ui + "Journal/ui-waystone" },
             { "almanac", Ui + "Journal/ui-almanac-tree" },
 
-            // The Amber pile's own plate, for the events rail's cache cell.
-            // Keyed here rather than in Resource because Amber is a currency
-            // and has no resource id to look it up by, and NOT reusing Line's
-            // "deep-amber" (a fly held in the resin): that is the collectible
-            // set on the Record's deep pages, and the two must not read as
-            // the same thing on a page where one of them is money.
-            { "amber", Plates + "Resources/res-amber" },
+            // The events rail's cache cell — the chest Play sets out each week,
+            // not the Amber inside it. An authored ink drawing in the barrel's
+            // and the cairn's hand (tools/make-chest-plate.py), so nothing is
+            // owed for it. It wore the Amber plate first: a pile of the
+            // currency on the strip reads as amber the player HOLDS, which is
+            // what the ledger two rows above already says.
+            { "chest", Ui + "Journal/ui-chest" },
 
             // The Wheel's plates (design §15) — the warden's own almanac
             // marks, not the land's naturalist pages: the calendar is the

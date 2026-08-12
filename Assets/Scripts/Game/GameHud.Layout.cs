@@ -171,7 +171,10 @@ namespace Wildgrove.Game
 
             // The events rail down the band's other edge — the strip gives it
             // width rather than the page giving it height (see GameHud.Events).
-            BuildEventRail(gap);
+            // Not a child of the gap, though it stands in it: the rail has a
+            // canvas of its own so the world can draw over it, and is laid
+            // against the band by hand each frame.
+            BuildEventRail();
 
             // Nothing else pins here, between the strip and the page: the
             // trail-home line and the camp actions each head their own page

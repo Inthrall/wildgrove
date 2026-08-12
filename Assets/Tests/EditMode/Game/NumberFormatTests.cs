@@ -183,24 +183,12 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
-        public void CountdownCoarse_KeepsTheLargestUnitAlone()
+        public void Countdown_TruncatesRatherThanRounding()
         {
-            // What the events rail's cells wear: one unit, because two do not
-            // fit a cell a fingertip wide.
-            Assert.That(NumberFormat.CountdownCoarse(11 * 86400.0 + 16 * 3600.0), Is.EqualTo("11d"));
-            Assert.That(NumberFormat.CountdownCoarse(16 * 3600.0 + 40 * 60.0), Is.EqualTo("16h"));
-            Assert.That(NumberFormat.CountdownCoarse(40 * 60.0 + 30.0), Is.EqualTo("40m"));
-            Assert.That(NumberFormat.CountdownCoarse(30.0), Is.EqualTo("30s"));
-        }
-
-        [Test]
-        public void CountdownCoarse_TruncatesRatherThanRounding()
-        {
-            // A cell reading "1d" with an hour to go would be a lie the player
+            // A clock reading "1d" with an hour to go would be a lie the player
             // acts on; reading "23h" with 23h59m to go is only ever cautious.
-            Assert.That(NumberFormat.CountdownCoarse(86400.0 - 1.0), Is.EqualTo("23h"));
-            Assert.That(NumberFormat.CountdownCoarse(3600.0 - 1.0), Is.EqualTo("59m"));
-            Assert.That(NumberFormat.CountdownCoarse(-5.0), Is.EqualTo("0s"), "a lapsed clock never goes negative");
+            Assert.That(NumberFormat.Countdown(86400.0 - 1.0), Is.EqualTo("23h 59m"));
+            Assert.That(NumberFormat.Countdown(2 * 86400.0 + 7199.0), Is.EqualTo("2d 1h"));
         }
     }
 }

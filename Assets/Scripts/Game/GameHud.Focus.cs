@@ -130,6 +130,15 @@ namespace Wildgrove.Game
                 _pageGroup.interactable = pageLive;
             }
 
+            // The rail keeps its own copy of the trap: it stands in a canvas of
+            // its own (see BuildEventRail), so the page's group does not reach
+            // it, and navigation out of a sheet into a rail cell is the exact
+            // escape the group exists to close.
+            if (_railGroup != null && _railGroup.interactable != pageLive)
+            {
+                _railGroup.interactable = pageLive;
+            }
+
             // A tap hands the journal back to the finger. The mark is a
             // navigation cue; left lit after a tap it reads as a cursor the
             // touch player doesn't have. uGUI's own selection is deliberately

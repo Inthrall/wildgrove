@@ -147,35 +147,5 @@ namespace Wildgrove.Game
 
             return Duration(total);
         }
-
-        /// <summary>
-        /// A time-until in ONE unit, the largest that fits: "11d", "16h",
-        /// "42m", "8s". For the events rail, whose cells are a fingertip wide
-        /// and no wider — "11d 16h" is twice the string for an hours figure
-        /// nobody reads a week and a half out, and the second unit is what
-        /// was making the cells too big to sit in the band's margin.
-        /// <see cref="Countdown"/> keeps both units for the lines that have
-        /// room, where the hour genuinely is the thing being waited on.
-        /// </summary>
-        public static string CountdownCoarse(double seconds)
-        {
-            var total = (long)System.Math.Floor(System.Math.Max(0.0, seconds));
-            if (total >= 86400)
-            {
-                return total / 86400 + "d";
-            }
-
-            if (total >= 3600)
-            {
-                return total / 3600 + "h";
-            }
-
-            if (total >= 60)
-            {
-                return total / 60 + "m";
-            }
-
-            return total + "s";
-        }
     }
 }

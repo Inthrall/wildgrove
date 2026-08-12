@@ -13,6 +13,24 @@ namespace Wildgrove.Game
     {
         private void ReportWorldStrip()
         {
+            if (_worldGap == null)
+            {
+                return;
+            }
+
+            // Null for the camera: the HUD's canvas is an overlay, where the
+            // gap's world corners ARE screen pixels.
+            _worldGap.GetWorldCorners(Corners);
+            var min = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
+            var max = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
+
+            // The band, once, for both readers of it.
+            var band = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
+
+            // The rail reads it from here too — it left the HUD's canvas for
+            // one of its own, so the gap's rect no longer positions it.
+            PlaceEventRail(band);
+
             if (_world == null)
             {
                 return;
@@ -22,9 +40,6 @@ namespace Wildgrove.Game
             // and burning their lifetime behind a modal punished opening one.
             _world.Frozen = _sheet != null;
             _world.CatchHintPending = !_hintCatchDone;
-            _worldGap.GetWorldCorners(Corners);
-            var min = RectTransformUtility.WorldToScreenPoint(null, Corners[0]);
-            var max = RectTransformUtility.WorldToScreenPoint(null, Corners[2]);
 
             // The WHOLE band, rail or no rail. The strip's plates are spread
             // across it at width * (i + 1) / (count + 1), so insetting the rect
@@ -36,7 +51,7 @@ namespace Wildgrove.Game
             // HandleWorldTap covers the rest. A landscape band seating five or
             // six a row would bring that centre in toward the rail, and the
             // answer then is a shorter rail, not a narrower strip.
-            _world.StripScreenRect = new Rect(min.x, min.y, max.x - min.x, max.y - min.y);
+            _world.StripScreenRect = band;
         }
 
         /// <param name="typing">
@@ -64,24 +79,35 @@ namespace Wildgrove.Game
 
             if (_input.TendTriggered(out var screenPosition))
             {
+                // A fresh gesture: whatever the last one left on the rail's
+                // one-shot is spent (see _railTapCaught). Cleared for the
+                // non-positional confirms too — Space and pad South are Submit
+                // on a marked cell, and a stale flag would eat one of those.
+                _railTapCaught = false;
+
                 if (screenPosition.HasValue)
                 {
-                    // The events rail's cells are ordinary uGUI Buttons and take
-                    // their own clicks; this path knows nothing about them, so
-                    // without the guard a tap on a cell would ALSO catch a
-                    // windfall drifting over it — a free reward for opening a
-                    // popup, and a windfall spent without the player seeing it.
-                    if (PointerOverEventRail(screenPosition.Value))
-                    {
-                        return;
-                    }
-
-                    // A drifting bubble floats over everything — the catch
-                    // wins before any plate or badge underneath it.
+                    // A drifting bubble floats over everything — the catch wins
+                    // before any plate or badge underneath it, and (since the
+                    // rail draws under the windfalls) before a rail cell too.
+                    var overRail = PointerOverEventRail(screenPosition.Value);
                     var caught = _world != null ? _world.PopBubbleAt(screenPosition.Value) : null;
                     if (caught != null)
                     {
+                        // The cell's own click is spoken for: this press caught
+                        // the thing drawn in front of it, and the release must
+                        // not ALSO open the cell's sheet.
+                        _railTapCaught = overRail;
                         CollectBubble(caught);
+                        return;
+                    }
+
+                    // Nothing caught, and the finger is on a cell: the cell's
+                    // own Button takes it from here (this path knows nothing
+                    // about uGUI), and the near-miss nudge below would only
+                    // shake the strip under an unrelated press.
+                    if (overRail)
+                    {
                         return;
                     }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Wildgrove.Game.World;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalWidgets;
 
@@ -11,7 +12,7 @@ namespace Wildgrove.Game
     // popup. What goes on it is EventRail's decision; this is the furniture and
     // the cadence.
     //
-    // It lives INSIDE the world gap for the same reason the slot counter does:
+    // It stands in the world gap for the same reason the slot counter does:
     // the chrome budget rule (see GameHud) says a pinned bar has to earn its
     // line of the page, and the rail earns nothing of the kind — it is read
     // twice a session. Standing in the band costs the page nothing at all, and
@@ -21,16 +22,28 @@ namespace Wildgrove.Game
     // The margin is the whole of what it takes. The strip is NOT told about a
     // narrower band (see ReportWorldStrip) — it was, and every plate moved over
     // and shrank to pay for a rail standing in space they were never using.
+    //
+    // It is also the one piece of chrome that renders in the CAMERA rather than
+    // in the HUD's overlay canvas — see BuildEventRail. An overlay canvas draws
+    // after the camera has finished, so nothing in the world can ever be in
+    // front of one, and a windfall drifting up the band's left side went behind
+    // the cells and came out the top.
+    //
+    // Standing under the windfalls settles the tap too: a press over a cell
+    // with a windfall under the finger CATCHES, and the cell's own click is
+    // swallowed on the release (_railTapCaught). The cell only opens when the
+    // press caught nothing — which is the same rule the plates keep.
     public sealed partial class GameHud
     {
         /// <summary>The rail's own width in canvas units — cell, border and the breath either side.</summary>
         private const float RailWidth = 134f;
 
         // 120 units ≈ 48dp, Android's touch floor, and the cell is held at it
-        // in BOTH axes rather than only in height. It was 138 to seat a two-unit
-        // countdown ("11d 16h") plus a wrapped name; with an icon and a
-        // one-unit clock (NumberFormat.CountdownCoarse) neither is there to
-        // carry, so the rail gives the band back the difference.
+        // in BOTH axes rather than only in height. It was 138 when the cell
+        // carried a wrapped NAME as well as its clock; the name is a face now,
+        // so 120 seats "11d 16h" on its own with room either side — the caption
+        // is set not to wrap (see BuildRailCell) so the space between the units
+        // can never become a line break.
         private const float RailCellWidth = 120f;
 
         // 126 units ≈ 50dp at the 1080×1920 reference scale, just over Android's
@@ -51,6 +64,29 @@ namespace Wildgrove.Game
         private const float RailGlyph = 72f;
 
         private RectTransform _eventRail;
+
+        /// <summary>The rail's own canvas — camera-space, so the world can draw over it.</summary>
+        private Canvas _railCanvas;
+
+        /// <summary>The modal trap for a rail that no longer stands inside the page's own group — see HandleFocus.</summary>
+        private CanvasGroup _railGroup;
+
+        /// <summary>
+        /// Set when a press over the rail caught a windfall, and consumed by
+        /// the cell click that press turns into — the one-shot that lets the
+        /// catch beat the cell without either side knowing about the other.
+        /// <para>
+        /// It works on the order the two arrive in, which is fixed:
+        /// <see cref="HandleWorldTap"/> reads a pointer PRESS
+        /// (<c>InputSystemGameInput.TendTriggered</c> is
+        /// <c>wasPressedThisFrame</c>), and uGUI raises a Button's click on the
+        /// RELEASE, at least a frame later. So the catch has always happened
+        /// by the time the cell hears about the tap, and the flag is cleared at
+        /// the head of every gesture rather than left to go stale.
+        /// </para>
+        /// </summary>
+        private bool _railTapCaught;
+
         private readonly List<EventRailEntry> _railEntries = new List<EventRailEntry>();
         private readonly List<RailCell> _railCells = new List<RailCell>();
 
@@ -69,17 +105,54 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The rail's frame, built once with the rest of the chrome: a column
-        /// pinned to the gap's left edge. The cells themselves come and go with
-        /// what is running.
+        /// standing at the band's left edge. The cells themselves come and go
+        /// with what is running.
+        /// <para>
+        /// It gets a canvas of its own, in ScreenSpaceCamera, because that is
+        /// the only way anything in the world can pass in FRONT of it: the
+        /// HUD's canvas is an overlay, which is drawn after the camera is
+        /// finished with the scene, so every sprite on the strip is behind it
+        /// unconditionally. Here the rail is one more rung of
+        /// <see cref="StripLayers"/> — over the plates and their captions,
+        /// under every rung a windfall carries.
+        /// </para>
+        /// <para>
+        /// The price of leaving the HUD canvas is that nothing the page does
+        /// reaches the rail any more: it is laid out against the band by hand
+        /// (<see cref="PlaceEventRail"/>) rather than by the gap's own rect,
+        /// and it carries its own copy of the modal trap. Both are why the
+        /// scaler below has to match the HUD's exactly — every measurement in
+        /// this file is in the same canvas units as the rest of the chrome.
+        /// </para>
         /// </summary>
-        private void BuildEventRail(RectTransform gap)
+        private void BuildEventRail()
         {
-            _eventRail = MakeRect("EventRail", gap);
-            _eventRail.anchorMin = new Vector2(0f, 0f);
-            _eventRail.anchorMax = new Vector2(0f, 1f);
+            var canvasGo = new GameObject("EventRailCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            canvasGo.transform.SetParent(transform, false);
+            _railCanvas = canvasGo.GetComponent<Canvas>();
+            _railCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+            // Null until the world view makes one (it builds the camera on its
+            // own first tick, after this) — PlaceEventRail keeps asking. A
+            // camera-space canvas with no camera silently draws as an overlay,
+            // which is the whole bug back again.
+            _railCanvas.worldCamera = Camera.main;
+            _railCanvas.sortingOrder = StripLayers.RailCell;
+            var scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080, 1920);
+            scaler.matchWidthOrHeight = 0.5f;
+            _railGroup = canvasGo.AddComponent<CanvasGroup>();
+
+            _eventRail = MakeRect("EventRail", canvasGo.transform);
+            // A point anchor at the canvas's centre: the band is reported in
+            // screen pixels and lands here as a local offset, so an anchor with
+            // any span of its own would only have to be undone.
+            _eventRail.anchorMin = new Vector2(0.5f, 0.5f);
+            _eventRail.anchorMax = new Vector2(0.5f, 0.5f);
             _eventRail.pivot = new Vector2(0f, 0.5f);
             // Cell and gutter together, which is also the rect the tap guard
             // tests — one width for what the rail covers, drawn and tapped.
+            // The height arrives with the band.
             _eventRail.sizeDelta = new Vector2(RailWidth, 0f);
             _eventRail.anchoredPosition = Vector2.zero;
 
@@ -94,6 +167,50 @@ namespace Wildgrove.Game
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.spacing = RailCellGap;
             layout.padding = new RectOffset(0, 0, (int)RailPadding / 2, (int)RailPadding / 2);
+        }
+
+        /// <summary>
+        /// Stand the rail down the left edge of the band, given the band as the
+        /// strip itself is given it — in screen pixels, once a frame from
+        /// <see cref="ReportWorldStrip"/>. The gap's own rect can't do this work
+        /// any more: it belongs to the HUD's canvas and the rail no longer does.
+        /// </summary>
+        private void PlaceEventRail(Rect band)
+        {
+            if (_railCanvas == null || _eventRail == null)
+            {
+                return;
+            }
+
+            if (_railCanvas.worldCamera == null)
+            {
+                _railCanvas.worldCamera = Camera.main;
+            }
+
+            var canvasRect = (RectTransform)_railCanvas.transform;
+            var camera = _railCanvas.worldCamera;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect, new Vector2(band.xMin, band.yMin), camera, out var foot)
+                || !RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect, new Vector2(band.xMin, band.yMax), camera, out var head))
+            {
+                return;
+            }
+
+            var stand = new Vector2(foot.x, (foot.y + head.y) * 0.5f);
+            var size = new Vector2(RailWidth, head.y - foot.y);
+            // Only on a real change, the rule the world gap keeps: this runs
+            // every frame, and either assignment dirties the layout group and
+            // rebuilds every cell in the column.
+            if (_eventRail.anchoredPosition != stand)
+            {
+                _eventRail.anchoredPosition = stand;
+            }
+
+            if (_eventRail.sizeDelta != size)
+            {
+                _eventRail.sizeDelta = size;
+            }
         }
 
         /// <summary>
@@ -232,7 +349,7 @@ namespace Wildgrove.Game
             colours.pressedColor = new Color(0.8f, 0.76f, 0.68f, 1f);
             button.colors = colours;
             var id = entry.id;
-            button.onClick.AddListener(() => _sheets.OpenEventSheet(id));
+            button.onClick.AddListener(() => OpenRailCell(id));
             // The rail is chrome, not page: it must not flush grey behind a sheet.
             NeverDim(button);
 
@@ -264,6 +381,10 @@ namespace Wildgrove.Game
             captionRect.sizeDelta = new Vector2(-8f, RailCaptionHeight);
             captionRect.anchoredPosition = new Vector2(0f, 4f);
             caption.raycastTarget = false;
+            // Legacy Text breaks at any plain space, and the clock has one in
+            // the middle of it: wrapped, "11d 16h" is two lines in a strip with
+            // room for one, and the second is drawn outside the plate.
+            caption.horizontalOverflow = HorizontalWrapMode.Overflow;
 
             return new RailCell
             {
@@ -273,6 +394,25 @@ namespace Wildgrove.Game
                 title = title,
                 caption = caption,
             };
+        }
+
+        /// <summary>
+        /// What a cell's press turns into: its sheet, unless the same press
+        /// already caught a windfall drawn over it. The windfalls draw in front
+        /// of the rail (see <see cref="StripLayers.RailCell"/>), and a tap has
+        /// to take what it looks like it takes — a cell that opened a popup
+        /// while the picture under the finger was a windfall would be reading
+        /// the player's aim off the thing they could not see.
+        /// </summary>
+        private void OpenRailCell(string id)
+        {
+            if (_railTapCaught)
+            {
+                _railTapCaught = false;
+                return;
+            }
+
+            _sheets.OpenEventSheet(id);
         }
 
         private void PaintRailCell(RailCell cell, EventRailEntry entry)
@@ -300,11 +440,14 @@ namespace Wildgrove.Game
                 return;
             }
 
-            // ONE unit, never two: see NumberFormat.CountdownCoarse. A cell
-            // this size cannot hold "11d 16h", and the hour is not what anyone
-            // is reading eleven days out anyway.
+            // Both units, the same clock every other surface reads (the Camp
+            // row's "ready in", the sheets, the Trail's head). A cell showing
+            // "1d" while the sheet behind it says "1d 3h" is the same wait told
+            // two ways, and the coarse one is the one that can be acted on
+            // wrongly — the tide a player means to catch tonight reads as a day
+            // away all afternoon.
             cell.caption.text = entry.remainingSeconds > 0.0
-                ? NumberFormat.CountdownCoarse(entry.remainingSeconds)
+                ? NumberFormat.Countdown(entry.remainingSeconds)
                 : string.Empty;
         }
 
@@ -321,6 +464,13 @@ namespace Wildgrove.Game
         /// plate on the Record's shelf and the keeping's card, which a
         /// 72-unit mark on a countdown does not spend.
         /// </para>
+        /// <para>
+        /// The cache wears a chest, not the Amber plate it wore first. Amber is
+        /// what is INSIDE it, and a cell that shows the currency reads as a
+        /// pile of amber standing on the strip — the ledger's own AMBER figure
+        /// two rows above says that, and it says it about money the player
+        /// holds rather than money Play is keeping for them.
+        /// </para>
         /// </summary>
         private Sprite RailIcon(EventRailEntry entry)
         {
@@ -330,7 +480,7 @@ namespace Wildgrove.Game
                 case EventRailKind.ComingSabbat:
                     return entry.sabbatId != null ? ArtLibrary.ForJournal("sabbat-" + entry.sabbatId) : null;
                 case EventRailKind.WeeklyCache:
-                    return ArtLibrary.ForJournal("amber");
+                    return ArtLibrary.ForJournal("chest");
                 default:
                     return null;
             }
@@ -339,10 +489,19 @@ namespace Wildgrove.Game
         /// <summary>
         /// True while <paramref name="screenPoint"/> is over the rail. The world
         /// strip resolves taps itself, off a screen rect and its own hit
-        /// circles, and knows nothing about uGUI — so without this a tap on a
-        /// cell would ALSO pop whatever windfall happened to be drifting over
-        /// it. (The rail's own cells are ordinary Buttons and get their click
-        /// from the EventSystem regardless.)
+        /// circles, and knows nothing about uGUI — so this is how
+        /// <see cref="HandleWorldTap"/> knows to stop and leave the press to the
+        /// cell's own Button, which gets its click from the EventSystem
+        /// regardless.
+        /// <para>
+        /// It used to stand the whole strip down over the rail, catch and all,
+        /// so that a cell tap could not also spend a windfall. That was the
+        /// right answer while the cells drew OVER the windfalls; now that they
+        /// draw under, the catch is the thing the player aimed at, and it takes
+        /// the press (<see cref="_railTapCaught"/> keeps the cell from opening
+        /// on the release). The guard still holds for a press that caught
+        /// nothing — the cell is what is under the finger then.
+        /// </para>
         /// </summary>
         private bool PointerOverEventRail(Vector2 screenPoint)
         {
@@ -351,7 +510,11 @@ namespace Wildgrove.Game
                 return false;
             }
 
-            return RectTransformUtility.RectangleContainsScreenPoint(_eventRail, screenPoint, null);
+            // The rail's own camera, not null: null is the overlay answer, and
+            // it reads a camera-space rect as being wherever its world units
+            // happen to land on screen.
+            return RectTransformUtility.RectangleContainsScreenPoint(
+                _eventRail, screenPoint, _railCanvas != null ? _railCanvas.worldCamera : null);
         }
     }
 }

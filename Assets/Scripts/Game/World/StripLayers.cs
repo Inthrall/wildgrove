@@ -19,6 +19,12 @@ namespace Wildgrove.Game.World
     /// mark, and a windfall shows an authored plate OR the tinted bead that
     /// stands in for one.
     /// </para>
+    /// <para>
+    /// One rung is not a sprite at all — the events rail is uGUI, and it reads
+    /// its <c>sortingOrder</c> from here because it renders in the camera
+    /// rather than in an overlay canvas, precisely so the rungs above it can
+    /// pass in front of it. See <c>GameHud.Events.cs</c>.
+    /// </para>
     /// Windfalls sit above the whole strip on purpose — one drifts across the
     /// plates and must stay catchable over any of them.
     /// </summary>
@@ -45,28 +51,31 @@ namespace Wildgrove.Game.World
         /// <summary>The caption naming the plate — topmost on the strip, so nothing pinned to a plate can clip its glyphs.</summary>
         public const int NodeCaption = 5;
 
+        /// <summary>The events rail's cells (a canvas, not a sprite) — a card laid over the strip, so above the plates and their captions and under everything a windfall carries.</summary>
+        public const int RailCell = 6;
+
         /// <summary>The page a windfall carries, hiding the strip it drifts across — UNDER the clock, so the hairs still radiate over it.</summary>
-        public const int WindfallPaper = 6;
+        public const int WindfallPaper = 7;
 
         /// <summary>The seedhead a windfall rides on.</summary>
-        public const int WindfallMount = 7;
+        public const int WindfallMount = 8;
 
         /// <summary>The tinted bead a windfall wears when its resource has no plate.</summary>
-        public const int WindfallSkin = 8;
+        public const int WindfallSkin = 9;
 
         /// <summary>The windfall's authored plate — never drawn alongside <see cref="WindfallShine"/>, which belongs to the bead.</summary>
-        public const int WindfallPlate = 9;
+        public const int WindfallPlate = 10;
 
         /// <summary>The bead's off-centre highlight.</summary>
-        public const int WindfallShine = 9;
+        public const int WindfallShine = 10;
 
         /// <summary>The first-run "tap to catch" tag under a windfall.</summary>
-        public const int WindfallHint = 10;
+        public const int WindfallHint = 11;
 
         /// <summary>Seed scattered from a caught windfall.</summary>
-        public const int WindfallSeed = 11;
+        public const int WindfallSeed = 12;
 
         /// <summary>The "+N" rising from a catch — the last thing drawn, at the finger.</summary>
-        public const int CatchText = 12;
+        public const int CatchText = 13;
     }
 }
