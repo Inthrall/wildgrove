@@ -15,7 +15,7 @@
       "name": "Samhain",
       "kind": "fire",
       "sign": "Samhain, by my count. The quiet things hold still longer tonight — the pencil keeps up.",
-      "lore": "the year's last gate — the herds come down off the hill and the dark half begins. what the summer could not keep, the telling keeps.",
+      "lore": "the herds come down off the hill at the year's last gate, and the dark half begins. what the summer could not keep, the telling keeps.",
       "touch": [
         { "type": "digSpeedMult", "value": 1.2 }
       ],
@@ -61,7 +61,7 @@
       "name": "Ostara",
       "kind": "quarter",
       "sign": "Ostara, by my count. Sowing weather; the ground takes what is given back, and asks less of it.",
-      "lore": "day and night stand level, and the year tips over into the light. what goes in now goes in on trust — nothing has come up yet to prove the ground has woken.",
+      "lore": "day and night stand level, and the year tips over into the light. nothing has come up yet to prove the ground has woken, so what goes in now goes in on trust.",
       "touch": [
         { "type": "replantCostMult", "value": 0.8 }
       ],
@@ -92,7 +92,7 @@
       "name": "Litha",
       "kind": "quarter",
       "sign": "Litha, by my count. The light stays long past its hour, and more comes drifting on it.",
-      "lore": "the longest day, the year at its full height. everything after it leans toward the harvest, which is no loss — it is what the light was for.",
+      "lore": "the longest day, the year at its full height. everything after it leans toward the harvest, which is no loss. that is what the light was for.",
       "touch": [
         { "type": "bubbleRewardBonus", "value": 0.2 }
       ],
