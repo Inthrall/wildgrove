@@ -180,19 +180,30 @@ namespace Wildgrove.Game
             button.targetGraphic = tile.GetComponent<Image>();
             button.onClick.AddListener(() =>
             {
-                // The note carries the bottle's own line either way: a drink
-                // that cannot happen must say which of the two reasons it is
-                // — none brewed, or one already running.
+                // Every tap reads the bottle aloud, the way the drawer's plates
+                // do, because the tile is unlabelled art and a bottle is the
+                // one plate here that a tap SPENDS. "drunk" alone answers that
+                // something happened and not what: the buff is a number on
+                // nodes three pages away, and by the time the player goes
+                // looking, the shelf is one emptier and cannot be asked again.
                 if (_loop.CanDrinkTincture(tincture))
                 {
                     _loop.DrinkTincture(tincture);
                     Flash(tile, "drunk", true);
+                    // Read AFTER the drink: a second bottle banks its duration
+                    // on top, so the clock is the only honest total.
+                    SetNote(BrewReading(tincture, "drunk. "
+                        + NumberFormat.Duration(_loop.TinctureRemainingSeconds(tincture)) + " to run"));
                     return;
                 }
 
-                SetNote(_loop.TinctureRemainingSeconds(tincture) > 0.0
-                    ? tincture.displayName + " is already working. a second bottle would add time, not depth."
-                    : "no " + GoodName(tincture.id) + " brewed. it is cooked at the fire with the other recipes.");
+                // A drink is refused for one reason, a bare shelf. Whether the
+                // last bottle is still working changes what to do about it, not
+                // why this tap did nothing.
+                var live = _loop.TinctureRemainingSeconds(tincture);
+                SetNote(BrewReading(tincture, live > 0.0
+                    ? "none in stock. the one drunk has " + NumberFormat.Duration(live) + " to run"
+                    : "none brewed. it is cooked at the fire with the other recipes"));
             });
 
             _liveUpdaters.Add(() =>
@@ -211,6 +222,17 @@ namespace Wildgrove.Game
                         : "<color=" + Ink2Hex + ">·</color>");
                 SetTilePaper(tile, have > BigDouble.Zero || remaining > 0.0);
             });
+        }
+
+        /// <summary>
+        /// The bottle said in words: which one it is, what drinking it does, and
+        /// where the tap left it. The middle clause is the bottle's authored
+        /// line (tinctures.json), which the data validator has always insisted
+        /// on and the journal had nowhere to show.
+        /// </summary>
+        private static string BrewReading(TinctureData tincture, string outcome)
+        {
+            return tincture.displayName + "  ·  " + tincture.description + "  ·  " + outcome;
         }
 
         // ── Tiles ─────────────────────────────────────────────────────────

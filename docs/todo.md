@@ -76,6 +76,14 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   indicator. The bottle's tile wears a green rule and counts down while the brew
   runs, but nothing says so from any other page. (`Sim/Tinctures.cs`,
   `StoresPage.BuildBrewTile`)
+- **A bottle in stock still cannot be read without spending it.** Every tap on a
+  brew tile now writes the bottle's authored line to the note (2026-08-13), so a
+  bare shelf and a live brew both explain themselves, and a drink says what it
+  did as it lands. The first tap on a bottle actually held is the gap: it drinks
+  before it reads, because tapping IS drinking. Closing it means the line sitting
+  under the tile rather than in the note, which costs the card four rows of prose
+  on a page whose argument is that plates say it faster than words.
+  (`StoresPage.BrewReading`)
 - **No aggregate camp production view** — per-resource rates exist only on node
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
 - **Tending's Choice window is invisible.** `Simulation.Tend` opens the 30 s
