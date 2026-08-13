@@ -197,10 +197,12 @@ namespace Wildgrove.Sim
             // The warden's name crosses with it, and for the same reason: it was
             // bought, and it names the player rather than the run. A fold that
             // dropped it would charge 50 Amber again for a name already given.
-            // The CAMP's name is deliberately absent here: it names the run,
-            // and it folds with the camp — naming the next camp is the next
-            // region's own ritual (design §9's sink slate).
+            // The camp's name crosses on the same terms (design §9, amended
+            // 2026-08-13): a camp that is struck and re-pitched a region north
+            // is still the camp the player named, and a fold that dropped it
+            // would charge 40 Amber again for a name already given.
             next.wardenName = state.wardenName;
+            next.campName = state.campName;
 
             // The Wheel is the warden's, not the run's (design §15): the
             // hemisphere is the warden's reckoning and the claims are sabbats

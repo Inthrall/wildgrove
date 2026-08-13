@@ -425,6 +425,23 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheBoughtNames()
+        {
+            var state = StateWithTheRiteSung();
+            state.wardenName = "Rowan";
+            state.campName = "Thistledown";
+
+            var next = Migration.Migrate(state, _data);
+
+            // Both names were paid for in Amber, and a fold that dropped either
+            // would charge for a name already given (design §9, amended
+            // 2026-08-13 — the camp's name used to fold with the run).
+            Assert.That(next.wardenName, Is.EqualTo("Rowan"), "a warden does not forget their name by migrating");
+            Assert.That(next.campName, Is.EqualTo("Thistledown"), "the camp is re-pitched a region north, not replaced");
+            Assert.That(Camp.DisplayName(next), Is.EqualTo("Thistledown"));
+        }
+
+        [Test]
         public void Migrate_CarriesTheDeepAmberButNotItsPityClock()
         {
             var state = StateWithTheRiteSung();

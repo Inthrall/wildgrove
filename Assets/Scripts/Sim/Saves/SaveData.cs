@@ -44,7 +44,7 @@ namespace Wildgrove.Sim.Saves
         public string wardenPostNodeId;
         public string wardenName;
 
-        /// <summary>This run's camp name (v45) — null until bought; folds with the run at Migration.</summary>
+        /// <summary>The camp's name (v45) — null until bought; crosses Migration with the warden's own.</summary>
         public string campName;
 
         /// <summary>The exchange window the considerations below were pressed in (v46).</summary>

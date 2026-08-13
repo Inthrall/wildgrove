@@ -158,11 +158,11 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Name this run's camp (design §9's sink slate) — the warden sheet's
-        /// sibling, priced between a companion's naming and the warden's own.
-        /// The one difference the sheet must say: this name is the RUN's, and
-        /// it folds with the camp — a player paying 40 amber deserves to know
-        /// the purchase has a season.
+        /// Name the camp (design §9's sink slate) — the warden sheet's sibling,
+        /// priced between a companion's naming and the warden's own. Like the
+        /// warden's, the name is kept: it crosses the fold with the camp it
+        /// names (amended 2026-08-13), so the sheet says the name will last
+        /// rather than warning that it has a season.
         /// </summary>
         internal void OpenCampNamingSheet(System.Action onClosed = null)
         {
@@ -186,10 +186,10 @@ namespace Wildgrove.Game
                                 + cost + " amber</color></size>", 18, TextAnchor.UpperCenter, Ink2, _hand);
             }
 
-            // §7 register: say what the name is for, and say what it isn't —
-            // it reads on the forecast and the pages, and it folds with the
-            // camp when the run ends.
-            MakeText(sheet, "<i>a name for this camp, this season: the pages will use it until the fold takes both.</i>",
+            // §7 register: say what the name is for and that it keeps — it
+            // reads on the forecast and the pages, and it goes north with the
+            // camp at every fold.
+            MakeText(sheet, "<i>a name for the camp: the pages will use it, and it strikes and pitches with you.</i>",
                 16, TextAnchor.UpperCenter, Ink2, _hand);
 
             var field = MakeInputField(sheet, named ? _loop.CampName() : string.Empty);
@@ -213,8 +213,8 @@ namespace Wildgrove.Game
                 if (_loop.NameCamp(typed))
                 {
                     SetNote(cost > 0
-                        ? "a name for the camp, paid in resin, written across the season's pages."
-                        : "a name for the camp, written across the season's pages.");
+                        ? "a name for the camp, paid in resin, written across the pages."
+                        : "a name for the camp, written across the pages.");
                     _dirty = true;
                 }
 

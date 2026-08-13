@@ -69,12 +69,11 @@ namespace Wildgrove.Sim
         public string wardenName;
 
         /// <summary>
-        /// What this run's camp is called, bought once per run for Amber
-        /// (design §9's sink slate, 2026-08-06). Null until named, and
-        /// <see cref="Camp.DisplayName"/> reads that as "the camp". Unlike the
-        /// warden's name it belongs to the run, not the player — the camp
-        /// folds at Migration and the name folds with it, which is what makes
-        /// naming it a ritual of each region rather than a purchase.
+        /// What the camp is called, bought once for Amber (design §9's sink
+        /// slate, 2026-08-06; made permanent 2026-08-13). Null until named, and
+        /// <see cref="Camp.DisplayName"/> reads that as "the camp". Crosses the
+        /// fold exactly as the warden's name does — the camp is struck and
+        /// re-pitched a region north, not replaced, so it keeps its name.
         /// </summary>
         public string campName;
 

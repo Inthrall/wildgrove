@@ -287,8 +287,9 @@ namespace Wildgrove.Game
             // The scrim stays inert on the run's one destructive confirm — a
             // stray tap must not answer it either way; Back still cancels.
             var sheet = BeginSheet(scrimDismisses: false);
-            // A named camp folds by name — the name is part of what is being
-            // left, and the sheet is where that should be felt.
+            // A named camp folds by name — it is this camp being struck, and
+            // the sheet is where that should be felt. The name itself is not
+            // among the losses: it pitches again in the next region.
             MakeText(sheet, _loop.IsCampNamed() ? "Fold " + _loop.CampName() : "Fold the camp",
                 32, TextAnchor.UpperCenter, Ink, _serif);
 
