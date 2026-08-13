@@ -138,6 +138,32 @@ namespace Wildgrove.Game.Tests
             }
         }
 
+        [Test]
+        public void PreferredHeight_SilentAndSpeaking_AreTheSameLine()
+        {
+            // The column holds this lane open from the moment the book opens,
+            // so the empty line standing in reserve has to be exactly as tall as
+            // the note that eventually lands in it. A lane that gained a few
+            // units on its first sentence would be the page-jump in miniature —
+            // which is why the height is measured from the font and not from
+            // whatever the label happens to be holding.
+            var lane = BuildLane(240f, out var label, out var marquee);
+            try
+            {
+                label.text = string.Empty;
+                var silent = marquee.preferredHeight;
+
+                label.text = "caught a windfall of 30 berries";
+
+                Assert.That(marquee.preferredHeight, Is.EqualTo(silent).Within(0.01f),
+                    "the lane measures a line of the type, not the words in it");
+            }
+            finally
+            {
+                Object.DestroyImmediate(lane);
+            }
+        }
+
         /// <summary>
         /// A lane the width of a phone's margin note, with the label set up the
         /// way <c>GameHud.BuildChrome</c> sets it up — Overflow, because the wrap

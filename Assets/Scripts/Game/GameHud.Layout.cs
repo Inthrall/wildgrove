@@ -140,9 +140,10 @@ namespace Wildgrove.Game
             KeyAction(_foldButton);
             _foldButton.gameObject.SetActive(false);
 
-            // Margin note — the handwritten aside, UNDER the tracker. Hidden
-            // while it has nothing to say (ShowNote), and on a spread it stands
-            // in the tracker's row rather than owning a line of its own.
+            // Margin note — the handwritten aside, UNDER the tracker. Its line
+            // is held open whether or not there is anything to say (StandNoteLane),
+            // and on a spread it stands in the tracker's row rather than owning
+            // a line of its own.
             //
             // It lives in a lane of its own height rather than sizing the row
             // itself: a note is pinned ABOVE the page, so a sentence that wrapped
@@ -164,7 +165,10 @@ namespace Wildgrove.Game
             noteRect.anchoredPosition = Vector2.zero;
             var marquee = noteLane.gameObject.AddComponent<MarqueeLine>();
             marquee.label = _note;
-            noteLane.gameObject.SetActive(false);
+            // Standing and empty, which is how the column opens. The fit at the
+            // end of this build takes it down again if the canvas turns out to
+            // be a spread.
+            StandNoteLane();
 
             // World gap — the WorldView strip draws here. Capped rather than
             // flexible: on tall screens the slack goes to the page (more cards
@@ -313,6 +317,11 @@ namespace Wildgrove.Game
         /// it. Two short lines become one — and because the row is the tracker's
         /// either way, a note arriving mid-play doesn't shove the whole page
         /// down a line to make room for itself.
+        /// <para>
+        /// Which way the page is folded is also what decides whether a silent
+        /// lane stands at all, so a device turned mid-run asks that again here:
+        /// see <see cref="StandNoteLane"/>.
+        /// </para>
         /// </summary>
         private void ApplyNoteFold(bool wide)
         {
@@ -330,16 +339,15 @@ namespace Wildgrove.Game
                     // reads top-to-bottom, turned on its side.
                     _noteLane.SetAsLastSibling();
                 }
-
-                return;
             }
-
-            if (_noteLane.parent != _root)
+            else if (_noteLane.parent != _root)
             {
                 _noteLane.SetParent(_root, false);
                 // Back to its own line, immediately below the tracker's row.
                 _noteLane.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
             }
+
+            StandNoteLane();
         }
 
         /// <summary>

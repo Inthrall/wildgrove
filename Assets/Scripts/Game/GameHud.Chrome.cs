@@ -238,18 +238,9 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Write the margin note — and take its row away entirely when there is
-        /// nothing to say. An empty hand-written line still reserved a full line
-        /// of paper, and once the teaching hints are learnt that is most of the
-        /// game: a blank band between the ledger and the tracker that the open
-        /// page could have had. <see cref="UpdateWorldGap"/> measures only the
-        /// rows that are standing, so the page collects the difference.
-        /// <para>
-        /// The lane is what stands or goes, never the label inside it: the lane
-        /// carries the mask and the one-line height (<see cref="MarqueeLine"/>),
-        /// so hiding the label alone would leave an empty line of paper behind
-        /// and hiding it in the wide fold would leave a gap in the tracker's row.
-        /// </para>
+        /// Write the margin note. The lane it stands in is left to
+        /// <see cref="StandNoteLane"/>, which is the same question asked when
+        /// the page folds.
         /// </summary>
         private void ShowNote(string text)
         {
@@ -259,10 +250,45 @@ namespace Wildgrove.Game
             }
 
             _note.text = text ?? string.Empty;
-            var speaking = _note.text.Length > 0;
-            if (_noteLane.gameObject.activeSelf != speaking)
+            StandNoteLane();
+        }
+
+        /// <summary>
+        /// Stand the note's lane, or take it away.
+        /// <para>
+        /// In the column the lane ALWAYS stands, empty or not — the line of
+        /// paper is held open from the moment the book does. The note is pinned
+        /// above the page, so a lane that arrived with the first sentence shoved
+        /// the whole journal down a line under a thumb already reading it, and
+        /// the first sentence is usually the outcome of the tap that thumb has
+        /// just made. One blank line for the life of the run is the cheaper half
+        /// of that trade; <see cref="UpdateWorldGap"/> measures the rows that are
+        /// standing, so the strip above simply keeps a line less and keeps it
+        /// from the outset.
+        /// </para>
+        /// <para>
+        /// On a spread the note stands BESIDE the tracker (<see cref="ApplyNoteFold"/>)
+        /// and so costs the page no height at all — there a silent lane is worth
+        /// taking away, because what it hands back is the tracker's other half
+        /// of the row rather than a line of the page.
+        /// </para>
+        /// <para>
+        /// The lane is what stands or goes, never the label inside it: the lane
+        /// carries the mask and the one-line height (<see cref="MarqueeLine"/>),
+        /// so hiding the label alone would leave an empty line of paper behind.
+        /// </para>
+        /// </summary>
+        private void StandNoteLane()
+        {
+            if (_noteLane == null)
             {
-                _noteLane.gameObject.SetActive(speaking);
+                return;
+            }
+
+            var stands = !_wide || (_note != null && _note.text.Length > 0);
+            if (_noteLane.gameObject.activeSelf != stands)
+            {
+                _noteLane.gameObject.SetActive(stands);
             }
         }
 

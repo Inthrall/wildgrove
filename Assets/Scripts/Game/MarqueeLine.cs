@@ -43,6 +43,16 @@ namespace Wildgrove.Game
         /// <summary>How long each end of the walk is held still, so both can be read.</summary>
         public float holdSeconds = 1.6f;
 
+        // The lane's height is measured from a probe rather than from the note,
+        // because it has to be the same height while the note says nothing: an
+        // empty label measures zero, and a lane that reported a rounded floor
+        // when silent and the font's real line when speaking would still step
+        // the page on the frame a note landed. Its own generator, not the
+        // label's — Text keeps one for its mesh and one for its layout, and
+        // borrowing either would throw away a generation it still needs.
+        private const string ProbeLine = "Ag";
+        private readonly TextGenerator _measure = new TextGenerator();
+
         private string _walking;
         private float _measured;
         private float _elapsed;
@@ -55,10 +65,12 @@ namespace Wildgrove.Game
         public int layoutPriority => 2;
 
         /// <summary>
-        /// One line, always. The label overflows rather than wrapping, so its
-        /// own preferred height IS a single line whatever it holds — the floor
-        /// is only for the empty string, which measures nothing and would
-        /// otherwise collapse the lane on the frame a note is cleared.
+        /// One line, always — and the SAME line whether the lane is speaking or
+        /// standing empty. The label overflows rather than wrapping, so any
+        /// sentence it holds is one line; measuring the probe rather than the
+        /// sentence is what makes the empty lane exactly as tall as the note
+        /// that will land in it, so a lane held open in reserve costs the page
+        /// nothing when it finally speaks.
         /// </summary>
         public float preferredHeight
         {
@@ -69,7 +81,15 @@ namespace Wildgrove.Game
                     return -1f;
                 }
 
-                return Mathf.Max(label.preferredHeight, label.fontSize * 1.25f);
+                // Extents as Text takes them for its own preferred height. The
+                // width is beside the point under Overflow, but a label wired
+                // to wrap would measure a paragraph against a zero-wide lane.
+                var settings = label.GetGenerationSettings(new Vector2(label.GetPixelAdjustedRect().size.x, 0f));
+                var line = _measure.GetPreferredHeight(ProbeLine, settings) / label.pixelsPerUnit;
+
+                // Nothing to measure without a font — the type size keeps the
+                // lane off the floor until one is set.
+                return line > 0f ? line : label.fontSize * 1.25f;
             }
         }
 
