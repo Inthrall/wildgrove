@@ -86,7 +86,7 @@ namespace Wildgrove.Game
             _pendingScroll = null;
             _firstVerseCard = null;
             _firstKeepingCard = null;
-            FoldedHeading = null;
+            AnchoredHeading = null;
 
             // Where the focus mark stood, before the page under it is destroyed.
             // Only the page's own mark goes: a rebuild can happen under an open
@@ -135,9 +135,9 @@ namespace Wildgrove.Game
             }
 
             SetPageColumn(null);
-            // The page has drawn its headings, so the fold has found its
+            // The page has drawn its headings, so the anchor has found its
             // landmark (or the section is gone) — the id has done its job.
-            PendingFold = null;
+            PendingAnchor = null;
             // The page's words before its measure. A great many labels are
             // built EMPTY and take their text from the live pass — every
             // building line and every rung of the ladder is two or three
@@ -218,7 +218,7 @@ namespace Wildgrove.Game
         internal void FoldZone(string zoneId, RectTransform heading)
         {
             JournalZones.Toggle(ZoneOpen, zoneId, _trail.NewestZoneId());
-            FoldAround(zoneId, heading);
+            KeepInPlace(zoneId, heading);
         }
 
         /// <summary>
@@ -231,19 +231,45 @@ namespace Wildgrove.Game
         internal void FoldCard(string cardId, RectTransform heading)
         {
             JournalCardFolds.Toggle(CardOpen, cardId);
-            FoldAround(cardId, heading);
+            KeepInPlace(cardId, heading);
         }
 
-        /// <summary>Rebuild the page around the heading that was pressed, and put it back where it stood.</summary>
-        private void FoldAround(string foldId, RectTransform heading)
+        /// <summary>
+        /// Rebuild the page around <paramref name="heading"/>, and put it back
+        /// where it stood — for a press whose answer changes the page ABOVE
+        /// itself, which is the one thing keeping the scrolled distance cannot
+        /// absorb (see <see cref="JournalNav.KeptPosition"/>). Taking up a rung
+        /// that opens a station is the plainest case: the Ladder sits under the
+        /// crafting cards, so a whole card arrives above it and the rung the
+        /// finger is still on walks off the bottom of the screen.
+        /// <para>
+        /// The id is how the landmark survives the rebuild that destroys it: the
+        /// fresh page calls <see cref="MarkAnchor"/> as it draws, and whichever
+        /// rect answers to this id becomes the one the settle scrolls to.
+        /// </para>
+        /// </summary>
+        internal void KeepInPlace(string anchorId, RectTransform heading)
         {
-            PendingFold = foldId;
-            _foldOffset = HeadingViewportOffset(heading);
-            _pendingScroll = FoldLandmark;
+            PendingAnchor = anchorId;
+            _anchorOffset = HeadingViewportOffset(heading);
+            _pendingScroll = AnchorLandmark;
             Dirty = true;
         }
 
-        /// <summary>Distance from the viewport's top edge down to <paramref name="heading"/>'s top edge — where the fold's settle puts it back.</summary>
+        /// <summary>
+        /// Offer <paramref name="target"/> as the landmark for
+        /// <paramref name="anchorId"/> while the page redraws — it is only kept
+        /// if that is the id the rebuild is anchored on.
+        /// </summary>
+        internal void MarkAnchor(string anchorId, RectTransform target)
+        {
+            if (anchorId != null && anchorId == PendingAnchor)
+            {
+                AnchoredHeading = target;
+            }
+        }
+
+        /// <summary>Distance from the viewport's top edge down to <paramref name="heading"/>'s top edge — where the settle puts it back.</summary>
         private float HeadingViewportOffset(RectTransform heading)
         {
             if (heading == null || _scroll == null)
@@ -292,14 +318,14 @@ namespace Wildgrove.Game
             }
         }
 
-        /// <summary>The landmark name a fold — a ground's or a card's — scrolls back to.</summary>
-        private const string FoldLandmark = "fold";
+        /// <summary>The landmark name a kept place — a fold's heading, or the card a press was answered on — scrolls back to.</summary>
+        private const string AnchorLandmark = "anchor";
 
         /// <summary>The small breath a deep-linked landmark keeps from the viewport's top edge.</summary>
         private const float LandmarkMargin = 6f;
 
-        /// <summary>Where the pressed heading stood in the viewport — the fold's settle restores it there.</summary>
-        private float _foldOffset = LandmarkMargin;
+        /// <summary>Where the pressed heading stood in the viewport — the settle restores it there.</summary>
+        private float _anchorOffset = LandmarkMargin;
 
         private RectTransform LandmarkCard(string landmark)
         {
@@ -309,8 +335,8 @@ namespace Wildgrove.Game
                     return _firstVerseCard;
                 case JournalCardFolds.Keeping:
                     return _firstKeepingCard;
-                case FoldLandmark:
-                    return FoldedHeading;
+                case AnchorLandmark:
+                    return AnchoredHeading;
                 default:
                     return null;
             }
@@ -350,9 +376,9 @@ namespace Wildgrove.Game
             var target = LandmarkCard(landmark);
             if (target != null)
             {
-                // A fold's landmark goes back to where its heading stood; the
-                // deep links land theirs at the top of the view.
-                ScrollTo(target, landmark == FoldLandmark ? _foldOffset : LandmarkMargin);
+                // A kept place goes back to where its heading stood; the deep
+                // links land theirs at the top of the view.
+                ScrollTo(target, landmark == AnchorLandmark ? _anchorOffset : LandmarkMargin);
             }
             else
             {

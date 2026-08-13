@@ -153,10 +153,7 @@ namespace Wildgrove.Game
             // The heading the page is being rebuilt around: the scroll comes
             // back to it once the fresh page has a height, so the ground the
             // player opened is still under the finger that opened it.
-            if (captured == _hud.PendingFold)
-            {
-                _hud.FoldedHeading = (RectTransform)heading.transform;
-            }
+            Anchor(captured, (RectTransform)heading.transform);
         }
 
         /// <summary>

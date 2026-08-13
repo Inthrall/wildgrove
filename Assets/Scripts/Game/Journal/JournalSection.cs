@@ -50,6 +50,23 @@ namespace Wildgrove.Game
         protected void SetNote(string text) => _hud.SetNote(text);
         protected void Flash(Component near, string message, bool good) => _hud.Flash(near, message, good);
 
+        // ─── Keeping the reader's place ───
+
+        /// <summary>
+        /// Name a rect as this page draws it, so a rebuild anchored on that id
+        /// can put the page back where it stood. Offered on every build; kept
+        /// only by the one rebuild that asked for it.
+        /// </summary>
+        protected void Anchor(string anchorId, RectTransform target) => _hud.MarkAnchor(anchorId, target);
+
+        /// <summary>
+        /// Rebuild the page, keeping <paramref name="target"/> where it stands —
+        /// what a press uses in place of <c>_dirty = true</c> when its answer
+        /// can add height ABOVE the card that was pressed. See
+        /// <see cref="GameHud.KeepInPlace"/>.
+        /// </summary>
+        protected void KeepInPlace(string anchorId, RectTransform target) => _hud.KeepInPlace(anchorId, target);
+
         // ─── The fold ───
 
         /// <summary>
@@ -94,11 +111,7 @@ namespace Wildgrove.Game
             pressed = JournalWidgets.Button(card, label, 400, () => _hud.FoldCard(cardId, (RectTransform)pressed.transform));
             pressed.gameObject.name = "CardHeading";
             JournalWidgets.AddFoldArrow(pressed, open);
-
-            if (cardId == _hud.PendingFold)
-            {
-                _hud.FoldedHeading = (RectTransform)pressed.transform;
-            }
+            Anchor(cardId, (RectTransform)pressed.transform);
 
             heading = pressed;
             return card;

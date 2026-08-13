@@ -22,6 +22,15 @@ namespace Wildgrove.Game
         // How many unpurchased Ladder rungs the camp shows at once.
         private const int UpgradeWindow = 3;
 
+        // The two cards on this page whose own button can grow the page above
+        // them — a rung or a raise that opens a recipe builds a station card,
+        // and the crafting cards are the first thing on the page. Both presses
+        // therefore keep their card's place rather than the scrolled distance.
+        // Not fold ids: nothing folds here, and a collision with one would
+        // scroll to the wrong card.
+        private const string LadderAnchor = "camp-ladder";
+        private const string BuildingsAnchor = "camp-buildings";
+
         internal CampPage(GameHud hud) : base(hud) { }
 
         internal void BuildCampPage()
@@ -68,6 +77,7 @@ namespace Wildgrove.Game
         private void BuildBuildingsCard()
         {
             var card = Card("BUILDING LINES");
+            Anchor(BuildingsAnchor, card);
             foreach (var building in _loop.Data.buildings)
             {
                 var captured = building;
@@ -97,7 +107,9 @@ namespace Wildgrove.Game
                     {
                         Flash(build, "raised", true);
                         SetNote(captured.displayName.ToLowerInvariant() + " goes up. the camp sleeps closer to the work.");
-                        _dirty = true;
+                        // A raise can bring a station up to a recipe's heat,
+                        // which adds a row to a card above this one.
+                        KeepInPlace(BuildingsAnchor, card);
                     }
                 });
 
@@ -148,6 +160,7 @@ namespace Wildgrove.Game
         private void BuildLadderCard()
         {
             var card = Card("THE LADDER");
+            Anchor(LadderAnchor, card);
 
             // The hatchet heads the rungs — the work sharpens as you climb.
             var tools = ArtLibrary.ForLine("tools");
@@ -193,7 +206,11 @@ namespace Wildgrove.Game
                     {
                         Flash(buy, "taken up", true);
                         SetNote(captured.displayName.ToLowerInvariant() + ": the work changes shape.");
-                        _dirty = true;
+                        // The rung that opens the fire ring or the bench builds
+                        // a whole station card at the head of the page — half a
+                        // screen of it — so the Ladder holds its own place
+                        // rather than being shoved down by what it just bought.
+                        KeepInPlace(LadderAnchor, card);
                     }
                 });
 

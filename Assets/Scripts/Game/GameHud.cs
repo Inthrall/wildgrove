@@ -238,14 +238,15 @@ namespace Wildgrove.Game
         internal Dictionary<string, bool> CardOpen { get; } = new Dictionary<string, bool>();
 
         /// <summary>
-        /// The heading the page is being rebuilt around, and the heading itself
-        /// once the page has drawn it — the landmark that keeps a fold under the
-        /// finger that pressed it (see <see cref="FoldZone"/> and
-        /// <see cref="FoldCard"/>).
+        /// The id of the thing the page is being rebuilt around, and the rect
+        /// itself once the page has drawn it again — the landmark that keeps a
+        /// pressed card under the finger that pressed it (see
+        /// <see cref="KeepInPlace"/>, and the folds that go through it,
+        /// <see cref="FoldZone"/> and <see cref="FoldCard"/>).
         /// </summary>
-        internal string PendingFold { get; private set; }
+        internal string PendingAnchor { get; private set; }
 
-        internal RectTransform FoldedHeading { get; set; }
+        internal RectTransform AnchoredHeading { get; private set; }
         internal JournalText Labels => _labels;
         internal JournalSheets Sheets => _sheets;
 
