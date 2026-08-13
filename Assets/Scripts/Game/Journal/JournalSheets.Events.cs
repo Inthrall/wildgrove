@@ -140,6 +140,18 @@ namespace Wildgrove.Game
         /// The sabbat being waited for. No plate: the plate is what a keeping
         /// earns (design §15), and a tide that has not opened has earned
         /// nothing yet — the sheet is a date and a promise, not a page.
+        /// <para>
+        /// A name, a countdown to the opening and one line of the warden's
+        /// voice — nothing else, from 2026-08-13. It used to carry the closing
+        /// night as well, the Wheel's rules read out in full, the tide's whole
+        /// touch under <em>When it opens</em>, the years it had been kept, and
+        /// a note on where the reckoning is changed: six things asked of a
+        /// player who tapped a cell to learn when the season turns. What the
+        /// tide gives belongs to the tide's own sheet, which says it the day it
+        /// starts being true; the night is a month past the only date this
+        /// sheet is about; and the years kept are the book's to remember, not
+        /// this sheet's.
+        /// </para>
         /// </summary>
         private void OpenComingSabbatSheet()
         {
@@ -152,36 +164,16 @@ namespace Wildgrove.Game
             var sheet = BeginSheet();
             MakeText(sheet, coming.displayName + " is coming", 32, TextAnchor.UpperCenter, Ink, _serif);
 
-            var now = _loop.NowUnixMs();
-            if (_loop.NextNightOf(coming, out var nightMs, out var opensMs))
+            if (_loop.NextNightOf(coming, out _, out var opensMs))
             {
-                MakeText(sheet, "the tide opens in " + NumberFormat.Countdown((opensMs - now) / 1000.0)
-                                + " and holds until the night itself, "
-                                + NumberFormat.Countdown((nightMs - now) / 1000.0) + " from now",
+                MakeText(sheet, "the tide opens in "
+                                + NumberFormat.Countdown((opensMs - _loop.NowUnixMs()) / 1000.0),
                     18, TextAnchor.MiddleCenter, Ink2, _serif);
             }
 
-            MakeText(sheet, "<i>the calendar is the warden's, not the land's. eight sabbats a year, each with"
-                            + " a month of tide before its night — an offering to set down at the fire, and a"
-                            + " page for the book if it is kept.</i>",
-                17, TextAnchor.UpperLeft, Ink2, _serif);
-
-            var gives = EffectsLabel(coming.touch);
-            if (gives.Length > 0)
-            {
-                MakeHairline((RectTransform)sheet);
-                MakeText(sheet, "<b>When it opens</b>  " + gives, 18, TextAnchor.UpperLeft, Ink);
-            }
-
-            MakeHairline((RectTransform)sheet);
-            var years = Keeping.KeptYears(_loop.State, coming.id);
-            MakeText(sheet, years.Count == 0
-                    ? "<i>you have not kept this one before.</i>"
-                    : "<i>kept " + string.Join(" · ", years) + ".</i>",
-                17, TextAnchor.MiddleCenter, Ink2, _hand);
-            MakeText(sheet, "by the " + (_loop.State.hemisphere == Wheel.HemisphereSouth ? "south" : "north")
-                            + "'s reckoning · the reckoning is changed on the inside cover, and only while no"
-                            + " tide is open", 15, TextAnchor.UpperLeft, Ink2);
+            MakeText(sheet, "<i>the calendar is the warden's, not the land's, and the warden reckons by the "
+                            + (_loop.State.hemisphere == Wheel.HemisphereSouth ? "south" : "north")
+                            + "'s wheel.</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
 
             var seen = Button(sheet, "Walk on", 320, CloseSheet);
             KeyAction(seen);
