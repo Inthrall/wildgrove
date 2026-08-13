@@ -133,7 +133,7 @@ namespace Wildgrove.Game
                 case EffectType.UnlockRecipe:
                     return "teaches " + effect.recipe;
                 case EffectType.UnlockDigSite:
-                    return "opens the watch in " + ZoneName(effect.zone);
+                    return "opens the sketching in " + ZoneName(effect.zone);
                 case EffectType.RecruitSpecies:
                     return "a " + SpeciesName(effect.species) + " joins the kith";
                 case EffectType.GrantUpgrade:
@@ -193,14 +193,14 @@ namespace Wildgrove.Game
                 return "resting at camp";
             }
 
-            // A watch post is named by its place, not by the work: "the marsh
-            // watch" is where a body IS, which is the question every caller here
-            // is asking. "watching" alone was true of six sites at once and told
-            // the player nothing about which one they had just filled.
-            var watchZone = Familiar.WatchZoneOf(stationId);
-            if (watchZone != null)
+            // A sketching post is named by its place, not by the work: "the
+            // marsh sketching" is where a body IS, which is the question every
+            // caller here is asking. The bare gerund was true of six sites at
+            // once and told the player nothing about which one they had filled.
+            var sketchZone = Familiar.SketchZoneOf(stationId);
+            if (sketchZone != null)
             {
-                return ZoneName(watchZone).ToLowerInvariant() + " watch";
+                return ZoneName(sketchZone).ToLowerInvariant() + " sketching";
             }
 
             if (stationId == Familiar.PonyStation)
@@ -290,7 +290,7 @@ namespace Wildgrove.Game
         /// <summary>
         /// A planter's name in the language of the node it serves. Foraging nodes
         /// keep the garden names (frame, trellis); mining, delving, logging,
-        /// fishing, husbandry and watching get names that fit the work. Dig sites
+        /// fishing, husbandry and sketching get names that fit the work. Dig sites
         /// and anything unmapped fall back to the planter's own displayName.
         /// </summary>
         internal string PlanterDisplayName(PlanterData planter, string targetId)
@@ -369,9 +369,9 @@ namespace Wildgrove.Game
         /// species carries the kind. It needs its own accessor if one ever does.
         /// </para>
         /// </summary>
-        internal string PostBonus(Familiar familiar, NodeState node, bool isWatchPost)
+        internal string PostBonus(Familiar familiar, NodeState node, bool isSketchPost)
         {
-            var factor = isWatchPost
+            var factor = isSketchPost
                 ? Traits.DigSpeedFactor(familiar, _loop.Data)
                 : node != null ? Traits.NodeYieldFactor(familiar, node, _loop.Data) : 1.0;
             if (factor <= 1.0)
@@ -380,7 +380,7 @@ namespace Wildgrove.Game
             }
 
             var percent = UnityEngine.Mathf.RoundToInt((float)((factor - 1.0) * 100.0));
-            return "+" + percent + "%" + (isWatchPost ? " sketching" : " yield");
+            return "+" + percent + "%" + (isSketchPost ? " sketching" : " yield");
         }
 
         /// <summary>The gathering skill of the node with this id, or null when the target is a dig site.</summary>

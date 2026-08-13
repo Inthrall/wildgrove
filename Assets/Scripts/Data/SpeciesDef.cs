@@ -21,7 +21,7 @@ namespace Wildgrove.Data
         /// <summary>
         /// The related pair of resources the trait is specialised to (e.g.
         /// copper-scree + tin-seam) — the familiar works either node. Empty
-        /// means it applies wherever the familiar is posted (watch/choice/bubble/warden).
+        /// means it applies wherever the familiar is posted (sketch/choice/bubble/warden).
         /// </summary>
         public List<string> Resources { get; set; } = new List<string>();
 

@@ -244,7 +244,7 @@ namespace Wildgrove.Sim.Tests
             Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
             Assert.That(Kith.HasRoom(state, _data), Is.False, "the vole holds the only slot");
 
-            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.WatchStation("old-growth-wood"));
+            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.SketchStation("old-growth-wood"));
 
             Assert.That(recruit, Is.Not.Null, "the collection is never slot-capped");
             Assert.That(recruit.IsResting, Is.True, "no slot open — the post request is quietly dropped");
@@ -256,9 +256,9 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
 
-            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.WatchStation("old-growth-wood"));
+            var recruit = Roster.Recruit(state, _data, "holt-otter", Familiar.SketchStation("old-growth-wood"));
 
-            Assert.That(recruit.stationId, Is.EqualTo(Familiar.WatchStation("old-growth-wood")));
+            Assert.That(recruit.stationId, Is.EqualTo(Familiar.SketchStation("old-growth-wood")));
         }
 
         [Test]
@@ -282,7 +282,7 @@ namespace Wildgrove.Sim.Tests
             var raven = Roster.Recruit(state, _data, "pack-raven", null);
             Assert.That(raven.IsResting, Is.True);
 
-            Assert.That(Roster.Station(state, _data, raven, Familiar.WatchStation("old-growth-wood")), Is.False);
+            Assert.That(Roster.Station(state, _data, raven, Familiar.SketchStation("old-growth-wood")), Is.False);
             Assert.That(raven.IsResting, Is.True, "the refusal changes nothing");
         }
 
@@ -292,7 +292,7 @@ namespace Wildgrove.Sim.Tests
             var state = GameStateFactory.NewGame(_data);
             var vole = Roster.Recruit(state, _data, "meadow-vole", state.nodes[1].id);
 
-            Assert.That(Roster.Station(state, _data, vole, Familiar.WatchStation("old-growth-wood")), Is.True,
+            Assert.That(Roster.Station(state, _data, vole, Familiar.SketchStation("old-growth-wood")), Is.True,
                 "a held slot moves post to post without asking again");
 
             Assert.That(Roster.Station(state, _data, vole, null), Is.True, "resting is always allowed");
@@ -308,7 +308,7 @@ namespace Wildgrove.Sim.Tests
 
             Roster.Station(state, _data, vole, null);
 
-            Assert.That(Roster.Station(state, _data, raven, Familiar.WatchStation("old-growth-wood")), Is.True,
+            Assert.That(Roster.Station(state, _data, raven, Familiar.SketchStation("old-growth-wood")), Is.True,
                 "the swap is the point of the ladder");
         }
 

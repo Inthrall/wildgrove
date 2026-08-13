@@ -156,11 +156,11 @@ namespace Wildgrove.Game
                 AddStationChoice(sheet, familiar, node.id);
             }
 
-            // One choice per open site: the watch is a place now, so "go and
-            // watch" is as many offers as there are places to watch from.
+            // One choice per open site: the sketching is a place now, so "go
+            // and draw" is as many offers as there are sites to draw at.
             foreach (var site in _loop.State.digSites)
             {
-                AddStationChoice(sheet, familiar, Familiar.WatchStation(site.zoneId));
+                AddStationChoice(sheet, familiar, Familiar.SketchStation(site.zoneId));
             }
         }
 

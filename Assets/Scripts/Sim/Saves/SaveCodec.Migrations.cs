@@ -177,6 +177,24 @@ namespace Wildgrove.Sim.Saves
                         save.version = 53;
                         break;
 
+                    case 53:
+                        // v54 renamed the work: a post at an observation site is
+                        // SKETCHING, not watching, and its id says so —
+                        // "sketch:{zone}" where v53 wrote "dig:{zone}". Unlike
+                        // 53, this rung really does rewrite the ids, and it can:
+                        // the zone half is carried through untouched, so no
+                        // content data is consulted and a site this build no
+                        // longer opens is still left for Restore to rest.
+                        //
+                        // Why the ids moved at all, rather than only the words:
+                        // "dig" is excavation vocabulary that outlived
+                        // excavation by two renames, and a persisted id nobody
+                        // dares touch is how the next reader learns the wrong
+                        // noun for the work.
+                        RewriteSketchStations(save);
+                        save.version = 54;
+                        break;
+
                     default:
                         // A gap in the ladder is a coding error — refuse rather
                         // than spin.
@@ -185,6 +203,51 @@ namespace Wildgrove.Sim.Saves
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Move every observation-site post from the v53 <c>dig:{zone}</c> id to
+        /// v54's <c>sketch:{zone}</c> — the roster's own posts and the warden's.
+        /// <para>
+        /// Deliberately NOT <c>save.stations</c>: that list is the craft queue,
+        /// whose <c>stationId</c> is a workbench and not a place a body stands.
+        /// The two fields share a name and nothing else, and rewriting the wrong
+        /// one would empty a player's queue on load without erroring.
+        /// </para>
+        /// </summary>
+        private static void RewriteSketchStations(SaveData save)
+        {
+            if (save.roster != null)
+            {
+                foreach (var familiar in save.roster)
+                {
+                    if (familiar != null)
+                    {
+                        familiar.stationId = RewriteSketchStation(familiar.stationId);
+                    }
+                }
+            }
+
+            save.wardenPostNodeId = RewriteSketchStation(save.wardenPostNodeId);
+        }
+
+        /// <summary>
+        /// One post id carried across the v54 rename, or handed back untouched.
+        /// Anything that is not a v53 site post — a node id, the pony's lane, the
+        /// retired roaming <c>wander</c>, null — passes through, because this rung
+        /// renames one thing and must not be the place a second meaning is
+        /// invented.
+        /// </summary>
+        private static string RewriteSketchStation(string stationId)
+        {
+            if (string.IsNullOrEmpty(stationId)
+                || !stationId.StartsWith(Familiar.LegacyWatchStationPrefix))
+            {
+                return stationId;
+            }
+
+            var zoneId = stationId.Substring(Familiar.LegacyWatchStationPrefix.Length);
+            return Familiar.SketchStation(zoneId);
         }
     }
 }

@@ -32,37 +32,46 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The retired roaming-watch station id: its holder walked the run and
-        /// watched EVERY observation site from the one post. Read only by save
+        /// sketched at EVERY observation site from the one post. Read only by save
         /// migration now — one body sketching at six places at once was a post
         /// whose reach nobody could see, and it made opening ground the way to
-        /// quicken a watch nobody was standing at.
+        /// quicken a site nobody was standing at.
         /// </summary>
         public const string LegacyWanderStation = "wander";
 
         /// <summary>
-        /// Prefix for a watch-post station id ("dig:{zoneId}") — one post per
-        /// observation site (design §6). Its holder — warden or familiar —
-        /// watches THAT site and nothing else, and gathers nothing anywhere: a
-        /// watcher who also gathered read as two jobs on one post.
+        /// The prefix these posts were written under until save v54, when the
+        /// work stopped being called watching. Read only by the migration that
+        /// rewrites the ids — <c>dig:</c> was excavation vocabulary that
+        /// outlived excavation, and nothing outside
+        /// <see cref="Saves.SaveCodec"/> may match on it.
         /// </summary>
-        public const string WatchStationPrefix = "dig:";
+        public const string LegacyWatchStationPrefix = "dig:";
 
-        /// <summary>The watch post at <paramref name="zoneId"/>'s observation site.</summary>
-        public static string WatchStation(string zoneId)
+        /// <summary>
+        /// Prefix for a sketching-post station id ("sketch:{zoneId}") — one post
+        /// per observation site (design §6). Its holder — warden or familiar —
+        /// draws what lives at THAT site and nowhere else, and gathers nothing
+        /// anywhere: a sketcher who also gathered read as two jobs on one post.
+        /// </summary>
+        public const string SketchStationPrefix = "sketch:";
+
+        /// <summary>The sketching post at <paramref name="zoneId"/>'s observation site.</summary>
+        public static string SketchStation(string zoneId)
         {
-            return WatchStationPrefix + zoneId;
+            return SketchStationPrefix + zoneId;
         }
 
-        /// <summary>True when <paramref name="stationId"/> is a watch post at some site.</summary>
-        public static bool IsWatchStation(string stationId)
+        /// <summary>True when <paramref name="stationId"/> is a sketching post at some site.</summary>
+        public static bool IsSketchStation(string stationId)
         {
-            return !string.IsNullOrEmpty(stationId) && stationId.StartsWith(WatchStationPrefix);
+            return !string.IsNullOrEmpty(stationId) && stationId.StartsWith(SketchStationPrefix);
         }
 
-        /// <summary>The zone whose site this watch post stands at, or null when the id is not a watch post.</summary>
-        public static string WatchZoneOf(string stationId)
+        /// <summary>The zone whose site this sketching post stands at, or null when the id is not a sketching post.</summary>
+        public static string SketchZoneOf(string stationId)
         {
-            return IsWatchStation(stationId) ? stationId.Substring(WatchStationPrefix.Length) : null;
+            return IsSketchStation(stationId) ? stationId.Substring(SketchStationPrefix.Length) : null;
         }
 
         /// <summary>Stable per-run roster id (e.g. "fam-1"), minted by <see cref="GameState.NextFamiliarId"/>.</summary>
@@ -81,8 +90,8 @@ namespace Wildgrove.Sim
         public double kinshipXp;
 
         /// <summary>
-        /// Where this familiar is stationed: a node id, a watch post
-        /// (<see cref="WatchStation"/>), or null/empty when it rests at camp.
+        /// Where this familiar is stationed: a node id, a sketching post
+        /// (<see cref="SketchStation"/>), or null/empty when it rests at camp.
         /// Every post holds at most ONE body — warden or familiar (§2). A
         /// stationed familiar holds one of the kith's slots (§4 ladder); a
         /// resting one works nothing and earns nothing, waiting to be called.
@@ -120,13 +129,13 @@ namespace Wildgrove.Sim
         /// </summary>
         public bool IsPony => speciesId == PonySpecies;
 
-        /// <summary>True when this one keeps a site's watch (one site, no gathering).</summary>
-        public bool IsWatching => IsWatchStation(stationId);
+        /// <summary>True when this one sketches at a site (one site, no gathering).</summary>
+        public bool IsSketching => IsSketchStation(stationId);
 
-        /// <summary>True when this one keeps <paramref name="zoneId"/>'s watch in particular.</summary>
-        public bool IsWatchingAt(string zoneId)
+        /// <summary>True when this one sketches at <paramref name="zoneId"/>'s site in particular.</summary>
+        public bool IsSketchingAt(string zoneId)
         {
-            return stationId == WatchStation(zoneId);
+            return stationId == SketchStation(zoneId);
         }
     }
 }

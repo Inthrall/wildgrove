@@ -16,7 +16,7 @@ namespace Wildgrove.Game
     /// assembles the page and keeps the zone headings that fold it, with the rest
     /// in the partials beside it: <c>Home</c> (the recruit bar), <c>Wheel</c>
     /// (the tide and the keeping), <c>Nodes</c> (a ground's plates),
-    /// <c>Watch</c> (its observation site) and <c>Verses</c> (the Rite).
+    /// <c>Sketching</c> (its observation site) and <c>Verses</c> (the Rite).
     /// <para>
     /// Posting lives on the world strip's badges, so the plates here carry only
     /// yields, replanting and planters. The kith roster lives on the Warden page.
@@ -90,15 +90,15 @@ namespace Wildgrove.Game
                     }
                 }
 
-                // The zone's own watch closes its section. The cards used to be
+                // The zone's own site closes its section. The cards used to be
                 // a block of their own after every ground, which put a run's six
-                // watches in one stack of near-identical plates, each headed by a
+                // sites in one stack of near-identical plates, each headed by a
                 // place the reader had scrolled past — and folding a ground shut
-                // left its watch behind on the page.
+                // left its site behind on the page.
                 var site = SiteIn(zone.id);
                 if (site != null)
                 {
-                    BuildWatchPlate(site);
+                    BuildSketchingPlate(site);
                 }
             }
 
@@ -183,9 +183,9 @@ namespace Wildgrove.Game
         /// <summary>
         /// What a folded ground is still growing, named in its own words —
         /// the nodes' resources, in the order the page would have drawn them,
-        /// and a word for a watch standing empty.
+        /// and a word for a sketching post standing empty.
         /// <para>
-        /// The watch word is here because the card carrying it now folds away
+        /// The sketching word is here because the card carrying it now folds away
         /// with the ground (it used to sit in a block of its own below every
         /// zone, always drawn): without it, shutting a ground would hide the one
         /// thing on it that is waiting to be answered.
@@ -204,9 +204,9 @@ namespace Wildgrove.Game
 
             var line = growing.Count == 0 ? "folded" : string.Join(" · ", growing.ToArray());
             var site = SiteIn(zone.id);
-            if (site != null && Stationing.WatchAgentsAt(_loop.State, _loop.Data, zone.id) <= 0.0)
+            if (site != null && Stationing.SketchAgentsAt(_loop.State, _loop.Data, zone.id) <= 0.0)
             {
-                line += " · <color=" + OchreInkHex + ">the watch stands empty</color>";
+                line += " · <color=" + OchreInkHex + ">no one sketches here</color>";
             }
 
             return line;

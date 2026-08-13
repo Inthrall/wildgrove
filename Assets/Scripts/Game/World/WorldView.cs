@@ -29,10 +29,14 @@ namespace Wildgrove.Game.World
     /// badge of its holder, and this class answers both tap questions — which
     /// node a tap tends, and which post's badge a tap assigns. While any kith
     /// slot stands unfilled a (+) mark closes the strip; tapping it opens the
-    /// picker — a ground, then a body. A site's watch post keeps no plate of its
-    /// own here — it would wear a node's face without being one — and is
-    /// assigned from that zone's watch card, the pickers and the familiars' own
-    /// sheets.
+    /// picker — a ground, then a body. An observation site's SKETCHING post is on
+    /// the board too, from 2026-08-13: its own plate among the grounds
+    /// (<see cref="NodeWorldView.CreateSketching"/>), wearing the badge of
+    /// whoever draws there. It kept no plate here for the week before that, on
+    /// the reasoning that a site is no node and would wear a node's face without
+    /// being one — but the plate it wears is a moth and not a crop, and the cost
+    /// of the rule was that the one post a player could fill from a zone's card
+    /// was also the one post they could never see filled.
     /// Placeholder tier: shapes in a strip for now; a real region scene replaces
     /// the layout when the art lands, but the camera/world seam and hit-testing
     /// stay.
@@ -104,7 +108,12 @@ namespace Wildgrove.Game.World
         private Font _labelFont;
         // Every node's view, in the land's own order — built once per state.
         private readonly List<NodeWorldView> _views = new List<NodeWorldView>();
-        // The subset actually on the strip this frame, in the same order.
+        // One sketching plate per open observation site, in site order. Kept
+        // apart from _views because _views is also the windfall pool, and a
+        // site has no resource for a windfall to pay out.
+        private readonly List<NodeWorldView> _sketchViews = new List<NodeWorldView>();
+        // The subset actually on the strip this frame — the nodes with a body,
+        // then the sites with one, in each list's own order.
         private readonly List<NodeWorldView> _onStrip = new List<NodeWorldView>();
         private readonly List<BubbleWorldView> _bubbles = new List<BubbleWorldView>();
         // Caught windfalls play out a short burst before being destroyed —
@@ -165,6 +174,14 @@ namespace Wildgrove.Game.World
                 }
             }
 
+            foreach (var view in _sketchViews)
+            {
+                if (view != null)
+                {
+                    view.RefreshLabel();
+                }
+            }
+
             if (_wardenPlace != null)
             {
                 _wardenPlace.RefreshLabel();
@@ -199,7 +216,7 @@ namespace Wildgrove.Game.World
             var nodeIndex = index - FirstNodeCentre;
             if (nodeIndex < _onStrip.Count)
             {
-                postId = _onStrip[nodeIndex].Node.id;
+                postId = _onStrip[nodeIndex].PostId;
                 return StripTap.Post;
             }
 
@@ -220,7 +237,9 @@ namespace Wildgrove.Game.World
 
             // Rebuild on a new run/state object, and when the strip's population
             // grows mid-run (a trail map unlocked a zone's nodes).
-            if (_builtFor != _loop.State || _views.Count != _loop.State.nodes.Count)
+            if (_builtFor != _loop.State
+                || _views.Count != _loop.State.nodes.Count
+                || _sketchViews.Count != _loop.State.digSites.Count)
             {
                 Rebuild();
             }
@@ -239,9 +258,9 @@ namespace Wildgrove.Game.World
             GatherStrip(state);
 
             // A warden at camp has no plate among the grounds, so their own empty
-            // ground leads the strip instead. Camp only — a watching warden also
-            // has no plate here (a site's watch is no node), but an empty ground
-            // would say they had no work when watching IS the work.
+            // ground leads the strip instead. Camp only, and now literally so: a
+            // sketching warden holds a site's plate on the strip like anyone else,
+            // where they used to be nowhere on the board at all while they drew.
             _wardenPlaceShown = postNodeId == null;
             if (_wardenPlace.gameObject.activeSelf != _wardenPlaceShown)
             {
@@ -259,7 +278,7 @@ namespace Wildgrove.Game.World
             // A fresh camp with nothing posted anywhere would otherwise render
             // the whole strip at idle-dim — reading as "disabled" exactly when
             // the first tap must happen. Dim only once dim can mean something.
-            var anyPosted = postNodeId != null || Warden.IsWatching(state);
+            var anyPosted = postNodeId != null || Warden.IsSketching(state);
             if (!anyPosted)
             {
                 foreach (var familiar in state.roster)
@@ -289,8 +308,8 @@ namespace Wildgrove.Game.World
             for (var i = 0; i < _onStrip.Count; i++)
             {
                 var view = _onStrip[i];
-                var occupant = Stationing.OccupantOf(state, view.Node.id);
-                var wardenHere = view.Node.id == postNodeId;
+                var occupant = Stationing.OccupantOf(state, view.PostId);
+                var wardenHere = view.PostId == postNodeId;
                 // A vacant badge draws nothing, so it must hit nothing. Only
                 // the empty-camp fallback puts a vacant plate on the strip at
                 // all; every other frame each of these is someone's post.
@@ -322,27 +341,57 @@ namespace Wildgrove.Game.World
             _onStrip.Clear();
             foreach (var view in _views)
             {
-                if (Stationing.HasBodyAt(state, view.Node.id))
+                if (Stationing.HasBodyAt(state, view.PostId))
                 {
                     _onStrip.Add(view);
                 }
             }
 
-            // A camp with no node held keeps the whole board — a watch-only camp
-            // included, since a site's watch has no plate of its own.
-            // Hiding every plate would take the assignment surface away at
-            // exactly the moment the first posting has to happen. The strip
-            // collapses to the worked posts on the first node posting.
+            // The sites come after the grounds, so the strip reads as the land
+            // first and the work at its edges second — and so a site opening
+            // mid-run never reorders the plates a player already knows.
+            foreach (var view in _sketchViews)
+            {
+                if (Stationing.HasBodyAt(state, view.PostId))
+                {
+                    _onStrip.Add(view);
+                }
+            }
+
+            // A camp with nothing held anywhere keeps the whole board: hiding
+            // every plate would take the assignment surface away at exactly the
+            // moment the first posting has to happen. The strip collapses to the
+            // worked posts on the first posting of any kind.
+            //
+            // Grounds only in the fallback. A site's plate is an invitation to
+            // work a place the player may not have reached yet, and a fresh camp
+            // opens no site at all (design §6: sites open from Zone 3), so
+            // seeding it here would only put a plate on the board in the one
+            // situation it cannot be earned in.
             if (_onStrip.Count == 0)
             {
                 _onStrip.AddRange(_views);
             }
 
-            // _onStrip still holds _views' own order here, so one cursor walks
-            // both. The warden's ground is moved to the front AFTER this, or the
-            // two lists would fall out of step and switch the wrong plates off.
-            var cursor = 0;
-            foreach (var view in _views)
+            // _onStrip holds each source list's own order here, so one cursor
+            // walks each in turn. The warden's ground is moved to the front AFTER
+            // this, or the lists would fall out of step and switch the wrong
+            // plates off.
+            var cursor = ShowOnly(_views, 0);
+            ShowOnly(_sketchViews, cursor);
+
+            LeadWithTheWarden(state);
+        }
+
+        /// <summary>
+        /// Switch on the views of <paramref name="candidates"/> that <c>_onStrip</c>
+        /// carries and switch the rest off, reading from <paramref name="cursor"/>
+        /// and handing back where it stopped — so the next list picks up at its own
+        /// run of entries rather than re-walking the whole strip.
+        /// </summary>
+        private int ShowOnly(List<NodeWorldView> candidates, int cursor)
+        {
+            foreach (var view in candidates)
             {
                 var shown = cursor < _onStrip.Count && _onStrip[cursor] == view;
                 if (shown)
@@ -356,15 +405,17 @@ namespace Wildgrove.Game.World
                 }
             }
 
-            LeadWithTheWarden(state);
+            return cursor;
         }
 
         /// <summary>
         /// Put the ground the warden stands on first. The player's own body
         /// reads at the head of the board, without being a plate of its own —
         /// the strip stays a row of grounds, and which one is theirs is said by
-        /// the badge under it, as it is for every companion. A warden at camp or
-        /// keeping a watch holds no ground, so the order is the land's own.
+        /// the badge under it, as it is for every companion. This finds a
+        /// sketching post as readily as a node, since both are on the strip and
+        /// both answer to PostId; only a warden at camp holds nothing here, and
+        /// then the order is the land's own.
         /// </summary>
         private void LeadWithTheWarden(GameState state)
         {
@@ -376,7 +427,7 @@ namespace Wildgrove.Game.World
 
             for (var i = 1; i < _onStrip.Count; i++)
             {
-                if (_onStrip[i].Node.id != postNodeId)
+                if (_onStrip[i].PostId != postNodeId)
                 {
                     continue;
                 }
@@ -771,6 +822,7 @@ namespace Wildgrove.Game.World
             }
 
             _views.Clear();
+            _sketchViews.Clear();
             _onStrip.Clear();
             // Any bubbles adrift were children of the torn-down container.
             _bubbles.Clear();
@@ -791,6 +843,19 @@ namespace Wildgrove.Game.World
                 _views.Add(NodeWorldView.Create(
                     _container, node, PlaceholderArt.ResourceColour(node.resourceId), _labelFont,
                     ArtLibrary.ForResource(node.resourceId)));
+            }
+
+            // One sketching plate per open observation site, kept in a list of
+            // their own rather than among _views: the windfall pool walks _views
+            // and a windfall pays out a node's own resource, so a site in there
+            // would be a bubble with nothing to give.
+            _sketchViews.Clear();
+            foreach (var site in _loop.State.digSites)
+            {
+                _sketchViews.Add(NodeWorldView.CreateSketching(
+                    _container, site.zoneId, Familiar.SketchStation(site.zoneId),
+                    PlaceholderArt.DigSiteColour(site.zoneId), _labelFont,
+                    ArtLibrary.ForSketching()));
             }
 
             // The warden's empty ground, leading the strip while they stand at

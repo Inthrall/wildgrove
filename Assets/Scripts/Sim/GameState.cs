@@ -176,8 +176,8 @@ namespace Wildgrove.Sim
         /// <summary>Reusable scratch for the observation tick's eligible-insect walk — see Observation.Advance. Never saved.</summary>
         public List<Wildgrove.Data.InsectData> insectScratch;
 
-        /// <summary>Reusable scratch for the observation tick's per-site watcher counts, parallel to digSites — see Observation.Advance. Never saved.</summary>
-        public List<double> watcherScratch;
+        /// <summary>Reusable scratch for the observation tick's per-site sketcher counts, parallel to digSites — see Observation.Advance. Never saved.</summary>
+        public List<double> sketcherScratch;
 
         /// <summary>Amber surfaced by observation sites but not yet reported to telemetry — GameLoop flushes it after each advance so an offline catch-up logs one aggregate find. Never saved.</summary>
         public double amberFoundUnlogged;
@@ -185,7 +185,7 @@ namespace Wildgrove.Sim
         /// <summary>Deep amber pieces surfaced (design §6), a count into the authored order — the journal keeps it across Migration. See <see cref="DeepAmber"/>.</summary>
         public int deepAmberFound;
 
-        /// <summary>Hours watched at the deep site without a piece surfacing — the pity clock.</summary>
+        /// <summary>Hours drawn at the deep site without a piece surfacing — the pity clock.</summary>
         public double deepAmberPityHours;
 
         /// <summary>Pieces surfaced but not yet reported to telemetry — GameLoop flushes after each advance. Never saved.</summary>
@@ -562,18 +562,18 @@ namespace Wildgrove.Sim
     }
 
     /// <summary>
-    /// One zone's observation site (design §6: a body posted here watches what
+    /// One zone's observation site (design §6: a body posted here draws what
     /// lives there and records it as field sketches). Sketches land in
     /// GameState.insectSketches; the site itself only tracks how long since the
-    /// last sketch. Its post is <see cref="Familiar.WatchStation"/> for this
-    /// zone (see <see cref="Stationing.WatchAgentsAt"/>).
+    /// last sketch. Its post is <see cref="Familiar.SketchStation"/> for this
+    /// zone (see <see cref="Stationing.SketchAgentsAt"/>).
     /// </summary>
     [Serializable]
     public sealed class DigSiteState
     {
         public string zoneId;
 
-        /// <summary>Hours watched since the last sketch — the pity timer (economy.observation.pityTimerHoursWatched guarantees a sketch).</summary>
+        /// <summary>Hours drawn since the last sketch — the pity timer (economy.observation.pityTimerHoursWatched guarantees a sketch).</summary>
         public double pityHours;
     }
 

@@ -67,7 +67,7 @@ namespace Wildgrove.Sim
         /// the window has shut.
         /// </summary>
         public static void AdvanceSite(GameState state, GameDataAsset data, string zoneId,
-            double watchers, double siteDigMult, double deltaSeconds)
+            double sketchers, double siteDigMult, double deltaSeconds)
         {
             if (!Configured(data) || data.deepAmber.zoneId != zoneId
                 || deltaSeconds <= 0.0 || IsComplete(state, data))
@@ -75,10 +75,10 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            var hoursWatched = deltaSeconds / 3600.0;
-            state.deepAmberPityHours += hoursWatched;
+            var hoursDrawn = deltaSeconds / 3600.0;
+            state.deepAmberPityHours += hoursDrawn;
 
-            var chance = watchers * data.deepAmber.findsPerHour * siteDigMult * hoursWatched;
+            var chance = sketchers * data.deepAmber.findsPerHour * siteDigMult * hoursDrawn;
             var found = Rng.NextDouble(ref state.rngState) < chance;
             if (!found && data.deepAmber.pityHoursWatched > 0.0
                 && state.deepAmberPityHours >= data.deepAmber.pityHoursWatched)

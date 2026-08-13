@@ -122,7 +122,7 @@ namespace Wildgrove.Game
 
             if (snapshot.digSpeedMultiplier != 1.0)
             {
-                parts.Add("×" + PlainNumber(snapshot.digSpeedMultiplier) + " watching at the sites");
+                parts.Add("×" + PlainNumber(snapshot.digSpeedMultiplier) + " sketching at the sites");
             }
 
             if (snapshot.choiceChanceBonus > 0.0)

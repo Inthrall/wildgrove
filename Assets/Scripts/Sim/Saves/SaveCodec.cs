@@ -17,7 +17,7 @@ namespace Wildgrove.Sim.Saves
     public static partial class SaveCodec
     {
         /// <summary>Bump when the wire shape changes, and add the matching migration step to <see cref="TryMigrate"/>.</summary>
-        public const int CurrentVersion = 53;
+        public const int CurrentVersion = 54;
 
         /// <summary>
         /// The oldest wire shape this build reads. Saves below it are refused

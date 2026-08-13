@@ -75,7 +75,7 @@ namespace Wildgrove.Game.Tests
             // says nothing about it.
             foreach (var familiar in state.roster)
             {
-                var watchZone = Familiar.WatchZoneOf(familiar.stationId);
+                var watchZone = Familiar.SketchZoneOf(familiar.stationId);
                 if (watchZone != null)
                 {
                     Assert.That(state.digSites.Any(site => site.zoneId == watchZone), Is.True,
@@ -87,7 +87,7 @@ namespace Wildgrove.Game.Tests
                     familiar.speciesId + " stands at " + familiar.stationId + ", which is no ground this run holds");
             }
 
-            Assert.That(state.roster.Any(familiar => familiar.IsWatching), Is.True,
+            Assert.That(state.roster.Any(familiar => familiar.IsSketching), Is.True,
                 "and the watch itself is staged — an unwatched map is a photograph of unfinished work");
         }
 

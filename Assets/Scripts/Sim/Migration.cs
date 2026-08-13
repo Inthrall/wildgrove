@@ -286,7 +286,7 @@ namespace Wildgrove.Sim
             }
 
             // The deep amber crosses too — journal content, like the plates.
-            // (The pity clock doesn't: a fresh run starts a fresh watch.)
+            // (The pity clock doesn't: a fresh run starts a fresh page.)
             next.deepAmberFound = state.deepAmberFound;
 
             // The kith and the camp are rebuilt every run, so these two records

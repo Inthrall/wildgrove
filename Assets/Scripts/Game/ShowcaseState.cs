@@ -67,17 +67,17 @@ namespace Wildgrove.Game
             state.foldedVersesSung = 10;
             state.sungVerseZones = new List<string>(Kith.SlotVerseZones(data));
             state.purchasedKithSlots = 2;
-            // Grounds and a site's watch, and nothing else: a post must be one
+            // Grounds and a site's sketching post, and nothing else: a post must be one
             // the ladder above actually opened, or SaveCodec rests whoever
             // carries it on load and the body photographs as idling at camp, on
-            // a page whose whole subject is a full drawer. The hare's watch is
+            // a page whose whole subject is a full drawer. The hare's post is
             // read off the staged sites rather than named, so a retuned ladder
             // that opens a different site first cannot silently rest her.
             var staged = new[]
             {
                 ("sedge-linnet", NodeAt(state, 1)),
                 ("red-squirrel", NodeAt(state, 2)),
-                ("bramble-hare", FirstWatch(state)),
+                ("bramble-hare", FirstSketching(state)),
                 ("tawny-owl", NodeAt(state, 3)),
             };
             for (var i = 0; i < staged.Length; i++)
@@ -140,14 +140,14 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The watch at the first observation site the ladder opened, or the
+        /// The sketching post at the first observation site the ladder opened, or the
         /// first node when the staged map has no site at all (hand-built data) —
         /// a photograph must never contain a body standing nowhere.
         /// </summary>
-        private static string FirstWatch(GameState state)
+        private static string FirstSketching(GameState state)
         {
             return state.digSites.Count > 0
-                ? Familiar.WatchStation(state.digSites[0].zoneId)
+                ? Familiar.SketchStation(state.digSites[0].zoneId)
                 : state.nodes[0].id;
         }
     }

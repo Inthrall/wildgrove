@@ -19,7 +19,7 @@ namespace Wildgrove.Sim.Saves
     /// <para>
     /// <see cref="Restore"/> is one long method by nature: it is a single pass
     /// over every field of the save, and the order matters in places (nodes
-    /// before posts, posts before the watch). The private helpers below it are
+    /// before posts, posts before the sketching). The private helpers below it are
     /// the questions it asks about whether a saved reference still stands.
     /// </para>
     /// </summary>
@@ -103,8 +103,8 @@ namespace Wildgrove.Sim.Saves
             // resource retuned) would strand the warden, matching no node at
             // all. Dangling post ids self-correct on restore like nodes do:
             // cleared, so the warden stands at camp until re-posted. A warden at
-            // a watch post follows the kith's rule exactly — the same mapping,
-            // so a wandering warden lands at the first site's watch rather than
+            // a sketching post follows the kith's rule exactly — the same mapping,
+            // so a wandering warden lands at the first site's post rather than
             // being sent home.
             state.wardenPostNodeId = RestoreWardenPost(state, save.wardenPostNodeId);
             // A blank or whitespace name restores as no name at all rather than
@@ -623,20 +623,20 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>
         /// The post a saved station id restores to: itself when it still
-        /// resolves under the current data, the first site's watch for the
+        /// resolves under the current data, the first site's post for the
         /// retired roaming post, and null (resting at camp) for anything left —
         /// so a familiar is never stranded as a silent no-op.
         /// </summary>
         private static string RestoreStation(GameState state, string stationId)
         {
-            // The roaming watch retired in v53 (one post that watched every
-            // site) — its holder keeps working, at the first site's own watch.
+            // The roaming post retired in v53 (one body drawing at every site)
+            // — its holder keeps working, at the first site's own post.
             // Which site cannot be guessed by TryMigrate: a migration must
             // never reach for the current content data, and only the restored
             // state knows which sites this build opens.
             if (stationId == Familiar.LegacyWanderStation)
             {
-                return FirstWatchStation(state);
+                return FirstSketchStation(state);
             }
 
             return StationValid(state, stationId) ? stationId : null;
@@ -654,9 +654,9 @@ namespace Wildgrove.Sim.Saves
 
         /// <summary>
         /// Whether a saved familiar's station id still resolves under the
-        /// current data (else it's cleared to resting). A watch post resolves
+        /// current data (else it's cleared to resting). A sketching post resolves
         /// only while its site is one this build opens — a save from a wider
-        /// map must not leave a body watching a place that isn't there.
+        /// map must not leave a body drawing at a place that isn't there.
         /// </summary>
         private static bool StationValid(GameState state, string stationId)
         {
@@ -665,9 +665,9 @@ namespace Wildgrove.Sim.Saves
                 return true;
             }
 
-            if (Familiar.IsWatchStation(stationId))
+            if (Familiar.IsSketchStation(stationId))
             {
-                return SiteExists(state, Familiar.WatchZoneOf(stationId));
+                return SiteExists(state, Familiar.SketchZoneOf(stationId));
             }
 
             return NodeExists(state, stationId);
@@ -688,14 +688,14 @@ namespace Wildgrove.Sim.Saves
         }
 
         /// <summary>
-        /// The watch post at the run's first open site (sites are synced in zone
+        /// The sketching post at the run's first open site (sites are synced in zone
         /// order), or null while no site is open at all. Where the retired
-        /// roaming watch's holder is put down: the oldest site is the one every
+        /// roaming post's holder is put down: the oldest site is the one every
         /// save that had a wanderer is certain to have opened.
         /// </summary>
-        private static string FirstWatchStation(GameState state)
+        private static string FirstSketchStation(GameState state)
         {
-            return state.digSites.Count > 0 ? Familiar.WatchStation(state.digSites[0].zoneId) : null;
+            return state.digSites.Count > 0 ? Familiar.SketchStation(state.digSites[0].zoneId) : null;
         }
 
         /// <summary>

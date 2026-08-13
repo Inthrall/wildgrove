@@ -257,7 +257,7 @@ namespace Wildgrove.Data
         /// <summary>
         /// The related pair of resources a nodeYieldBonus trait covers (e.g.
         /// copper-scree + tin-seam) — the familiar works either node. Empty for
-        /// trail/watch/choice traits, which apply wherever the familiar is posted.
+        /// trail/sketch/choice traits, which apply wherever the familiar is posted.
         /// </summary>
         public List<string> resources = new List<string>();
 
@@ -333,7 +333,7 @@ namespace Wildgrove.Data
         /// <summary>The zone whose observation site surfaces the pieces.</summary>
         public string zoneId;
 
-        /// <summary>Piece find rate per watcher-hour, before digSpeedMult modifiers.</summary>
+        /// <summary>Piece find rate per sketcher-hour, before digSpeedMult modifiers.</summary>
         public double findsPerHour;
 
         /// <summary>Watched hours without a piece that guarantee the next one.</summary>

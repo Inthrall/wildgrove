@@ -35,12 +35,20 @@ namespace Wildgrove.Game
         // so the square, its caption strip and its corner mark are shared.
 
         /// <summary>
-        /// Step one of the strip's (+): which ground? Every node in the run,
-        /// each wearing whoever stands there now. Picking one asks who walks it
-        /// (<see cref="OpenBodyPickSheet"/>). The watch posts are not among them:
-        /// they stand over no crop, so they have no place in a drawer of
-        /// gathering grounds — each site's own watch card and a companion's
-        /// station sheet are where a watcher is sent.
+        /// Step one of the strip's (+): which ground? Every node in the run and
+        /// every open site's sketching post, each wearing whoever stands there
+        /// now. Picking one asks who walks it
+        /// (<see cref="OpenBodyPickSheet"/>).
+        /// <para>
+        /// The sketching posts were held out of this drawer until 2026-08-13, on
+        /// the grounds that they stand over no crop — so a player filling a slot
+        /// from the strip was offered every place a body can stand EXCEPT the
+        /// ones on the far side of the map, and had to know to go looking on a
+        /// zone's own card. They wear a plate of their own now and stand among
+        /// the grounds on the strip, so holding them out of the one drawer that
+        /// exists to answer "where can this body go?" only hid a post that is
+        /// otherwise drawn exactly like its neighbours.
+        /// </para>
         /// </summary>
         internal void OpenGroundPickSheet()
         {
@@ -49,7 +57,7 @@ namespace Wildgrove.Game
             MakeText(sheet, "posts walked " + _loop.KithWalking() + " of " + _loop.KithSlots(),
                 14, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            BuildGroundGrid(sheet, OpenBodyPickSheet, includeWatchPosts: false);
+            BuildGroundGrid(sheet, OpenBodyPickSheet, includeSketchPosts: true);
         }
 
         /// <summary>
@@ -82,11 +90,11 @@ namespace Wildgrove.Game
 
             MakeText(sheet, WardenWhereabouts().ToUpperInvariant(), 16, TextAnchor.UpperCenter, Ink2, _smallCaps);
 
-            // The warden keeps the watch posts among their grounds — watching is
-            // work, not gathering, and a site is watched by whoever stands at
-            // it. ("Tending" is the windfall catch and nothing else — a watcher
+            // The warden keeps the sketching posts among their grounds — drawing
+            // is work, not gathering, and a site is drawn by whoever stands at
+            // it. ("Tending" is the windfall catch and nothing else — a sketcher
             // never does it.)
-            BuildGroundGrid(sheet, WalkWardenTo, includeWatchPosts: true);
+            BuildGroundGrid(sheet, WalkWardenTo, includeSketchPosts: true);
         }
 
         /// <summary>
@@ -100,11 +108,11 @@ namespace Wildgrove.Game
             var sheet = BeginSheet();
             var state = _loop.State;
             var occupantHere = Stationing.OccupantOf(state, stationId);
-            var isWatchPost = Familiar.IsWatchStation(stationId);
+            var isSketchPost = Familiar.IsSketchStation(stationId);
             var node = FindNode(stationId);
             var wardenHere = node != null
                 ? Warden.PostNodeId(state) == node.id
-                : isWatchPost && Warden.PostNodeId(state) == stationId;
+                : isSketchPost && Warden.PostNodeId(state) == stationId;
             var hasRoom = Kith.HasRoom(state, _loop.Data);
 
             MakeText(sheet, "Who walks here?", 32, TextAnchor.UpperCenter, Ink, _serif);
@@ -124,7 +132,7 @@ namespace Wildgrove.Game
 
             if (occupantHere == null)
             {
-                var notice = EmptyPostNotice(node != null || isWatchPost);
+                var notice = EmptyPostNotice(node != null || isSketchPost);
                 if (notice != null)
                 {
                     var line = MakeText(sheet, "<i>" + notice + "</i>", 16, TextAnchor.UpperCenter, Ink2);
@@ -136,10 +144,10 @@ namespace Wildgrove.Game
 
             var grid = SheetGrid(sheet);
 
-            // The warden takes a node or a watch post, never the trail: they
+            // The warden takes a node or a sketching post, never the trail: they
             // tend, the kith carries. Nothing to offer when they already stand
             // here — the post's own sheet is where a holder stands down.
-            if (!wardenHere && (node != null || isWatchPost))
+            if (!wardenHere && (node != null || isSketchPost))
             {
                 // Wearing the ground they stand on now, exactly as the companion
                 // tiles below do — the warden is a body like any other here.
@@ -160,12 +168,13 @@ namespace Wildgrove.Game
                 // Taking an empty post from rest needs a free slot; stepping in
                 // for a holder always works — the vacated slot covers it.
                 var blocked = captured.IsResting && occupantHere == null && !hasRoom;
+
                 // What the ground gains from this body, under its name. The
                 // caption strip is 56 deep against a 13pt name, so a second
                 // line at 12 costs no geometry — and the tiles are a drawer of
                 // near-identical portraits, which is exactly where a number is
                 // the only thing that tells them apart.
-                var bonus = PostBonus(captured, node, isWatchPost);
+                var bonus = PostBonus(captured, node, isSketchPost);
                 var caption = bonus.Length == 0
                     ? captured.name
                     : captured.name + "\n" + SizeOpen(12) + "<color=" + MossDeepHex + ">" + bonus + "</color></size>";
@@ -189,8 +198,8 @@ namespace Wildgrove.Game
             Button(sheet, "Choose another ground", 380, OpenGroundPickSheet);
         }
 
-        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then — when asked for — one watch post per open site.</summary>
-        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick, bool includeWatchPosts)
+        /// <summary>Every ground a body can be sent to, as a drawer of plates: the run's nodes, then — when asked for — one sketching post per open site.</summary>
+        private void BuildGroundGrid(Transform sheet, System.Action<string> onPick, bool includeSketchPosts)
         {
             var grid = SheetGrid(sheet);
             foreach (var node in _loop.State.nodes)
@@ -199,17 +208,17 @@ namespace Wildgrove.Game
                 GroundTile(grid, captured, ArtLibrary.ForResource(node.resourceId), () => onPick(captured));
             }
 
-            if (!includeWatchPosts)
+            if (!includeSketchPosts)
             {
                 return;
             }
 
-            // A watch post stands over no crop, so every one of them borrows the
-            // watch's own mark; the tile's caption is what says which site it is.
+            // A sketching post stands over no crop, so every one of them wears
+            // the one sketching plate; the caption says which site it is.
             foreach (var site in _loop.State.digSites)
             {
-                var captured = Familiar.WatchStation(site.zoneId);
-                GroundTile(grid, captured, ArtLibrary.ForSkill("observation"), () => onPick(captured));
+                var captured = Familiar.SketchStation(site.zoneId);
+                GroundTile(grid, captured, ArtLibrary.ForSketching(), () => onPick(captured));
             }
         }
 
@@ -230,14 +239,14 @@ namespace Wildgrove.Game
             PlateTile(grid, plate, StationLabel(stationId), held, onPick);
         }
 
-        /// <summary>Send the warden to the ground picked — a site's watch included — and say so in the margin.</summary>
+        /// <summary>Send the warden to the ground picked — a site's sketching included — and say so in the margin.</summary>
         private void WalkWardenTo(string stationId)
         {
-            var watchZone = Familiar.WatchZoneOf(stationId);
-            if (watchZone != null)
+            var sketchZone = Familiar.SketchZoneOf(stationId);
+            if (sketchZone != null)
             {
-                _loop.WatchWarden(watchZone);
-                SetNote(_loop.WardenName() + " settles in to watch " + ZoneName(watchZone) + ".");
+                _loop.SketchWarden(sketchZone);
+                SetNote(_loop.WardenName() + " settles in to sketch at " + ZoneName(sketchZone) + ".");
                 CloseSheet();
                 return;
             }

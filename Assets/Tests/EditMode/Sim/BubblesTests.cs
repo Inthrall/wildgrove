@@ -140,7 +140,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RewardFor_AWatchingWarden_PaysTheSameFlatWindfall()
+        public void RewardFor_ASketchingWarden_PaysTheSameFlatWindfall()
         {
             // The case that drove the flat haul: back when a roaming warden
             // spread their hands across every node (the wander gather-share,
@@ -149,7 +149,7 @@ namespace Wildgrove.Sim.Tests
             // watch leaves ground that stays eligible, and worth a full windfall.
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
-            Warden.Watch(state, "old-growth-wood");
+            Warden.Sketch(state, "old-growth-wood");
 
             Assert.That(Bubbles.IsEligible(state, _data, state.nodes[2]), Is.True);
             Assert.That(Bubbles.RewardFor(state, _data, state.nodes[2]).ToDouble(),

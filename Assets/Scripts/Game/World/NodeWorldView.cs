@@ -4,11 +4,21 @@ using Wildgrove.Sim;
 namespace Wildgrove.Game.World
 {
     /// <summary>
-    /// One gathering node's world-space sprite: a resource-coloured disc and
-    /// the assignment badge beneath it — the tiny icon of whoever holds the
-    /// post (one body per node), which is also the tap target for posting.
-    /// Dimmed while nothing works it. Placement and per-frame refresh are
-    /// driven by <see cref="WorldView"/>.
+    /// One post's world-space sprite: a coloured disc under its plate, and the
+    /// assignment badge beneath — the tiny icon of whoever holds the post (one
+    /// body per post), which is also the tap target for posting. Dimmed while
+    /// nothing works it. Placement and per-frame refresh are driven by
+    /// <see cref="WorldView"/>.
+    /// <para>
+    /// Two kinds of post wear this view, and the difference is only what the
+    /// plate shows: a gathering node (<see cref="Create"/>), which keeps its
+    /// <see cref="Node"/>, and an observation site's sketching post
+    /// (<see cref="CreateSketching"/>), whose <see cref="Node"/> is null because
+    /// a site is no node. <see cref="PostId"/> is the station id either way, and
+    /// it is what everything about STANDING should ask — <see cref="Node"/> is
+    /// for the things that are really about a node, chiefly which resource a
+    /// windfall pays out in.
+    /// </para>
     /// (The selection ring is gone — selection stopped doing anything once
     /// taps opened sheets directly, and its near-paper colour never read.
     /// The scale pulse that rode the Tending burst is gone too — a caught
@@ -29,7 +39,11 @@ namespace Wildgrove.Game.World
 
         private static readonly Color LabelColour = new Color(0.431f, 0.376f, 0.278f, 1f); // GameHud's Ink2
 
+        /// <summary>The gathering node this plate is, or null at a sketching post — a site is no node.</summary>
         public NodeState Node { get; private set; }
+
+        /// <summary>The station id a body stands at here: the node's own id, or the site's sketching post.</summary>
+        public string PostId { get; private set; }
 
         private SpriteRenderer _disc;
         private SpriteRenderer _plate;
@@ -40,15 +54,45 @@ namespace Wildgrove.Game.World
 
         public static NodeWorldView Create(Transform parent, NodeState node, Color colour, Font labelFont, Sprite face)
         {
-            var go = new GameObject("Node_" + node.resourceId);
-            go.transform.SetParent(parent, false);
-            var view = go.AddComponent<NodeWorldView>();
-            view.Node = node;
-            view._colour = colour;
-
             // The resource name under the disc — the strip's shapes and the
             // FIG. plates below name the same thing, so a glance connects them.
-            view._label = PlaceholderArt.CreateLabel(go.transform, node.resourceId, labelFont, LabelColour,
+            var view = Build(parent, "Node_" + node.resourceId, node.resourceId, colour, labelFont, face);
+            view.Node = node;
+            view.PostId = node.id;
+            return view;
+        }
+
+        /// <summary>
+        /// An observation site's sketching post, drawn as a ground like any
+        /// other: the sketching plate over a disc in that site's own colour, and
+        /// the badge of whoever draws there (design §6 — one post per site,
+        /// warden or familiar).
+        /// <para>
+        /// It had no plate here at all until 2026-08-13, on the reasoning that a
+        /// site is no node and so has no place among the grounds — which left the
+        /// one post the player could fill and never see, and put a body doing
+        /// real work off the assignment board entirely while they did it. The
+        /// caption carries the zone because two sketching plates otherwise read
+        /// as the same place twice.
+        /// </para>
+        /// </summary>
+        public static NodeWorldView CreateSketching(Transform parent, string zoneId, string stationId,
+            Color colour, Font labelFont, Sprite face)
+        {
+            var view = Build(parent, "Sketching_" + zoneId, zoneId + " sketching", colour, labelFont, face);
+            view.PostId = stationId;
+            return view;
+        }
+
+        private static NodeWorldView Build(Transform parent, string name, string caption, Color colour,
+            Font labelFont, Sprite face)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var view = go.AddComponent<NodeWorldView>();
+            view._colour = colour;
+
+            view._label = PlaceholderArt.CreateLabel(go.transform, caption, labelFont, LabelColour,
                 StripLayers.NodeCaption);
 
             view._disc = CreateSprite(go.transform, "Disc", PlaceholderArt.Disc, colour, StripLayers.NodeDisc);

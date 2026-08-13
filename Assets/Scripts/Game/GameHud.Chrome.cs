@@ -24,7 +24,7 @@ namespace Wildgrove.Game
                 var state = _loop.State;
                 _hintPostDone = Kith.Walking(state) > 0
                                 || Warden.PostNodeId(state) != null
-                                || Warden.IsWatching(state);
+                                || Warden.IsSketching(state);
                 if (_hintPostDone && _noteRevert <= 0f && _note != null)
                 {
                     // The gesture just landed (or a posted save just loaded) —

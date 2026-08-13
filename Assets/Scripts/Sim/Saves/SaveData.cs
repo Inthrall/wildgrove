@@ -178,7 +178,7 @@ namespace Wildgrove.Sim.Saves
         /// <summary>Deep amber pieces surfaced, a count into the authored order.</summary>
         public int deepAmberFound;
 
-        /// <summary>Hours watched at the deep site without a piece surfacing — the pity clock.</summary>
+        /// <summary>Hours drawn at the deep site without a piece surfacing — the pity clock.</summary>
         public double deepAmberPityHours;
 
         /// <summary>Bought camp building levels per line.</summary>
@@ -254,7 +254,7 @@ namespace Wildgrove.Sim.Saves
         public bool deedBaselineSet;
     }
 
-    /// <summary>One observation site's pity progress (identity resyncs from owned unlockDigSite upgrades on restore; who keeps its watch rides on the roster's own station ids).</summary>
+    /// <summary>One observation site's pity progress (identity resyncs from owned unlockDigSite upgrades on restore; who draws there rides on the roster's own station ids).</summary>
     [Serializable]
     public sealed class SavedDigSite
     {

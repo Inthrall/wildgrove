@@ -63,28 +63,28 @@ namespace Wildgrove.Sim
             return !string.IsNullOrWhiteSpace(state?.wardenName);
         }
 
-        /// <summary>The warden's post — a node id, a watch post, or null while they stand at camp.</summary>
+        /// <summary>The warden's post — a node id, a sketching post, or null while they stand at camp.</summary>
         public static string PostNodeId(GameState state)
         {
             return string.IsNullOrEmpty(state.wardenPostNodeId) ? null : state.wardenPostNodeId;
         }
 
-        /// <summary>Whether the warden stands at <paramref name="node"/> (never true at a watch post — a site is not a node).</summary>
+        /// <summary>Whether the warden stands at <paramref name="node"/> (never true at a sketching post — a site is not a node).</summary>
         public static bool IsPosted(GameState state, NodeState node)
         {
             return node != null && node.id == PostNodeId(state);
         }
 
-        /// <summary>Whether the warden keeps some site's watch (design §2: the warden may take one, like any familiar).</summary>
-        public static bool IsWatching(GameState state)
+        /// <summary>Whether the warden draws at some site (design §2: the warden may take a sketching post, like any familiar).</summary>
+        public static bool IsSketching(GameState state)
         {
-            return Familiar.IsWatchStation(state.wardenPostNodeId);
+            return Familiar.IsSketchStation(state.wardenPostNodeId);
         }
 
-        /// <summary>Whether the warden keeps <paramref name="zoneId"/>'s watch in particular.</summary>
-        public static bool IsWatchingAt(GameState state, string zoneId)
+        /// <summary>Whether the warden draws at <paramref name="zoneId"/>'s site in particular.</summary>
+        public static bool IsSketchingAt(GameState state, string zoneId)
         {
-            return state.wardenPostNodeId == Familiar.WatchStation(zoneId);
+            return state.wardenPostNodeId == Familiar.SketchStation(zoneId);
         }
 
         /// <summary>
@@ -109,14 +109,14 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// Stand the warden at <paramref name="zoneId"/>'s watch — watching that
-        /// one site, gathering nothing (design §2/§6). One body per post: a
-        /// familiar already keeping this watch steps back to camp (its slot
-        /// frees), same as taking a node.
+        /// Stand the warden at <paramref name="zoneId"/>'s site — drawing at that
+        /// one place, gathering nothing (design §2/§6). One body per post: a
+        /// familiar already drawing here steps back to camp (its slot frees),
+        /// same as taking a node.
         /// </summary>
-        public static void Watch(GameState state, string zoneId)
+        public static void Sketch(GameState state, string zoneId)
         {
-            var station = Familiar.WatchStation(zoneId);
+            var station = Familiar.SketchStation(zoneId);
             var occupant = Stationing.OccupantOf(state, station);
             if (occupant != null)
             {
@@ -140,8 +140,8 @@ namespace Wildgrove.Sim
         /// widened by whatever carries for them — the fell pony's
         /// wardenYieldBonus trait (§11) and worn-gear wardenYieldBonus effects
         /// (the Birch Frame Pack) sum into one additive band. Zero anywhere but
-        /// their posted node: at camp, while keeping a watch (a watch post is
-        /// the watch and only the watch), or when unconfigured (pre-warden
+        /// their posted node: at camp, while holding a sketching post (which is
+        /// the drawing and only the drawing), or when unconfigured (pre-warden
         /// fixtures stay inert).
         /// </summary>
         /// <remarks>

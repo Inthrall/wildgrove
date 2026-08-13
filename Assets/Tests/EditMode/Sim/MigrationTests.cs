@@ -265,7 +265,7 @@ namespace Wildgrove.Sim.Tests
         public void Migrate_CarriesTheKithFolded()
         {
             var state = StateWithTheRiteSung();
-            Roster.Recruit(state, _data, "meadow-vole", Familiar.WatchStation("old-growth-wood"));
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.SketchStation("old-growth-wood"));
             state.roster[0].xp = 5000.0;
             var count = state.roster.Count;
 
@@ -288,14 +288,14 @@ namespace Wildgrove.Sim.Tests
             // and the two states then shared one roster list. Nothing depended
             // on it only because the caller swaps states immediately.
             var state = StateWithTheRiteSung();
-            Roster.Recruit(state, _data, "meadow-vole", Familiar.WatchStation("old-growth-wood"));
+            Roster.Recruit(state, _data, "meadow-vole", Familiar.SketchStation("old-growth-wood"));
             state.roster[0].xp = 5000.0;
 
             var next = Migration.Migrate(state, _data);
 
             Assert.That(state.roster[0].xp, Is.EqualTo(5000.0).Within(Tolerance),
                 "the retiring run keeps the run XP it was read for");
-            Assert.That(state.roster[0].stationId, Is.EqualTo(Familiar.WatchStation("old-growth-wood")),
+            Assert.That(state.roster[0].stationId, Is.EqualTo(Familiar.SketchStation("old-growth-wood")),
                 "and keeps its posts");
             Assert.That(next.roster[0], Is.Not.SameAs(state.roster[0]),
                 "the fold carries copies, so an edit to either run can't reach the other");

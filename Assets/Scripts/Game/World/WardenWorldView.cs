@@ -24,10 +24,14 @@ namespace Wildgrove.Game.World
     /// what ran into its neighbour's caption before.
     /// </para>
     /// <para>
-    /// Camp only. A watching warden holds an observation site's post, which is
-    /// no node and so has no plate here either — but drawing them on an empty
-    /// ground would say they had no work, when watching IS the work
-    /// (decided 2026-08-06: one slot meaning one thing).
+    /// Camp only, and that now means what it says. A sketching warden used to
+    /// fall through to nothing at all: a site's post was no node, so it had no
+    /// plate on the strip, and drawing them on an EMPTY ground would have said
+    /// they had no work when drawing IS the work — so the one body the player
+    /// is went missing from the board for as long as they drew. Sketching posts
+    /// carry their own plate from 2026-08-13
+    /// (<see cref="NodeWorldView.CreateSketching"/>), so the warden is on the
+    /// board wherever they stand, and this slot is for camp and nowhere else.
     /// </para>
     /// Placement is driven by <see cref="WorldView"/>; nothing here changes
     /// frame to frame, so there is no per-frame refresh.

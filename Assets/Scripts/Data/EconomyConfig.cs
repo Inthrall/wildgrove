@@ -111,10 +111,10 @@ namespace Wildgrove.Data
             public double PityTimerHoursWatched { get; set; }
             public double BaseSketchesPerHour { get; set; }
 
-            /// <summary>The craft the watching trains — "Observation" in design §5, `entomology` in the data.</summary>
+            /// <summary>The craft the sketching trains — "Observation" in design §5, `entomology` in the data.</summary>
             public string Skill { get; set; }
 
-            /// <summary>Skill XP per watcher per site-hour, scaled by the site's dig-speed multiplier.</summary>
+            /// <summary>Skill XP per sketcher per site-hour, scaled by the site's dig-speed multiplier. (Key still says `watch`: renaming it is a data change, todo §2.)</summary>
             public double WatchXpPerHour { get; set; }
         }
 

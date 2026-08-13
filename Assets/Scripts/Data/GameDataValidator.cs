@@ -117,7 +117,7 @@ namespace Wildgrove.Data
         /// </summary>
         private static void ValidateSkillGatesAreEarnable(GameData data, List<string> issues)
         {
-            // Gathering and watching are never level-gated, so those skills earn
+            // Gathering and sketching are never level-gated, so those skills earn
             // from a standing start. A craft skill only does if it has at least
             // one recipe openable at level 1 — otherwise its first rung sits
             // behind a level only that rung could have paid for.

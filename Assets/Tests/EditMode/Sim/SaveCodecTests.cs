@@ -197,26 +197,26 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void RoundTrip_RestoresAWatchingWarden()
+        public void RoundTrip_RestoresASketchingWarden()
         {
             var state = StateWithASite();
-            Warden.Watch(state, "bramble-hedgerows");
+            Warden.Sketch(state, "bramble-hedgerows");
 
             var restored = RoundTrip(state);
 
             // A watch post is a valid warden post — it survives the save's
             // node-existence scrub rather than dropping the warden to camp.
-            Assert.That(Warden.IsWatchingAt(restored, "bramble-hedgerows"), Is.True);
+            Assert.That(Warden.IsSketchingAt(restored, "bramble-hedgerows"), Is.True);
         }
 
         [Test]
-        public void RoundTrip_AWatchPostAtASiteThisBuildDoesNotOpen_RestsTheWatcher()
+        public void RoundTrip_ASketchPostAtASiteThisBuildDoesNotOpen_RestsTheSketcher()
         {
             // The mirror of the dangling-node rule: content retuned under a save
             // can take a site away, and a body left watching a place that isn't
             // there is a walked slot doing nothing, with nothing to say so.
             var state = GameStateFactory.NewGame(_data);
-            TestKith.Station(state, Familiar.WatchStation("mistfen-marsh"), 1);
+            TestKith.Station(state, Familiar.SketchStation("mistfen-marsh"), 1);
 
             var restored = RoundTrip(state);
 
@@ -224,7 +224,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void TryMigrate_V52_ThenRestore_PutsARoamingWatcherDownAtTheFirstSite()
+        public void TryMigrate_V52_ThenRestore_PutsARoamingSketcherDownAtTheFirstSite()
         {
             // v53 made the watch a place. The roaming post that watched every
             // site is gone, and its holder must keep working rather than be
@@ -239,7 +239,7 @@ namespace Wildgrove.Sim.Tests
             var restored = SaveCodec.Restore(save, _data);
 
             Assert.That(restored.roster[0].stationId,
-                Is.EqualTo(Familiar.WatchStation("bramble-hedgerows")),
+                Is.EqualTo(Familiar.SketchStation("bramble-hedgerows")),
                 "the wanderer keeps a watch — the first site's");
         }
 
@@ -254,11 +254,11 @@ namespace Wildgrove.Sim.Tests
             Assert.That(SaveCodec.TryMigrate(save), Is.True);
             var restored = SaveCodec.Restore(save, _data);
 
-            Assert.That(Warden.IsWatchingAt(restored, "bramble-hedgerows"), Is.True);
+            Assert.That(Warden.IsSketchingAt(restored, "bramble-hedgerows"), Is.True);
         }
 
         [Test]
-        public void TryMigrate_V52_ThenRestore_WithNoSiteOpen_SendsARoamingWatcherHome()
+        public void TryMigrate_V52_ThenRestore_WithNoSiteOpen_SendsARoamingSketcherHome()
         {
             // A save whose watcher roamed a map with no site on it (hand-built,
             // or a build whose sites all moved) has nowhere to put them down, and
@@ -275,6 +275,96 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(restored.roster[0].IsResting, Is.True, "the companion rests");
             Assert.That(Warden.PostNodeId(restored), Is.Null, "and the warden stands at camp");
+        }
+
+        [Test]
+        public void TryMigrate_V53_MovesEverySitePostOntoTheSketchingId()
+        {
+            // v54 renamed the work and the id with it. A v53 save writes its
+            // site posts as "dig:{zone}"; nothing in this build matches that
+            // prefix any more, so a save that climbed the rung without being
+            // rewritten would rest every sketcher on sight.
+            var state = StateWithASite();
+            var save = SaveCodec.Capture(state, 0);
+            save.roster.Add(new SavedFamiliar
+            {
+                id = "fam-legacy",
+                speciesId = "test-species-legacy",
+                stationId = Familiar.LegacyWatchStationPrefix + "bramble-hedgerows",
+            });
+            save.wardenPostNodeId = Familiar.LegacyWatchStationPrefix + "bramble-hedgerows";
+            save.version = 53;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+
+            Assert.That(save.roster[save.roster.Count - 1].stationId,
+                Is.EqualTo(Familiar.SketchStation("bramble-hedgerows")),
+                "the companion's post is rewritten");
+            Assert.That(save.wardenPostNodeId,
+                Is.EqualTo(Familiar.SketchStation("bramble-hedgerows")),
+                "and so is the warden's");
+        }
+
+        [Test]
+        public void TryMigrate_V53_LeavesEveryOtherPostIdAlone()
+        {
+            // The rung renames one thing. A node id, the pony's lane and the
+            // retired roaming post all pass through — a migration that started
+            // inventing second meanings is one nobody could read years later.
+            var state = StateWithASite();
+            var nodeId = state.nodes[0].id;
+            TestKith.Station(state, nodeId, 1);
+            TestKith.Station(state, Familiar.LegacyWanderStation, 1);
+            state.wardenPostNodeId = nodeId;
+            var save = SaveCodec.Capture(state, 0);
+            save.version = 53;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+
+            Assert.That(save.roster[0].stationId, Is.EqualTo(nodeId), "a node id is untouched");
+            Assert.That(save.roster[1].stationId, Is.EqualTo(Familiar.LegacyWanderStation),
+                "and so is the retired roaming post — Restore is what puts it down");
+            Assert.That(save.wardenPostNodeId, Is.EqualTo(nodeId), "and the warden's node");
+        }
+
+        [Test]
+        public void TryMigrate_V53_LeavesTheCraftQueueAlone()
+        {
+            // SavedStation.stationId is a workbench, not a place a body stands.
+            // The two fields share a name and nothing else, and rewriting the
+            // wrong one would empty a player's queue on load without erroring —
+            // so this pins the one confusion the rung could make.
+            var state = StateWithASite();
+            state.stations.Add(new StationState { stationId = "dig:not-a-post", recipeId = "test-recipe" });
+            var save = SaveCodec.Capture(state, 0);
+            save.version = 53;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+
+            Assert.That(save.stations[0].stationId, Is.EqualTo("dig:not-a-post"),
+                "a craft station keeps its id even when it reads like a site post");
+        }
+
+        [Test]
+        public void TryMigrate_V53_ThenRestore_KeepsTheSketcherAtTheirOwnSite()
+        {
+            // End to end: the rewritten id has to be one StationValid accepts,
+            // or the rung would hand Restore a post it rests anyway.
+            var state = StateWithASite();
+            var save = SaveCodec.Capture(state, 0);
+            save.roster.Add(new SavedFamiliar
+            {
+                id = "fam-legacy",
+                speciesId = "test-species-legacy",
+                stationId = Familiar.LegacyWatchStationPrefix + "bramble-hedgerows",
+            });
+            save.version = 53;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            var restored = SaveCodec.Restore(save, _data);
+
+            Assert.That(restored.roster[restored.roster.Count - 1].IsSketchingAt("bramble-hedgerows"),
+                Is.True, "the sketcher keeps the site they were drawing at");
         }
 
         [Test]
@@ -483,7 +573,7 @@ namespace Wildgrove.Sim.Tests
             };
             var state = GameStateFactory.NewGame(_data);
             Upgrades.TryPurchase(state, _data, _data.upgrades[1]); // opens the zone and its dig site
-            TestKith.Station(state, Familiar.WatchStation("bramble-hedgerows"), 1);
+            TestKith.Station(state, Familiar.SketchStation("bramble-hedgerows"), 1);
             state.digSites[0].pityHours = 1.5;
             state.insectSketches["stags-herald"] = 3; // assembled
 
@@ -491,7 +581,7 @@ namespace Wildgrove.Sim.Tests
 
             Assert.That(restored.digSites, Has.Count.EqualTo(1));
             Assert.That(restored.digSites[0].zoneId, Is.EqualTo("bramble-hedgerows"));
-            Assert.That(Stationing.WatchersAt(restored, "bramble-hedgerows"), Is.EqualTo(1));
+            Assert.That(Stationing.SketchersAt(restored, "bramble-hedgerows"), Is.EqualTo(1));
             Assert.That(restored.digSites[0].pityHours, Is.EqualTo(1.5).Within(Tolerance));
             Assert.That(Insects.SketchCount(restored, "stags-herald"), Is.EqualTo(3));
             // The completed insect's +10% all yields folds into the restored

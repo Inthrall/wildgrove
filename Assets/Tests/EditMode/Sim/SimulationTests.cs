@@ -348,19 +348,19 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Advance_WardenWatching_GathersNothing()
+        public void Advance_WardenSketching_GathersNothing()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.9 };
             var state = GameStateFactory.NewGame(_data);
             state.roster.Clear(); // only the warden works
-            Warden.Watch(state, "old-growth-wood");
+            Warden.Sketch(state, "old-growth-wood");
 
             Simulation.Advance(state, _data, 10.0);
 
             // A watch post is the watch and only the watch: a watching warden
             // picks nothing at any node (the gather-share retired 2026-08-09 —
             // a body that also gathered read as two jobs on one post).
-            Assert.That(Warden.IsWatching(state), Is.True);
+            Assert.That(Warden.IsSketching(state), Is.True);
             foreach (var node in state.nodes)
             {
                 Assert.That(state.GetResource(node.resourceId).ToDouble(), Is.EqualTo(0.0).Within(Tolerance), node.id);
@@ -369,27 +369,27 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void WardenWatch_AFamiliarKeepingThatWatch_StepsBackToCamp()
+        public void WardenSketch_AFamiliarHoldingThatPost_StepsBackToCamp()
         {
             var state = GameStateFactory.NewGame(_data);
-            var watch = Familiar.WatchStation("old-growth-wood");
+            var watch = Familiar.SketchStation("old-growth-wood");
             TestKith.Station(state, watch, 1);
             var holder = Stationing.OccupantOf(state, watch);
 
-            Warden.Watch(state, "old-growth-wood");
+            Warden.Sketch(state, "old-growth-wood");
 
             // One body per post: the warden takes the site's watch, the familiar
             // that held it goes home — the same rule a node follows.
-            Assert.That(Warden.IsWatchingAt(state, "old-growth-wood"), Is.True);
+            Assert.That(Warden.IsSketchingAt(state, "old-growth-wood"), Is.True);
             Assert.That(holder.IsResting, Is.True);
         }
 
         [Test]
-        public void Advance_AWatcher_GathersNothing()
+        public void Advance_ASketcher_GathersNothing()
         {
             var state = GameStateFactory.NewGame(_data);
             TestKith.ClearStations(state);
-            TestKith.Station(state, Familiar.WatchStation("old-growth-wood"), 1);
+            TestKith.Station(state, Familiar.SketchStation("old-growth-wood"), 1);
 
             Simulation.Advance(state, _data, 9.0);
 
@@ -579,7 +579,7 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void YieldPerSecond_AWatchingWarden_AddsNothingToTheKithsLane()
+        public void YieldPerSecond_ASketchingWarden_AddsNothingToTheKithsLane()
         {
             _data.economy.warden = new EconomyData.WardenData { gatherPerSecond = 0.5 };
             var state = GameStateFactory.NewGame(_data);
@@ -592,7 +592,7 @@ namespace Wildgrove.Sim.Tests
             Warden.Rest(state);
             var resting = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
 
-            Warden.Watch(state, "old-growth-wood");
+            Warden.Sketch(state, "old-growth-wood");
             var watching = Simulation.YieldPerSecond(node, state, _data, _data.economy).ToDouble();
 
             // A watch post is the watch and only the watch (the gather-share

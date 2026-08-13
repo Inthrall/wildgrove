@@ -106,21 +106,25 @@ bump `SaveCodec.CurrentVersion`, add the matching case to the sequential migrati
 things that no longer fit). Test saves from before a migration are the cheapest way
 to find what `Restore` missed.
 
-**The ladder runs 42→53.** `CurrentVersion` is 53 and `EarliestReadableVersion` is
+**The ladder runs 42→54.** `CurrentVersion` is 54 and `EarliestReadableVersion` is
 42: a v42 save climbs every rung — the clock ratchet (43), the warden's name (44),
 the camp's name (45), the consideration pair (46), the second queue (47), the
 keepsakes (48), the Wheel's hemisphere + claims (49), the keeping (50), the
 keepsakes dropped again (51), the kith ladder onto named verses (52), the watch as
-a place (53) — and is read whole. Most rungs add nothing but a version, which is
-the shape to copy: a migration fills in only what its version predates, and never
-reaches for current content data.
+a place (53), the watch renamed to the sketching (54) — and is read whole. Most
+rungs add nothing but a version, which is the shape to copy: a migration fills in
+only what its version predates, and never reaches for current content data.
 
 A rung that fills nothing in is still worth adding (51 and 53 are both this): it is
 what makes an older build refuse a save this one wrote, rather than read it a field
 short. 52 is the exception that shows the rule — it had to carry earned kith places
 forward, so it writes the *old* milestones out as literals rather than reading the
 current economy, because a migration has to hold for a save opened years after those
-numbers stopped existing.
+numbers stopped existing. 54 is the other kind of exception: it rewrites persisted
+ids in place (`dig:{zone}` → `sketch:{zone}`) and is safe to, because it carries the
+zone half through untouched and so consults no content data. Note what it must NOT
+touch — `SavedStation.stationId` is the craft queue's workbench, sharing a name with
+a post id and nothing else.
 
 Add a rung the same way — a case, and bump `CurrentVersion` only — and **leave
 `EarliestReadableVersion` where it is**. It moves again only when bottom rungs are

@@ -702,7 +702,7 @@ namespace Wildgrove.Game
         /// <summary>
         /// The deep amber at the foot of the Deep Pages (design §6): the one
         /// find the land lets the warden keep, surfaced piece by authored
-        /// piece at its own zone's watch site. Hidden until that site has been
+        /// piece at its own zone's observation site. Hidden until that site has been
         /// walked this run — unless the carried journal already holds a piece,
         /// because the record crosses every fold.
         /// </summary>

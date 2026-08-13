@@ -19,7 +19,7 @@ namespace Wildgrove.Game
     {
         /// <summary>
         /// The post plate and the picture it wears. Narrower than the worded
-        /// buttons it replaces (190 at a node, 220 at the watch) because a
+        /// buttons it replaces (190 at a node, 220 at a site) because a
         /// picture needs no room to wrap — the width goes back to the node's own
         /// line. 84 is as small as a portrait can be drawn and still read as an
         /// animal rather than a smudge, and it clears the plate's 120 of touch

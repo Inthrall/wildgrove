@@ -179,7 +179,7 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The plate for what a post yields — the resource of the node it is, or
-        /// the watch's own mark at an observation site (it stands over no crop,
+        /// the sketching plate at an observation site (it stands over no crop,
         /// but it is a place, and every picker draws a post as a picture).
         /// Null for camp (no station at all) and the trail: neither is a place
         /// with a face, so the caller falls back to naming them.
@@ -189,12 +189,19 @@ namespace Wildgrove.Game
         /// the one place the page and the picker could disagree about what a
         /// post looks like.
         /// </para>
+        /// <para>
+        /// A sketching post wore the observation CRAFT glyph until 2026-08-13,
+        /// which made it the one tile in a drawer of naturalist plates carrying a
+        /// flat two-tone mark — so the eye read it as a different kind of thing
+        /// rather than another place a body can stand. It has a plate of its own
+        /// now (<see cref="ArtLibrary.ForSketching"/>).
+        /// </para>
         /// </summary>
         protected Sprite StationPlate(string stationId)
         {
-            if (Familiar.IsWatchStation(stationId))
+            if (Familiar.IsSketchStation(stationId))
             {
-                return ArtLibrary.ForSkill("observation");
+                return ArtLibrary.ForSketching();
             }
 
             var node = FindNode(stationId);
@@ -227,7 +234,7 @@ namespace Wildgrove.Game
         protected string BundleHaveLabel(List<Buildings.MaterialCost> bundle) => _hud.Labels.BundleHaveLabel(bundle);
         protected string PlanterDisplayName(PlanterData planter, string targetId) => _hud.Labels.PlanterDisplayName(planter, targetId);
         protected string PlanterGives(PlanterData planter) => _hud.Labels.PlanterGives(planter);
-        protected string PostBonus(Familiar familiar, NodeState node, bool isWatchPost) => _hud.Labels.PostBonus(familiar, node, isWatchPost);
+        protected string PostBonus(Familiar familiar, NodeState node, bool isSketchPost) => _hud.Labels.PostBonus(familiar, node, isSketchPost);
         protected string NodeSkill(string targetId) => _hud.Labels.NodeSkill(targetId);
     }
 }

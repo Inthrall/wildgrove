@@ -42,11 +42,11 @@ namespace Wildgrove.Game
             var occupantHere = Stationing.OccupantOf(state, stationId);
             var hasRoom = Kith.HasRoom(state, _loop.Data);
 
-            // The warden stands at a node, or takes a site's watch (design §2) —
+            // The warden stands at a node, or takes a site's sketching post (design §2) —
             // but never the trail: the warden tends, the kith carries.
             var node = FindNode(stationId);
-            var watchZone = Familiar.WatchZoneOf(stationId);
-            var wardenCanStand = node != null || watchZone != null;
+            var sketchZone = Familiar.SketchZoneOf(stationId);
+            var wardenCanStand = node != null || sketchZone != null;
             var wardenHere = wardenCanStand
                 && (node != null ? Warden.PostNodeId(state) == node.id : Warden.PostNodeId(state) == stationId);
 
@@ -98,8 +98,8 @@ namespace Wildgrove.Game
             {
                 // Moss verbs — these are the actions the sheet exists for;
                 // ochre made them read as warnings.
-                var wardenVerb = watchZone != null
-                    ? "Set " + _loop.WardenName() + " watching here"
+                var wardenVerb = sketchZone != null
+                    ? "Set " + _loop.WardenName() + " sketching here"
                     : "Walk " + _loop.WardenName() + " here";
                 // Drawn like the companion rows below it, because it is the same
                 // offer: the body's own plate leads, the ground they stand on
@@ -116,10 +116,10 @@ namespace Wildgrove.Game
                     "<color=" + MossDeepHex + ">" + wardenVerb + "</color>" + whereTail,
                     wardenGround, 740, 120f, () =>
                 {
-                    if (watchZone != null)
+                    if (sketchZone != null)
                     {
-                        _loop.WatchWarden(watchZone);
-                        SetNote(_loop.WardenName() + " settles in to watch " + ZoneName(watchZone) + ".");
+                        _loop.SketchWarden(sketchZone);
+                        SetNote(_loop.WardenName() + " settles in to sketch at " + ZoneName(sketchZone) + ".");
                     }
                     else
                     {
@@ -157,7 +157,7 @@ namespace Wildgrove.Game
                 // The pony is never offered anywhere (§11): she walks her own
                 // lane and cannot be posted, so listing her would only be a row
                 // that refuses. This covers every post — nodes, the trail and
-                // the watch posts all open this sheet.
+                // the sketching posts all open this sheet.
                 if (!PostMatches(familiar.stationId, stationId) && !familiar.IsPony)
                 {
                     ordered.Add(familiar);
@@ -205,12 +205,11 @@ namespace Wildgrove.Game
                 // moss, the colour every other number that helps is written in,
                 // and blank for everyone the ground gains nothing from — so the
                 // eye finds the one that matters instead of reading twelve rows.
-                //
                 // Greyed with the verb on a blocked row: the plate tint does not
                 // reach the text (which is why the verb colours itself), and a
                 // moss number would otherwise be the liveliest thing on a row
                 // that cannot be tapped.
-                var bonus = PostBonus(captured, node, watchZone != null);
+                var bonus = PostBonus(captured, node, sketchZone != null);
                 var bonusTail = bonus.Length == 0
                     ? string.Empty
                     : "  " + SizeOpen(15) + "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + bonus + "</color></size>";

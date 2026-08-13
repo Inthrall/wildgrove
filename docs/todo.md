@@ -170,12 +170,22 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
     moss (+) where the crop would be, their badge beneath it, captioned "at camp"
     (never the warden's name — that caption is what collided), and a tap that
     opens the walk sheet.
-  - **A watching warden shows nothing here, deliberately** (2026-08-06; the watch
-    became per-site 2026-08-12). They hold an observation site's post, which is no
-    node and so has no plate on the strip — but drawing them on an empty ground
-    would say they had no work, when watching IS the work. One slot, one meaning.
-    The cost is that the warden is off the board while watching; that zone's watch
-    card and the pickers are where the posting is read.
+  - ~~**A watching warden shows nothing here, deliberately**~~ ✅ RESOLVED
+    2026-08-13, and the deliberate absence turned out to be the bug. A body
+    holding an observation site's post was nowhere on the assignment board for as
+    long as they held it: a site is no node, so it had no plate, and drawing the
+    warden on an EMPTY ground would have said they had no work when the work is
+    exactly what they were doing. One slot one meaning was the right rule and the
+    wrong conclusion — the answer was to give the post a plate, not to leave the
+    body off the board. Sketching posts now stand among the grounds
+    (`NodeWorldView.CreateSketching`, `WorldView._sketchViews`), wearing the
+    Curtis moth plate and the badge of whoever draws there, captioned
+    "{zone} sketching" so two of them never read as one place. They are in the
+    strip's (+) ground picker too, where they had also been held out.
+    <br>**Judge in the playtest sitting:** whether a moth among the crops reads
+    as *a place to send somebody* or as *a specimen you have found* — it is the
+    one plate on the strip that is not a crop, and the grammar it leans on ("a
+    plate says what the place gives") is being asked to stretch one step.
 - **Zone folding, one beat to watch:** the moment the second zone unlocks, the
   meadow's plates disappear behind a heading for the first time. It names its
   resources and looks pressable, but that is the one place a player could think
@@ -586,7 +596,7 @@ lean is a regression, not a phase. Build order:
     `dig:{zone}` station is retired, and `SaveCodec.StationValid` rests whoever
     carries one on load (deliberately, per `Familiar.DigStationPrefix`), so the
     fourth staged companion was at camp in every shot. It stands on a ground
-    now, and `Stage_PostsOnlyGroundsAndTheWatch` pins that the showcase posts
+    now, and `Stage_PostsOnlyGroundsAndTheSketching` pins that the showcase posts
     nothing the save cannot carry. This was the only remaining use of the
     prefix anywhere in the project.
   - **The staging moved out of the editor harness** to
@@ -628,6 +638,28 @@ lean is a regression, not a phase. Build order:
   `GameDataValidator`'s `KnownSkills` whitelist still lists the retired
   `"excavation"` — that one is now load-bearing as the last stable
   never-granted-skill test example, so leave it.
+  <br>**The first seam is now half closed (2026-08-13).** The *watch* was renamed
+  to the *sketching* through the code and every player-facing line, and the
+  persisted post id moved with it: `dig:{zone}` → `sketch:{zone}`, on **save rung
+  54**, which rewrites the ids in place and is safe to because it carries the zone
+  half through untouched. What is deliberately NOT renamed is the half that lives
+  in data, because each of those is a schema change with a `GameData.asset`
+  re-import behind it and a validator to keep in step:
+  `economy.observation.watchXpPerHour`, `economy.observation.pityTimerHoursWatched`,
+  `ambers.pityHoursWatched`, `economy.amber.digFindsPerHour`, `digSpeedMult` and
+  its whole effect/trait family (`EffectType.DigSpeedMult`, `digSpeedBonus`,
+  `Upgrades.DigSpeedMultiplier`), `EffectType.UnlockDigSite`, `zone.digSite`,
+  `GameState.digSites`/`DigSiteState`, and `PlaceholderArt.DigSiteColour`. So the
+  code and the pages say *sketching* while the data still says *dig* and *watch* —
+  which is a smaller mismatch than the one it replaced, and one whose whole cost
+  is a reader's surprise rather than a wrong noun on screen. Close it in a pass of
+  its own, with the JSON and the re-imported asset in the same commit.
+  <br>Also renamed in the same pass, for the record: `TrailPage.Watch.cs` →
+  `TrailPage.Sketching.cs`, the card heading THE WATCH → **THE SKETCHING**, and
+  `Stationing.WatchAgentsAt`/`WatchersAt` → `SketchAgentsAt`/`SketchersAt`.
+  `Familiar.LegacyWanderStation` and the new `Familiar.LegacyWatchStationPrefix`
+  are the two ids that keep the old words on purpose: both are read only by
+  migration, and a migration must go on saying what the save it is reading said.
 - **Kinship constants are hardcoded.** `Divisor` 1000 and `XpRatePerLevel` 0.02
   are `const`s in `Kinship.cs`; they belong in an `economy.json` section with the
   rest of the tuning.

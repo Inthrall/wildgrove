@@ -165,7 +165,7 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Station a familiar at a post — a node id, "trail", a "dig:{zone}"
+        /// Station a familiar at a post — a node id, "trail", a "sketch:{zone}"
         /// site, or null to rest at camp (design §2). Returns false when a
         /// resting familiar wants a post and every slot is walked (§4 ladder).
         /// </summary>
@@ -180,10 +180,10 @@ namespace Wildgrove.Game
             Warden.Post(State, node);
         }
 
-        /// <summary>Stand the warden at a site's watch — watching that site, gathering nothing (design §2/§6), evicting any familiar keeping it.</summary>
-        public void WatchWarden(string zoneId)
+        /// <summary>Stand the warden at a site's sketching post — drawing there, gathering nothing (design §2/§6), evicting any familiar holding it.</summary>
+        public void SketchWarden(string zoneId)
         {
-            Warden.Watch(State, zoneId);
+            Warden.Sketch(State, zoneId);
         }
 
         /// <summary>Send the warden back to camp — no post, no picking.</summary>

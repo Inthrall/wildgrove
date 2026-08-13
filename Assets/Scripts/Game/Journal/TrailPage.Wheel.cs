@@ -128,7 +128,7 @@ namespace Wildgrove.Game
         /// left, and — in the journal's invitation ink — whether the stores can
         /// answer a slot this minute. That last clause is the whole of what a
         /// shut card owes the player, and it is the Trail's own rule for a
-        /// folded ground, which says "the watch stands empty" the same way.
+        /// folded ground, which says "no one sketches here" the same way.
         /// </summary>
         private string KeepingTally()
         {

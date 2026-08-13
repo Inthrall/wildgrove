@@ -75,12 +75,12 @@ namespace Wildgrove.Sim.Tests
         {
             var state = GameStateFactory.NewGame(_data);
             state.digSites.Add(new DigSiteState { zoneId = GameStateFactory.StartingZoneId });
-            TestKith.Station(state, Familiar.WatchStation(GameStateFactory.StartingZoneId), 1);
+            TestKith.Station(state, Familiar.SketchStation(GameStateFactory.StartingZoneId), 1);
             return state;
         }
 
         [Test]
-        public void Watching_SurfacesThePiecesInAuthoredOrder()
+        public void Sketching_SurfacesThePiecesInAuthoredOrder()
         {
             var state = StateWithAWatcher();
 

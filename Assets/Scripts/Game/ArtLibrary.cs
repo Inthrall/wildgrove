@@ -230,6 +230,14 @@ namespace Wildgrove.Game
         // warden — a map of one id would only invite a second.
         private const string WardenMark = Ui + "ui-warden";
 
+        // The sketching post's plate, for the same reason: every observation
+        // site's post wears this one mark, and the caption is what says which
+        // site. A plate rather than the observation craft glyph because a
+        // sketching post stands among the grounds on the strip and in the
+        // pickers, and a flat two-tone glyph among naturalist plates read as a
+        // different KIND of thing rather than another place to stand.
+        private const string SketchingPlate = Plates + "Sites/site-sketching";
+
         private static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
 
         /// <summary>The plate for a gatherable resource, or null when there's no art.</summary>
@@ -264,6 +272,9 @@ namespace Wildgrove.Game
 
         /// <summary>The warden's mark — the player's own figure, worn on the badge of whichever post they stand at. Null when the plate is missing.</summary>
         public static Sprite ForWarden() => Load(WardenMark);
+
+        /// <summary>The plate an observation site's sketching post wears, the same at every site. Null when the plate is missing.</summary>
+        public static Sprite ForSketching() => Load(SketchingPlate);
 
         private static string Lookup(Dictionary<string, string> map, string id)
         {

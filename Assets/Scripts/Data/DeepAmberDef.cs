@@ -13,7 +13,7 @@ namespace Wildgrove.Data
         /// <summary>The zone whose observation site surfaces the pieces.</summary>
         public string Zone { get; set; }
 
-        /// <summary>Piece find rate per watcher-hour, before digSpeedMult modifiers.</summary>
+        /// <summary>Piece find rate per sketcher-hour, before digSpeedMult modifiers.</summary>
         public double FindsPerHour { get; set; }
 
         /// <summary>Watched hours without a piece that guarantee the next one — the lore must not starve.</summary>

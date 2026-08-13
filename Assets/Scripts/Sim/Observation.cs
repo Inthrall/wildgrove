@@ -6,10 +6,10 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The observation tick (design §6): a body posted to a zone's observation
-    /// site watches what lives THERE and records it (one watch post per site —
+    /// site draws what lives THERE and records it (one sketching post per site —
     /// revised 2026-08-12, from a single roaming post that watched every site
     /// at once) — adding a field
-    /// sketch at watchers · baseSketchesPerHour · digSpeedMult · the site's
+    /// sketch at sketchers · baseSketchesPerHour · digSpeedMult · the site's
     /// summed unrecorded rarity; a pity timer guarantees a sketch once
     /// pityTimerHoursWatched hours pass without one. Which insect the sketch
     /// belongs to is a rarity-weighted pick among the site's unrecorded plates
@@ -20,10 +20,10 @@ namespace Wildgrove.Sim
     /// (design §10) is the exception: one flat roll per tick for the whole
     /// round, outside the site walk and untouched by digSpeedMult, because
     /// per-site × multiplicative-stack compounded into a login payout many
-    /// times the design lean — so it is rolled off the round's watchers rather
-    /// than site by site. Watching also
+    /// times the design lean — so it is rolled off the round's sketchers rather
+    /// than site by site. Drawing also
     /// trains the observation craft (economy.observation.skill), which is the
-    /// only thing that earns that skill's XP — it is a watched-hours trickle, not
+    /// only thing that earns that skill's XP — it is a drawn-hours trickle, not
     /// a per-sketch award, so it keeps paying at a fully-recorded site.
     /// </summary>
     public static class Observation
@@ -36,33 +36,33 @@ namespace Wildgrove.Sim
                 return;
             }
 
-            // Each site's own post supplies its watching (design §2/§6), its
-            // holder's dig-speed trait folded in via Stationing.WatchAgentsAt.
+            // Each site's own post supplies its drawing (design §2/§6), its
+            // holder's dig-speed trait folded in via Stationing.SketchAgentsAt.
             // Counted once for the whole round, into reused scratch: the amber
             // roll below needs the round's total (one roll, not one per site),
-            // an unwatched map has to return before any rng is drawn so
+            // a map nobody draws at has to return before any rng is drawn so
             // sequences match the idle-site behaviour, and each count costs a
             // pass over the roster — asking again inside the walk would pay for
             // the same question twice per site per 1 s substep, which an offline
             // catch-up multiplies by tens of thousands.
-            state.watcherScratch = state.watcherScratch ?? new List<double>();
-            var siteWatchers = state.watcherScratch;
-            siteWatchers.Clear();
-            var roundWatchers = 0.0;
+            state.sketcherScratch = state.sketcherScratch ?? new List<double>();
+            var siteSketchers = state.sketcherScratch;
+            siteSketchers.Clear();
+            var roundSketchers = 0.0;
             foreach (var site in state.digSites)
             {
-                var watching = Stationing.WatchAgentsAt(state, data, site.zoneId);
-                siteWatchers.Add(watching);
-                roundWatchers += watching;
+                var sketching = Stationing.SketchAgentsAt(state, data, site.zoneId);
+                siteSketchers.Add(sketching);
+                roundSketchers += sketching;
             }
 
-            if (roundWatchers <= 0.0)
+            if (roundSketchers <= 0.0)
             {
                 return;
             }
 
-            var hoursWatched = deltaSeconds / 3600.0;
-            // Samhain's tide leans on the watch (design §15) — it joins the
+            var hoursDrawn = deltaSeconds / 3600.0;
+            // Samhain's tide leans on the sketching (design §15) — it joins the
             // sketch walk's stack below, and deliberately NOT the amber roll:
             // the 2026-08-02 flattening took every multiplier off the premium
             // faucet, and the tide does not reopen that door.
@@ -75,14 +75,14 @@ namespace Wildgrove.Sim
             // used to, and both compounded — six sites against a multiplicative
             // ×10 stack put one login's catch-up near 70 amber where the design
             // lean is ~40 a week. It scales with the round's WATCHERS, which is
-            // a real cost (every watch post spends one of the kith's slots) and
+            // a real cost (every sketching post spends one of the kith's slots) and
             // not with how much ground stands open, which was the leak. Rolled
             // before the sketch walk, so a fully-recorded map keeps surfacing
             // it. No draw when unconfigured: pre-amber rng sequences must not
             // shift.
             var amber = data.economy.amber;
             if (amber != null && amber.digFindsPerHour > 0.0
-                && Rng.NextDouble(ref state.rngState) < roundWatchers * amber.digFindsPerHour * hoursWatched)
+                && Rng.NextDouble(ref state.rngState) < roundSketchers * amber.digFindsPerHour * hoursDrawn)
             {
                 state.amber += amber.perFind;
                 // Banked for GameLoop to report once per advance — the sim
@@ -95,18 +95,18 @@ namespace Wildgrove.Sim
             {
                 var site = state.digSites[siteIndex];
 
-                // An unwatched site does nothing at all — no sketch, no craft
+                // A site nobody draws at does nothing at all — no sketch, no craft
                 // XP, no deep amber — and draws no rng, so the sites a player
                 // has not posted anyone to cannot shift the sequence at the
                 // ones they have.
-                var watchers = siteWatchers[siteIndex];
-                if (watchers <= 0.0)
+                var sketchers = siteSketchers[siteIndex];
+                if (sketchers <= 0.0)
                 {
                     // Its pity clock is left exactly where it stood rather than
-                    // wiped: those hours WERE watched, and this is the same
-                    // freeze an unwatched map has always had (the roaming post
+                    // wiped: those hours WERE drawn, and this is the same
+                    // freeze an undrawn map has always had (the roaming post
                     // returned before touching a site when nobody held it).
-                    // Moving a watcher between sites must not burn their banked
+                    // Moving a sketcher between sites must not burn their banked
                     // patience at the one they left.
                     continue;
                 }
@@ -114,8 +114,8 @@ namespace Wildgrove.Sim
                 // Reed-screen planters (design §3) steady this site's sketching.
                 var siteDigMult = digMult * Planters.DigSpeedMultiplier(state, data, site.zoneId);
 
-                // The watching itself trains the craft (design §4: XP from every
-                // action) — credited per watcher per site-hour, before this
+                // The drawing itself trains the craft (design §4: XP from every
+                // action) — credited per sketcher per site-hour, before this
                 // site's find channels roll, so a site with every plate already
                 // recorded still teaches. That ordering is the whole point: the
                 // sketch pool is finite (25 portions across every plate) and
@@ -126,17 +126,17 @@ namespace Wildgrove.Sim
                 if (observation.watchXpPerHour > 0.0)
                 {
                     Skills.AddXp(state, data, observation.skill,
-                        new BigDouble(watchers * observation.watchXpPerHour * siteDigMult * hoursWatched));
+                        new BigDouble(sketchers * observation.watchXpPerHour * siteDigMult * hoursDrawn));
                 }
 
                 // The deep amber (design §6): the authored deep-past pieces,
                 // surfaced only at their own zone's site. Stays per-site and
                 // keeps its dig-speed multiplier where the ordinary amber
                 // channel above gave both up — this one is lore pacing, not
-                // currency, it can only ever pay out four times, and the watch
+                // currency, it can only ever pay out four times, and the post
                 // stack shortening that walk is the intent (see ambers.json).
                 // It too keeps working after every plate here is recorded.
-                DeepAmber.AdvanceSite(state, data, site.zoneId, watchers, siteDigMult, deltaSeconds);
+                DeepAmber.AdvanceSite(state, data, site.zoneId, sketchers, siteDigMult, deltaSeconds);
 
                 // Reused scratch: this runs per site per 1 s substep — a full
                 // offline catch-up is tens of thousands of walks, so the list
@@ -152,7 +152,7 @@ namespace Wildgrove.Sim
                     continue;
                 }
 
-                site.pityHours += hoursWatched;
+                site.pityHours += hoursDrawn;
 
                 var totalRarity = 0.0;
                 foreach (var insect in eligible)
@@ -160,7 +160,7 @@ namespace Wildgrove.Sim
                     totalRarity += insect.rarity;
                 }
 
-                var chance = watchers * observation.baseSketchesPerHour * siteDigMult * totalRarity * hoursWatched;
+                var chance = sketchers * observation.baseSketchesPerHour * siteDigMult * totalRarity * hoursDrawn;
                 var dropped = Rng.NextDouble(ref state.rngState) < chance;
                 if (!dropped && observation.pityTimerHoursWatched > 0.0 && site.pityHours >= observation.pityTimerHoursWatched)
                 {
