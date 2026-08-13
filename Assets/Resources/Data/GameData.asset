@@ -113,7 +113,7 @@ MonoBehaviour:
       callingGiftAmber: 10
       campNameCostAmber: 40
       considerationCostAmber: 5
-      secondQueueCostAmber: 20
+      secondQueueCostAmber: 40
     store:
       starterBundleAmber: 30
       amberPackSmall: 50
