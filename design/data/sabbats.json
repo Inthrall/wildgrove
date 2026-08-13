@@ -1,5 +1,5 @@
 {
-  "$comment": "The Wheel (design §15): eight real-world sabbats a year, hemisphere-mirrored, each opening a MONTH-long tide that closes at the sabbat night (widened from a fortnight 2026-08-11 — a tide the warden can walk into whenever they open the book, rather than a window that is shut two visits in three). The tightest authored pair is Mabon->Samhain at 38 days, so 30 is close to the ceiling the calendar allows: past ~37 the windows overlap and the validator says so. The calendar is the warden's, not the land's — 'sign' is the warden's margin line ('…, by my count'), draft wording owed to the narrative pass. The tide's 'touch' is the world's ONE ambient lean (it replaced the drawn region season, design §8, 2026-08-08): read live by Wheel.cs from the sim clock cursor, NEVER joined into the cached active-effect union, never entering verseDemand, and never touching the Amber faucet. Values are unplaytested first guesses; every lean stays inside one mastery band (~+25%) — the no-gate rule. Nights are authored dates (no astronomy code; solstice drift is data), per hemisphere, several years ahead so an un-updated install keeps the wheel turning — top up around 2029. openDaysBefore sets when each tide opens ahead of its night. Windows within one hemisphere must never overlap (validator-enforced).",
+  "$comment": "The Wheel (design §15): eight real-world sabbats a year, hemisphere-mirrored, each opening a MONTH-long tide that closes at the sabbat night (widened from a fortnight 2026-08-11 — a tide the warden can walk into whenever they open the book, rather than a window that is shut two visits in three). The tightest authored pair is Mabon->Samhain at 38 days, so 30 is close to the ceiling the calendar allows: past ~37 the windows overlap and the validator says so. The calendar is the warden's, not the land's — 'sign' is the warden's margin line ('…, by my count'), read while the tide holds, and 'lore' is what the day IS in the old year the warden inherited, read on the sheet that waits for a tide a month out (where the sign would be a month early). Both are the warden's voice and neither lets the land speak (§7); draft wording owed to the narrative pass. The tide's 'touch' is the world's ONE ambient lean (it replaced the drawn region season, design §8, 2026-08-08): read live by Wheel.cs from the sim clock cursor, NEVER joined into the cached active-effect union, never entering verseDemand, and never touching the Amber faucet. Values are unplaytested first guesses; every lean stays inside one mastery band (~+25%) — the no-gate rule. Nights are authored dates (no astronomy code; solstice drift is data), per hemisphere, several years ahead so an un-updated install keeps the wheel turning — top up around 2029. openDaysBefore sets when each tide opens ahead of its night. Windows within one hemisphere must never overlap (validator-enforced).",
   "openDaysBefore": 30,
   "observance": {
     "$note": "The keeping (design §15): the tide's own verse — choose-any-of-5 offering slots generated from the run's unlocked content, NEVER a Rite verse (no gift pile, no verse milestone, no ground). Tiers are slots answered: kept the eve / kept the day / kept the wheel. All values are unplaytested first guesses for the sitting: slotValueMult prices each goods slot against the candidates' average worth (the Rite's verse-1 anchor ≈ 1.0, so 2.0 ≈ a second-verse-sized ask, flat at every fold — the wheel greets every warden the same); tierAmber pays 5/10/10 as tiers are crossed (25 for a full keep, ~once per 6.5 weeks, read against the ~120/week diligent lean and the weekly cache's 20 — §9); specimenRenown is the specimen slot's fixed grant, small against the goods slots.",
@@ -15,6 +15,7 @@
       "name": "Samhain",
       "kind": "fire",
       "sign": "Samhain, by my count. The quiet things hold still longer tonight — the pencil keeps up.",
+      "lore": "the year's last gate — the herds come down off the hill and the dark half begins. what the summer could not keep, the telling keeps.",
       "touch": [
         { "type": "digSpeedMult", "value": 1.2 }
       ],
@@ -29,6 +30,7 @@
       "name": "Yule",
       "kind": "quarter",
       "sign": "Yule, by my count. The fire wants little and gives much; the pots come off early.",
+      "lore": "the longest night, and the turn buried inside it. the fire is fed until morning because the morning is the whole point of it.",
       "touch": [
         { "type": "craftSpeedMult", "skill": "firecraft", "value": 1.2 }
       ],
@@ -43,6 +45,7 @@
       "name": "Imbolc",
       "kind": "fire",
       "sign": "Imbolc, by my count. First stirrings under the frost — the hedge hands over more than it shows.",
+      "lore": "the ewes come into milk with nothing yet showing above ground. the old year calls it the quickening and takes it on trust.",
       "touch": [
         { "type": "yieldMult", "resource": "fibres", "value": 1.2 },
         { "type": "yieldMult", "resource": "herbs", "value": 1.2 }
@@ -58,6 +61,7 @@
       "name": "Ostara",
       "kind": "quarter",
       "sign": "Ostara, by my count. Sowing weather; the ground takes what is given back, and asks less of it.",
+      "lore": "day and night stand level, and the year tips over into the light. what goes in now goes in on trust — nothing has come up yet to prove the ground has woken.",
       "touch": [
         { "type": "replantCostMult", "value": 0.8 }
       ],
@@ -72,6 +76,7 @@
       "name": "Beltane",
       "kind": "fire",
       "sign": "Beltane, by my count. The meadow keeps it too; the flowers come readier.",
+      "lore": "the herds are walked between two fires and let out onto the summer grass. the hedge goes white overnight, and the light half of the year begins.",
       "touch": [
         { "type": "yieldMult", "resource": "wildflowers", "value": 1.2 },
         { "type": "yieldMult", "resource": "berries", "value": 1.2 }
@@ -87,6 +92,7 @@
       "name": "Litha",
       "kind": "quarter",
       "sign": "Litha, by my count. The light stays long past its hour, and more comes drifting on it.",
+      "lore": "the longest day, the year at its full height. everything after it leans toward the harvest, which is no loss — it is what the light was for.",
       "touch": [
         { "type": "bubbleRewardBonus", "value": 0.2 }
       ],
@@ -101,6 +107,7 @@
       "name": "Lughnasadh",
       "kind": "fire",
       "sign": "Lughnasadh, by my count. First harvest; the wood is generous with its keeping.",
+      "lore": "the first sheaf is cut and eaten. the year's first proof that the summer's work was work and not only hope.",
       "touch": [
         { "type": "yieldMult", "resource": "nuts", "value": 1.2 },
         { "type": "yieldMult", "resource": "mushrooms", "value": 1.2 }
@@ -116,6 +123,7 @@
       "name": "Mabon",
       "kind": "quarter",
       "sign": "Mabon, by my count. Even the caravan weighs fairer, this once.",
+      "lore": "day and night stand level again, the other way about. what is in is in; what is still out is left to whatever wants it.",
       "touch": [
         { "type": "exchangeSpreadEase", "value": 0.05 }
       ],

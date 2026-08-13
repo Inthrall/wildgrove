@@ -84,6 +84,13 @@ namespace Wildgrove.Data
                     issues.Add($"Sabbat '{sabbat.Id}' has no sign — the warden's margin says one line per tide");
                 }
 
+                // The coming-sabbat sheet is a name, a countdown and this. A
+                // tide with no lore leaves it a bare date a month out.
+                if (string.IsNullOrWhiteSpace(sabbat.Lore))
+                {
+                    issues.Add($"Sabbat '{sabbat.Id}' has no lore — the sheet that waits for a tide says what the day is");
+                }
+
                 if (sabbat.Kind != "fire" && sabbat.Kind != "quarter")
                 {
                     issues.Add($"Sabbat '{sabbat.Id}' kind must be 'fire' or 'quarter' (was '{sabbat.Kind}')");

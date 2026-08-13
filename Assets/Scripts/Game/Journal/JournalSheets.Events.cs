@@ -141,9 +141,20 @@ namespace Wildgrove.Game
         /// earns (design §15), and a tide that has not opened has earned
         /// nothing yet — the sheet is a date and a promise, not a page.
         /// <para>
-        /// A name, a countdown to the opening and one line of the warden's
-        /// voice — nothing else, from 2026-08-13. It used to carry the closing
-        /// night as well, the Wheel's rules read out in full, the tide's whole
+        /// A name, a countdown to the opening and the sabbat's own lore —
+        /// nothing else, from 2026-08-13. The third line was the reckoning
+        /// ("the calendar is the warden's… by the south's wheel") for the
+        /// first half of that day: it answered a question nobody had asked,
+        /// and said it a third time, the reckoning already naming the Record's
+        /// Wheel card and labelling the inside-cover button that changes it.
+        /// What a player waiting on a tide wants is what the day is for, so
+        /// the sabbat's <c>lore</c> stands there instead. The tide's own
+        /// <c>sign</c> cannot do that job: it is written for the night it
+        /// falls on, and this sheet is a month early.
+        /// </para>
+        /// <para>
+        /// It used to carry the closing night
+        /// as well, the Wheel's rules read out in full, the tide's whole
         /// touch under <em>When it opens</em>, the years it had been kept, and
         /// a note on where the reckoning is changed: six things asked of a
         /// player who tapped a cell to learn when the season turns. What the
@@ -171,9 +182,7 @@ namespace Wildgrove.Game
                     18, TextAnchor.MiddleCenter, Ink2, _serif);
             }
 
-            MakeText(sheet, "<i>the calendar is the warden's, not the land's, and the warden reckons by the "
-                            + (_loop.State.hemisphere == Wheel.HemisphereSouth ? "south" : "north")
-                            + "'s wheel.</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
+            MakeText(sheet, "<i>" + coming.lore + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
 
             var seen = Button(sheet, "Walk on", 320, CloseSheet);
             KeyAction(seen);

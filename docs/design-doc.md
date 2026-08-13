@@ -851,7 +851,7 @@ Cost, once the calendar service exists for the observance itself: one multiplier
 ### Costs, honestly
 
 - **Eight plates** in the one template — a bounded batch, reused every year. Scope pressure cuts count, never quality (§1): the four fire festivals alone are a coherent first ship (they carry the hemisphere mirror whole), quarters at the next pass.
-- **~150–200 words** across eight tides, each sabbat's line doubling as its teaching note (§7's pattern; the touch's margin line is the same line, not an addition), sized deliberately against the post-MVP word budget.
+- **~150–200 words** across eight tides, each sabbat's line doubling as its teaching note (§7's pattern; the touch's margin line is the same line, not an addition), sized deliberately against the post-MVP word budget. **A second line each, 2026-08-13 (`lore`), taking it to ~300:** the sheet that waits for a tide cannot use the `sign`, which is written for the night it falls on and read a month early there. It said the reckoning instead — a third telling of a thing the Record card and the inside cover already say — so it now says what the day IS in the old year the warden keeps. Still the warden's voice, still no spirit named, and still nothing the land says (§7).
 - **A live-ops posture,** however mild: the calendar wants topping up every few years; each year's plates want nothing. The evergreen rule is what makes both true.
 
 ### Open questions (the v1.1 sitting)

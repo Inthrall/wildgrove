@@ -411,6 +411,9 @@ namespace Wildgrove.Data
         /// <summary>The warden's margin line — the calendar is the warden's, never the land's.</summary>
         public string sign;
 
+        /// <summary>What the day is in the old year the warden keeps — read while its tide is still coming.</summary>
+        public string lore;
+
         /// <summary>The ambient touch: one narrow lean, live while the tide is open.</summary>
         public List<EffectData> touch = new List<EffectData>();
 

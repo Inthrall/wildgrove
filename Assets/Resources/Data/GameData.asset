@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: cee830d5f490d1f9467e761c20d564ee256af207b197053c4a4fb1c4e02759e8
+  sourceHash: 41fabd0c44bdc8968284d837f0a02e6ac85cfadb6b6c6e3f721d1771397dd5fe
   economy:
     costGrowth:
       building: 1.25
@@ -2455,6 +2455,8 @@ MonoBehaviour:
       kind: fire
       sign: "Samhain, by my count. The quiet things hold still longer tonight \u2014
         the pencil keeps up."
+      lore: "the year's last gate \u2014 the herds come down off the hill and the
+        dark half begins. what the summer could not keep, the telling keeps."
       touch:
       - type: 4
         skill: 
@@ -2475,6 +2477,8 @@ MonoBehaviour:
       kind: quarter
       sign: Yule, by my count. The fire wants little and gives much; the pots come
         off early.
+      lore: the longest night, and the turn buried inside it. the fire is fed until
+        morning because the morning is the whole point of it.
       touch:
       - type: 3
         skill: firecraft
@@ -2495,6 +2499,8 @@ MonoBehaviour:
       kind: fire
       sign: "Imbolc, by my count. First stirrings under the frost \u2014 the hedge
         hands over more than it shows."
+      lore: the ewes come into milk with nothing yet showing above ground. the old
+        year calls it the quickening and takes it on trust.
       touch:
       - type: 0
         skill: 
@@ -2523,6 +2529,9 @@ MonoBehaviour:
       kind: quarter
       sign: Ostara, by my count. Sowing weather; the ground takes what is given back,
         and asks less of it.
+      lore: "day and night stand level, and the year tips over into the light. what
+        goes in now goes in on trust \u2014 nothing has come up yet to prove the
+        ground has woken."
       touch:
       - type: 19
         skill: 
@@ -2542,6 +2551,8 @@ MonoBehaviour:
       displayName: Beltane
       kind: fire
       sign: Beltane, by my count. The meadow keeps it too; the flowers come readier.
+      lore: the herds are walked between two fires and let out onto the summer grass.
+        the hedge goes white overnight, and the light half of the year begins.
       touch:
       - type: 0
         skill: 
@@ -2570,6 +2581,8 @@ MonoBehaviour:
       kind: quarter
       sign: Litha, by my count. The light stays long past its hour, and more comes
         drifting on it.
+      lore: "the longest day, the year at its full height. everything after it leans
+        toward the harvest, which is no loss \u2014 it is what the light was for."
       touch:
       - type: 11
         skill: 
@@ -2590,6 +2603,8 @@ MonoBehaviour:
       kind: fire
       sign: Lughnasadh, by my count. First harvest; the wood is generous with its
         keeping.
+      lore: the first sheaf is cut and eaten. the year's first proof that the summer's
+        work was work and not only hope.
       touch:
       - type: 0
         skill: 
@@ -2617,6 +2632,8 @@ MonoBehaviour:
       displayName: Mabon
       kind: quarter
       sign: Mabon, by my count. Even the caravan weighs fairer, this once.
+      lore: day and night stand level again, the other way about. what is in is in;
+        what is still out is left to whatever wants it.
       touch:
       - type: 20
         skill: 

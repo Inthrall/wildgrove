@@ -188,6 +188,7 @@ namespace Wildgrove.Data
                 displayName = s.Name,
                 kind = s.Kind,
                 sign = s.Sign,
+                lore = s.Lore,
                 touch = s.Touch.Select(MapEffect).ToList(),
                 verseLean = new List<string>(s.VerseLean),
                 northNightDays = MapNights(s.Nights?.North),

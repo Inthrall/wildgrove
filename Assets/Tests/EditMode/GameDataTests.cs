@@ -136,6 +136,8 @@ namespace Wildgrove.Data.Tests
                 Is.True, "Beltane-tide leans the flowers (design §15)");
             Assert.That(data.Wheel.Sabbats.All(s => !string.IsNullOrWhiteSpace(s.Sign)), Is.True,
                 "every sabbat gets the warden's margin line");
+            Assert.That(data.Wheel.Sabbats.All(s => !string.IsNullOrWhiteSpace(s.Lore)), Is.True,
+                "every sabbat says what its day is — the coming-sabbat sheet is a name, a countdown and this");
             Assert.That(data.Wheel.Sabbats.Single(s => s.Id == "samhain").Nights.North, Does.Contain("2026-10-31"),
                 "the wheel is hemisphere-mirrored: NH Samhain sits on SH Beltane's date (design §15)");
             Assert.That(data.Wheel.Sabbats.Single(s => s.Id == "beltane").Nights.South, Does.Contain("2026-10-31"),

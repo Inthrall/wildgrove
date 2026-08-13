@@ -49,6 +49,14 @@ namespace Wildgrove.Data
         /// <summary>The warden's margin line — the calendar is the warden's, never the land's.</summary>
         public string Sign { get; set; }
 
+        /// <summary>
+        /// What the day IS, in the practice the warden inherited — read on the
+        /// sheet that waits for a tide, where the sign would be a month early.
+        /// Still the warden's, never the land's (§7 holds): an old year's
+        /// reckoning, remembered; no spirit named and none answering.
+        /// </summary>
+        public string Lore { get; set; }
+
         /// <summary>The ambient touch: one narrow lean, read live by the sim's Wheel — never joined into the effect union.</summary>
         public List<EffectDef> Touch { get; set; } = new List<EffectDef>();
 
