@@ -459,19 +459,6 @@ namespace Wildgrove.Game
                 }
             }
 
-            // Why the plate below says "Craft instead" rather than "Craft" —
-            // the warning is on the button, the reason for it is here.
-            var displaced = _loop.CraftWouldDisplace(recipe);
-            if (displaced != null)
-            {
-                // Not "the fire is working the jam" — the card this row sits on
-                // is headed THE FIRE, and every recipe a row can displace is one
-                // of its own. Naming the station again was a word the reader had
-                // just read, and it doubled the article the display name already
-                // carries ("The Fire" → "the the fire").
-                return "busy with the " + GoodName(displaced.output);
-            }
-
             return "ready";
         }
 
