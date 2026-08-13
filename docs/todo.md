@@ -226,6 +226,29 @@ wired to nothing. The settings row lands with the audio pass.
     leads the Record page now (it is the one card here with a currency to spend),
     which makes the drift matter more, not less. Either the doc is stale or the
     card is on the wrong tab.
+- ~~**The Trail opened on no gathering plate at all**~~ ✅ RESOLVED 2026-08-13 —
+  the page's head had grown to ~1,480 canvas units against a ~1,030-unit
+  viewport, so for the ~68% of the year a tide holds the Trail opened on
+  preamble and the first plate was a viewport and a half down. Every cut was a
+  duplicate rather than a trim: the fallow weeks' countdown (the rail's cell,
+  read aloud), the tide's touch label (the tide sheet says the same sentence
+  under *While it holds*), the tracker's `· {sabbat}-tide` tail (a rail cell
+  wearing that plate stands two rows below it), and the trail-home bar — 100
+  units animating deliveries that are automatic, lossless and untappable. The
+  keeping card now folds shut behind a live head (tier · answered · closes-in,
+  plus a moss clause when a slot can be met), which made `JournalRecordFolds`
+  the journal-wide `JournalCardFolds`; both deep links into it open the fold on
+  the way through, so a door never ends in a shut drawer. Keystone mark 120 →
+  60. Design §13 Phase 2 records the rule this leaves behind: a pinned line at
+  the head of the Trail has to be worth a plate. The **carrier** went with the
+  bar and is not coming back (Mo, 2026-08-13): deliveries are automatic and
+  lossless, so the dot was an animation of a thing that cannot go wrong.
+  **Deferred:** whether the **fell pony** gets a walk of her own again. She
+  still reads on the roster (`JournalSheets.Roster.cs` — "walks her own lane"),
+  so nothing about her is invisible; what she has lost is the one place she was
+  a body moving rather than a line of text. If it is wanted back it belongs in
+  the world strip, where ambient motion costs the page nothing — never as a
+  pinned row on the Trail again.
 - **`design-doc.md` re-synced 2026-08-04** (windfall catch, the three-piece kit,
   the famXP formulas, the §12 achievement and Rewards rows). What remains there
   is voice, not accuracy: the §6 lore / §7 backstory were written for fossils
@@ -385,8 +408,11 @@ lean is a regression, not a phase. Build order:
   so ~37 is the ceiling); the Record's shelf was re-cut (dated and
   soonest-first on the day, then **cut back to a count and the kept names on
   2026-08-12** — the dates are read on the rail and the Trail's head, which is
-  where a player acts on them; design §15 records both turns); the Trail's head
-  counts the next tide's opening down through the fallow weeks; and the
+  where a player acts on them; design §15 records both turns); ~~the Trail's head
+  counts the next tide's opening down through the fallow weeks~~ **cut
+  2026-08-13** — the rail's coming-sabbat cell had made it the same countdown
+  read aloud one screen away, and it was standing above the grounds to do it
+  (see the Trail's head below); and the
   **events rail** (`EventRail.cs`, `GameHud.Events.cs`,
   `JournalSheets.Events.cs`) stands cells down the world strip's left edge —
   on screen at every tab, paid for out of the band's left MARGIN rather than

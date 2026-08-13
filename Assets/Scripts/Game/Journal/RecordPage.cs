@@ -23,7 +23,7 @@ namespace Wildgrove.Game
     /// record is the thing itself.
     /// </para>
     /// <para>
-    /// And what only records now FOLDS (see <see cref="JournalRecordFolds"/>),
+    /// And what only records now FOLDS (see <see cref="JournalCardFolds"/>),
     /// which is the Trail's rule for its grounds applied to the longer page.
     /// The cards you act on lead and stay open: the Almanac, which is where the
     /// Verdure goes, then the Folio, which is where a Choice find is pressed.
@@ -88,45 +88,6 @@ namespace Wildgrove.Game
             });
         }
 
-        // ── The fold ──────────────────────────────────────────────────────
-
-        /// <summary>
-        /// A card whose head is the fold that opens it. Shut, the head carries
-        /// <paramref name="tally"/> — the card's own count — so the folded page
-        /// reads as a table of contents with progress on it rather than as a row
-        /// of closed drawers (the Trail's rule for a folded ground).
-        /// <para>
-        /// The head is the journal's button plate rather than the card's usual
-        /// text so that it is a real control: focus reaches it, the pad presses
-        /// it, and it answers a touch the way every other plate does.
-        /// </para>
-        /// </summary>
-        private RectTransform FoldingCard(string cardId, string head, string tally, out bool open)
-        {
-            open = JournalRecordFolds.IsOpen(_recordOpen, cardId);
-            var card = Card(null);
-            card.gameObject.name = "Card_" + head;
-
-            var label = open
-                ? SizeOpen(15) + head + "</size>"
-                : SizeOpen(15) + head + "</size>" + SizeOpen(13) + "\n<color=" + Ink2Hex + ">"
-                  + tally + "</color></size>";
-
-            // The heading hands its own rect to the fold, which notes where it
-            // stands in the viewport — the rebuilt page puts it back there.
-            Button heading = null;
-            heading = Button(card, label, 400, () => _hud.FoldCard(cardId, (RectTransform)heading.transform));
-            heading.gameObject.name = "CardHeading";
-            AddFoldArrow(heading, open);
-
-            if (cardId == _hud.PendingFold)
-            {
-                _hud.FoldedHeading = (RectTransform)heading.transform;
-            }
-
-            return card;
-        }
-
         // ── The Compendium ────────────────────────────────────────────────
 
         /// <summary>
@@ -147,7 +108,7 @@ namespace Wildgrove.Game
         {
             var discovered = Compendium.DiscoveredCount(_loop.State, _loop.Data);
             var total = Compendium.TotalEntries(_loop.Data);
-            var card = FoldingCard(JournalRecordFolds.Compendium, "THE COMPENDIUM",
+            var card = FoldingCard(JournalCardFolds.Compendium, "THE COMPENDIUM",
                 discovered + " of " + total + " recorded", out var open);
             if (!open)
             {
@@ -323,7 +284,7 @@ namespace Wildgrove.Game
                 }
             }
 
-            var card = FoldingCard(JournalRecordFolds.Folio, "THE FOLIO",
+            var card = FoldingCard(JournalCardFolds.Folio, "THE FOLIO",
                 complete + " of " + _loop.Data.folioSpreads.Count + " spreads pressed", out var open);
             if (!open)
             {
@@ -598,7 +559,7 @@ namespace Wildgrove.Game
                 }
             }
 
-            var card = FoldingCard(JournalRecordFolds.DeepPages, "THE DEEP PAGES",
+            var card = FoldingCard(JournalCardFolds.DeepPages, "THE DEEP PAGES",
                 recorded + " of " + _loop.Data.insects.Count + " recorded", out var open);
             if (!open)
             {
@@ -889,7 +850,7 @@ namespace Wildgrove.Game
             // The reckoning names the card. It governs the whole wheel rather
             // than any one line of it, and the inside cover, where it is
             // changed, is the place that explains it.
-            var card = FoldingCard(JournalRecordFolds.Wheel,
+            var card = FoldingCard(JournalCardFolds.Wheel,
                 _loop.State.hemisphere == Wheel.HemisphereSouth ? "THE SOUTHERN WHEEL" : "THE NORTHERN WHEEL",
                 kept.Count + " of " + wheel.sabbats.Count + " kept", out var open);
             if (!open)

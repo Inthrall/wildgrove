@@ -179,9 +179,13 @@ namespace Wildgrove.Game
                     var need = Rite.RequiredSlots(_loop.State, _loop.Data, verse);
                     // The trailing guillemet marks the banner as a link — it
                     // jumps to the verse card, far down the Trail page.
+                    // The verse alone. A grey "· Ostara-tide" used to ride the
+                    // end of this line, two rows above a rail cell wearing the
+                    // same sabbat's plate and its countdown — the demotion the
+                    // rail was built to end, restated by the row that demoted
+                    // it. Dropped 2026-08-13; the banner says one thing.
                     _trackerText.text = "Verse of " + _labels.ZoneName(verse.zone) + ": <b>"
-                                        + Mathf.Min(done, need) + " of " + need + "</b> answered  »"
-                                        + TideTail();
+                                        + Mathf.Min(done, need) + " of " + need + "</b> answered  »";
                     _trackerPanel.SetActive(true);
                     return;
                 }
@@ -204,15 +208,6 @@ namespace Wildgrove.Game
             // strip reads as a rendering bug.
             _trackerText.text = string.Empty;
             _trackerPanel.SetActive(false);
-        }
-
-        /// <summary>The short reminder an open tide adds to a busier banner.</summary>
-        private string TideTail()
-        {
-            var tide = _loop.OpenTide();
-            return tide != null
-                ? "  <color=" + Ink2Hex + ">· " + tide.displayName + "-tide</color>"
-                : string.Empty;
         }
 
         private string KeepingWord()

@@ -222,14 +222,15 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Fold one of the Record page's cards open or shut. The landmark
-        /// matters more here than it does on the Trail, not less: the back pages
-        /// are the longest scroll in the book, and the Compendium alone changes
-        /// the page's height by a drawer of plates.
+        /// Fold one of the journal's cards open or shut. The landmark matters
+        /// more here than it does on the Trail's grounds, not less: the back
+        /// pages are the longest scroll in the book, the Compendium alone
+        /// changes the page's height by a drawer of plates, and the keeping by
+        /// most of a phone screen.
         /// </summary>
         internal void FoldCard(string cardId, RectTransform heading)
         {
-            JournalRecordFolds.Toggle(RecordOpen, cardId);
+            JournalCardFolds.Toggle(CardOpen, cardId);
             FoldAround(cardId, heading);
         }
 
@@ -268,6 +269,19 @@ namespace Wildgrove.Game
         /// </summary>
         private void ScrollToOnTrail(string landmark)
         {
+            // A door that ends in a shut drawer is not a door. The keeping folds
+            // away by default (see JournalCardFolds), and both the things that
+            // link to it — the tracker's tide row and the tide sheet's own
+            // button — are asking for the slots, not for the head that hides
+            // them. Opening it here rather than defaulting it open keeps the
+            // player's own fold: once they shut it, only another link reopens it.
+            if (landmark == JournalCardFolds.Keeping
+                && !JournalCardFolds.IsOpen(CardOpen, JournalCardFolds.Keeping))
+            {
+                CardOpen[JournalCardFolds.Keeping] = true;
+                Dirty = true;
+            }
+
             _pendingScroll = landmark;
             OpenTab(TabTrail);
             if (!_dirty)
@@ -293,7 +307,7 @@ namespace Wildgrove.Game
             {
                 case "verse":
                     return _firstVerseCard;
-                case "keeping":
+                case JournalCardFolds.Keeping:
                     return _firstKeepingCard;
                 case FoldLandmark:
                     return FoldedHeading;

@@ -229,12 +229,13 @@ namespace Wildgrove.Game
         internal Dictionary<string, bool> ZoneOpen { get; } = new Dictionary<string, bool>();
 
         /// <summary>
-        /// The Record page's cards the player has folded open or shut, by id —
-        /// held and defaulted exactly as <see cref="ZoneOpen"/> is, against
-        /// <see cref="JournalRecordFolds.IsOpen"/>'s rule rather than the
-        /// Trail's.
+        /// The journal's folding cards the player has opened or shut, by id —
+        /// the Record page's four and the Trail's keeping. Held and defaulted
+        /// exactly as <see cref="ZoneOpen"/> is, against
+        /// <see cref="JournalCardFolds.IsOpen"/>'s rule rather than the
+        /// Trail's positional one.
         /// </summary>
-        internal Dictionary<string, bool> RecordOpen { get; } = new Dictionary<string, bool>();
+        internal Dictionary<string, bool> CardOpen { get; } = new Dictionary<string, bool>();
 
         /// <summary>
         /// The heading the page is being rebuilt around, and the heading itself

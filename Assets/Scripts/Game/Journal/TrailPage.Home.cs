@@ -12,126 +12,28 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The head of the page: the trail home, and the recruit bar that appears
-    /// when a companion will answer a pile.
+    /// The head of the page: the recruit bar that appears when a companion will
+    /// answer a pile.
+    /// <para>
+    /// The trail-home line stood here until 2026-08-13 — "the trail home" on the
+    /// left, a dashed rule with the delivery batch and the fell pony walking it,
+    /// a line of status on the right. It went because it was 100 units of pinned
+    /// height at the top of the page, and by the end it was pure presentation:
+    /// deliveries had become automatic and lossless, the carrier post left with
+    /// the hauling system, and nothing on the bar was postable or even
+    /// tappable. It was an animation of a thing that could not go wrong, drawn
+    /// above the plates that can.
+    /// </para>
+    /// <para>
+    /// The carrier went with it for good. The fell pony is the open question —
+    /// she still reads on the roster ("walks her own lane"), so what she has
+    /// lost is the one place she was a body moving rather than a line of text.
+    /// If that is wanted back it belongs in the world strip, where ambient
+    /// motion already lives and costs the page nothing; not here.
+    /// </para>
     /// </summary>
     internal sealed partial class TrailPage
     {
-        /// <summary>
-        /// The trail home — "the trail home" on the left, a dotted rule with
-        /// the day's deliveries walking it, and a line of status on the right.
-        /// Pure presentation now: deliveries are automatic and lossless, so
-        /// the dot is the delivery batch walking to camp (one per
-        /// economy.delivery.batchSeconds while anything is pooled), and the
-        /// fell pony keeps her half-step alongside while she's owned. Nothing
-        /// here is postable any more — the carrier post left with the hauling
-        /// system.
-        /// </summary>
-        private void BuildTrailHomeLine()
-        {
-            var bar = MakePanel("TrailHome", _body, CardPaper);
-            var layout = bar.AddComponent<HorizontalLayoutGroup>();
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.padding = new RectOffset(12, 12, 4, 4);
-            layout.spacing = 10;
-            var element = bar.AddComponent<LayoutElement>();
-            element.flexibleHeight = 0;
-            element.minHeight = 100f;
-            AddBorder(bar, Ink2);
-
-            MakeText(bar.transform, "the trail home", 20, TextAnchor.MiddleLeft, Ink2, _hand);
-
-            var lineGo = MakeRect("Line", (RectTransform)bar.transform).gameObject;
-            var lineElement = lineGo.AddComponent<LayoutElement>();
-            lineElement.flexibleWidth = 1f;
-            lineElement.minHeight = 22f;
-
-            var rule = new GameObject("Rule", typeof(Image));
-            rule.transform.SetParent(lineGo.transform, false);
-            var ruleImage = rule.GetComponent<Image>();
-            ruleImage.sprite = DashSprite();
-            ruleImage.type = Image.Type.Tiled;
-            ruleImage.raycastTarget = false;
-            var ruleRect = (RectTransform)rule.transform;
-            ruleRect.anchorMin = new Vector2(0f, 0.5f);
-            ruleRect.anchorMax = new Vector2(1f, 0.5f);
-            ruleRect.offsetMin = new Vector2(0f, -1f);
-            ruleRect.offsetMax = new Vector2(0f, 1f);
-
-            var dot = new GameObject("Carrier", typeof(Image));
-            dot.transform.SetParent(lineGo.transform, false);
-            var dotImage = dot.GetComponent<Image>();
-            dotImage.color = MossDeep;
-            dotImage.raycastTarget = false;
-            var carrierDot = (RectTransform)dot.transform;
-            carrierDot.sizeDelta = new Vector2(14f, 14f);
-
-            // The pony's lane shares the one dashed line — two dots walking it
-            // is the whole picture of a second lane, and it costs no layout.
-            // She keeps half a step out of phase so the pair reads as two
-            // bodies rather than one blurred dot.
-            var ponyGo = new GameObject("Pony", typeof(Image));
-            ponyGo.transform.SetParent(lineGo.transform, false);
-            var ponyImage = ponyGo.GetComponent<Image>();
-            ponyImage.color = MossDeep;
-            ponyImage.raycastTarget = false;
-            var ponyDot = (RectTransform)ponyGo.transform;
-            ponyDot.sizeDelta = new Vector2(14f, 14f);
-
-            var status = MakeText(bar.transform, string.Empty, 20, TextAnchor.MiddleRight, Ink2, _hand);
-
-            // The dot walks per frame; the status only changes on the
-            // cadence, like every other label on the page.
-            _frameUpdaters.Add(() =>
-            {
-                var batchSeconds = _loop.Data.economy?.delivery?.batchSeconds ?? 0.0;
-                var pending = false;
-                foreach (var node in _loop.State.nodes)
-                {
-                    if (node.basket > BigDouble.Zero)
-                    {
-                        pending = true;
-                        break;
-                    }
-                }
-
-                var show = pending && batchSeconds > 0.0;
-                var showPony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation) != null;
-                carrierDot.gameObject.SetActive(show);
-                ponyDot.gameObject.SetActive(showPony);
-
-                var fraction = show
-                    ? Mathf.Clamp01((float)(_loop.State.deliveryProgress / batchSeconds))
-                    : 0f;
-                if (show)
-                {
-                    carrierDot.anchorMin = new Vector2(fraction, 0.5f);
-                    carrierDot.anchorMax = new Vector2(fraction, 0.5f);
-                    carrierDot.anchoredPosition = Vector2.zero;
-                }
-
-                if (showPony)
-                {
-                    var ponyFraction = Mathf.Repeat(fraction + 0.5f, 1f);
-                    ponyDot.anchorMin = new Vector2(ponyFraction, 0.5f);
-                    ponyDot.anchorMax = new Vector2(ponyFraction, 0.5f);
-                    ponyDot.anchoredPosition = Vector2.zero;
-                }
-            });
-
-            _liveUpdaters.Add(() =>
-            {
-                var pony = Stationing.OccupantOf(_loop.State, Familiar.PonyStation);
-                status.text = pony != null
-                    ? pony.name + " walks at " + _loop.WardenNamePossessive() + " side"
-                    : "the day's pickings walk themselves home";
-            });
-        }
-
         /// <summary>
         /// The recruit bar — a bordered call-out at the top of the Trail page
         /// that only shows while a verse-earned pile waits (design §4). The next

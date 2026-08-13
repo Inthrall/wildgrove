@@ -34,7 +34,7 @@ namespace Wildgrove.Game
         protected Dictionary<string, float> _flashAges => _hud.FlashAges;
         protected Dictionary<string, Text> _tendFlashes => _hud.TendFlashes;
         protected Dictionary<string, bool> _zoneOpen => _hud.ZoneOpen;
-        protected Dictionary<string, bool> _recordOpen => _hud.RecordOpen;
+        protected Dictionary<string, bool> _cardOpen => _hud.CardOpen;
         protected RectTransform _firstVerseCard { get => _hud.FirstVerseCard; set => _hud.FirstVerseCard = value; }
         protected RectTransform _firstKeepingCard { get => _hud.FirstKeepingCard; set => _hud.FirstKeepingCard = value; }
         protected GameObject _sheet { get => _hud.Sheet; set => _hud.Sheet = value; }
@@ -49,6 +49,73 @@ namespace Wildgrove.Game
         // ─── Coordinator calls ───
         protected void SetNote(string text) => _hud.SetNote(text);
         protected void Flash(Component near, string message, bool good) => _hud.Flash(near, message, good);
+
+        // ─── The fold ───
+
+        /// <summary>
+        /// A card whose head is the fold that opens it. Shut, the head carries
+        /// <paramref name="tally"/> — the card's own count — so the folded page
+        /// reads as a table of contents with progress on it rather than as a row
+        /// of closed drawers (the Trail's rule for a folded ground).
+        /// <para>
+        /// The head is the journal's button plate rather than the card's usual
+        /// text so that it is a real control: focus reaches it, the pad presses
+        /// it, and it answers a touch the way every other plate does.
+        /// </para>
+        /// <para>
+        /// Shared rather than the Record page's own since the keeping learnt to
+        /// fold (2026-08-13). It lives here for the same reason
+        /// <see cref="StationPlate"/> does: two pages drawing the same control
+        /// two ways is one bug and two wordings.
+        /// </para>
+        /// </summary>
+        protected RectTransform FoldingCard(string cardId, string head, string tally, out bool open)
+        {
+            return FoldingCard(cardId, head, tally, out open, out _);
+        }
+
+        /// <summary>
+        /// <see cref="FoldingCard(string,string,string,out bool)"/>, handing
+        /// back the head itself — for a card whose tally is a clock rather than
+        /// a count, and so has to be rewritten on the cadence rather than
+        /// written once at the build.
+        /// </summary>
+        protected RectTransform FoldingCard(string cardId, string head, string tally, out bool open, out Button heading)
+        {
+            open = JournalCardFolds.IsOpen(_cardOpen, cardId);
+            var card = JournalWidgets.Card(null);
+            card.gameObject.name = "Card_" + head;
+
+            var label = FoldingCardLabel(head, tally, open);
+
+            // The heading hands its own rect to the fold, which notes where it
+            // stands in the viewport — the rebuilt page puts it back there.
+            Button pressed = null;
+            pressed = JournalWidgets.Button(card, label, 400, () => _hud.FoldCard(cardId, (RectTransform)pressed.transform));
+            pressed.gameObject.name = "CardHeading";
+            JournalWidgets.AddFoldArrow(pressed, open);
+
+            if (cardId == _hud.PendingFold)
+            {
+                _hud.FoldedHeading = (RectTransform)pressed.transform;
+            }
+
+            heading = pressed;
+            return card;
+        }
+
+        /// <summary>
+        /// The head's own label: the card's name, and under it the tally it
+        /// wears while it is shut. Separate from the build so a live tally can
+        /// be rewritten by the same rule that wrote it.
+        /// </summary>
+        protected static string FoldingCardLabel(string head, string tally, bool open)
+        {
+            return open
+                ? JournalWidgets.SizeOpen(15) + head + "</size>"
+                : JournalWidgets.SizeOpen(15) + head + "</size>" + JournalWidgets.SizeOpen(13)
+                  + "\n<color=" + JournalTheme.Ink2Hex + ">" + tally + "</color></size>";
+        }
 
         /// <summary>
         /// The muted " $x.xx" a real-money line wears once the store has

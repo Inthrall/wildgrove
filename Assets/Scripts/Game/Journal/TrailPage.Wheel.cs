@@ -12,23 +12,31 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Wheel's presence on the trail: the open tide, the next sabbat coming,
-    /// and the keeping card with a row per slot.
+    /// The Wheel's presence on the trail: the open tide's sign, and the keeping
+    /// card — folded shut behind its own tally — with a row per slot. The fallow
+    /// weeks draw nothing here; that is the events rail's post, not the page's.
     /// </summary>
     internal sealed partial class TrailPage
     {
         /// <summary>
         /// The tide's line (design §15): while a sabbat's tide is open, the
         /// warden's margin names it at the head of the Trail — the calendar is
-        /// the warden's, the land's answer belongs on the land's page.
+        /// the warden's, the land's answer belongs on the land's page. The sign
+        /// alone; it is a mood, not a reading.
         /// <para>
-        /// Through the fallow weeks it counts the next one down instead of
-        /// showing nothing. Showing nothing was the whole of the Wheel's
-        /// presence outside a tide: the tracker row, this line and the keeping
-        /// card all stand down together, and the only surface left naming a
-        /// sabbat was the fold sheet — which a player has no reason to open.
-        /// The countdown is a margin aside, not a card: a tide that is not open
-        /// is not something to act on.
+        /// Two things left this line on 2026-08-13, both of them said better
+        /// elsewhere and both of them costing the page height the grounds
+        /// wanted. The touch label ("+20% … while Ostara-tide holds — the Rite's
+        /// verses ask none of it") went to the tide's own sheet, which already
+        /// carried the same sentence under <em>While it holds</em>: it is a
+        /// static clause that does not change for a month, and it was two
+        /// wrapped lines above the first plate for every one of those days. And
+        /// the fallow weeks' countdown went entirely — it existed because
+        /// showing nothing was once the whole of the Wheel's presence outside a
+        /// tide, and the events rail retired that argument on 2026-08-11 by
+        /// standing a coming-sabbat cell on every tab with the same
+        /// <see cref="NumberFormat.Countdown"/> in its caption. The line was the
+        /// cell read aloud.
         /// </para>
         /// </summary>
         private void BuildTideLine()
@@ -36,64 +44,10 @@ namespace Wildgrove.Game
             var tide = _loop.OpenTide();
             if (tide == null)
             {
-                BuildNextSabbatLine();
                 return;
             }
 
             MakeText(_body, "<i>" + tide.sign + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _hand);
-
-            // What the tide actually does — said out loud, so the lean doesn't
-            // read as a bug when it lapses at the fire. And the half that
-            // matters after the drawn season's DemandWeight retired (design
-            // §8): the verse's asks are NOT scaled by it — keeping the sabbat
-            // never raises the Rite's price.
-            var gives = EffectsLabel(tide.touch);
-            if (gives.Length > 0)
-            {
-                MakeText(_body, gives + " · while " + tide.displayName + "-tide holds — the Rite's verses ask none of it",
-                    15, TextAnchor.MiddleCenter, Ink2);
-            }
-        }
-
-        /// <summary>
-        /// The fallow weeks' one line: which sabbat is coming, and how long
-        /// until its tide opens. Live-updated, because a countdown that only
-        /// moves when the page is rebuilt is a countdown that reads as stuck.
-        /// </summary>
-        private void BuildNextSabbatLine()
-        {
-            if (_loop.NextSabbat(out _) == null)
-            {
-                return;
-            }
-
-            var line = MakeText(_body, string.Empty, 17, TextAnchor.MiddleCenter, Ink2, _hand);
-            void Reread()
-            {
-                // Re-read the sabbat, not just the clock: a tide that opens
-                // while this page is up makes the whole line wrong, and the
-                // rebuild that replaces it with the warden's sign is a beat
-                // behind the cadence that notices.
-                var ahead = _loop.NextSabbat(out _);
-                if (ahead == null || _loop.OpenTide() != null)
-                {
-                    line.gameObject.SetActive(false);
-                    return;
-                }
-
-                line.gameObject.SetActive(true);
-                var away = _loop.NextNightOf(ahead, out _, out var opensMs)
-                    ? (opensMs - _loop.NowUnixMs()) / 1000.0
-                    : 0.0;
-                line.text = away > 0
-                    ? "<i>" + ahead.displayName + " is coming — the tide opens in " + NumberFormat.Countdown(away) + ".</i>"
-                    : "<i>" + ahead.displayName + " is coming.</i>";
-            }
-
-            // Drawn once now rather than a quarter-second later: the page must
-            // never appear with a blank line standing where this one goes.
-            Reread();
-            _liveUpdaters.Add(Reread);
         }
 
         /// <summary>
@@ -101,6 +55,16 @@ namespace Wildgrove.Game
         /// beside the Rite and never of it — no verse count, no gift pile, no
         /// ground moves with it. Tiers pay a little Amber; the first writes
         /// the year's claim. Nothing here through the fallow weeks.
+        /// <para>
+        /// It FOLDS, and folds shut by default, from 2026-08-13 — the one card
+        /// in the book that does so while carrying buttons (see
+        /// <see cref="JournalCardFolds"/> for why it earns the exception). A
+        /// plate, a standing line and five slot rows is close to a whole phone
+        /// viewport, and it stood at the head of the Trail for the ~68% of the
+        /// year a tide holds: opening the page put no gathering plate on screen
+        /// at all. Shut, its head says everything the card's own summary said,
+        /// and wears the moss when the stores can answer a slot.
+        /// </para>
         /// </summary>
         private void BuildKeepingCard()
         {
@@ -111,9 +75,26 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var card = Card("THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE");
-            // The tracker's tide row deep-links here.
+            var head = "THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE";
+            var card = FoldingCard(JournalCardFolds.Keeping, head, KeepingTally(), out var open, out var heading);
+            // The tracker's tide row and the tide sheet's button both deep-link
+            // here, and both open the fold on the way (GameHud.ScrollToOnTrail).
             _firstKeepingCard = card;
+
+            if (!open)
+            {
+                // Every word of the head moves: the tier as slots are answered,
+                // the clock as the tide runs down, the moss as the stores rise
+                // to a slot. Written once at the build it would be a day stale
+                // by the evening, which is the one thing a countdown may not be.
+                var label = heading.GetComponentInChildren<Text>();
+                if (label != null)
+                {
+                    _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, KeepingTally(), false));
+                }
+
+                return;
+            }
 
             // The sabbat's plate, the day the art pass paints it — until then
             // the card is the words alone.
@@ -132,17 +113,59 @@ namespace Wildgrove.Game
                     return;
                 }
 
-                var closeMs = _loop.OpenTideCloseMs();
-                var days = (long)System.Math.Ceiling((closeMs - _loop.NowUnixMs()) / 86400000.0);
-                var tier = _loop.KeepingTierReached();
-                var word = tier == 1 ? "kept the eve" : tier == 2 ? "kept the day" : tier == 3 ? "kept the wheel" : "unkept yet";
-                standing.text = word + " · " + (days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days");
+                standing.text = KeepingWord() + " · " + KeepingCloseWord();
             });
 
             for (var i = 0; i < keeping.slots.Count; i++)
             {
                 BuildKeepingSlotRow(card, i);
             }
+        }
+
+        /// <summary>
+        /// The keeping as one line, for the head that stands where the card is
+        /// folded away: how it is kept, how much of it is answered, how long is
+        /// left, and — in the journal's invitation ink — whether the stores can
+        /// answer a slot this minute. That last clause is the whole of what a
+        /// shut card owes the player, and it is the Trail's own rule for a
+        /// folded ground, which says "the watch stands empty" the same way.
+        /// </summary>
+        private string KeepingTally()
+        {
+            var keeping = _loop.CurrentKeeping();
+            if (keeping == null)
+            {
+                return "the tide has closed";
+            }
+
+            var line = KeepingWord() + " · " + Keeping.CompletedSlotCount(keeping)
+                       + " of " + keeping.slots.Count + " set down · " + KeepingCloseWord();
+            for (var i = 0; i < keeping.slots.Count; i++)
+            {
+                if (!Keeping.IsSlotComplete(keeping.slots[i]) && _loop.CanOfferKeeping(i))
+                {
+                    return line + " · <color=" + MossDeepHex + ">something to set down</color>";
+                }
+            }
+
+            return line;
+        }
+
+        private string KeepingWord()
+        {
+            switch (_loop.KeepingTierReached())
+            {
+                case 1: return "kept the eve";
+                case 2: return "kept the day";
+                case 3: return "kept the wheel";
+                default: return "unkept yet";
+            }
+        }
+
+        private string KeepingCloseWord()
+        {
+            var days = (long)System.Math.Ceiling((_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 86400000.0);
+            return days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days";
         }
 
         private void BuildKeepingSlotRow(RectTransform card, int slotIndex)

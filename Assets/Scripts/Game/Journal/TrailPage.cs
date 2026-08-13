@@ -14,14 +14,21 @@ namespace Wildgrove.Game
     /// <summary>
     /// The Trail page: the land's own business, ground by ground. This file
     /// assembles the page and keeps the zone headings that fold it, with the rest
-    /// in the partials beside it: <c>Home</c> (the trail home and the recruit
-    /// bar), <c>Wheel</c> (the tide, the next sabbat, the keeping),
-    /// <c>Nodes</c> (a ground's plates), <c>Watch</c> (its observation site) and
-    /// <c>Verses</c> (the Rite).
+    /// in the partials beside it: <c>Home</c> (the recruit bar), <c>Wheel</c>
+    /// (the tide and the keeping), <c>Nodes</c> (a ground's plates),
+    /// <c>Watch</c> (its observation site) and <c>Verses</c> (the Rite).
     /// <para>
-    /// Posting lives on the world strip's badges and on the trail-home line at
-    /// the head of this page (one body per post), so the plates here carry only
+    /// Posting lives on the world strip's badges, so the plates here carry only
     /// yields, replanting and planters. The kith roster lives on the Warden page.
+    /// </para>
+    /// <para>
+    /// The page's head is kept SHORT, deliberately, and that is a rule rather
+    /// than a preference (2026-08-13). Everything above the first ground is
+    /// status, and the plates are the only thing on the page to act on: a head
+    /// that grew to the tide's line, its touch label, an unfolded keeping card
+    /// and the trail-home bar put the first gathering plate a viewport and a
+    /// half down a page whose whole subject is gathering. A new pinned line at
+    /// the top of this page has to be worth a plate, and almost nothing is.
     /// </para>
     /// </summary>
     internal sealed partial class TrailPage : JournalSection
@@ -32,7 +39,6 @@ namespace Wildgrove.Game
         {
             BuildTideLine();
             BuildKeepingCard();
-            BuildTrailHomeLine();
             BuildRecruitBar();
 
             var unlockedZones = ZonesInOrder();
@@ -61,10 +67,13 @@ namespace Wildgrove.Game
 
                 // The zone's keystone specimen heads its section (design §3) —
                 // a modest mark, not a full plate; the strip carries the art.
+                // 60 from 2026-08-13, halved: at 120 it was the last thing
+                // standing between the ground's name and its first plate, and a
+                // mark that costs half a plate of height is not a modest one.
                 var keystone = ArtLibrary.ForZone(zone.id);
                 if (keystone != null)
                 {
-                    PlateImage(_body, keystone, 120f).name = "Keystone";
+                    PlateImage(_body, keystone, 60f).name = "Keystone";
                 }
 
                 foreach (var node in _loop.State.nodes)
