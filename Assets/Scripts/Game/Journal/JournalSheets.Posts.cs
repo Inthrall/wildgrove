@@ -199,11 +199,27 @@ namespace Wildgrove.Game
                     ? string.Empty
                     : "  " + SizeOpen(15) + "<color=" + Ink2Hex + ">" + StationLabel(captured.stationId) + "</color></size>";
 
+                // What this body is worth HERE, which the row could not say at
+                // all before: a species trait is a line of prose on an arrival
+                // sheet and nowhere near the moment it decides a posting. In
+                // moss, the colour every other number that helps is written in,
+                // and blank for everyone the ground gains nothing from — so the
+                // eye finds the one that matters instead of reading twelve rows.
+                //
+                // Greyed with the verb on a blocked row: the plate tint does not
+                // reach the text (which is why the verb colours itself), and a
+                // moss number would otherwise be the liveliest thing on a row
+                // that cannot be tapped.
+                var bonus = PostBonus(captured, node, watchZone != null);
+                var bonusTail = bonus.Length == 0
+                    ? string.Empty
+                    : "  " + SizeOpen(15) + "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + bonus + "</color></size>";
+
                 var button = PictureButton(sheet, portrait,
                     "<color=" + (blocked ? Ink2Hex : MossDeepHex) + ">" + verb + "</color>  "
                     // Wider than a plain row: two plates and a verb on ONE line
                     // needs the width the sheet's own notice already uses.
-                    + captured.name + speciesTail + whereTail, working, 740, 120f, () =>
+                    + captured.name + speciesTail + whereTail + bonusTail, working, 740, 120f, () =>
                 {
                     Station(captured, stationId);
                     CloseSheet();

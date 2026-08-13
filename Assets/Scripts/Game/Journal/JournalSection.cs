@@ -227,6 +227,7 @@ namespace Wildgrove.Game
         protected string BundleHaveLabel(List<Buildings.MaterialCost> bundle) => _hud.Labels.BundleHaveLabel(bundle);
         protected string PlanterDisplayName(PlanterData planter, string targetId) => _hud.Labels.PlanterDisplayName(planter, targetId);
         protected string PlanterGives(PlanterData planter) => _hud.Labels.PlanterGives(planter);
+        protected string PostBonus(Familiar familiar, NodeState node, bool isWatchPost) => _hud.Labels.PostBonus(familiar, node, isWatchPost);
         protected string NodeSkill(string targetId) => _hud.Labels.NodeSkill(targetId);
     }
 }

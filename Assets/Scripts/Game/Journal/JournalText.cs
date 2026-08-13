@@ -345,6 +345,44 @@ namespace Wildgrove.Game
             }
         }
 
+        /// <summary>
+        /// What a body would add to the post being filled, in the fewest words
+        /// that still say which number moves — "+40% yield". Empty where its
+        /// species trait does nothing here, which is most of the roster for any
+        /// one ground. The wording is <see cref="PlanterGives"/>'s on purpose:
+        /// the same two numbers under the same two words, wherever they are read.
+        /// <para>
+        /// The factor comes from the sim's own <see cref="Traits"/> answers
+        /// rather than from the trait's printed value, which settles two things
+        /// for free: whether the trait covers THIS node's resource, and the
+        /// Kinship deepening a companion has earned. A badge reading the species'
+        /// flat 40% would under-read a long-kept companion at the one moment the
+        /// number decides a posting.
+        /// </para>
+        /// <para>
+        /// Deliberately only what the POST gains. The raven's windfall bonus and
+        /// the pony's warden bonus apply wherever their bearer walks, so printing
+        /// them among a ground's choices would answer "who should work here?"
+        /// with a number that has nothing to do with here. choiceBonus is absent
+        /// for a duller reason: <see cref="Traits.ChoiceBonusAt"/> sums who is
+        /// stationed already and cannot be asked hypothetically, and no shipped
+        /// species carries the kind. It needs its own accessor if one ever does.
+        /// </para>
+        /// </summary>
+        internal string PostBonus(Familiar familiar, NodeState node, bool isWatchPost)
+        {
+            var factor = isWatchPost
+                ? Traits.DigSpeedFactor(familiar, _loop.Data)
+                : node != null ? Traits.NodeYieldFactor(familiar, node, _loop.Data) : 1.0;
+            if (factor <= 1.0)
+            {
+                return string.Empty;
+            }
+
+            var percent = UnityEngine.Mathf.RoundToInt((float)((factor - 1.0) * 100.0));
+            return "+" + percent + "%" + (isWatchPost ? " sketching" : " yield");
+        }
+
         /// <summary>The gathering skill of the node with this id, or null when the target is a dig site.</summary>
         internal string NodeSkill(string targetId)
         {

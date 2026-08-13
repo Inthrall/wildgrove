@@ -160,7 +160,17 @@ namespace Wildgrove.Game
                 // Taking an empty post from rest needs a free slot; stepping in
                 // for a holder always works — the vacated slot covers it.
                 var blocked = captured.IsResting && occupantHere == null && !hasRoom;
-                var tile = PlateTile(grid, ArtLibrary.ForSpecies(captured.speciesId), captured.name,
+                // What the ground gains from this body, under its name. The
+                // caption strip is 56 deep against a 13pt name, so a second
+                // line at 12 costs no geometry — and the tiles are a drawer of
+                // near-identical portraits, which is exactly where a number is
+                // the only thing that tells them apart.
+                var bonus = PostBonus(captured, node, isWatchPost);
+                var caption = bonus.Length == 0
+                    ? captured.name
+                    : captured.name + "\n" + SizeOpen(12) + "<color=" + MossDeepHex + ">" + bonus + "</color></size>";
+
+                var tile = PlateTile(grid, ArtLibrary.ForSpecies(captured.speciesId), caption,
                     captured.IsResting ? null : StationPlate(captured.stationId), () =>
                     {
                         Station(captured, stationId);
