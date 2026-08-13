@@ -124,12 +124,16 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The action strip along a plate's bottom edge — what can be bought
-        /// here, centred. Centre rather than left because the strip holds whole
-        /// purchases of its own rather than continuing the rows above it: pinned
-        /// left, two plates of different widths left a ragged gutter down the
-        /// right of every card that had one. The plates size themselves to their
-        /// words (childControlWidth, no force-expand), so centring keeps the
-        /// strip balanced whichever of them is showing.
+        /// here, pinned right. The plates size themselves to their words
+        /// (childControlWidth, no force-expand), so the strip is as wide as
+        /// whatever is showing. Pinned left, that left a ragged gutter down the
+        /// right of every card; centred (until 2026-08-14) it left BOTH edges
+        /// ragged, so a column of nodes had no straight line anywhere on it,
+        /// each card's "Plant back" starting and ending at whatever width its
+        /// own planter name and price happened to make. Right puts the last plate
+        /// under the post plate above it, which is already flush right (Row
+        /// gives the label the flexible width), so every card reads down one
+        /// margin and only the interior is ragged.
         /// </summary>
         internal static Transform ActionRow(RectTransform card)
         {
@@ -139,7 +143,7 @@ namespace Wildgrove.Game
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childAlignment = TextAnchor.MiddleRight;
             layout.spacing = 8;
             return go.transform;
         }

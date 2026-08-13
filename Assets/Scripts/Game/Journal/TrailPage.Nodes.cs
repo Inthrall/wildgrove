@@ -66,8 +66,8 @@ namespace Wildgrove.Game
         /// "0.##" can reach a six-character mantissa. A deep run therefore grows
         /// this plate a line, the same accepted loss as the bundle above.
         /// Deliberately NOT matched to the planter's 420: two equal plates would
-        /// pad this one with 160 of empty paper, and a centred strip has no row
-        /// to fill.
+        /// pad this one with 160 of empty paper, and the strip hangs off the
+        /// right margin rather than filling a row it has to justify against.
         /// </para>
         /// <para>
         /// <b>The ceiling is the SPREAD, not the phone.</b> The Trail is the
