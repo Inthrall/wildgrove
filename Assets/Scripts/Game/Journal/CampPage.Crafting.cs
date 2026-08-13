@@ -209,6 +209,13 @@ namespace Wildgrove.Game
             var head = CraftStationName(stationId).ToUpperInvariant();
             var foldId = JournalCardFolds.Station(stationId);
             var card = FoldingCard(foldId, head, StationTally(recipes), standsOpen, out var open, out var heading);
+            // The same plate the Building Lines card wears for this line — the
+            // two cards are the one place, seen from its two sides. It rides the
+            // heading's right margin, the Trail's rule for a ground's keystone:
+            // on the card it was a loose plate between the station's name and
+            // its first recipe, and it only drew while the station was open, so
+            // a camp with the work at the fire was a column of bare names.
+            AddHeadingMark(heading, ArtLibrary.ForBuilding(stationId));
             if (!open)
             {
                 // The tally is a progress bar written in words, so it moves —
@@ -221,14 +228,6 @@ namespace Wildgrove.Game
                 }
 
                 return;
-            }
-
-            // The same plate the Building Lines card wears for this line — the
-            // two cards are the one place, seen from its two sides.
-            var plate = ArtLibrary.ForBuilding(stationId);
-            if (plate != null)
-            {
-                PlateImage(card, plate, 120f);
             }
 
             var rule = MakeText(card, "<i>" + StationRule(stationId, stations) + "</i>",
@@ -275,7 +274,7 @@ namespace Wildgrove.Game
                     if (displaced != null && _loop.IsCrafting(captured))
                     {
                         SetNote(CraftStationName(captured.station).ToLowerInvariant() + " sets aside the "
-                                + GoodName(displaced.output) + " and takes up the " + GoodName(captured.output) + ".");
+                                + GoodName(displaced.output) + " for the " + GoodName(captured.output) + ".");
                     }
 
                     // Which station stands open follows the work, so stopping

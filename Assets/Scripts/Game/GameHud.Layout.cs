@@ -143,9 +143,28 @@ namespace Wildgrove.Game
             // Margin note — the handwritten aside, UNDER the tracker. Hidden
             // while it has nothing to say (ShowNote), and on a spread it stands
             // in the tracker's row rather than owning a line of its own.
-            _note = MakeText(root, string.Empty, 24, TextAnchor.MiddleLeft, Ink2, _hand);
-            FlexibleWidth(_note.gameObject, 1f);
-            _note.gameObject.SetActive(false);
+            //
+            // It lives in a lane of its own height rather than sizing the row
+            // itself: a note is pinned ABOVE the page, so a sentence that wrapped
+            // to two lines shoved the whole journal down and pulled it back up
+            // again six seconds later. The lane is one line, always; the mask
+            // clips what will not fit and MarqueeLine walks it across.
+            var noteLane = MakeRect("NoteLane", root);
+            _noteLane = noteLane;
+            noteLane.gameObject.AddComponent<RectMask2D>();
+            FlexibleWidth(noteLane.gameObject, 1f);
+            _note = MakeText(noteLane, string.Empty, 24, TextAnchor.MiddleLeft, Ink2, _hand);
+            // Overflow, not Wrap: the wrap is the thing being prevented, and the
+            // mask is what stops the overflow reaching the page margins.
+            _note.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var noteRect = (RectTransform)_note.transform;
+            noteRect.anchorMin = Vector2.zero;
+            noteRect.anchorMax = new Vector2(0f, 1f);
+            noteRect.pivot = new Vector2(0f, 0.5f);
+            noteRect.anchoredPosition = Vector2.zero;
+            var marquee = noteLane.gameObject.AddComponent<MarqueeLine>();
+            marquee.label = _note;
+            noteLane.gameObject.SetActive(false);
 
             // World gap — the WorldView strip draws here. Capped rather than
             // flexible: on tall screens the slack goes to the page (more cards
@@ -297,29 +316,29 @@ namespace Wildgrove.Game
         /// </summary>
         private void ApplyNoteFold(bool wide)
         {
-            if (_trackerRow == null || _note == null || _root == null)
+            if (_trackerRow == null || _noteLane == null || _root == null)
             {
                 return;
             }
 
             if (wide)
             {
-                if (_note.transform.parent != _trackerRow)
+                if (_noteLane.parent != _trackerRow)
                 {
-                    _note.transform.SetParent(_trackerRow, false);
+                    _noteLane.SetParent(_trackerRow, false);
                     // Right of the tracker plate — the same order the column
                     // reads top-to-bottom, turned on its side.
-                    _note.transform.SetAsLastSibling();
+                    _noteLane.SetAsLastSibling();
                 }
 
                 return;
             }
 
-            if (_note.transform.parent != _root)
+            if (_noteLane.parent != _root)
             {
-                _note.transform.SetParent(_root, false);
+                _noteLane.SetParent(_root, false);
                 // Back to its own line, immediately below the tracker's row.
-                _note.transform.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
+                _noteLane.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
             }
         }
 

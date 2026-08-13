@@ -63,18 +63,18 @@ namespace Wildgrove.Game
                 if (arrived != null)
                 {
                     SetNote(arrived.IsResting
-                        ? "you left a pile of " + target.resourceId + " and stepped back. something said yes. it rests at camp until you give it a post."
-                        : "you left a pile of " + target.resourceId + " and stepped back. something said yes.");
+                        ? "something said yes to the " + target.resourceId + ". it rests at camp, unposted."
+                        : "something said yes to the " + target.resourceId + ".");
                     _dirty = true;
                 }
                 else if (_loop.GiftWaitsOnAmber(target))
                 {
-                    SetNote("the pile is ready, but the asking is " + NumberFormat.Short(_loop.GiftCallingCost())
-                            + " amber. it will wait.");
+                    SetNote("the pile is ready. the asking is "
+                            + NumberFormat.Short(_loop.GiftCallingCost()) + " amber.");
                 }
                 else
                 {
-                    SetNote("not enough " + target.resourceId + " for a proper pile. keep picking.");
+                    SetNote("not enough " + target.resourceId + " for a pile. keep picking.");
                 }
             });
             line.gameObject.AddComponent<LayoutElement>().minHeight = 52f;

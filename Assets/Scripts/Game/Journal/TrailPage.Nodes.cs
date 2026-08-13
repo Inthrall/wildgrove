@@ -208,13 +208,13 @@ namespace Wildgrove.Game
                 if (_loop.Replant(captured))
                 {
                     Flash(replant, "planted back", true);
-                    SetNote("planted " + captured.resourceId + " back into the ground. it earns tone, not numbers.");
+                    SetNote("planted " + captured.resourceId + " back. it earns tone, not numbers.");
                     _dirty = true;
                 }
                 else
                 {
                     Flash(replant, "not enough " + captured.resourceId, false);
-                    SetNote("not enough " + captured.resourceId + " to plant back. the land can wait.");
+                    SetNote("not enough " + captured.resourceId + " to plant back.");
                 }
             });
 

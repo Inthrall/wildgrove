@@ -94,6 +94,10 @@ namespace Wildgrove.Game
         private GameObject _ledgerRule;
         private RectTransform _trackerRow;
         private Text _note;
+        // The note's own lane — one line tall, masked, and what actually stands
+        // in the layout. The Text inside it is wider than the lane whenever the
+        // sentence is (see MarqueeLine), so the note is never the row.
+        private RectTransform _noteLane;
         private Text _trackerText;
         private GameObject _trackerPanel;
         private Button _foldButton;
@@ -359,6 +363,13 @@ namespace Wildgrove.Game
         /// null once both are. Keyboard/gamepad tail only where one can exist —
         /// on a phone the margin note is flavour, not a manual for keys it
         /// doesn't have.
+        /// <para>
+        /// Short, because these are the notes that STAY: every other one is
+        /// gone in six seconds, and these stand in the margin for as long as the
+        /// gesture goes unlearned. The lane holds one line
+        /// (<see cref="MarqueeLine"/>), so a teaching line that outran it would
+        /// spend the whole tutorial walking itself back and forth.
+        /// </para>
         /// </summary>
         private string HintText()
         {
@@ -370,13 +381,13 @@ namespace Wildgrove.Game
             if (!_hintPostDone)
             {
                 return _hintCatchDone
-                    ? press + " a plate to post someone · the land only gives to the posted."
-                    : press + " a plate to post someone · catch the windfalls drifting up the strip" + catchTail;
+                    ? press + " a plate to post someone · the posted gather."
+                    : press + " a plate to post someone · catch the windfalls" + catchTail;
             }
 
             return _hintCatchDone
                 ? null
-                : "catch the windfalls drifting up the strip · each pays a burst of goods" + catchTail;
+                : "catch the windfalls · each pays a burst of goods" + catchTail;
         }
 
         /// <summary>

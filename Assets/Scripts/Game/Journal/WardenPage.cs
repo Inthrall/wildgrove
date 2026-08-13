@@ -273,7 +273,7 @@ namespace Wildgrove.Game
                     {
                         Flash(action, "on " + _loop.WardenName(), true);
                         SetNote("took the " + captured.displayName.ToLowerInvariant()
-                                + " out of the bag. what it replaced keeps, and nothing is lost.");
+                                + " out of the bag. nothing is lost.");
                         _dirty = true;
                     }
 
@@ -283,7 +283,7 @@ namespace Wildgrove.Game
                 if (_loop.CraftGear(captured))
                 {
                     Flash(action, "bound tight", true);
-                    SetNote("bound the " + captured.displayName.ToLowerInvariant() + " tight. the work will mind it less.");
+                    SetNote("bound the " + captured.displayName.ToLowerInvariant() + " tight.");
                     _dirty = true;
                 }
             });
@@ -606,17 +606,17 @@ namespace Wildgrove.Game
                 {
                     case StoreResult.Purchased:
                     case StoreResult.AlreadyOwned:
-                        SetNote("a place opens at your side. thank you for keeping the grove.");
+                        SetNote("a place opens at your side. thank you.");
                         _dirty = true;
                         break;
                     case StoreResult.Failed:
                         SetNote("that didn't go through. nothing was charged.");
                         break;
                     case StoreResult.Unavailable:
-                        SetNote("the store couldn't be reached. nothing was charged. try again shortly.");
+                        SetNote("the store couldn't be reached. nothing was charged.");
                         break;
                     case StoreResult.Deferred:
-                        SetNote("the payment hasn't cleared yet. the place opens when Play finishes it.");
+                        SetNote("not cleared yet. the place opens when Play is done.");
                         break;
                 }
             });

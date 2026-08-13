@@ -59,11 +59,13 @@ namespace Wildgrove.Game
         /// It FOLDS, and folds shut by default, from 2026-08-13 — the one card
         /// in the book that does so while carrying buttons (see
         /// <see cref="JournalCardFolds"/> for why it earns the exception). A
-        /// plate, a standing line and five slot rows is close to a whole phone
+        /// plate, a standing line and five slot rows was close to a whole phone
         /// viewport, and it stood at the head of the Trail for the ~68% of the
         /// year a tide holds: opening the page put no gathering plate on screen
         /// at all. Shut, its head says everything the card's own summary said,
-        /// and wears the moss when the stores can answer a slot.
+        /// and wears the moss when the stores can answer a slot. The plate came
+        /// off the card and into the head on 2026-08-14, which takes 200 units
+        /// off the open card as well and gives the shut one a face.
         /// </para>
         /// </summary>
         private void BuildKeepingCard()
@@ -77,6 +79,13 @@ namespace Wildgrove.Game
 
             var head = "THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE";
             var card = FoldingCard(JournalCardFolds.Keeping, head, KeepingTally(), out var open, out var heading);
+            // The sabbat's plate rides the heading's right margin, opposite the
+            // chevron — the same place a ground's keystone stands, and for the
+            // same reason: on the card it cost 200 units of the head this page
+            // is trying to keep short, and it only drew while the card was open,
+            // so the tide the head is named for had no face for most of its run.
+            // (Null until the art pass paints it; then the card is words alone.)
+            AddHeadingMark(heading, ArtLibrary.ForJournal("sabbat-" + tide.id));
             // The tracker's tide row and the tide sheet's button both deep-link
             // here, and both open the fold on the way (GameHud.ScrollToOnTrail).
             _firstKeepingCard = card;
@@ -94,14 +103,6 @@ namespace Wildgrove.Game
                 }
 
                 return;
-            }
-
-            // The sabbat's plate, the day the art pass paints it — until then
-            // the card is the words alone.
-            var plate = ArtLibrary.ForJournal("sabbat-" + tide.id);
-            if (plate != null)
-            {
-                PlateImage(card, plate, 200f);
             }
 
             var standing = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
@@ -180,12 +181,12 @@ namespace Wildgrove.Game
                 if (_loop.OfferKeeping(slotIndex))
                 {
                     Flash(offer, "set down", true);
-                    SetNote("set it down at the fire. the day is a little more kept.");
+                    SetNote("set it down at the fire. the day is more kept.");
                 }
                 else
                 {
                     Flash(offer, "not the whole offering", false);
-                    SetNote("the whole offering, or none at all. the stores are short.");
+                    SetNote("the whole offering or none. the stores are short.");
                 }
             });
 

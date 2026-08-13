@@ -145,8 +145,8 @@ namespace Wildgrove.Game
                 if (_loop.RenameWarden(typed))
                 {
                     SetNote(named
-                        ? "a new name, paid in resin, set at the front of the journal."
-                        : "you set your name at the front of the journal.");
+                        ? "a new name, paid in resin, set at the front."
+                        : "your name, set at the front of the journal.");
                     _dirty = true;
                 }
 
@@ -213,8 +213,8 @@ namespace Wildgrove.Game
                 if (_loop.NameCamp(typed))
                 {
                     SetNote(cost > 0
-                        ? "a name for the camp, paid in resin, written across the pages."
-                        : "a name for the camp, written across the pages.");
+                        ? "a camp name, paid in resin, written in."
+                        : "a name for the camp, written in.");
                     _dirty = true;
                 }
 

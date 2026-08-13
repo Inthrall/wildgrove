@@ -184,7 +184,7 @@ namespace Wildgrove.Game
                 // 2026-08-06.) It pops empty, and the strip itself says so
                 // with a grey deflate, not just a sentence elsewhere.
                 _world?.ResolveCatch("nothing inside", false);
-                SetNote("the windfall bursts over the " + node.resourceId + ", with nothing inside.");
+                SetNote("the windfall bursts over the " + node.resourceId + ", empty.");
                 return;
             }
 

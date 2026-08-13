@@ -26,7 +26,9 @@ namespace Wildgrove.Game
     /// from it (<see cref="BuildBrewsCard"/>) and the caravan that trades it
     /// (<c>StoresPage.Exchange</c>, the Camp page's until 2026-08-13). Both came
     /// here from elsewhere, and for the same reason: what a card is ABOUT is
-    /// which page it belongs on.
+    /// which page it belongs on. The caravan stands at the FOOT of the page
+    /// (2026-08-14) — see <see cref="BuildStoresPage"/> for why the drawer
+    /// outranks it.
     /// </para>
     /// <para>
     /// One tile per <em>stack</em>, not per resource: a resource held Poor,
@@ -50,12 +52,23 @@ namespace Wildgrove.Game
 
         internal void BuildStoresPage()
         {
-            // The two cards that DO something lead the page, and the drawer they
-            // act on follows: it grows a tile per stack, so anything under it
-            // drifts further out of reach with every zone the trail opens.
+            // The drawer is what the page is FOR, so it opens on it — bar the
+            // bottles, which are a shelf of stock themselves and read as the
+            // drawer's first row rather than as a card above it. The caravan
+            // comes last, below the drawer it trades out of.
+            //
+            // The Exchange led the page until 2026-08-14, on the argument that a
+            // card you act on outranks a card you read. What that missed is that
+            // the drawer grows a tile per stack: by the third zone the caravan
+            // was a full card of preamble on the page whose whole subject is
+            // stock, and answering "what can I spend" meant scrolling past a
+            // deal that turns over on its own every few minutes whether or not
+            // it was looked at. It costs the caravan nothing to stand at the
+            // foot — the deal is the same deal wherever the card is — and the
+            // drawer above it is the thing a trade is decided from.
             BuildBrewsCard();
-            BuildExchangeCard();
             BuildStockCard();
+            BuildExchangeCard();
         }
 
         // ── The drawer ────────────────────────────────────────────────────
@@ -210,7 +223,7 @@ namespace Wildgrove.Game
                 var live = _loop.TinctureRemainingSeconds(tincture);
                 SetNote(BrewReading(tincture, live > 0.0
                     ? "none in stock. the one drunk has " + NumberFormat.Duration(live) + " to run"
-                    : "none brewed. it is cooked at the fire with the other recipes"));
+                    : "none brewed. it is cooked at the fire"));
             });
 
             _liveUpdaters.Add(() =>

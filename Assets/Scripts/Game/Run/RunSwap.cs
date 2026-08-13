@@ -31,7 +31,7 @@ namespace Wildgrove.Game
         /// The journal is where the game says something happened without
         /// stopping to say it.
         /// </summary>
-        private const string AdoptedNotice = "another device had walked further. the book opens there.";
+        private const string AdoptedNotice = "another device walked further. the book opens there.";
 
         private readonly IRunHost _host;
         private readonly RunPersistence _persistence;

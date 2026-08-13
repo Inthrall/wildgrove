@@ -446,7 +446,7 @@ namespace Wildgrove.Game
             var current = _loop.CurrentExchangeOffer();
             if (current == null || current.from != offer.from || current.to != offer.to)
             {
-                SetNote("the caravan had already turned that deal over. nothing traded.");
+                SetNote("the caravan had turned that deal over. nothing traded.");
                 _dirty = true;
                 return;
             }
@@ -469,11 +469,11 @@ namespace Wildgrove.Game
             {
                 Flash(trade, "+" + NumberFormat.Short(got) + " " + GoodName(offer.to), true);
                 SetNote("traded " + TierName(quality) + GoodName(offer.from) + " for " + GoodName(offer.to)
-                        + ". a nod. gone before the count.");
+                        + ". a nod, and gone.");
             }
             else
             {
-                SetNote("that pile was spoken for before the deal was struck. nothing traded.");
+                SetNote("that pile was spoken for. nothing traded.");
             }
 
             _dirty = true;

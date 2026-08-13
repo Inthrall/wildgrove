@@ -7,8 +7,8 @@ namespace Wildgrove.Game.Tests
     /// Pins the journal's card-folding rule. It is what keeps the two longest
     /// surfaces in the book short without maintenance, so the cases that matter
     /// are the ones nobody presses: a card that only records is shut on arrival,
-    /// the Record card with a button on it is not, and the keeping is shut
-    /// despite having five.
+    /// the keeping is shut despite carrying five buttons, and a card nobody
+    /// wrote a rule for is open — because a card shut by accident has no door.
     /// <para>
     /// The station cards come in with a default of their own instead, and the
     /// case worth pinning there is the press on a station the rule would have
@@ -26,18 +26,34 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
-        public void IsOpen_ACardThatOnlyRecords_ArrivesFoldedShut()
+        public void IsOpen_ARecordCardBelowTheAlmanac_ArrivesFoldedShut()
         {
             Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Compendium), Is.False,
                 "the compendium is a drawer of every gatherable — unfolded it is the whole page");
             Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.DeepPages), Is.False);
             Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Wheel), Is.False);
+            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Folio), Is.False,
+                "nine spreads of plates, and pressing one waits on a Choice find turning up");
         }
 
         [Test]
-        public void IsOpen_TheFolio_ArrivesOpenBecauseItIsTheOneWithAButtonOnIt()
+        public void IsOpen_TheAlmanac_ArrivesOpen()
         {
-            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Folio), Is.True);
+            // The card the Record page opens on — where a fold's Verdure is
+            // spent, and a fold is what sends anyone to the back pages at all.
+            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Almanac), Is.True);
+        }
+
+        [Test]
+        public void Toggle_ShutsTheAlmanac_WhichWasOpenByDefault()
+        {
+            // It folds like everything else on the page (2026-08-14) rather than
+            // being a card with no head to press: a default-open card that could
+            // not be put away would make "opens the page" and "cannot be closed"
+            // the same fact, which is no use to a warden with nothing unspent.
+            JournalCardFolds.Toggle(_choices, JournalCardFolds.Almanac);
+
+            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Almanac), Is.False);
         }
 
         [Test]
@@ -79,11 +95,12 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
-        public void Toggle_ShutsTheFolio_WhichWasOpenByDefault()
+        public void Toggle_ShutsACardWithNoRuleOfItsOwn_WhichWasOpenByDefault()
         {
-            JournalCardFolds.Toggle(_choices, JournalCardFolds.Folio);
-            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Folio), Is.False,
-                "a default-open card has to be shuttable, or the fold is decoration");
+            // The other direction from the Record cards above: a default-OPEN
+            // card has to be shuttable too, or the fold in its head is decoration.
+            JournalCardFolds.Toggle(_choices, "a-card-nobody-wrote-a-rule-for");
+            Assert.That(JournalCardFolds.IsOpen(_choices, "a-card-nobody-wrote-a-rule-for"), Is.False);
         }
 
         [Test]
@@ -100,16 +117,18 @@ namespace Wildgrove.Game.Tests
             JournalCardFolds.Toggle(_choices, JournalCardFolds.Compendium);
             Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.DeepPages), Is.False);
             Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Wheel), Is.False);
-            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Folio), Is.True);
+            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Folio), Is.False);
+            Assert.That(JournalCardFolds.IsOpen(_choices, JournalCardFolds.Almanac), Is.True);
         }
 
         [Test]
         public void NoStore_ReadsTheDefaultsAndSwallowsTheToggle()
         {
             // The HUD holds the store, and a page built before it exists must
-            // not throw — the rule is the fallback, not the dictionary.
-            Assert.That(JournalCardFolds.IsOpen(null, JournalCardFolds.Folio), Is.True);
-            Assert.That(JournalCardFolds.IsOpen(null, JournalCardFolds.Compendium), Is.False);
+            // not throw — the rule is the fallback, not the dictionary. Both
+            // answers, so a null store is read rather than defaulted wholesale.
+            Assert.That(JournalCardFolds.IsOpen(null, "a-card-nobody-wrote-a-rule-for"), Is.True);
+            Assert.That(JournalCardFolds.IsOpen(null, JournalCardFolds.Folio), Is.False);
             Assert.DoesNotThrow(() => JournalCardFolds.Toggle(null, JournalCardFolds.Folio));
         }
 

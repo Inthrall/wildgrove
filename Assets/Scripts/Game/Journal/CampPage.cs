@@ -114,7 +114,7 @@ namespace Wildgrove.Game
                     if (_loop.BuyBuildingLevel(captured))
                     {
                         Flash(build, "raised", true);
-                        SetNote(captured.displayName.ToLowerInvariant() + " goes up. the camp sleeps closer to the work.");
+                        SetNote(captured.displayName.ToLowerInvariant() + " goes up. the camp sleeps nearer the work.");
                         // A raise can bring a station up to a recipe's heat,
                         // which adds a row to a card above this one.
                         KeepInPlace(BuildingsAnchor, card);

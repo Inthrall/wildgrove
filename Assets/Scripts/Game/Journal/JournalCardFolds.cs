@@ -26,10 +26,10 @@ namespace Wildgrove.Game
     /// That rule is why this isn't <see cref="JournalZones"/>. The Trail's
     /// default for its grounds is positional (whichever ground is newest stands
     /// open, so the page shortens itself as the trail grows) and a card has no
-    /// newest entry. Here the default is what a card is <em>for</em>: the Folio
-    /// holds specimens waiting to be pressed, which is why a player opens the
-    /// back pages mid-run at all, and the rest answer questions that are asked
-    /// on purpose.
+    /// newest entry. Here the default is what a card is <em>for</em>: the
+    /// Almanac is where a fold's Verdure is spent, which is why a player opens
+    /// the back pages the minute a fold lands, and the rest answer questions
+    /// that are asked on purpose.
     /// </para>
     /// <para>
     /// An id nobody has a rule for stands open. A card that defaulted shut by
@@ -43,6 +43,16 @@ namespace Wildgrove.Game
     /// </summary>
     public static class JournalCardFolds
     {
+        /// <summary>
+        /// The Almanac. It FOLDS like every other card on the back pages, and
+        /// it is the only one that arrives open — see <see cref="ShutUnasked"/>.
+        /// It was a plain unfoldable card until 2026-08-14, which made "the card
+        /// the page opens on" and "the card that cannot be put away" the same
+        /// fact by accident: a warden with no Verdure to spend had a tree of
+        /// learned lines nailed to the top of the page and no head to press.
+        /// </summary>
+        public const string Almanac = "almanac";
+
         public const string Compendium = "compendium";
         public const string Folio = "folio";
         public const string DeepPages = "deep-pages";
@@ -67,9 +77,28 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The cards that keep their contents folded away until asked for. The
-        /// Folio is the one Record card left out: it is the only one of the
-        /// four with a button on it.
+        /// The cards that keep their contents folded away until asked for —
+        /// every Record card but the Almanac, and the Trail's keeping.
+        /// <para>
+        /// The Folio joined them on 2026-08-14, so the Record page now opens on
+        /// the Almanac alone. It was the one card left out, on the grounds that
+        /// it is the only Record card with a button — but a button is not what
+        /// made the Almanac worth the height, the Verdure is: the Almanac is
+        /// where a fold's whole reward is spent, and it is asked for the moment
+        /// a fold lands. The Folio is nine spreads of plates, each a strip of
+        /// specimens, and pressing one is a thing done when a Choice find turns
+        /// up rather than on the way past. Shut, its head still carries the
+        /// count of spreads pressed, which is the question the page is opened
+        /// with.
+        /// </para>
+        /// <para>
+        /// The Almanac is <em>absent</em> from this set rather than unfoldable
+        /// (also 2026-08-14). Every card on the back pages now folds, so the
+        /// page has one rule and no exceptions to it, and being the card the
+        /// page opens on is a default the player can overrule like any other —
+        /// which matters most for the warden it is least use to, the one with
+        /// nothing unspent to spend on it.
+        /// </para>
         /// <para>
         /// The station cards are not in here and cannot be: which one stands
         /// open is positional, the Trail's kind of rule rather than this one
@@ -80,6 +109,7 @@ namespace Wildgrove.Game
         private static readonly HashSet<string> ShutUnasked = new HashSet<string>
         {
             Compendium,
+            Folio,
             DeepPages,
             Wheel,
             Keeping,

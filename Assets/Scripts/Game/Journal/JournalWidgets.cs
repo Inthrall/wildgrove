@@ -273,6 +273,18 @@ namespace Wildgrove.Game
         /// opposite number, so a folded section is named on the left and shown
         /// on the right.
         /// <para>
+        /// This is where a folding card's picture goes, everywhere in the book
+        /// (2026-08-14; the Trail's grounds had it alone from 2026-08-13). A
+        /// plate on the card itself is wrong twice over: it is a loose picture
+        /// between the section's name and its first row, costing 120–240 units
+        /// of a page that wanted them, and it is drawn only while the section is
+        /// OPEN — so a book folded down to its heads is a column of bare words.
+        /// In the margin it costs nothing at all (the heading already carries a
+        /// 120 floor) and a shut section keeps its face. The sabbat's plate on
+        /// the keeping, the building's on a crafting station and the tree on the
+        /// Almanac all came here from their cards.
+        /// </para>
+        /// <para>
         /// Call this AFTER <see cref="AddFoldArrow"/>: both widen the name's
         /// inset and the later call wins, so the wider lane has to be the one
         /// set last. The inset goes on BOTH sides for the reason the chevron's

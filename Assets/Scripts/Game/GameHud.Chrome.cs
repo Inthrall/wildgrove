@@ -244,19 +244,25 @@ namespace Wildgrove.Game
         /// game: a blank band between the ledger and the tracker that the open
         /// page could have had. <see cref="UpdateWorldGap"/> measures only the
         /// rows that are standing, so the page collects the difference.
+        /// <para>
+        /// The lane is what stands or goes, never the label inside it: the lane
+        /// carries the mask and the one-line height (<see cref="MarqueeLine"/>),
+        /// so hiding the label alone would leave an empty line of paper behind
+        /// and hiding it in the wide fold would leave a gap in the tracker's row.
+        /// </para>
         /// </summary>
         private void ShowNote(string text)
         {
-            if (_note == null)
+            if (_note == null || _noteLane == null)
             {
                 return;
             }
 
             _note.text = text ?? string.Empty;
             var speaking = _note.text.Length > 0;
-            if (_note.gameObject.activeSelf != speaking)
+            if (_noteLane.gameObject.activeSelf != speaking)
             {
-                _note.gameObject.SetActive(speaking);
+                _noteLane.gameObject.SetActive(speaking);
             }
         }
 

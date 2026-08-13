@@ -151,7 +151,7 @@ namespace Wildgrove.Game
                         // The store was never reached, so the button must come
                         // back — this is the one outcome a second press can fix.
                         RestoreRemoveAdsButton();
-                        SetNote("The store couldn't be reached. Nothing was charged. Try again shortly.");
+                        SetNote("The store couldn't be reached. Nothing was charged.");
                         break;
                     case StoreResult.Deferred:
                         // Play holds the order until the payment clears. A second
@@ -164,7 +164,7 @@ namespace Wildgrove.Game
                             SetButtonLabel(_removeAdsButton, "Waiting on Play…");
                         }
 
-                        SetNote("Play is still finishing that payment. The ads step aside when it clears, with nothing more to do.");
+                        SetNote("Not cleared yet. The ads step aside when Play is done.");
                         break;
                 }
             });

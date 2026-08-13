@@ -25,8 +25,10 @@ namespace Wildgrove.Game
     /// <para>
     /// And what only records now FOLDS (see <see cref="JournalCardFolds"/>),
     /// which is the Trail's rule for its grounds applied to the longer page.
-    /// The cards you act on lead and stay open: the Almanac, which is where the
-    /// Verdure goes, then the Folio, which is where a Choice find is pressed.
+    /// The Almanac alone leads and stays open, because it is where a fold's
+    /// Verdure is spent and a fold is what sends anyone here. The Folio folded
+    /// in with the rest on 2026-08-14: pressing a spread is done when a Choice
+    /// find turns up, not on the way past nine spreads of plates.
     /// </para>
     /// </summary>
     internal sealed class RecordPage : JournalSection
@@ -496,7 +498,7 @@ namespace Wildgrove.Game
                 if (_loop.FixSpecimen(resourceId))
                 {
                     Flash(fix, "pressed to the page", true);
-                    SetNote("pressed it between these pages, where it will outlast the camp.");
+                    SetNote("pressed between these pages. it outlasts the camp.");
                     _dirty = true;
                 }
             });
@@ -946,7 +948,7 @@ namespace Wildgrove.Game
                         return;
                     }
 
-                    SetNote("Play Games didn't answer, so the board stays shut for now.");
+                    SetNote("Play Games didn't answer. the board stays shut.");
                 });
             });
 
@@ -988,7 +990,7 @@ namespace Wildgrove.Game
                 // exactly once — so the board is the thing that gives way.
                 if (_sheet != null)
                 {
-                    SetNote("the board answered while the page was busy. ask again in a moment.");
+                    SetNote("the board answered while the page was busy. ask again.");
                     return;
                 }
 
@@ -1011,6 +1013,14 @@ namespace Wildgrove.Game
         /// the same reason: the thing that can be USED goes above the things
         /// that are read, or it drifts further out of reach with every entry the
         /// record gains.
+        /// <para>
+        /// It FOLDS, from 2026-08-14, and is the one card on the page that
+        /// arrives open. Leading the page and being unfoldable had been the same
+        /// fact by accident: a warden with nothing unspent had a tree of learned
+        /// lines nailed to the top of the back pages and no head to press. Shut,
+        /// its head carries the two things the card is opened to find out — how
+        /// much of the song is sung, and whether there is anything to spend.
+        /// </para>
         /// </summary>
         private void BuildAlmanacCard()
         {
@@ -1019,18 +1029,28 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var card = Card("THE ALMANAC");
+            var card = FoldingCard(JournalCardFolds.Almanac, "THE ALMANAC", AlmanacTally(),
+                out var open, out var heading);
+            AddHeadingMark(heading, ArtLibrary.ForJournal("almanac"));
+            if (!open)
+            {
+                // The unspent figure moves on its own — a fold lands, a line is
+                // learned — so the shut head is rewritten on the cadence rather
+                // than written once at the build, the way the keeping's is.
+                var shutLabel = heading.GetComponentInChildren<Text>();
+                if (shutLabel != null)
+                {
+                    _liveUpdaters.Add(() => shutLabel.text = FoldingCardLabel("THE ALMANAC", AlmanacTally(), false));
+                }
+
+                return;
+            }
+
             var header = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
             _liveUpdaters.Add(() =>
             {
                 header.text = Mathf.FloorToInt((float)_loop.AvailableVerdure()) + " Verdure unspent";
             });
-
-            var tree = ArtLibrary.ForJournal("almanac");
-            if (tree != null)
-            {
-                PlateImage(card, tree, 240f);
-            }
 
             foreach (var node in _loop.Data.almanac)
             {
@@ -1062,7 +1082,7 @@ namespace Wildgrove.Game
                         if (_loop.BuyAlmanacNode(endlessNode))
                         {
                             Flash(take, "sung", true);
-                            SetNote("the long song takes another verse. it crosses every fold with you.");
+                            SetNote("the long song takes another verse. it crosses the fold.");
                             _dirty = true;
                         }
                     });
@@ -1110,7 +1130,7 @@ namespace Wildgrove.Game
                     if (_loop.BuyAlmanacNode(captured))
                     {
                         Flash(buy, "learned", true);
-                        SetNote("the almanac takes a new line. it crosses every fold with you.");
+                        SetNote("the almanac takes a new line. it crosses the fold.");
                         _dirty = true;
                     }
                 });
@@ -1122,6 +1142,38 @@ namespace Wildgrove.Game
                     SetButtonTint(buy, ok);
                 });
             }
+        }
+
+        /// <summary>
+        /// The song as one line, for the head that stands where the card is
+        /// folded away: how much of it is sung, and — in the journal's
+        /// invitation ink — whether there is Verdure waiting to be spent. That
+        /// second clause is the whole of what a shut Almanac owes the player,
+        /// and it is the rule the keeping's head and a folded ground both keep.
+        /// <para>
+        /// Verses count with lines, not apart from them. An endless line is
+        /// sung over and over (<c>almanacLevels</c>) while the rest are learned
+        /// once (<c>almanacNodeIds</c>), and a head that counted only the second
+        /// would read "0 lines learned" at a warden four verses into the long
+        /// song.
+        /// </para>
+        /// </summary>
+        private string AlmanacTally()
+        {
+            var learned = _loop.State.almanacNodeIds.Count;
+            foreach (var pair in _loop.State.almanacLevels)
+            {
+                learned += pair.Value;
+            }
+
+            var line = learned + (learned == 1 ? " line sung" : " lines sung");
+            var unspent = Mathf.FloorToInt((float)_loop.AvailableVerdure());
+            if (unspent <= 0)
+            {
+                return line;
+            }
+
+            return line + " · <color=" + MossDeepHex + ">" + unspent + " Verdure unspent</color>";
         }
 
         /// <summary>

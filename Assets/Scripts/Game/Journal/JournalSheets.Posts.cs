@@ -261,7 +261,7 @@ namespace Wildgrove.Game
             if (!_loop.StationFamiliar(familiar, stationId))
             {
                 // No room at the warden's side — every place already walks (design §4).
-                SetNote("every slot is walked. rest someone before " + familiar.name + " takes a post.");
+                SetNote("every slot is walked. rest someone for " + familiar.name + ".");
                 return;
             }
 

@@ -143,7 +143,7 @@ namespace Wildgrove.Game
                     {
                         if (_loop.BuySecondQueue())
                         {
-                            SetNote("amber spent: the stations each take a second work in hand.");
+                            SetNote("amber spent: every station takes a second work.");
                             _dirty = true;
                         }
                     });
@@ -189,8 +189,8 @@ namespace Wildgrove.Game
                 {
                     Flash(look, "asking Play Games", true);
                     _loop.GameServices.SignInInteractive(signedIn => SetNote(signedIn
-                        ? "signed in, so Play Games can set the cache out now."
-                        : "Play Games didn't answer, so the cache keeps for now."));
+                        ? "signed in. Play Games can set the cache out."
+                        : "Play Games didn't answer. the cache keeps."));
                     return;
                 }
 
@@ -221,7 +221,7 @@ namespace Wildgrove.Game
                         return;
                     }
 
-                    SetNote("nothing set out yet. Play Games leaves the cache for a challenge met.");
+                    SetNote("nothing set out yet. the cache waits on a challenge.");
                 });
             });
 
@@ -342,11 +342,11 @@ namespace Wildgrove.Game
                     }
                     else if (result == StoreResult.Unavailable)
                     {
-                        SetNote("the caravan couldn't be reached, nothing was charged. try again shortly.");
+                        SetNote("the caravan couldn't be reached. nothing charged.");
                     }
                     else if (result == StoreResult.Deferred)
                     {
-                        SetNote("the payment hasn't cleared yet. the amber arrives when Play finishes it.");
+                        SetNote("not cleared yet. the amber comes when Play is done.");
                     }
                 });
             });

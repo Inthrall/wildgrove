@@ -162,7 +162,7 @@ namespace Wildgrove.Game
                                 // The sheet describes that book — it goes, rather
                                 // than rewrite its lines with numbers that never
                                 // landed.
-                                SetNote("the book moved on while that played. nothing was doubled.");
+                                SetNote("the book moved on while that played. nothing doubled.");
                                 CloseSheet();
                                 return;
                             }

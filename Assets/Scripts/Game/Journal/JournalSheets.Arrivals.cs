@@ -132,7 +132,7 @@ namespace Wildgrove.Game
                 if (!string.IsNullOrWhiteSpace(typed) && typed.Trim() != familiar.name
                     && !_loop.RenameFamiliar(familiar, typed))
                 {
-                    SetNote("not enough amber for a chosen name, so the suggestion holds.");
+                    SetNote("not enough amber for a chosen name. it holds.");
                 }
 
                 _loop.TakePendingArrival();

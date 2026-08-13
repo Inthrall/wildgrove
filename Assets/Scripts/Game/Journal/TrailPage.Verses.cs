@@ -230,12 +230,12 @@ namespace Wildgrove.Game
                         {
                             var units = PlainNumber(System.Math.Floor(given.ToDouble()));
                             Flash(offer, "set down " + units + " " + slot.resource, true);
-                            SetNote("set down " + units + " " + slot.resource + ". all of it. no answer. not yet.");
+                            SetNote("set down " + units + " " + slot.resource + ". no answer. not yet.");
                         }
                         else
                         {
                             Flash(offer, "not the whole offering", false);
-                            SetNote("the whole offering, or none at all. the stores are short.");
+                            SetNote("the whole offering or none. the stores are short.");
                         }
                     });
                     break;
@@ -246,14 +246,14 @@ namespace Wildgrove.Game
                         {
                             Flash(offer, "set down", true);
                             SetNote(slot.count > 1
-                                ? "set the perfect ones down. they deserved better than a page, maybe."
-                                : "set the perfect one down. it deserved better than a page, maybe.");
+                                ? "set the perfect ones down. better than a page, maybe."
+                                : "set the perfect one down. better than a page, maybe.");
                         }
                         else
                         {
                             Flash(offer, slot.count > 1 ? "too few such finds in hand" : "no such find in hand", false);
                             SetNote(slot.count > 1
-                                ? "the whole offering, or none at all. the drawer is short."
+                                ? "the whole offering or none. the drawer is short."
                                 : "no such find in hand. the site is patient.");
                         }
                     });
@@ -264,7 +264,7 @@ namespace Wildgrove.Game
                         if (_loop.OfferSketch(verse, slotIndex))
                         {
                             Flash(offer, "page torn out", true);
-                            SetNote("tore the page out for them. that portion must be watched again.");
+                            SetNote("tore the page out. that portion is to draw again.");
                         }
                         else
                         {

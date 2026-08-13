@@ -62,7 +62,7 @@ namespace Wildgrove.Game
             {
                 // The tide closed between the cell being painted and the finger
                 // landing on it. Nothing to say and nothing to do — say that.
-                SetNote("the tide has closed; the fire keeps what it was given.");
+                SetNote("the tide has closed. the fire keeps what it got.");
                 return;
             }
 
@@ -324,7 +324,7 @@ namespace Wildgrove.Game
 
                     _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
                     SetNote(NumberFormat.Duration(hours * 3600.0)
-                            + " pass in a breath, and the kith kept to the work.");
+                            + " pass in a breath. the kith kept to it.");
                     _dirty = true;
                 });
         }
