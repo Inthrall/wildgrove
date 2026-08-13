@@ -111,7 +111,8 @@ namespace Wildgrove.Game
             var discovered = Compendium.DiscoveredCount(_loop.State, _loop.Data);
             var total = Compendium.TotalEntries(_loop.Data);
             var card = FoldingCard(JournalCardFolds.Compendium, "THE COMPENDIUM",
-                discovered + " of " + total + " recorded", out var open);
+                discovered + " of " + total + " recorded", out var open, out var heading);
+            AddHeadingMark(heading, ArtLibrary.ForJournal("compendium"));
             if (!open)
             {
                 return;
@@ -287,7 +288,9 @@ namespace Wildgrove.Game
             }
 
             var card = FoldingCard(JournalCardFolds.Folio, "THE FOLIO",
-                complete + " of " + _loop.Data.folioSpreads.Count + " spreads pressed", out var open);
+                complete + " of " + _loop.Data.folioSpreads.Count + " spreads pressed",
+                out var open, out var heading);
+            AddHeadingMark(heading, ArtLibrary.ForJournal("folio"));
             if (!open)
             {
                 return;
@@ -562,7 +565,8 @@ namespace Wildgrove.Game
             }
 
             var card = FoldingCard(JournalCardFolds.DeepPages, "THE DEEP PAGES",
-                recorded + " of " + _loop.Data.insects.Count + " recorded", out var open);
+                recorded + " of " + _loop.Data.insects.Count + " recorded", out var open, out var heading);
+            AddHeadingMark(heading, ArtLibrary.ForJournal("deep-pages"));
             if (!open)
             {
                 return;
@@ -854,7 +858,11 @@ namespace Wildgrove.Game
             // changed, is the place that explains it.
             var card = FoldingCard(JournalCardFolds.Wheel,
                 _loop.State.hemisphere == Wheel.HemisphereSouth ? "THE SOUTHERN WHEEL" : "THE NORTHERN WHEEL",
-                kept.Count + " of " + wheel.sabbats.Count + " kept", out var open);
+                kept.Count + " of " + wheel.sabbats.Count + " kept", out var open, out var heading);
+            // The wheel itself, not a sabbat off it: the card governs the whole
+            // turn of the year, and a mark wearing one festival's plate would
+            // pick a winner out of the eight the card exists to hold together.
+            AddHeadingMark(heading, ArtLibrary.ForJournal("wheel"));
             if (!open)
             {
                 return;

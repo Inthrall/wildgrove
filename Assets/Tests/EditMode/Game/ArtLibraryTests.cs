@@ -159,7 +159,11 @@ namespace Wildgrove.Game.Tests
         {
             // Keyed by plain name rather than a data id, so nothing but this
             // would notice a renamed file.
-            foreach (var name in new[] { "paper", "cairn", "caravan", "waystone", "almanac", "chest", "glass" })
+            foreach (var name in new[]
+                     {
+                         "paper", "cairn", "caravan", "waystone", "almanac", "chest", "glass",
+                         "compendium", "folio", "deep-pages", "wheel",
+                     })
             {
                 Assert.That(ArtLibrary.ForJournal(name), Is.Not.Null, "journal furnishing " + name);
             }
@@ -168,6 +172,36 @@ namespace Wildgrove.Game.Tests
             {
                 Assert.That(ArtLibrary.ForLine(name), Is.Not.Null, "line motif " + name);
             }
+        }
+
+        [Test]
+        public void EveryFoldingCardOnTheRecordPage_HasItsOwnMark()
+        {
+            // Every folding section in the book wears a picture in its heading,
+            // and these five are the Record page's. Distinctness is the pin, as
+            // with the sabbats: a mis-keyed mark still loads a mark, and five
+            // heads wearing one beetle would pass a not-null check happily.
+            var seen = new System.Collections.Generic.HashSet<UnityEngine.Sprite>();
+            foreach (var name in new[] { "almanac", "compendium", "folio", "deep-pages", "wheel" })
+            {
+                var mark = ArtLibrary.ForJournal(name);
+                Assert.That(mark, Is.Not.Null, "fold mark " + name);
+                Assert.That(seen.Add(mark), Is.True, name + " must be its own mark, not a neighbour's");
+            }
+        }
+
+        [Test]
+        public void TheAlmanac_DrawsTheAuthoredMark_NotTheSourcedPlateItReplaced()
+        {
+            // ui-almanac-tree.jpg left with the 2026-08-14 pass and its row left
+            // Resources/Art/CREDITS.md with it. Resources.Load returns null for
+            // a file that is gone rather than throwing, so a key pointing back
+            // at it would simply draw no mark at all — which is the state this
+            // whole pass exists to end, and it would be silent.
+            Assert.That(UnityEngine.Resources.Load<Sprite>("Art/UI/Journal/ui-almanac-tree"), Is.Null,
+                "the sourced engraving is gone; nothing may key onto it");
+            Assert.That(ArtLibrary.ForJournal("almanac"),
+                Is.SameAs(UnityEngine.Resources.Load<Sprite>("Art/UI/Journal/ui-almanac")));
         }
 
         [Test]

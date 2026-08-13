@@ -200,7 +200,26 @@ namespace Wildgrove.Game
             { "cairn", Ui + "Journal/ui-cairn" },
             { "caravan", Ui + "Journal/ui-caravan" },
             { "waystone", Ui + "Journal/ui-waystone" },
-            { "almanac", Ui + "Journal/ui-almanac-tree" },
+            // The Record page's five fold marks — a branching tree of learned
+            // lines, the hand lens, a specimen under its paper corners, a beetle
+            // half drawn and half let go, and the year's eight spokes. Every
+            // other folding section in the book wears a picture in its heading
+            // and these cards had none, so the back pages folded down to a
+            // column of bare words. Authored in the chest's and the glass's hand
+            // (tools/make-record-marks.py), so nothing is owed for any of them.
+            //
+            // The Almanac's was a sourced 1657 arbor consanguinitatis until
+            // 2026-08-14: the right subject in the wrong hand, and once it stood
+            // in a heading beside the other four it was plainly a photograph of
+            // an engraving among line drawings, portrait and white-grounded
+            // where they are transparent. Public domain, so nothing was owed for
+            // it either and dropping it cost the colophon nothing — only a row
+            // in Resources/Art/CREDITS.md.
+            { "almanac", Ui + "Journal/ui-almanac" },
+            { "compendium", Ui + "Journal/ui-compendium" },
+            { "folio", Ui + "Journal/ui-folio" },
+            { "deep-pages", Ui + "Journal/ui-deep-pages" },
+            { "wheel", Ui + "Journal/ui-wheel" },
 
             // The events rail's cache cell — the chest Play sets out each week,
             // not the Amber inside it. An authored ink drawing in the barrel's

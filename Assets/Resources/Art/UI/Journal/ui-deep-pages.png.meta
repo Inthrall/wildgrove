@@ -1,0 +1,520 @@
+fileFormatVersion: 2
+guid: 808c9fcc558ee85459b8637f12eed59a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4504057296494443410
+    second: ui-deep-pages_0
+  - first:
+      213: 3431128529131141751
+    second: ui-deep-pages_1
+  - first:
+      213: -766742553104191114
+    second: ui-deep-pages_2
+  - first:
+      213: -3447779018382833065
+    second: ui-deep-pages_3
+  - first:
+      213: -3702813584462182443
+    second: ui-deep-pages_4
+  - first:
+      213: -2694873674499362759
+    second: ui-deep-pages_5
+  - first:
+      213: -1784032156883700078
+    second: ui-deep-pages_6
+  - first:
+      213: 1340076622298013830
+    second: ui-deep-pages_7
+  - first:
+      213: -3600745479919136105
+    second: ui-deep-pages_8
+  - first:
+      213: 4994970982957196815
+    second: ui-deep-pages_9
+  - first:
+      213: 3456960325778935809
+    second: ui-deep-pages_10
+  - first:
+      213: -2128783141841957494
+    second: ui-deep-pages_11
+  - first:
+      213: 234679554625638956
+    second: ui-deep-pages_12
+  - first:
+      213: -1135856354239367433
+    second: ui-deep-pages_13
+  - first:
+      213: 4649538997458766380
+    second: ui-deep-pages_14
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: ui-deep-pages_0
+      rect:
+        serializedVersion: 2
+        x: 169
+        y: 39
+        width: 363
+        height: 521
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e64417a90cf5e71c0800000000000000
+      internalID: -4504057296494443410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_1
+      rect:
+        serializedVersion: 2
+        x: 548
+        y: 533
+        width: 55
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77af195e731dd9f20800000000000000
+      internalID: 3431128529131141751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_2
+      rect:
+        serializedVersion: 2
+        x: 519
+        y: 388
+        width: 27
+        height: 54
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6717c08d5bbfb55f0800000000000000
+      internalID: -766742553104191114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_3
+      rect:
+        serializedVersion: 2
+        x: 518
+        y: 307
+        width: 40
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75a0f39ff370720d0800000000000000
+      internalID: -3447779018382833065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_4
+      rect:
+        serializedVersion: 2
+        x: 624
+        y: 334
+        width: 55
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d704acc9a6fc9cc0800000000000000
+      internalID: -3702813584462182443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_5
+      rect:
+        serializedVersion: 2
+        x: 703
+        y: 348
+        width: 27
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 930f9eccba2e99ad0800000000000000
+      internalID: -2694873674499362759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_6
+      rect:
+        serializedVersion: 2
+        x: 554
+        y: 295
+        width: 53
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 296b21d9438dd37e0800000000000000
+      internalID: -1784032156883700078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_7
+      rect:
+        serializedVersion: 2
+        x: 555
+        y: 205
+        width: 55
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 680e0e38698e89210800000000000000
+      internalID: 1340076622298013830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_8
+      rect:
+        serializedVersion: 2
+        x: 557
+        y: 235
+        width: 24
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79293d64015970ec0800000000000000
+      internalID: -3600745479919136105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_9
+      rect:
+        serializedVersion: 2
+        x: 630
+        y: 221
+        width: 55
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f062c8ef4a3b15540800000000000000
+      internalID: 4994970982957196815
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_10
+      rect:
+        serializedVersion: 2
+        x: 559
+        y: 154
+        width: 23
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1001cacb91799ff20800000000000000
+      internalID: 3456960325778935809
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_11
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 195
+        width: 29
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8d8ba2e20b0572e0800000000000000
+      internalID: -2128783141841957494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_12
+      rect:
+        serializedVersion: 2
+        x: 522
+        y: 81
+        width: 89
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c221281cfcfb14300800000000000000
+      internalID: 234679554625638956
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_13
+      rect:
+        serializedVersion: 2
+        x: 634
+        y: 110
+        width: 48
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f631b1f9a0ac30f0800000000000000
+      internalID: -1135856354239367433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ui-deep-pages_14
+      rect:
+        serializedVersion: 2
+        x: 691
+        y: 56
+        width: 40
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2a0bd8751b768040800000000000000
+      internalID: 4649538997458766380
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      ui-deep-pages_0: -4504057296494443410
+      ui-deep-pages_1: 3431128529131141751
+      ui-deep-pages_10: 3456960325778935809
+      ui-deep-pages_11: -2128783141841957494
+      ui-deep-pages_12: 234679554625638956
+      ui-deep-pages_13: -1135856354239367433
+      ui-deep-pages_14: 4649538997458766380
+      ui-deep-pages_2: -766742553104191114
+      ui-deep-pages_3: -3447779018382833065
+      ui-deep-pages_4: -3702813584462182443
+      ui-deep-pages_5: -2694873674499362759
+      ui-deep-pages_6: -1784032156883700078
+      ui-deep-pages_7: 1340076622298013830
+      ui-deep-pages_8: -3600745479919136105
+      ui-deep-pages_9: 4994970982957196815
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
