@@ -55,25 +55,31 @@ namespace Wildgrove.Game
                 // One ground and no heading to press: it must never fold, or
                 // the page could be shut with nothing left to open it with.
                 var open = unlockedZones.Count == 1 || JournalZones.IsOpen(_zoneOpen, zone.id, newest);
+
+                // The zone's keystone specimen (design §3) rides the heading's
+                // right margin, opposite the chevron. It stood on the page under
+                // the heading until 2026-08-13, where it read as a loose plate
+                // between the ground's name and its first card — and it only
+                // drew while the ground was open, so a folded trail was a column
+                // of bare names. In the margin it costs no height at all (the
+                // heading already carries a 120 floor) and a shut ground keeps
+                // its creature.
+                var keystone = ArtLibrary.ForZone(zone.id);
                 if (unlockedZones.Count > 1)
                 {
-                    BuildZoneHeading(zone, open);
+                    BuildZoneHeading(zone, open, keystone);
+                }
+                else if (keystone != null)
+                {
+                    // One ground draws no heading, so there is no margin to ride:
+                    // the mark keeps its old place on the page rather than the
+                    // opening run losing its specimen entirely.
+                    PlateImage(_body, keystone, 60f).name = "Keystone";
                 }
 
                 if (!open)
                 {
                     continue;
-                }
-
-                // The zone's keystone specimen heads its section (design §3) —
-                // a modest mark, not a full plate; the strip carries the art.
-                // 60 from 2026-08-13, halved: at 120 it was the last thing
-                // standing between the ground's name and its first plate, and a
-                // mark that costs half a plate of height is not a modest one.
-                var keystone = ArtLibrary.ForZone(zone.id);
-                if (keystone != null)
-                {
-                    PlateImage(_body, keystone, 60f).name = "Keystone";
                 }
 
                 foreach (var node in _loop.State.nodes)
@@ -133,8 +139,13 @@ namespace Wildgrove.Game
         /// shut ground wears — so a ground with nothing under it reads as an
         /// unresponsive button rather than an empty open one.
         /// </para>
+        /// <para>
+        /// The ground's keystone specimen rides the right margin, the chevron's
+        /// opposite number: name on the left, creature on the right, and a
+        /// folded trail reads as a row of grounds rather than a row of words.
+        /// </para>
         /// </summary>
-        private void BuildZoneHeading(ZoneData zone, bool open)
+        private void BuildZoneHeading(ZoneData zone, bool open, Sprite keystone)
         {
             var captured = zone.id;
             var name = zone.displayName.ToUpperInvariant();
@@ -149,6 +160,9 @@ namespace Wildgrove.Game
             heading = Button(_body, label, 400, () => _hud.FoldZone(captured, (RectTransform)heading.transform));
             heading.gameObject.name = "ZoneHeading";
             AddFoldArrow(heading, open);
+            // After the chevron, never before: both widen the name's inset and
+            // the mark's lane is the wider of the two, so it has to be set last.
+            AddHeadingMark(heading, keystone);
 
             // The heading the page is being rebuilt around: the scroll comes
             // back to it once the fresh page has a height, so the ground the

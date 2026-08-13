@@ -259,6 +259,63 @@ namespace Wildgrove.Game
             rect.localRotation = Quaternion.Euler(0f, 0f, open ? 0f : 90f);
         }
 
+        /// <summary>The width of a fold heading's right margin, and the specimen mark standing in it.</summary>
+        private const float HeadingMarkLane = 130f;
+        private const float HeadingMarkWidth = 112f;
+        private const float HeadingMarkHeight = 76f;
+
+        /// <summary>
+        /// Pin a specimen mark into a heading's right margin — the chevron's
+        /// opposite number, so a folded section is named on the left and shown
+        /// on the right.
+        /// <para>
+        /// Call this AFTER <see cref="AddFoldArrow"/>: both widen the name's
+        /// inset and the later call wins, so the wider lane has to be the one
+        /// set last. The inset goes on BOTH sides for the reason the chevron's
+        /// does — a centred heading must stay centred over its contents rather
+        /// than shunting left by half a mark.
+        /// </para>
+        /// <para>
+        /// The mark is fitted by width rather than height: the plates are
+        /// specimen drawings of wildly different proportion, a trout beside a
+        /// standing reed, and letting each fill the lane's width keeps them one
+        /// family of marks instead of a fish the size of a thumbnail next to a
+        /// reed the height of the bar.
+        /// </para>
+        /// </summary>
+        internal static void AddHeadingMark(Button heading, Sprite mark)
+        {
+            if (mark == null)
+            {
+                return;
+            }
+
+            var label = heading.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                var labelRect = (RectTransform)label.transform;
+                labelRect.offsetMin = new Vector2(HeadingMarkLane, labelRect.offsetMin.y);
+                labelRect.offsetMax = new Vector2(-HeadingMarkLane, labelRect.offsetMax.y);
+            }
+
+            var go = new GameObject("HeadingMark", typeof(Image), typeof(LayoutElement));
+            go.transform.SetParent(heading.transform, false);
+            go.GetComponent<LayoutElement>().ignoreLayout = true;
+            var image = go.GetComponent<Image>();
+            image.sprite = mark;
+            image.preserveAspect = true;
+            // The plate takes the tap, as with the chevron — a mark that
+            // swallowed it would leave a dead spot in the control it describes.
+            image.raycastTarget = false;
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = new Vector2(1f, 0.5f);
+            rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(HeadingMarkWidth, HeadingMarkHeight);
+            rect.anchoredPosition = new Vector2(-HeadingMarkLane * 0.5f, 0f);
+        }
+
         internal static Button Button(Transform parent, string text, float width, UnityEngine.Events.UnityAction onClick)
         {
             var button = ButtonPlate(parent, width, onClick);
