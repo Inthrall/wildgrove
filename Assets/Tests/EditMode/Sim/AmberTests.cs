@@ -680,10 +680,11 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void CampName_FoldsWithTheCamp()
+        public void CampName_SurvivesTheFold()
         {
-            // The same one-verse rite WardenName_SurvivesTheFold stands up —
-            // the two names cross the fold in opposite directions on purpose.
+            // The same one-verse rite WardenName_SurvivesTheFold stands up, and
+            // since 2026-08-13 the two bought names cross together: this pinned
+            // the camp's name being dropped until the name was made permanent.
             var verse = new RiteVerseData
             {
                 id = "verse-sunfield",
@@ -704,9 +705,8 @@ namespace Wildgrove.Sim.Tests
             var next = Migration.Migrate(state, _data);
 
             Assert.That(next, Is.Not.Null, "the sung rite lets the fold happen at all");
-            Assert.That(next.campName, Is.Null, "the camp's name is the run's — it folds with the camp");
-            Assert.That(Camp.DisplayName(next), Is.EqualTo("the camp"),
-                "the next region's camp waits to be named — naming is each region's own ritual");
+            Assert.That(Camp.DisplayName(next), Is.EqualTo("Thistledown"),
+                "a bought name crosses the fold — the camp is re-pitched a region north, not replaced");
         }
 
         [Test]
