@@ -99,7 +99,20 @@ namespace Wildgrove.Game
         /// </summary>
         protected RectTransform FoldingCard(string cardId, string head, string tally, out bool open, out Button heading)
         {
-            open = JournalCardFolds.IsOpen(_cardOpen, cardId);
+            return FoldingCard(cardId, head, tally, JournalCardFolds.OpenUnasked(cardId), out open, out heading);
+        }
+
+        /// <summary>
+        /// <see cref="FoldingCard(string,string,string,out bool,out Button)"/> for
+        /// a card whose unasked default is positional rather than a matter of
+        /// what the card is for — the Camp page's stations. The same answer goes
+        /// to the head's own press, or the fold would be computed one way and
+        /// toggled the other.
+        /// </summary>
+        protected RectTransform FoldingCard(string cardId, string head, string tally, bool openUnasked,
+            out bool open, out Button heading)
+        {
+            open = JournalCardFolds.IsOpen(_cardOpen, cardId, openUnasked);
             var card = JournalWidgets.Card(null);
             card.gameObject.name = "Card_" + head;
 
@@ -108,7 +121,8 @@ namespace Wildgrove.Game
             // The heading hands its own rect to the fold, which notes where it
             // stands in the viewport — the rebuilt page puts it back there.
             Button pressed = null;
-            pressed = JournalWidgets.Button(card, label, 400, () => _hud.FoldCard(cardId, (RectTransform)pressed.transform));
+            pressed = JournalWidgets.Button(card, label, 400,
+                () => _hud.FoldCard(cardId, (RectTransform)pressed.transform, openUnasked));
             pressed.gameObject.name = "CardHeading";
             JournalWidgets.AddFoldArrow(pressed, open);
             Anchor(cardId, (RectTransform)pressed.transform);

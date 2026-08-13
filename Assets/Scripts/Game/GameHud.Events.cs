@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Wildgrove.Game.Services;
 using Wildgrove.Game.World;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalWidgets;
@@ -227,7 +228,7 @@ namespace Wildgrove.Game
             }
 
             EventRail.Collect(_loop.State, _loop.Data, _loop.NowUnixMs(),
-                _loop.GameServices.IsSignedIn, _railEntries);
+                _loop.GameServices.IsSignedIn, _loop.RewardedReady(RewardedPlacement.TimeSkip), _railEntries);
             TrimRailToBand();
 
             var signature = RailSignature();
@@ -471,6 +472,12 @@ namespace Wildgrove.Game
         /// two rows above says that, and it says it about money the player
         /// holds rather than money Play is keeping for them.
         /// </para>
+        /// <para>
+        /// The time-skip wears a sand glass, drawn part run
+        /// (tools/make-glass-plate.py): the warden times an observation with one,
+        /// and what the cell offers is hours the land works through rather than
+        /// an hour of the day, which a clock face would have said instead.
+        /// </para>
         /// </summary>
         private Sprite RailIcon(EventRailEntry entry)
         {
@@ -481,6 +488,8 @@ namespace Wildgrove.Game
                     return entry.sabbatId != null ? ArtLibrary.ForJournal("sabbat-" + entry.sabbatId) : null;
                 case EventRailKind.WeeklyCache:
                     return ArtLibrary.ForJournal("chest");
+                case EventRailKind.TimeSkip:
+                    return ArtLibrary.ForJournal("glass");
                 default:
                     return null;
             }

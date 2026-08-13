@@ -14,6 +14,11 @@ namespace Wildgrove.Game
     /// A card per crafting station, and the recipe rows inside them: the cost
     /// strip that keeps itself current, and the line that says whether a craft is
     /// running, halted, or waiting on something not yet found.
+    /// <para>
+    /// The cards fold, one standing open (see
+    /// <see cref="StationStandingOpen"/>), and a shut one carries its own bars on
+    /// its head.
+    /// </para>
     /// </summary>
     internal sealed partial class CampPage
     {
@@ -28,10 +33,77 @@ namespace Wildgrove.Game
         private void BuildCraftingCards()
         {
             var stations = CraftingStations();
+            var standing = StationStandingOpen(stations);
             foreach (var station in stations)
             {
-                BuildStationCard(station.Key, station.Value, stations);
+                BuildStationCard(station.Key, station.Value, stations, station.Key == standing);
             }
+        }
+
+        /// <summary>
+        /// The one station that stands open unasked: the first with an order
+        /// standing at it, or the first station of all while the camp is idle.
+        /// <para>
+        /// The stations fold from 2026-08-13, and this is the positional half of
+        /// it (<see cref="JournalZones"/>' kind of rule, not
+        /// <see cref="JournalCardFolds"/>'). They are the longest thing in the
+        /// book after the Record's back pages: seventeen recipes across three
+        /// cards is around 2,850 canvas units against a ~1,030 viewport, and the
+        /// fire alone holds ten of them. At most two of the seventeen can be
+        /// working, so the page was three screens of rows to show two bars.
+        /// </para>
+        /// <para>
+        /// One open, not "every station that is working": late in a run every
+        /// station has an order standing, so that rule would open all three and
+        /// shorten nothing on the page it was drawn to shorten.
+        /// </para>
+        /// </summary>
+        private string StationStandingOpen(List<KeyValuePair<string, List<RecipeData>>> stations)
+        {
+            if (stations.Count == 0)
+            {
+                return null;
+            }
+
+            foreach (var station in stations)
+            {
+                foreach (var recipe in station.Value)
+                {
+                    if (_loop.IsCrafting(recipe))
+                    {
+                        return station.Key;
+                    }
+                }
+            }
+
+            return stations[0].Key;
+        }
+
+        /// <summary>
+        /// What a folded station says on its head: the orders standing at it and
+        /// how far along they are, or how many works it could take up. The bars
+        /// are the reason the head is worth reading at all, so they are the whole
+        /// tally — a shut card still answers "is the charcoal done yet".
+        /// </summary>
+        private string StationTally(List<RecipeData> recipes)
+        {
+            var standing = new List<string>();
+            foreach (var recipe in recipes)
+            {
+                if (!_loop.IsCrafting(recipe))
+                {
+                    continue;
+                }
+
+                standing.Add(_loop.IsCraftHalted(recipe)
+                    ? GoodName(recipe.output) + " <color=" + AlarmHex + ">halted</color>"
+                    : GoodName(recipe.output) + " "
+                      + Mathf.RoundToInt((float)_loop.CraftProgress(recipe) * 100f) + "%");
+            }
+
+            return standing.Count > 0
+                ? string.Join(" · ", standing)
+                : "nothing standing · " + recipes.Count + " to work";
         }
 
         /// <summary>
@@ -132,9 +204,25 @@ namespace Wildgrove.Game
         private const float CraftRowHeight = 132f;
 
         private void BuildStationCard(string stationId, List<RecipeData> recipes,
-            List<KeyValuePair<string, List<RecipeData>>> stations)
+            List<KeyValuePair<string, List<RecipeData>>> stations, bool standsOpen)
         {
-            var card = Card(CraftStationName(stationId).ToUpperInvariant());
+            var head = CraftStationName(stationId).ToUpperInvariant();
+            var foldId = JournalCardFolds.Station(stationId);
+            var card = FoldingCard(foldId, head, StationTally(recipes), standsOpen, out var open, out var heading);
+            if (!open)
+            {
+                // The tally is a progress bar written in words, so it moves —
+                // written once at the build, a shut fire would say 12% for the
+                // rest of the session.
+                var label = heading.GetComponentInChildren<Text>();
+                if (label != null)
+                {
+                    _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, StationTally(recipes), false));
+                }
+
+                return;
+            }
+
             // The same plate the Building Lines card wears for this line — the
             // two cards are the one place, seen from its two sides.
             var plate = ArtLibrary.ForBuilding(stationId);
@@ -190,6 +278,12 @@ namespace Wildgrove.Game
                                 + GoodName(displaced.output) + " and takes up the " + GoodName(captured.output) + ".");
                     }
 
+                    // Which station stands open follows the work, so stopping
+                    // the last order here would fold this card away under the
+                    // finger that stopped it. A press on a row asks for the
+                    // station as plainly as a press on its head does, and is
+                    // remembered the same way.
+                    _cardOpen[foldId] = true;
                     _dirty = true;
                 });
 

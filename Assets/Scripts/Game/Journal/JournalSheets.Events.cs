@@ -1,4 +1,5 @@
 using UnityEngine;
+using Wildgrove.Game.Services;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalFormat;
@@ -11,12 +12,19 @@ namespace Wildgrove.Game
     /// <para>
     /// Each says the same three things in the same order: what this is, how it
     /// stands right now, and the way through to the page that answers it. That
-    /// last part is why none of these sheets carries an offering button or a
-    /// claim: the keeping is answered on the Trail's card and the cache is
-    /// looked for on the Camp's row, and a second set of controls over the same
-    /// state is two places to fix a bug and two places for the wording to
-    /// disagree. A popup that ONLY tells you things and then strands you would
+    /// last part is why the Wheel's sheets and the cache's carry no offering
+    /// button and no claim: the keeping is answered on the Trail's card and the
+    /// cache is looked for on the Camp's row, and a second set of controls over
+    /// the same state is two places to fix a bug and two places for the wording
+    /// to disagree. A popup that ONLY tells you things and then strands you would
     /// be the worse failure, so each ends in a door.
+    /// </para>
+    /// <para>
+    /// The time-skip's sheet is the exception, and it is the same rule read the
+    /// other way: from 2026-08-13 there IS no page that answers it, so this sheet
+    /// is the one set of controls rather than a second. It has to be a sheet
+    /// rather than the cell's own tap because the tap costs an ad, and an ad that
+    /// starts from a cell nobody read is a surprise the player did not agree to.
     /// </para>
     /// </summary>
     internal sealed partial class JournalSheets
@@ -33,6 +41,9 @@ namespace Wildgrove.Game
                     break;
                 case EventRail.WeeklyCacheId:
                     OpenWeeklyCacheSheet();
+                    break;
+                case EventRail.TimeSkipId:
+                    OpenTimeSkipSheet();
                     break;
             }
         }
@@ -236,6 +247,86 @@ namespace Wildgrove.Game
                 _hud.OpenTab(TabCamp);
             });
             KeyAction(go);
+        }
+
+        /// <summary>
+        /// The rewarded time-skip (design §10): hours of gathering for a short
+        /// ad, once a cooldown. This sheet is where it is taken, and the only
+        /// place — it was a plate at the head of the Camp page until 2026-08-13
+        /// (see <see cref="EventRail"/> for why it moved to the rail).
+        /// <para>
+        /// The one rail sheet that acts rather than pointing at a page, and it
+        /// has to be a sheet: the tap spends an ad, and the cell alone cannot say
+        /// what the hours are worth or what they cost before it starts one.
+        /// </para>
+        /// <para>
+        /// It names the amber row as well. The two are the same verb at two
+        /// prices — this credits at the away rate for an ad, the Camp's row at
+        /// full pace for amber — and until they were a tap apart neither surface
+        /// mentioned the other's existence.
+        /// </para>
+        /// </summary>
+        private void OpenTimeSkipSheet()
+        {
+            var hours = Amber.RewardedTimeSkipHours;
+            var sheet = BeginSheet();
+            MakeText(sheet, "Pass the time", 32, TextAnchor.UpperCenter, Ink, _serif);
+
+            var plate = ArtLibrary.ForJournal("glass");
+            if (plate != null)
+            {
+                PlateImage(sheet, plate, 200f);
+            }
+
+            MakeText(sheet, "<color=" + MossDeepHex + ">+" + NumberFormat.Duration(hours * 3600.0)
+                            + "</color> of gathering, at the pace the land keeps while you are away",
+                22, TextAnchor.MiddleCenter, Ink, _serif);
+            MakeText(sheet, "<i>the kith work the hours through in a breath. every batch, every post, every"
+                            + " site: the same hours you would have had by putting the book down.</i>",
+                17, TextAnchor.UpperLeft, Ink2, _serif);
+
+            MakeHairline((RectTransform)sheet);
+            if (!_loop.CanTimeSkipReward)
+            {
+                MakeText(sheet, "the land has given its hours for now. the glass turns again in "
+                                + NumberFormat.Countdown(_loop.TimeSkipRewardCooldownRemaining) + ".",
+                    18, TextAnchor.UpperLeft, Ink);
+                KeyAction(Button(sheet, "Walk on", 320, CloseSheet));
+                return;
+            }
+
+            MakeText(sheet, "<i>the amber row at the camp hastens the same hours at FULL pace, for amber"
+                            + " rather than an ad.</i>", 15, TextAnchor.UpperLeft, Ink2, _serif);
+
+            var take = Button(sheet, "Pass the time" + _loop.RewardedActionSuffix, 420, () =>
+            {
+                CloseSheet();
+                TakeTimeSkip(hours);
+            });
+            KeyAction(take);
+        }
+
+        /// <summary>
+        /// Watch for the hours and credit them. The cooldown is re-checked at the
+        /// grant as well as at the tap: the sheet can sit open, and
+        /// <see cref="GameLoop.CreditTimeSkip"/> is the one authority on whether
+        /// the land owes anything.
+        /// </summary>
+        private void TakeTimeSkip(double hours)
+        {
+            _loop.WatchRewarded(RewardedPlacement.TimeSkip,
+                () =>
+                {
+                    if (!_loop.CreditTimeSkip(hours))
+                    {
+                        return;
+                    }
+
+                    _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
+                    SetNote(NumberFormat.Duration(hours * 3600.0)
+                            + " pass in a breath, and the kith kept to the work.");
+                    _dirty = true;
+                });
         }
     }
 }

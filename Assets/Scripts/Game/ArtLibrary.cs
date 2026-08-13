@@ -210,6 +210,12 @@ namespace Wildgrove.Game
             // what the ledger two rows above already says.
             { "chest", Ui + "Journal/ui-chest" },
 
+            // The rail's time-skip cell — a sand glass, part run. Authored in
+            // the same hand as the chest (tools/make-glass-plate.py), so nothing
+            // is owed for it either. A glass and not a clock face: the cell
+            // offers hours of gathering, not an hour of the day.
+            { "glass", Ui + "Journal/ui-glass" },
+
             // The Wheel's plates (design §15) — the warden's own almanac
             // marks, not the land's naturalist pages: the calendar is the
             // warden's, so the mark is an almanac ornament in the warden's

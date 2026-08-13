@@ -1,39 +1,44 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Wildgrove.Game.Services;
-using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
 using static Wildgrove.Game.JournalWidgets;
 
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The camp-actions strip at the head of the Camp page, and the two offers on
-    /// it: the rewarded time-skip and the one-off remove-ads purchase.
+    /// The camp-actions strip at the head of the Camp page, and the offer on it:
+    /// the one-off remove-ads purchase.
     /// <para>
-    /// Not a sheet at all, but it belongs with them because both buttons open
-    /// something modal that this class owns, and because both have a state a
-    /// live updater has to keep honest. The rule they share is that neither may
-    /// ever accept a tap it will then refuse: the time-skip greys out and counts
-    /// its cooldown down on its own face, and remove-ads stays hidden until
-    /// billing has resolved who already owns it.
+    /// Not a sheet at all, but it belongs with them because the button opens
+    /// something modal that this class owns, and because it has a state a live
+    /// updater has to keep honest: it may never accept a tap it will then refuse,
+    /// so it stays hidden until billing has resolved who already owns it.
+    /// </para>
+    /// <para>
+    /// The rewarded time-skip stood beside it until 2026-08-13 and is now a cell
+    /// on the events rail (see <see cref="EventRail"/> and
+    /// <c>OpenTimeSkipSheet</c>) — a clock and a fingertip belong in the band,
+    /// not in a 380-unit plate at the head of a page five viewports long. With it
+    /// went the reason the strip was ever a row of two, so the strip goes with the
+    /// button now: an owner of Remove Ads would otherwise open the Camp page onto
+    /// an empty bordered panel.
     /// </para>
     /// </summary>
     internal sealed partial class JournalSheets
     {
-        // The time-skip ad credits this many hours of gathering.
-        private const double TimeSkipHours = 2.0;
-        private Button _timeSkipButton;
+        private GameObject _campActions;
         private Button _removeAdsButton;
         private bool _removeAdsPending;
 
         /// <summary>
-        /// The camp-actions strip at the head of the Camp page: the rewarded
-        /// time-skip and the one-off remove-ads purchase.
+        /// The camp-actions strip at the head of the Camp page: the one-off
+        /// remove-ads purchase.
         /// </summary>
         internal void BuildCampActions(Transform root)
         {
             var bar = MakePanel("CampActions", (RectTransform)root, CardPaper);
+            _campActions = bar;
             var layout = bar.AddComponent<HorizontalLayoutGroup>();
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -46,9 +51,6 @@ namespace Wildgrove.Game
             element.flexibleHeight = 0;
             AddBorder(bar, Ink2);
 
-            _timeSkipButton = Button(bar.transform, TimeSkipLabel(), 380, OnTimeSkip);
-            KeyAction(_timeSkipButton);
-
             // Hidden until the store resolves ownership (RefreshCampActions is the
             // authority): shown only once billing is initialised and the player
             // doesn't already own Remove Ads. Built inactive so an owner never sees
@@ -60,50 +62,34 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// Keep the camp-strip buttons current — the Camp page registers this
-        /// as one of its live updaters, and it no-ops on every other tab, where
-        /// the strip isn't built. The time-skip greys out and counts down while
-        /// its reward cooldown holds, rather than accepting a tap only to
-        /// refuse it with a note.
+        /// Keep the camp strip current — the Camp page registers this as one of
+        /// its live updaters, and it no-ops on every other tab, where the strip
+        /// isn't built. The button may never accept a tap it will then refuse, so
+        /// it is shown only once billing has resolved who owns what; the strip
+        /// itself goes with it, since a bordered panel holding nothing reads as a
+        /// card that failed to draw.
         /// </summary>
         internal void RefreshCampActions()
         {
-            if (_timeSkipButton == null || _loop == null || _loop.State == null)
+            if (_removeAdsButton == null || _loop == null || _loop.State == null)
             {
                 return;
             }
 
-            // Off cooldown AND something to show. Gating on the cooldown alone
-            // lit the button whenever the placement was empty, and ShowRewarded
-            // reports that case through onClosed — which this caller doesn't
-            // pass. So the tap did nothing and said nothing, the one thing the
-            // camp strip must never do. (The drip row already asks both.)
-            // RewardedReady is true outright for a Remove Ads owner, so the
-            // stricter gate can't shut the button on the player who paid.
-            var offCooldown = _loop.CanTimeSkipReward;
-            var ready = offCooldown && _loop.RewardedReady(RewardedPlacement.TimeSkip);
-            _timeSkipButton.interactable = ready;
-            SetButtonTint(_timeSkipButton, ready, true);
-            SetButtonLabel(_timeSkipButton, ready
-                ? TimeSkipLabel()
-                : offCooldown
-                    // Waiting on fill, not on the clock — saying "ready in 0s"
-                    // here would be a countdown that never ends.
-                    ? "Pass the time (no ad to hand)"
-                    : "Pass the time (ready in " + NumberFormat.Duration(_loop.TimeSkipRewardCooldownRemaining) + ")");
-
-            if (_removeAdsButton != null)
+            // Owning Remove Ads — or a store that's still connecting or
+            // unavailable — keeps it hidden.
+            var offer = _loop.Store.IsInitialised && !_loop.Store.RemoveAdsOwned;
+            _removeAdsButton.gameObject.SetActive(offer);
+            if (_campActions != null)
             {
-                // Show only once billing has resolved entitlements and the player
-                // doesn't already own it. Owning Remove Ads — or a store that's
-                // still connecting or unavailable — keeps it hidden.
-                _removeAdsButton.gameObject.SetActive(_loop.Store.IsInitialised && !_loop.Store.RemoveAdsOwned);
-                if (!_removeAdsPending)
-                {
-                    // The store's price lands after the catalogue fetch — keep
-                    // the label current so the tap is never a surprise dialog.
-                    SetButtonLabel(_removeAdsButton, RemoveAdsLabel());
-                }
+                _campActions.SetActive(offer);
+            }
+
+            if (!_removeAdsPending)
+            {
+                // The store's price lands after the catalogue fetch — keep the
+                // label current so the tap is never a surprise dialog.
+                SetButtonLabel(_removeAdsButton, RemoveAdsLabel());
             }
         }
 
@@ -112,38 +98,6 @@ namespace Wildgrove.Game
         {
             var price = _loop.Store.PriceLabel(StoreProductIds.RemoveAds);
             return string.IsNullOrEmpty(price) ? "Remove ads" : "Remove ads · " + price;
-        }
-
-        /// <summary>"Pass the time, +2 hours" (+ the "watch a short ad" tail until Remove Ads is owned) — says what the reward gives.</summary>
-        private string TimeSkipLabel()
-        {
-            var unit = System.Math.Abs(TimeSkipHours - 1.0) < 0.0001 ? "hour" : "hours";
-            return "Pass the time, +" + TimeSkipHours.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
-                   + " " + unit + _loop.RewardedActionSuffix;
-        }
-
-        private void OnTimeSkip()
-        {
-            if (!_loop.CanTimeSkipReward)
-            {
-                // Still cooling down — refuse before showing an ad or granting.
-                SetNote("the land has given its hours for now. let a while pass.");
-                return;
-            }
-
-            _loop.WatchRewarded(RewardedPlacement.TimeSkip,
-                () =>
-                {
-                    if (!_loop.CreditTimeSkip(TimeSkipHours))
-                    {
-                        return;
-                    }
-
-                    _loop.Telemetry.LogEvent("rewarded_ad", ("placement", "time_skip"));
-                    SetNote(NumberFormat.Duration(TimeSkipHours * 3600.0)
-                            + " pass in a breath, and the kith kept to the work.");
-                    _dirty = true;
-                });
         }
 
         private void OnRemoveAds()

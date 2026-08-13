@@ -15,6 +15,9 @@ namespace Wildgrove.Game
 
         /// <summary>The weekly Play Games cache (design §11) — the other thing in the game with a clock on it.</summary>
         WeeklyCache,
+
+        /// <summary>The rewarded time-skip (design §10): hours of gathering for a short ad, once every cooldown.</summary>
+        TimeSkip,
     }
 
     /// <summary>One cell of the events rail: a face, a countdown, and whether it wants a tap now.</summary>
@@ -31,7 +34,12 @@ namespace Wildgrove.Game
         /// <summary>Seconds until this turns over, or a negative when there is nothing to count.</summary>
         public double remainingSeconds;
 
-        /// <summary>A word standing where the countdown would go — "set down", "sign in" — or null to count the clock.</summary>
+        /// <summary>
+        /// What stands where the countdown would go — "set down", "sign in",
+        /// "+2h" — or null to count the clock. A word wherever there is one; the
+        /// time-skip's is the reward itself, because "pass the time" does not fit
+        /// a fingertip and the hours are what the tap is for.
+        /// </summary>
         public string mark;
 
         /// <summary>True when there is something to do RIGHT NOW — the cell wears the moss and the popup leads with the act.</summary>
@@ -42,7 +50,7 @@ namespace Wildgrove.Game
     }
 
     /// <summary>
-    /// The events rail's contents (design §15, and whatever else grows a clock):
+    /// The events rail's contents (design §15, §10, and whatever else grows a clock):
     /// the short list of time-boxed things running right now, in the order they
     /// deserve the player's attention.
     /// <para>
@@ -67,6 +75,7 @@ namespace Wildgrove.Game
         public const string OpenTideId = "tide";
         public const string ComingSabbatId = "sabbat-next";
         public const string WeeklyCacheId = "weekly-cache";
+        public const string TimeSkipId = "time-skip";
 
         /// <summary>
         /// Fill <paramref name="into"/> with the live entries, most urgent
@@ -78,8 +87,14 @@ namespace Wildgrove.Game
         /// cannot award one to — and a service handle in here would cost the
         /// whole class its testability for one bool.
         /// </param>
+        /// <param name="rewardToHand">
+        /// Whether a rewarded ad is loaded (or Remove Ads is owned, which grants
+        /// without one). Passed for the same reason as
+        /// <paramref name="playSignedIn"/>: the time-skip cell must not offer
+        /// hours the ad layer has nothing to sell them for.
+        /// </param>
         public static void Collect(GameState state, GameDataAsset data, long nowUnixMs, bool playSignedIn,
-            List<EventRailEntry> into)
+            bool rewardToHand, List<EventRailEntry> into)
         {
             into.Clear();
             if (state == null || data == null)
@@ -89,6 +104,7 @@ namespace Wildgrove.Game
 
             CollectWheel(state, data, nowUnixMs, into);
             CollectWeeklyCache(state, data, nowUnixMs, playSignedIn, into);
+            CollectTimeSkip(state, nowUnixMs, rewardToHand, into);
         }
 
         /// <summary>
@@ -187,6 +203,67 @@ namespace Wildgrove.Game
                 kind = EventRailKind.WeeklyCache,
                 title = "the cache",
                 remainingSeconds = Amber.WeeklyCacheNextDueInMs(state, nowUnixMs) / 1000.0,
+                ready = true,
+            });
+        }
+
+        /// <summary>
+        /// The rewarded time-skip (design §10), the rail's third inhabitant and
+        /// the first that is not on a calendar of its own: it counts a cooldown
+        /// rather than a season.
+        /// <para>
+        /// It is here because it is the shape of a rail cell and nothing else in
+        /// the book was: a clock, a fingertip, and a thing to take up when the
+        /// clock runs out. It stood at the head of the Camp page until
+        /// 2026-08-13, as a 380-unit plate carrying its own countdown in
+        /// brackets, which is a pinned bar's job done in the page's height, on
+        /// one tab, five viewports away from the amber row that hastens the same
+        /// hours for money.
+        /// </para>
+        /// <para>
+        /// Last of the three on purpose, so it is what a short band drops
+        /// (<c>GameHud.TrimRailToBand</c>). It is the only one of them that
+        /// cannot be missed: a sabbat not kept is gone for a year and a cache
+        /// expires with its week, while these hours sit and wait to be taken
+        /// whenever the player next looks.
+        /// </para>
+        /// <para>
+        /// With nothing to hand it stands down entirely rather than greying, the
+        /// cache's rule: a cell that spends its day saying "not yet" is what
+        /// teaches a player to stop reading the rail, and that was exactly the
+        /// price the Camp page's disabled plate was paying.
+        /// </para>
+        /// </summary>
+        private static void CollectTimeSkip(GameState state, long nowUnixMs, bool rewardToHand,
+            List<EventRailEntry> into)
+        {
+            if (!Amber.CanRewardedTimeSkip(state, nowUnixMs))
+            {
+                into.Add(new EventRailEntry
+                {
+                    id = TimeSkipId,
+                    kind = EventRailKind.TimeSkip,
+                    title = "the hours",
+                    remainingSeconds = Amber.RewardedTimeSkipCooldownRemainingMs(state, nowUnixMs) / 1000.0,
+                    ready = false,
+                });
+                return;
+            }
+
+            if (!rewardToHand)
+            {
+                return;
+            }
+
+            into.Add(new EventRailEntry
+            {
+                id = TimeSkipId,
+                kind = EventRailKind.TimeSkip,
+                title = "the hours",
+                remainingSeconds = -1.0,
+                // The reward, not the verb: what the cell is offering is the one
+                // thing a 120-unit caption has room to say.
+                mark = "+" + NumberFormat.Duration(Amber.RewardedTimeSkipHours * 3600.0),
                 ready = true,
             });
         }

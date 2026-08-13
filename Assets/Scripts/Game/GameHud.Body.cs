@@ -235,6 +235,17 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// <see cref="FoldCard(string,RectTransform)"/> for a card that decides
+        /// its own unasked default — the Camp page's stations, where the default
+        /// is which station the work is standing at.
+        /// </summary>
+        internal void FoldCard(string cardId, RectTransform heading, bool openUnasked)
+        {
+            JournalCardFolds.Toggle(CardOpen, cardId, openUnasked);
+            KeepInPlace(cardId, heading);
+        }
+
+        /// <summary>
         /// Rebuild the page around <paramref name="heading"/>, and put it back
         /// where it stood — for a press whose answer changes the page ABOVE
         /// itself, which is the one thing keeping the scrolled distance cannot

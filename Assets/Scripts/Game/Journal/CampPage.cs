@@ -13,9 +13,12 @@ namespace Wildgrove.Game
     /// <summary>
     /// The Camp page: what the camp makes of what the trail brings home. This
     /// file assembles the page and keeps its plainer furniture, the camp's name
-    /// card and the Ladder's next rungs; the three subsystems with a card each of
-    /// their own live in the partials beside it (<c>Amber</c>, <c>Crafting</c>,
-    /// <c>Exchange</c>).
+    /// card and the Ladder's next rungs; the two subsystems with a card each of
+    /// their own live in the partials beside it (<c>Amber</c>, <c>Crafting</c>).
+    /// <para>
+    /// The caravan was the third until 2026-08-13, when it went to the Stores
+    /// page — a trade is stock for stock (see <c>StoresPage.Exchange</c>).
+    /// </para>
     /// </summary>
     internal sealed partial class CampPage : JournalSection
     {
@@ -35,11 +38,17 @@ namespace Wildgrove.Game
 
         internal void BuildCampPage()
         {
-            // The camp actions (the rewarded time-skip, and Remove Ads until
-            // it's owned) are camp business, so they head the camp's page
-            // rather than a bar pinned in the chrome that all four tabs would
-            // pay for. Being in the body also means they refresh off the page's
-            // own updater pool rather than the HUD's chrome pass.
+            // Remove Ads until it's owned, and nothing else: a purchase is camp
+            // business, so it heads the camp's page rather than a bar pinned in
+            // the chrome that all four tabs would pay for. Being in the body also
+            // means it refreshes off the page's own updater pool rather than the
+            // HUD's chrome pass.
+            //
+            // The rewarded time-skip was the other half of this strip until
+            // 2026-08-13, and it did go to the chrome — but to the events rail,
+            // which is paid for out of the world band's left MARGIN rather than
+            // out of any page's height, so the objection above never applied to
+            // it. A clock counting itself down is what that rail is for.
             _hud.Sheets.BuildCampActions(_body);
             _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
 
@@ -47,7 +56,6 @@ namespace Wildgrove.Game
             BuildCraftingCards();
             BuildBuildingsCard();
             BuildLadderCard();
-            BuildExchangeCard();
             BuildAmberCard();
         }
 
@@ -206,10 +214,12 @@ namespace Wildgrove.Game
                     {
                         Flash(buy, "taken up", true);
                         SetNote(captured.displayName.ToLowerInvariant() + ": the work changes shape.");
-                        // The rung that opens the fire ring or the bench builds
-                        // a whole station card at the head of the page — half a
-                        // screen of it — so the Ladder holds its own place
-                        // rather than being shoved down by what it just bought.
+                        // The rung that opens the fire ring or the bench builds a
+                        // whole station card at the head of the page, so the
+                        // Ladder holds its own place rather than being shoved
+                        // down by what it just bought. Still true now the cards
+                        // fold: a new station arrives shut, and a head is 132
+                        // units the rung did not have above it a moment ago.
                         KeepInPlace(LadderAnchor, card);
                     }
                 });

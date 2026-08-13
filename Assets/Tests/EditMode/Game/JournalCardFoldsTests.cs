@@ -9,6 +9,11 @@ namespace Wildgrove.Game.Tests
     /// are the ones nobody presses: a card that only records is shut on arrival,
     /// the Record card with a button on it is not, and the keeping is shut
     /// despite having five.
+    /// <para>
+    /// The station cards come in with a default of their own instead, and the
+    /// case worth pinning there is the press on a station the rule would have
+    /// called open: computed one way and toggled the other, the head does nothing.
+    /// </para>
     /// </summary>
     public class JournalCardFoldsTests
     {
@@ -113,6 +118,63 @@ namespace Wildgrove.Game.Tests
         {
             Assert.That(JournalCardFolds.IsOpen(_choices, null), Is.False);
             Assert.DoesNotThrow(() => JournalCardFolds.Toggle(_choices, null));
+        }
+
+        // ── The stations, whose default is positional ──────────────────────
+
+        [Test]
+        public void IsOpen_AStationNobodyPressed_FollowsTheDefaultItWasHanded()
+        {
+            var fire = JournalCardFolds.Station("fire");
+            var forge = JournalCardFolds.Station("forge");
+
+            Assert.That(JournalCardFolds.IsOpen(_choices, fire, true), Is.True, "the work stands here");
+            Assert.That(JournalCardFolds.IsOpen(_choices, forge, false), Is.False,
+                "and every other station is a head and a tally");
+        }
+
+        [Test]
+        public void Toggle_ShutsAStationThatWasOpenByItsPosition()
+        {
+            var fire = JournalCardFolds.Station("fire");
+
+            JournalCardFolds.Toggle(_choices, fire, true);
+
+            Assert.That(JournalCardFolds.IsOpen(_choices, fire, true), Is.False);
+        }
+
+        [Test]
+        public void Toggle_OpensAStationThatWasShutByItsPosition()
+        {
+            // The case a default of this class's own would get wrong: a station
+            // id is in nobody's shut-unasked set, so the rule-based Toggle would
+            // read it as open, write shut, and the head would do nothing at all.
+            var forge = JournalCardFolds.Station("forge");
+
+            JournalCardFolds.Toggle(_choices, forge, false);
+
+            Assert.That(JournalCardFolds.IsOpen(_choices, forge, false), Is.True,
+                "one press on a folded station's head must open it");
+        }
+
+        [Test]
+        public void IsOpen_APressedStation_OutlastsTheWorkMovingOn()
+        {
+            var forge = JournalCardFolds.Station("forge");
+            JournalCardFolds.Toggle(_choices, forge, false);
+
+            // The work has moved to another station, so the positional default
+            // for this one is shut again — and the press still wins, which is
+            // what keeps a card from folding away under the finger that was
+            // using it.
+            Assert.That(JournalCardFolds.IsOpen(_choices, forge, false), Is.True);
+        }
+
+        [Test]
+        public void Station_IsNullForNoStation()
+        {
+            Assert.That(JournalCardFolds.Station(null), Is.Null);
+            Assert.That(JournalCardFolds.Station("fire"), Is.EqualTo("station-fire"));
         }
     }
 }

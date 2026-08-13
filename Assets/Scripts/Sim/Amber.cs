@@ -24,6 +24,17 @@ namespace Wildgrove.Sim
         /// <summary>Cooldown between rewarded time-skips — same role as <see cref="AdDripCooldownMs"/> for the "Hasten a while" reward. Tuning value.</summary>
         public const long TimeSkipCooldownMs = 4L * 60L * 60L * 1000L;
 
+        /// <summary>
+        /// Hours of gathering a rewarded time-skip credits, at the offline rate.
+        /// Beside its cooldown rather than in the journal's furniture, where it
+        /// sat until 2026-08-13: the rail cell says what the reward gives and the
+        /// sheet grants it, and two surfaces reading one number is how they come
+        /// to disagree. (The AMBER-paid skip is authored in economy.json with the
+        /// rest of that sink — this one is free, so it is baseline rather than
+        /// balance.)
+        /// </summary>
+        public const double RewardedTimeSkipHours = 2.0;
+
         /// <summary>Unity can't serialize a null section — a zeroed sink also reads as "no amber system".</summary>
         public static bool Configured(EconomyData economy)
         {

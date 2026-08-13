@@ -19,8 +19,17 @@ namespace Wildgrove.Game
     /// stock is the one amount that asks first, because it is the one that cannot
     /// be walked back.
     /// </para>
+    /// <para>
+    /// On the Stores page from 2026-08-13, where it was the Camp's until then.
+    /// A trade is stock for stock — what it asks, what it pays and every quality
+    /// tier it answers at are all readings of the drawer under it — and the Camp
+    /// page was six viewports long with the caravan at the foot of them. The
+    /// tinctures made the same move for the same reason (see
+    /// <see cref="StoresPage.BuildBrewsCard"/>): a card belongs on the page whose
+    /// subject it is.
+    /// </para>
     /// </summary>
-    internal sealed partial class CampPage
+    internal sealed partial class StoresPage
     {
         // How much of the give-good a trade spends, as a fraction of what's
         // held. Half by default: the whole stock is the one amount that can't

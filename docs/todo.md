@@ -84,6 +84,17 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   under the tile rather than in the note, which costs the card four rows of prose
   on a page whose argument is that plates say it faster than words.
   (`StoresPage.BrewReading`)
+- **Building Lines and the station cards are the same place drawn twice.** The
+  code says so itself (`CampPage.Crafting`: "the two cards are the one place, seen
+  from its two sides"), and they wear the same plates: five Raise rows on one
+  card, three station cards headed by three of those five lines. Now the stations
+  fold (2026-08-13) the pair reads odder, not better, because the folded heads sit
+  directly under a card that names them again. Closing it means the Raise moving
+  into its own station's card and Building Lines shrinking to the lines no recipe
+  works (the store and the roosts), which is ~700 units down to ~300 and puts the
+  raise where the work is. Left alone deliberately: it restructures two cards
+  rather than folding one, and the fold was the length problem.
+  (`CampPage.BuildBuildingsCard`)
 - **No aggregate camp production view** — per-resource rates exist only on node
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
 - **Tending's Choice window is invisible.** `Simulation.Tend` opens the 30 s

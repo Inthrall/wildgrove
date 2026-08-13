@@ -7,7 +7,7 @@ using Wildgrove.Sim;
 namespace Wildgrove.Game.Tests
 {
     /// <summary>
-    /// Pins the events rail's contents (design §15): which cells stand, in what
+    /// Pins the events rail's contents (design §15, §10): which cells stand, in what
     /// order, and — the part that matters most — the ones that must NOT stand.
     /// A rail cell is a promise on screen at every tab, so a cell that lights
     /// for a reward nobody can collect is worse than no rail at all.
@@ -114,7 +114,7 @@ namespace Wildgrove.Game.Tests
         {
             var state = InTide();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
 
             Assert.That(_entries[0].id, Is.EqualTo(EventRail.OpenTideId), "the open tide leads the rail");
             Assert.That(_entries[0].kind, Is.EqualTo(EventRailKind.OpenTide));
@@ -129,7 +129,7 @@ namespace Wildgrove.Game.Tests
         {
             var state = Fallow();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
 
             var coming = Find(_entries, EventRail.ComingSabbatId);
             Assert.That(coming, Is.Not.Null, "the fallow weeks are exactly when the rail has to speak up");
@@ -147,7 +147,7 @@ namespace Wildgrove.Game.Tests
             var state = InTide();
             Assert.That(state.keeping, Is.Null, "nothing has looked at the keeping yet");
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
 
             Assert.That(state.keeping, Is.Null,
                 "the rail is on screen at every tab — reading through Keeping.Current would move every "
@@ -160,12 +160,12 @@ namespace Wildgrove.Game.Tests
         public void Collect_NeverStandsBothWheelCells()
         {
             var open = InTide();
-            EventRail.Collect(open, _data, open.simNowUnixMs, false, _entries);
+            EventRail.Collect(open, _data, open.simNowUnixMs, false, false, _entries);
             Assert.That(Find(_entries, EventRail.ComingSabbatId), Is.Null,
                 "a tide is open; the one after it is a month away and must not spend a fingertip");
 
             var fallow = Fallow();
-            EventRail.Collect(fallow, _data, fallow.simNowUnixMs, false, _entries);
+            EventRail.Collect(fallow, _data, fallow.simNowUnixMs, false, false, _entries);
             Assert.That(Find(_entries, EventRail.OpenTideId), Is.Null);
         }
 
@@ -176,7 +176,7 @@ namespace Wildgrove.Game.Tests
             state.hemisphere = Wheel.HemisphereUnset;
             state.wheelCache = null;
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
 
             Assert.That(Find(_entries, EventRail.OpenTideId), Is.Null);
             Assert.That(Find(_entries, EventRail.ComingSabbatId), Is.Null,
@@ -189,14 +189,14 @@ namespace Wildgrove.Game.Tests
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
             var state = Fallow();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
             var signedOut = Find(_entries, EventRail.WeeklyCacheId);
             Assert.That(signedOut, Is.Not.Null, "the cell still stands — signing in is the thing to do about it");
             Assert.That(signedOut.Value.ready, Is.False,
                 "Play cannot leave a cache for somebody it does not know");
             Assert.That(signedOut.Value.mark, Is.EqualTo("sign in"));
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
             var signedIn = Find(_entries, EventRail.WeeklyCacheId);
             Assert.That(signedIn.Value.ready, Is.True, "never claimed and signed in — the week is up");
             Assert.That(signedIn.Value.mark, Is.Null,
@@ -212,7 +212,7 @@ namespace Wildgrove.Game.Tests
             // local midnight at offset 0 — so the week turns over a day out.
             var state = Fallow();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
             var cache = Find(_entries, EventRail.WeeklyCacheId);
             Assert.That(cache.Value.remainingSeconds, Is.EqualTo(86400.0).Within(1e-6),
@@ -230,7 +230,7 @@ namespace Wildgrove.Game.Tests
             // stands in, so this is a cache already taken for THIS week.
             state.weeklyCacheClaimedUnixMs = now - DayMs;
 
-            EventRail.Collect(state, _data, now, true, _entries);
+            EventRail.Collect(state, _data, now, true, false, _entries);
 
             Assert.That(Find(_entries, EventRail.WeeklyCacheId), Is.Null,
                 "the week is claimed, so there is nothing to act on — and a cell that spends six days "
@@ -242,10 +242,72 @@ namespace Wildgrove.Game.Tests
         {
             var state = Fallow();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
             Assert.That(_entries, Has.Count.EqualTo(1),
                 "an unconfigured economy shows no empty cell — absent is inert (fixtures)");
+        }
+
+        [Test]
+        public void Collect_TheTimeSkip_OffersTheHoursWhenThereIsAnAdToHand()
+        {
+            var state = Fallow();
+
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, true, _entries);
+
+            var skip = Find(_entries, EventRail.TimeSkipId);
+            Assert.That(skip, Is.Not.Null, "never claimed, so the land owes its hours");
+            Assert.That(skip.Value.kind, Is.EqualTo(EventRailKind.TimeSkip));
+            Assert.That(skip.Value.ready, Is.True);
+            Assert.That(skip.Value.mark, Is.EqualTo("+2h"),
+                "the reward, not the verb — \"pass the time\" does not fit a 120-unit cell, and the hours "
+                + "are what the tap is for");
+            Assert.That(skip.Value.remainingSeconds, Is.LessThan(0.0),
+                "nothing to count while it is ready: the mark speaks over the clock");
+        }
+
+        [Test]
+        public void Collect_TheTimeSkip_CountsItsCooldownOut()
+        {
+            var state = Fallow();
+            var now = state.simNowUnixMs;
+            state.timeSkipClaimedUnixMs = now;
+
+            EventRail.Collect(state, _data, now, true, true, _entries);
+
+            var skip = Find(_entries, EventRail.TimeSkipId);
+            Assert.That(skip, Is.Not.Null, "the cell stands through the cooldown — the countdown IS the cell");
+            Assert.That(skip.Value.ready, Is.False, "taken, so there is nothing to take");
+            Assert.That(skip.Value.mark, Is.Null, "and no word over the clock, because the clock is the news");
+            Assert.That(skip.Value.remainingSeconds,
+                Is.EqualTo(Amber.TimeSkipCooldownMs / 1000.0).Within(1e-6));
+        }
+
+        [Test]
+        public void Collect_TheTimeSkip_StandsDownWhenTheAdLayerHasNothing()
+        {
+            var state = Fallow();
+
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
+
+            Assert.That(Find(_entries, EventRail.TimeSkipId), Is.Null,
+                "off cooldown with no ad filled and no Remove Ads: the hours cannot be had, so the cell "
+                + "does not offer them — a greyed plate saying \"no ad to hand\" is what it replaced");
+        }
+
+        [Test]
+        public void Collect_TheTimeSkip_StandsLastSoAShortBandDropsItFirst()
+        {
+            _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
+            var state = InTide();
+
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, true, _entries);
+
+            Assert.That(_entries, Has.Count.EqualTo(3));
+            Assert.That(_entries[2].id, Is.EqualTo(EventRail.TimeSkipId),
+                "the band seats two cells at its floor and three at its ceiling, and this is the one of "
+                + "the three that cannot be missed: a sabbat not kept is gone for a year and a cache goes "
+                + "with its week, while these hours wait to be taken");
         }
 
         [Test]
@@ -254,8 +316,8 @@ namespace Wildgrove.Game.Tests
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
             var state = Fallow();
 
-            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
-            EventRail.Collect(state, _data, state.simNowUnixMs, true, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
+            EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
             Assert.That(_entries, Has.Count.EqualTo(2),
                 "the caller holds one list for the run — a Collect that appended would grow it forever");

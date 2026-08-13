@@ -22,6 +22,13 @@ namespace Wildgrove.Game
     /// looking for.
     /// </para>
     /// <para>
+    /// Two cards act on the drawer rather than reading it: the bottles brewed
+    /// from it (<see cref="BuildBrewsCard"/>) and the caravan that trades it
+    /// (<c>StoresPage.Exchange</c>, the Camp page's until 2026-08-13). Both came
+    /// here from elsewhere, and for the same reason: what a card is ABOUT is
+    /// which page it belongs on.
+    /// </para>
+    /// <para>
     /// One tile per <em>stack</em>, not per resource: a resource held Poor,
     /// Decent and Choice at once is three tiles, because the three pools are
     /// spent on different things and a single tile could only ever wear one
@@ -30,7 +37,7 @@ namespace Wildgrove.Game
     /// glance.
     /// </para>
     /// </summary>
-    internal sealed class StoresPage : JournalSection
+    internal sealed partial class StoresPage : JournalSection
     {
         internal StoresPage(GameHud hud) : base(hud) { }
 
@@ -43,11 +50,11 @@ namespace Wildgrove.Game
 
         internal void BuildStoresPage()
         {
-            // The brews lead the page: the bottles are the one thing here that
-            // can be USED rather than read, and the drawer under them grows a
-            // tile per stack — below it they would drift further out of reach
-            // with every zone the trail opens.
+            // The two cards that DO something lead the page, and the drawer they
+            // act on follows: it grows a tile per stack, so anything under it
+            // drifts further out of reach with every zone the trail opens.
             BuildBrewsCard();
+            BuildExchangeCard();
             BuildStockCard();
         }
 

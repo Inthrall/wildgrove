@@ -57,9 +57,25 @@ namespace Wildgrove.Game
         public const string Keeping = "keeping";
 
         /// <summary>
+        /// A crafting station's card on the Camp page (<c>CampPage.Crafting</c>).
+        /// Built from the station id because the stations are content: the fire,
+        /// the bench and the forge are data, and a run's data can name a fourth.
+        /// </summary>
+        public static string Station(string stationId)
+        {
+            return stationId == null ? null : "station-" + stationId;
+        }
+
+        /// <summary>
         /// The cards that keep their contents folded away until asked for. The
         /// Folio is the one Record card left out: it is the only one of the
         /// four with a button on it.
+        /// <para>
+        /// The station cards are not in here and cannot be: which one stands
+        /// open is positional, the Trail's kind of rule rather than this one
+        /// (<see cref="JournalZones"/>), so they hand their own default to the
+        /// overloads below.
+        /// </para>
         /// </summary>
         private static readonly HashSet<string> ShutUnasked = new HashSet<string>
         {
@@ -70,11 +86,32 @@ namespace Wildgrove.Game
         };
 
         /// <summary>
+        /// Whether a card nobody has pressed stands open, by what the card is
+        /// FOR — the rule this class exists to hold. Cards with a positional
+        /// default don't ask it; they pass their own answer instead.
+        /// </summary>
+        public static bool OpenUnasked(string cardId)
+        {
+            return cardId != null && !ShutUnasked.Contains(cardId);
+        }
+
+        /// <summary>
         /// Whether <paramref name="cardId"/>'s contents are drawn.
         /// <paramref name="choices"/> holds only the cards the player has
         /// pressed; everything else falls through to the rule above.
         /// </summary>
         public static bool IsOpen(IDictionary<string, bool> choices, string cardId)
+        {
+            return IsOpen(choices, cardId, OpenUnasked(cardId));
+        }
+
+        /// <summary>
+        /// <see cref="IsOpen(IDictionary{string,bool},string)"/> for a card whose
+        /// unasked default is the caller's to decide — the station cards, where
+        /// it is "this is the one the work is standing at" and so cannot be a
+        /// set of ids known here.
+        /// </summary>
+        public static bool IsOpen(IDictionary<string, bool> choices, string cardId, bool openUnasked)
         {
             if (cardId == null)
             {
@@ -86,18 +123,29 @@ namespace Wildgrove.Game
                 return chosen;
             }
 
-            return !ShutUnasked.Contains(cardId);
+            return openUnasked;
         }
 
         /// <summary>Fold the card the other way, and remember that the player said so.</summary>
         public static void Toggle(IDictionary<string, bool> choices, string cardId)
+        {
+            Toggle(choices, cardId, OpenUnasked(cardId));
+        }
+
+        /// <summary>
+        /// Fold a card whose default the caller owns. The default has to come
+        /// back in here as well as into <see cref="IsOpen"/>: a card drawn shut
+        /// by a positional rule and toggled against this class's own would be
+        /// set shut a second time, and the head would do nothing.
+        /// </summary>
+        public static void Toggle(IDictionary<string, bool> choices, string cardId, bool openUnasked)
         {
             if (choices == null || cardId == null)
             {
                 return;
             }
 
-            choices[cardId] = !IsOpen(choices, cardId);
+            choices[cardId] = !IsOpen(choices, cardId, openUnasked);
         }
     }
 }
