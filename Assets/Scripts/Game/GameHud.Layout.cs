@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
+using Wildgrove.Game.Input;
 using Wildgrove.Game.World;
 using Wildgrove.Sim;
 using static Wildgrove.Game.JournalTheme;
@@ -28,9 +29,14 @@ namespace Wildgrove.Game
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas = canvas;
             var scaler = canvasGo.GetComponent<CanvasScaler>();
+            _hudScaler = scaler;
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080, 1920);
             scaler.matchWidthOrHeight = 0.5f;
+            // The reference is not the flat 1080x1920 it reads as: a screen
+            // physically bigger than a phone is handed more units to work in
+            // (JournalLayout.RoomFactor), and this is re-asked whenever the
+            // screen changes shape — a foldable opening is a different device.
+            ApplyCanvasRoom();
 
             var root = MakeRect("Root", canvasGo.transform);
             Stretch(root);
@@ -206,8 +212,10 @@ namespace Wildgrove.Game
             // time-skip the Camp's — and pinned here they cost every tab a
             // fifth of its height.
 
-            // The open journal page — a scroll view the tab pages build into.
-            _body = BuildScroll(root);
+            // The open journal page. TWO scroll views side by side, not one
+            // scroll holding two columns: a spread's pages each keep their own
+            // place (see BuildPageArea).
+            BuildPageArea(root);
             JournalWidgets.Content = _body;
 
             // The journal tabs along the bottom edge.
@@ -250,8 +258,56 @@ namespace Wildgrove.Game
         /// share of the screen. Re-applied whenever the safe area or canvas
         /// size changes.
         /// </summary>
+        /// <summary>
+        /// Hand every canvas the units this screen has earned — one reference
+        /// resolution, opened out by <see cref="JournalLayout.RoomFactor"/>, so
+        /// a tablet gets more of the book rather than a bigger copy of the
+        /// phone's.
+        /// <para>
+        /// Asked off the SCREEN's pixels rather than the canvas's units, which
+        /// is what keeps it from chasing its own tail: changing the reference
+        /// changes the canvas, and a rule that read the canvas would answer
+        /// differently every time it ran. The screen only changes when the
+        /// device does — a rotation keeps the same pixel count and so the same
+        /// answer, while a foldable opening is genuinely a larger screen and
+        /// gets one.
+        /// </para>
+        /// </summary>
+        private void ApplyCanvasRoom()
+        {
+            var width = Screen.width;
+            var height = Screen.height;
+            if (width == _appliedScreenWidth && height == _appliedScreenHeight)
+            {
+                return;
+            }
+
+            _appliedScreenWidth = width;
+            _appliedScreenHeight = height;
+            var reference = JournalLayout.ReferenceResolution(width, height, DeviceForm.ScreenDpi);
+            if (_hudScaler != null)
+            {
+                _hudScaler.referenceResolution = reference;
+            }
+
+            // The rail keeps a canvas of its own so the world can draw over it,
+            // and lays itself against the band in the HUD's units by hand — two
+            // scalers that disagreed would stand it somewhere else entirely.
+            // Null on the first call: the rail is built after the chrome, and
+            // sets the same reference itself.
+            if (_railScaler != null)
+            {
+                _railScaler.referenceResolution = reference;
+            }
+
+            // The canvas has a new size; the fit below has to measure the new
+            // one, not the one this call just replaced.
+            Canvas.ForceUpdateCanvases();
+        }
+
         private void FitLayoutToScreen()
         {
+            ApplyCanvasRoom();
             var safe = Screen.safeArea;
             var canvasRect = ((RectTransform)_canvas.transform).rect;
             var canvasHeight = canvasRect.height;
@@ -266,7 +322,7 @@ namespace Wildgrove.Game
             _appliedSafeArea = safe;
             _appliedCanvasHeight = canvasHeight;
             _appliedCanvasWidth = canvasWidth;
-            ApplyWideLayout(JournalLayout.IsWide(canvasWidth, canvasHeight));
+            ApplyWideLayout(JournalLayout.IsWide(canvasWidth, canvasHeight), canvasHeight);
             ApplyPageMargins(canvasWidth);
 
             var scale = _canvas.scaleFactor > 0f ? _canvas.scaleFactor : 1f;
@@ -309,18 +365,55 @@ namespace Wildgrove.Game
             _ledger.alignment = wide ? TextAnchor.MiddleRight : TextAnchor.MiddleCenter;
             _ledgerRow.gameObject.SetActive(!wide);
             _ledgerRule.SetActive(!wide);
+
+            // And the tracker with them (2026-08-14): title · banner · ledger,
+            // one line. The banner is a single short sentence, and on a spread
+            // it had a row of its own with 940 units of empty paper either side
+            // of it while the page below was clipped by the tabs. It stands
+            // between the two things already in this line because that is the
+            // order the column reads top-to-bottom, turned on its side, and it
+            // takes the row's slack (flexibleWidth) so the title and the ledger
+            // keep their own widths at the margins.
+            if (_trackerPanel != null)
+            {
+                var trackerHost = wide ? _headRow : (Transform)_trackerRow;
+                if (_trackerPanel.transform.parent != trackerHost)
+                {
+                    _trackerPanel.transform.SetParent(trackerHost, false);
+                }
+
+                if (wide)
+                {
+                    _trackerPanel.transform.SetSiblingIndex(1);
+                }
+            }
+
+            // Nothing left in it on a spread: the note it used to stand beside
+            // goes back to a line of its own, which stands only when there is
+            // something written on it (StandNoteLane).
+            _trackerRow.gameObject.SetActive(!wide);
             ApplyNoteFold(wide);
         }
 
         /// <summary>
-        /// Stand the margin note beside the tracker on a spread instead of over
-        /// it. Two short lines become one — and because the row is the tracker's
-        /// either way, a note arriving mid-play doesn't shove the whole page
-        /// down a line to make room for itself.
+        /// Keep the margin note on a line of its own, immediately under the
+        /// tracker's row.
         /// <para>
-        /// Which way the page is folded is also what decides whether a silent
-        /// lane stands at all, so a device turned mid-run asks that again here:
-        /// see <see cref="StandNoteLane"/>.
+        /// It stood BESIDE the tracker on a spread until 2026-08-14, to make
+        /// two short lines into one. The tracker has gone up into the title's
+        /// line since (<see cref="ApplyHeadFold"/>), which buys the page the
+        /// whole of that row rather than half of it, and leaves the note with
+        /// nothing to share. It costs the spread nothing to be back on its own
+        /// line: a silent lane doesn't stand there at all
+        /// (<see cref="StandNoteLane"/>), and a note that arrives mid-play is
+        /// paid for out of the world band rather than out of the page — the
+        /// band is the layout's shock absorber (<see cref="UpdateWorldGap"/>),
+        /// which is what stops a sentence shoving the journal under a thumb
+        /// already reading it.
+        /// </para>
+        /// <para>
+        /// Which way the page is folded is still what decides whether a silent
+        /// lane stands at all, so a device turned mid-run asks that again here.
         /// </para>
         /// </summary>
         private void ApplyNoteFold(bool wide)
@@ -330,24 +423,147 @@ namespace Wildgrove.Game
                 return;
             }
 
-            if (wide)
-            {
-                if (_noteLane.parent != _trackerRow)
-                {
-                    _noteLane.SetParent(_trackerRow, false);
-                    // Right of the tracker plate — the same order the column
-                    // reads top-to-bottom, turned on its side.
-                    _noteLane.SetAsLastSibling();
-                }
-            }
-            else if (_noteLane.parent != _root)
+            if (_noteLane.parent != _root)
             {
                 _noteLane.SetParent(_root, false);
-                // Back to its own line, immediately below the tracker's row.
-                _noteLane.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
             }
 
+            _noteLane.SetSiblingIndex(_trackerRow.GetSiblingIndex() + 1);
             StandNoteLane();
+        }
+
+        /// <summary>The rail's breath between itself and the page it opens.</summary>
+        private const float TabRailGap = 20f;
+
+        /// <summary>
+        /// The tabs' second home: a rail down the page's fore-edge, standing
+        /// only while the book is a spread.
+        /// <para>
+        /// Built empty. The tab plates themselves live in whichever home the
+        /// fold has put them in (<see cref="ApplyTabFold"/>) — they are the same
+        /// five objects either way, so which tab is lit, what it says and where
+        /// its handler goes all survive the move without being told about it.
+        /// </para>
+        /// </summary>
+        private void BuildTabRail(RectTransform parent)
+        {
+            var railGo = MakeRect("TabRail", parent).gameObject;
+            _tabRail = (RectTransform)railGo.transform;
+            var element = railGo.AddComponent<LayoutElement>();
+            element.minWidth = JournalLayout.RailTabWidth;
+            element.preferredWidth = JournalLayout.RailTabWidth;
+            element.flexibleWidth = 0f;
+
+            var layout = railGo.AddComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            // From the top, with the paper below them: index tabs are cut down
+            // from the head of a book, not centred on its height.
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.spacing = JournalLayout.RailTabSpacing;
+            railGo.SetActive(false);
+        }
+
+        /// <summary>
+        /// Move the journal's tabs between their two homes: the bar along the
+        /// bottom edge in a column, the rail down the page's fore-edge on a
+        /// spread.
+        /// <para>
+        /// This is the largest single thing the landscape book gets back.
+        /// Landscape is short of exactly one measure and it is not width: a
+        /// bottom bar costs <see cref="JournalLayout.TabDepth"/> of a ~1,150-unit canvas —
+        /// an eighth of the scarce axis — to seat five short words that sit
+        /// perfectly well in the abundant one. Down the fore-edge they cost
+        /// <see cref="JournalLayout.RailTabWidth"/> of a 2,000-unit canvas
+        /// instead, and read as what they have always been drawn as: index tabs
+        /// cut into the edge of a book.
+        /// </para>
+        /// <para>
+        /// The rail stands on the page's LEFT rather than its right, which
+        /// looks like the wrong edge for a thumb index until you ask what the
+        /// lit tab is fused to. The merge strip makes a raised tab part of the
+        /// page it opens, and the page it opens is the left one of the spread —
+        /// so the tabs have to stand outside THAT page, with the fusion facing
+        /// in across the gap. On the far edge they would be fused to the Trail,
+        /// which no tab opens.
+        /// </para>
+        /// </summary>
+        private void ApplyTabFold(bool wide, float canvasHeight)
+        {
+            if (_tabsLayout == null || _tabRail == null || _tabsBar == null)
+            {
+                return;
+            }
+
+            // Wide is not the same question as tall enough — a 32:9 canvas is a
+            // spread with no room for a column of fingertips beside the page,
+            // and the bar is what always fits. The Trail keeps no tab on a
+            // spread, so the rail seats one fewer than the book has.
+            var railed = wide && JournalLayout.RailSeatsTabs(canvasHeight, Tabs.Length - 1);
+
+            // The plates move; nothing else about them does. In Tabs order, so
+            // the rail reads top-to-bottom the way the bar reads left-to-right.
+            var host = railed ? _tabRail : _tabsBar;
+            foreach (var id in Tabs)
+            {
+                if (!_tabButtons.TryGetValue(id, out var tab))
+                {
+                    continue;
+                }
+
+                if (tab.transform.parent != host)
+                {
+                    tab.transform.SetParent(host, false);
+                }
+
+                tab.transform.SetAsLastSibling();
+                if (_tabMerges.TryGetValue(id, out var merge))
+                {
+                    OrientTabMerge(merge, railed);
+                }
+            }
+
+            _tabsBar.gameObject.SetActive(!railed);
+            _tabRail.gameObject.SetActive(railed);
+
+            // A bar standing on a spread it could not rail is still a bar on a
+            // very broad canvas: stretched five ways it hands each tab several
+            // hundred units to seat one short word. Packed at the left margin
+            // it reads as index tabs, which is the mock's own answer for a wide
+            // bar (`body.wide .tabs { justify-content:flex-start }`).
+            _tabsLayout.childForceExpandWidth = !wide;
+            _tabsLayout.childAlignment = wide ? TextAnchor.MiddleLeft : TextAnchor.MiddleCenter;
+        }
+
+        /// <summary>
+        /// Face the merge strip at the page. It is paper drawn over the lit
+        /// tab's own border and on across the gap, so the raised tab reads as
+        /// PART of the page rather than as a lighter plate beside it — which
+        /// means it has to lie along whichever edge the page is on: the tab's
+        /// top in the bottom bar, its right-hand side in the fore-edge rail.
+        /// </summary>
+        private static void OrientTabMerge(GameObject merge, bool wide)
+        {
+            var rect = (RectTransform)merge.transform;
+            if (wide)
+            {
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = Vector2.one;
+                // Left 4 to cover the tab's own rule, right across the rail's
+                // gap; inset top and bottom so the other rules still frame it.
+                rect.offsetMin = new Vector2(-4f, 3f);
+                rect.offsetMax = new Vector2(TabRailGap + 2f, -3f);
+                return;
+            }
+
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = Vector2.one;
+            // Down 4 to cover the tab's own top border, up 14 across the bar
+            // padding and root spacing; inset so the side rules still frame it.
+            rect.offsetMin = new Vector2(3f, -4f);
+            rect.offsetMax = new Vector2(-3f, 14f);
         }
 
         /// <summary>
@@ -365,7 +581,7 @@ namespace Wildgrove.Game
                 return;
             }
 
-            var side = JournalLayout.SideMargin(canvasWidth, PageMargin);
+            var side = JournalLayout.SideMargin(canvasWidth, PageMargin, _wide);
             if (layout.padding.left == side)
             {
                 return;
@@ -383,7 +599,7 @@ namespace Wildgrove.Game
         /// sitting on the Trail is moved to the Camp so the left page still
         /// says something the right one doesn't (the mock does the same).
         /// </summary>
-        private void ApplyWideLayout(bool wide)
+        private void ApplyWideLayout(bool wide, float canvasHeight)
         {
             // Idempotent on purpose: the first fit runs before the tab bar
             // exists (so the hide below is a no-op), and the one at the end of
@@ -392,6 +608,7 @@ namespace Wildgrove.Game
             var changed = wide != _wide;
             _wide = wide;
             ApplyHeadFold(wide);
+            ApplyTabFold(wide, canvasHeight);
 
             if (_tabButtons.TryGetValue(TabTrail, out var trailTab))
             {
@@ -433,14 +650,60 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The band the open page stands in: the journal's tabs down the
+        /// fore-edge, and the scroll beside them.
+        /// <para>
+        /// The tabs are here rather than in a row of their own because
+        /// landscape is short of one thing and it is not width. A bottom bar
+        /// costs 132 units of a ~1,150-unit canvas — an eighth of the scarce
+        /// axis — to say five short words that would sit perfectly happily in
+        /// the abundant one, and a journal's index tabs run down its fore-edge
+        /// anyway. In a column the bar goes back to the bottom edge, where a
+        /// thumb expects it and where height is not the thing in short supply
+        /// (see <see cref="ApplyTabFold"/>).
+        /// </para>
+        /// <para>
+        /// ONE scroll, holding both columns of a spread — not a scroll per page.
+        /// That was tried on 2026-08-14 and taken out again the same day: two
+        /// scrollbars on one screen is a worse thing to look at than one, and
+        /// the left page's rode the spine, where it read as a rule cutting the
+        /// book in half rather than as a control. The answer to the Trail being
+        /// dragged out of view is to spend less of the page on chrome so there
+        /// is less scrolling to do, which is what everything else in this pass
+        /// is for.
+        /// </para>
+        /// </summary>
+        private void BuildPageArea(RectTransform root)
+        {
+            _pageArea = MakeRect("PageRow", root);
+            // The only flexible row in the chrome — the page is what gives when
+            // anything above it grows (see UpdateWorldGap).
+            Flexible(_pageArea.gameObject, 2f);
+            var row = _pageArea.gameObject.AddComponent<HorizontalLayoutGroup>();
+            row.childControlWidth = true;
+            row.childControlHeight = true;
+            // The rail keeps a width of its own; the page takes everything left.
+            row.childForceExpandWidth = false;
+            row.childForceExpandHeight = true;
+            row.childAlignment = TextAnchor.UpperLeft;
+            row.spacing = TabRailGap;
+
+            // Before the page, so the tabs stand on the outer edge with the
+            // open page they belong to on their right — which is also the way
+            // the merge strip has to face (see OrientTabMerge).
+            BuildTabRail(_pageArea);
+            _body = BuildScroll(_pageArea);
+        }
+
+        /// <summary>
         /// Build the spread's frame inside the scroll content: two equal
         /// columns side by side, top-aligned, and return them. The columns are
         /// ordinary vertical layouts, so a page cannot tell it is one.
         /// </summary>
         private void BuildSpreadColumns(out RectTransform left, out RectTransform right)
         {
-            _spread = MakeRect("Spread", _body);
-            var row = _spread.gameObject.AddComponent<HorizontalLayoutGroup>();
+            var spread = MakeRect("Spread", _body);
+            var row = spread.gameObject.AddComponent<HorizontalLayoutGroup>();
             row.childControlWidth = true;
             row.childControlHeight = true;
             row.childForceExpandWidth = true;
@@ -450,8 +713,8 @@ namespace Wildgrove.Game
             row.childAlignment = TextAnchor.UpperLeft;
             row.spacing = JournalLayout.SpreadGap;
 
-            left = MakeColumn("PageLeft", _spread);
-            right = MakeColumn("PageRight", _spread);
+            left = MakeColumn("PageLeft", spread);
+            right = MakeColumn("PageRight", spread);
         }
 
         private RectTransform MakeColumn(string name, RectTransform parent)
@@ -487,6 +750,66 @@ namespace Wildgrove.Game
             element.preferredWidth = 0f;
             return column;
         }
+
+        /// <summary>
+        /// The running head over one page of a spread: the page's name in
+        /// small caps with a rule under it, which is the mock's
+        /// <c>.running-head</c> down to the border (docs/wildgrove-journal.html
+        /// § the 880px breakpoint).
+        /// <para>
+        /// BOTH pages carry one, as the mock's four sections do. The Trail's
+        /// stood alone until 2026-08-14, and the two halves of the book then
+        /// began on different lines — the left page's first card started level
+        /// with the right page's HEAD rather than with its first card — so the
+        /// spread read as two panes that happened to be side by side. The rule
+        /// is the other half of it: without one the head floated in the paper
+        /// under the world band with nothing to sit on.
+        /// </para>
+        /// <para>
+        /// On the Camp and the Warden the head is the thing's own NAME, with
+        /// the quill that changes it — see <see cref="PageIsNamed"/> for why
+        /// that replaced a card. Those two are the only heads a single column
+        /// draws: there the title above already says which page this is, so a
+        /// label would restate it, and a name does not.
+        /// </para>
+        /// </summary>
+        private void RunningHead(RectTransform column, string tab)
+        {
+            var named = PageIsNamed(tab);
+            if (!_wide && !named)
+            {
+                return;
+            }
+
+            if (named)
+            {
+                // A row, because the quill stands beside the name and carries
+                // the 48dp plate that sets this line's height whatever the name
+                // is — the reason it is handed that height at build time rather
+                // than growing into it (JournalWidgets.Row).
+                var row = Row(column, NameHeadRow);
+                var layout = row.GetComponent<HorizontalLayoutGroup>();
+                layout.childAlignment = TextAnchor.MiddleCenter;
+                layout.spacing = 2;
+
+                var name = MakeText(row.transform, PageName(tab), 22, TextAnchor.MiddleCenter, Ink, _serif);
+                var captured = tab;
+                IconButton(row.transform, QuillSprite(), 38f, NameHeadTouch, () => OpenPageNaming(captured));
+                _liveUpdaters.Add(() => name.text = PageName(captured));
+            }
+            else
+            {
+                MakeText(column, RunningHeadName(tab), 13, TextAnchor.MiddleCenter, Ink2, _smallCaps);
+            }
+
+            MakeHairline(column);
+        }
+
+        /// <summary>The quill's touch plate in a named running head — 120 units ≈ Android's 48dp floor.</summary>
+        private const float NameHeadTouch = 120f;
+
+        /// <summary>The line that holds it: the plate plus the row's own 6/6 padding.</summary>
+        private const float NameHeadRow = NameHeadTouch + 12f;
 
         /// <summary>
         /// Give the world strip whatever the chrome and the page don't need —
@@ -529,7 +852,14 @@ namespace Wildgrove.Game
                 }
 
                 rows++;
-                if (child == _worldGap || child == _body)
+                // The two rows that GIVE — the band being sized, and the page
+                // area it is sized against. Everything else is pinned chrome
+                // and is measured. (_pageArea, not _body: the page is a row of
+                // scroll views now, and _body is the content inside one of
+                // them — several viewports tall, and not a child of the root at
+                // all, so it would neither be found here nor be the right
+                // measure if it were.)
+                if (child == _worldGap || child == _pageArea)
                 {
                     continue;
                 }
@@ -551,9 +881,11 @@ namespace Wildgrove.Game
         private void BuildTabsBar(RectTransform root)
         {
             var barGo = MakeRect("Tabs", root).gameObject;
+            _tabsBar = (RectTransform)barGo.transform;
             // ≥117 units ≈ Android's 48dp touch floor — 84 was ~32dp tabs.
-            FixedHeight(barGo, 132);
+            FixedHeight(barGo, JournalLayout.TabDepth);
             var layout = barGo.AddComponent<HorizontalLayoutGroup>();
+            _tabsLayout = layout;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
@@ -570,8 +902,16 @@ namespace Wildgrove.Game
 
         private void AddTab(Transform bar, string id, string label)
         {
-            var go = new GameObject("Tab_" + id, typeof(Image), typeof(Button));
+            var go = new GameObject("Tab_" + id, typeof(Image), typeof(Button), typeof(LayoutElement));
             go.transform.SetParent(bar, false);
+            // A size of its own, for the rail: a vertical group controls height
+            // and does not force-expand it, so without this the tabs would
+            // stack to nothing. Both are PREFERRED, never minimums — the
+            // phone's bar shares 1,048 units between five tabs, and a floor of
+            // the rail's width would overflow it.
+            var element = go.GetComponent<LayoutElement>();
+            element.preferredWidth = JournalLayout.SpreadTabWidth;
+            element.preferredHeight = JournalLayout.TabDepth;
             AddBorder(go, Ink2);
             var outer = AddBorder(go, RulePaper, 4f);
             var button = go.GetComponent<Button>();
@@ -589,13 +929,7 @@ namespace Wildgrove.Game
             var mergeImage = merge.GetComponent<Image>();
             mergeImage.color = PagePaper;
             mergeImage.raycastTarget = false;
-            var mergeRect = (RectTransform)merge.transform;
-            mergeRect.anchorMin = new Vector2(0f, 1f);
-            mergeRect.anchorMax = Vector2.one;
-            // Down 4 to cover the tab's own top border, up 14 across the bar
-            // padding and root spacing; inset so the side rules still frame it.
-            mergeRect.offsetMin = new Vector2(3f, -4f);
-            mergeRect.offsetMax = new Vector2(-3f, 14f);
+            OrientTabMerge(merge, _wide);
 
             _tabButtons[id] = button;
             _tabLabels[id] = text;
@@ -612,7 +946,8 @@ namespace Wildgrove.Game
             var scrollGo = new GameObject("Body", typeof(Image), typeof(ScrollRect));
             scrollGo.transform.SetParent(parent, false);
             scrollGo.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.02f);
-            Flexible(scrollGo, 2f);
+            // Everything the rail beside it does not take.
+            FlexibleWidth(scrollGo, 1f);
 
             var scroll = scrollGo.GetComponent<ScrollRect>();
             scroll.horizontal = false;

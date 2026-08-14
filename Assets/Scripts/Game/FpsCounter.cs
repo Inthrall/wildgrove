@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Wildgrove.Game.Input;
 
 namespace Wildgrove.Game
 {
@@ -76,7 +77,9 @@ namespace Wildgrove.Game
 
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            // The journal's own answer, so the diagnostic sits at the size the
+            // page does rather than at whatever a flat reference would give it.
+            scaler.referenceResolution = JournalLayout.ReferenceResolution(Screen.width, Screen.height, DeviceForm.ScreenDpi);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 

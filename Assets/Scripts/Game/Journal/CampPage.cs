@@ -36,13 +36,28 @@ namespace Wildgrove.Game
 
         internal CampPage(GameHud hud) : base(hud) { }
 
+        // The camp's own name headed this page as a card until 2026-08-14. It
+        // is the page's running head now — a name belongs in a page head, and
+        // that line is one the book draws anyway (see GameHud.PageIsNamed).
         internal void BuildCampPage()
         {
+            BuildCraftingCards();
+            BuildBuildingsCard();
+            BuildLadderCard();
+            BuildAmberCard();
+
             // Remove Ads until it's owned, and nothing else: a purchase is camp
-            // business, so it heads the camp's page rather than a bar pinned in
-            // the chrome that all four tabs would pay for. Being in the body also
-            // means it refreshes off the page's own updater pool rather than the
-            // HUD's chrome pass.
+            // business, so it stands on the camp's page rather than in a bar
+            // pinned in the chrome that all four tabs would pay for. Being in
+            // the body also means it refreshes off the page's own updater pool
+            // rather than the HUD's chrome pass.
+            //
+            // At the FOOT of it, beside the Amber card, from 2026-08-14. It
+            // headed the page until then, which cost 136 units above everything
+            // the tab was opened for — a quarter of the open page on a
+            // landscape spread, where the page is ~578 units all told. The two
+            // real-money surfaces also read better as one place to spend than
+            // as bookends around four cards of play.
             //
             // The rewarded time-skip was the other half of this strip until
             // 2026-08-13, and it did go to the chrome — but to the events rail,
@@ -51,35 +66,6 @@ namespace Wildgrove.Game
             // it. A clock counting itself down is what that rail is for.
             _hud.Sheets.BuildCampActions(_body);
             _liveUpdaters.Add(() => _hud.Sheets.RefreshCampActions());
-
-            BuildCampNameCard();
-            BuildCraftingCards();
-            BuildBuildingsCard();
-            BuildLadderCard();
-            BuildAmberCard();
-        }
-
-        /// <summary>
-        /// The page's own head: what this camp is called (design §9's sink
-        /// slate) — the Warden page's name card, worn by the run instead of
-        /// the player. The quill opens the naming sheet, which carries the
-        /// price; the card says the name and nothing else, for the same
-        /// measured-at-zero-width reason the warden's does.
-        /// </summary>
-        private void BuildCampNameCard()
-        {
-            var card = Card("THE CAMP");
-
-            var row = Row(card);
-            var layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 2;
-
-            var name = MakeText(row.transform, _loop.CampName(), 30, TextAnchor.MiddleCenter, Ink, _serif);
-            IconButton(row.transform, JournalSprites.QuillSprite(), 40f, 120f,
-                () => _hud.Sheets.OpenCampNamingSheet());
-
-            _liveUpdaters.Add(() => name.text = _loop.CampName());
         }
 
         private void BuildBuildingsCard()

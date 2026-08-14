@@ -497,6 +497,23 @@ lean is a regression, not a phase. Build order:
   change to either end is what would break it, not a change to the rail. A
   press that catches nothing still belongs to the cell, which is the same
   rule the node plates keep.
+- **The landscape chrome pass is unproven by anything but the eye** (2026-08-14).
+  Chrome and band went from 44% of a landscape canvas to 26%, by three moves,
+  none of which any test can see: the **tabs** leave the bottom bar for a rail
+  down the page's fore-edge (`ApplyTabFold`, and `RailSeatsTabs` sends them back
+  to the bar on a canvas too short to seat them — 32:9 is), the **tracker
+  banner** folds up into the title's line beside the ledger (`ApplyHeadFold`),
+  and the **camp's and warden's names** leave their cards for the page's own
+  running head (`GameHud.PageIsNamed`). EditMode tests never build the HUD, so
+  check by hand: that the lit tab in the rail still fuses to the page it opens
+  (`OrientTabMerge` turns the merge strip on its side, and a strip left facing
+  the wrong way looks like a rendering fault rather than a missing cue); that
+  the title line does not crush the title when the Fold banner is up, which is
+  the longest thing that line ever carries and has a button on it; that a pad
+  walks the rail; and that turning to portrait puts the tabs back along the
+  bottom, the banner back on its own row and the names back at the head of
+  their pages. Two scrollbars were tried first and taken out the same day —
+  don't put them back without reading `BuildPageArea`.
 - **The rail's new canvas is unproven by anything but the eye.** EditMode tests
   never build the HUD, so nothing pins the rail's placement (`PlaceEventRail`
   converts the band's screen rect into the rail canvas's own units), the
@@ -810,6 +827,32 @@ for:
 
 ### 3.3 On device — the build is not proven until these are done
 
+- **The room a big screen is given rests on `Screen.dpi`, which nothing here can
+  check.** `JournalLayout.RoomFactor` (2026-08-14) asks the screen how big it
+  physically is and hands a tablet up to 1.6× the canvas units of a phone, so
+  the book gains rows and margins instead of being a magnified phone. **Phones
+  are untouched by construction** — the curve starts at the largest handheld
+  (`PhoneInches`), so nothing under a tablet moves at all — and an unknown or
+  implausible density takes the phone's answer rather than the roomiest, since a
+  tablet's page at a phone's size is unreadable while the reverse is merely
+  generous. What still needs eyes on hardware: that a 10-inch tablet reads as
+  *more book* rather than as *small text*, that a 4:3 tablet held upright keeps
+  a phone's line measure with paper either side (`SideMargin`'s single-page cap,
+  same date), and that a foldable opening re-scales rather than keeping the
+  folded phone's units.
+  **⚠️ The Editor's plain game view cannot preview a tablet, and must not be
+  asked to.** `Screen.dpi` there is the DEVELOPER'S MONITOR — not the game view,
+  not its resolution, not any device. Read straight it made every preset look
+  like a twenty-inch screen, so the journal took its roomiest layout at every
+  resolution *including phone presets*, and a phone was laid out as a tablet at
+  a phone's size (seen 2026-08-14, and the reason `DeviceForm.ScreenDpi` exists).
+  The game view is now answered with `JournalLayout.ReferenceDpi` instead, so a
+  preset previews "this many pixels at a handheld's density" — deterministic,
+  and the same on every developer's machine, but it means a large preset reads
+  as a large PHONE and shows almost none of the tablet's room. **Use the Device
+  Simulator with a tablet profile** (it drives `UnityEngine.Device` with that
+  device's real dpi, which is why everything here reads `Device.Screen` rather
+  than `Screen`), or a device.
 - **Cloud Snapshots cross-device.** Single-device confirmed 2026-07-28. The
   most-played-wins reconcile has never met a *second* device, which is the only
   place it differs from newest-wins — i.e. the whole of what `AdoptCloudRun`

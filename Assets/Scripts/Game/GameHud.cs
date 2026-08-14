@@ -93,6 +93,12 @@ namespace Wildgrove.Game
         private RectTransform _ledgerRow;
         private GameObject _ledgerRule;
         private RectTransform _trackerRow;
+        // The journal's tabs have two homes and move between them: a bar along
+        // the bottom edge in a column, a rail down the page's fore-edge on a
+        // spread, where height is what the book is short of. See ApplyTabFold.
+        private RectTransform _tabsBar;
+        private HorizontalLayoutGroup _tabsLayout;
+        private RectTransform _tabRail;
         private Text _note;
         // The note's own lane — one line tall, masked, and what actually stands
         // in the layout. The Text inside it is wider than the lane whenever the
@@ -103,6 +109,11 @@ namespace Wildgrove.Game
         private Button _foldButton;
 
         private RectTransform _worldGap;
+
+        // The band the page stands in — the fore-edge tab rail and the scroll
+        // beside it (see BuildPageArea) — and the scroll's content, which the
+        // tab builders draw into.
+        private RectTransform _pageArea;
         private RectTransform _body;
         private Transform _modalLayer;
         private Canvas _canvas;
@@ -130,6 +141,14 @@ namespace Wildgrove.Game
         private float _appliedCanvasHeight;
         private float _appliedCanvasWidth;
 
+        // The two scalers that must always answer alike, and the screen size
+        // their shared reference resolution was last computed for — see
+        // ApplyCanvasRoom.
+        private CanvasScaler _hudScaler;
+        private CanvasScaler _railScaler;
+        private int _appliedScreenWidth;
+        private int _appliedScreenHeight;
+
         /// <summary>
         /// True while the canvas is wide enough to carry a spread (see
         /// <see cref="JournalLayout"/>): the open page on the left, the Trail
@@ -147,8 +166,6 @@ namespace Wildgrove.Game
         /// </summary>
         private RectTransform _pageColumn;
 
-        /// <summary>The spread's two page columns, alive only while wide.</summary>
-        private RectTransform _spread;
         private readonly Dictionary<string, Button> _tabButtons = new Dictionary<string, Button>();
         private readonly Dictionary<string, Text> _tabLabels = new Dictionary<string, Text>();
         private readonly Dictionary<string, GameObject> _tabOuterRules = new Dictionary<string, GameObject>();

@@ -80,7 +80,12 @@ namespace Wildgrove.Game
         /// </summary>
         private void BuildStockCard()
         {
-            var card = Card("THE STORES");
+            // Headless: the page is called The Stores in its title, and again
+            // in the running head over it on a spread — a card head saying it a
+            // third time, directly under the second, names nothing. The line
+            // below is the drawer's own head and always was.
+            var card = Card(null);
+            card.gameObject.name = "Card_Stock";
             MakeText(card, "<i>what the ground gave and the fire made</i>",
                 15, TextAnchor.MiddleCenter, Ink2, _serif);
 

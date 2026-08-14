@@ -48,7 +48,11 @@ namespace Wildgrove.Game
             switch (_tab)
             {
                 case TabCamp:
-                    title = "Fire, Bench & Caravan";
+                    // The three station lines the page actually carries. It
+                    // named the caravan until 2026-08-14, and the caravan went
+                    // to the Stores page on 2026-08-13 with the Exchange — a
+                    // page titled after a card that is no longer on it.
+                    title = "Fire, Forge & Bench";
                     break;
                 case TabWarden:
                     title = "Kit & Crafts";
@@ -71,6 +75,62 @@ namespace Wildgrove.Game
 
             _title.text = title;
             _slotCounter.text = _loop.KithWalking() + " / " + _loop.KithSlots() + " POSTED";
+        }
+
+        /// <summary>
+        /// What a page calls itself in the running head — the mock's
+        /// <c>.running-head</c>, which every page carries and not only the Trail
+        /// (docs/wildgrove-journal.html). A different register from the title
+        /// above: the title says what is ON the page ("Fire, Forge &amp; Bench"),
+        /// the running head says WHICH page of the book it is, which is the
+        /// question a facing page raises and a single column doesn't.
+        /// </summary>
+        private static string RunningHeadName(string tab)
+        {
+            switch (tab)
+            {
+                case TabCamp: return "THE CAMP";
+                case TabStores: return "THE STORES";
+                case TabWarden: return "THE WARDEN";
+                case TabRecord: return "THE RECORD";
+                default: return "THE TRAIL";
+            }
+        }
+
+        /// <summary>
+        /// The two pages whose running head is a NAME rather than a label — the
+        /// camp's and the warden's (design §9's sink slate, worn by the run and
+        /// by the player). Both carried a whole card to say it until
+        /// 2026-08-14: a bordered panel, its own head, and a row sized by the
+        /// quill's touch plate, 154 units to hold two words on the shortest
+        /// pages in the book. A page's own head is where a name belongs, and
+        /// that line is one the spread was drawing anyway.
+        /// <para>
+        /// It is also why a single column has a running head at all now. There
+        /// the title says which page this is, so a label under it would only
+        /// restate it — but a NAME is not a restatement, and it is cheaper as a
+        /// head than as a card wherever the book is being read.
+        /// </para>
+        /// </summary>
+        private bool PageIsNamed(string tab)
+        {
+            return tab == TabCamp || tab == TabWarden;
+        }
+
+        private string PageName(string tab)
+        {
+            return tab == TabCamp ? _loop.CampName() : _loop.WardenName();
+        }
+
+        private void OpenPageNaming(string tab)
+        {
+            if (tab == TabCamp)
+            {
+                _sheets.OpenCampNamingSheet();
+                return;
+            }
+
+            _sheets.OpenWardenNamingSheet();
         }
 
         private void RefreshLedger()

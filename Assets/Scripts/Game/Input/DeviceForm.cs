@@ -45,6 +45,51 @@ namespace Wildgrove.Game.Input
         /// <summary>The verb for a press, in the player's own hardware: "tap" or "click".</summary>
         public static string PressVerb => IsDesktopLike ? "click" : "tap";
 
+        /// <summary>
+        /// How dense the screen is, for the one caller that needs to know how
+        /// physically big it is (<c>JournalLayout.RoomFactor</c>, which hands a
+        /// tablet more of the book than a phone).
+        /// <para>
+        /// <b>In the Editor, <c>Screen.dpi</c> is the DEVELOPER'S MONITOR</b> —
+        /// nothing whatever to do with the game view, its resolution, or the
+        /// device being previewed. A ~96dpi monitor makes every game view look
+        /// like a twenty-inch screen, so the journal took the roomiest layout it
+        /// has at every resolution, phone presets included, and the page was
+        /// laid out for a tablet at a phone's size. Read straight, this reads
+        /// the machine the game is being WRITTEN on.
+        /// </para>
+        /// <para>
+        /// So the plain game view is answered with the density the reference
+        /// resolution is measured at instead: the preview is then "this many
+        /// pixels, at the density a handheld would have", which is both
+        /// deterministic and the question the resolution dropdown is actually
+        /// asking. A phone preset gets the phone's layout, every time, on every
+        /// developer's monitor.
+        /// </para>
+        /// <para>
+        /// The <b>Device Simulator</b> is the exception and the way to see a
+        /// real tablet: it drives <c>UnityEngine.Device</c> with the chosen
+        /// profile's own numbers, so the platform reads as mobile and the dpi
+        /// is that device's. Everything here goes through <c>Device.Screen</c>
+        /// rather than <c>Screen</c> for exactly that reason.
+        /// </para>
+        /// </summary>
+        public static float ScreenDpi
+        {
+            get
+            {
+#if UNITY_EDITOR
+                // Mobile only under the Simulator; the plain game view reports
+                // the editor's own platform, and its dpi is the monitor's.
+                if (!UnityEngine.Device.Application.isMobilePlatform)
+                {
+                    return JournalLayout.ReferenceDpi;
+                }
+#endif
+                return UnityEngine.Device.Screen.dpi;
+            }
+        }
+
         private static bool HasPcSystemFeature()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR

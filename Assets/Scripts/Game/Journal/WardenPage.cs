@@ -20,50 +20,20 @@ namespace Wildgrove.Game
     {
         internal WardenPage(GameHud hud) : base(hud) { }
 
+        // The warden's own name headed this page as a card from 2026-08-06 —
+        // the page is the warden's identity, and it opened on their luggage
+        // with the only body on it unnamed. It is the page's running head now,
+        // for the reason the camp's is (see GameHud.PageIsNamed): a name is
+        // what a page head is FOR, and the card was 154 units to say two words.
+        // The price of a first name stays where it always belonged, on the
+        // naming sheet the quill opens, and not on the page every visit.
         internal void BuildWardenPage()
         {
-            BuildNameCard();
             BuildKitCard();
             BuildCraftsCard();
             BuildFavoursCard();
             BuildKithCard();
             BuildRunCard();
-        }
-
-        /// <summary>
-        /// The page's own head: who this is. The Warden page is the warden's
-        /// identity, and until now it opened on their luggage — the kit card —
-        /// with the only body on the page unnamed. The name sits above
-        /// everything it owns, with the quill beside it that buys or changes it.
-        /// <para>
-        /// The card says the name and nothing else. It carried the price of a
-        /// name under it while the warden was unnamed (2026-08-06), which put a
-        /// cost on the page every visit for an offer the quill already makes —
-        /// the naming sheet is where the price belongs, and it says it there.
-        /// </para>
-        /// <para>
-        /// The label is built WITH the name in it, not empty for a live updater
-        /// to fill. An empty label in a horizontal group is measured at zero
-        /// width, so the first vertical pass wrapped a ten-letter name into ten
-        /// lines of 60px type and <see cref="HeightSettledElement"/> — grow-only
-        /// by design — held the card at that height for good. That is what made
-        /// this card a screenful of blank paper.
-        /// </para>
-        /// </summary>
-        private void BuildNameCard()
-        {
-            var card = Card("THE WARDEN");
-
-            var row = Row(card);
-            var layout = row.GetComponent<HorizontalLayoutGroup>();
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 2;
-
-            var name = MakeText(row.transform, _loop.WardenName(), 30, TextAnchor.MiddleCenter, Ink, _serif);
-            IconButton(row.transform, JournalSprites.QuillSprite(), 40f, 120f,
-                () => _hud.Sheets.OpenWardenNamingSheet());
-
-            _liveUpdaters.Add(() => name.text = _loop.WardenName());
         }
 
         /// <summary>

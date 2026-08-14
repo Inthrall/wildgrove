@@ -100,37 +100,32 @@ namespace Wildgrove.Game
             _liveUpdaters.Clear();
             _frameUpdaters.Clear();
             _tendFlashes.Clear();
-            for (var i = _body.childCount - 1; i >= 0; i--)
-            {
-                var child = _body.GetChild(i).gameObject;
-                // Off before Destroy: a destroyed child holds its place in the
-                // layout until end of frame, so the old and new pages would
-                // share the body for one rendered frame — a visible stutter on
-                // every rebuild. Inactive, it leaves the layout at once, and
-                // the scroll can settle before this frame draws.
-                child.SetActive(false);
-                Destroy(child);
-            }
+            ClearPage(_body);
 
-            _spread = null;
             if (_wide)
             {
                 // A spread: the open page on the left, the Trail always facing
                 // it. The Trail keeps the land in view while the player works
                 // the Camp or the Record — which is the whole point of the
                 // wide layout, and why the Trail has no tab here.
+                //
+                // Each page names itself over its own column, the way the mock's
+                // do — the Trail because it has no lit tab to name it here, the
+                // open page so that the two of them start on the same line.
                 BuildSpreadColumns(out var left, out var right);
                 SetPageColumn(left);
+                RunningHead(left, _tab);
                 BuildPage(_tab);
                 SetPageColumn(right);
-                // The Trail has no lit tab to name it here, so the page names
-                // itself — the running head the mock puts over the facing page.
-                MakeText(right, "THE TRAIL", 13, TextAnchor.MiddleCenter, Ink2, _smallCaps);
+                RunningHead(right, TabTrail);
                 _trail.BuildTrailPage();
             }
             else
             {
                 SetPageColumn(_body);
+                // In a column the head is only worth a line where it is a NAME
+                // — the page's own title says the rest, one row above.
+                RunningHead(_body, _tab);
                 BuildPage(_tab);
             }
 
@@ -150,6 +145,27 @@ namespace Wildgrove.Game
             StartCoroutine(SettleScroll(keepOffset, landmark));
         }
 
+        /// <summary>Take a page's cards off it, ahead of drawing them again.</summary>
+        private void ClearPage(RectTransform page)
+        {
+            if (page == null)
+            {
+                return;
+            }
+
+            for (var i = page.childCount - 1; i >= 0; i--)
+            {
+                var child = page.GetChild(i).gameObject;
+                // Off before Destroy: a destroyed child holds its place in the
+                // layout until end of frame, so the old and new pages would
+                // share the body for one rendered frame — a visible stutter on
+                // every rebuild. Inactive, it leaves the layout at once, and
+                // the scroll can settle before this frame draws.
+                child.SetActive(false);
+                Destroy(child);
+            }
+        }
+
         /// <summary>Repaint every live label and plate on the open page.</summary>
         private void RunLiveUpdaters()
         {
@@ -160,7 +176,7 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// How far down the page the window's top edge sits, in the page's own
+        /// How far down a page the window's top edge sits, in the page's own
         /// units — what <see cref="JournalNav.KeptPosition"/> puts back.
         /// </summary>
         private float ScrolledOffset()
@@ -323,7 +339,10 @@ namespace Wildgrove.Game
             OpenTab(TabTrail);
             if (!_dirty)
             {
-                // Already on the Trail with no rebuild coming — jump now.
+                // Already looking at the Trail with no rebuild coming — jump
+                // now. On a spread that means the right page moves and the
+                // open page beside it does not, which is the whole reason the
+                // two carry their own scrolls.
                 StartCoroutine(SettleScroll(ScrolledOffset(), _pendingScroll));
                 _pendingScroll = null;
             }

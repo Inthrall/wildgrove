@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Wildgrove.Game.Input;
 using Wildgrove.Game.Services;
 using Wildgrove.Game.World;
 using static Wildgrove.Game.JournalTheme;
@@ -139,9 +140,12 @@ namespace Wildgrove.Game
             _railCanvas.worldCamera = Camera.main;
             _railCanvas.sortingOrder = StripLayers.RailCell;
             var scaler = canvasGo.GetComponent<CanvasScaler>();
+            _railScaler = scaler;
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1080, 1920);
             scaler.matchWidthOrHeight = 0.5f;
+            // The same answer the HUD's canvas was given, by the same rule —
+            // see ApplyCanvasRoom, which re-asks it for both from here on.
+            scaler.referenceResolution = JournalLayout.ReferenceResolution(Screen.width, Screen.height, DeviceForm.ScreenDpi);
             _railGroup = canvasGo.AddComponent<CanvasGroup>();
 
             _eventRail = MakeRect("EventRail", canvasGo.transform);
