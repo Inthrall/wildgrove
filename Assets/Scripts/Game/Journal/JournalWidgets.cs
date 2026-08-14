@@ -170,7 +170,25 @@ namespace Wildgrove.Game
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
+            // Each piece at its own height, centred on the row's middle line —
+            // NOT stretched to the row (2026-08-14).
+            //
+            // Force-expanded, every child of a row is as tall as the tallest
+            // thing in it, and the tallest thing is always the words. A recipe
+            // whose requirement line wrapped to four — "40 fibres (have 86)",
+            // then what it still needs, then the rung that would open it — made
+            // its Craft plate 273 units of paper carrying one short word, and
+            // the button was then the largest object on the page while being
+            // the least of what the row said. The plates on the Trail never had
+            // this: they hang off ActionRow, which does not force-expand, so
+            // the same book was drawing its buttons two sizes on two facing
+            // pages.
+            //
+            // The row itself is unaffected — its floor is the LayoutElement and
+            // HeightSettledElement below, not its children's stretch — so a
+            // sparse row is still a fingertip deep, and a button is still its
+            // own 120 (LabelFittedElement) wherever it stands.
+            layout.childForceExpandHeight = false;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.padding = new RectOffset(0, 0, 6, 6);
             layout.spacing = 8;
