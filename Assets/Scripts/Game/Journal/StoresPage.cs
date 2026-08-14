@@ -195,7 +195,12 @@ namespace Wildgrove.Game
 
         private void BuildBrewTile(RectTransform grid, TinctureData tincture)
         {
-            var tile = Tile(grid, ArtLibrary.ForGood(tincture.id), GradePoor, out var caption, out var rule);
+            // The plate gives up a strip at the top as well as the bottom, live
+            // brew or not, so a bottle does not jump a strip's worth when one is
+            // drunk.
+            var tile = Tile(grid, ArtLibrary.ForGood(tincture.id), GradePoor, out var caption, out var rule,
+                CaptionHeight);
+            var clockStrip = BrewClock(tile, out var clock);
             var button = tile.gameObject.AddComponent<Button>();
             button.targetGraphic = tile.GetComponent<Image>();
             button.onClick.AddListener(() =>
@@ -217,31 +222,71 @@ namespace Wildgrove.Game
                     return;
                 }
 
-                // A drink is refused for one reason, a bare shelf. Whether the
-                // last bottle is still working changes what to do about it, not
-                // why this tap did nothing.
+                // A drink is refused for one reason, a bare shelf — and the
+                // tile has just said so, in the caption and the paper it is
+                // drawn on. The note says the part it cannot: how long the one
+                // already working has, or where another comes from.
                 var live = _loop.TinctureRemainingSeconds(tincture);
                 SetNote(BrewReading(tincture, live > 0.0
-                    ? "none in stock. the one drunk has " + NumberFormat.Duration(live) + " to run"
-                    : "none brewed. it is cooked at the fire"));
+                    ? NumberFormat.Duration(live) + " to run"
+                    : "cooked at the fire"));
             });
 
             _liveUpdaters.Add(() =>
             {
                 var remaining = _loop.TinctureRemainingSeconds(tincture);
+                var live = remaining > 0.0;
                 var have = _loop.State.GetResource(tincture.id);
                 // A live brew turns its own rule green rather than growing a
                 // second ring outside the first — at grade weight two rules
                 // touch. The brews card carries no grades, so green cannot be
                 // misread as "decent" here; it is just the working colour.
-                rule.color = remaining > 0.0 ? GradeDecent : GradePoor;
-                caption.text = remaining > 0.0
-                    ? "<color=" + MossDeepHex + ">" + NumberFormat.Duration(remaining) + "</color>"
-                    : (have > BigDouble.Zero
-                        ? "<b>" + NumberFormat.Short(have) + "</b>"
-                        : "<color=" + Ink2Hex + ">·</color>");
-                SetTilePaper(tile, have > BigDouble.Zero || remaining > 0.0);
+                rule.color = live ? GradeDecent : GradePoor;
+                // The two facts a shelf of bottles is asked for — how many are
+                // left and how long the last one has to run — are answers to
+                // different questions, and the caption used to give whichever
+                // was true LAST, so drinking the only bottle read as a full
+                // shelf and a fresh drink hid the shelf going bare. They keep a
+                // strip each: stock below, where every tile in the drawer keeps
+                // its count, and the clock above.
+                caption.text = have > BigDouble.Zero
+                    ? "<b>" + NumberFormat.Short(have) + "</b>"
+                    : "<color=" + Ink2Hex + ">·</color>";
+                if (clockStrip.activeSelf != live)
+                {
+                    clockStrip.SetActive(live);
+                }
+
+                if (live)
+                {
+                    clock.text = NumberFormat.Duration(remaining);
+                }
+
+                SetTilePaper(tile, have > BigDouble.Zero || live);
             });
+        }
+
+        /// <summary>
+        /// The strip a live brew counts down in, along the top inside edge and
+        /// mirroring the caption below. Hidden until something is running: an
+        /// empty second strip on every bottle is furniture, and the tile has 190
+        /// units of width to say things in.
+        /// </summary>
+        private static GameObject BrewClock(RectTransform tile, out Text clock)
+        {
+            var strip = MakePanel("Clock", tile, CardPaper);
+            var stripRect = (RectTransform)strip.transform;
+            stripRect.anchorMin = new Vector2(0f, 1f);
+            stripRect.anchorMax = Vector2.one;
+            stripRect.offsetMin = new Vector2(RuleWeight, -(CaptionHeight - RuleWeight));
+            stripRect.offsetMax = new Vector2(-RuleWeight, -RuleWeight);
+            strip.GetComponent<Image>().raycastTarget = false;
+
+            clock = MakeText(strip.transform, string.Empty, 19, TextAnchor.MiddleCenter, MossDeep);
+            Stretch((RectTransform)clock.transform);
+            clock.raycastTarget = false;
+            strip.SetActive(false);
+            return strip;
         }
 
         /// <summary>
@@ -368,9 +413,14 @@ namespace Wildgrove.Game
         /// caption strip along the bottom inside edge carrying the count. The
         /// strip is inside the square on purpose — a label under the tile
         /// would make the cell oblong and the drawer ragged.
+        /// <para>
+        /// <paramref name="topInset"/> is how much of the square the plate
+        /// leaves clear at the top: the rule alone in the drawer, a second
+        /// strip's worth on a bottle that has a clock to show.
+        /// </para>
         /// </summary>
         private static RectTransform Tile(RectTransform grid, Sprite plate, Color border,
-            out Text caption, out Image rule)
+            out Text caption, out Image rule, float topInset = RuleWeight + 3f)
         {
             var go = MakePanel("Tile", grid, DeepPaper);
             var tile = (RectTransform)go.transform;
@@ -388,7 +438,7 @@ namespace Wildgrove.Game
                 // Inside the rule, and clear of the caption strip below — a
                 // plate read through either is a plate read twice.
                 rect.offsetMin = new Vector2(RuleWeight + 3f, CaptionHeight);
-                rect.offsetMax = new Vector2(-(RuleWeight + 3f), -(RuleWeight + 3f));
+                rect.offsetMax = new Vector2(-(RuleWeight + 3f), -topInset);
             }
 
             var strip = MakePanel("Caption", tile, CardPaper);
