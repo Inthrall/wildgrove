@@ -58,11 +58,13 @@ namespace Wildgrove.EditorTools
         // which the CI test image doesn't have — compile the icon wiring out
         // when the active target isn't Android.
 #if UNITY_ANDROID
+        // Adaptive is the only kind we assign: Unity 6 deprecates the Round and
+        // Legacy kinds in its favour, and our minimum SDK is 26, so every device
+        // that can install the game renders the adaptive icon.
         private static void AssignIcons()
         {
             var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-foreground.png");
             var background = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-background.png");
-            var legacy = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtDir + "/icon-legacy.png");
 
             var adaptive = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive);
             foreach (var icon in adaptive)
@@ -71,22 +73,6 @@ namespace Wildgrove.EditorTools
             }
 
             PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Adaptive, adaptive);
-
-            var round = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Round);
-            foreach (var icon in round)
-            {
-                icon.SetTextures(legacy);
-            }
-
-            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Round, round);
-
-            var legacyKind = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy);
-            foreach (var icon in legacyKind)
-            {
-                icon.SetTextures(legacy);
-            }
-
-            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, AndroidPlatformIconKind.Legacy, legacyKind);
         }
 #else
         private static void AssignIcons()
