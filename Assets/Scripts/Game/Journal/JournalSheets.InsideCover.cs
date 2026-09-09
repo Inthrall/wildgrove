@@ -140,10 +140,22 @@ namespace Wildgrove.Game
         /// <summary>
         /// The warden's reckoning (design §15): which half of the world's wheel
         /// the sabbats keep. Locale guessed it once; the equator chooses, a
-        /// traveller keeps their own. Locked while a tide is open — the
-        /// opposite sabbat sits on the same dates, and a mid-tide flip would be
-        /// a double-claim vector. Sheets are snapshots, so the row re-reads
+        /// traveller keeps their own. Sheets are snapshots, so the row re-reads
         /// itself in its own handler.
+        /// <para>
+        /// It locks once the season's keeping has been BEGUN, not while a season
+        /// is open (2026-09-09). The lock exists because the opposite sabbat
+        /// sits on the same dates: flip mid-season and the fire offers a second
+        /// keeping over the very same weeks, and flipping back after keeping
+        /// both is two claims for one span of the year. What makes that a
+        /// double claim is the setting-down, though, not the flip — and once the
+        /// seasons ran end to end (design §15), "while a tide is open" was every
+        /// day of the year, which is a setting that can never be changed. So the
+        /// wheel turns freely until something is given to the fire, and holds
+        /// still from then until the next sabbat takes it, which is the exact
+        /// span a flip could be paid twice for. The claims key on (sabbat, year,
+        /// hemisphere) underneath regardless.
+        /// </para>
         /// </summary>
         private void BuildWheel(Transform sheet)
         {
@@ -155,15 +167,18 @@ namespace Wildgrove.Game
             SheetSection(sheet, "THE WHEEL");
             MakeText(sheet,
                 "The reckoning of the sabbats — Beltane, Samhain and the rest — turns with the half of"
-                + " the world the warden keeps it by. While a tide is open, its page waits on the Trail.",
+                + " the world the warden keeps it by. One of them holds the wheel at any hour, and its"
+                + " page waits on the Trail; turn the reckoning and the other half's sabbat holds it"
+                + " instead. Once something has been set down at the fire, the reckoning keeps still"
+                + " until the season turns.",
                 16, TextAnchor.UpperLeft, Ink2, _serif);
 
             Button reckoning = null;
             reckoning = Button(sheet, ReckoningLabel(), 460, () =>
             {
-                if (_loop.OpenTide() != null)
+                if (_loop.KeepingBegun())
                 {
-                    Flash(reckoning, "the tide holds the reckoning", false);
+                    Flash(reckoning, "the fire holds the reckoning", false);
                     return;
                 }
 

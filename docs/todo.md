@@ -41,7 +41,7 @@ Knobs the sitting is allowed to move, by file:
 | `tinctures.json` | four brews at 1200 s; the cordial's +1 choice point |
 | `ambers.json` | `findsPerHour` 0.1, `pityHoursWatched` 12 |
 | `economy.json` kith | `slotVerseZones` — WHICH three verses open a place (design §4, named rather than tallied since 2026-08-11). Chosen off the zones' `minMigration` gates for mid-run-1 / run 3 / run 6; the pacing is a first guess and the honest test is a run-1-to-run-5 sitting. Changing one is a data edit, but moving a verse EARLIER hands the place to saves that already sang it, and moving one later takes nothing back — a verse sung is never unsung. |
-| `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); `openDaysBefore` 30 leaves the world leaning ~68% of the year, so the touch is now the number under watch, not the window; top the calendar up ~2029 |
+| `sabbats.json` | every touch value (+20%s, ×0.8 replant, 5-pt spread ease) — the no-gate rule and the one-mastery-band ceiling are the lines to hold (design §15); since 2026-09-09 the seasons run night to night, so the world leans every day of the year and the touch is the ONLY number under watch, there being no window left to tune; top the calendar up ~2029 |
 | `insects.json` | rarities (Apollo 0.4, Windborne 0.25, Quiet Court 0.2) |
 | `exchange.json` | `offerMinutes` 5; flat spread across quality tiers |
 | `folio.json` | spread/effect sizes |
@@ -257,7 +257,7 @@ wired to nothing. The settings row lands with the audio pass.
     card is on the wrong tab.
 - ~~**The Trail opened on no gathering plate at all**~~ ✅ RESOLVED 2026-08-13 —
   the page's head had grown to ~1,480 canvas units against a ~1,030-unit
-  viewport, so for the ~68% of the year a tide holds the Trail opened on
+  viewport, so for the ~68% of the year a tide then held the Trail opened on
   preamble and the first plate was a viewport and a half down. Every cut was a
   duplicate rather than a trim: the fallow weeks' countdown (the rail's cell,
   read aloud), the tide's touch label (the tide sheet says the same sentence
@@ -269,7 +269,12 @@ wired to nothing. The settings row lands with the audio pass.
   the journal-wide `JournalCardFolds`; both deep links into it open the fold on
   the way through, so a door never ends in a shut drawer. Keystone mark 120 →
   60. Design §13 Phase 2 records the rule this leaves behind: a pinned line at
-  the head of the Trail has to be worth a plate. The **carrier** went with the
+  the head of the Trail has to be worth a plate. **A sixth cut, 2026-09-09**:
+  the tide's sign, the last thing left above the keeping's head — a margin note
+  about what day it is, standing over the plates for the whole of a six-week
+  season (§1.8 above). The same pass moved the tally ONTO that head so it reads
+  open as well as shut, and dropped the card's own standing line, which had
+  been saying it again a finger's width below. The **carrier** went with the
   bar and is not coming back (Mo, 2026-08-13): deliveries are automatic and
   lossless, so the dot was an animation of a thing that cannot go wrong.
   **Deferred:** whether the **fell pony** gets a walk of her own again. She
@@ -530,14 +535,36 @@ lean is a regression, not a phase. Build order:
   Wheel widget, and not enough to know whether the seat count, the urgency
   order or the drop-from-the-tail rule are right. The band's floor seats two;
   a third event is where `TrimRailToBand` starts making real decisions.
+- ~~**The tides had gaps, and a gap is invisible**~~ ✅ RESOLVED 2026-09-09 —
+  the sabbats now hold the wheel from their own night until the next takes it:
+  eight pagan seasons back to back, no gap and no lead-in, and no
+  `openDaysBefore` at all (design §15 records the decision and everything it
+  moved). `Wheel.cs` walks one pass for the latest night fallen and the
+  soonest still to come, which is the window; the calendar's last authored
+  night holds 46 days and then the wheel goes quiet, so it is not the sabbat
+  that silently never opens. The validator's overlap rule is now "no two
+  sabbats on one night in one hemisphere". Countdowns everywhere are named for
+  what ends the season (`JournalFormat.TideCloseWord`, shared by the tracker
+  and the keeping's head so one wait is not told two ways). The open tide's id
+  joined `StructureSignature`, or the Trail would keep the old season's head
+  over the new season's slots. **The knock-on worth remembering:** the inside
+  cover's reckoning was locked "while a tide is open", which is now every day
+  of the year — it locks on the keeping having been BEGUN instead
+  (`Keeping.Begun`, pinned by
+  `Begun_IsWhatLocksTheReckoning_AndNeverDrawsTheKeepingToAnswer`), which is
+  the tighter fit for the double-claim vector it was always guarding. Suite
+  1170/1170.
 - **Word/art debts**: the eight plates ~~in the template~~ landed 2026-08-08
   as **authored almanac marks** (`Art/Plates/Wheel/sabbat-*.jpg`) — the
   warden's calendar ornament rather than a naturalist page, deliberately:
   the calendar is the warden's (§15's naming device), the set is original
   work (no licence owed, `ArtCredits` untouched), and a painted plate can
   land over the same id any time. `EverySabbat_HasItsOwnPlate` pins each to
-  its own mark. Still owed: the narrative pass re-voices the eight margin
-  lines drafted in `sabbats.json` and the keeping sheet's wording.
+  its own mark. Still owed: the narrative pass re-voices the eight `sign` and
+  `lore` lines drafted in `sabbats.json` and the keeping sheet's wording. The
+  signs were re-cut on 2026-09-09 off the *"…, by my count"* opener, which
+  dated a line that now runs six weeks; they read as a season rather than a
+  night, but they are still draft.
 
 ---
 

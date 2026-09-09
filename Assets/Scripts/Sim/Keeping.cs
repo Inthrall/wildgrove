@@ -33,9 +33,10 @@ namespace Wildgrove.Sim
 
         /// <summary>
         /// The open tide's keeping — generated on first read, redrawn (open
-        /// slots only) when a fold moved under it, null through the fallow
-        /// weeks. The returned state is the persisted one: its slots are
-        /// facts, so a reload can never reroll them.
+        /// slots only) when a fold moved under it, and replaced outright the
+        /// midnight the next sabbat takes the wheel. Null only where the
+        /// calendar does not reach. The returned state is the persisted one:
+        /// its slots are facts, so a reload can never reroll them.
         /// </summary>
         public static KeepingState Current(GameState state, GameDataAsset data)
         {
@@ -64,6 +65,36 @@ namespace Wildgrove.Sim
             }
 
             return keeping;
+        }
+
+        /// <summary>
+        /// True when the open season's keeping has had anything set down in it.
+        /// The inside cover's lock on turning the reckoning hangs off this
+        /// (design §15): the mirrored sabbat holds the very same weeks, so a
+        /// flip after an offering is one span of the year claimed twice, while a
+        /// flip before one costs and earns nothing.
+        /// <para>
+        /// It reads the PERSISTED keeping rather than asking
+        /// <see cref="Current"/>, which generates one on first read — the same
+        /// guard the events rail keeps. A settings row that drew the season's
+        /// slots by being looked at would move every keeping's draw from "the
+        /// first time the player opened it" to whenever the inside cover was
+        /// opened, which is a balance change made by a piece of chrome.
+        /// </para>
+        /// </summary>
+        public static bool Begun(GameState state, GameDataAsset data)
+        {
+            var tide = Wheel.OpenTide(state, data);
+            var keeping = state?.keeping;
+            if (tide == null || keeping == null
+                || keeping.sabbatId != tide.id
+                || keeping.hemisphere != state.hemisphere
+                || keeping.year != YearOfEpochDay(Wheel.OpenNightDay(state, data)))
+            {
+                return false;
+            }
+
+            return CompletedSlotCount(keeping) > 0;
         }
 
         public static bool IsSlotComplete(KeepingSlotState slot)

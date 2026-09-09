@@ -62,6 +62,32 @@ namespace Wildgrove.Game
             return Mathf.RoundToInt((float)(value * 100.0)) + "%";
         }
 
+        /// <summary>
+        /// How long the open season has left, named for the sabbat that ends it
+        /// (design §15). A season gives the wheel up to the next one rather than
+        /// closing at a fire of its own, so what takes it is the honest way to
+        /// say when; the last day drops the name, because by then the hour is
+        /// the news. A null <paramref name="next"/> is the authored calendar
+        /// running out — the one case where a season ends in nothing.
+        /// <para>
+        /// Here rather than at either of the two places that say it, which are
+        /// the pinned tracker and the keeping's own head, one tap apart: the
+        /// banner links to the card, and a wait told two ways is the same bug
+        /// the rail's countdowns were pulled into one format to fix.
+        /// </para>
+        /// </summary>
+        internal static string TideCloseWord(SabbatData next, long daysLeft)
+        {
+            if (daysLeft <= 1L)
+            {
+                return next != null ? next.displayName + " takes it tonight" : "the wheel runs out tonight";
+            }
+
+            return next != null
+                ? next.displayName + " in " + daysLeft + " days"
+                : daysLeft + " days left of the calendar";
+        }
+
         internal static string SlotName(RiteSlotData slot)
         {
             switch (slot.type)

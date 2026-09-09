@@ -12,60 +12,43 @@ using static Wildgrove.Game.JournalWidgets;
 namespace Wildgrove.Game
 {
     /// <summary>
-    /// The Wheel's presence on the trail: the open tide's sign, and the keeping
-    /// card — folded shut behind its own tally — with a row per slot. The fallow
-    /// weeks draw nothing here; that is the events rail's post, not the page's.
+    /// The Wheel's presence on the trail: the keeping card, folded shut behind
+    /// its own tally, with a row per slot. Nothing else — the seasons run back
+    /// to back, so a tide line at the head of this page would be a line that is
+    /// never not there.
+    /// <para>
+    /// The sign stood above the card until 2026-09-09, the last of three things
+    /// this page said about the Wheel. It was a margin note about what day it
+    /// is, and once a day became a six-week season that was the same scrawl
+    /// over the plates on every visit; it reads once and on purpose on the
+    /// tide's own sheet instead. (The touch label and the fallow weeks'
+    /// countdown were the two before it, both 2026-08-13.)
+    /// </para>
     /// </summary>
     internal sealed partial class TrailPage
     {
         /// <summary>
-        /// The tide's line (design §15): while a sabbat's tide is open, the
-        /// warden's margin names it at the head of the Trail — the calendar is
-        /// the warden's, the land's answer belongs on the land's page. The sign
-        /// alone; it is a mood, not a reading.
-        /// <para>
-        /// Two things left this line on 2026-08-13, both of them said better
-        /// elsewhere and both of them costing the page height the grounds
-        /// wanted. The touch label ("+20% … while Ostara-tide holds — the Rite's
-        /// verses ask none of it") went to the tide's own sheet, which already
-        /// carried the same sentence under <em>While it holds</em>: it is a
-        /// static clause that does not change for a month, and it was two
-        /// wrapped lines above the first plate for every one of those days. And
-        /// the fallow weeks' countdown went entirely — it existed because
-        /// showing nothing was once the whole of the Wheel's presence outside a
-        /// tide, and the events rail retired that argument on 2026-08-11 by
-        /// standing a coming-sabbat cell on every tab with the same
-        /// <see cref="NumberFormat.Countdown"/> in its caption. The line was the
-        /// cell read aloud.
-        /// </para>
-        /// </summary>
-        private void BuildTideLine()
-        {
-            var tide = _loop.OpenTide();
-            if (tide == null)
-            {
-                return;
-            }
-
-            MakeText(_body, "<i>" + tide.sign + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _hand);
-        }
-
-        /// <summary>
-        /// The keeping's page (design §15): the tide's own offering slots,
+        /// The keeping's page (design §15): the season's own offering slots,
         /// beside the Rite and never of it — no verse count, no gift pile, no
         /// ground moves with it. Tiers pay a little Amber; the first writes
-        /// the year's claim. Nothing here through the fallow weeks.
+        /// the year's claim. Nothing here where the calendar does not reach.
         /// <para>
         /// It FOLDS, and folds shut by default, from 2026-08-13 — the one card
         /// in the book that does so while carrying buttons (see
         /// <see cref="JournalCardFolds"/> for why it earns the exception). A
         /// plate, a standing line and five slot rows was close to a whole phone
-        /// viewport, and it stood at the head of the Trail for the ~68% of the
-        /// year a tide holds: opening the page put no gathering plate on screen
-        /// at all. Shut, its head says everything the card's own summary said,
-        /// and wears the moss when the stores can answer a slot. The plate came
-        /// off the card and into the head on 2026-08-14, which takes 200 units
-        /// off the open card as well and gives the shut one a face.
+        /// viewport, and it stands at the head of the Trail every day of the
+        /// year: opening the page put no gathering plate on screen at all. The
+        /// plate came off the card and into the head on 2026-08-14, which takes
+        /// 200 units off the open card as well and gives the shut one a face.
+        /// </para>
+        /// <para>
+        /// From 2026-09-09 the head carries the tally open as well as shut, and
+        /// the card's own standing line is gone with it. The two said the same
+        /// thing a finger's width apart — how it is kept, how far it has got,
+        /// how long is left — and the head is the half that is on screen either
+        /// way, so a player who folds the card away loses nothing and one who
+        /// opens it is not told twice.
         /// </para>
         /// </summary>
         private void BuildKeepingCard()
@@ -78,44 +61,33 @@ namespace Wildgrove.Game
             }
 
             var head = "THE KEEPING · " + tide.displayName.ToUpperInvariant() + "-TIDE";
-            var card = FoldingCard(JournalCardFolds.Keeping, head, KeepingTally(), out var open, out var heading);
+            var card = FoldingCard(JournalCardFolds.Keeping, head, KeepingTally(), out var open, out var heading,
+                tallyWhenOpen: true);
             // The sabbat's plate rides the heading's right margin, opposite the
             // chevron — the same place a ground's keystone stands, and for the
             // same reason: on the card it cost 200 units of the head this page
             // is trying to keep short, and it only drew while the card was open,
-            // so the tide the head is named for had no face for most of its run.
+            // so the season the head is named for had no face for most of its run.
             // (Null until the art pass paints it; then the card is words alone.)
             AddHeadingMark(heading, ArtLibrary.ForJournal("sabbat-" + tide.id));
             // The tracker's tide row and the tide sheet's button both deep-link
             // here, and both open the fold on the way (GameHud.ScrollToOnTrail).
             _firstKeepingCard = card;
 
-            if (!open)
+            // Every word of the head moves: the tier as slots are answered, the
+            // clock as the season runs down, the moss as the stores rise to a
+            // slot. Written once at the build it would be a day stale by the
+            // evening, which is the one thing a countdown may not be.
+            var label = heading.GetComponentInChildren<Text>();
+            if (label != null)
             {
-                // Every word of the head moves: the tier as slots are answered,
-                // the clock as the tide runs down, the moss as the stores rise
-                // to a slot. Written once at the build it would be a day stale
-                // by the evening, which is the one thing a countdown may not be.
-                var label = heading.GetComponentInChildren<Text>();
-                if (label != null)
-                {
-                    _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, KeepingTally(), false));
-                }
-
-                return;
+                _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, KeepingTally()));
             }
 
-            var standing = MakeText(card, string.Empty, 17, TextAnchor.MiddleCenter, Ink2);
-            _liveUpdaters.Add(() =>
+            if (!open)
             {
-                if (_loop.CurrentKeeping() == null)
-                {
-                    standing.text = "<i>the tide has closed; the fire keeps what it was given</i>";
-                    return;
-                }
-
-                standing.text = KeepingWord() + " · " + KeepingCloseWord();
-            });
+                return;
+            }
 
             for (var i = 0; i < keeping.slots.Count; i++)
             {
@@ -124,19 +96,19 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The keeping as one line, for the head that stands where the card is
-        /// folded away: how it is kept, how much of it is answered, how long is
-        /// left, and — in the journal's invitation ink — whether the stores can
-        /// answer a slot this minute. That last clause is the whole of what a
-        /// shut card owes the player, and it is the Trail's own rule for a
-        /// folded ground, which says "no one sketches here" the same way.
+        /// The keeping as one line, under the head open or shut: how it is
+        /// kept, how much of it is answered, who takes the wheel next and when
+        /// — and, in the journal's invitation ink, whether the stores can answer
+        /// a slot this minute. That last clause is the whole of what a shut card
+        /// owes the player, and it is the Trail's own rule for a folded ground,
+        /// which says "no one sketches here" the same way.
         /// </summary>
         private string KeepingTally()
         {
             var keeping = _loop.CurrentKeeping();
             if (keeping == null)
             {
-                return "the tide has closed";
+                return "the season has turned; the fire keeps what it was given";
             }
 
             var line = KeepingWord() + " · " + Keeping.CompletedSlotCount(keeping)
@@ -166,7 +138,7 @@ namespace Wildgrove.Game
         private string KeepingCloseWord()
         {
             var days = (long)System.Math.Ceiling((_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 86400000.0);
-            return days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days";
+            return TideCloseWord(_loop.NextTide(out _), days);
         }
 
         private void BuildKeepingSlotRow(RectTransform card, int slotIndex)

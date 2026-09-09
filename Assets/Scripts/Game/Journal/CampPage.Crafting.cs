@@ -224,7 +224,7 @@ namespace Wildgrove.Game
                 var label = heading.GetComponentInChildren<Text>();
                 if (label != null)
                 {
-                    _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, StationTally(recipes), false));
+                    _liveUpdaters.Add(() => label.text = FoldingCardLabel(head, StationTally(recipes)));
                 }
 
                 return;

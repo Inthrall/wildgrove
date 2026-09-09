@@ -335,11 +335,17 @@ namespace Wildgrove.Game
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
 
             // The forecast names the Wheel, not a drawn region (design §8,
-            // 2026-08-08) — the Wheel turns whether or not the camp folds.
+            // 2026-08-08) — the Wheel turns whether or not the camp folds, and
+            // the fold carries a keeping's answered slots across (design §15).
             var tide = _loop.OpenTide();
             if (tide != null)
             {
-                MakeText(sheet, "<i>" + tide.displayName + "-tide is open.</i>", 19, TextAnchor.MiddleCenter, Ink2, _serif);
+                var next = _loop.NextTide(out _);
+                var days = (long)System.Math.Ceiling((_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 86400000.0);
+                MakeText(sheet, "<i>" + tide.displayName + "-tide holds"
+                                + (next != null ? ", and " + next.displayName + " takes the wheel in "
+                                                  + days + (days == 1 ? " day." : " days.") : ".") + "</i>",
+                    19, TextAnchor.MiddleCenter, Ink2, _serif);
             }
             else
             {

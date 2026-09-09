@@ -1048,7 +1048,7 @@ namespace Wildgrove.Game
                 var shutLabel = heading.GetComponentInChildren<Text>();
                 if (shutLabel != null)
                 {
-                    _liveUpdaters.Add(() => shutLabel.text = FoldingCardLabel("THE ALMANAC", AlmanacTally(), false));
+                    _liveUpdaters.Add(() => shutLabel.text = FoldingCardLabel("THE ALMANAC", AlmanacTally()));
                 }
 
                 return;

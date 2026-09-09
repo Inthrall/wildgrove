@@ -167,7 +167,6 @@ namespace Wildgrove.Data
         {
             return w == null ? null : new WheelData
             {
-                openDaysBefore = w.OpenDaysBefore,
                 observance = w.Observance == null ? null : new ObservanceData
                 {
                     slotCount = w.Observance.SlotCount,

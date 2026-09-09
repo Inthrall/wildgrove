@@ -5,7 +5,7 @@ namespace Wildgrove.Data
 {
     /// <summary>
     /// The Wheel of the year: the sabbats, their nights in both hemispheres, and
-    /// the rule that no two tides may overlap in the same hemisphere.
+    /// the rule that no two of them may fall on one night in the same hemisphere.
     /// </summary>
     public static partial class GameDataValidator
     {
@@ -16,11 +16,6 @@ namespace Wildgrove.Data
             {
                 // The Wheel is optional data (fixtures) — absent is inert, not wrong.
                 return;
-            }
-
-            if (wheel.OpenDaysBefore < 1 || wheel.OpenDaysBefore > 60)
-            {
-                issues.Add($"Wheel openDaysBefore must be 1..60 (was {wheel.OpenDaysBefore})");
             }
 
             if (wheel.Observance != null)
@@ -81,14 +76,14 @@ namespace Wildgrove.Data
 
                 if (string.IsNullOrWhiteSpace(sabbat.Sign))
                 {
-                    issues.Add($"Sabbat '{sabbat.Id}' has no sign — the warden's margin says one line per tide");
+                    issues.Add($"Sabbat '{sabbat.Id}' has no sign — the tide's sheet says what its season is like to walk in");
                 }
 
-                // The coming-sabbat sheet is a name, a countdown and this. A
-                // tide with no lore leaves it a bare date a month out.
+                // The sheets lead with what the day IS. A sabbat with no lore
+                // leaves a season named after nothing the player can read.
                 if (string.IsNullOrWhiteSpace(sabbat.Lore))
                 {
-                    issues.Add($"Sabbat '{sabbat.Id}' has no lore — the sheet that waits for a tide says what the day is");
+                    issues.Add($"Sabbat '{sabbat.Id}' has no lore — the sheets say what the day is that the season is named for");
                 }
 
                 if (sabbat.Kind != "fire" && sabbat.Kind != "quarter")
@@ -132,17 +127,23 @@ namespace Wildgrove.Data
                 ValidateHemisphereNights(sabbat, "south", sabbat.Nights?.South, issues);
             }
 
-            ValidateNoOverlappingTides(wheel, "north", s => s.Nights?.North, issues);
-            ValidateNoOverlappingTides(wheel, "south", s => s.Nights?.South, issues);
+            ValidateNoSharedNights(wheel, "north", s => s.Nights?.North, issues);
+            ValidateNoSharedNights(wheel, "south", s => s.Nights?.South, issues);
         }
 
         /// <summary>
-        /// Within one hemisphere, no two tides may be open at once — the sim
-        /// carries a single open tide, and an overlap would silently drop one.
-        /// Windows are [night − openDaysBefore, night + 1), so consecutive
-        /// nights need a gap of at least openDaysBefore + 1 days.
+        /// Within one hemisphere, no two sabbats may fall on the same night —
+        /// a tide runs from its own night to the next one, so a shared night is
+        /// a season nought days long, and the sim carries a single open tide, so
+        /// one of the pair would silently never hold the wheel at all.
+        /// <para>
+        /// The old rule here was an overlap rule, and it had a number in it: a
+        /// tide opened a month ahead of its night, so consecutive nights needed
+        /// a gap wider than that month. Seasons that run night to night cannot
+        /// overlap by construction, and the only gap that is wrong is none.
+        /// </para>
         /// </summary>
-        private static void ValidateNoOverlappingTides(WheelDef wheel, string hemisphere,
+        private static void ValidateNoSharedNights(WheelDef wheel, string hemisphere,
             System.Func<SabbatDef, List<string>> nightsOf, List<string> issues)
         {
             var nights = new List<(System.DateTime day, string sabbat)>();
@@ -162,11 +163,10 @@ namespace Wildgrove.Data
             nights.Sort((a, b) => a.day.CompareTo(b.day));
             for (var i = 1; i < nights.Count; i++)
             {
-                var gap = (nights[i].day - nights[i - 1].day).TotalDays;
-                if (gap < wheel.OpenDaysBefore + 1)
+                if (nights[i].day == nights[i - 1].day)
                 {
-                    issues.Add($"Sabbat '{nights[i].sabbat}' ({hemisphere}, {nights[i].day:yyyy-MM-dd}) opens before"
-                               + $" '{nights[i - 1].sabbat}' closes — nights need a gap of at least {wheel.OpenDaysBefore + 1} days");
+                    issues.Add($"Sabbat '{nights[i].sabbat}' falls on the same {hemisphere} night as"
+                               + $" '{nights[i - 1].sabbat}' ({nights[i].day:yyyy-MM-dd}) — one of them would never hold the wheel");
                 }
             }
         }

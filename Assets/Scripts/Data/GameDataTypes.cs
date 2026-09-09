@@ -360,17 +360,15 @@ namespace Wildgrove.Data
     }
 
     /// <summary>
-    /// The Wheel (design §15): the eight sabbats and the tide-open lead time.
-    /// The world's one ambient lean since the drawn region season retired
-    /// (design §8, 2026-08-08). Read live by the sim's Wheel from the sim
-    /// clock cursor — its touch effects never join the cached effect union.
+    /// The Wheel (design §15): the eight sabbats, each holding the wheel from
+    /// its own night until the next takes it. The world's one ambient lean
+    /// since the drawn region season retired (design §8, 2026-08-08). Read live
+    /// by the sim's Wheel from the sim clock cursor — its touch effects never
+    /// join the cached effect union.
     /// </summary>
     [Serializable]
     public sealed class WheelData
     {
-        /// <summary>Days before the sabbat night that its tide opens.</summary>
-        public int openDaysBefore = 30;
-
         /// <summary>The keeping's shape (design §15) — a zeroed section reads as "no verse"; Keeping.Configured is the liveness check.</summary>
         public ObservanceData observance;
 
@@ -408,10 +406,10 @@ namespace Wildgrove.Data
         /// <summary>"fire" (cross-quarter) or "quarter" (solstice/equinox).</summary>
         public string kind;
 
-        /// <summary>The warden's margin line — the calendar is the warden's, never the land's.</summary>
+        /// <summary>What the season is like to walk in, while this sabbat holds the wheel.</summary>
         public string sign;
 
-        /// <summary>What the day is in the old year the warden keeps — read while its tide is still coming.</summary>
+        /// <summary>What the day is in the old year the warden keeps — why the season carries its name.</summary>
         public string lore;
 
         /// <summary>The ambient touch: one narrow lean, live while the tide is open.</summary>

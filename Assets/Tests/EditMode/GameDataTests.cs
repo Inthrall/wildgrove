@@ -302,19 +302,21 @@ namespace Wildgrove.Data.Tests
         }
 
         [Test]
-        public void Validate_SabbatNightsTooClose_IsCaught()
+        public void Validate_TwoSabbatsOnOneNight_IsCaught()
         {
             var sources = LoadSources();
-            // Slide NH Imbolc onto NH Beltane's tide (Apr 30 is inside the
-            // May 1 window) — overlapping tides would silently drop one.
+            // Slide NH Imbolc onto NH Beltane's own night. Seasons run night to
+            // night, so two on one night is a season nought days long, and the
+            // sim carries a single open tide — one of the pair would silently
+            // never hold the wheel at all.
             sources.SabbatsJson = sources.SabbatsJson.Replace(
                 "\"2027-02-01\"",
-                "\"2027-04-30\"");
-            Assert.That(sources.SabbatsJson, Does.Contain("2027-04-30"), "the corruption must land, or this test proves nothing");
+                "\"2027-05-01\"");
+            Assert.That(sources.SabbatsJson, Does.Contain("2027-05-01"), "the corruption must land, or this test proves nothing");
 
             var issues = GameDataValidator.Validate(GameData.Parse(sources));
 
-            Assert.That(issues, Has.Some.Contains("opens before"));
+            Assert.That(issues, Has.Some.Contains("falls on the same north night as"));
         }
 
         [Test]

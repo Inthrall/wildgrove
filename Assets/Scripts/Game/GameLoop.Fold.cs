@@ -201,48 +201,47 @@ namespace Wildgrove.Game
             return Migration.RenownForNextVerdure(State, Data);
         }
 
-        /// <summary>The sabbat whose tide is open right now (design §15) — null through the fallow weeks, or while the Wheel is inert.</summary>
+        /// <summary>The sabbat holding the wheel right now (design §15) — null only where the calendar does not reach, or while the Wheel is inert.</summary>
         public SabbatData OpenTide()
         {
             return Wheel.OpenTide(State, Data);
         }
 
         /// <summary>
-        /// The sabbat night at or ahead of now — the fold forecast's line since
-        /// the drawn season retired (design §8): the Wheel turns whether or not
-        /// the camp folds. Null while the Wheel is inert or the calendar has
-        /// run out.
+        /// The soonest sabbat night ahead of now — the fold forecast's line
+        /// since the drawn season retired (design §8): the Wheel turns whether
+        /// or not the camp folds. Null while the Wheel is inert or the calendar
+        /// has run out.
         /// </summary>
         public SabbatData NextSabbat(out long nightStartUnixMs)
         {
             return Wheel.NextSabbat(State, Data, out nightStartUnixMs);
         }
 
-        /// <summary>When the open tide closes (UTC unix ms) — 0 in the fallow weeks.</summary>
+        /// <summary>When the open tide gives the wheel up (UTC unix ms) — 0 where the calendar does not reach.</summary>
         public long OpenTideCloseMs()
         {
             return Wheel.OpenTideCloseMs(State, Data);
         }
 
+        /// <summary>The sabbat that takes the wheel next, and the midnight it does so (design §15) — the cached read, null once the calendar runs out.</summary>
+        public SabbatData NextTide(out long takesTheWheelUnixMs)
+        {
+            return Wheel.NextTide(State, Data, out takesTheWheelUnixMs);
+        }
+
         /// <summary>
-        /// One named sabbat's next turn: the night, and when its tide opens
-        /// (both UTC unix ms). False when the Wheel is inert or that sabbat's
-        /// authored nights have run out. The Record's shelf and the events rail
-        /// ask this; everything watching only "what is open now" asks
-        /// <see cref="OpenTide"/>, which is the cached read.
+        /// One named sabbat's next turn (UTC unix ms) — the night its tide
+        /// opens. False when the Wheel is inert or that sabbat's authored
+        /// nights have run out. Everything watching only "what is open now"
+        /// asks <see cref="OpenTide"/>, which is the cached read.
         /// </summary>
-        public bool NextNightOf(SabbatData sabbat, out long nightStartUnixMs, out long tideOpensUnixMs)
+        public bool NextNightOf(SabbatData sabbat, out long nightStartUnixMs)
         {
-            return Wheel.NextNightOf(State, Data, sabbat, out nightStartUnixMs, out tideOpensUnixMs);
+            return Wheel.NextNightOf(State, Data, sabbat, out nightStartUnixMs);
         }
 
-        /// <summary>How far ahead of its night a tide opens, in days — authored on the Wheel (design §15).</summary>
-        public int TideOpenDays()
-        {
-            return Wheel.OpenDaysBefore(Data);
-        }
-
-        /// <summary>The open tide's keeping (design §15) — generated on first read, null through the fallow weeks.</summary>
+        /// <summary>The open tide's keeping (design §15) — generated on first read, null only where the calendar does not reach.</summary>
         public KeepingState CurrentKeeping()
         {
             return Keeping.Current(State, Data);
@@ -252,6 +251,12 @@ namespace Wildgrove.Game
         public int KeepingTierReached()
         {
             return Keeping.TierReached(Data, Keeping.Current(State, Data));
+        }
+
+        /// <summary>Whether anything has been set down in the open season's keeping — the inside cover's lock on turning the reckoning.</summary>
+        public bool KeepingBegun()
+        {
+            return Keeping.Begun(State, Data);
         }
 
         public bool CanOfferKeeping(int slotIndex)

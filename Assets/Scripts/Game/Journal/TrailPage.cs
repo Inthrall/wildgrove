@@ -29,6 +29,8 @@ namespace Wildgrove.Game
     /// and the trail-home bar put the first gathering plate a viewport and a
     /// half down a page whose whole subject is gathering. A new pinned line at
     /// the top of this page has to be worth a plate, and almost nothing is.
+    /// What is left of that head is the keeping's own folded card, and nothing
+    /// standing above it.
     /// </para>
     /// </summary>
     internal sealed partial class TrailPage : JournalSection
@@ -37,7 +39,6 @@ namespace Wildgrove.Game
 
         internal void BuildTrailPage()
         {
-            BuildTideLine();
             BuildKeepingCard();
             BuildRecruitBar();
 

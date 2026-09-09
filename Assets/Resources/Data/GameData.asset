@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ccddaf0e778f584d92cc7fe6c63a339, type: 3}
   m_Name: GameData
   m_EditorClassIdentifier: Wildgrove.Data::Wildgrove.Data.GameDataAsset
-  sourceHash: e8c15e9a846bf50eb4e1d528d8247bb17e329d6702d7c1e0b265a274e9730d07
+  sourceHash: 1818e953cba2a5c2932fe37de01f4b2e3d0ea87d75301317b0a134dc18574b3f
   economy:
     costGrowth:
       building: 1.25
@@ -2439,7 +2439,6 @@ MonoBehaviour:
     - id: reeds
       amount: 20
   wheel:
-    openDaysBefore: 30
     observance:
       slotCount: 5
       tierSlots: 010000000300000005000000
@@ -2453,8 +2452,8 @@ MonoBehaviour:
     - id: samhain
       displayName: Samhain
       kind: fire
-      sign: "Samhain, by my count. The quiet things hold still longer tonight \u2014
-        the pencil keeps up."
+      sign: The dark half. Everything holds still a beat longer than it means to,
+        and the pencil keeps up with all of it.
       lore: the herds come down off the hill at the year's last gate, and the dark
         half begins. what the summer could not keep, the telling keeps.
       touch:
@@ -2475,8 +2474,8 @@ MonoBehaviour:
     - id: yule
       displayName: Yule
       kind: quarter
-      sign: Yule, by my count. The fire wants little and gives much; the pots come
-        off early.
+      sign: Deep cold, and the fire wants less than it gives back. The pots come
+        off early, every one of them, all season.
       lore: the longest night, and the turn buried inside it. the fire is fed until
         morning because the morning is the whole point of it.
       touch:
@@ -2497,8 +2496,8 @@ MonoBehaviour:
     - id: imbolc
       displayName: Imbolc
       kind: fire
-      sign: "Imbolc, by my count. First stirrings under the frost \u2014 the hedge
-        hands over more than it shows."
+      sign: Nothing is up yet, and the hedge still hands over more than it has any
+        business showing. Fibre and herb weeks.
       lore: the ewes come into milk with nothing yet showing above ground. the old
         year calls it the quickening and takes it on trust.
       touch:
@@ -2527,8 +2526,8 @@ MonoBehaviour:
     - id: ostara
       displayName: Ostara
       kind: quarter
-      sign: Ostara, by my count. Sowing weather; the ground takes what is given back,
-        and asks less of it.
+      sign: Sowing weather, and it holds. The ground takes back whatever is given
+        it, and asks less for the taking.
       lore: day and night stand level, and the year tips over into the light. nothing
         has come up yet to prove the ground has woken, so what goes in now goes in
         on trust.
@@ -2550,7 +2549,8 @@ MonoBehaviour:
     - id: beltane
       displayName: Beltane
       kind: fire
-      sign: Beltane, by my count. The meadow keeps it too; the flowers come readier.
+      sign: The hedge went white overnight and has stayed that way. Flowers and berries
+        come readier than the walk deserves.
       lore: the herds are walked between two fires and let out onto the summer grass.
         the hedge goes white overnight, and the light half of the year begins.
       touch:
@@ -2579,8 +2579,8 @@ MonoBehaviour:
     - id: litha
       displayName: Litha
       kind: quarter
-      sign: Litha, by my count. The light stays long past its hour, and more comes
-        drifting on it.
+      sign: The light stays long past its hour, night after night, and more keeps
+        drifting in on it than the day set out.
       lore: the longest day, the year at its full height. everything after it leans
         toward the harvest, which is no loss. that is what the light was for.
       touch:
@@ -2601,8 +2601,8 @@ MonoBehaviour:
     - id: lughnasadh
       displayName: Lughnasadh
       kind: fire
-      sign: Lughnasadh, by my count. First harvest; the wood is generous with its
-        keeping.
+      sign: "The gathering-in. Whatever the wood has been keeping to itself, it hands
+        over now \u2014 the nuts and the mushrooms both."
       lore: the first sheaf is cut and eaten. the year's first proof that the summer's
         work was work and not only hope.
       touch:
@@ -2631,7 +2631,8 @@ MonoBehaviour:
     - id: mabon
       displayName: Mabon
       kind: quarter
-      sign: Mabon, by my count. Even the caravan weighs fairer, this once.
+      sign: Level days, dark for light. Even the caravan weighs fairer while they
+        last, and it knows it.
       lore: day and night stand level again, the other way about. what is in is in;
         what is still out is left to whatever wants it.
       touch:

@@ -5,10 +5,11 @@ namespace Wildgrove.Sim
 {
     /// <summary>
     /// The Wheel (design §15): eight real-world sabbats a year, hemisphere-
-    /// mirrored. Each opens a tide a month ahead of its night and closes at
-    /// warden-local midnight after it; while a tide is open its sabbat's
-    /// ambient touch leans the world a little — the world's ONE lean since the
-    /// drawn region season retired (design §8, 2026-08-08).
+    /// mirrored. Each takes the wheel at warden-local midnight on its own night
+    /// and holds it until the next sabbat's, so the year is eight seasons back
+    /// to back with no gap between them; the open sabbat's ambient touch leans
+    /// the world a little — the world's ONE lean since the drawn region season
+    /// retired (design §8, 2026-08-08).
     /// <para>
     /// Everything here is a pure function of the sim clock cursor
     /// (<see cref="GameState.simNowUnixMs"/>), the hemisphere choice and the
@@ -24,8 +25,9 @@ namespace Wildgrove.Sim
     /// sub-step through an offline catch-up (Simulation.Step), so an absence
     /// spanning a tide's edge earns the tide's rate for exactly the seconds
     /// inside it, and a wound-forward device celebrates alone — spent, not
-    /// minted. Unconfigured data, an unset hemisphere, or an unstamped cursor
-    /// all read as "no tide": absent is inert (fixtures).
+    /// minted. Unconfigured data, an unset hemisphere, an unstamped cursor and
+    /// a cursor outside the authored calendar all read as "no tide": absent is
+    /// inert (fixtures).
     /// </para>
     /// </summary>
     public static class Wheel
@@ -33,6 +35,16 @@ namespace Wildgrove.Sim
         public const int HemisphereUnset = 0;
         public const int HemisphereNorth = 1;
         public const int HemisphereSouth = 2;
+
+        /// <summary>
+        /// How long the calendar's LAST authored night holds the wheel, having
+        /// no successor to hand it to: one turn of the eight, near enough. It
+        /// is what stops the final sabbat being the one that silently never
+        /// opens, and the wheel goes quiet after it rather than extrapolating
+        /// dates nobody authored — the evergreen rule is about topping the
+        /// calendar up (see sabbats.json), not about guessing at it.
+        /// </summary>
+        private const int LastNightHoldsDays = 46;
 
         private const long DayMs = 86400000L;
         private const long MinuteMs = 60000L;
@@ -42,10 +54,23 @@ namespace Wildgrove.Sim
             return data?.wheel?.sabbats != null && data.wheel.sabbats.Count > 0;
         }
 
-        /// <summary>The sabbat whose tide is open right now — null through the fallow weeks, and whenever the Wheel is inert.</summary>
+        /// <summary>The sabbat whose tide is open right now — null only where the calendar does not reach, and whenever the Wheel is inert.</summary>
         public static SabbatData OpenTide(GameState state, GameDataAsset data)
         {
             return Cache(state, data)?.open;
+        }
+
+        /// <summary>
+        /// The sabbat that takes the wheel when the open tide gives it up, and
+        /// when it does so (UTC unix ms) — the open tide's own close, said the
+        /// other way about. Null once the authored calendar has run out, which
+        /// is the one case where a tide ends in nothing.
+        /// </summary>
+        public static SabbatData NextTide(GameState state, GameDataAsset data, out long takesTheWheelUnixMs)
+        {
+            var cache = Cache(state, data);
+            takesTheWheelUnixMs = cache?.next != null ? cache.nextStartMs : 0L;
+            return cache?.next;
         }
 
         /// <summary>The open tide's sabbat night as a days-since-epoch date, or -1 — the keeping keys its year on this.</summary>
@@ -55,7 +80,7 @@ namespace Wildgrove.Sim
             return cache?.open != null ? cache.openNightDay : -1;
         }
 
-        /// <summary>When the open tide closes (UTC unix ms) — the fire's own midnight; 0 when no tide is open.</summary>
+        /// <summary>When the open tide gives the wheel up (UTC unix ms) — the next sabbat's own midnight; 0 when no tide is open.</summary>
         public static long OpenTideCloseMs(GameState state, GameDataAsset data)
         {
             var cache = Cache(state, data);
@@ -63,9 +88,12 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// The sabbat night at or ahead of the cursor — the open tide's own
-        /// night while one is open, else the next to come. Null when the Wheel
-        /// is inert or the authored calendar has run out (top up sabbats.json).
+        /// The soonest sabbat night still ahead of the cursor. Null when the
+        /// Wheel is inert or the authored calendar has run out (top up
+        /// sabbats.json). While a tide holds this is the sabbat taking the
+        /// wheel off it — the same answer <see cref="NextTide"/> gives from the
+        /// cache, reached the long way for the surfaces that ask before any
+        /// tide has opened at all.
         /// </summary>
         public static SabbatData NextSabbat(GameState state, GameDataAsset data, out long nightStartUnixMs)
         {
@@ -79,7 +107,7 @@ namespace Wildgrove.Sim
             var bestStart = long.MaxValue;
             foreach (var sabbat in data.wheel.sabbats)
             {
-                if (NextNightOf(state, data, sabbat, out var nightStart, out _) && nightStart < bestStart)
+                if (NextNightOf(state, data, sabbat, out var nightStart) && nightStart < bestStart)
                 {
                     best = sabbat;
                     bestStart = nightStart;
@@ -91,11 +119,11 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
-        /// ONE sabbat's next turn: the soonest of its authored nights still at
-        /// or ahead of the cursor, and the moment that night's tide opens.
-        /// False when the Wheel is inert or this sabbat's authored nights have
-        /// run out while others still have theirs — which is why the Record's
-        /// shelf asks per sabbat rather than reading the calendar itself.
+        /// ONE sabbat's next turn: the soonest of its authored nights still
+        /// ahead of the cursor, which is both the night and the moment its tide
+        /// opens — they are the same midnight now. False when the Wheel is
+        /// inert or this sabbat's authored nights have run out while others
+        /// still have theirs.
         /// <para>
         /// Uncached on purpose: <see cref="Cache"/> answers "what is open now"
         /// in O(1) for the hook sites that read it every step, and this walks
@@ -105,26 +133,22 @@ namespace Wildgrove.Sim
         /// </para>
         /// </summary>
         public static bool NextNightOf(GameState state, GameDataAsset data, SabbatData sabbat,
-            out long nightStartUnixMs, out long tideOpenUnixMs)
+            out long nightStartUnixMs)
         {
             nightStartUnixMs = 0L;
-            tideOpenUnixMs = 0L;
             if (state == null || sabbat == null || !Configured(data)
                 || state.hemisphere == HemisphereUnset || state.simNowUnixMs <= 0L)
             {
                 return false;
             }
 
-            var openDays = OpenDaysBefore(data);
             var bestStart = long.MaxValue;
             foreach (var nightDay in NightsFor(sabbat, state.hemisphere))
             {
                 var nightStart = LocalDayStartMs(nightDay, state.utcOffsetMinutes);
-                var nightEnd = LocalDayStartMs(nightDay + 1, state.utcOffsetMinutes);
-                if (nightEnd > state.simNowUnixMs && nightStart < bestStart)
+                if (nightStart > state.simNowUnixMs && nightStart < bestStart)
                 {
                     bestStart = nightStart;
-                    tideOpenUnixMs = LocalDayStartMs(nightDay - openDays, state.utcOffsetMinutes);
                 }
             }
 
@@ -137,14 +161,7 @@ namespace Wildgrove.Sim
             return true;
         }
 
-        /// <summary>How far ahead of its night a tide opens — authored, with the shipped month as the fallback for data that omits it.</summary>
-        public static int OpenDaysBefore(GameDataAsset data)
-        {
-            var authored = data?.wheel != null ? data.wheel.openDaysBefore : 0;
-            return authored > 0 ? authored : 30;
-        }
-
-        /// <summary>The open tide's yield lean on one resource — 1.0 for everything a tide doesn't name, and through the fallow weeks.</summary>
+        /// <summary>The open tide's yield lean on one resource — 1.0 for everything a tide doesn't name, and wherever the calendar does not reach.</summary>
         public static double YieldMult(GameState state, GameDataAsset data, string resourceId)
         {
             var cache = Cache(state, data);
@@ -230,6 +247,8 @@ namespace Wildgrove.Sim
             cache.utcOffsetMinutes = state.utcOffsetMinutes;
             cache.open = null;
             cache.openNightDay = -1;
+            cache.next = null;
+            cache.nextStartMs = 0L;
             cache.fromMs = long.MinValue;
             cache.toMs = long.MaxValue;
             cache.digSpeedMult = 1.0;
@@ -252,42 +271,63 @@ namespace Wildgrove.Sim
                 return;
             }
 
+            // The latest night already fallen holds the wheel; the soonest still
+            // to come is what takes it. One pass over the calendar answers both,
+            // and the pair of them IS the window — a tide runs night to night.
             var now = state.simNowUnixMs;
-            var openDays = OpenDaysBefore(data);
-            var previousEdge = long.MinValue;
-            var nextEdge = long.MaxValue;
+            SabbatData holding = null;
+            var holdingNightDay = -1;
+            var heldFromMs = long.MinValue;
+            var takenAtMs = long.MaxValue;
 
             foreach (var sabbat in data.wheel.sabbats)
             {
                 foreach (var nightDay in NightsFor(sabbat, state.hemisphere))
                 {
-                    var openMs = LocalDayStartMs(nightDay - openDays, state.utcOffsetMinutes);
-                    var closeMs = LocalDayStartMs(nightDay + 1, state.utcOffsetMinutes);
-                    if (now >= openMs && now < closeMs)
+                    var nightMs = LocalDayStartMs(nightDay, state.utcOffsetMinutes);
+                    if (nightMs <= now)
                     {
-                        cache.open = sabbat;
-                        cache.openNightDay = nightDay;
-                        cache.fromMs = openMs;
-                        cache.toMs = closeMs;
-                        BuildTouch(cache, sabbat);
-                        return;
+                        if (nightMs > heldFromMs)
+                        {
+                            holding = sabbat;
+                            holdingNightDay = nightDay;
+                            heldFromMs = nightMs;
+                        }
                     }
-
-                    if (closeMs <= now && closeMs > previousEdge)
+                    else if (nightMs < takenAtMs)
                     {
-                        previousEdge = closeMs;
-                    }
-
-                    if (openMs > now && openMs < nextEdge)
-                    {
-                        nextEdge = openMs;
+                        cache.next = sabbat;
+                        cache.nextStartMs = nightMs;
+                        takenAtMs = nightMs;
                     }
                 }
             }
 
-            // Fallow weeks: the cache holds until the next tide opens.
-            cache.fromMs = previousEdge;
-            cache.toMs = nextEdge;
+            if (holding == null)
+            {
+                // The cursor sits before the calendar's first night — nothing
+                // has taken the wheel yet. Hold until something does.
+                cache.toMs = takenAtMs;
+                return;
+            }
+
+            var givesUpMs = cache.next != null
+                ? takenAtMs
+                : LocalDayStartMs(holdingNightDay + LastNightHoldsDays, state.utcOffsetMinutes);
+            if (givesUpMs <= now)
+            {
+                // Past the last authored night and past the span it holds for:
+                // the wheel is quiet until the calendar is topped up, and no
+                // edge is coming, so the cache never needs rebuilding again.
+                cache.fromMs = givesUpMs;
+                return;
+            }
+
+            cache.open = holding;
+            cache.openNightDay = holdingNightDay;
+            cache.fromMs = heldFromMs;
+            cache.toMs = givesUpMs;
+            BuildTouch(cache, holding);
         }
 
         private static void BuildTouch(WheelCache cache, SabbatData sabbat)
@@ -406,8 +446,8 @@ namespace Wildgrove.Sim
     /// <summary>
     /// Cached open-tide window and its precomputed touch — see <see cref="Wheel"/>.
     /// Valid while the cursor stays inside [fromMs, toMs) under the same data,
-    /// hemisphere and offset; through the fallow weeks it spans the whole gap,
-    /// so reads stay O(1) between edges. Never saved.
+    /// hemisphere and offset, so reads stay O(1) between one sabbat's midnight
+    /// and the next's. Never saved.
     /// </summary>
     public sealed class WheelCache
     {
@@ -418,6 +458,10 @@ namespace Wildgrove.Sim
         public long toMs = long.MinValue;
         public SabbatData open;
         public int openNightDay = -1;
+
+        /// <summary>The sabbat this window ends in, and its own midnight — null once the calendar has run out.</summary>
+        public SabbatData next;
+        public long nextStartMs;
 
         public double digSpeedMult = 1.0;
         public double craftSpeedGlobal = 1.0;

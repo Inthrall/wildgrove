@@ -49,20 +49,30 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The open tide, in full: the warden's sign, what the world is leaning
-        /// toward while it holds, and the keeping's slots as they stand. The
-        /// tier moment keeps its own sheet (<see cref="OpenKeepingSheet"/>) —
-        /// that one is a celebration the game raises, this one is a reference
-        /// the player asked for, and they should not read alike.
+        /// The open season, in full: what the day it is named for meant in the
+        /// old year, what the land is like to walk while it holds, what the
+        /// world is leaning toward, who takes the wheel next, and the keeping's
+        /// slots as they stand. The tier moment keeps its own sheet
+        /// (<see cref="OpenKeepingSheet"/>) — that one is a celebration the game
+        /// raises, this one is a reference the player asked for, and they should
+        /// not read alike.
+        /// <para>
+        /// The sabbat's <c>lore</c> joined it on 2026-09-09, when the seasons
+        /// were laid end to end (design §15). It used to belong to the sheet
+        /// that waited a month for a tide to open, and there is no waiting any
+        /// more: a season names itself for a day, and this is now the only place
+        /// that says what the day was.
+        /// </para>
         /// </summary>
         private void OpenTideEventSheet()
         {
             var tide = _loop.OpenTide();
             if (tide == null)
             {
-                // The tide closed between the cell being painted and the finger
-                // landing on it. Nothing to say and nothing to do — say that.
-                SetNote("the tide has closed. the fire keeps what it got.");
+                // The season turned between the cell being painted and the
+                // finger landing on it. Nothing to say and nothing to do — say
+                // that.
+                SetNote("the season turned. the fire keeps what it got.");
                 return;
             }
 
@@ -75,10 +85,14 @@ namespace Wildgrove.Game
                 PlateImage(sheet, plate, 220f);
             }
 
+            MakeText(sheet, "<i>" + tide.lore + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
             MakeText(sheet, "<i>" + tide.sign + "</i>", 19, TextAnchor.MiddleCenter, Ink2, _hand);
 
-            var closes = (_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 1000.0;
-            MakeText(sheet, "the tide closes at the fire, " + NumberFormat.Countdown(closes) + " from now",
+            var next = _loop.NextTide(out _);
+            var left = (_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 1000.0;
+            MakeText(sheet, next != null
+                    ? next.displayName + " takes the wheel in " + NumberFormat.Countdown(left)
+                    : "the authored wheel runs out in " + NumberFormat.Countdown(left),
                 17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
 
             var gives = EffectsLabel(tide.touch);
@@ -115,7 +129,7 @@ namespace Wildgrove.Game
                 : tier >= 3 ? "the wheel is kept" : "nothing set down yet";
             MakeText(sheet, "<b>The keeping</b>  <color=" + Ink2Hex + ">" + word + " · "
                             + Keeping.CompletedSlotCount(keeping) + " of " + keeping.slots.Count
-                            + " answered</color>", 18, TextAnchor.UpperLeft, Ink);
+                            + " set down</color>", 18, TextAnchor.UpperLeft, Ink);
 
             foreach (var slot in keeping.slots)
             {
@@ -149,30 +163,23 @@ namespace Wildgrove.Game
 
         /// <summary>
         /// The sabbat being waited for. No plate: the plate is what a keeping
-        /// earns (design §15), and a tide that has not opened has earned
+        /// earns (design §15), and a season that has not begun has earned
         /// nothing yet — the sheet is a date and a promise, not a page.
         /// <para>
-        /// A name, a countdown to the opening and the sabbat's own lore —
-        /// nothing else, from 2026-08-13. The third line was the reckoning
-        /// ("the calendar is the warden's… by the south's wheel") for the
-        /// first half of that day: it answered a question nobody had asked,
-        /// and said it a third time, the reckoning already naming the Record's
-        /// Wheel card and labelling the inside-cover button that changes it.
-        /// What a player waiting on a tide wants is what the day is for, so
-        /// the sabbat's <c>lore</c> stands there instead. The tide's own
-        /// <c>sign</c> cannot do that job: it is written for the night it
-        /// falls on, and this sheet is a month early.
+        /// A name, a countdown to the night it takes the wheel, and the
+        /// sabbat's own lore — nothing else, from 2026-08-13. The third line was
+        /// the reckoning ("the calendar is the warden's… by the south's wheel")
+        /// for the first half of that day: it answered a question nobody had
+        /// asked, and said it a third time, the reckoning already naming the
+        /// Record's Wheel card and labelling the inside-cover button that
+        /// changes it.
         /// </para>
         /// <para>
-        /// It used to carry the closing night
-        /// as well, the Wheel's rules read out in full, the tide's whole
-        /// touch under <em>When it opens</em>, the years it had been kept, and
-        /// a note on where the reckoning is changed: six things asked of a
-        /// player who tapped a cell to learn when the season turns. What the
-        /// tide gives belongs to the tide's own sheet, which says it the day it
-        /// starts being true; the night is a month past the only date this
-        /// sheet is about; and the years kept are the book's to remember, not
-        /// this sheet's.
+        /// Since the seasons were laid end to end (2026-09-09) this is the rare
+        /// half of the Wheel's rail cell rather than the common one: a season is
+        /// open every day the calendar covers, so the only way here is a cursor
+        /// sitting before the first authored night. It stays because that IS a
+        /// state the game can be in and a blank rail would say nothing about it.
         /// </para>
         /// </summary>
         private void OpenComingSabbatSheet()
@@ -186,10 +193,10 @@ namespace Wildgrove.Game
             var sheet = BeginSheet();
             MakeText(sheet, coming.displayName + " is coming", 32, TextAnchor.UpperCenter, Ink, _serif);
 
-            if (_loop.NextNightOf(coming, out _, out var opensMs))
+            if (_loop.NextNightOf(coming, out var nightMs))
             {
-                MakeText(sheet, "the tide opens in "
-                                + NumberFormat.Countdown((opensMs - _loop.NowUnixMs()) / 1000.0),
+                MakeText(sheet, "it takes the wheel in "
+                                + NumberFormat.Countdown((nightMs - _loop.NowUnixMs()) / 1000.0),
                     18, TextAnchor.MiddleCenter, Ink2, _serif);
             }
 

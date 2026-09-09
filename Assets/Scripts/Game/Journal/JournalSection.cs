@@ -97,26 +97,35 @@ namespace Wildgrove.Game
         /// a count, and so has to be rewritten on the cadence rather than
         /// written once at the build.
         /// </summary>
-        protected RectTransform FoldingCard(string cardId, string head, string tally, out bool open, out Button heading)
+        /// <param name="tallyWhenOpen">
+        /// Keep the tally under the head once the card is open, rather than
+        /// letting the contents speak for themselves. For a card whose tally is
+        /// the answer and whose contents are the working — the keeping, where
+        /// "3 of 5 set down" is what the player came to read and five slot rows
+        /// are how it got there.
+        /// </param>
+        protected RectTransform FoldingCard(string cardId, string head, string tally, out bool open, out Button heading,
+            bool tallyWhenOpen = false)
         {
-            return FoldingCard(cardId, head, tally, JournalCardFolds.OpenUnasked(cardId), out open, out heading);
+            return FoldingCard(cardId, head, tally, JournalCardFolds.OpenUnasked(cardId), out open, out heading,
+                tallyWhenOpen);
         }
 
         /// <summary>
-        /// <see cref="FoldingCard(string,string,string,out bool,out Button)"/> for
+        /// <see cref="FoldingCard(string,string,string,out bool,out Button,bool)"/> for
         /// a card whose unasked default is positional rather than a matter of
         /// what the card is for — the Camp page's stations. The same answer goes
         /// to the head's own press, or the fold would be computed one way and
         /// toggled the other.
         /// </summary>
         protected RectTransform FoldingCard(string cardId, string head, string tally, bool openUnasked,
-            out bool open, out Button heading)
+            out bool open, out Button heading, bool tallyWhenOpen = false)
         {
             open = JournalCardFolds.IsOpen(_cardOpen, cardId, openUnasked);
             var card = JournalWidgets.Card(null);
             card.gameObject.name = "Card_" + head;
 
-            var label = FoldingCardLabel(head, tally, open);
+            var label = FoldingCardLabel(head, open && !tallyWhenOpen ? null : tally);
 
             // The heading hands its own rect to the fold, which notes where it
             // stands in the viewport — the rebuilt page puts it back there.
@@ -132,13 +141,15 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The head's own label: the card's name, and under it the tally it
-        /// wears while it is shut. Separate from the build so a live tally can
-        /// be rewritten by the same rule that wrote it.
+        /// The head's own label: the card's name, and under it the tally, where
+        /// there is one to wear. Separate from the build so a live tally can be
+        /// rewritten by the same rule that wrote it — and it knows nothing about
+        /// folding, which is the caller's business: an empty tally is a head
+        /// with a name and nothing else.
         /// </summary>
-        protected static string FoldingCardLabel(string head, string tally, bool open)
+        protected static string FoldingCardLabel(string head, string tally)
         {
-            return open
+            return string.IsNullOrEmpty(tally)
                 ? JournalWidgets.SizeOpen(15) + head + "</size>"
                 : JournalWidgets.SizeOpen(15) + head + "</size>" + JournalWidgets.SizeOpen(13)
                   + "\n<color=" + JournalTheme.Ink2Hex + ">" + tally + "</color></size>";

@@ -7,10 +7,10 @@ namespace Wildgrove.Game
     /// <summary>What a rail cell stands for — the popup and the cell's own face both switch on this.</summary>
     public enum EventRailKind
     {
-        /// <summary>A sabbat's tide, open now: the keeping is answerable and the world is leaning.</summary>
+        /// <summary>The sabbat holding the wheel now: the keeping is answerable and the world is leaning.</summary>
         OpenTide,
 
-        /// <summary>The sabbat being waited for, with its tide still shut.</summary>
+        /// <summary>The sabbat being waited for, where the authored calendar does not yet reach the cursor.</summary>
         ComingSabbat,
 
         /// <summary>The weekly Play Games cache (design §11) — the other thing in the game with a clock on it.</summary>
@@ -56,11 +56,13 @@ namespace Wildgrove.Game
     /// <para>
     /// The Wheel is why this exists. Its five surfaces are scattered through the
     /// journal and four of them draw nothing outside a tide, so a player who
-    /// opened the book in a fallow week saw no evidence the system existed —
-    /// and a player inside a tide only met it if they happened to be on the
-    /// Trail. A rail beside the strip is on screen at every tab, which is the
-    /// chrome budget rule's test (GameHud), and it pays for itself in the
-    /// strip's width rather than the page's height.
+    /// opened the book in one of the fallow weeks the calendar used to have saw
+    /// no evidence the system existed — and a player inside a tide only met it
+    /// if they happened to be on the Trail. A rail beside the strip is on screen
+    /// at every tab, which is the chrome budget rule's test (GameHud), and it
+    /// pays for itself in the strip's width rather than the page's height. The
+    /// fallow weeks went in 2026-09-09; the argument for the rail did not, since
+    /// the four conditional surfaces are still four pages deep.
     /// </para>
     /// <para>
     /// Pure over (state, data, now) so the ordering and the inert cases can be
@@ -108,10 +110,16 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The Wheel's one cell: the open tide while one holds, else the sabbat
-        /// being waited for. Never both — a tide that is open IS the news, and
-        /// a second cell counting down the one after it would be the rail
-        /// spending a fingertip on something four weeks away.
+        /// The Wheel's one cell: the open season while one holds, else the
+        /// sabbat being waited for. Never both — the season that is open IS the
+        /// news, and a second cell counting down the one after it would be the
+        /// rail spending a fingertip on the same clock the first cell wears.
+        /// <para>
+        /// Since the seasons run end to end (2026-09-09) the first branch is
+        /// almost always the answer: the second is reached only where the
+        /// authored calendar does not cover the cursor, which is a save opened
+        /// before the first night in it or after the last has run out.
+        /// </para>
         /// </summary>
         private static void CollectWheel(GameState state, GameDataAsset data, long nowUnixMs, List<EventRailEntry> into)
         {
@@ -133,7 +141,7 @@ namespace Wildgrove.Game
             }
 
             var coming = Wheel.NextSabbat(state, data, out _);
-            if (coming == null || !Wheel.NextNightOf(state, data, coming, out _, out var opensMs))
+            if (coming == null || !Wheel.NextNightOf(state, data, coming, out var nightMs))
             {
                 return;
             }
@@ -144,7 +152,7 @@ namespace Wildgrove.Game
                 kind = EventRailKind.ComingSabbat,
                 title = coming.displayName,
                 sabbatId = coming.id,
-                remainingSeconds = (opensMs - nowUnixMs) / 1000.0,
+                remainingSeconds = (nightMs - nowUnixMs) / 1000.0,
                 ready = false,
             });
         }

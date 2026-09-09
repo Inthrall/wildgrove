@@ -121,18 +121,20 @@ namespace Wildgrove.Sim.Tests
         [TestCase(999.0)]
         public void Advance_AcrossATideEdge_LandsWhereOneCallWould(double sliceSeconds)
         {
-            // A tide (design §15) closes one hour into a three-hour absence:
-            // the leaned find must earn tide-rate for exactly the hour it was
-            // open, however the catch-up is sliced. The sim clock cursor is
-            // what carries the edge — Simulation.Step walks it per sub-step.
+            // A season (design §15) hands the wheel over one hour into a
+            // three-hour absence: the leaned find must earn the season's rate
+            // for exactly the hour it held, however the catch-up is sliced. The
+            // sim clock cursor is what carries the edge — Simulation.Step walks
+            // it per sub-step.
             const double away = 3 * 3600.0;
             const long dayMs = 86400000L;
             const int nightDay = 20000;
+            // Seasons run night to night, so the edge is the NEXT sabbat's own
+            // midnight — which is what the second entry here is for.
             var closeMs = (nightDay + 1) * dayMs;
             var leaveMs = closeMs - 3600000L;
             _data.wheel = new WheelData
             {
-                openDaysBefore = 14,
                 sabbats = new List<SabbatData>
                 {
                     new SabbatData
@@ -140,13 +142,29 @@ namespace Wildgrove.Sim.Tests
                         id = "beltane",
                         displayName = "Beltane",
                         kind = "fire",
-                        sign = "by my count",
+                        sign = "the hedge went white overnight",
                         touch = new List<EffectData>
                         {
                             new EffectData { type = EffectType.YieldMult, resource = "wildflowers", value = 1.2 },
                         },
                         northNightDays = new List<int> { nightDay },
                         southNightDays = new List<int> { nightDay },
+                    },
+                    new SabbatData
+                    {
+                        id = "samhain",
+                        displayName = "Samhain",
+                        kind = "fire",
+                        sign = "the dark half",
+                        // A lane nothing in this fixture crafts at: what the
+                        // probe below measures is the leaned hour ENDING, so
+                        // the season that takes over must move no yield at all.
+                        touch = new List<EffectData>
+                        {
+                            new EffectData { type = EffectType.CraftSpeedMult, skill = "firecraft", value = 1.2 },
+                        },
+                        northNightDays = new List<int> { nightDay + 1 },
+                        southNightDays = new List<int> { nightDay + 1 },
                     },
                 },
             };

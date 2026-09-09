@@ -251,7 +251,7 @@ namespace Wildgrove.Game
                 }
             }
 
-            // With no verse pinned, an open tide takes the row alone — the
+            // With no verse pinned, the open season takes the row alone — the
             // keeping is the one clock left running (design §15), and the
             // guillemet links to its card at the head of the Trail.
             var tide = _loop.OpenTide();
@@ -283,9 +283,8 @@ namespace Wildgrove.Game
 
         private string TideCloseWord()
         {
-            var closeMs = _loop.OpenTideCloseMs();
-            var days = (long)System.Math.Ceiling((closeMs - _loop.NowUnixMs()) / 86400000.0);
-            return days <= 1 ? "closes at the fire tonight" : "closes in " + days + " days";
+            var days = (long)Math.Ceiling((_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 86400000.0);
+            return JournalFormat.TideCloseWord(_loop.NextTide(out _), days);
         }
 
         internal void SetNote(string text)

@@ -15,9 +15,11 @@ namespace Wildgrove.Game.Tests
     public class EventRailTests
     {
         private const long DayMs = 86400000L;
+
+        // One sabbat, and so one season: it takes the wheel on its own night
+        // and holds it for the fallback span, nothing else being authored.
         private const int NightDay = 20000;
-        private const int OpenDays = 30;
-        private static readonly long OpenMs = (NightDay - OpenDays) * DayMs;
+        private static readonly long OpenMs = NightDay * DayMs;
 
         private GameDataAsset _data;
         private readonly List<EventRailEntry> _entries = new List<EventRailEntry>();
@@ -57,7 +59,6 @@ namespace Wildgrove.Game.Tests
             _data.exchange = new ExchangeData { spread = 0.15, offerMinutes = 5 };
             _data.wheel = new WheelData
             {
-                openDaysBefore = OpenDays,
                 sabbats = new List<SabbatData>
                 {
                     new SabbatData
@@ -65,7 +66,7 @@ namespace Wildgrove.Game.Tests
                         id = "beltane",
                         displayName = "Beltane",
                         kind = "fire",
-                        sign = "Beltane, by my count.",
+                        sign = "The hedge went white overnight.",
                         touch = new List<EffectData>
                         {
                             new EffectData { type = EffectType.YieldMult, resource = "wildflowers", value = 1.2 },
@@ -94,7 +95,12 @@ namespace Wildgrove.Game.Tests
 
         private GameState InTide() => At(OpenMs + DayMs);
 
-        private GameState Fallow() => At(OpenMs - 10 * DayMs);
+        /// <summary>
+        /// Epoch day 19960, forty days before the only authored night — the one
+        /// state left in which no season holds the wheel (design §15). It is
+        /// also a Sunday, which the cache tests below lean on.
+        /// </summary>
+        private GameState BeforeTheWheel() => At((NightDay - 40) * DayMs);
 
         private static EventRailEntry? Find(List<EventRailEntry> entries, string id)
         {
@@ -125,20 +131,21 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
-        public void Collect_ThroughTheFallowWeeks_CountsToTheNextTideOpening()
+        public void Collect_BeforeTheCalendarReaches_CountsToTheComingNight()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
 
             var coming = Find(_entries, EventRail.ComingSabbatId);
-            Assert.That(coming, Is.Not.Null, "the fallow weeks are exactly when the rail has to speak up");
+            Assert.That(coming, Is.Not.Null,
+                "a cursor the calendar does not reach is exactly when the rail has to speak up");
             Assert.That(coming.Value.title, Is.EqualTo("Beltane"));
             Assert.That(coming.Value.sabbatId, Is.EqualTo("beltane"));
             Assert.That(coming.Value.ready, Is.False);
             Assert.That(coming.Value.remainingSeconds,
                 Is.EqualTo((OpenMs - state.simNowUnixMs) / 1000.0).Within(1e-6),
-                "counted to the OPENING, not the night — the opening is when it can be acted on");
+                "counted to the night, which is when the season starts and so when it can be acted on");
         }
 
         [Test]
@@ -162,10 +169,11 @@ namespace Wildgrove.Game.Tests
             var open = InTide();
             EventRail.Collect(open, _data, open.simNowUnixMs, false, false, _entries);
             Assert.That(Find(_entries, EventRail.ComingSabbatId), Is.Null,
-                "a tide is open; the one after it is a month away and must not spend a fingertip");
+                "a season is open, and the one after it is the same clock this cell already wears — "
+                + "a second cell for it would spend a fingertip saying the same number twice");
 
-            var fallow = Fallow();
-            EventRail.Collect(fallow, _data, fallow.simNowUnixMs, false, false, _entries);
+            var before = BeforeTheWheel();
+            EventRail.Collect(before, _data, before.simNowUnixMs, false, false, _entries);
             Assert.That(Find(_entries, EventRail.OpenTideId), Is.Null);
         }
 
@@ -187,7 +195,7 @@ namespace Wildgrove.Game.Tests
         public void Collect_TheCache_NeverPromisesAmberToASignedOutPlayer()
         {
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, false, false, _entries);
             var signedOut = Find(_entries, EventRail.WeeklyCacheId);
@@ -208,9 +216,9 @@ namespace Wildgrove.Game.Tests
         public void Collect_TheCache_CountsTheWardensWeekOut()
         {
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
-            // Epoch day 19960 is a Sunday, and Fallow() stands on that day's own
+            // Epoch day 19960 is a Sunday, and BeforeTheWheel() stands on that day's own
             // local midnight at offset 0 — so the week turns over a day out.
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
@@ -224,7 +232,7 @@ namespace Wildgrove.Game.Tests
         public void Collect_TheCache_StandsDownOnceTheWeekHasBeenClaimed()
         {
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
-            var state = Fallow();
+            var state = BeforeTheWheel();
             var now = state.simNowUnixMs;
             // Yesterday — the Saturday of the same Monday-to-Sunday week `now`
             // stands in, so this is a cache already taken for THIS week.
@@ -240,7 +248,7 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void Collect_WithNoCacheAuthored_LeavesTheRailToTheWheel()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
@@ -251,7 +259,7 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void Collect_TheTimeSkip_OffersTheHoursWhenThereIsAnAdToHand()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, true, true, _entries);
 
@@ -269,7 +277,7 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void Collect_TheTimeSkip_CountsItsCooldownOut()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
             var now = state.simNowUnixMs;
             state.timeSkipClaimedUnixMs = now;
 
@@ -286,7 +294,7 @@ namespace Wildgrove.Game.Tests
         [Test]
         public void Collect_TheTimeSkip_StandsDownWhenTheAdLayerHasNothing()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
 
@@ -314,7 +322,7 @@ namespace Wildgrove.Game.Tests
         public void Collect_ClearsWhatWasThereBefore()
         {
             _data.economy.amber = new EconomyData.AmberData { weeklyCacheAmber = 20.0 };
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);
             EventRail.Collect(state, _data, state.simNowUnixMs, true, false, _entries);

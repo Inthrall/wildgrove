@@ -65,7 +65,14 @@ namespace Wildgrove.Game
             // its live updater — instead of collapsing into SUNG VERSES.
             var sungVerses = Rite.CompletedVerseCount(state, _loop.Data);
 
-            return _tab + "/" + state.roster.Count + "/" + state.nodes.Count + "/" + state.digSites.Count
+            // Which sabbat holds the wheel: the seasons run end to end (design
+            // §15), so the midnight one takes over from another is a change of
+            // page and nothing else here moves at it. Without this the Trail
+            // keeps the card it built — the old season's name and plate over the
+            // new season's slots, which the rows would swap under it live.
+            var season = _loop.OpenTide()?.id ?? string.Empty;
+
+            return _tab + "/" + season + "/" + state.roster.Count + "/" + state.nodes.Count + "/" + state.digSites.Count
                    + "/" + owned + "/" + recipes + "/" + buildings + "/" + choice
                    + "/" + _loop.UnlockedSkills().Count + "/" + state.gearBySlot.Count
                    + "/" + state.fixedResources.Count + "/" + recordedInsects

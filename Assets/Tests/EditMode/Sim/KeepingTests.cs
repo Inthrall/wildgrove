@@ -9,15 +9,20 @@ namespace Wildgrove.Sim.Tests
     /// Pins the keeping (design §15): generation as persisted facts (a reload
     /// never rerolls), the lean's bias, whole-ask offering with the Rite's own
     /// Renown rules, one-shot tier grants and the year's claim, the fold
-    /// redraw that keeps answered slots, the closed-tide gate — and the
-    /// containment that matters most: nothing the Rite counts ever moves.
+    /// redraw that keeps answered slots, the gate once the season has gone —
+    /// and the containment that matters most: nothing the Rite counts ever
+    /// moves.
     /// </summary>
     public class KeepingTests
     {
         private const long DayMs = 86400000L;
+
+        // One sabbat, and so one season: it takes the wheel on its own night
+        // and, having no successor authored, holds it for the fallback span
+        // (design §15) before the wheel goes quiet.
         private const int NightDay = 20000;
-        private static readonly long OpenMs = (NightDay - 14) * DayMs;
-        private static readonly long CloseMs = (NightDay + 1) * DayMs;
+        private static readonly long OpenMs = NightDay * DayMs;
+        private static readonly long CloseMs = (NightDay + 46) * DayMs;
 
         private GameDataAsset _data;
 
@@ -48,7 +53,6 @@ namespace Wildgrove.Sim.Tests
             };
             _data.wheel = new WheelData
             {
-                openDaysBefore = 14,
                 observance = new ObservanceData
                 {
                     slotCount = 5,
@@ -64,7 +68,7 @@ namespace Wildgrove.Sim.Tests
                         id = "beltane",
                         displayName = "Beltane",
                         kind = "fire",
-                        sign = "Beltane, by my count.",
+                        sign = "The hedge went white overnight.",
                         verseLean = new List<string> { "wildflowers" },
                         touch = new List<EffectData>
                         {
@@ -93,11 +97,12 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void Current_FallowOrUnconfigured_IsNull()
+        public void Current_BeyondTheCalendarOrUnconfigured_IsNull()
         {
             var state = InTide();
             state.simNowUnixMs = OpenMs - 30 * DayMs;
-            Assert.That(Keeping.Current(state, _data), Is.Null, "the fallow weeks keep nothing");
+            Assert.That(Keeping.Current(state, _data), Is.Null,
+                "a cursor the calendar does not reach keeps nothing");
 
             state.simNowUnixMs = OpenMs + DayMs;
             _data.wheel.observance = null;
@@ -151,6 +156,36 @@ namespace Wildgrove.Sim.Tests
             var value = Economy.TradeValuePerUnit(state, _data, slot.goodsId).ToDouble();
             Assert.That((state.renown - renownBefore).ToDouble(), Is.EqualTo(slot.target * value).Within(1e-6),
                 "offerings credit Renown at full trade value — the wheel never taxes prestige either");
+        }
+
+        [Test]
+        public void Begun_IsWhatLocksTheReckoning_AndNeverDrawsTheKeepingToAnswer()
+        {
+            var state = InTide();
+
+            Assert.That(state.keeping, Is.Null, "nothing has looked at the keeping yet");
+            Assert.That(Keeping.Begun(state, _data), Is.False);
+            Assert.That(state.keeping, Is.Null,
+                "the inside cover asks this every time it is opened — asking through Current would move "
+                + "the season's draw to whenever the settings were looked at, which is chrome drawing the verse");
+
+            var keeping = Keeping.Current(state, _data);
+            Assert.That(Keeping.Begun(state, _data), Is.False,
+                "a page drawn and untouched is not begun — the wheel still turns freely");
+
+            state.resources[keeping.slots[0].goodsId] = new BreakInfinity.BigDouble(keeping.slots[0].target);
+            Assert.That(Keeping.TryOffer(state, _data, 0), Is.True);
+
+            Assert.That(Keeping.Begun(state, _data), Is.True,
+                "something is at the fire, so the reckoning holds still: the opposite sabbat covers the "
+                + "very same weeks, and a flip now would be one span of the year claimed twice");
+
+            // Walk past this season — the lock lifts with it, which is the whole
+            // reason it hangs off the offering and not off a season being open.
+            state.simNowUnixMs = CloseMs + DayMs;
+            Assert.That(Keeping.Begun(state, _data), Is.False,
+                "a lock keyed on \"a season is open\" could never lift on the real calendar, "
+                + "where one always is");
         }
 
         [Test]
@@ -242,15 +277,16 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void ClosedTide_GatesEveryOffer_ButTheRecordRemains()
+        public void SeasonGone_GatesEveryOffer_ButTheRecordRemains()
         {
             var state = InTide();
             Keeping.Current(state, _data);
 
             state.simNowUnixMs = CloseMs + 1L;
-            Assert.That(Keeping.Current(state, _data), Is.Null, "the tide has closed — the fire takes no more");
+            Assert.That(Keeping.Current(state, _data), Is.Null,
+                "the season is gone and nothing took the wheel — the fire takes no more");
             Assert.That(Keeping.CanOffer(state, _data, 0), Is.False);
-            Assert.That(state.keeping, Is.Not.Null, "the page stays behind as the record until the next tide");
+            Assert.That(state.keeping, Is.Not.Null, "the page stays behind as the record until the next season draws its own");
         }
     }
 }

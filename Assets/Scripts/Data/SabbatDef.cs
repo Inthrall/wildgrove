@@ -4,15 +4,14 @@ namespace Wildgrove.Data
 {
     /// <summary>
     /// The Wheel's authoring model (design §15): eight real-world sabbats,
-    /// hemisphere-mirrored, each with a month-long tide and one small ambient
-    /// touch — the world's one lean since the drawn region season retired
-    /// (design §8, 2026-08-08). Nights are authored dates, not astronomy.
+    /// hemisphere-mirrored, each holding the wheel from its own night until the
+    /// next takes it, with one small ambient touch — the world's one lean since
+    /// the drawn region season retired (design §8, 2026-08-08). Nights are
+    /// authored dates, not astronomy, and the nights are the whole calendar:
+    /// the seasons are the gaps between them.
     /// </summary>
     public sealed class WheelDef
     {
-        /// <summary>Days before the sabbat night that its tide opens.</summary>
-        public int OpenDaysBefore { get; set; } = 30;
-
         /// <summary>The keeping's shape (design §15) — absent means the tide has no verse (touch only).</summary>
         public ObservanceDef Observance { get; set; }
 
@@ -46,14 +45,14 @@ namespace Wildgrove.Data
         /// <summary>"fire" (cross-quarter) or "quarter" (solstice/equinox).</summary>
         public string Kind { get; set; }
 
-        /// <summary>The warden's margin line — the calendar is the warden's, never the land's.</summary>
+        /// <summary>What the season is like to walk in — the sign the land gives while this sabbat holds the wheel.</summary>
         public string Sign { get; set; }
 
         /// <summary>
-        /// What the day IS, in the practice the warden inherited — read on the
-        /// sheet that waits for a tide, where the sign would be a month early.
-        /// Still the warden's, never the land's (§7 holds): an old year's
-        /// reckoning, remembered; no spirit named and none answering.
+        /// What the day IS, in the practice the warden inherited — the reason
+        /// the season is named for it. Still the warden's, never the land's
+        /// (§7 holds): an old year's reckoning, remembered; no spirit named and
+        /// none answering.
         /// </summary>
         public string Lore { get; set; }
 

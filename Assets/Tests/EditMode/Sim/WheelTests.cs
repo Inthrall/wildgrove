@@ -6,23 +6,27 @@ using Wildgrove.Data;
 namespace Wildgrove.Sim.Tests
 {
     /// <summary>
-    /// Pins the Wheel (design §15): the tide window's edges, the hemisphere
-    /// mirror, the inert states (unconfigured data, unset hemisphere, unstamped
-    /// cursor), each lane of the ambient touch at its real hook site, and the
+    /// Pins the Wheel (design §15): the season's edges — night to night, back
+    /// to back — the hemisphere mirror, the inert states (unconfigured data,
+    /// unset hemisphere, unstamped cursor, a cursor the calendar does not
+    /// reach), each lane of the ambient touch at its real hook site, and the
     /// sim clock cursor the whole thing reads. The offline half of the story —
-    /// a tide edge crossed mid-absence — is pinned in OfflineCatchUpTests,
+    /// a season's edge crossed mid-absence — is pinned in OfflineCatchUpTests,
     /// where the sliced-equals-unsliced property lives.
     /// </summary>
     public class WheelTests
     {
         private const long DayMs = 86400000L;
 
-        // Any date-only epoch day; the calendar is authored data, so tests
-        // never need a real "today". Window (offset 0, openDaysBefore 14):
-        // [ (NightDay-14)·day , (NightDay+1)·day ).
+        // Any date-only epoch days; the calendar is authored data, so tests
+        // never need a real "today". Two sabbats, mirrored the way the real
+        // eight are — each sits on the other's date in the other hemisphere —
+        // so that a season has something to end AT, which is the whole rule
+        // under test. Beltane's northern window is [NightDay, MirrorDay).
         private const int NightDay = 20000;
-        private static readonly long OpenMs = (NightDay - 14) * DayMs;
-        private static readonly long CloseMs = (NightDay + 1) * DayMs;
+        private const int MirrorDay = NightDay + 182;
+        private static readonly long OpenMs = NightDay * DayMs;
+        private static readonly long CloseMs = MirrorDay * DayMs;
 
         private GameDataAsset _data;
 
@@ -61,7 +65,6 @@ namespace Wildgrove.Sim.Tests
             _data.exchange = new ExchangeData { spread = 0.15, offerMinutes = 5 };
             _data.wheel = new WheelData
             {
-                openDaysBefore = 14,
                 sabbats = new List<SabbatData>
                 {
                     new SabbatData
@@ -69,7 +72,9 @@ namespace Wildgrove.Sim.Tests
                         id = "beltane",
                         displayName = "Beltane",
                         kind = "fire",
-                        sign = "Beltane, by my count.",
+                        sign = "The hedge went white overnight.",
+                        // Every lane at once, so one fixture can prove each of
+                        // them reads at its own hook site.
                         touch = new List<EffectData>
                         {
                             new EffectData { type = EffectType.YieldMult, resource = "wildflowers", value = 1.2 },
@@ -80,7 +85,22 @@ namespace Wildgrove.Sim.Tests
                             new EffectData { type = EffectType.ExchangeSpreadEase, value = 0.05 },
                         },
                         northNightDays = new List<int> { NightDay },
-                        southNightDays = new List<int> { NightDay + 182 },
+                        southNightDays = new List<int> { MirrorDay },
+                    },
+                    new SabbatData
+                    {
+                        id = "samhain",
+                        displayName = "Samhain",
+                        kind = "fire",
+                        sign = "The dark half.",
+                        // A lean on the find Beltane never names, so which
+                        // season is holding is readable from the yields alone.
+                        touch = new List<EffectData>
+                        {
+                            new EffectData { type = EffectType.YieldMult, resource = "berries", value = 1.5 },
+                        },
+                        northNightDays = new List<int> { MirrorDay },
+                        southNightDays = new List<int> { NightDay },
                     },
                 },
             };
@@ -101,9 +121,13 @@ namespace Wildgrove.Sim.Tests
             return state;
         }
 
-        private GameState Fallow()
+        /// <summary>
+        /// Before the calendar's first night — the one state left in which no
+        /// season holds the wheel, now that they run end to end. Same run,
+        /// nothing leaning.
+        /// </summary>
+        private GameState BeforeTheWheel()
         {
-            // Well before the tide opens — same run, nothing leaning.
             return InTide(OpenMs - 30 * DayMs);
         }
 
@@ -140,21 +164,83 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void OpenTide_WindowEdges_AreOpenInclusiveCloseExclusive()
+        public void OpenTide_WindowEdges_RunNightToNight_WithNoGapBetweenThem()
         {
             var state = InTide();
 
             state.simNowUnixMs = OpenMs - 1L;
-            Assert.That(Wheel.OpenTide(state, _data), Is.Null, "one ms before the tide opens");
+            Assert.That(Wheel.OpenTide(state, _data), Is.Null,
+                "one ms before Beltane's own midnight, and the calendar has not started");
 
             state.simNowUnixMs = OpenMs;
-            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"), "the opening ms is inside");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"),
+                "the season opens ON the night, at the warden's own midnight");
 
             state.simNowUnixMs = CloseMs - 1L;
-            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"), "the sabbat night's last ms is inside");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"),
+                "and holds every ms up to the next sabbat's midnight");
 
             state.simNowUnixMs = CloseMs;
-            Assert.That(Wheel.OpenTide(state, _data), Is.Null, "the tide closes at the fire — midnight after the night");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"),
+                "which is where the next season starts — the wheel is handed over, never put down: "
+                + "there is no ms of the authored year with nothing holding it");
+
+            state.simNowUnixMs = OpenMs + DayMs;
+            Assert.That(Wheel.OpenTideCloseMs(state, _data), Is.EqualTo(CloseMs),
+                "and a season's close is the next sabbat's own night, not a fire of its own");
+        }
+
+        [Test]
+        public void NextTide_NamesWhoTakesTheWheel_AndWhen()
+        {
+            var state = InTide();
+
+            var next = Wheel.NextTide(state, _data, out var takesAtMs);
+
+            Assert.That(next?.id, Is.EqualTo("samhain"), "the sabbat this season ends in");
+            Assert.That(takesAtMs, Is.EqualTo(CloseMs), "at the moment it ends — one edge, said the other way about");
+            Assert.That(takesAtMs, Is.EqualTo(Wheel.OpenTideCloseMs(state, _data)),
+                "the two must be the same number, or the countdown and the name come apart");
+        }
+
+        [Test]
+        public void OpenTide_TheLastAuthoredNight_HoldsItsSpanAndThenTheWheelGoesQuiet()
+        {
+            // Samhain's is the last night in the north, so nothing takes the
+            // wheel off it — it holds for the fallback span and stops.
+            var state = InTide(CloseMs + DayMs);
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"),
+                "the last authored night must still open, or it is the one sabbat that silently never runs");
+
+            state.simNowUnixMs = CloseMs + 45 * DayMs;
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"), "and holds its 46 days");
+
+            state.simNowUnixMs = CloseMs + 46 * DayMs;
+            Assert.That(Wheel.OpenTide(state, _data), Is.Null,
+                "then the wheel is quiet — a calendar authored out is topped up, never extrapolated");
+        }
+
+        [Test]
+        public void OpenTide_BeforeTheFirstAuthoredNight_HoldsNothing()
+        {
+            var state = BeforeTheWheel();
+
+            Assert.That(Wheel.OpenTide(state, _data), Is.Null,
+                "a cursor the authored calendar does not reach has no season, and the Wheel must not guess one");
+            Assert.That(Wheel.OpenTideCloseMs(state, _data), Is.EqualTo(0L),
+                "and no close to count down to");
+        }
+
+        [Test]
+        public void OpenTide_CacheHoldsUntilTheCalendarStarts()
+        {
+            var state = BeforeTheWheel();
+            Assert.That(Wheel.OpenTide(state, _data), Is.Null);
+
+            state.simNowUnixMs = OpenMs;
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"),
+                "the cache spans the whole run-up to the first night and must expire ON it, "
+                + "not hold the emptiness it was built in");
         }
 
         [Test]
@@ -165,12 +251,14 @@ namespace Wildgrove.Sim.Tests
             south.hemisphere = Wheel.HemisphereSouth;
             south.wheelCache = null;
 
-            Assert.That(Wheel.OpenTide(north, _data), Is.Not.Null, "the north's window is open at this cursor");
-            Assert.That(Wheel.OpenTide(south, _data), Is.Null, "the south's Beltane sits half a year away");
+            Assert.That(Wheel.OpenTide(north, _data)?.id, Is.EqualTo("beltane"), "the north's own night has fallen");
+            Assert.That(Wheel.OpenTide(south, _data)?.id, Is.EqualTo("samhain"),
+                "and the south is holding the opposite sabbat over the very same weeks — which is why "
+                + "turning the reckoning after an offering would be one span of the year claimed twice");
 
             south.simNowUnixMs += 182 * DayMs;
             Assert.That(Wheel.OpenTide(south, _data)?.id, Is.EqualTo("beltane"),
-                "half a year on, the south's own window is the open one");
+                "half a year on, the mirror has turned the other way about");
         }
 
         [Test]
@@ -182,11 +270,11 @@ namespace Wildgrove.Sim.Tests
 
             // Local midnight falls 13 hours earlier in UTC.
             state.simNowUnixMs = CloseMs - 780L * 60000L;
-            Assert.That(Wheel.OpenTide(state, _data), Is.Null,
-                "the tide closes at WARDEN-local midnight, not UTC midnight");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"),
+                "the wheel is handed over at WARDEN-local midnight, not UTC midnight");
 
             state.simNowUnixMs -= 1L;
-            Assert.That(Wheel.OpenTide(state, _data), Is.Not.Null);
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"));
         }
 
         [Test]
@@ -233,11 +321,11 @@ namespace Wildgrove.Sim.Tests
         [Test]
         public void NextSabbat_NamesTheComingNight_AndRunsOutHonestly()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
 
             var next = Wheel.NextSabbat(state, _data, out var nightStartMs);
             Assert.That(next?.id, Is.EqualTo("beltane"));
-            Assert.That(nightStartMs, Is.EqualTo(NightDay * DayMs), "the night itself, not the tide's opening");
+            Assert.That(nightStartMs, Is.EqualTo(OpenMs), "the night its season opens on — they are one midnight now");
 
             state.simNowUnixMs = CloseMs + DayMs;
             Assert.That(Wheel.NextSabbat(state, _data, out _), Is.Null,
@@ -245,82 +333,72 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
-        public void NextNightOf_GivesTheNightAndItsTideOpening()
+        public void NextNightOf_GivesTheNightItsSeasonOpensOn()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
             var beltane = _data.wheel.sabbats[0];
 
-            Assert.That(Wheel.NextNightOf(state, _data, beltane, out var nightMs, out var opensMs), Is.True);
-            Assert.That(nightMs, Is.EqualTo(NightDay * DayMs), "the night itself");
-            Assert.That(opensMs, Is.EqualTo(OpenMs),
-                "and when its tide opens — the shelf and the rail both count down to the OPENING, "
-                + "which is the moment anything can be done about it");
+            Assert.That(Wheel.NextNightOf(state, _data, beltane, out var nightMs), Is.True);
+            Assert.That(nightMs, Is.EqualTo(OpenMs),
+                "the rail counts down to this, and it is the moment anything can be done about it — "
+                + "a season and its night start together");
         }
 
         [Test]
-        public void NextNightOf_StillNamesTheNightFromInsideItsOwnTide()
+        public void NextNightOf_FromInsideASeason_LooksPastTheNightAlreadyFallen()
         {
-            // The Record's shelf asks about every sabbat, the open one included,
-            // and a window the cursor is already inside must not be skipped as
-            // past — the night has not fallen yet.
+            // Beltane's own night is what opened the season the cursor stands
+            // in, so it is behind, not ahead: the next thing to happen to this
+            // wheel is Samhain taking it.
             var state = InTide();
-            var beltane = _data.wheel.sabbats[0];
 
-            Assert.That(Wheel.NextNightOf(state, _data, beltane, out var nightMs, out _), Is.True);
-            Assert.That(nightMs, Is.EqualTo(NightDay * DayMs));
+            Assert.That(Wheel.NextNightOf(state, _data, _data.wheel.sabbats[0], out _), Is.False,
+                "its one authored night has fallen — a season's own night is not still coming");
+            Assert.That(Wheel.NextNightOf(state, _data, _data.wheel.sabbats[1], out var nightMs), Is.True);
+            Assert.That(nightMs, Is.EqualTo(CloseMs), "and the night ahead is the one that ends this season");
         }
 
         [Test]
         public void NextNightOf_RunsOutHonestly_AndStaysInertWhenTheWheelIs()
         {
-            var state = Fallow();
+            var state = BeforeTheWheel();
             var beltane = _data.wheel.sabbats[0];
 
             state.simNowUnixMs = CloseMs + DayMs;
-            Assert.That(Wheel.NextNightOf(state, _data, beltane, out _, out _), Is.False,
+            Assert.That(Wheel.NextNightOf(state, _data, beltane, out _), Is.False,
                 "past the authored nights it must say so rather than extrapolate a calendar");
 
-            var unset = Fallow();
+            var unset = BeforeTheWheel();
             unset.hemisphere = Wheel.HemisphereUnset;
             unset.wheelCache = null;
-            Assert.That(Wheel.NextNightOf(unset, _data, beltane, out _, out _), Is.False,
+            Assert.That(Wheel.NextNightOf(unset, _data, beltane, out _), Is.False,
                 "an unset hemisphere has no dates — the mirror is the whole calendar");
-        }
-
-        [Test]
-        public void OpenDaysBefore_FallsBackToTheShippedMonth()
-        {
-            Assert.That(Wheel.OpenDaysBefore(_data), Is.EqualTo(14), "authored data wins");
-
-            _data.wheel.openDaysBefore = 0;
-            Assert.That(Wheel.OpenDaysBefore(_data), Is.EqualTo(30),
-                "unauthored falls back to the shipped month, not to the fortnight it used to be");
         }
 
         [Test]
         public void YieldMult_LeansOnlyTheNamedResource_AndOnlyWhileTheTideHolds()
         {
             var open = InTide();
-            var fallow = Fallow();
+            var before = BeforeTheWheel();
 
             Assert.That(Wheel.YieldMult(open, _data, "wildflowers"), Is.EqualTo(1.2).Within(1e-12));
             Assert.That(Wheel.YieldMult(open, _data, "berries"), Is.EqualTo(1.0),
                 "a lean must not bleed into finds the sabbat never named");
-            Assert.That(Wheel.YieldMult(fallow, _data, "wildflowers"), Is.EqualTo(1.0),
-                "the fallow weeks are plain — the lean lapses at the fire");
+            Assert.That(Wheel.YieldMult(before, _data, "wildflowers"), Is.EqualTo(1.0),
+                "before the calendar reaches, nothing leans");
         }
 
         [Test]
         public void YieldPerSecond_InsideTheTide_PaysExactlyTheLean()
         {
             var open = InTide();
-            var fallow = Fallow();
+            var before = BeforeTheWheel();
             var node = open.nodes.Find(n => n.resourceId == "wildflowers");
-            var plainNode = fallow.nodes.Find(n => n.resourceId == "wildflowers");
+            var plainNode = before.nodes.Find(n => n.resourceId == "wildflowers");
             TestKith.Station(open, node.id, 1);
-            TestKith.Station(fallow, plainNode.id, 1);
+            TestKith.Station(before, plainNode.id, 1);
             var leaned = Simulation.YieldPerSecond(node, open, _data, _data.economy).ToDouble();
-            var plain = Simulation.YieldPerSecond(plainNode, fallow, _data, _data.economy).ToDouble();
+            var plain = Simulation.YieldPerSecond(plainNode, before, _data, _data.economy).ToDouble();
 
             Assert.That(plain, Is.GreaterThan(0.0), "the fixture must actually gather, or the ratio proves nothing");
             Assert.That(leaned / plain, Is.EqualTo(1.2).Within(1e-9),
@@ -331,7 +409,7 @@ namespace Wildgrove.Sim.Tests
         public void TouchLanes_ReadAtTheirHookSites()
         {
             var open = InTide();
-            var fallow = Fallow();
+            var before = BeforeTheWheel();
 
             Assert.That(Wheel.DigSpeedMult(open, _data), Is.EqualTo(1.2).Within(1e-12), "Samhain's lane: the watch");
             Assert.That(Wheel.CraftSpeedMult(open, _data, "firecraft"), Is.EqualTo(1.2).Within(1e-12), "Yule's lane: the fire");
@@ -340,10 +418,10 @@ namespace Wildgrove.Sim.Tests
             Assert.That(Wheel.ReplantCostMult(open, _data), Is.EqualTo(0.8).Within(1e-12), "Ostara's lane: the sowing");
             Assert.That(Wheel.SpreadEase(open, _data), Is.EqualTo(0.05).Within(1e-12), "Mabon's lane: the caravan");
 
-            Assert.That(Wheel.DigSpeedMult(fallow, _data), Is.EqualTo(1.0));
-            Assert.That(Wheel.BubbleRewardBonus(fallow, _data), Is.EqualTo(0.0));
-            Assert.That(Wheel.ReplantCostMult(fallow, _data), Is.EqualTo(1.0));
-            Assert.That(Wheel.SpreadEase(fallow, _data), Is.EqualTo(0.0));
+            Assert.That(Wheel.DigSpeedMult(before, _data), Is.EqualTo(1.0));
+            Assert.That(Wheel.BubbleRewardBonus(before, _data), Is.EqualTo(0.0));
+            Assert.That(Wheel.ReplantCostMult(before, _data), Is.EqualTo(1.0));
+            Assert.That(Wheel.SpreadEase(before, _data), Is.EqualTo(0.0));
         }
 
         [Test]
@@ -363,10 +441,10 @@ namespace Wildgrove.Sim.Tests
         public void ExchangeRate_InsideTheTide_EasesTheSpread()
         {
             var open = InTide();
-            var fallow = Fallow();
+            var before = BeforeTheWheel();
 
             var eased = Exchange.Rate(open, _data, "berries", "wildflowers").ToDouble();
-            var plain = Exchange.Rate(fallow, _data, "berries", "wildflowers").ToDouble();
+            var plain = Exchange.Rate(before, _data, "berries", "wildflowers").ToDouble();
 
             Assert.That(plain, Is.EqualTo(2.0 / 3.0 * 0.85).Within(1e-9));
             Assert.That(eased, Is.EqualTo(2.0 / 3.0 * 0.90).Within(1e-9),
@@ -377,10 +455,10 @@ namespace Wildgrove.Sim.Tests
         public void BubbleReward_InsideTheTide_JoinsTheAdditiveBand()
         {
             var open = InTide();
-            var fallow = Fallow();
+            var before = BeforeTheWheel();
 
             var leaned = Bubbles.RewardFor(open, _data, open.nodes[0]).ToDouble();
-            var plain = Bubbles.RewardFor(fallow, _data, fallow.nodes[0]).ToDouble();
+            var plain = Bubbles.RewardFor(before, _data, before.nodes[0]).ToDouble();
 
             Assert.That(plain, Is.EqualTo(5.0).Within(1e-9), "rewardSeconds × ratePerSecond, un-leaned");
             Assert.That(leaned, Is.EqualTo(6.0).Within(1e-9),
@@ -416,17 +494,19 @@ namespace Wildgrove.Sim.Tests
         {
             var state = InTide();
 
-            Assert.That(Wheel.OpenTide(state, _data), Is.Not.Null);
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"));
 
-            // Walk the cursor over the close — the cached window must expire.
+            // Walk the cursor over the handover — the cached window must expire.
             state.simNowUnixMs = CloseMs + 1L;
-            Assert.That(Wheel.OpenTide(state, _data), Is.Null, "the cache must expire at the window's edge");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"),
+                "the cache must expire at the window's edge, and the edge is the next sabbat's own night");
 
             // Flip the hemisphere — the cache keys on it.
-            state.simNowUnixMs = (NightDay + 182) * DayMs - 1L;
+            state.simNowUnixMs = CloseMs - 1L;
             state.hemisphere = Wheel.HemisphereSouth;
-            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("beltane"),
-                "a hemisphere change must rebuild the window, not serve the old one");
+            Assert.That(Wheel.OpenTide(state, _data)?.id, Is.EqualTo("samhain"),
+                "a hemisphere change must rebuild the window, not serve the old one — the south holds "
+                + "the opposite sabbat over the same weeks");
         }
     }
 }
