@@ -885,6 +885,41 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void WeeklyCache_TheStampIsTheOnlyRecordThatOneEverCame()
+        {
+            // The confirmation sheet is queued in memory, so a player who missed
+            // it has nothing but this to read the arrival off. Which makes the
+            // "never came" answer a distinct one, not a zero.
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+
+            Assert.That(Amber.WeeklyCacheEverTaken(state), Is.False, "a new run has had none");
+            Assert.That(Amber.WeeklyCacheSinceLastMs(state, now), Is.EqualTo(-1L),
+                "and says so, rather than answering nought seconds ago");
+
+            Amber.ReceiveWeeklyCache(state, _data, now);
+            Assert.That(Amber.WeeklyCacheEverTaken(state), Is.True);
+            Assert.That(Amber.WeeklyCacheSinceLastMs(state, now), Is.EqualTo(0L), "it came just now");
+
+            var threeDaysOn = now + (3L * 24L * HourMs);
+            Assert.That(Amber.WeeklyCacheSinceLastMs(state, threeDaysOn), Is.EqualTo(3L * 24L * HourMs),
+                "and counts up from the stamp, across the week it turns in");
+        }
+
+        [Test]
+        public void WeeklyCacheSinceLast_NeverCountsBackwards()
+        {
+            // A stamp written on a device whose clock ran ahead of this one
+            // would otherwise read as the future, and the page would have a
+            // negative age to print.
+            var state = GameStateFactory.NewGame(_data);
+            const long now = 1_000_000_000_000L;
+            state.weeklyCacheClaimedUnixMs = now + (2L * HourMs);
+
+            Assert.That(Amber.WeeklyCacheSinceLastMs(state, now), Is.EqualTo(0L));
+        }
+
+        [Test]
         public void WeeklyCache_MintsNothingWhenUnconfigured()
         {
             _data.economy.amber = null;

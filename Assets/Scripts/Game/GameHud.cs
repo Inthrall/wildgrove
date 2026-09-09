@@ -234,6 +234,8 @@ namespace Wildgrove.Game
         internal RectTransform FirstVerseCard { get => _firstVerseCard; set => _firstVerseCard = value; }
         internal RectTransform FirstKeepingCard { get => _firstKeepingCard; set => _firstKeepingCard = value; }
         private RectTransform _firstKeepingCard;
+        internal RectTransform AmberCard { get => _amberCard; set => _amberCard = value; }
+        private RectTransform _amberCard;
         internal List<Action> LiveUpdaters => _liveUpdaters;
         internal List<Action> FrameUpdaters => _frameUpdaters;
         internal Dictionary<string, float> FlashAges => _flashAges;
@@ -539,7 +541,7 @@ namespace Wildgrove.Game
 
             // On a spread the Trail is already open on the right page, so
             // asking for it means "somewhere that isn't here" — the Camp, as
-            // the mock does. Deep links (ScrollToOnTrail) route through here
+            // the mock does. Deep links (ScrollToCard) route through here
             // too, and land on a Trail that never left the screen.
             if (_wide && tab == TabTrail)
             {

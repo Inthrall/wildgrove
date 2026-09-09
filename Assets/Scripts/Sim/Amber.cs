@@ -540,6 +540,34 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// Whether a cache has ever arrived in this run. The claim stamp is the
+        /// only lasting record of one: the confirmation is queued in memory and
+        /// goes with the process, so a player who missed it has nothing else to
+        /// read the arrival off.
+        /// </summary>
+        public static bool WeeklyCacheEverTaken(GameState state)
+        {
+            return state != null && state.weeklyCacheClaimedUnixMs > 0L;
+        }
+
+        /// <summary>
+        /// Milliseconds since the last cache arrived, or -1 when none ever has.
+        /// Never negative otherwise: a stamp written by a device whose clock ran
+        /// ahead of this one would otherwise read as the future, and the ratchet
+        /// only holds the clock this run has seen.
+        /// </summary>
+        public static long WeeklyCacheSinceLastMs(GameState state, long nowUnixMs)
+        {
+            if (!WeeklyCacheEverTaken(state))
+            {
+                return -1L;
+            }
+
+            var since = nowUnixMs - state.weeklyCacheClaimedUnixMs;
+            return since > 0L ? since : 0L;
+        }
+
+        /// <summary>
         /// Receive the weekly Amber cache that Play Games has set out (design
         /// §11): credit its pile and stamp the arrival so the card can say when
         /// the next is due. Returns the amount, or 0 when unconfigured.

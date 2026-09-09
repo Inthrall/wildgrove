@@ -93,6 +93,7 @@ namespace Wildgrove.Game
             _pendingScroll = null;
             _firstVerseCard = null;
             _firstKeepingCard = null;
+            _amberCard = null;
             AnchoredHeading = null;
 
             // Where the focus mark stood, before the page under it is destroyed.
@@ -317,17 +318,25 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// <see cref="ScrollToOnTrail"/> for the sheets — an event popup ends
+        /// <see cref="ScrollToCard"/> for the sheets — an event popup ends
         /// in the card that answers it, and the Trail is a long scroll to be
         /// dropped into the top of.
         /// </summary>
-        internal void GoToTrail(string landmark) => ScrollToOnTrail(landmark);
+        internal void GoToTrail(string landmark) => ScrollToCard(TabTrail, landmark);
 
         /// <summary>
-        /// Open the Trail tab and bring a landmark card ("verse") into view —
-        /// the tracker deep-links into a page that is otherwise a long scroll.
+        /// <see cref="GoToTrail"/> for the pages that are not the Trail: the
+        /// cache's sheet ends at the amber card, which is most of the Camp page
+        /// further down.
         /// </summary>
-        private void ScrollToOnTrail(string landmark)
+        internal void GoToCard(string tab, string landmark) => ScrollToCard(tab, landmark);
+
+        /// <summary>
+        /// Open a tab and bring a landmark card ("verse", the keeping, the
+        /// amber) into view — the trackers and the sheets deep-link into pages
+        /// that are otherwise a long scroll.
+        /// </summary>
+        private void ScrollToCard(string tab, string landmark)
         {
             // A door that ends in a shut drawer is not a door. The keeping folds
             // away by default (see JournalCardFolds), and both the things that
@@ -343,7 +352,7 @@ namespace Wildgrove.Game
             }
 
             _pendingScroll = landmark;
-            OpenTab(TabTrail);
+            OpenTab(tab);
             if (!_dirty)
             {
                 // Already looking at the Trail with no rebuild coming — jump
@@ -372,6 +381,8 @@ namespace Wildgrove.Game
                     return _firstVerseCard;
                 case JournalCardFolds.Keeping:
                     return _firstKeepingCard;
+                case "amber":
+                    return _amberCard;
                 case AnchorLandmark:
                     return AnchoredHeading;
                 default:

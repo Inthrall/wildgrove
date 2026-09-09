@@ -224,7 +224,7 @@ namespace Wildgrove.Game
             }
 
             MakeText(sheet, "<i>Play Games sets a cache out for a challenge met, about once a week. The"
-                            + " journal's own week turns over at midnight on Monday — what Play has"
+                            + " journal's own week turns over at midnight on Monday. What Play has"
                             + " actually left is only known by looking.</i>",
                 17, TextAnchor.UpperLeft, Ink2, _serif);
 
@@ -236,24 +236,40 @@ namespace Wildgrove.Game
             }
             else if (_loop.WeeklyCacheDue)
             {
-                // The same number the rail cell wears, said in full: due now,
-                // and the week it is due in runs out at that hour.
-                MakeText(sheet, "<color=" + MossDeepHex + ">the week has turned over — worth a look. this"
-                                + " week's runs out in " + NumberFormat.Countdown(_loop.WeeklyCacheNextDueIn) + ".</color>",
+                // The same number the rail cell wears, said in full. What it
+                // counts is the warden's week running out, not a cache waiting,
+                // so the line says what it knows and leaves the rest to a look.
+                MakeText(sheet, "<color=" + MossDeepHex + ">none taken this week, and the week runs out in "
+                                + NumberFormat.Countdown(_loop.WeeklyCacheNextDueIn) + ".</color>",
                     18, TextAnchor.UpperLeft, Ink);
+                MakeText(sheet, LastCacheLine(), 17, TextAnchor.UpperLeft, Ink2, _serif);
             }
             else
             {
-                MakeText(sheet, "the next is due in " + NumberFormat.Countdown(_loop.WeeklyCacheNextDueIn) + ".",
+                MakeText(sheet, "a cache came this week. the next is due in "
+                                + NumberFormat.Countdown(_loop.WeeklyCacheNextDueIn) + ".",
                     18, TextAnchor.UpperLeft, Ink);
             }
 
-            var go = Button(sheet, "Go to the fire", 360, () =>
+            var go = Button(sheet, "Go", 360, () =>
             {
                 CloseSheet();
-                _hud.OpenTab(TabCamp);
+                _hud.GoToCard(TabCamp, "amber");
             });
             KeyAction(go);
+        }
+
+        /// <summary>
+        /// Whether a cache has ever come, and how long ago. The claim stamp is
+        /// the only lasting record of an arrival, so for a player who missed the
+        /// confirmation this is the only place it is still written down.
+        /// </summary>
+        private string LastCacheLine()
+        {
+            var since = _loop.WeeklyCacheSinceLast;
+            return since < 0.0
+                ? "no cache has come yet."
+                : "the last came " + NumberFormat.Countdown(since) + " ago.";
         }
 
         /// <summary>

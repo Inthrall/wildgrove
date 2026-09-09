@@ -37,6 +37,7 @@ namespace Wildgrove.Game
         protected Dictionary<string, bool> _cardOpen => _hud.CardOpen;
         protected RectTransform _firstVerseCard { get => _hud.FirstVerseCard; set => _hud.FirstVerseCard = value; }
         protected RectTransform _firstKeepingCard { get => _hud.FirstKeepingCard; set => _hud.FirstKeepingCard = value; }
+        protected RectTransform _amberCard { get => _hud.AmberCard; set => _hud.AmberCard = value; }
         protected GameObject _sheet { get => _hud.Sheet; set => _hud.Sheet = value; }
         protected Transform _modalLayer => _hud.ModalLayer;
 

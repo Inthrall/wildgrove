@@ -137,7 +137,7 @@ namespace Wildgrove.Game
             var trackerButton = trackerGo.AddComponent<Button>();
             // The row deep-links to whatever it is showing — the verse card
             // usually, the keeping's card when the tide holds the row alone.
-            trackerButton.onClick.AddListener(() => ScrollToOnTrail(_trackerTarget));
+            trackerButton.onClick.AddListener(() => GoToTrail(_trackerTarget));
             NeverDim(trackerButton);
             AddBorder(trackerGo, Ink2);
             _trackerText = MakeText(trackerGo.transform, string.Empty, 21, TextAnchor.MiddleCenter, Ink, _serif);

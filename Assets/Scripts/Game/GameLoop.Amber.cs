@@ -369,6 +369,20 @@ namespace Wildgrove.Game
         public double WeeklyCacheNextDueIn => Amber.WeeklyCacheNextDueInMs(State, NowUnixMs()) / 1000.0;
 
         /// <summary>
+        /// Seconds since the last cache arrived, or -1 when none ever has. The
+        /// stamp is the only lasting record of an arrival, so this is what a
+        /// surface asks when the player wants to know whether one ever came.
+        /// </summary>
+        public double WeeklyCacheSinceLast
+        {
+            get
+            {
+                var since = Amber.WeeklyCacheSinceLastMs(State, NowUnixMs());
+                return since < 0L ? -1.0 : since / 1000.0;
+            }
+        }
+
+        /// <summary>
         /// Buy a consumable Amber pack (design §10) and credit its pile on success.
         /// The result callback fires on the main thread like every IStore callback.
         /// </summary>

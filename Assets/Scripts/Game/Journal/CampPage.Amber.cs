@@ -36,6 +36,10 @@ namespace Wildgrove.Game
 
             var card = Card("THE AMBER");
 
+            // The cache's sheet deep-links here, and the card sits well down a
+            // page whose other three cards are the camp's whole trade.
+            _amberCard = card;
+
             if (Amber.Configured(economy))
             {
                 BuildTimeSkipRow(card, economy);
@@ -221,7 +225,12 @@ namespace Wildgrove.Game
                         return;
                     }
 
-                    SetNote("nothing set out yet. the cache waits on a challenge.");
+                    // Whether one ever came is the other half of the answer, and
+                    // the row has no room to stand it.
+                    var since = _loop.WeeklyCacheSinceLast;
+                    SetNote(since < 0.0
+                        ? "nothing set out yet. the cache waits on a challenge."
+                        : "nothing set out yet. the last came " + NumberFormat.Countdown(since) + " ago.");
                 });
             });
 
@@ -229,11 +238,7 @@ namespace Wildgrove.Game
             {
                 var signedIn = _loop.GameServices.IsSignedIn;
                 var due = _loop.WeeklyCacheDue;
-                label.text = signedIn
-                    ? text + (due
-                        ? SizeOpen(15) + "<color=" + Ink2Hex + ">  set out by Play Games</color></size>"
-                        : WaitingTail(_loop.WeeklyCacheNextDueIn))
-                    : text + SizeOpen(15) + "<color=" + Ink2Hex + ">  Play Games isn't signed in</color></size>";
+                label.text = text + CacheTail(signedIn, due, _loop.WeeklyCacheNextDueIn);
                 if (!checking)
                 {
                     SetButtonLabel(look, signedIn ? "Look" : "Sign in");
@@ -291,7 +296,32 @@ namespace Wildgrove.Game
         /// <summary>The muted "ready in 6d 4h" tail an amber line wears while its cooldown holds.</summary>
         private static string WaitingTail(double seconds)
         {
-            return SizeOpen(15) + "<color=" + Ink2Hex + ">  ready in " + NumberFormat.Countdown(seconds) + "</color></size>";
+            return MutedTail("ready in " + NumberFormat.Countdown(seconds));
+        }
+
+        /// <summary>A muted clause after a row's own words, in the tail's smaller hand.</summary>
+        private static string MutedTail(string words)
+        {
+            return SizeOpen(15) + "<color=" + Ink2Hex + ">  " + words + "</color></size>";
+        }
+
+        /// <summary>
+        /// What the cache row knows, and only that. Being due is the warden's
+        /// own week turning over, so this never says a cache is waiting: what
+        /// Play has set out is known by looking. Not due is the one state that
+        /// is evidence rather than a reading, because nothing but an arrival
+        /// stamps the week.
+        /// </summary>
+        private static string CacheTail(bool signedIn, bool due, double nextDueIn)
+        {
+            if (!signedIn)
+            {
+                return MutedTail("Play Games isn't signed in");
+            }
+
+            return due
+                ? MutedTail("none taken this week")
+                : MutedTail("taken this week, next in " + NumberFormat.Countdown(nextDueIn));
         }
 
         /// <summary>
