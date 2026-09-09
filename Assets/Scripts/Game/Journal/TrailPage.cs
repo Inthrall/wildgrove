@@ -29,8 +29,9 @@ namespace Wildgrove.Game
     /// and the trail-home bar put the first gathering plate a viewport and a
     /// half down a page whose whole subject is gathering. A new pinned line at
     /// the top of this page has to be worth a plate, and almost nothing is.
-    /// What is left of that head is the keeping's own folded card, and nothing
-    /// standing above it.
+    /// Nothing is left of that head: the keeping's card went to the foot of the
+    /// page with the rest of it, and the recruit bar is all that stands above
+    /// the first ground.
     /// </para>
     /// </summary>
     internal sealed partial class TrailPage : JournalSection
@@ -39,7 +40,6 @@ namespace Wildgrove.Game
 
         internal void BuildTrailPage()
         {
-            BuildKeepingCard();
             BuildRecruitBar();
 
             var unlockedZones = ZonesInOrder();
@@ -104,6 +104,12 @@ namespace Wildgrove.Game
             }
 
             BuildVerseCards();
+            // The keeping closes the page, under every ground and the Rite. It
+            // is the only card here that both doors reach by themselves (the
+            // rail's cell and the tide's own sheet each scroll straight to it
+            // and open the fold on the way), so distance costs it least of
+            // anything on the Trail.
+            BuildKeepingCard();
             BuildWaystoneFooter();
         }
 

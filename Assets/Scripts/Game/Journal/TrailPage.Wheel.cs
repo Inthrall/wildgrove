@@ -70,8 +70,14 @@ namespace Wildgrove.Game
             // so the season the head is named for had no face for most of its run.
             // (Null until the art pass paints it; then the card is words alone.)
             AddHeadingMark(heading, ArtLibrary.ForJournal("sabbat-" + tide.id));
+            // The one folding card on a page of grounds. A ground's own heading
+            // is a bare plate standing in the body, and a node's card carries no
+            // head at all, so this card's ink head inside its ink border was the
+            // only box in a box on the Trail. The Record's cards keep theirs:
+            // there they are five of a kind and the doubling reads as the rule.
+            FadeButtonBorder(heading);
             // The tracker's tide row and the tide sheet's button both deep-link
-            // here, and both open the fold on the way (GameHud.ScrollToOnTrail).
+            // here, and both open the fold on the way (GameHud.ScrollToCard).
             _firstKeepingCard = card;
 
             // Every word of the head moves: the tier as slots are answered, the
@@ -89,10 +95,49 @@ namespace Wildgrove.Game
                 return;
             }
 
+            // What setting a slot down actually pays, which nothing on any page
+            // said. The tier being worked towards only: a card this page is
+            // already tight for gains one line rather than three, and a tier
+            // already paid is not left standing on it.
+            var tierLine = MakeText(card, KeepingTierLine(), 17, TextAnchor.MiddleCenter, Ink2, _serif);
+            _liveUpdaters.Add(() => tierLine.text = KeepingTierLine());
+
             for (var i = 0; i < keeping.slots.Count; i++)
             {
                 BuildKeepingSlotRow(card, i);
             }
+        }
+
+        /// <summary>
+        /// The next tier and what it pays (design §15), named where the setting
+        /// down happens. Once the wheel is kept whole there is nothing left to
+        /// offer, so the line says that instead of an empty reward.
+        /// </summary>
+        private string KeepingTierLine()
+        {
+            var keeping = _loop.CurrentKeeping();
+            var observance = _loop.Data.wheel?.observance;
+            if (keeping == null || observance?.tierSlots == null)
+            {
+                return string.Empty;
+            }
+
+            var done = Keeping.CompletedSlotCount(keeping);
+            for (var tier = 0; tier < observance.tierSlots.Count; tier++)
+            {
+                if (done >= observance.tierSlots[tier])
+                {
+                    continue;
+                }
+
+                var amber = tier < observance.tierAmber.Count ? observance.tierAmber[tier] : 0.0;
+                var line = observance.tierSlots[tier] + " set down keeps " + TierName(tier);
+                return amber > 0.0
+                    ? line + " · <color=" + AmberInkHex + ">+" + Mathf.FloorToInt((float)amber) + " amber</color>"
+                    : line;
+            }
+
+            return "<color=" + MossDeepHex + ">the wheel is kept whole</color>";
         }
 
         /// <summary>
@@ -126,12 +171,18 @@ namespace Wildgrove.Game
 
         private string KeepingWord()
         {
-            switch (_loop.KeepingTierReached())
+            var reached = _loop.KeepingTierReached();
+            return reached > 0 ? "kept " + TierName(reached - 1) : "unkept yet";
+        }
+
+        /// <summary>What a tier of the keeping is called (design §15): the eve, the day, the whole wheel.</summary>
+        private static string TierName(int tier)
+        {
+            switch (tier)
             {
-                case 1: return "kept the eve";
-                case 2: return "kept the day";
-                case 3: return "kept the wheel";
-                default: return "unkept yet";
+                case 0: return "the eve";
+                case 1: return "the day";
+                default: return "the wheel";
             }
         }
 

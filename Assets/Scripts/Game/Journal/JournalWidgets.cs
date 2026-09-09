@@ -1039,6 +1039,23 @@ namespace Wildgrove.Game
         /// (large text), so it stays plainly readable while plainly secondary.
         /// </para>
         /// </summary>
+        /// <summary>
+        /// Take the ink out of a button plate's outline, leaving it ruled in the
+        /// faint hand. For a plate standing inside a bordered card on a page
+        /// where nothing else is: two ink rules around the one thing read as a
+        /// box in a box, and the chevron and the press tint say it is pressable
+        /// without a second rule helping.
+        /// </summary>
+        internal static void FadeButtonBorder(Button button)
+        {
+            var border = button.transform.Find("Border");
+            var image = border != null ? border.GetComponent<Image>() : null;
+            if (image != null)
+            {
+                image.color = RulePaper;
+            }
+        }
+
         internal static void SetButtonTint(Button button, bool on, bool keyAction = false)
         {
             var image = button.GetComponent<Image>();
