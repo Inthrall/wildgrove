@@ -170,13 +170,13 @@
     },
     {
       "slug": "the-whole-wood",
-      "name": "The Whole Wood",
-      "description": "Befriend every species that walks the grove.",
+      "name": "Twelve Companions",
+      "description": "Befriend twelve of the species that walk the grove.",
       "type": "INCREMENTAL",
       "steps": 12,
       "state": "REVEALED",
       "points": 40,
-      "anchor": "distinct species ids ever befriended (needs a saved set — see notes)"
+      "anchor": "distinct species ids ever befriended; 12 is FROZEN by Play (14 exist)"
     },
 
     {
@@ -256,13 +256,13 @@
     },
     {
       "slug": "all-five-plates",
-      "name": "Every Plate Drawn",
-      "description": "Record a plate for every insect of the grove.",
+      "name": "Five Plates Drawn",
+      "description": "Draw and record five insect plates.",
       "type": "INCREMENTAL",
       "steps": 5,
       "state": "REVEALED",
       "points": 25,
-      "anchor": "count of recorded plates"
+      "anchor": "count of recorded plates, awarded plates excluded; 5 is FROZEN by Play (7 drawable)"
     },
     {
       "slug": "something-older",
@@ -421,13 +421,13 @@
     },
     {
       "slug": "the-almanac-complete",
-      "name": "The Almanac Complete",
-      "description": "Buy every node the Almanac holds.",
+      "name": "The Almanac Well Thumbed",
+      "description": "Buy fourteen of the nodes the Almanac holds.",
       "type": "INCREMENTAL",
       "steps": 14,
       "state": "REVEALED",
       "points": 40,
-      "anchor": "almanacNodeIds.Count"
+      "anchor": "almanacNodeIds.Count, which the two endless lines never enter; 14 is FROZEN by Play (19 one-off nodes)"
     },
     {
       "slug": "a-fuller-grove",

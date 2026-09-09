@@ -105,6 +105,13 @@ namespace Wildgrove.Game.Services
                 var milestones = SignatureMilestoneCount(d);
                 return milestones > 0 && BestSignatureMilestones(s, d) >= milestones;
             }),
+            // 12, 5 and 14 across these rules are FROZEN by Play, not chosen: an incremental
+            // achievement's step count cannot be edited once published, so these
+            // three sit permanently below the totals their data holds (14 species,
+            // 7 drawable plates, 19 one-off nodes). They are milestones, and their
+            // names say so. Raising one to match the data is the one change to
+            // never make: the console can never follow, and the console is what
+            // decides when Play turns the bar over.
             Count(AchievementIds.TheWholeWood, 12, (s, d) => s.speciesEverBefriended.Count),
 
             // ── Compendium and Folio ──────────────────────────────────────
@@ -296,11 +303,23 @@ namespace Wildgrove.Game.Services
             return count;
         }
 
+        /// <summary>
+        /// Plates the warden has drawn. An awarded plate is not one of them: the
+        /// Wayfarer's Plate arrives from a Play Games Reward and no one sketches
+        /// it, so counting it would hand a step of the drawing achievement to
+        /// whoever happened to run a Quest. <see cref="Observation"/> holds the
+        /// same line for the sketching pool.
+        /// </summary>
         private static int RecordedPlateCount(GameState state, GameDataAsset data)
         {
             var count = 0;
             foreach (var insect in data.insects)
             {
+                if (insect.rewarded)
+                {
+                    continue;
+                }
+
                 if (Insects.IsRecorded(state, insect))
                 {
                     count++;

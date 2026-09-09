@@ -14,15 +14,27 @@ cost a build cycle each to re-learn.
 
 ## 1. MVP
 
-### 1.1 The playtest gate — the one blocking item
+### 1.1 The playtest gate — SAT 2026-08, and the table below is now a review
 
-**A run-3-to-run-6 sitting.** With Cloudreach Peaks built (2026-08-01) the map is
-walked out and there is no content slice in front of it. Every mid/late number is
-**model-derived, never played**: the fold gate, `demandGrowth` 1.45, the breadth
-ramp, Almanac costs, the zones 4–6 pass, the crags and peaks passes, and the
-zone-demand geometric ramp. Model estimate to judge against: a debut verse holds
-at ~20–60 min of its own node's production; FTP walks the fold-4 Rite in ~9–12
-days, a committed payer ~4–6.
+**The run-3-to-run-6 sitting has been played** (Mo, locally), and it is what drove
+the run of changes ending 2026-08-14. So the framing this section carried for a
+month is spent: the mid and late numbers are no longer "model-derived, never
+played", and this is no longer the one item blocking everything else.
+
+**What it leaves is a different job.** The knob table below was written as a list
+of things nobody had ever seen in play. It now needs one pass with the sitting in
+mind to say, per row, whether the number was confirmed, moved, or simply never
+came up — because a row that was never reached in a run-3-to-run-6 sitting (most
+of zones 7–8, the peaks' waystones, the deepsteel door) is still exactly as
+unplayed as it was. **Until someone does that pass the table cannot be trusted
+either way**, and its rows should be read as candidates rather than as open
+questions. Anything the sitting settled belongs in `design-doc.md`.
+
+The original framing, kept because the unreached rows are still governed by it:
+with Cloudreach Peaks built (2026-08-01) the map is walked out and there is no
+content slice in front of it. The model estimate to judge against was a debut
+verse holding at ~20–60 min of its own node's production; FTP walking the fold-4
+Rite in ~9–12 days, a committed payer ~4–6.
 
 Knobs the sitting is allowed to move, by file:
 
@@ -475,13 +487,15 @@ lean is a regression, not a phase. Build order:
   Ours is Monday on the guess that it is; worth confirming while §3.2's Play
   Console visits are open, because a mismatch is what puts an off-cadence
   delivery a day early or late against the row's own reading.
-  **The public docs do not answer it — checked 2026-08-12, so don't re-read them.**
-  The Level Up guideline is the only place the cadence is written down at all
-  ("with a maximum of 1 reward per week per player", awarded after social
-  challenges); it defines no week, no start day and no timezone, and neither the
-  Rewards page nor the guideline says whether the developer can see or set the
-  cap. That leaves two routes, both console-side: ask on the Sep 1 visit, or read
-  the cadence off an actual test delivery once reward testing opens. Worth
+  **The public docs do not answer it — checked 2026-08-12 and again 2026-09-09,
+  so don't re-read them.** The Level Up guideline is the only place the cadence is
+  written down at all ("with a maximum of 1 reward per week per player", awarded
+  after social challenges); it defines no week, no start day and no timezone, and
+  neither the Rewards page nor the guideline says whether the developer can see or
+  set the cap. Both pages were rechecked the day the gate opened and neither had
+  gained a word on it. **Reward testing is open as of Sep 1 2026, so the one
+  instrument that can answer this now exists: read the cadence off a real test
+  delivery** (§3.2, §3.3). Worth
   knowing while it stands open: a mismatch cannot cost the player anything,
   because the grant is unconditional by design (§11) and an early delivery is
   taken rather than refused. The damage is confined to the countdown reading
@@ -592,22 +606,107 @@ lean is a regression, not a phase. Build order:
   app and switches straight back to a live process. It was never a lost reward,
   since a cold start or the Camp row still found it inside the three-day claim
   window, but it made the arrival wait on the player doing something arbitrary.
-- **Three published incremental achievements have drifted from the data they
-  count.** Each needs the same three-place fix, landing together: Play Console
-  step count → `store/play-games/achievements.json` → `Achievements.cs`. Batch
-  them into one console visit (the Sep 1 Rewards visit is the natural one).
-  - **"The Almanac Complete"** — 14 steps; the tree is now **22** one-off nodes.
-    It unlocks at 14 while promising "buy every node the Almanac holds".
-  - **"The Whole Wood"** — 12 steps; the kea and pika took the roster to **14**.
-  - **"All Five Plates"** — 5 steps; **7** plates are drawable. The name itself
-    rots, so either rename in the console or leave the count and reword the
-    description to "the first five".
-  - Add with them a test pinning each constant to its data-derived count (the
-    constants must stay hardcoded because the console holds the same figure) —
-    `Achievements.StepTarget` and
-    `AchievementsTests.EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas`
-    are the pattern. Worth doing for **"Reader of Stones" (4)** too, if that
-    number ever means anything other than "some of them".
+- **⚠️ THREE INCREMENTAL STEP COUNTS ARE FROZEN AND CANNOT BE CORRECTED. Found
+  in the console 2026-09-09.** `Steps needed` is greyed out on a published
+  achievement, over the words *"This can't be changed after the achievement is
+  published."* So the plan this entry carried for a month — move the console to
+  match the data — **is not available on any of the three**, and no flag, tool or
+  API call gets around it. They are fixed at **12, 5 and 14** for as long as they
+  exist.
+  <br>**What this costs, exactly.** `Achievements.Reassert` reports absolute
+  progress and Play unlocks at the *console's* target, so the console's number is
+  the one that decides and the code's is only a clamp. All three therefore fire
+  EARLY against their own names: The Whole Wood at 12 of 14 species, Every Plate
+  Drawn at 5 of 7 plates, The Almanac Complete at 14 of 19 nodes. Nothing is
+  broken and nothing fails to fire; the names and descriptions are simply lying
+  about what they mean.
+  <br>**Which inverts the fix.** The in-repo change made earlier the same day
+  (12→14, 5→7, 14→19 in `Achievements.cs` and the manifest, with tests pinning
+  each to its data-derived count) now points the wrong way: it pins the code to
+  three numbers the console can never hold. Unless the entries can be deleted and
+  remade, **that change has to be reversed** and the achievements reworded to be
+  honest at 12, 5 and 14 instead.
+  <br>**Delete is not offered either — checked in the console 2026-09-09.** A
+  published achievement has no Delete in the UI, which matches the guard
+  `pgs-achievements.py` already carried (`if item.get("published"): left alone`)
+  and the note in its header that a published achievement carries player data and
+  stays. So delete-and-recreate is out, even though it would have cost almost
+  nothing here with no players and no testers to lose unlocks for.
+  <br>**DECIDED 2026-09-09 (Mo): reword the three so each is honest at its frozen
+  number**, rather than add a second completion tier beside them. Done in-repo the
+  same day; the console renames are the remaining half.
+  <br>**Do NOT run `pgs-achievements.py --apply --update` until this is settled.**
+  It PUTs the whole resource including `steps`, so against a frozen field it
+  either fails and aborts the run at the first of the three (`return 1`, leaving
+  the rest untouched), or the API accepts the call while ignoring the field and
+  the tool prints `~ updated (steps)` for a change that did not happen. The
+  second is worse, because it reads as success.
+  - **The three renames, all by hand in the console.** Each is a name and a
+    description; the step count beside them stays exactly where it is.
+
+    | Console now | Rename to | New description |
+    |---|---|---|
+    | The Whole Wood (12) | **Twelve Companions** | Befriend twelve of the species that walk the grove. |
+    | Every Plate Drawn (5) | **Five Plates Drawn** | Draw and record five insect plates. |
+    | The Almanac Complete (14) | **The Almanac Well Thumbed** | Buy fourteen of the nodes the Almanac holds. |
+
+    The slugs and the C# constants keep their old spellings on purpose:
+    `all-five-plates` and `AchievementIds.TheWholeWood` are internal, the encoded
+    ids never change, and renaming them would be churn for nothing.
+  - **`RecordedPlateCount` still skips a `rewarded` plate**, and that survives the
+    reword on its own merit: the Wayfarer's Plate arrives from a Play Games Reward
+    and nobody sketches it, so counting it would hand a step of a *drawing*
+    achievement to whoever happened to run a Quest.
+    `Observation.EligibleInsectsInto` holds the same line for the sketching pool.
+  - **⚠️ Do the console renames BEFORE any tool run, and prefer no tool run at
+    all.** `pgs-achievements.py` matches the console **by display name**, so a
+    manifest renamed ahead of the console reads as three missing achievements and
+    `--apply` inserts three duplicates. Worse, `--update` PUTs the whole resource
+    including `steps`, so against a frozen field it either fails and aborts at the
+    first of the three, or the API takes the call while ignoring the field and the
+    tool prints `~ updated (steps)` for a change that never happened.
+    <br>Once the four hand edits are done (these three plus Choice), the manifest
+    and the console agree and **there is nothing left for the tool to push**. Run
+    it with no flags to confirm that — that plans and writes nothing, and a clean
+    run of `=` lines is the proof. The one entry that genuinely wants a tool push
+    is **Fixed in Ink**, whose description alone drifted; hand-edit that too and
+    the tool need not run at all this visit.
+    <br>The token default was pointing at `Documents/Wildgrove-secrets/`, which
+    does not exist on this machine any more; corrected 2026-09-09 to
+    `../Wildgrove-secrets/` beside the checkout, where the upload keystore
+    already lives. The token itself is an hour-long OAuth Playground grant with
+    the `androidpublisher` scope, so it is fetched per visit, never stored.
+  - **⚠️ The step counts do not go live until the configuration is PUBLISHED,
+    and publish is project-wide — which couples this to Game Stats.** The tool
+    writes drafts only (`published` is read-only on the API, with no publish
+    method), so pushing the three counts leaves them staged behind the wrong
+    published figures. Clicking publish in the console makes them live **and in
+    the same act promotes the Game Stats draft to production**, ending the
+    window in which a stats row can still be deleted. §3.4 wanted those two
+    visits kept separate; the honest position is that they cannot be, so it is
+    one decision rather than two.
+    <br>**DECIDED 2026-09-09 (Mo): publish, and take Game Stats to production
+    with it.** Closed testing has not begun, so there are no players and no
+    testers at all: a production stats config can disturb nothing, because there
+    is nothing yet for it to disturb. That makes now the cheapest moment this
+    click will ever have, and it takes both figures off the board before anyone
+    is looking at them. So the visit ends with a publish rather than avoiding one.
+    <br>**Two things that follow.** Publish promotes *everything* staged on both
+    screens, not only the rows you came for, so look over the drafts before
+    clicking. And once published, a stats row is a public artifact carrying
+    player data and cannot be deleted — which moves the care from after the
+    click to before it, onto the CSVs in `store/play-games/gamestats/`.
+  - ~~Add with them a test pinning each constant to its data-derived count~~
+    ✅ DONE 2026-09-09. `TheWholeWood_AsksForEverySpeciesTheDataHolds`,
+    `EveryPlateDrawn_AsksForEveryPlateThatCanActuallyBeDrawn`,
+    `EveryPlateDrawn_IsNotAdvancedByAnAwardedPlate` and
+    `TheAlmanacComplete_AsksForTheOneOffNodesOnly` sit beside
+    `EveryStoneRead_TurnsOverOnTheLastZoneTheDataActuallyHas` and read the real
+    `design/data` through a shared `ShippedDesignData()`. The constants stay
+    hardcoded because the console holds the same figure and cannot be asked for
+    it at runtime; the tests are the only place the two can be held together.
+    Suite green at 1167/1167. Still worth doing for **"Reader of Stones" (4)**
+    if that number ever means anything other than "some of them".
 - **The "Pristine" achievement is renamed in the manifest but not in the
   console.** The grades are Poor / Decent / Choice from 2026-08-02, so
   `store/play-games/achievements.json` now names the achievement **"Choice"**
@@ -619,6 +718,14 @@ lean is a regression, not a phase. Build order:
   changes, so unlocks in the field are unaffected either way. Re-upload
   `store/play-games/achievement-choice-512.png` in the same visit (icons are a
   manual upload — see the tool's header). Batch with the drifted-step visit above.
+  <br>**The rename commit (`570d36f`) touched TWO achievements, and only one of
+  them is manual.** Alongside `choice` it corrected **"Fixed in Ink"**, whose
+  description went from "Fix a Pristine specimen into the Folio." to "Fix a
+  Choice specimen into the Folio." That one's *name* never changed, so the tool
+  matches it fine and `--apply --update` pushes the new description on its own.
+  Nothing to do by hand for it — but it does mean the console currently shows
+  the retired word "Pristine" to players in **two** places, not one, and a visit
+  that fixes only the rename leaves the second sitting there.
 - **The store-screenshot harness photographs a run that is not the showcase.**
   Found 2026-08-06 while using it to look at the new roster drawer; diagnosed
   2026-08-11, and the diagnosis it was filed under was wrong.
@@ -761,17 +868,60 @@ for:
   are one-time products like the rest, which is correct: consumable-vs-durable
   is the client's distinction (`StoreCatalogue.IsConsumable`), not a console
   setting. What's left to prove is the internal-track catalogue fetch (§3.3).
-- **Attach a Play Games Reward offer to each of the three reward products.** The
-  products (`reward_drovers_halter`, `reward_weekly_amber_cache`,
-  `reward_wayfarers_plate`) are created and activated. **The association UI and
-  reward testing do not open until Sep 1 2026**, and the Level Up bar for ≥2
-  single-use rewards is **Sep 30 2026** — a one-month window. (≥1 repeatable by
-  **Mar 1 2027**; the weekly cache is it.) **All three dates re-verified
-  2026-08-12** against the Rewards page and the Level Up guideline: adding,
-  removing and end-to-end delivery of a reward are each marked "available from
-  September 01, 2026", and the page says in as many words that the out-of-app
-  purchase flow can be integrated ahead of that date but only tested fully on or
-  after it — which is what we did, so nothing is waiting on us here.
+- **Attach a Play Games Reward offer to each of the three reward products —
+  ✅ DONE 2026-09-09: all three offers created and ACTIVATED.** Icons came from
+  `store/iap/reward_*-icon.png`, generated 2026-08-12 by `make-store-art.py`, all
+  1024×1024 32-bit RGBA and inside Play's 512–1080 window. **`LU-RE-GAC` is now
+  met in the console as well as in code**, five months before `LU-RE-GAD` is due.
+  Note these live on the *Monetise* side, so they did not wait on the Play Games
+  Services publish that §2's renames need. What remains is proving one actually
+  lands, which is the device pass in §3.3.
+  <br>The gate opened Sep 1 2026 and was
+  re-verified 2026-09-09 against the [Rewards page](https://developer.android.com/games/rewards)
+  and the [Level Up guideline](https://developer.android.com/games/guidelines):
+  the wording has not moved a day. Adding a reward, removing one and proving
+  end-to-end delivery are each still marked "available from September 01, 2026",
+  which is now behind us, and Level Up enrollment opened the same day. Nothing
+  is waiting on us and nothing was pushed back.
+  <br>**`LU-RE-GAC` wants ≥2 single-use offers by Sep 30 2026**, and
+  `reward_drovers_halter` and `reward_wayfarers_plate` are the two, both created
+  and activated, so this is an attach and not a build. (`LU-RE-GAD` wants ≥1
+  repeatable by Mar 1 2027; `reward_weekly_amber_cache` is it.) **Read both
+  dates as guideline phase-ins rather than deadlines we can miss** — see the
+  note below on why an unreleased title cannot fall off that cliff.
+  <br>The client owes nothing here: `RewardProductIds` splits Durable from
+  Repeatable, `StoreCatalogue.IsConsumable` answers true for the cache so a
+  second delivery is never refused as already owned, `RewardGrants.Apply` holds
+  the grant → tell → acknowledge order, and the resume path checks for
+  unacknowledged rewards, which is the half Google's page asks for in as many
+  words. What is owed is entirely console and device.
+  <br>**Do in this order:**
+  1. Attach an offer to `reward_drovers_halter` and `reward_wayfarers_plate`
+     first. Those two are the Sep 30 bar; the cache can follow at leisure.
+  2. Attach the offer to `reward_weekly_amber_cache`.
+  3. Then the device pass in §3.3 — claim in the Play Games app and switch back
+     to a live process without killing it, which is the path the 2026-08-12 fix
+     was written for and the only one that has never been walked.
+  <br>**Enrolling in Level Up is NOT one of these steps, and cannot be yet.**
+  Enrollment is per-title and the help article's prerequisite is that the game
+  is "published to production on Google Play and has been in compliance with
+  all applicable Play policies" — Wildgrove is pre-launch, so the form has
+  nothing to submit. Enrollment belongs in §3.5 with the launch tail, after the
+  store listing and the closed beta, not on this visit.
+  <br>**Which resets what Sep 30 2026 means for us.** It is the phase-in date
+  for `LU-RE-GAC` as a *guideline*, i.e. the state a title must be in when it
+  is assessed, not a cliff an unreleased game falls off. Attaching the two
+  offers now is still the right move (it is cheap, the products are already
+  live, and it takes the row off the board before launch), but it is not the
+  emergency a Sep 30 date suggests. Nothing here expires in three weeks.
+  <br>**Read the weekly reset off the first cache delivery while you are in
+  there.** `Amber.WeeklyCacheNextDueInMs` counts a warden-local Monday on a
+  guess, and the docs still refuse to define the week: re-read 2026-09-09 and
+  the only sentence anywhere is the guideline's "with a maximum of 1 reward per
+  week per player", with no start day and no timezone, exactly as on 2026-08-12.
+  A test delivery is now the only instrument that can answer it. A mismatch
+  costs the player nothing (the grant is unconditional and an early delivery is
+  taken, not refused); it costs the countdown row a wrong sentence.
 - **Do not create `reward_wayfarers_cloak`.** The cosmetic reward was retired
   unbuilt — it wanted a cosmetic substrate the game has never had. A test pins
   that the id is uncatalogued, so an award of it could never be acknowledged.
@@ -784,13 +934,77 @@ for:
   none), **yes** users can sign in with an account created outside the app (the
   Google account), and App access is *all functionality available without special
   access* — nothing is gated behind the sign-in.
-- **Bring the Data Safety form up to what ships — before the next release.** The
-  privacy page was corrected on 2026-08-05 (Game Stats disclosed, the "no accounts"
-  claim withdrawn); the form is the half that isn't in a repo, and it has never
-  been revisited since Play Games and Game Stats landed. It needs the Play Games
-  identity (display name, gamer profile) and the gameplay stats declared, with
-  *collected* / *shared* / *optional* set to match — the form and the page
-  disagreeing is a policy strike in its own right, whichever of the two is right.
+- ~~**Bring the Data Safety form up to what ships — before the next release.**~~
+  ✅ **ANSWERED IN THE CONSOLE 2026-09-09 (Mo)**, to the table below. It had never
+  been revisited since Play Games and Game Stats landed. Two things to confirm on
+  the next visit rather than assume: that the form was **submitted** rather than
+  left saved (it goes through Google's review as part of app review, and the
+  review checks for policy violations, not for whether the answers match the
+  SDKs), and that the store listing preview reads the way you expect. Changes here
+  do NOT need an app release and propagate on their own, which is why this could
+  be done pre-launch at all.
+  <br>**Keep the table below as the answer of record**, because the form is the
+  one artifact of this whole visit that lives nowhere in the repo. If an SDK is
+  added or dropped, this is the thing to re-derive: adding any UGS package,
+  re-adding `com.unity.analytics`, or dropping Firebase all move rows.
+  **The answer set below was derived 2026-09-09 from
+  what the build actually does**, against the shipped packages, the telemetry
+  code, Google's own SDK disclosures and the live privacy page. The page itself
+  was re-read the same day and is **accurate and current** — it already covers
+  Firebase, Play Games, Game Stats and ads, so the form is the only stale half.
+  <br>**⚠️ Firebase is a real collector and the old note here never mentioned it.**
+  `com.google.firebase.analytics` 13.13.0 ships and `FirebaseTelemetry` is the
+  live sink on device: gameplay and purchase events to Analytics, crashes and
+  non-fatals to Crashlytics.
+
+  | Play data type | Collected | Shared | Ephemeral | Optional | Why |
+  |---|---|---|---|---|---|
+  | Location › Approximate location | Yes | **Yes** | No | No | AdMob's IP plus Analytics' masked IP |
+  | Personal info › Name | Yes | No | No | No | the Play Games display name, which the leaderboard shows |
+  | Financial info › Purchase history | Yes | No | No | No | Analytics logs purchase events with product id, name and price |
+  | App activity › App interactions | Yes | **Yes** | No | **No** | AdMob's "user product interactions" plus Analytics screen views and sessions |
+  | App activity › Other actions | Yes | No | No | **Yes** | Play Games achievements, leaderboard and Game Stats counts, all gated on Play notes |
+  | App info and performance › Crash logs | Yes | No | No | **No** | Crashlytics is deliberately NOT covered by the toggle |
+  | App info and performance › Diagnostics | Yes | **Yes** | No | No | AdMob's diagnostics are shared even though crash logs alone would not be |
+  | Device or other IDs | Yes | **Yes** | No | No | AdMob's ad id and app set id, Analytics' app-instance id, Crashlytics' install UUID |
+
+  **Ephemeral is No on every row, and that is a finding rather than a default.**
+  Play lets data processed only in memory, never persisted beyond servicing the
+  request, be declared ephemeral — and declared *not collected* on that basis, so
+  it is the one answer that could quietly excuse the whole table. Nothing here
+  qualifies. AdMob's disclosure page **carries no ephemeral marking on any of its
+  four rows**, and the form has to be answered on that absence rather than on a
+  sentence saying so; Analytics and Crashlytics exist precisely to retain what
+  they gather so it can be read back later; and the Play Games rows are durable by
+  design, since a stat you cannot see next week is not a stat. Anyone revisiting
+  this and tempted to mark a row ephemeral should treat that as a signal they have
+  misread what the SDK does.
+
+  **The three rows that catch people, each for the same reason: a row answers for
+  the WHOLE app, so the least private contributor decides it.**
+  - **App interactions cannot be Optional.** The "Play notes" toggle stops our
+    Firebase events and the Play Games stats, but it does not stop AdMob, and
+    AdMob collects product interactions regardless.
+  - **Crash logs cannot be Optional either, and this one is new.**
+    `FirebaseTelemetry.LogException` is not gated on `_collecting`, there is no
+    `IsCrashlyticsCollectionEnabled` anywhere in the tree, and the privacy page
+    says so on purpose: *"Crash reports are sent whichever way that is set: they
+    carry nothing of your run, and a build that cannot report its own faults
+    cannot be mended."* Code and page agree; the form must too.
+  - **Diagnostics is Shared** while Crash logs is not, because the sharing comes
+    from AdMob rather than from Crashlytics.
+
+  **The rest of the form**, unchanged and re-confirmed 2026-09-09: deletion URL
+  `https://decryptic.app/wildgrove/privacy#deleting-your-data` (**anchor verified
+  live today** — a markdown-converted read will tell you it is missing, which is
+  the converter stripping ids, so check the raw HTML before believing it); no
+  account creation; users *can* sign in with an account created outside the app
+  (the Google one); App access is *all functionality available without special
+  access*; data is encrypted in transit; users can request deletion.
+  <br>**Genuinely a judgement call, so decide rather than inherit:** whether the
+  Play Games rows (achievements, cloud save, Game Stats) need declaring at all,
+  or count as Google's own processing against the gamer profile. Declared above
+  on the cautious reading, which is the safer way to be wrong.
 - **AdMob's own disclosure table, read 2026-08-05 — three rows are stricter than
   they look.** Google publishes the SDK's collection at
   `developers.google.com/admob/unity/privacy/play-data-disclosure`, and it says
@@ -843,14 +1057,17 @@ for:
   reassigning three achievements to different subjects. Not urgent, and honestly
   invisible unless the profile is read next to the tidier cards.
 - **Re-step the three drifted achievements** (§2) in the same visit.
-- **Add Mo as a license tester** (Settings → License testing) so test purchases
-  aren't charged.
-- **Keep Sidekick on for CI uploads.** Sidekick is added at *upload* time for App
-  Bundles. Every release here is uploaded by `android-release.yml` via
-  `r0adkll/upload-google-play`, so Testing → Advanced settings → **Play Games
-  Sidekick** → *"Automatically make Sidekick on by default for new app bundles"*
-  must be set, or each CI upload lands Sidekick-less and the guideline quietly
-  fails.
+- ~~**Add Mo as a license tester**~~ ✅ DONE 2026-09-09 (Settings → License
+  testing), so test purchases aren't charged. This is the list §3.3's device pass
+  needs; it is NOT the same list as the PGS project's own testers, which is what
+  gates a Game Stats draft.
+- ~~**Keep Sidekick on for CI uploads.**~~ ✅ DONE 2026-09-09. Sidekick is added at
+  *upload* time for App Bundles. Every release here is uploaded by
+  `android-release.yml` via `r0adkll/upload-google-play`, so Testing → Advanced
+  settings → **Play Games Sidekick** → *"Automatically make Sidekick on by default
+  for new app bundles"* had to be set, or each CI upload would land Sidekick-less
+  and `LU-SK-GAA` would quietly fail. Worth re-checking after any Play Console
+  redesign, since nothing in a build log would ever say it had come unset.
 
 ### 3.3 On device — the build is not proven until these are done
 
@@ -908,12 +1125,21 @@ for:
   immediately rather than at the next launch. Also confirm the refund direction —
   the store reporting not-owned must start the ads that session, not leave the
   rewarded buttons dead until a relaunch.
-- **The real out-of-app reward delivery.** `StubStore.DeliverReward` exercises
-  grant → acknowledge and the refusal branch in the editor; a live Quest award
-  can't be tried before Sep 1. What *is* checkable now: an internal-track build's
-  catalogue fetch should resolve every reward id with a price. An id coming back
-  unavailable means the console entry and `RewardProductIds` disagree — the one
-  failure that would silently swallow every future award.
+- **The real out-of-app reward delivery — now testable, as of Sep 1 2026.**
+  `StubStore.DeliverReward` exercises grant → acknowledge and the refusal branch
+  in the editor, and a live Quest award was simply not offerable before the gate
+  opened. It is now, so this stops being a wait and becomes a device pass. Walk
+  all three: claim in the Play Games app and come back to a **live** process
+  (the resume branch of `OnApplicationPause`, fixed 2026-08-12 and never once
+  walked in the field), claim and come back to a **cold start**, and let one sit
+  past its three-day window to see it refunded rather than stuck.
+  Still checkable without a Quest, and worth doing first because it is the cheap
+  half: an internal-track build's catalogue fetch should resolve every reward id
+  with a price. An id coming back unavailable means the console entry and
+  `RewardProductIds` disagree — the one failure that would silently swallow every
+  future award.
+  <br>**Read the weekly cache's reset day off the first repeatable delivery**, per
+  §3.2 — it is the only instrument that can answer what no page documents.
 - **The pad / keyboard / large-screen gate.** Play it through on real 4:3, 16:10,
   21:9 and foldable hardware with a controller in hand. Keyboard and controller
   navigation is built and tested; it has never been *held*.
@@ -967,17 +1193,24 @@ for:
     fixed, the ZIP is rebuilt, and the whole account with the reasoning is in
     `store/play-games/gamestats/README.md`. **Re-uploaded clean the same day: all
     seven events and seven stats are in as Draft, available to testers.** Next is
-    a tester read, *not* a publish — draft is already testable, publishing before
-    launch buys nothing, and it would end the window in which a row can still be
-    deleted. **It would also drag the achievements along:** publish is project-wide,
-    so applying §2's drifted step counts promotes this stats draft to production
-    too, which is why those two console visits should stay separate. The guide's own wording never did promise this: it still
-    calls the API "available for early feedback", dates GA to "starting August
-    2026" with no day, and names no month at all for the upload experience, so the
-    console is running ahead of its documentation. **September 2026** is the date
-    Google does give, for players seeing stats on the Gamer profile and for testing
-    a draft config with test accounts, so that half still batches with the Sep 1
-    rewards visit.
+    a tester read, and then **a publish — DECIDED 2026-09-09 (Mo)**. The case for
+    holding was that draft is already testable and publishing ends the window in
+    which a row can still be deleted; the case that won is that closed testing has
+    not begun, so there is no one in the field to disturb and this is the cheapest
+    this click will ever be. Publish is
+    project-wide, so §2's step counts and this stats draft go to production in one
+    act; those two visits do not need separating after all, they need doing
+    together. **Get the CSVs right before the click:** a published stats row
+    carries player data and stays.
+    **The guide caught up 2026-09-09, and the console is no longer ahead of it.**
+    The overview has been rewritten since it was last read on 2026-08-13: the
+    "available for early feedback" caveat is gone, so is the undated "GA starting
+    August 2026", and the words "beta" and "early feedback" now appear nowhere on
+    it. The milestones table is down to a single row, **September 2026 — "Players
+    start seeing game stats on their Gamer profile"**, alongside "The Game Stats UI
+    will be available in September 2026". So GA has happened, the tester read is
+    unblocked, and the player-facing half lands this month. Nothing here changed
+    shape; what changed is that the last reason to wait went away.
     **The format spec was found the same day, on a page nothing here had read:**
     [Integrate Game Stats](https://developer.android.com/games/pgs/integrate-gamestats),
     which also gives the console path (**Grow users → Play Games Services → Setup
@@ -1021,11 +1254,45 @@ for:
   check Play Store collisions and trademark (design §14). Everything
   listing-side hangs off the answer, so it comes before screenshots or copy.
 - **The store listing**, with tablet and PC screenshots (Level Up parity).
-- **Closed beta: 2–3 weeks of vitals**, with the Play Games on PC opt-in and the
-  Level Up self-check run during it.
+- **Closed beta: 2–3 weeks of vitals** — **not started; being built towards as of
+  2026-09-09.** Nothing is in anyone's hands yet, so §3.3's device list is still
+  work someone has to sit down and do rather than something testers will surface,
+  and no vitals exist for the ship gate below to judge. Run the Play Games on PC
+  opt-in and the Level Up self-check during it, as planned.
 - **The ship gate:** vitals green 14 consecutive days and D1 retention >30% in
   beta → ship. The onboarding pass (§1.7) feeds the same gate — the first-hour
   funnel must be green.
+- **Enrol in Level Up — AFTER the game is live in production, never before.**
+  Enrollment opened 2026-09-01 and is **per-title, not per-account**, needing
+  admin or account-owner permission. Path: **Monitor and improve → Policy and
+  programs → Programs → Level Up**. The form asks you to answer for each
+  guideline how the game implements it, to raise any exemption requests before
+  confirming compliance, and to accept the terms; review takes **up to 14 days**,
+  and the verdict arrives by email and as a Play Console notification. A
+  rejection lists the specific failures, and the same screen then offers three
+  routes back: fixed everything, appeal, or partial fix plus appeal. This is
+  what design §12's table is *for* — it is the answer sheet for that form, so
+  walk in with it open.
+  <br>**The prerequisite is production.** The help article requires the game be
+  "published to production on Google Play and has been in compliance with all
+  applicable Play policies", which is why this sits here and not in §3.2.
+  <br>**Two things worth knowing before it disappoints:** the rate card does not
+  take effect for any approved title until **Sep 30 2026** (after that date,
+  within 24 hours of enrollment), and eligibility rolls out by **user** location rather
+  than developer location: AU, EEA, JP, UK and US from **Sep 30 2026**, KR from
+  **Dec 31 2026**, rest of world **Sep 30 2027**. NZ players therefore fall in
+  the last wave even though the AU and US ones do not, so a NZ-first audience
+  sees the benefit last.
+  <br>**Unresolved, and worth one look at the form rather than trusting this
+  file:** the enrollment help article appears to state a **$1M USD earnings over
+  the last 12 months** threshold, but it documents two programs side by side
+  (Apps Experience and Level Up) with identical-looking prerequisite blocks, and
+  every other Google source says the opposite in as many words — "the Level Up
+  program is open to all games", "all games on Google Play qualify". The gated
+  tier is **Level Up+**, whose published bar is engagement (~1.6M MAU / active
+  installs), not earnings. Best reading: the $1M belongs to Apps Experience and
+  base Level Up has no revenue floor. Confirm on the screen when the time comes;
+  it costs nothing to be wrong about until then.
 
 ---
 

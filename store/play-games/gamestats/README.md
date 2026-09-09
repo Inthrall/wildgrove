@@ -24,14 +24,17 @@ names in the config CSVs are what a single-language title needs.
 ## What the console still owes, and when
 
 Google's own timeline, from the [Game Stats guide](https://developer.android.com/games/pgs/gamestats)
-as it read on **2026-08-12**: the API and SDK are "available for early feedback and
-will be Generally Available (GA) starting August 2026", and **September 2026** is
-when players start seeing game stats on their Gamer profile and when a **draft
-stats configuration can be tested with test accounts**.
+as it reads on **2026-09-09**: one milestone row, **September 2026 — "Players start
+seeing game stats on their Gamer profile"**, and one plain sentence, "The Game Stats
+UI will be available in September 2026". That is the whole of what is still ahead.
 
-Read that carefully, because this file used to say something firmer than the guide
-does. GA is dated to *this month* without a day, and the overview never promises a
-month for the **Play Console upload experience** at all.
+**The guide was rewritten between 2026-08-13 and 2026-09-09, and the caveats went
+with it.** It used to call the API "available for early feedback and will be
+Generally Available (GA) starting August 2026" and to promise no month at all for
+the Play Console upload experience. The words "beta" and "early feedback" no longer
+appear on the page. GA has happened, and the note below about the console running
+ahead of its documentation is now history rather than a live warning: the
+documentation caught up.
 
 **Uploaded and accepted 2026-08-13.** All seven events and all seven stats sit in
 the console as **Draft — available to testers**, icons rendering in the stat list,
@@ -40,16 +43,26 @@ documentation: the guide dates draft-config testing to September 2026 and the
 console is offering it now. Two things follow, and they are the opposite of the
 obvious ones:
 
-- **Do not publish yet.** Draft is already testable by a test account, so
-  publishing buys nothing before launch and costs the cheap-iteration window: in
-  draft every row still has a `Delete`, and this config needed three corrections on
-  its first day. (Tester access is the PGS project's own testers list, not the
-  `Settings → License testing` list todo §3.2 tracks for purchases.)
-- **Publish is project-wide, so it couples this to the achievements.** Publishing
-  the three drifted achievement step counts (§2) would promote this stats draft to
-  production in the same act. If stats should stay in draft, the achievement visit
-  has to be a separate one — which is the reverse of batching them, and the reason
-  is recorded here because the console gives no hint of it.
+- ~~**Do not publish yet.**~~ **DECIDED 2026-09-09 (Mo): publish. Closed testing
+  has not begun, so there are no testers and no players: a production stats config
+  can disturb nothing, which makes this the cheapest the click will ever be, and
+  it takes both these figures off the board before anyone is looking at them.** The
+  argument it overrides, kept because it is the one that will come back if a stat
+  ever needs deleting: in draft every row still has a `Delete`, and this config
+  needed three corrections on its first day. Once published, a row is a public
+  artifact carrying player data, and it stays. So **get the schema right before
+  the click, not after** — the CSVs in this folder are the thing to re-read, and
+  `GameStatsTests.EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` is what
+  proves code and CSV still agree. (Tester access is the PGS project's own testers
+  list, not the `Settings → License testing` list todo §3.2 tracks for purchases.)
+- **Publish is project-wide, which is why the decision above is one decision and
+  not two.** Publishing the three corrected achievement step counts (§2) promotes
+  this stats draft to production in the same act, and vice versa. The console
+  gives no hint of it, which is the reason it is written down here.
+  <br>**One caution that follows from it:** publish promotes *everything* staged,
+  not only the rows you came to change. Before clicking, look over what is sitting
+  in draft on both screens, because a half-finished row made by hand weeks ago goes
+  live with the rest.
 
 **Settled 2026-08-13: the screen is there, and it validates.** The question above
 was answered by walking into the console. What September still owns, as far as

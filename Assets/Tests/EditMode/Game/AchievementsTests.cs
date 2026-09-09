@@ -188,6 +188,106 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void TwelveCompanions_StaysAtThePublishedTwelve()
+        {
+            var design = ShippedDesignData();
+
+            Assert.That(Achievements.StepTarget(AchievementIds.TheWholeWood), Is.EqualTo(PublishedWholeWoodSteps),
+                FrozenStepReason("Twelve Companions"));
+            Assert.That(PublishedWholeWoodSteps, Is.LessThan(design.Species.Count),
+                "it is a milestone below the roster, and the name says twelve because twelve is what "
+                + "Play will turn it over on");
+        }
+
+        [Test]
+        public void FivePlatesDrawn_StaysAtThePublishedFive()
+        {
+            var design = ShippedDesignData();
+            var drawable = design.Insects.Count(insect => !insect.Rewarded);
+
+            Assert.That(drawable, Is.LessThan(design.Insects.Count),
+                "an awarded plate must exist for the exclusion below to prove anything");
+            Assert.That(Achievements.StepTarget(AchievementIds.AllFivePlates), Is.EqualTo(PublishedPlatesSteps),
+                FrozenStepReason("Five Plates Drawn"));
+            Assert.That(PublishedPlatesSteps, Is.LessThan(drawable),
+                "it is a milestone below the drawable plates, and the name says five for the same reason");
+        }
+
+        [Test]
+        public void EveryPlateDrawn_IsNotAdvancedByAnAwardedPlate()
+        {
+            // The target above is only honest while the count agrees with it.
+            // An awarded plate sits in insectSketches like any other, so nothing
+            // but the rewarded flag keeps it out of the tally.
+            _data.insects = new List<InsectData>
+            {
+                new InsectData { id = "stags-herald", sketches = 1 },
+                new InsectData { id = "wayfarers-plate", sketches = 1, rewarded = true },
+            };
+
+            var state = GameStateFactory.NewGame(_data);
+            state.insectSketches["wayfarers-plate"] = 1;
+            Achievements.Reassert(_services, state, _data);
+
+            // Reassert reports nothing at zero progress, so the absence of the
+            // key IS the assertion that the awarded plate counted for nothing.
+            Assert.That(_services.Steps, Does.Not.ContainKey(AchievementIds.AllFivePlates),
+                "a plate the player was given is not a plate the player drew");
+            Assert.That(_services.Unlocked, Does.Not.Contain(AchievementIds.APlateRecorded),
+                "and it does not stand in for the first plate either");
+
+            state.insectSketches["stags-herald"] = 1;
+            Achievements.Reassert(_services, state, _data);
+
+            Assert.That(_services.Steps[AchievementIds.AllFivePlates], Is.EqualTo(1),
+                "and a plate they did draw still counts");
+        }
+
+        [Test]
+        public void TheAlmanacWellThumbed_StaysAtThePublishedFourteen()
+        {
+            var design = ShippedDesignData();
+            var oneOff = design.Almanac.Count(node => !node.Repeatable);
+
+            Assert.That(oneOff, Is.LessThan(design.Almanac.Count),
+                "an endless line must exist for this to prove anything: almanacNodeIds never records one");
+            Assert.That(Achievements.StepTarget(AchievementIds.TheAlmanacComplete), Is.EqualTo(PublishedAlmanacSteps),
+                FrozenStepReason("The Almanac Well Thumbed"));
+            Assert.That(PublishedAlmanacSteps, Is.LessThan(oneOff),
+                "it is a milestone below the tree, which is why it is no longer called Complete");
+        }
+
+        /// <summary>
+        /// The step counts Play published and will not let anyone change. The
+        /// console greys the field out on a published incremental achievement,
+        /// so these three are what the game is stuck with for as long as those
+        /// achievements exist. They are deliberately below the totals the data
+        /// holds; see <see cref="FrozenStepReason"/>.
+        /// </summary>
+        private const int PublishedWholeWoodSteps = 12;
+        private const int PublishedPlatesSteps = 5;
+        private const int PublishedAlmanacSteps = 14;
+
+        private static string FrozenStepReason(string displayName)
+        {
+            return $"\"{displayName}\" is published, and Play freezes an incremental achievement's step "
+                + "count at publish: the console greys the field out. Raising this to match the data is "
+                + "the one change to never make here, because the console can never follow and the "
+                + "console is what decides when the bar turns over. Reword the achievement instead.";
+        }
+
+        /// <summary>
+        /// The real authored data, not the fixture: these targets are hardcoded
+        /// because the Play Console holds its own copy and cannot be asked for
+        /// one at runtime, so the only place the two can be held together is here.
+        /// </summary>
+        private static GameData ShippedDesignData()
+        {
+            var dataDir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "design", "data"));
+            return GameData.Parse(GameData.ReadSourcesFromFiles(dataDir));
+        }
+
+        [Test]
         public void Reassert_WhenSignedOut_ReportsNothing()
         {
             var state = GameStateFactory.NewGame(_data);
