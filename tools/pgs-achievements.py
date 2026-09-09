@@ -32,8 +32,8 @@ Two things this deliberately cannot do, both confirmed against the current docs:
     silently never unlocks on a device.
 
 Auth is a personal Google access token holding the androidpublisher scope, read
-from a file outside the repo (default Documents/Wildgrove-secrets/pgs-token.txt)
-or the PGS_TOKEN environment variable. It is never printed. A token from the
+from a file outside the repo (default ../Wildgrove-secrets/pgs-token.txt, beside
+the checkout) or the PGS_TOKEN environment variable. It is never printed. A token from the
 OAuth Playground lasts an hour, which is long enough for the whole ladder.
 """
 import argparse
@@ -52,7 +52,9 @@ MANIFEST = ROOT / "store" / "play-games" / "achievements.json"
 # live editor, which is the point: the ids in code and the ids in the console
 # cannot drift if only one of them is ever typed.
 GENERATED = ROOT / "Assets" / "Scripts" / "Game" / "Services" / "AchievementIds.g.cs"
-DEFAULT_TOKEN = Path.home() / "Documents" / "Wildgrove-secrets" / "pgs-token.txt"
+# Beside the repo, not under the user profile: that is where the upload keystore
+# already lives, and Documents is subject to folder redirection on this machine.
+DEFAULT_TOKEN = ROOT.parent / "Wildgrove-secrets" / "pgs-token.txt"
 
 BASE = "https://www.googleapis.com/games/v1configuration"
 
