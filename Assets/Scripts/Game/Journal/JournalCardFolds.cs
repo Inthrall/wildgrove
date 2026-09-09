@@ -19,7 +19,7 @@ namespace Wildgrove.Game
     /// twice over: the rail's cell is on screen at every tab and wears the moss
     /// the moment a slot can be answered, and the tide's own sheet reads every
     /// slot without opening anything. Both doors open the fold on the way
-    /// through (see <c>GameHud.ScrollToOnTrail</c>), so the card is never a shut
+    /// through (see <c>GameHud.ScrollToCard</c>), so the card is never a shut
     /// drawer at the end of a link.
     /// </para>
     /// <para>
@@ -52,6 +52,15 @@ namespace Wildgrove.Game
         /// learned lines nailed to the top of the page and no head to press.
         /// </summary>
         public const string Almanac = "almanac";
+
+        /// <summary>
+        /// The Camp page's Building Lines. It arrives open, like the Almanac:
+        /// the raise is where a camp's whole stores go, so it is a card acted
+        /// on rather than read. What it wanted the fold for is length — five
+        /// lines of three rows each, above the stations that name half of them
+        /// again.
+        /// </summary>
+        public const string Buildings = "buildings";
 
         public const string Compendium = "compendium";
         public const string Folio = "folio";

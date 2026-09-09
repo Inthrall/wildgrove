@@ -29,10 +29,10 @@ namespace Wildgrove.Game
         // them — a rung or a raise that opens a recipe builds a station card,
         // and the crafting cards are the first thing on the page. Both presses
         // therefore keep their card's place rather than the scrolled distance.
-        // Not fold ids: nothing folds here, and a collision with one would
-        // scroll to the wrong card.
+        // Not a fold id: the ladder does not fold, and a collision with one
+        // would scroll to the wrong card. Building Lines keeps its place under
+        // its own fold id, which FoldingCard anchors for it.
         private const string LadderAnchor = "camp-ladder";
-        private const string BuildingsAnchor = "camp-buildings";
 
         internal CampPage(GameHud hud) : base(hud) { }
 
@@ -70,8 +70,23 @@ namespace Wildgrove.Game
 
         private void BuildBuildingsCard()
         {
-            var card = Card("BUILDING LINES");
-            Anchor(BuildingsAnchor, card);
+            const string head = "BUILDING LINES";
+            var card = FoldingCard(JournalCardFolds.Buildings, head, BuildingsTally(), out var open, out var heading);
+            var headingRect = (RectTransform)heading.transform;
+            if (!open)
+            {
+                // The tally moves as the stores fill, so a shut card written
+                // once at the build would still be saying "nothing to raise"
+                // with the bundle sitting in the stores.
+                var shutLabel = heading.GetComponentInChildren<Text>();
+                if (shutLabel != null)
+                {
+                    _liveUpdaters.Add(() => shutLabel.text = FoldingCardLabel(head, BuildingsTally()));
+                }
+
+                return;
+            }
+
             foreach (var building in _loop.Data.buildings)
             {
                 var captured = building;
@@ -103,7 +118,7 @@ namespace Wildgrove.Game
                         SetNote(captured.displayName.ToLowerInvariant() + " goes up. the camp sleeps nearer the work.");
                         // A raise can bring a station up to a recipe's heat,
                         // which adds a row to a card above this one.
-                        KeepInPlace(BuildingsAnchor, card);
+                        KeepInPlace(JournalCardFolds.Buildings, headingRect);
                     }
                 });
 
@@ -117,6 +132,36 @@ namespace Wildgrove.Game
                     SetButtonTint(build, ok);
                 });
             }
+        }
+
+        /// <summary>
+        /// Building Lines as one line, under the head open or shut: how many
+        /// lines the run can see, and whether the stores can raise one this
+        /// minute. The moss clause is the Trail's rule for a folded ground,
+        /// and it is the whole of what a shut card owes the player.
+        /// </summary>
+        private string BuildingsTally()
+        {
+            var lines = 0;
+            var ready = 0;
+            foreach (var building in _loop.Data.buildings)
+            {
+                if (!BundleDiscovered(_loop.NextBuildingBundle(building)))
+                {
+                    continue;
+                }
+
+                lines++;
+                if (_loop.CanAffordBuilding(building))
+                {
+                    ready++;
+                }
+            }
+
+            var count = lines + (lines == 1 ? " line" : " lines");
+            return ready > 0
+                ? count + " · <color=" + MossDeepHex + ">" + ready + " can go up</color>"
+                : count + " · nothing to raise yet";
         }
 
         private bool BundleDiscovered(List<Buildings.MaterialCost> bundle)
