@@ -881,22 +881,47 @@ namespace Wildgrove.Game
             // soonest-first order to tell a reader.
             MakeText(card, kept.Count + " of " + wheel.sabbats.Count + " kept",
                 20, TextAnchor.MiddleCenter, Ink, _serif);
+            var shelf = Grid(card, RecordTile);
             foreach (var sabbat in kept)
             {
-                BuildWheelShelfRow(card, sabbat);
+                BuildWheelShelfTile(shelf, sabbat);
             }
         }
 
-        /// <summary>One kept sabbat: the plate the keeping earned (design §15), and its name.</summary>
-        private void BuildWheelShelfRow(RectTransform card, SabbatData sabbat)
+        /// <summary>
+        /// One kept sabbat: the plate the keeping earned (design §15) under its
+        /// own name, on the drawer grid every collection in the book is laid out
+        /// on. Straight into the card's vertical layout each one was a
+        /// full-width plate and a line under it, so two kept of eight read as a
+        /// list two deep rather than as two marks on one shelf.
+        /// </summary>
+        private void BuildWheelShelfTile(RectTransform shelf, SabbatData sabbat)
         {
-            var plate = ArtLibrary.ForJournal("sabbat-" + sabbat.id);
-            if (plate != null)
+            var captured = sabbat;
+            PlateTile(shelf, ArtLibrary.ForJournal("sabbat-" + captured.id), captured.displayName, null,
+                () => SetNote(KeptYearsReading(captured)));
+        }
+
+        /// <summary>
+        /// What a kept sabbat's tile says when it is pressed: the years the fire
+        /// was given its due. Read at the press rather than at the build, so a
+        /// keeping answered while the page stands open is not a year behind.
+        /// </summary>
+        private string KeptYearsReading(SabbatData sabbat)
+        {
+            var years = Keeping.KeptYears(_loop.State, sabbat.id);
+            if (years.Count == 0)
             {
-                PlateImage(card, plate, 140f);
+                return sabbat.displayName.ToLowerInvariant() + " is unkept.";
             }
 
-            MakeText(card, "<b>" + sabbat.displayName + "</b>", 18, TextAnchor.MiddleCenter, Ink);
+            var written = new string[years.Count];
+            for (var yearIndex = 0; yearIndex < years.Count; yearIndex++)
+            {
+                written[yearIndex] = years[yearIndex].ToString();
+            }
+
+            return sabbat.displayName.ToLowerInvariant() + ", kept in " + string.Join(", ", written) + ".";
         }
 
         // ── The practical matter ──────────────────────────────────────────
