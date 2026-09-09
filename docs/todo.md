@@ -105,7 +105,10 @@ The sim-vs-journal audit is otherwise closed. What still pays out unseen:
   into its own station's card and Building Lines shrinking to the lines no recipe
   works (the store and the roosts), which is ~700 units down to ~300 and puts the
   raise where the work is. Left alone deliberately: it restructures two cards
-  rather than folding one, and the fold was the length problem.
+  rather than folding one, and the fold was the length problem. **Building Lines
+  itself folds from 2026-09-10** (Mo's call, `JournalCardFolds.Buildings`,
+  arriving open like the Almanac), which answers the length half and leaves this
+  entry as what it always really was: two cards naming the same five lines.
   (`CampPage.BuildBuildingsCard`)
 - **No aggregate camp production view** — per-resource rates exist only on node
   cards; the only rollup is the trail's gather-vs-carry shortfall line.
@@ -606,6 +609,23 @@ lean is a regression, not a phase. Build order:
   app and switches straight back to a live process. It was never a lost reward,
   since a cold start or the Camp row still found it inside the three-day claim
   window, but it made the arrival wait on the player doing something arbitrary.
+- **A reward's confirmation can be lost outright, where its payout cannot.**
+  Found 2026-09-10, making the cache row honest. `Announcements` holds the
+  delivered `RewardGrant` in a plain in-memory `Queue`, nothing in `SaveCodec`
+  persists it, and `RewardGrants.Apply` has already credited the pile and
+  stamped `weeklyCacheClaimedUnixMs` by the time it is queued. So a reward that
+  lands and is acknowledged on a process that dies before
+  `JournalSheets.PumpSheets` reaches the queue leaves the player paid and never
+  told. It is the compliance half as well as the courtesy one: design §11 has
+  the confirmation naming the item and standing until the player acknowledges
+  it, which is what Google asks for after any out-of-app purchase.
+  <br>**Not fixed, deliberately:** persisting the queue is a save rung and a
+  migration, and it does not earn one on its own. What went in instead is the
+  evidence — `Amber.WeeklyCacheEverTaken` and `WeeklyCacheSinceLastMs`, read by
+  the Camp row's note and the cache sheet — so a player who missed the sheet can
+  still find out that a cache came, and when. Close it properly the next time the
+  save shape moves for another reason.
+
 - **⚠️ THREE INCREMENTAL STEP COUNTS ARE FROZEN AND CANNOT BE CORRECTED. Found
   in the console 2026-09-09.** `Steps needed` is greyed out on a published
   achievement, over the words *"This can't be changed after the achievement is
@@ -1125,21 +1145,34 @@ for:
   immediately rather than at the next launch. Also confirm the refund direction —
   the store reporting not-owned must start the ads that session, not leave the
   rewarded buttons dead until a relaunch.
-- **The real out-of-app reward delivery — now testable, as of Sep 1 2026.**
-  `StubStore.DeliverReward` exercises grant → acknowledge and the refusal branch
-  in the editor, and a live Quest award was simply not offerable before the gate
-  opened. It is now, so this stops being a wait and becomes a device pass. Walk
-  all three: claim in the Play Games app and come back to a **live** process
-  (the resume branch of `OnApplicationPause`, fixed 2026-08-12 and never once
-  walked in the field), claim and come back to a **cold start**, and let one sit
-  past its three-day window to see it refunded rather than stuck.
-  Still checkable without a Quest, and worth doing first because it is the cheap
-  half: an internal-track build's catalogue fetch should resolve every reward id
-  with a price. An id coming back unavailable means the console entry and
+- **The real out-of-app reward delivery — and it CANNOT be triggered from this
+  side. Re-read 2026-09-10.** `StubStore.DeliverReward` exercises grant →
+  acknowledge and the refusal branch in the editor, and that is still the only
+  place the flow can be made to happen on demand. Google's Rewards page is
+  explicit about who starts a real one: *"Play will grant a player a Play Games
+  Reward after they have successfully completed an engagement mechanism, such as
+  a Quest, for your game"*. On testing it says only that the flow can be
+  *"test[ed] fully on or after September 1, 2026, once Play Game Rewards have
+  been created"*, and points at the Play Billing testing guide for the rest.
+  **It documents no developer-triggered test delivery, and the console offers no
+  such control.** So the three walks below wait on Play setting a reward out for
+  a Quest or Social Challenge; they are not a device pass anyone can sit down and
+  do, and for a pre-launch title with no players they are not available at all.
+  Do NOT hold anything else behind them.
+  <br>Walk all three when a real award does land: claim in the Play Games app and
+  come back to a **live** process (the resume branch of `OnApplicationPause`,
+  fixed 2026-08-12 and never once walked in the field), claim and come back to a
+  **cold start**, and let one sit past its three-day window to see it refunded
+  rather than stuck.
+  <br>**What IS doable now, and is the whole of the device pass here:** an
+  internal-track build's catalogue fetch should resolve every reward id with a
+  price. An id coming back unavailable means the console entry and
   `RewardProductIds` disagree — the one failure that would silently swallow every
-  future award.
-  <br>**Read the weekly cache's reset day off the first repeatable delivery**, per
-  §3.2 — it is the only instrument that can answer what no page documents.
+  future award. It needs no Quest and no delivery.
+  <br>**So the weekly cache's reset day cannot be read yet either.** §3.2 and
+  §1.8 both say a real delivery is the only instrument for it, which is right;
+  the instrument is simply not in our hands. Ours stays a warden-local Monday on
+  a guess, and a mismatch still costs only a wrong sentence in a countdown row.
 - **The pad / keyboard / large-screen gate.** Play it through on real 4:3, 16:10,
   21:9 and foldable hardware with a controller in hand. Keyboard and controller
   navigation is built and tested; it has never been *held*.
