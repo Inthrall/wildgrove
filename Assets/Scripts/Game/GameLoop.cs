@@ -334,6 +334,9 @@ namespace Wildgrove.Game
             {
                 _announce.MarkArrivalsSeen(State.roster);
                 _announce.MarkKithSlotsSeen();
+                // A reward the last session was handed but never got to show:
+                // the only news a loaded run legitimately carries.
+                QueueRewardsOwed();
                 CreditAbsence(run.AwaySeconds, rebaseStatsWhenCredited: true);
             }
 
@@ -393,6 +396,31 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// Queue the confirmations the run in hand still owes (design §11), and
+        /// forget the ones the run before it did. A reward is credited the
+        /// moment Play hands it over and its sheet can only be shown by the HUD,
+        /// so the debt lives in the save and is re-read here: a session that
+        /// died between the two still owes the telling.
+        /// <para>
+        /// An id this build cannot name words to null and is dropped, which is
+        /// what retires a reward's debt along with the reward.
+        /// </para>
+        /// </summary>
+        private void QueueRewardsOwed()
+        {
+            _announce.DropRewardsOwed();
+            if (State?.rewardsOwedTelling == null)
+            {
+                return;
+            }
+
+            foreach (var rewardId in State.rewardsOwedTelling)
+            {
+                _announce.RequeueReward(RewardGrants.Words(Data, rewardId));
+            }
+        }
+
+        /// <summary>
         /// Record what the store says about the ads, and hold this session to it.
         /// Only reached when ownership is actually known (the store raises its
         /// resolved event on a successful read, never on a failed one), so a
@@ -435,6 +463,11 @@ namespace Wildgrove.Game
         void IRunHost.SaveAndSync()
         {
             SaveAndSync();
+        }
+
+        void IRunHost.QueueRewardsOwed()
+        {
+            QueueRewardsOwed();
         }
 
         /// <summary>

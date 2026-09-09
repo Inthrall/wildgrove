@@ -36,6 +36,7 @@ namespace Wildgrove.Sim.Saves
                 droversHalterOwned = state.droversHalterOwned,
                 wayfarersPlateOwned = state.wayfarersPlateOwned,
                 weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs,
+                rewardsOwedTelling = new List<string>(state.rewardsOwedTelling),
                 adDripClaimedUnixMs = state.adDripClaimedUnixMs,
                 timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs,
                 timeSkipBudgetHours = state.timeSkipBudgetHours,

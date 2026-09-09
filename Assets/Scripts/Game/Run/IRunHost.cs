@@ -4,7 +4,7 @@ namespace Wildgrove.Game
 {
     /// <summary>
     /// The scene side of the run, behind a seam: the live state itself, and the
-    /// four things that have to move with it when the whole run is replaced.
+    /// five things that have to move with it when the whole run is replaced.
     /// <see cref="GameLoop"/> is the only implementation the game ships with —
     /// this exists so <see cref="RunSwap"/>'s ordering can be pinned by an
     /// EditMode test rather than a PlayMode fixture, since a swap done in the
@@ -23,6 +23,9 @@ namespace Wildgrove.Game
 
         /// <summary>Fold in everything the store says this player holds — the run now in hand may predate a purchase or a reward.</summary>
         void SyncStoreEntitlements();
+
+        /// <summary>Queue the reward confirmations the run now in hand still owes, and drop the ones the last run did.</summary>
+        void QueueRewardsOwed();
 
         /// <summary>Write the run to the device and push it to Play Games in the same breath.</summary>
         void SaveAndSync();

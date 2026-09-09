@@ -1272,6 +1272,74 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Capture_RoundTripsTheConfirmationsTheRunStillOwes()
+        {
+            // The whole point of the rung: a reward is credited the moment Play
+            // hands it over, and its sheet can only be shown by the HUD. The
+            // debt has to survive the process, or a session that dies in
+            // between leaves the player paid and never told.
+            var state = GameStateFactory.NewGame(_data);
+            state.rewardsOwedTelling.Add("reward_drovers_halter");
+            state.rewardsOwedTelling.Add("reward_weekly_amber_cache");
+            state.rewardsOwedTelling.Add("reward_weekly_amber_cache");
+
+            var restored = SaveCodec.Restore(SaveCodec.Capture(state, 0), _data);
+
+            Assert.That(restored.rewardsOwedTelling, Is.EqualTo(new[]
+            {
+                "reward_drovers_halter",
+                "reward_weekly_amber_cache",
+                "reward_weekly_amber_cache",
+            }), "in order, and not deduped: two deliveries are two tellings");
+        }
+
+        [Test]
+        public void Restore_ShapelessConfirmationsOwed_ComeBackAsNoneAndCapped()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            var save = SaveCodec.Capture(state, 0);
+            save.rewardsOwedTelling = new List<string> { null, string.Empty, "  ", "reward_drovers_halter" };
+
+            Assert.That(SaveCodec.Restore(save, _data).rewardsOwedTelling,
+                Is.EqualTo(new[] { "reward_drovers_halter" }),
+                "a blank is a sheet with nothing on it, so it never comes in");
+
+            var flooded = SaveCodec.Capture(state, 0);
+            flooded.rewardsOwedTelling = new List<string>();
+            for (var i = 0; i < 200; i++)
+            {
+                flooded.rewardsOwedTelling.Add("reward_weekly_amber_cache");
+            }
+
+            Assert.That(SaveCodec.Restore(flooded, _data).rewardsOwedTelling.Count, Is.EqualTo(16),
+                "every entry is a sheet to dismiss, so a corrupt list is capped rather than obeyed");
+        }
+
+        [Test]
+        public void Restore_MissingConfirmationsOwed_ReadsAsOwingNothing()
+        {
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.rewardsOwedTelling = null;
+
+            Assert.That(SaveCodec.Restore(save, _data).rewardsOwedTelling, Is.Empty);
+        }
+
+        [Test]
+        public void TryMigrate_V54_ClimbsToCurrentOwingNothing()
+        {
+            // v55 persists the tellings owed. A v54 save held them in memory
+            // alone, so whatever it owed died with the process that wrote it:
+            // empty is the honest shape, and the rung fills nothing in.
+            var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);
+            save.version = 54;
+            save.rewardsOwedTelling = null;
+
+            Assert.That(SaveCodec.TryMigrate(save), Is.True);
+            Assert.That(save.version, Is.EqualTo(SaveCodec.CurrentVersion));
+            Assert.That(SaveCodec.Restore(save, _data).rewardsOwedTelling, Is.Empty);
+        }
+
+        [Test]
         public void TryMigrate_CurrentVersion_NeedsNoRung()
         {
             var save = SaveCodec.Capture(GameStateFactory.NewGame(_data), 0);

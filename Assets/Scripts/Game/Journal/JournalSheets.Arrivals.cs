@@ -162,7 +162,15 @@ namespace Wildgrove.Game
                 MakeText(sheet, "<i>" + grant.flavour + "</i>", 20, TextAnchor.MiddleCenter, Ink2, _hand);
             }
 
-            var accept = Button(sheet, "Continue", 320, CloseSheet);
+            // The press IS the acknowledgement, so it is what strikes the debt
+            // off the run: the sheet cannot be dismissed any other way
+            // (scrimDismisses is false above), and a session that dies while it
+            // stands owes the telling again on the next launch.
+            var accept = Button(sheet, "Continue", 320, () =>
+            {
+                _loop.TellingDone(grant.rewardId);
+                CloseSheet();
+            });
             KeyAction(accept);
         }
 

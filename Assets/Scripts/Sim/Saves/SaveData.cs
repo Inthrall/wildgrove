@@ -83,6 +83,9 @@ namespace Wildgrove.Sim.Saves
         /// <summary>UTC unix ms of the last weekly Amber cache claim.</summary>
         public long weeklyCacheClaimedUnixMs;
 
+        /// <summary>Reward product ids delivered but not yet confirmed to the player.</summary>
+        public List<string> rewardsOwedTelling = new List<string>();
+
         /// <summary>UTC unix ms of the last rewarded Amber-drip claim.</summary>
         public long adDripClaimedUnixMs;
 

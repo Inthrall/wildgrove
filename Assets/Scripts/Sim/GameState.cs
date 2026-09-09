@@ -115,6 +115,18 @@ namespace Wildgrove.Sim
         /// <summary>UTC unix ms of the last weekly Amber cache claim (design §11) — 0 = never claimed; the cache re-arms a week after this.</summary>
         public long weeklyCacheClaimedUnixMs;
 
+        /// <summary>
+        /// Reward product ids delivered but not yet confirmed to the player
+        /// (design §11). Google asks the game to name the item after any
+        /// out-of-app purchase, and the grant credits the run before a sheet can
+        /// possibly be shown, so the debt is persisted: a session that dies in
+        /// between still owes the telling on the next launch. An id leaves the
+        /// list when the player acknowledges it, and duplicates are meaningful —
+        /// two deliveries are two tellings. Survives Migration, a fold being no
+        /// reason to stop owing it.
+        /// </summary>
+        public List<string> rewardsOwedTelling = new List<string>();
+
         /// <summary>UTC unix ms of the last rewarded Amber-drip claim — 0 = never; the drip re-arms after Amber.AdDripCooldownMs. Persisted so the cooldown can't be reset by relaunching, and (once Remove Ads drops the ad) so it still throttles the ad-free grant.</summary>
         public long adDripClaimedUnixMs;
 

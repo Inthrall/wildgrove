@@ -128,6 +128,11 @@ namespace Wildgrove.Game.Tests
                 // by an absence it never had.
                 FakeRunHost.CatchUpDropped,
                 FakeRunHost.RunReplaced,
+                // The confirmations owed are re-pointed at the run in hand while
+                // the other announcement queues are, and BEFORE the absence:
+                // every queue the HUD drains is re-based on the adopted run
+                // before anything is put in one.
+                FakeRunHost.RewardsOwedRequeued,
                 // Then the absence since the cloud save, folded entitlements the
                 // adopted save may predate, and only then the write that
                 // converges both slots on all of it.
@@ -135,6 +140,27 @@ namespace Wildgrove.Game.Tests
                 FakeRunHost.EntitlementsSynced,
                 FakeRunHost.Saved,
             }));
+        }
+
+        [Test]
+        public void AdoptFromCloud_OwesTheAdoptedRunsConfirmations_AndNotTheDiscardedRunsOnes()
+        {
+            // The discarded run was handed a pony it never got to be told
+            // about, and the adopted one a plate: the queue must follow the
+            // book, or the player is shown a sheet for a reward the run in hand
+            // has no record of.
+            _local.rewardsOwedTelling.Add(RewardProductIds.DroversHalter);
+            _announce.QueueReward(RewardGrants.Words(_data, RewardProductIds.DroversHalter));
+
+            var adopted = Adopted();
+            adopted.State.rewardsOwedTelling.Add(RewardProductIds.WayfarersPlate);
+            _sut.AdoptFromCloud(adopted);
+
+            var told = _announce.TakeReward();
+            Assert.That(told, Is.Not.Null, "the adopted run's own debt is queued");
+            Assert.That(told.rewardId, Is.EqualTo(RewardProductIds.WayfarersPlate));
+            Assert.That(_announce.TakeReward(), Is.Null,
+                "and the discarded run's telling went with the discarded run");
         }
 
         [Test]
@@ -334,6 +360,7 @@ namespace Wildgrove.Game.Tests
             public const string CatchUpDropped = "catch-up-dropped";
             public const string AbsenceCredited = "absence-credited";
             public const string EntitlementsSynced = "entitlements-synced";
+            public const string RewardsOwedRequeued = "rewards-owed-requeued";
             public const string Saved = "saved-and-synced";
 
             private readonly Announcements _announce;
@@ -385,6 +412,18 @@ namespace Wildgrove.Game.Tests
             public void SyncStoreEntitlements()
             {
                 Steps.Add(EntitlementsSynced);
+            }
+
+            // What GameLoop does, in the same order: forget the queue the last
+            // run's list built, then queue what the run in hand says it owes.
+            public void QueueRewardsOwed()
+            {
+                Steps.Add(RewardsOwedRequeued);
+                _announce.DropRewardsOwed();
+                foreach (var rewardId in _state.rewardsOwedTelling)
+                {
+                    _announce.RequeueReward(RewardGrants.Words(null, rewardId));
+                }
             }
 
             public void SaveAndSync()

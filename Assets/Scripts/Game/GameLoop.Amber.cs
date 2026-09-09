@@ -168,6 +168,18 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
+        /// The player has acknowledged a reward's confirmation, so the run stops
+        /// owing it (design §11). Struck on the acknowledgement rather than when
+        /// the sheet opens: a process that dies with the sheet standing has not
+        /// told anybody anything, and being told twice is the harmless way round.
+        /// </summary>
+        public void TellingDone(string rewardId)
+        {
+            RewardGrants.TellingDone(State, rewardId);
+            SaveAndSync();
+        }
+
+        /// <summary>
         /// Ask Play whether anything has been set out since the last look, for a
         /// player who redeemed a moment ago and would rather not relaunch. Calls
         /// back with how many rewards landed, or <c>null</c> if the store could

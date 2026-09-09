@@ -172,6 +172,11 @@ namespace Wildgrove.Sim
             // repeatable act a player controls). The weekly cache especially —
             // without this a player could claim, fold, and claim again at once.
             next.weeklyCacheClaimedUnixMs = state.weeklyCacheClaimedUnixMs;
+
+            // A confirmation owed is owed whatever book it was earned in: the
+            // reward was granted and acknowledged to Play, and the fold is not
+            // the player's fault for having been told about it yet.
+            next.rewardsOwedTelling = new List<string>(state.rewardsOwedTelling);
             next.adDripClaimedUnixMs = state.adDripClaimedUnixMs;
             next.timeSkipClaimedUnixMs = state.timeSkipClaimedUnixMs;
             next.timeSkipBudgetHours = state.timeSkipBudgetHours;

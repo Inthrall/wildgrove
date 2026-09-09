@@ -609,8 +609,18 @@ lean is a regression, not a phase. Build order:
   app and switches straight back to a live process. It was never a lost reward,
   since a cold start or the Camp row still found it inside the three-day claim
   window, but it made the arrival wait on the player doing something arbitrary.
-- **A reward's confirmation can be lost outright, where its payout cannot.**
-  Found 2026-09-10, making the cache row honest. `Announcements` holds the
+- ~~**A reward's confirmation can be lost outright, where its payout cannot.**~~
+  ✅ RESOLVED 2026-09-10, save rung 54→55: `GameState.rewardsOwedTelling` holds
+  the ids a run still owes a telling for, `RewardGrants.Apply` writes the debt
+  down as it banks the credit, `RewardGrants.Words` reads the sheet's copy back
+  without granting anything again, and the Continue press on the sheet is what
+  strikes it off (`GameLoop.TellingDone`). A reward is therefore told twice at
+  worst and never lost. The debt crosses the fold (`Migration`), follows the
+  book on a cloud adoption rather than the device (`RunSwap`, pinned in
+  `RunSwapTests`), and an id this build cannot name words to null and is
+  dropped, which is how the retired cloak's debt would retire with it. What
+  follows, kept because it is the reasoning:
+  <br>Found 2026-09-10, making the cache row honest. `Announcements` holds the
   delivered `RewardGrant` in a plain in-memory `Queue`, nothing in `SaveCodec`
   persists it, and `RewardGrants.Apply` has already credited the pile and
   stamped `weeklyCacheClaimedUnixMs` by the time it is queued. So a reward that
@@ -619,12 +629,10 @@ lean is a regression, not a phase. Build order:
   told. It is the compliance half as well as the courtesy one: design §11 has
   the confirmation naming the item and standing until the player acknowledges
   it, which is what Google asks for after any out-of-app purchase.
-  <br>**Not fixed, deliberately:** persisting the queue is a save rung and a
-  migration, and it does not earn one on its own. What went in instead is the
-  evidence — `Amber.WeeklyCacheEverTaken` and `WeeklyCacheSinceLastMs`, read by
-  the Camp row's note and the cache sheet — so a player who missed the sheet can
-  still find out that a cache came, and when. Close it properly the next time the
-  save shape moves for another reason.
+  <br>The evidence went in first and stands on its own merit:
+  `Amber.WeeklyCacheEverTaken` and `WeeklyCacheSinceLastMs`, read by the Camp
+  row's note and the cache sheet, so a player can ask whether a cache ever came
+  and when, whatever the sheet did or failed to do.
 
 - **⚠️ THREE INCREMENTAL STEP COUNTS ARE FROZEN AND CANNOT BE CORRECTED. Found
   in the console 2026-09-09.** `Steps needed` is greyed out on a published

@@ -139,6 +139,78 @@ namespace Wildgrove.Game.Tests
         }
 
         [Test]
+        public void Apply_WritesTheTellingDownInTheRun_SoADeadProcessStillOwesIt()
+        {
+            // The grant banks the credit here and the sheet can only be shown by
+            // the HUD. Without this record, a process that dies between the two
+            // leaves the player paid and never told, permanently.
+            var state = new GameState();
+
+            RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now);
+            RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now);
+
+            Assert.That(state.rewardsOwedTelling, Is.EqualTo(new[]
+            {
+                RewardProductIds.WeeklyAmberCache,
+                RewardProductIds.WeeklyAmberCache,
+            }), "two deliveries are two tellings, so the second is not folded into the first");
+        }
+
+        [Test]
+        public void Apply_ARefusedDelivery_OwesNoTelling()
+        {
+            // The order goes unacknowledged and Play will offer it again, so a
+            // telling written here would be a sheet for a reward never granted.
+            _data.economy.amber = null;
+            var state = new GameState();
+
+            Assert.That(RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now), Is.Null);
+            Assert.That(state.rewardsOwedTelling, Is.Empty);
+        }
+
+        [Test]
+        public void TellingDone_StrikesOneOffAndLeavesTheOther()
+        {
+            var state = new GameState();
+            RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now);
+            RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now);
+
+            RewardGrants.TellingDone(state, RewardProductIds.WeeklyAmberCache);
+
+            Assert.That(state.rewardsOwedTelling, Is.EqualTo(new[] { RewardProductIds.WeeklyAmberCache }),
+                "acknowledging one delivery does not answer the other");
+        }
+
+        [Test]
+        public void Words_SaysTheSameThingAsAGrant_WithoutGrantingAnything()
+        {
+            // What a carried-over debt is read back with: the words are authored
+            // here rather than persisted, so a telling that waited a build over
+            // reads in this build's words -- and re-reading them must not pay
+            // the player a second time.
+            var state = new GameState();
+            var granted = RewardGrants.Apply(state, _data, RewardProductIds.WeeklyAmberCache, Now);
+            var amberAfterGrant = state.amber;
+
+            var words = RewardGrants.Words(_data, RewardProductIds.WeeklyAmberCache);
+
+            Assert.That(words, Is.Not.Null);
+            Assert.That(words.rewardId, Is.EqualTo(granted.rewardId));
+            Assert.That(words.statement, Is.EqualTo(granted.statement));
+            Assert.That(words.flavour, Is.EqualTo(granted.flavour));
+            Assert.That(state.amber, Is.EqualTo(amberAfterGrant).Within(Tolerance), "and nothing was granted again");
+        }
+
+        [Test]
+        public void Words_AnIdThisBuildCannotName_IsNothingRatherThanABlankSheet()
+        {
+            // How a retired reward's debt is dropped along with the reward: the
+            // cloak's id can sit in an old save forever and never draw a sheet.
+            Assert.That(RewardGrants.Words(_data, "reward_wayfarers_cloak"), Is.Null);
+            Assert.That(RewardGrants.Words(_data, null), Is.Null);
+        }
+
+        [Test]
         public void Apply_TheWeeklyCacheUnconfigured_RefusesRatherThanAcknowledgeNothing()
         {
             _data.economy.amber = null;

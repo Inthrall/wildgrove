@@ -82,6 +82,12 @@ namespace Wildgrove.Game
             // The local load's summary credited the state we've just discarded;
             // drop it so the absence since the cloud save credits the adopted run.
             _announce.DropOfflineSummary();
+            // Same again for the confirmations owed: the queue standing was
+            // built from the discarded run's list, and the adopted run carries
+            // its own. It sits with the other announcement resets and ahead of
+            // the absence, so every queue the HUD drains has been re-pointed at
+            // the run in hand before anything is added to one.
+            _host.QueueRewardsOwed();
             _host.CreditAbsence(adopted.AwaySeconds);
             // The adopted save may predate a purchase or a reward this device
             // already owns — re-fold the entitlements rather than let the

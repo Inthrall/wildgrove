@@ -25,6 +25,14 @@ namespace Wildgrove.Sim.Saves
     /// </summary>
     public static partial class SaveCodec
     {
+        /// <summary>
+        /// How many owed reward confirmations a save may carry in. Generous
+        /// against the real cadence (Play sets one out about weekly, and they
+        /// are told at the next launch) and low enough that a corrupt list
+        /// cannot bury the book under sheets.
+        /// </summary>
+        private const int MostTellingsOwed = 16;
+
         public static GameState Restore(SaveData save, GameDataAsset data)
         {
             // The baseline supplies the node set the current data says exists:
@@ -140,6 +148,24 @@ namespace Wildgrove.Sim.Saves
             state.droversHalterOwned = save.droversHalterOwned;
             state.wayfarersPlateOwned = save.wayfarersPlateOwned;
             state.weeklyCacheClaimedUnixMs = save.weeklyCacheClaimedUnixMs > 0 ? save.weeklyCacheClaimedUnixMs : 0L;
+
+            // In order and NOT deduped: two deliveries are two tellings and the
+            // player is owed both. Capped because every entry is a sheet that
+            // has to be dismissed before the book can be read, so a save
+            // claiming hundreds would lock the run rather than apologise. Ids
+            // this build cannot name are left in place for the Game side to
+            // drop, the Sim having no idea what a reward product is.
+            state.rewardsOwedTelling.Clear();
+            if (save.rewardsOwedTelling != null)
+            {
+                foreach (var rewardId in save.rewardsOwedTelling)
+                {
+                    if (!string.IsNullOrWhiteSpace(rewardId) && state.rewardsOwedTelling.Count < MostTellingsOwed)
+                    {
+                        state.rewardsOwedTelling.Add(rewardId);
+                    }
+                }
+            }
             state.adDripClaimedUnixMs = save.adDripClaimedUnixMs > 0 ? save.adDripClaimedUnixMs : 0L;
             state.timeSkipClaimedUnixMs = save.timeSkipClaimedUnixMs > 0 ? save.timeSkipClaimedUnixMs : 0L;
             state.timeSkipBudgetStampUnixMs = save.timeSkipBudgetStampUnixMs > 0 ? save.timeSkipBudgetStampUnixMs : 0L;

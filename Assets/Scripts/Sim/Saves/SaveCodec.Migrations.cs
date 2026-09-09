@@ -195,6 +195,17 @@ namespace Wildgrove.Sim.Saves
                         save.version = 54;
                         break;
 
+                    case 54:
+                        // v55 persists the confirmations a delivered reward is
+                        // still owed (design §11). A save written before this
+                        // held them in memory alone, so whatever it was owing
+                        // died with the process that wrote it: an empty list is
+                        // the honest shape and this rung fills nothing in. It
+                        // exists so an older build refuses a save this one wrote
+                        // rather than reading it a field short.
+                        save.version = 55;
+                        break;
+
                     default:
                         // A gap in the ladder is a coding error — refuse rather
                         // than spin.

@@ -139,6 +139,31 @@ namespace Wildgrove.Game
             RewardsReceived++;
         }
 
+        /// <summary>
+        /// Queue a confirmation the RUN says is still owed, without counting it
+        /// as an arrival: it landed in an earlier session (see
+        /// <c>GameState.rewardsOwedTelling</c>), and
+        /// <see cref="RewardsReceived"/> answers "did my own re-read find
+        /// anything", which a debt carried in from a save did not.
+        /// </summary>
+        public void RequeueReward(RewardGrant grant)
+        {
+            if (grant != null)
+            {
+                _rewards.Enqueue(grant);
+            }
+        }
+
+        /// <summary>
+        /// Forget every confirmation still queued. For a run being put down: the
+        /// debts belong to the book that earned them, and the run taking its
+        /// place carries its own list of what it owes.
+        /// </summary>
+        public void DropRewardsOwed()
+        {
+            _rewards.Clear();
+        }
+
         /// <summary>The next delivered reward still owed its confirmation, or null.</summary>
         public RewardGrant TakeReward()
         {

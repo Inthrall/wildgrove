@@ -477,6 +477,21 @@ namespace Wildgrove.Sim.Tests
         }
 
         [Test]
+        public void Migrate_CarriesTheConfirmationsStillOwed()
+        {
+            // The reward was granted and acknowledged to Play; folding the camp
+            // is not a reason to stop owing the player the sentence that says so.
+            var state = StateWithTheRiteSung();
+            state.rewardsOwedTelling.Add("reward_drovers_halter");
+
+            var next = Migration.Migrate(state, _data);
+
+            Assert.That(next.rewardsOwedTelling, Is.EqualTo(new[] { "reward_drovers_halter" }));
+            Assert.That(next.rewardsOwedTelling, Is.Not.SameAs(state.rewardsOwedTelling),
+                "and it is the new run's own list, not the old run's held by both");
+        }
+
+        [Test]
         public void Migrate_TheCompendiumCrossesWhole()
         {
             var state = StateWithTheRiteSung();
