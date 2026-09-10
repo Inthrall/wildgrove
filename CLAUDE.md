@@ -3,11 +3,13 @@
 Guidance for Claude Code working in this repository. Conventions and traps only —
 the *what* lives in the docs below, and the open work lives in the todo manifest.
 
-## Before you push: put the repo back to public
+## The repo is public, and a build push wants it that way
 
-`Inthrall/wildgrove` was set **private** on 2026-08-26 at Mo's request. **Make it public again before pushing any future change.** Pushing while it is private is a decision to put to Mo first, never a default.
+`Inthrall/wildgrove` is **public** (confirmed 2026-09-10), so an ordinary push needs nothing done first. It was set **private** on 2026-08-26 at Mo's request and has been restored since. **If it is ever made private again, put it back to public before pushing builds**, and treat pushing while it is private as a decision to put to Mo first rather than a default.
 
 ```bash
+gh api repos/Inthrall/wildgrove --jq .private   # check rather than assume
+
 GH_TOKEN="$(gh auth token --hostname github.com --user Inthrall)" \
   gh repo edit Inthrall/wildgrove --visibility public --accept-visibility-change-consequences
 ```
