@@ -3,6 +3,17 @@
 Guidance for Claude Code working in this repository. Conventions and traps only —
 the *what* lives in the docs below, and the open work lives in the todo manifest.
 
+## Before you push: put the repo back to public
+
+`Inthrall/wildgrove` was set **private** on 2026-08-26 at Mo's request. **Make it public again before pushing any future change.** Pushing while it is private is a decision to put to Mo first, never a default.
+
+```bash
+GH_TOKEN="$(gh auth token --hostname github.com --user Inthrall)" \
+  gh repo edit Inthrall/wildgrove --visibility public --accept-visibility-change-consequences
+```
+
+The `GH_TOKEN` prefix is needed because `gh`'s active account on this machine is the work one, which has no rights here. Note also that both Android workflows trigger on a push, and GitHub-hosted Actions minutes are metered against the free-plan quota on a private repo while a public one is unlimited, so the flip is a CI question as well as a disclosure one.
+
 ## Where things are written down
 
 | Document | What it is |
