@@ -20,6 +20,12 @@ namespace Wildgrove.Game
     /// be the worse failure, so each ends in a door.
     /// </para>
     /// <para>
+    /// The middle of those three is what a sheet MAY say, not what it owes:
+    /// from 2026-09-10 the tide's says nothing about how the keeping stands,
+    /// because the card at the other end of its own button is where that is
+    /// drawn, and standing it here as well was the same page twice, a tap apart.
+    /// </para>
+    /// <para>
     /// The time-skip's sheet is the exception, and it is the same rule read the
     /// other way: from 2026-08-13 there IS no page that answers it, so this sheet
     /// is the one set of controls rather than a second. It has to be a sheet
@@ -49,19 +55,29 @@ namespace Wildgrove.Game
         }
 
         /// <summary>
-        /// The open season, in full: what the day it is named for meant in the
-        /// old year, what the land is like to walk while it holds, what the
-        /// world is leaning toward, who takes the wheel next, and the keeping's
-        /// slots as they stand. The tier moment keeps its own sheet
-        /// (<see cref="OpenKeepingSheet"/>) — that one is a celebration the game
-        /// raises, this one is a reference the player asked for, and they should
-        /// not read alike.
+        /// The open season in the warden's own words, and nothing else: what
+        /// the day it is named for meant in the old year, the sign the land is
+        /// giving for it, and the way through to the card that answers it. The
+        /// tier moment keeps its own sheet (<see cref="OpenKeepingSheet"/>):
+        /// that one is a celebration the game raises, this one is the page the
+        /// player asked for, and they should not read alike.
         /// <para>
         /// The sabbat's <c>lore</c> joined it on 2026-09-09, when the seasons
         /// were laid end to end (design §15). It used to belong to the sheet
         /// that waited a month for a tide to open, and there is no waiting any
         /// more: a season names itself for a day, and this is now the only place
         /// that says what the day was.
+        /// </para>
+        /// <para>
+        /// Three things came off it on 2026-09-10 (Mo's call), leaving lore and
+        /// a door. The countdown, which is the rail cell that opened this sheet
+        /// read aloud, and the keeping card's head says it again at the other
+        /// end of the button. The keeping's slot list, which is that same card
+        /// drawn a second time, one tap before it. And the touch's <i>While it
+        /// holds ×1.2</i> line, whose work the sabbat's <c>sign</c> already does
+        /// directly above it in the warden's hand. §15 asks for the touch to be
+        /// seen as a sign, and a table of multipliers under the sign is that
+        /// one lean told twice, once in the voice and once in the numbers.
         /// </para>
         /// </summary>
         private void OpenTideEventSheet()
@@ -88,77 +104,12 @@ namespace Wildgrove.Game
             MakeText(sheet, "<i>" + tide.lore + "</i>", 17, TextAnchor.MiddleCenter, Ink2, _serif);
             MakeText(sheet, "<i>" + tide.sign + "</i>", 19, TextAnchor.MiddleCenter, Ink2, _hand);
 
-            var next = _loop.NextTide(out _);
-            var left = (_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 1000.0;
-            MakeText(sheet, next != null
-                    ? next.displayName + " takes the wheel in " + NumberFormat.Countdown(left)
-                    : "the authored wheel runs out in " + NumberFormat.Countdown(left),
-                17, TextAnchor.MiddleCenter, Ink2, _smallCaps);
-
-            var gives = EffectsLabel(tide.touch);
-            if (gives.Length > 0)
-            {
-                MakeHairline((RectTransform)sheet);
-                MakeText(sheet, "<b>While it holds</b>  " + gives, 18, TextAnchor.UpperLeft, Ink);
-                MakeText(sheet, "<i>the Rite's verses ask none of it — keeping a sabbat never raises the"
-                                + " price of anything.</i>", 15, TextAnchor.UpperLeft, Ink2, _serif);
-            }
-
-            BuildKeepingProgress(sheet);
-
             var go = Button(sheet, "Open the keeping", 360, () =>
             {
                 CloseSheet();
                 _hud.GoToTrail("keeping");
             });
             KeyAction(go);
-        }
-
-        /// <summary>The keeping as it stands — every slot, what is held against it, and the tier the fire has counted.</summary>
-        private void BuildKeepingProgress(Transform sheet)
-        {
-            var keeping = _loop.CurrentKeeping();
-            if (keeping?.slots == null || keeping.slots.Count == 0)
-            {
-                return;
-            }
-
-            MakeHairline((RectTransform)sheet);
-            var tier = _loop.KeepingTierReached();
-            var word = tier == 1 ? "the eve is kept" : tier == 2 ? "the day is kept"
-                : tier >= 3 ? "the wheel is kept" : "nothing set down yet";
-            MakeText(sheet, "<b>The keeping</b>  <color=" + Ink2Hex + ">" + word + " · "
-                            + Keeping.CompletedSlotCount(keeping) + " of " + keeping.slots.Count
-                            + " set down</color>", 18, TextAnchor.UpperLeft, Ink);
-
-            foreach (var slot in keeping.slots)
-            {
-                var specimen = slot.kind == KeepingSlotState.SpecimenKind;
-                var name = specimen ? "a Decent find" : GoodName(slot.goodsId ?? string.Empty);
-                if (Keeping.IsSlotComplete(slot))
-                {
-                    MakeText(sheet, "<color=" + MossDeepHex + ">" + name + ", set down</color>",
-                        17, TextAnchor.UpperLeft, Ink);
-                    continue;
-                }
-
-                var held = specimen ? DecentFindsHeld() : _loop.State.GetResource(slot.goodsId).ToDouble();
-                MakeText(sheet, name + "  <color=" + Ink2Hex + ">"
-                                + NumberFormat.ShortFloor(System.Math.Floor(System.Math.Min(held, slot.target)))
-                                + " / " + NumberFormat.Short(slot.target) + "</color>",
-                    17, TextAnchor.UpperLeft, Ink);
-            }
-        }
-
-        private double DecentFindsHeld()
-        {
-            var total = 0.0;
-            foreach (var pair in _loop.State.decentResources)
-            {
-                total += pair.Value.ToDouble();
-            }
-
-            return total;
         }
 
         /// <summary>

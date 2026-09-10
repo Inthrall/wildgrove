@@ -50,6 +50,16 @@ namespace Wildgrove.Game
         /// way, so a player who folds the card away loses nothing and one who
         /// opens it is not told twice.
         /// </para>
+        /// <para>
+        /// From 2026-09-10 a kept wheel empties the card down to its tier line,
+        /// which turns around at that point and says what the season paid. The
+        /// rows are the work left; five of them reading "set down" under a head
+        /// already saying 5 of 5 was the tally spelled out at five times the
+        /// height. Each row hides itself in the live pass rather than being
+        /// skipped at the build, so the last offering clears the card and the
+        /// next sabbat taking the wheel fills it again, neither needing a
+        /// rebuild of the page.
+        /// </para>
         /// </summary>
         private void BuildKeepingCard()
         {
@@ -111,7 +121,9 @@ namespace Wildgrove.Game
         /// <summary>
         /// The next tier and what it pays (design §15), named where the setting
         /// down happens. Once the wheel is kept whole there is nothing left to
-        /// offer, so the line says that instead of an empty reward.
+        /// work towards, so the line turns around and says what the season
+        /// paid: the same reward in the past tense, and the only line the card
+        /// carries at that point.
         /// </summary>
         private string KeepingTierLine()
         {
@@ -137,7 +149,27 @@ namespace Wildgrove.Game
                     : line;
             }
 
-            return "<color=" + MossDeepHex + ">the wheel is kept whole</color>";
+            var kept = "<color=" + MossDeepHex + ">the wheel is kept whole</color>";
+            var paid = AmberPaidByTiers(observance);
+            return paid > 0.0
+                ? kept + " · <color=" + AmberInkHex + ">+" + Mathf.FloorToInt((float)paid) + " amber taken</color>"
+                : kept;
+        }
+
+        /// <summary>
+        /// Every tier's Amber summed: what a whole keeping pays out. Read only
+        /// once all the tiers are behind the player, so the sum IS what landed:
+        /// they are crossed in order and each pays once (<see cref="Keeping"/>).
+        /// </summary>
+        private static double AmberPaidByTiers(ObservanceData observance)
+        {
+            var paid = 0.0;
+            for (var tier = 0; observance.tierAmber != null && tier < observance.tierAmber.Count; tier++)
+            {
+                paid += observance.tierAmber[tier];
+            }
+
+            return paid;
         }
 
         /// <summary>
@@ -216,7 +248,12 @@ namespace Wildgrove.Game
             _liveUpdaters.Add(() =>
             {
                 var keeping = _loop.CurrentKeeping();
-                if (keeping == null || slotIndex >= keeping.slots.Count)
+                // A kept wheel's rows are five lines all saying "set down",
+                // under a head that already says 5 of 5 and over a tier line
+                // that says what they paid for. The rows are the work left, so
+                // once there is none they are nothing but the tally spelled out.
+                if (keeping == null || slotIndex >= keeping.slots.Count
+                    || Keeping.CompletedSlotCount(keeping) == keeping.slots.Count)
                 {
                     row.gameObject.SetActive(false);
                     return;
