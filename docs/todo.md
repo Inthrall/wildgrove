@@ -493,9 +493,11 @@ lean is a regression, not a phase. Build order:
   Landed with the rail cell's own turn — it counts the week out where it used to
   say "look", and stands down entirely once the week's cache is taken. **Still
   owed: whether Play's own weekly reset is calendar-based, and on which day.**
-  Ours is Monday on the guess that it is; worth confirming while §3.2's Play
-  Console visits are open, because a mismatch is what puts an off-cadence
-  delivery a day early or late against the row's own reading.
+  Ours is Monday on the guess that it is, and it is the one row the 2026-09-15
+  Play visit left open: a real delivery is the only instrument that can read it,
+  and nobody on this side can trigger one (§3.3), so it waits on the closed beta.
+  A mismatch is what puts an off-cadence delivery a day early or late against the
+  row's own reading.
   **The public docs do not answer it — checked 2026-08-12 and again 2026-09-09,
   so don't re-read them.** The Level Up guideline is the only place the cadence is
   written down at all ("with a maximum of 1 reward per week per player", awarded
@@ -640,8 +642,11 @@ lean is a regression, not a phase. Build order:
   row's note and the cache sheet, so a player can ask whether a cache ever came
   and when, whatever the sheet did or failed to do.
 
-- **⚠️ THREE INCREMENTAL STEP COUNTS ARE FROZEN AND CANNOT BE CORRECTED. Found
-  in the console 2026-09-09.** `Steps needed` is greyed out on a published
+- ~~**⚠️ THREE INCREMENTAL STEP COUNTS ARE FROZEN AND CANNOT BE CORRECTED.**~~
+  ✅ RESOLVED 2026-09-15: the three console renames are in, so the names and the
+  frozen numbers agree. The freeze itself is permanent, so read the rest of this
+  entry as a standing constraint rather than as work.
+  **Found in the console 2026-09-09.** `Steps needed` is greyed out on a published
   achievement, over the words *"This can't be changed after the achievement is
   published."* So the plan this entry carried for a month — move the console to
   match the data — **is not available on any of the three**, and no flag, tool or
@@ -668,17 +673,18 @@ lean is a regression, not a phase. Build order:
   nothing here with no players and no testers to lose unlocks for.
   <br>**DECIDED 2026-09-09 (Mo): reword the three so each is honest at its frozen
   number**, rather than add a second completion tier beside them. Done in-repo the
-  same day; the console renames are the remaining half.
-  <br>**Do NOT run `pgs-achievements.py --apply --update` until this is settled.**
+  same day, and the console renames went in by hand on 2026-09-15.
+  <br>**⚠️ Standing: never run `pgs-achievements.py --apply --update` against these
+  three.**
   It PUTs the whole resource including `steps`, so against a frozen field it
   either fails and aborts the run at the first of the three (`return 1`, leaving
   the rest untouched), or the API accepts the call while ignoring the field and
   the tool prints `~ updated (steps)` for a change that did not happen. The
   second is worse, because it reads as success.
-  - **The three renames, all by hand in the console.** Each is a name and a
-    description; the step count beside them stays exactly where it is.
+  - **The three renames, done by hand in the console 2026-09-15.** Each was a name
+    and a description; the step count beside them stayed exactly where it was.
 
-    | Console now | Rename to | New description |
+    | Was | Now | Description |
     |---|---|---|
     | The Whole Wood (12) | **Twelve Companions** | Befriend twelve of the species that walk the grove. |
     | Every Plate Drawn (5) | **Five Plates Drawn** | Draw and record five insect plates. |
@@ -692,26 +698,29 @@ lean is a regression, not a phase. Build order:
     and nobody sketches it, so counting it would hand a step of a *drawing*
     achievement to whoever happened to run a Quest.
     `Observation.EligibleInsectsInto` holds the same line for the sketching pool.
-  - **⚠️ Do the console renames BEFORE any tool run, and prefer no tool run at
-    all.** `pgs-achievements.py` matches the console **by display name**, so a
+  - **⚠️ The renames had to go in BEFORE any tool run, and the rule outlives
+    them.** `pgs-achievements.py` matches the console **by display name**, so a
     manifest renamed ahead of the console reads as three missing achievements and
     `--apply` inserts three duplicates. Worse, `--update` PUTs the whole resource
     including `steps`, so against a frozen field it either fails and aborts at the
     first of the three, or the API takes the call while ignoring the field and the
     tool prints `~ updated (steps)` for a change that never happened.
-    <br>Once the four hand edits are done (these three plus Choice), the manifest
-    and the console agree and **there is nothing left for the tool to push**. Run
-    it with no flags to confirm that — that plans and writes nothing, and a clean
-    run of `=` lines is the proof. The one entry that genuinely wants a tool push
-    is **Fixed in Ink**, whose description alone drifted; hand-edit that too and
-    the tool need not run at all this visit.
+    <br>The four hand edits are done (these three plus Choice), so the manifest
+    and the console agree and **there is nothing left for the tool to push**. A
+    no-flag run is how to confirm that: it plans and writes nothing, and a clean
+    sheet of `=` lines is the proof. **Fixed in Ink**, whose description alone
+    drifted, was hand-edited in the same visit, so the tool did not have to run
+    at all.
     <br>The token default was pointing at `Documents/Wildgrove-secrets/`, which
     does not exist on this machine any more; corrected 2026-09-09 to
     `../Wildgrove-secrets/` beside the checkout, where the upload keystore
     already lives. The token itself is an hour-long OAuth Playground grant with
     the `androidpublisher` scope, so it is fetched per visit, never stored.
-  - **⚠️ The step counts do not go live until the configuration is PUBLISHED,
-    and publish is project-wide — which couples this to Game Stats.** The tool
+  - ~~**⚠️ The step counts do not go live until the configuration is PUBLISHED,
+    and publish is project-wide — which couples this to Game Stats.**~~
+    ✅ PUBLISHED 2026-09-15, both screens in the one act. The coupling is the part
+    worth keeping, because it governs every future publish as much as it governed
+    this one. The tool
     writes drafts only (`published` is read-only on the API, with no publish
     method), so pushing the three counts leaves them staged behind the wrong
     published figures. Clicking publish in the console makes them live **and in
@@ -741,25 +750,19 @@ lean is a regression, not a phase. Build order:
     it at runtime; the tests are the only place the two can be held together.
     Suite green at 1167/1167. Still worth doing for **"Reader of Stones" (4)**
     if that number ever means anything other than "some of them".
-- **The "Pristine" achievement is renamed in the manifest but not in the
-  console.** The grades are Poor / Decent / Choice from 2026-08-02, so
-  `store/play-games/achievements.json` now names the achievement **"Choice"**
-  ("Find your first Choice specimen", slug `choice`) and `AchievementIds.g.cs`
-  carries the same encoded id under the new constant. `pgs-achievements.py`
-  matches the console **by display name**, so until the console entry is renamed
-  by hand a `--apply` run would read "Choice" as missing and insert a duplicate.
-  Rename it in the console first, then re-run the tool; the id itself never
-  changes, so unlocks in the field are unaffected either way. Re-upload
-  `store/play-games/achievement-choice-512.png` in the same visit (icons are a
-  manual upload — see the tool's header). Batch with the drifted-step visit above.
-  <br>**The rename commit (`570d36f`) touched TWO achievements, and only one of
-  them is manual.** Alongside `choice` it corrected **"Fixed in Ink"**, whose
-  description went from "Fix a Pristine specimen into the Folio." to "Fix a
-  Choice specimen into the Folio." That one's *name* never changed, so the tool
-  matches it fine and `--apply --update` pushes the new description on its own.
-  Nothing to do by hand for it — but it does mean the console currently shows
-  the retired word "Pristine" to players in **two** places, not one, and a visit
-  that fixes only the rename leaves the second sitting there.
+- ~~**The "Pristine" achievement is renamed in the manifest but not in the
+  console.**~~ ✅ RESOLVED 2026-09-15. The grades have been Poor / Decent / Choice
+  since 2026-08-02, and the console now agrees:
+  `store/play-games/achievements.json` names the achievement **"Choice"** ("Find
+  your first Choice specimen", slug `choice`), `AchievementIds.g.cs` carries the
+  same encoded id under the new constant, the console entry was renamed by hand,
+  and `store/play-games/achievement-choice-512.png` went up beside it (icons are
+  a manual upload; see the tool's header). The rename commit (`570d36f`) had
+  touched a second achievement, **"Fixed in Ink"**, whose description alone
+  drifted, from "Fix a Pristine specimen into the Folio." to "Fix a Choice
+  specimen into the Folio."; that went in on the same visit, so the retired word
+  "Pristine" is gone from both of the two places it was showing players. The
+  encoded ids never changed, so unlocks in the field were unaffected throughout.
 - **The store-screenshot harness photographs a run that is not the showcase.**
   Found 2026-08-06 while using it to look at the new roster drawer; diagnosed
   2026-08-11, and the diagnosis it was filed under was wrong.
@@ -916,7 +919,7 @@ for:
   landed last, and `reward_wayfarers_cloak` is rightly absent. The amber packs
   are one-time products like the rest, which is correct: consumable-vs-durable
   is the client's distinction (`StoreCatalogue.IsConsumable`), not a console
-  setting. What's left to prove is the internal-track catalogue fetch (§3.3).
+  setting. The internal-track catalogue fetch proved it on 2026-09-15 (§3.3).
 - **Attach a Play Games Reward offer to each of the three reward products —
   ✅ DONE 2026-09-09: all three offers created and ACTIVATED.** Icons came from
   `store/iap/reward_*-icon.png`, generated 2026-08-12 by `make-store-art.py`, all
@@ -944,13 +947,12 @@ for:
   the grant → tell → acknowledge order, and the resume path checks for
   unacknowledged rewards, which is the half Google's page asks for in as many
   words. What is owed is entirely console and device.
-  <br>**Do in this order:**
-  1. Attach an offer to `reward_drovers_halter` and `reward_wayfarers_plate`
-     first. Those two are the Sep 30 bar; the cache can follow at leisure.
-  2. Attach the offer to `reward_weekly_amber_cache`.
-  3. Then the device pass in §3.3 — claim in the Play Games app and switch back
-     to a live process without killing it, which is the path the 2026-08-12 fix
-     was written for and the only one that has never been walked.
+  <br>**Steps 1 and 2 (attach an offer to all three products) are done, and so is
+  the catalogue fetch that proves the ids line up (§3.3, 2026-09-15).** What is
+  left is the one step nobody here can take: claim a real award in the Play Games
+  app and switch back to a live process without killing it, which is the path the
+  2026-08-12 fix was written for and the only one that has never been walked. Play
+  starts that delivery, not us, so it waits on the closed beta.
   <br>**Enrolling in Level Up is NOT one of these steps, and cannot be yet.**
   Enrollment is per-title and the help article's prerequisite is that the game
   is "published to production on Google Play and has been in compliance with
@@ -963,12 +965,16 @@ for:
   offers now is still the right move (it is cheap, the products are already
   live, and it takes the row off the board before launch), but it is not the
   emergency a Sep 30 date suggests. Nothing here expires in three weeks.
-  <br>**Read the weekly reset off the first cache delivery while you are in
-  there.** `Amber.WeeklyCacheNextDueInMs` counts a warden-local Monday on a
-  guess, and the docs still refuse to define the week: re-read 2026-09-09 and
-  the only sentence anywhere is the guideline's "with a maximum of 1 reward per
-  week per player", with no start day and no timezone, exactly as on 2026-08-12.
-  A test delivery is now the only instrument that can answer it. A mismatch
+  <br>**⚠️ The weekly reset day is the one thing the 2026-09-15 visit did NOT
+  settle, and no further console visit can settle it.**
+  `Amber.WeeklyCacheNextDueInMs` counts a warden-local Monday on a guess, and the
+  docs still refuse to define the week: re-read 2026-09-09 and the only sentence
+  anywhere is the guideline's "with a maximum of 1 reward per week per player",
+  with no start day and no timezone, exactly as on 2026-08-12. A real cache
+  delivery is the only instrument that can answer it, and §3.3 records why that
+  cannot be triggered from this side: Play sets a reward out off a Quest or Social
+  Challenge, and a pre-launch title with no players never sees one. So this waits
+  on the closed beta (§3.5), not on anything anyone can go and do. A mismatch
   costs the player nothing (the grant is unconditional and an early delivery is
   taken, not refused); it costs the countdown row a wrong sentence.
 - **Do not create `reward_wayfarers_cloak`.** The cosmetic reward was retired
@@ -1105,7 +1111,10 @@ for:
   plates (they are the game's art too, so the fix would improve both), rather than
   reassigning three achievements to different subjects. Not urgent, and honestly
   invisible unless the profile is read next to the tidier cards.
-- **Re-step the three drifted achievements** (§2) in the same visit.
+- ~~**Re-step the three drifted achievements** (§2) in the same visit.~~
+  ✅ CLOSED 2026-09-15, and not by re-stepping: the counts turned out to be frozen
+  on a published achievement, so the three were reworded to be honest at 12, 5 and
+  14 instead. §2 carries the account.
 - ~~**Add Mo as a license tester**~~ ✅ DONE 2026-09-09 (Settings → License
   testing), so test purchases aren't charged. This is the list §3.3's device pass
   needs; it is NOT the same list as the PGS project's own testers, which is what
@@ -1193,11 +1202,13 @@ for:
   fixed 2026-08-12 and never once walked in the field), claim and come back to a
   **cold start**, and let one sit past its three-day window to see it refunded
   rather than stuck.
-  <br>**What IS doable now, and is the whole of the device pass here:** an
+  <br>~~**What IS doable now, and is the whole of the device pass here:** an
   internal-track build's catalogue fetch should resolve every reward id with a
-  price. An id coming back unavailable means the console entry and
-  `RewardProductIds` disagree — the one failure that would silently swallow every
-  future award. It needs no Quest and no delivery.
+  price.~~ ✅ DONE 2026-09-15: off an internal-track build, every reward id came
+  back with a price. An id coming back unavailable would have meant the console
+  entry and `RewardProductIds` disagree, which is the one failure that would
+  silently swallow every future award. They agree, and it needed no Quest and no
+  delivery.
   <br>**So the weekly cache's reset day cannot be read yet either.** §3.2 and
   §1.8 both say a real delivery is the only instrument for it, which is right;
   the instrument is simply not in our hands. Ours stays a warden-local Monday on
@@ -1218,12 +1229,16 @@ for:
 
 ### 3.4 Blocked on Google
 
-- **Game Stats — the client submits since 2026-08-04; the console side is the
-  remainder.** GPGS **2.2.0** (released 2026-07-31) added the API and is now
+- **Game Stats: nothing is owed on this side any more.** The client has submitted
+  since 2026-08-04, the console config was published 2026-09-15, and the editor's
+  Force Resolve confirm went with it. What is left is Google's own rollout: stats
+  appear on the Gamer profile in the September 2026 window. The sub-entries below
+  are kept as notes, not work.
+  GPGS **2.2.0** (released 2026-07-31) added the API and is now
   vendored: `PlayGamesServices.RecordStat` builds a `PlayerGameEvent` and
   records it, `FlushStats` nudges `RequestEventsUpload` on the save cadence,
   and dev builds log `[play-games] game-stats: recorded <event>` per event as
-  the on-device instrument. What remains:
+  the on-device instrument. The account, now all closed:
   - **Editor confirm — the import half is DONE 2026-08-04.** The 2.2.0 import
     ran clean on the first open: no compile errors, only GPGS's own CS0618
     warnings about its now-deprecated `GPGSProjectSettings`, and `GPGSUpgrader`
@@ -1235,17 +1250,30 @@ for:
     against the vendored plugin and the patched `PluginVersion.cs`, including
     `EveryEventTheGameRecords_IsDeclaredInTheConsoleSchema` — so code and the
     authored CSVs still agree ahead of the console upload.
-  - **Still owed in the editor: Android Resolver Force Resolve.** No resolve
-    appears in either Unity log Unity still keeps, so
-    the hand-edited templates remain unconfirmed — though they already match
-    EDM's own output conventions, down to the `GooglePlayGamesPluginDependencies
-    .xml:9` / `:14` end-of-element line attributions, and EDM's auto-resolve
-    hook has run repeatedly without wanting to rewrite
-    `AndroidResolverDependencies.xml`. (The templates being right is the claim:
-    the `gpgs-plugin-support` maven line and its local m2repository are gone,
-    the support lib is a plain AAR under `Runtime/Plugins/Android`, and
-    `play-services-games-v2:22.0.0` + `play-services-nearby:18.5.0` are
-    declared direct — 2.1.0 got both transitively, at games-v2 **21.0.0**.)
+  - ~~**Still owed in the editor: Android Resolver Force Resolve.**~~
+    ✅ CONFIRMED 2026-09-15, headless against 6000.5.8f1 via
+    `AndroidResolverRunner.ForceResolve` (the command is in `CLAUDE.md`). It
+    logged `ResolveSync(force) succeeded` and exited 0.
+    <br>**The hand-edited templates are exactly what EDM writes, which is the
+    thing this entry could not prove for a month.** All four resolver outputs are
+    tracked in git (`mainTemplate.gradle`, `settingsTemplate.gradle`,
+    `gradleTemplate.properties`, `ProjectSettings/AndroidResolverDependencies.xml`),
+    so a forced resolve leaving every one of them untouched is the oracle. The
+    claim they were carrying holds: the `gpgs-plugin-support` maven line and its
+    local m2repository are gone, the support lib is a plain AAR under
+    `Runtime/Plugins/Android`, and `play-services-games-v2:22.0.0` +
+    `play-services-nearby:18.5.0` are declared direct, attributed to
+    `GooglePlayGamesPluginDependencies.xml:9` and `:14` (2.1.0 got both
+    transitively, at games-v2 **21.0.0**).
+    <br>**Two things to expect on any re-run, neither of them a finding.** The
+    runner sets `PatchSettingsTemplateGradle` and `PatchMainTemplateGradle` before
+    resolving and rewrites `ProjectSettings/GvhProjectSettings.xml` with LF
+    endings, so that file goes modified with an empty `git diff`: content
+    identical, line endings only, and `git checkout --` on it is the whole
+    response. And the resolve re-copies the three `firebase-*-unity` artifacts
+    into the gitignored `Assets/GeneratedLocalRepo` (22 MB). Their `.meta` files
+    survived the round trip, which is the half `FirebaseRepoGuard` would otherwise
+    fail an Android build on, so check them rather than assuming.
   - **Console: the screen exists and the CSVs have been through its validator
     once — 2026-08-13.** Rejected on content, not shape: the header row was taken
     as authored, and the twelve errors were all `Unit` (a closed physical-unit
@@ -1254,16 +1282,15 @@ for:
     required when `Is Competitive` is `true` and forbidden when it is `false`. All
     fixed, the ZIP is rebuilt, and the whole account with the reasoning is in
     `store/play-games/gamestats/README.md`. **Re-uploaded clean the same day: all
-    seven events and seven stats are in as Draft, available to testers.** Next is
-    a tester read, and then **a publish — DECIDED 2026-09-09 (Mo)**. The case for
-    holding was that draft is already testable and publishing ends the window in
-    which a row can still be deleted; the case that won is that closed testing has
-    not begun, so there is no one in the field to disturb and this is the cheapest
-    this click will ever be. Publish is
-    project-wide, so §2's step counts and this stats draft go to production in one
-    act; those two visits do not need separating after all, they need doing
-    together. **Get the CSVs right before the click:** a published stats row
-    carries player data and stays.
+    seven events and seven stats went in as Draft.** ✅ **PUBLISHED 2026-09-15**,
+    on Mo's 2026-09-09 call: the case for holding was that draft is already
+    testable and publishing ends the window in which a row can still be deleted;
+    the case that won is that closed testing had not begun, so there was nobody in
+    the field to disturb and it was the cheapest that click would ever be. Publish
+    is project-wide, so §2's step counts went to production in the same act.
+    **The CSVs are fixed in public now:** a published stats row carries player data
+    and stays, so `store/play-games/gamestats/` is the thing to get right before
+    any future upload rather than after it.
     **The guide caught up 2026-09-09, and the console is no longer ahead of it.**
     The overview has been rewritten since it was last read on 2026-08-13: the
     "available for early feedback" caveat is gone, so is the undated "GA starting
