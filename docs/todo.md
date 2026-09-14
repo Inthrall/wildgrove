@@ -434,6 +434,12 @@ lean is a regression, not a phase. Build order:
 - ~~**Fold forecast names the next sabbat**~~ ✅ RESOLVED 2026-08-08 —
   "{sabbat}-tide is open." / "{sabbat}, N days off." on the fold sheet; the
   Trail page's head line is now the warden's tide line + touch label.
+  **The fold sheet's line was cut 2026-09-15**, the same argument that took the
+  Trail's head countdown: the rail already reads the tide on every tab, and the
+  season is not part of the fold's decision either way. The sheet lost its
+  Renown explainer in the same pass (the fold banner's job) and its sharpenings
+  now name the companions without their traits — it is a confirm, and it carries
+  what is gained, what is lost and the two ways out. Design §8 records the cut.
 - ~~**The observance layer**~~ ✅ RESOLVED 2026-08-08 — the keeping:
   `Keeping.cs` + `RiteGenerator.GenerateKeeping/RedrawKeeping` (persisted
   facts, whole-ask offers, Renown at trade value, one-shot tier Amber

@@ -296,7 +296,7 @@ namespace Wildgrove.Game
             // Say plainly what a fold IS before saying what it costs. "They were
             // never yours" is the right voice but it isn't an explanation, and a
             // player who has never met a prestige reset can't infer one.
-            MakeText(sheet, "<b>Start this camp over, on purpose.</b>\nYou begin again in the first meadow with nothing built,"
+            MakeText(sheet, "<b>Start this camp over, on purpose.</b>\nYou begin again in the first meadow,"
                             + " and every run after this one runs richer.",
                 20, TextAnchor.MiddleCenter, Ink, _serif);
 
@@ -304,12 +304,14 @@ namespace Wildgrove.Game
             var after = Mathf.FloorToInt((float)_loop.VerdureAfterMigration());
             var carried = "<color=" + MossDeepHex + "><b>You carry:</b> +" + Mathf.FloorToInt((float)gain)
                           + " Verdure (" + after + " in all"
-                          + (bonus > 0.0 ? ", worth +" + Mathf.RoundToInt((float)(after * bonus * 100.0)) + "% to everything you gather, for good" : string.Empty)
+                          + (bonus > 0.0 ? ", +" + Mathf.RoundToInt((float)(after * bonus * 100.0)) + "% to everything you gather, for good" : string.Empty)
                           + "). The kith walk with you, and the journal keeps every plate, sketch and Almanac node.</color>";
             MakeText(sheet, carried, 19, TextAnchor.MiddleCenter, Ink);
 
             // Signatures about to sharpen (design §4): the creature's memory
-            // arguing FOR the fold, named before the cost line.
+            // arguing FOR the fold, named before the cost line. The NAMES alone
+            // — a trait apiece ran the line to three on a phone, and which way
+            // sharpens is the plate's business, read where the plate is.
             var sharpenings = _loop.FoldSharpenings();
             if (sharpenings.Count > 0)
             {
@@ -321,12 +323,11 @@ namespace Wildgrove.Game
                         names.Append(", ");
                     }
 
-                    names.Append(familiar.name).Append("'s ")
-                        .Append(_loop.FamiliarTrait(familiar)?.displayName ?? "way");
+                    names.Append(familiar.name);
                 }
 
                 MakeText(sheet, "<color=" + MossDeepHex + "><i>" + names + (sharpenings.Count > 1 ? " deepen" : " deepens")
-                                + " at this fold, and the plate takes a new line.</i></color>",
+                                + " at this fold.</i></color>",
                     19, TextAnchor.MiddleCenter, Ink, _serif);
             }
 
@@ -334,36 +335,13 @@ namespace Wildgrove.Game
                             + " the trails you opened, and every skill level. <i>They were never yours</i>.",
                 19, TextAnchor.MiddleCenter, Ink2, _serif);
 
-            // The forecast names the Wheel, not a drawn region (design §8,
-            // 2026-08-08) — the Wheel turns whether or not the camp folds, and
-            // the fold carries a keeping's answered slots across (design §15).
-            var tide = _loop.OpenTide();
-            if (tide != null)
-            {
-                var next = _loop.NextTide(out _);
-                var days = (long)System.Math.Ceiling((_loop.OpenTideCloseMs() - _loop.NowUnixMs()) / 86400000.0);
-                MakeText(sheet, "<i>" + tide.displayName + "-tide holds"
-                                + (next != null ? ", and " + next.displayName + " takes the wheel in "
-                                                  + days + (days == 1 ? " day." : " days.") : ".") + "</i>",
-                    19, TextAnchor.MiddleCenter, Ink2, _serif);
-            }
-            else
-            {
-                var next = _loop.NextSabbat(out var nightStartMs);
-                if (next != null)
-                {
-                    var days = (long)System.Math.Ceiling((nightStartMs - _loop.NowUnixMs()) / 86400000.0);
-                    MakeText(sheet, "<i>" + next.displayName + ", " + days + (days == 1 ? " day off." : " days off.") + "</i>",
-                        19, TextAnchor.MiddleCenter, Ink2, _serif);
-                }
-            }
-
-            // Where Verdure comes from. The "how close is the next point"
-            // question is answered by the fold banner's percentage, not here.
-            MakeText(sheet, "<i>Verdure is drawn from LIFETIME Renown: " + NumberFormat.Short(_loop.State.renown)
-                            + " earned so far, and never spent. Renown comes from every level the kith and the"
-                            + " crafts earn, and from what the Rite is given.</i>",
-                17, TextAnchor.MiddleCenter, Ink2, _serif);
+            // No tide line and no Renown explainer. The Wheel turns whether or
+            // not the camp folds, so the season was never part of this choice,
+            // and the events rail carries it on every tab anyway (design §15's
+            // rule against telling one wait twice). Where Verdure comes from is
+            // the fold banner's job, one tap behind this sheet: this is the
+            // confirm, and a confirm carries what is gained, what is lost, and
+            // the two ways out.
             Button(sheet, "Stay a while", 320, CloseSheet);
             var migrate = Button(sheet, "Fold and begin again", 320, () =>
             {
