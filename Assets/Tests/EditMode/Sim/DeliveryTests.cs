@@ -151,5 +151,52 @@ namespace Wildgrove.Sim.Tests
             // would have landed it.
             Assert.That(state.GetResource("berries").ToDouble(), Is.EqualTo(100.0).Within(Tolerance));
         }
+
+        [Test]
+        public void DeliveryProgress_WalksTheCadenceAndStartsOverOnLanding()
+        {
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+
+            Simulation.Advance(state, _data, 1.5);
+
+            // Three quarters through the fixture's 2 s cadence — what the node
+            // card's band is drawing.
+            Assert.That(Simulation.DeliveryProgress(state, _data), Is.EqualTo(0.75).Within(Tolerance));
+
+            Simulation.Advance(state, _data, 0.5);
+
+            // The batch landed and the count starts over rather than sitting
+            // full: a band left at 100% would say a delivery is still owed.
+            Assert.That(Simulation.DeliveryProgress(state, _data), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void DeliveryProgress_IdleGrove_ReadsEmpty()
+        {
+            var state = GameStateFactory.NewGame(_data);
+
+            Simulation.Advance(state, _data, 10.0);
+
+            // Nothing is pooled anywhere, so there is nothing to count down to
+            // — the same parked clock Advance_IdleGrove_DoesNotBankDeliveryProgress
+            // pins from the sim's side.
+            Assert.That(Simulation.DeliveryProgress(state, _data), Is.EqualTo(0.0).Within(Tolerance));
+        }
+
+        [Test]
+        public void DeliveryProgress_NoDeliveryConfig_ReadsEmptyAndSaysSo()
+        {
+            _data.economy.delivery = null;
+            var state = GameStateFactory.NewGame(_data);
+            TestKith.Station(state, state.nodes[0].id, 1);
+
+            Simulation.Advance(state, _data, 3.0);
+
+            // Goods went straight to camp, so there is no cadence to draw and
+            // the card leaves the gauge off rather than standing an empty track.
+            Assert.That(Simulation.DeliveriesConfigured(_data), Is.False);
+            Assert.That(Simulation.DeliveryProgress(state, _data), Is.EqualTo(0.0).Within(Tolerance));
+        }
     }
 }

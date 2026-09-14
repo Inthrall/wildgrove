@@ -853,6 +853,21 @@ lean is a regression, not a phase. Build order:
 - **Kinship constants are hardcoded.** `Divisor` 1000 and `XpRatePerLevel` 0.02
   are `const`s in `Kinship.cs`; they belong in an `economy.json` section with the
   rest of the tuning.
+- **The two gathering gauges are unproven by anything but the eye** (2026-09-15).
+  The delivery band on every node card (`TrailPage.BuildNodePlate`) and the level
+  band on the kith info sheet (`OpenStationPickSheet`) are HUD, and EditMode tests
+  never build the HUD — `DeliveryTests` and `FamiliarsTests` pin the two readings
+  behind them and nothing pins what is drawn. Check by hand: that a worked node's
+  band walks the cadence smoothly and empties on the landing rather than crawling
+  or jumping (it is the one thing here driven per frame, and the basket line under
+  it moves on the page's quarter-second cadence, so the two are *meant* to disagree
+  by up to a quarter-second); that a node left fallow keeps its gauge until the
+  last pickings land and only then loses it; and that the kith sheet's band reads
+  as belonging to the line above it rather than as a rule across the sheet, which
+  is what `LevelGaugeWidth` at 360 of the column's 740 is for. **The 4:3 spread is
+  the ceiling here as it is for the plates** — the node card gains a gauge and a
+  15pt line, on a card whose own comment says its mastery line already takes two
+  lines there.
 ---
 
 ## 3. Outside-code

@@ -19,6 +19,16 @@ namespace Wildgrove.Game
     /// </summary>
     internal sealed partial class JournalSheets
     {
+        /// <summary>The level gauge's weight — the trail's own gauges, so a band means the same thing wherever the book draws one.</summary>
+        private const float LevelGaugeHeight = 10f;
+
+        /// <summary>
+        /// Half the sheet's 740 of text column. The gauge belongs to the line
+        /// above it, and one run to the full width reads as a rule dividing the
+        /// sheet — which is what the stitch above the buttons already is.
+        /// </summary>
+        private const float LevelGaugeWidth = 360f;
+
         /// <summary>
         /// The posting sheet's mirror, asked from the roster: not "who walks
         /// here?" but "where shall this one walk?" — every post as a one-tap
@@ -77,6 +87,21 @@ namespace Wildgrove.Game
                             + Mathf.RoundToInt((float)_loop.FamiliarLevelProgress(familiar) * 100f)
                             + "% to next" + bonded + kinship,
                 18, TextAnchor.UpperCenter, Ink2, _serif);
+
+            // The idiom above, finished: the crafts plate carries "Stop · 49%"
+            // over a band doing the same arithmetic, and the number and the
+            // band are one reading rather than two. Off the sheet entirely at
+            // the top of the curve, where the progress reads 0 — an empty band
+            // under a capped level says the opposite of what is true.
+            if (!_loop.FamiliarAtMaxLevel(familiar))
+            {
+                var gauge = Gauge((RectTransform)sheet, LevelGaugeHeight, out var gaugeFill);
+                var width = gauge.GetComponent<LayoutElement>();
+                width.minWidth = LevelGaugeWidth;
+                width.preferredWidth = LevelGaugeWidth;
+                width.flexibleWidth = 0f;
+                SetFill(gaugeFill, (float)_loop.FamiliarLevelProgress(familiar));
+            }
 
             // What this one is good at, at the moment it decides where they
             // walk. Not on every roster row, which is where it is read least

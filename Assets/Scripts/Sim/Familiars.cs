@@ -38,6 +38,23 @@ namespace Wildgrove.Sim
         }
 
         /// <summary>
+        /// True when the familiar has climbed the whole curve, or when there is
+        /// no curve to climb. Both are cases <see cref="ProgressToNextLevel"/>
+        /// answers 0 to, and a reader cannot tell that "0" from the one a fresh
+        /// level gives — so anything drawing the progress asks this first.
+        /// </summary>
+        public static bool AtMaxLevel(Familiar familiar, GameDataAsset data)
+        {
+            var xp = data?.economy?.familiarXp;
+            if (xp == null || familiar == null)
+            {
+                return true;
+            }
+
+            return Level(familiar, data) >= xp.maxLevel;
+        }
+
+        /// <summary>
         /// XP a familiar earns per second at its post: the authored base rate,
         /// the roosts' comfort (§4) and its own Kinship rate perk, folded
         /// together. Zero while it rests — no post, no work, no lesson. The

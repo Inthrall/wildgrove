@@ -204,6 +204,12 @@ namespace Wildgrove.Game
             return Familiars.ProgressToNextLevel(familiar, Data);
         }
 
+        /// <summary>True when the familiar has climbed the whole curve — the progress above then reads 0, and a band drawing it would read as empty rather than as done.</summary>
+        public bool FamiliarAtMaxLevel(Familiar familiar)
+        {
+            return Familiars.AtMaxLevel(familiar, Data);
+        }
+
         /// <summary>The familiar's permanent Kinship level (design §4).</summary>
         public int FamiliarKinship(Familiar familiar)
         {

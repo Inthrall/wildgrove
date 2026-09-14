@@ -91,6 +91,9 @@ namespace Wildgrove.Game
 
         private const float ReplantPlate = 260f;
 
+        /// <summary>The delivery gauge's height — the sketching gauge's weight, because the two are the same rule doing the same job on facing cards.</summary>
+        private const float DeliveryGaugeHeight = 10f;
+
         /// <summary>
         /// What a post's plate shows: the body standing there — a companion's
         /// own portrait, the warden's mark — and the moss (+) when the ground is
@@ -181,6 +184,15 @@ namespace Wildgrove.Game
                 flashRect.anchoredPosition = new Vector2(-flashInset, -4f + 20f * t);
             });
 
+            // The delivery cadence, which the card had no word for: pickings
+            // pool at the node and land at camp in a batch, so "1.2K at camp"
+            // above steps in jumps and the seconds between them were a silence.
+            // The crafts card answers the same question with a band on its
+            // plate; a node has no running control to colour in, so the band is
+            // a gauge of its own, under the lines it explains.
+            var gauge = Gauge(card, DeliveryGaugeHeight, out var gaugeFill);
+            var basketLine = MakeText(card, string.Empty, 15, TextAnchor.MiddleLeft, Ink2);
+
             // The strip is built whether or not planters have been unlocked,
             // because Plant back lives on it now — gating the whole row on
             // PlantersUnlocked would take the node's oldest purchase away from
@@ -256,6 +268,40 @@ namespace Wildgrove.Game
                 var ok = _loop.CanReplant(captured);
                 replant.interactable = ok;
                 SetButtonTint(replant, ok);
+
+                // The gauge stands while anything is coming — a worked ground
+                // has pickings in hand at almost every moment, and one just left
+                // fallow still lands what it holds. It comes off a fallow, empty
+                // node rather than leaving a band that cannot move. The TRACK is
+                // decided here rather than per frame so a delivery landing
+                // doesn't blink it away and back between two frames; the band
+                // going to nothing is what says the batch landed.
+                var coming = captured.basket > BigDouble.Zero || rate > BigDouble.Zero;
+                var drawn = coming && _loop.DeliveriesConfigured();
+                gauge.SetActive(drawn);
+                basketLine.gameObject.SetActive(drawn);
+                if (drawn)
+                {
+                    // What is riding on the band. Without it the gauge fills
+                    // toward an unnamed event, and the card already has the two
+                    // numbers either side of the pool — the rate feeding it and
+                    // the camp stock it lands in.
+                    basketLine.text = NumberFormat.Short(captured.basket) + " in the basket";
+                }
+            });
+
+            // The band alone walks per frame, like the crafts card's plate fill:
+            // it is the one thing here whose job is to look like time passing,
+            // and the page's quarter-second cadence would step it four times a
+            // second. The basket's reading above stays on the cadence, where a
+            // string every quarter-second is the right price for a number read
+            // in passing.
+            _frameUpdaters.Add(() =>
+            {
+                // An empty basket is turned away on the field read before the
+                // cadence is asked for: every node on the ground runs this, and
+                // a fallow one has nothing coming.
+                SetFill(gaugeFill, captured.basket > BigDouble.Zero ? (float)_loop.DeliveryProgress() : 0f);
             });
         }
 

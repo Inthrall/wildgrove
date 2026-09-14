@@ -223,6 +223,34 @@ namespace Wildgrove.Sim
             }
         }
 
+        /// <summary>
+        /// True when goods pool and land in batches. Hand-built fixtures can
+        /// leave the section out, and goods then reach camp un-batched with no
+        /// cadence to draw.
+        /// </summary>
+        public static bool DeliveriesConfigured(GameDataAsset data)
+        {
+            var delivery = data?.economy?.delivery;
+            return delivery != null && delivery.batchSeconds > 0.0;
+        }
+
+        /// <summary>
+        /// How far the cadence has come toward landing what is waiting, 0..1 —
+        /// the band on a node's card. Zero while nothing is pooled anywhere,
+        /// which is where <see cref="DeliverPending"/> parks the clock: a grove
+        /// with nothing coming has nothing to count down to.
+        /// </summary>
+        public static double DeliveryProgress(GameState state, GameDataAsset data)
+        {
+            if (state == null || !DeliveriesConfigured(data))
+            {
+                return 0.0;
+            }
+
+            var fraction = state.deliveryProgress / data.economy.delivery.batchSeconds;
+            return System.Math.Min(1.0, System.Math.Max(0.0, fraction));
+        }
+
         /// <summary>True when any node has pickings waiting for the next delivery.</summary>
         private static bool AnythingPending(GameState state)
         {

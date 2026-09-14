@@ -100,6 +100,18 @@ namespace Wildgrove.Game
             return gained;
         }
 
+        /// <summary>How far the delivery cadence has come toward landing what is pooled (0..1) — the band on a node's card.</summary>
+        public double DeliveryProgress()
+        {
+            return Simulation.DeliveryProgress(State, Data);
+        }
+
+        /// <summary>True when pickings pool and land in batches — off in hand-built data, where they go straight to camp with no cadence to draw.</summary>
+        public bool DeliveriesConfigured()
+        {
+            return Simulation.DeliveriesConfigured(Data);
+        }
+
         /// <summary>The node's next replant cost, in units of its own resource (design §3) — for the button label.</summary>
         public BigDouble ReplantCost(NodeState node)
         {
