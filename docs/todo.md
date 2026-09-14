@@ -807,6 +807,17 @@ lean is a regression, not a phase. Build order:
     in the past. Draining is still right (any sheet can stand, and a scrim
     outlives a tab change) but a welcome-back sheet in front of a capture is a
     symptom of the wrong-run fault above, not of the stamp.
+- **⚠️ The screenshot harness's default size is one Play will reject, and nothing
+  in the loop says so** (2026-09-15). `StoreScreenshots.ShotSize()` falls back to
+  **1080 x 2400**, a phone's real aspect. Play's listing spec allows a screenshot's
+  long side to be at most **twice** its short side, and 2400 is 2.22 times 1080, so
+  the whole default set bounces at upload. Nothing local catches it: the harness is
+  happy, the shots look right, and the first thing that disagrees is the console.
+  `WILDGROVE_SHOT_SIZE=1080x1920` is the size to pass, which is inside the rule, is
+  the 9:16 the tablet slots ask for, and is the resolution promotional eligibility
+  wants. **The fix is the one-line default**, and the reason to make it rather than
+  remember it is that the env var is the thing a hurried capture forgets. The spec
+  and the rest of the listing asset sizes are in `store/closed-testing.md`.
 - **Sim purity is a convention with nothing enforcing it.** `CLAUDE.md` states
   `Wildgrove.Sim` = `noEngineReferences: true`; the asmdef flag is **`false`**, and
   flipping it does not compile — Sim takes `GameDataAsset` in nearly every
@@ -1339,15 +1350,50 @@ for:
 
 ### 3.5 Launch (design §13 Phase 6 — carried here so the plan's tail isn't lost)
 
-- **The name check, before the listing.** "Wildgrove" is a working title —
-  check Play Store collisions and trademark (design §14). Everything
-  listing-side hangs off the answer, so it comes before screenshots or copy.
-- **The store listing**, with tablet and PC screenshots (Level Up parity).
-- **Closed beta: 2–3 weeks of vitals** — **not started; being built towards as of
-  2026-09-09.** Nothing is in anyone's hands yet, so §3.3's device list is still
-  work someone has to sit down and do rather than something testers will surface,
-  and no vitals exist for the ship gate below to judge. Run the Play Games on PC
-  opt-in and the Level Up self-check during it, as planned.
+- ~~**The name check, before the listing.**~~ ✅ DECIDED 2026-09-15 (Mo): the game
+  keeps the name **Wildgrove**. No Play Store app of that name and no game or
+  software trademark turned up, with the caveat recorded so nobody reads it as
+  more than it is: that was a web search, not a search of the registers. Design
+  §14's open question is closed and everything listing-side is unblocked.
+- **The store listing**, with tablet and PC screenshots (Level Up parity). The
+  copy is drafted in `store/closed-testing.md`, in the same first-draft register
+  as the rest of the game's words, so the narrative pass (§1.4) owns it before it
+  reaches the console.
+- **The app icon and the feature graphic do not exist**, and they are the only two
+  listing assets with no harness behind them (2026-09-15). Everything else the
+  listing wants is either generated (`tools/make-store-art.py`) or captured
+  (`StoreScreenshots`); these two are drawings nobody has made. Play wants the icon
+  at 512 x 512 32-bit PNG **with** alpha and the feature graphic at 1024 x 500
+  JPEG or 24-bit PNG **without** it, and the alpha rule going opposite ways between
+  them is exactly the trap that made three achievement icons white boxes (§3.2).
+  **The track cannot go live without both**, so they sit on the critical path in
+  front of the fourteen-day clock, not beside it. `make-store-art.py` is the
+  precedent for drawing them in the game's own plate idiom.
+- **⚠️ Closed testing is a GATE, not a beta we choose to run, and it is the
+  longest pole left.** Established 2026-09-15: the Play account is a personal one
+  created after 13 Nov 2023, so production access needs **twelve testers opted in
+  continuously for fourteen days** first. `store/closed-testing.md` is the
+  runbook: the rule as Google words it, what must be green before the track goes
+  live, the tester mechanics, the listing specs, and the order to work in.
+  <br>**The sequencing conclusion is the part worth carrying here.** Nothing
+  shortens the fourteen days, and a closed test takes new builds the whole time it
+  runs, so everything else outstanding (the narrative pass, audio, §3.3's device
+  sitting, onboarding, the three white-box icons) belongs **inside** that window.
+  Polishing first and starting the clock afterwards is a two-week mistake. Recruit
+  more than twelve, because one opt-out resets that tester to zero with no partial
+  credit and no warning. Run the Play Games on PC opt-in and the Level Up
+  self-check during the window, as planned.
+- **⚠️ There are THREE tester lists, none of which feeds the others** (2026-09-15).
+  The closed **track's** list (an email list or a Google Group, and the one the
+  twelve are counted off), the **Play Games Services project's** own testers (§3.2,
+  what gates a Game Stats draft), and **License testing** (§3.2, so a test purchase
+  is not charged). A tester on the track but absent from the other two installs the
+  build, meets no achievements, sees no stats, and is billed for real money if they
+  try the store. That reads as three separate product bugs and is one piece of
+  console admin. **Put every closed tester on all three**, and note the constraint
+  from Google's own page: an internal tester cannot be in a closed test at the same
+  time without opting out of the internal track first, which is the likeliest
+  reason a name that should see the build does not.
 - **The ship gate:** vitals green 14 consecutive days and D1 retention >30% in
   beta → ship. The onboarding pass (§1.7) feeds the same gate — the first-hour
   funnel must be green.

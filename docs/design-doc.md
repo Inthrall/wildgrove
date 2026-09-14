@@ -740,7 +740,7 @@ Solo, part-time. Each phase ends at a **gate**: a concrete question answered bef
 **Before Phase 1 ends**
 - **Readability without Coin**, the gate question. Fallback: a cosmetic skin over Renown, never a wallet.
 - **Active-play depth:** ship the windfall catch only (the 2026-07-24 rework of Tending, §2); prototype the hold-still-to-sketch observation reveal at 1.1, doubly tempting now, since the sketch *is* the insect moment and release gives it an ending.
-- **Name:** "Wildgrove" is a working title, so check Play Store collisions and trademark before the listing.
+- **Name:** ~~"Wildgrove" is a working title, so check Play Store collisions and trademark before the listing.~~ ✅ **RESOLVED 2026-09-15 (Mo): the name stays Wildgrove.** No Play Store app carries it and no game or software trademark turned up. Recorded with its limit, so it is not mistaken for more than it was: a web search, not a search of the registers.
 
 **Before Phase 3**
 - **Species pool contents:** author the deterministic pools (structure is decided; the entries are a writing/balance task).
